@@ -94,8 +94,8 @@ keys and the public footer. The docs add no production API routes or migrations.
 ## Release testing
 
 Every mobile release build must include the ignored production configuration
-file. A build without these compile-time values reaches iOS but stops before
-Flutter renders its first frame. Build the signed IPA from `mobile/` with:
+file. A build without these compile-time values now shows a recovery screen,
+but cannot reach account entry. Build the signed IPA from `mobile/` with:
 
 ```bash
 test -f .env && flutter build ipa --release --dart-define-from-file=.env
