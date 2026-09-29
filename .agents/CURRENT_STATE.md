@@ -54,8 +54,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   icon tab bar, compact Ask actions, recent photos instead of photo-less import
   rows, compact lists for photo-less inventory, a refreshed profile avatar,
   and a full-page object editor. The new
-  item-photo upload route is tested locally but not deployed. These changes are
-  not in build 28.
+  item-photo upload route is tested locally but not deployed. The production VM
+  lacks the route's authorization helper and has an older item-update signature;
+  copying the branch file would overwrite unrelated VM changes. These changes
+  are not in build 28.
 - Low-stock thresholds are stored on one device and do not sync.
 - Two Stripe route families are mounted. The live webhook source and iOS payment
   strategy must be settled before changing pricing or shipping paid digital access.
