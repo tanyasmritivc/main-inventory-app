@@ -41,6 +41,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   reviewed files. A blind pull, reset, or full checkout replacement can destroy work.
 - Numbered migrations alone do not reconstruct the database. The schema baseline
   and live verification are required.
+- Pending workspace migration 038 has no legacy personal/team data backfill before
+  replacing item RLS policies. It must not deploy until the transition and direct
+  JWT isolation acceptance are proven on a disposable copy of the live schema.
 - Three physical release gates remain documented: Google sign-in, Apple sign-in,
   and APNs delivery on a real iPhone. Password recovery also needs a fresh-link
   device check.
