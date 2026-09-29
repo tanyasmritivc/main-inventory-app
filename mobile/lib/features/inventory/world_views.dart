@@ -63,10 +63,16 @@ class WorldHeader extends StatelessWidget {
 }
 
 class WorldSection extends StatelessWidget {
-  const WorldSection({super.key, required this.title, required this.children});
+  const WorldSection({
+    super.key,
+    required this.title,
+    required this.children,
+    this.flat = false,
+  });
 
   final String title;
   final List<Widget> children;
+  final bool flat;
 
   @override
   Widget build(BuildContext context) {
@@ -85,26 +91,36 @@ class WorldSection extends StatelessWidget {
             ),
           ),
         ),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AppTokens.radius),
-          child: Material(
-            color: t.card,
-            child: Column(
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      indent: 16,
-                      endIndent: 16,
-                      color: t.separator,
-                    ),
-                  children[i],
-                ],
+        if (flat)
+          Column(
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0) Divider(height: 1, color: t.separator),
+                children[i],
               ],
+            ],
+          )
+        else
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppTokens.radius),
+            child: Material(
+              color: t.card,
+              child: Column(
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        indent: 16,
+                        endIndent: 16,
+                        color: t.separator,
+                      ),
+                    children[i],
+                  ],
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -115,6 +131,7 @@ class WorldRow extends StatelessWidget {
     super.key,
     required this.title,
     required this.count,
+    this.countSemantics,
     this.subtitle,
     this.onTap,
     this.onLongPress,
@@ -125,6 +142,7 @@ class WorldRow extends StatelessWidget {
 
   final String title;
   final String count;
+  final String? countSemantics;
   final String? subtitle;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -135,69 +153,95 @@ class WorldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    return InkWell(
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    return Semantics(
+      button: onTap != null,
+      label: [
+        title,
+        if (subtitle != null && subtitle!.isNotEmpty) subtitle!,
+        if (count.isNotEmpty) countSemantics ?? 'quantity $count',
+      ].join(', '),
+      hint: onLongPress == null ? null : 'Long press for actions',
       onTap: onTap,
       onLongPress: onLongPress,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 62),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          child: Row(
-            children: [
-              if (showCrop) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    color: t.s2,
-                    child: imageUrl == null || imageUrl!.isEmpty
-                        ? null
-                        : Image.network(
-                            imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const SizedBox.shrink(),
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: t.ink, fontSize: 15),
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: warning ? t.warn : t.text2,
-                          fontSize: 13,
-                        ),
+      child: ExcludeSemantics(
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 62),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+              child: Row(
+                children: [
+                  if (showCrop) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        color: t.s2,
+                        child: imageUrl == null || imageUrl!.isEmpty
+                            ? Icon(
+                                Icons.inventory_2_outlined,
+                                color: t.text3,
+                                size: 20,
+                              )
+                            : Image.network(
+                                imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: t.text3,
+                                      size: 20,
+                                    ),
+                              ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
                   ],
-                ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: largeText ? null : 2,
+                          overflow: largeText
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                          style: TextStyle(color: t.ink, fontSize: 15),
+                        ),
+                        if (subtitle != null && subtitle!.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            subtitle!,
+                            maxLines: largeText ? null : 2,
+                            overflow: largeText
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: warning ? t.warn : t.text2,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    count,
+                    style: TextStyle(
+                      color: t.text2,
+                      fontFamily: 'IBMPlexMono',
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                count,
-                style: TextStyle(
-                  color: t.text2,
-                  fontFamily: 'IBMPlexMono',
-                  fontSize: 14,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -231,15 +275,17 @@ class WorldItems extends StatelessWidget {
         ),
       );
     }
-    if (items.length > 40) {
+    if (items.length > 40 ||
+        MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
+        MediaQuery.sizeOf(context).width < 360) {
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         itemCount: items.length,
         separatorBuilder: (_, _) => Divider(height: 1, color: t.separator),
         itemBuilder: (context, index) {
           final item = items[index];
           return Material(
-            color: t.card,
+            color: t.bg,
             child: WorldRow(
               title: item.displayName,
               subtitle: item.displayDescription ?? item.category,
@@ -256,7 +302,7 @@ class WorldItems extends StatelessWidget {
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: .83,
@@ -281,9 +327,10 @@ class WorldItems extends StatelessWidget {
                     color: t.s2,
                     child: item.imageUrl == null || item.imageUrl!.isEmpty
                         ? Center(
-                            child: Text(
-                              'No photo',
-                              style: TextStyle(color: t.text3, fontSize: 13),
+                            child: Icon(
+                              Icons.inventory_2_outlined,
+                              color: t.text3,
+                              size: 30,
                             ),
                           )
                         : Image.network(
@@ -291,12 +338,10 @@ class WorldItems extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 Center(
-                                  child: Text(
-                                    'Photo unavailable',
-                                    style: TextStyle(
-                                      color: t.text3,
-                                      fontSize: 13,
-                                    ),
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    color: t.text3,
+                                    size: 30,
                                   ),
                                 ),
                           ),

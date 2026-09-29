@@ -14,7 +14,7 @@ void main() {
         MaterialApp(theme: theme, home: const AuthPage()),
       );
 
-      expect(find.text('Sign in to open your inventory.'), findsOneWidget);
+      expect(find.text('Sign in to open your inventory.'), findsNothing);
       final signup = find.text('Need an account? Sign up');
       await tester.ensureVisible(signup);
       await tester.tap(signup);
@@ -22,7 +22,7 @@ void main() {
 
       expect(
         find.text('Create an account to start your inventory.'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byType(TextField), findsNWidgets(4));
       expect(find.text('Role (optional)'), findsNothing);

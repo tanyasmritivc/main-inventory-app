@@ -695,23 +695,6 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          _isLogin ? 'Welcome back' : 'Welcome',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.4,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isLogin
-                              ? 'Sign in to open your inventory.'
-                              : 'Create an account to start your inventory.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppTokens.of(context).text2),
-                        ),
-                        const SizedBox(height: 18),
                         if (!_isLogin) ...[
                           TextField(
                             controller: _firstName,

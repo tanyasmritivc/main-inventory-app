@@ -140,3 +140,16 @@ Find tab duplicated search while pushing the actual inventory hierarchy into Mor
 
 **Implications:** Home, Ask navigation hints, and capture handoffs open Places.
 More keeps All objects and inventory utilities but does not duplicate Places.
+
+## 2026-09-28: Reserve layout space for navigation and follow system text settings
+
+**Decision:** Mobile navigation occupies Scaffold layout space in portrait and a
+side rail in landscape. Screens do not add compensating bottom spacers. Respect
+the phone's Bold Text and text scaling settings.
+
+**Reasoning:** The overlay bar obscured final rows, and fixed spacing consumed
+small landscape screens. Forced regular text overrode an accessibility setting.
+
+**Implications:** New screens must remain scrollable to their final action at
+large text sizes. Navigation, Home, Places, and More have widget coverage; the
+iOS simulator smoke suite covers the primary tab journey.

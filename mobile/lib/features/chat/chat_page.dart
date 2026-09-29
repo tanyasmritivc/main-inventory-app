@@ -2186,18 +2186,41 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildEmptyState() {
+    final t = AppTokens.of(context);
+    const suggestions = [
+      'What did I capture recently?',
+      'What do I have in each place?',
+      'Which objects need identifying?',
+    ];
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Ask about an object, a place, or what you need for a project.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTokens.of(context).text2),
-            ),
-          ],
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Try asking',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(color: t.text2),
+              ),
+              const SizedBox(height: 6),
+              for (final suggestion in suggestions)
+                TextButton(
+                  onPressed: () => unawaited(_submit(suggestion)),
+                  style: TextButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 4,
+                    ),
+                  ),
+                  child: Text(suggestion, textAlign: TextAlign.left),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2316,7 +2339,7 @@ class _ChatPageState extends State<ChatPage>
             ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 8, 20, keyboardVisible ? 12 : 96),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, keyboardVisible ? 12 : 16),
           child: Column(
             children: [
               if (widget.inPageView)

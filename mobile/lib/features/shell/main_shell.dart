@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,9 +36,14 @@ import '../profile/settings_page.dart';
 import 'more_page.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.api});
+  const MainShell({
+    super.key,
+    required this.api,
+    this.enablePushNotifications = true,
+  });
 
   final ApiClient api;
+  final bool enablePushNotifications;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -174,7 +178,9 @@ class _MainShellState extends State<MainShell> {
     }
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
-    unawaited(_initializePushNotifications());
+    if (widget.enablePushNotifications) {
+      unawaited(_initializePushNotifications());
+    }
     _notificationTimer ??= Timer.periodic(
       const Duration(seconds: 60),
       (_) => unawaited(_loadNotificationCount()),
@@ -256,23 +262,90 @@ class _MainShellState extends State<MainShell> {
     return Expanded(
       child: SizedBox(
         key: key,
-        height: 54,
-        child: TextButton(
-          onPressed: () => _onNavigationTap(index),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            textStyle: Theme.of(context).textTheme.bodySmall,
-            backgroundColor: index == 2
-                ? (selected ? tokens.accent : tokens.accentSoft)
-                : (selected ? tokens.raised : Colors.transparent),
-            foregroundColor: index == 2
-                ? (selected ? tokens.onAccent : tokens.accentText)
-                : (selected ? tokens.ink : tokens.text2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(27),
+        height: 54 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
+        child: Semantics(
+          selected: selected,
+          child: TextButton(
+            onPressed: () => _onNavigationTap(index),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              textStyle: Theme.of(context).textTheme.bodySmall,
+              backgroundColor: index == 2
+                  ? (selected ? tokens.accent : tokens.accentSoft)
+                  : (selected ? tokens.raised : Colors.transparent),
+              foregroundColor: index == 2
+                  ? (selected ? tokens.onAccent : tokens.accentText)
+                  : (selected ? tokens.ink : tokens.text2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(27),
+              ),
+            ),
+            child: Text(label, maxLines: 2, textAlign: TextAlign.center),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomNavigation() {
+    final t = AppTokens.of(context);
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: t.card,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: t.separator),
+        ),
+        child: Row(
+          children: [
+            _barItem(0, 'Home'),
+            _barItem(1, 'Ask', key: TutorialController.assistTabKey),
+            _barItem(2, 'Capture', key: TutorialController.scanTabKey),
+            _barItem(3, 'Places', key: TutorialController.inventoryIconKey),
+            _barItem(4, 'More', key: TutorialController.moreTabKey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sideNavigation() {
+    final t = AppTokens.of(context);
+    const labels = ['Home', 'Ask', 'Capture', 'Places', 'More'];
+    return SafeArea(
+      right: false,
+      child: Container(
+        width: 96,
+        decoration: BoxDecoration(
+          color: t.card,
+          border: Border(right: BorderSide(color: t.separator)),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          itemCount: labels.length,
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Semantics(
+              selected: _navigationIndex == index,
+              child: TextButton(
+                onPressed: () => _onNavigationTap(index),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(84, 52),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  backgroundColor: _navigationIndex == index
+                      ? (index == 2 ? t.accent : t.raised)
+                      : Colors.transparent,
+                  foregroundColor: _navigationIndex == index && index == 2
+                      ? t.onAccent
+                      : t.ink,
+                ),
+                child: Text(labels[index], textAlign: TextAlign.center),
+              ),
             ),
           ),
-          child: Text(label, maxLines: 1),
         ),
       ),
     );
@@ -586,11 +659,17 @@ class _MainShellState extends State<MainShell> {
       );
     }
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final landscape =
+        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
     return Scaffold(
       backgroundColor: AppTokens.of(context).bg,
-      body: Stack(
+      bottomNavigationBar: landscape || keyboardVisible
+          ? null
+          : _bottomNavigation(),
+      body: Row(
         children: [
-          Positioned.fill(
+          if (landscape && !keyboardVisible) _sideNavigation(),
+          Expanded(
             child: AnimatedOpacity(
               opacity: _pageOpacity,
               duration: const Duration(milliseconds: 140),
@@ -689,66 +768,6 @@ class _MainShellState extends State<MainShell> {
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
                   ),
                 ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 8,
-            child: IgnorePointer(
-              ignoring: keyboardVisible,
-              child: AnimatedSlide(
-                offset: keyboardVisible ? const Offset(0, 1.35) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: AnimatedOpacity(
-                  opacity: keyboardVisible ? 0 : 1,
-                  duration: const Duration(milliseconds: 140),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppTokens.of(
-                            context,
-                          ).card.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(
-                            color: AppTokens.of(context).separator,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            _barItem(0, 'Home'),
-                            _barItem(
-                              1,
-                              'Ask',
-                              key: TutorialController.assistTabKey,
-                            ),
-                            _barItem(
-                              2,
-                              'Capture',
-                              key: TutorialController.scanTabKey,
-                            ),
-                            _barItem(
-                              3,
-                              'Places',
-                              key: TutorialController.inventoryIconKey,
-                            ),
-                            _barItem(
-                              4,
-                              'More',
-                              key: TutorialController.moreTabKey,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
           ),

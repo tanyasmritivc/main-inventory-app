@@ -5,6 +5,7 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/home/home_dashboard.dart';
 import 'package:mobile/features/inventory/item_detail_sheet.dart';
 import 'package:mobile/features/shell/main_shell.dart';
+import 'package:mobile/features/shell/more_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -143,6 +144,43 @@ void main() {
     expect(find.text('Choose a workspace'), findsNothing);
   });
 
+  testWidgets('navigation stays outside page content in both orientations', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    Future<void> pumpAt(Size size) async {
+      await tester.binding.setSurfaceSize(size);
+      await tester.pumpWidget(
+        MaterialApp(
+          key: ValueKey(size),
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(size: size),
+            child: child!,
+          ),
+          home: MainShell(api: _LegacyApi()),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    await pumpAt(const Size(390, 844));
+
+    final pagePortrait = tester.getRect(find.byType(PageView));
+    final homePortrait = tester.getRect(
+      find.widgetWithText(TextButton, 'Home'),
+    );
+    expect(homePortrait.top, greaterThanOrEqualTo(pagePortrait.bottom));
+
+    await pumpAt(const Size(844, 390));
+    final pageLandscape = tester.getRect(find.byType(PageView));
+    final homeLandscape = tester.getRect(
+      find.widgetWithText(TextButton, 'Home'),
+    );
+    expect(homeLandscape.right, lessThanOrEqualTo(pageLandscape.left));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Home uses derived review and omits unavailable low stock', (
     tester,
   ) async {
@@ -169,9 +207,36 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('need identifying'), findsOneWidget);
+    expect(find.text('to identify'), findsOneWidget);
     expect(find.text('running low'), findsNothing);
     expect(find.text('Choose a workspace'), findsNothing);
+  });
+
+  testWidgets('More scrolls to its final settings action', (tester) async {
+    String? destination;
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: MorePage(
+            api: _LegacyApi(),
+            refreshToken: 0,
+            workspaceName: 'Your inventory',
+            workspaceAvailable: false,
+            onOpen: (value) => destination = value,
+            onWorkspace: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    expect(destination, 'settings');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('object opens from list data when detail routes are missing', (

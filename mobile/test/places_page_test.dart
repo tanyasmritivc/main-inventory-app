@@ -90,7 +90,8 @@ void main() {
     expect(find.text('My inventory'), findsOneWidget);
     expect(find.text('Garage'), findsOneWidget);
     expect(find.text('Workshop'), findsOneWidget);
-    expect(find.text('Shared by you, 1 kind'), findsOneWidget);
+    expect(find.text('Shared by you'), findsOneWidget);
+    expect(find.text('Shared by you, 1 kind'), findsNothing);
     expect(find.text('Shared with you'), findsOneWidget);
     expect(find.text('Robotics room'), findsOneWidget);
     expect(find.text('Join a shared place'), findsOneWidget);

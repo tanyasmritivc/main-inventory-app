@@ -7,8 +7,8 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/pending_captures.dart';
 import '../../core/ui/visual_surfaces.dart';
-import '../showcase/tutorial_controller.dart';
 import '../inventory/item_detail_sheet.dart';
+import '../inventory/world_views.dart';
 import 'home_metrics.dart';
 
 Future<T?> _optionalRead<T>(Future<T> Function() read) async {
@@ -140,13 +140,22 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final t = AppTokens.of(context);
     final text = Theme.of(context).textTheme;
     final data = _data;
+    final featuredPlaces =
+        data?.places.take(3).toList() ?? const <_HomePlace>[];
+    final recentItems = data?.recentItems ?? const <InventoryItem>[];
+    final hasDecisions =
+        data != null &&
+        (data.metrics.needsIdentifying > 0 ||
+            (data.showRunningLow && data.metrics.runningLow > 0) ||
+            (data.showMissing && data.metrics.missing > 0) ||
+            (data.showLentOut && data.metrics.lentOut > 0));
     return SafeArea(
       top: true,
       bottom: false,
       child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
             TextButton(
               onPressed: widget.workspaceAvailable ? widget.onWorkspace : null,
@@ -160,7 +169,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.workspaceName, style: text.headlineMedium),
+                  Flexible(
+                    child: Text(
+                      widget.workspaceName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.headlineMedium,
+                    ),
+                  ),
                   if (widget.workspaceAvailable) ...[
                     const SizedBox(width: 8),
                     Text('⌄', style: text.headlineMedium),
@@ -168,28 +184,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-            GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: InkWell(
-                key: TutorialController.homeAskKey,
-                onTap: widget.onAsk,
-                child: SizedBox(
-                  height: 58,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Ask about your inventory',
-                        style: text.bodyLarge?.copyWith(color: t.text2),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 26),
+            const SizedBox(height: 20),
             if (_loading && data == null)
               const Center(child: CircularProgressIndicator())
             else if (_error != null)
@@ -224,76 +219,62 @@ class _HomeDashboardState extends State<HomeDashboard> {
               )
             else if (data != null && data.items.isEmpty) ...[
               const SizedBox(height: 36),
-              Text('Nothing here yet.', style: text.headlineLarge),
-              const SizedBox(height: 8),
-              Text(
-                'One photograph changes that.',
-                style: text.bodyLarge?.copyWith(color: t.text2),
-              ),
+              Text('No objects yet', style: text.headlineLarge),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: widget.onCapture,
-                child: const Text('Photograph something'),
+                child: const Text('Take a photo'),
               ),
               const SizedBox(height: 10),
               OutlinedButton(
                 onPressed: widget.onImport,
                 child: const Text('Import a list'),
               ),
-              const SizedBox(height: 10),
-              if (widget.workspaceAvailable)
-                OutlinedButton(
-                  onPressed: widget.onWorkspaces,
-                  child: const Text('Choose a workspace'),
-                ),
             ] else if (data != null) ...[
-              _sectionTitle('Needs a decision'),
-              const SizedBox(height: 10),
-              GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 1.52,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _decision(
-                    0,
-                    data.metrics.needsIdentifying,
-                    'need identifying',
-                    t.accent,
-                  ),
-                  if (data.showRunningLow)
-                    _decision(
-                      1,
-                      data.metrics.runningLow,
-                      'running low',
-                      t.warn,
-                    ),
-                  if (data.showMissing)
-                    _decision(2, data.metrics.missing, 'missing', t.ink),
-                  if (data.showLentOut)
-                    _decision(3, data.metrics.lentOut, 'lent out', t.ink),
-                ],
-              ),
-              const SizedBox(height: 26),
-              _sectionTitle('Captured today'),
-              const SizedBox(height: 10),
-              if (data.capturedToday.isEmpty)
-                _empty(
-                  'Nothing captured today. Your new objects will appear here.',
-                )
-              else
-                SizedBox(
-                  height: 132,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: data.capturedToday.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (_, index) {
-                      final item = data.capturedToday[index];
-                      return InkWell(
+              if (hasDecisions) ...[
+                Column(
+                  children: [
+                    if (data.metrics.needsIdentifying > 0)
+                      _decision(
+                        0,
+                        data.metrics.needsIdentifying,
+                        'to identify',
+                        t.accent,
+                      ),
+                    if (data.showRunningLow && data.metrics.runningLow > 0)
+                      _decision(
+                        1,
+                        data.metrics.runningLow,
+                        'running low',
+                        t.warn,
+                      ),
+                    if (data.showMissing && data.metrics.missing > 0)
+                      _decision(2, data.metrics.missing, 'missing', t.ink),
+                    if (data.showLentOut && data.metrics.lentOut > 0)
+                      _decision(3, data.metrics.lentOut, 'lent out', t.ink),
+                  ],
+                ),
+                const SizedBox(height: 26),
+              ],
+              if (recentItems.isNotEmpty) ...[
+                _sectionTitle('Recent objects'),
+                const SizedBox(height: 8),
+                Column(
+                  children: [
+                    for (
+                      var index = 0;
+                      index < recentItems.length;
+                      index++
+                    ) ...[
+                      if (index > 0) Divider(height: 1, color: t.separator),
+                      WorldRow(
+                        title: recentItems[index].displayName,
+                        subtitle: recentItems[index].location,
+                        count: '${recentItems[index].quantity}',
+                        showCrop: true,
+                        imageUrl: recentItems[index].imageUrl,
                         onTap: () async {
+                          final item = recentItems[index];
                           await showItemDetailSheet(
                             context,
                             item: item,
@@ -302,78 +283,28 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           );
                           if (mounted) unawaited(_load());
                         },
-                        child: SizedBox(
-                          width: 112,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: ColoredBox(
-                                  color: t.card,
-                                  child: SizedBox(
-                                    height: 94,
-                                    width: 112,
-                                    child: item.imageUrl?.isNotEmpty == true
-                                        ? Image.network(
-                                            item.imageUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, _, _) =>
-                                                const Center(
-                                                  child: Text('No photo'),
-                                                ),
-                                          )
-                                        : Center(
-                                            child: Text(
-                                              item.quantity.toString(),
-                                              style: text.headlineMedium,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                item.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: text.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 26),
-              Row(
-                children: [
-                  Expanded(child: _sectionTitle('Where things live')),
-                  TextButton(
-                    onPressed: widget.onAllPlaces,
-                    child: const Text('All places'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (data.places.isEmpty)
-                _empty('No places yet. Add a place to organize what you own.')
-              else
-                GroupedSurface(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      for (
-                        var index = 0;
-                        index < data.places.length;
-                        index++
-                      ) ...[
-                        if (index > 0) Divider(height: 1, color: t.separator),
-                        _placeRow(data.places[index], data),
-                      ],
+                      ),
                     ],
-                  ),
+                  ],
+                ),
+                const SizedBox(height: 26),
+              ],
+              _sectionTitle('Places'),
+              const SizedBox(height: 8),
+              if (featuredPlaces.isEmpty)
+                _empty('No places yet')
+              else
+                Column(
+                  children: [
+                    for (
+                      var index = 0;
+                      index < featuredPlaces.length;
+                      index++
+                    ) ...[
+                      if (index > 0) Divider(height: 1, color: t.separator),
+                      _placeRow(featuredPlaces[index], data),
+                    ],
+                  ],
                 ),
             ],
           ],
@@ -400,27 +331,23 @@ class _HomeDashboardState extends State<HomeDashboard> {
     return Semantics(
       button: true,
       label: '$count $label',
-      child: GroupedSurface(
-        padding: EdgeInsets.zero,
-        child: InkWell(
-          onTap: () => widget.onDecision(index),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$count',
-                  style: text.headlineLarge?.copyWith(
-                    color: color,
-                    fontFamily: 'IBM Plex Mono',
-                  ),
+      child: InkWell(
+        onTap: () => widget.onDecision(index),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                '$count',
+                style: text.headlineMedium?.copyWith(
+                  color: color,
+                  fontFamily: 'IBM Plex Mono',
                 ),
-                const SizedBox(height: 5),
-                Text(label, style: text.bodySmall?.copyWith(color: t.text2)),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Text(label, style: text.bodyLarge)),
+              Icon(Icons.chevron_right, color: t.text2),
+            ],
           ),
         ),
       ),
@@ -435,10 +362,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
       child: InkWell(
         onTap: () =>
             widget.onPlace(place.name, place.id, data.items, data.thresholds),
-        child: SizedBox(
-          height: 58,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 54),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
             child: Row(
               children: [
                 Expanded(child: Text(place.name)),
@@ -493,14 +420,10 @@ class _HomeData {
     checkouts: checkouts,
   );
 
-  List<InventoryItem> get capturedToday {
-    final now = DateTime.now();
-    return items.where((item) {
-      final date = item.createdAt.toLocal();
-      return date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  List<InventoryItem> get recentItems {
+    final recent = List<InventoryItem>.of(items)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return recent.take(3).toList();
   }
 
   List<_HomePlace> get places {
@@ -535,6 +458,6 @@ class _HomeData {
         );
       }
     }
-    return result;
+    return result..sort((a, b) => b.count.compareTo(a.count));
   }
 }

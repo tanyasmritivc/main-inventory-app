@@ -49,27 +49,123 @@ Future<void> main() async {
     return;
   }
 
-  AppConfig.validate();
-  await ProStatus.loadCached();
-  await ThemePreference.load();
-  await LowStockNotifications.initialize();
+  runApp(_StartupGate(launchMode: launchMode));
+}
 
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    anonKey: AppConfig.supabaseAnonKey,
-  );
+class _StartupGate extends StatefulWidget {
+  const _StartupGate({required this.launchMode});
 
-  if (launchMode == 1) {
-    runApp(
-      const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
-      ),
-    );
-    return;
+  final int launchMode;
+
+  @override
+  State<_StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<_StartupGate> {
+  bool _ready = false;
+  bool _loading = true;
+  bool _configurationError = false;
+  Future<Supabase>? _supabaseInitialization;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_initialize());
   }
 
-  runApp(const MyApp());
+  Future<void> _initialize() async {
+    setState(() => _loading = true);
+    try {
+      AppConfig.validate();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _configurationError = true;
+          _loading = false;
+        });
+      }
+      return;
+    }
+    try {
+      _supabaseInitialization ??= Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+      );
+      await _supabaseInitialization!.timeout(const Duration(seconds: 20));
+      // Local preferences and notification setup must not prevent account entry.
+      await Future.wait([
+        ProStatus.loadCached().catchError((Object _) {}),
+        ThemePreference.load().catchError((Object _) {}),
+        LowStockNotifications.initialize().catchError((Object _) {}),
+      ]).timeout(const Duration(seconds: 8), onTimeout: () => []);
+      if (mounted) {
+        setState(() {
+          _ready = true;
+          _loading = false;
+        });
+      }
+    } catch (error) {
+      if (error is! TimeoutException) _supabaseInitialization = null;
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_ready) {
+      if (widget.launchMode == 1) {
+        return const MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
+        );
+      }
+      return const MyApp();
+    }
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_loading) const CircularProgressIndicator(),
+                  const SizedBox(height: 20),
+                  Text(
+                      _loading
+                          ? 'Opening FindEZ'
+                          : _configurationError
+                          ? 'Update FindEZ'
+                          : 'Could not start FindEZ',
+                    style: const TextStyle(fontSize: 22),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (!_loading) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _configurationError
+                          ? 'Install the latest version to continue.'
+                          : 'Try again or reopen the app.',
+                      textAlign: TextAlign.center,
+                    ),
+                    if (!_configurationError) ...[
+                      const SizedBox(height: 18),
+                      FilledButton(
+                        onPressed: _initialize,
+                        child: const Text('Try again'),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -279,13 +375,10 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: 'FindEZ',
         builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(boldText: false),
-            child: GestureDetector(
-              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-              behavior: HitTestBehavior.translucent,
-              child: child ?? const SizedBox.shrink(),
-            ),
+          return GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: child ?? const SizedBox.shrink(),
           );
         },
         themeMode: themeMode,

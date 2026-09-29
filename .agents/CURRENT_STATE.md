@@ -45,6 +45,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   and APNs delivery on a real iPhone. Password recovery also needs a fresh-link
   device check.
 - Offline inventory is not implemented. The mobile cache is memory-only.
+- The mobile rebuild branch now reserves layout space for navigation, presents
+  flatter Home/Places/More rows, respects Bold Text, and has a stubbed iOS
+  simulator navigation suite. These changes are not in build 28 or deployed.
 - Low-stock thresholds are stored on one device and do not sync.
 - Two Stripe route families are mounted. The live webhook source and iOS payment
   strategy must be settled before changing pricing or shipping paid digital access.
@@ -58,6 +61,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   compile-time production configuration and could not render its first frame.
   Corrected TestFlight build 28 was delivered to App Store Connect on 2026-09-28
   at 6:20 PM local time and was still processing when last checked.
+- The current rebuild branch passes a compiled release-config check, Flutter
+  analysis, 58 unit/widget tests, and the new simulator smoke journey. This is
+  not physical-device or public-release acceptance.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.

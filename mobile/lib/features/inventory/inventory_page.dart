@@ -1739,7 +1739,7 @@ class _InventoryPageState extends State<InventoryPage>
             else
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                   children: [
                     if (_spacesError)
                       Padding(
@@ -1753,7 +1753,9 @@ class _InventoryPageState extends State<InventoryPage>
                       ),
                     if (places.isEmpty)
                       WorldSection(
-                        title: widget.workspaceName?.trim().isNotEmpty == true
+                        flat: true,
+                        title: widget.workspaceName?.trim().isNotEmpty == true &&
+                                widget.workspaceName != 'Your inventory'
                             ? widget.workspaceName!
                             : 'Your places',
                         children: [
@@ -1768,7 +1770,9 @@ class _InventoryPageState extends State<InventoryPage>
                       )
                     else
                       WorldSection(
-                        title: widget.workspaceName?.trim().isNotEmpty == true
+                        flat: true,
+                        title: widget.workspaceName?.trim().isNotEmpty == true &&
+                                widget.workspaceName != 'Your inventory'
                             ? widget.workspaceName!
                             : 'Your places',
                         children: [
@@ -1808,12 +1812,13 @@ class _InventoryPageState extends State<InventoryPage>
                                       : null,
                                   title: name,
                                   subtitle: isShared
-                                      ? 'Shared by you, ${matching.length} ${matching.length == 1 ? 'kind' : 'kinds'}'
+                                      ? 'Shared by you'
                                       : low > 0
                                       ? '$low running low'
-                                      : '${matching.length} ${matching.length == 1 ? 'kind' : 'kinds'}',
+                                      : null,
                                   warning: low > 0,
                                   count: '${matching.length}',
+                                  countSemantics: '${matching.length} objects',
                                   onTap: () => _openLocation(
                                     location: name,
                                     thresholds: _thresholds.value,
@@ -1833,6 +1838,7 @@ class _InventoryPageState extends State<InventoryPage>
                       ),
                     if (_joinedShares.isNotEmpty)
                       WorldSection(
+                        flat: true,
                         title: 'Shared with you',
                         children: [
                           for (final share in _joinedShares)
@@ -1856,6 +1862,8 @@ class _InventoryPageState extends State<InventoryPage>
                                       : 'View only',
                                   count:
                                       _joinedShareCounts[id]?.toString() ?? '',
+                                  countSemantics:
+                                      '${_joinedShareCounts[id] ?? 0} objects',
                                   onTap: () => _openSharedSpace(share),
                                   onLongPress: () => _leaveJoinedSpace(
                                     shareId: id,

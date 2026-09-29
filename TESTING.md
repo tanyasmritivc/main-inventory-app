@@ -25,6 +25,7 @@ cd mobile && flutter pub get && cd ..
 | Backend | `make test-backend` | FastAPI services, route behavior, auth, limits, search, imports, catalog, and notifications with external I/O stubbed |
 | Web | `make test-frontend` | Next.js/TypeScript business logic and user-facing error behavior |
 | Mobile | `make test-mobile` | Flutter model behavior and critical widget flows |
+| iOS simulator smoke | `cd mobile && flutter test integration_test/app_smoke_test.dart -d <simulator-id>` | On-device Home, Places search, More, and Ask navigation with a stubbed API |
 | AI connectors | `make test-integrations` | MCP handshake, inventory reads/writes, deletion rejection, safe failures, Actions contract, and packaged Desktop extension |
 | All with coverage | `make test-coverage` | Produces backend XML, Jest coverage, and Flutter LCOV reports |
 
@@ -102,6 +103,23 @@ test -f .env && flutter build ipa --release --dart-define-from-file=.env
 
 Before uploading, install or run that release build on a physical iPhone and
 verify that it advances beyond the launch screen.
+
+Before building, run the compiled release configuration check from `mobile/`:
+
+```bash
+flutter test test/release_config_test.dart --dart-define-from-file=.env --dart-define=VERIFY_RELEASE_CONFIG=true
+```
+
+This checks that the same compile-time values supplied to the release build
+contain HTTPS Supabase and API endpoints. It does not replace the physical
+release launch check.
+
+Run the iOS simulator smoke suite above on a disposable simulator before every
+mobile release. It installs a test app under the normal bundle ID and can reset
+that simulator's sign-in state; it does not use production credentials or mutate
+an inventory. Then run the release build on
+a physical iPhone and complete `test-data/release-checklist.md`; simulator tests
+cannot prove camera, APNs, OAuth, offline recovery, or account isolation.
 
 The Claude Desktop extension and ChatGPT Actions import live in
 `integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.

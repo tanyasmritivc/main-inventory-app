@@ -341,16 +341,13 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       if (mounted) {
         setState(
           () => _cameraError = error.code.toLowerCase().contains('denied')
-              ? 'Camera access is off. Allow access in Settings or choose a photo.'
-              : 'Camera could not start. Choose a photo or try again.',
+              ? 'Allow camera access in Settings.'
+              : 'Camera unavailable.',
         );
       }
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _cameraError =
-              'Camera could not start. Choose a photo or try again.',
-        );
+        setState(() => _cameraError = 'Camera unavailable.');
       }
     } finally {
       _cameraLoading = false;
@@ -612,6 +609,10 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final camera = _camera;
+    final landscape =
+        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
+    final cameraUnavailable =
+        _mode == CaptureMode.photo && camera == null && _cameraError != null;
     return Scaffold(
       backgroundColor: t.bg,
       appBar: widget.showAppBar ? AppBar(title: const Text('Capture')) : null,
@@ -663,25 +664,29 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    color: t.s1,
-                    child: switch (_mode) {
-                      CaptureMode.photo =>
-                        camera != null && camera.value.isInitialized
-                            ? CameraPreview(camera)
-                            : _cameraMessage(t),
-                      CaptureMode.scan => _scanView(t),
-                    },
+            if (cameraUnavailable && !landscape) const Spacer(),
+            if (cameraUnavailable)
+              SizedBox(height: landscape ? 112 : 170, child: _cameraMessage(t))
+            else
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      color: t.s1,
+                      child: switch (_mode) {
+                        CaptureMode.photo =>
+                          camera != null && camera.value.isInitialized
+                              ? CameraPreview(camera)
+                              : _cameraMessage(t),
+                        CaptureMode.scan => _scanView(t),
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
+            SizedBox(height: landscape ? 6 : 14),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: Row(
@@ -706,11 +711,18 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 }).toList(),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: landscape ? 4 : 12),
             SizedBox(
               height: 64,
               child: Center(
                 child: switch (_mode) {
+                  CaptureMode.photo when cameraUnavailable => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: FilledButton(
+                      onPressed: _space == null ? null : _choosePhoto,
+                      child: const Text('Choose photo'),
+                    ),
+                  ),
                   CaptureMode.photo => Row(
                     children: [
                       Expanded(
@@ -743,7 +755,8 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 onPressed: _manualAdd,
                 child: const Text('Add without a photo'),
               ),
-            const SizedBox(height: AppTokens.bottomBarClearance + 16),
+            if (cameraUnavailable && !landscape) const Spacer(),
+            SizedBox(height: landscape ? 4 : 16),
           ],
         ),
       ),
@@ -752,11 +765,13 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
 
   Widget _cameraMessage(AppTokens t) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_cameraError == null) const CircularProgressIndicator(),
+          if (_cameraError != null)
+            Icon(Icons.camera_alt_outlined, color: t.text2, size: 28),
           if (_cameraError != null)
             Text(
               _cameraError!,

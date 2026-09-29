@@ -60,25 +60,14 @@ class _MorePageState extends State<MorePage> {
       _error = null;
     });
     try {
-      final profileFuture = _optionalRead(widget.api.getMyProfile);
-      final workspacesFuture = widget.workspaceAvailable
-          ? _optionalRead(widget.api.listWorkspaces)
-          : Future<List<Map<String, dynamic>>?>.value(null);
+      final profileFuture = widget.api.getMyProfile();
       final notificationsFuture = _optionalRead(widget.api.getNotifications);
-      final kitsFuture = _optionalRead(widget.api.getProjectKits);
       final profile = await profileFuture;
-      final workspaces = await workspacesFuture;
       final notifications = await notificationsFuture;
-      final kits = await kitsFuture;
       if (!mounted) return;
       setState(() {
         _data = _MoreData(
-          profile: profile ?? const <String, dynamic>{},
-          teamCount: workspaces?.length,
-          objectCount: null,
-          projectCount: kits?.length,
-          supplyCount: null,
-          reviewCount: null,
+          profile: profile,
           notificationCount: (notifications?['unread_count'] as num?)?.toInt(),
         );
         _loading = false;
@@ -103,41 +92,18 @@ class _MorePageState extends State<MorePage> {
       child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
-            TextButton(
-              onPressed: widget.workspaceAvailable ? widget.onWorkspace : null,
-              style: TextButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                foregroundColor: t.ink,
-                disabledForegroundColor: t.ink,
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(0, 54),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(widget.workspaceName, style: text.headlineMedium),
-                  if (widget.workspaceAvailable) ...[
-                    const SizedBox(width: 8),
-                    Text('⌄', style: text.headlineMedium),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text('More', style: text.titleLarge),
-            const SizedBox(height: 14),
+            Text('More', style: text.headlineMedium),
+            const SizedBox(height: 18),
             if (_loading && data == null)
-              const GroupedSurface(
-                child: Text('Loading your account and counts'),
-              )
+              const Center(child: CircularProgressIndicator())
             else if (_error != null)
               GroupedSurface(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Counts could not load', style: text.titleMedium),
+                    Text('Account could not load', style: text.titleMedium),
                     const SizedBox(height: 6),
                     Text(_error!, style: text.bodyMedium),
                     TextButton(
@@ -148,59 +114,69 @@ class _MorePageState extends State<MorePage> {
                 ),
               )
             else if (data != null)
-              GroupedSurface(
-                padding: EdgeInsets.zero,
-                child: InkWell(
-                  onTap: () => widget.onOpen('profile'),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: t.raised,
-                          child: Text(data.initial, style: text.bodyLarge),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(data.name, style: text.bodyLarge),
-                              Text(
-                                data.teamCount == null
-                                    ? data.email
-                                    : '${data.email} · ${data.teamCount} workspaces',
-                                style: text.bodySmall?.copyWith(color: t.text2),
-                              ),
-                            ],
+              Semantics(
+                button: true,
+                label: 'Profile, ${data.name}',
+                child: GroupedSurface(
+                  padding: EdgeInsets.zero,
+                  child: InkWell(
+                    onTap: () => widget.onOpen('profile'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: t.raised,
+                            child: Text(data.initial, style: text.bodyLarge),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(data.name, style: text.bodyLarge),
+                                Text(
+                                  data.email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: text.bodySmall?.copyWith(
+                                    color: t.text2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             const SizedBox(height: 24),
-            _group('Your world', [
-              _MoreLink('All objects', 'objects', data?.objectCount),
+            _group('Inventory', [
+              const _MoreLink('All objects', 'objects'),
               const _MoreLink('Documents', 'documents'),
               const _MoreLink('Labels', 'labels'),
             ]),
-            _group('Plan and track', [
-              _MoreLink('Projects', 'projects', data?.projectCount),
-              _MoreLink('Restock list', 'supplies', data?.supplyCount),
+            _group('Planning', [
+              const _MoreLink('Projects', 'projects'),
+              const _MoreLink('Restock list', 'supplies'),
               const _MoreLink('Borrowed items', 'checkouts'),
             ]),
-            _group('Keeping it true', [
-              _MoreLink('Review', 'review', data?.reviewCount),
+            _group('Updates', [
+              const _MoreLink('Review', 'review'),
               const _MoreLink('Activity', 'activity'),
-              _MoreLink('Notifications', 'inbox', data?.notificationCount),
+              _MoreLink(
+                'Notifications',
+                'inbox',
+                data?.notificationCount == 0 ? null : data?.notificationCount,
+              ),
             ]),
-            _group('You', [
+            _group('Account', [
               if (widget.workspaceAvailable)
-                _MoreLink('Workspaces', 'workspaces', data?.teamCount),
+                const _MoreLink('Workspaces', 'workspaces'),
               const _MoreLink('Teams', 'team-spaces'),
-              const _MoreLink('Shared places', 'sharing'),
+              const _MoreLink('Sharing', 'sharing'),
               const _MoreLink('Settings', 'settings'),
             ]),
           ],
@@ -219,42 +195,28 @@ class _MorePageState extends State<MorePage> {
         children: [
           Text(heading, style: text.titleSmall?.copyWith(color: t.text2)),
           const SizedBox(height: 10),
-          GroupedSurface(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                for (var index = 0; index < links.length; index++) ...[
-                  if (index > 0) Divider(height: 1, color: t.separator),
-                  InkWell(
+          Column(
+            children: [
+              for (var index = 0; index < links.length; index++) ...[
+                if (index > 0) Divider(height: 1, color: t.separator),
+                Semantics(
+                  button: true,
+                  child: ListTile(
+                    tileColor: t.bg,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    minTileHeight: 54,
+                    title: Text(links[index].label, style: text.bodyLarge),
+                    trailing: links[index].count != null
+                        ? Text(
+                            '${links[index].count}',
+                            style: text.bodyMedium?.copyWith(color: t.text2),
+                          )
+                        : Icon(Icons.chevron_right, color: t.text2),
                     onTap: () => widget.onOpen(links[index].destination),
-                    child: SizedBox(
-                      height: 56,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                links[index].label,
-                                style: text.bodyLarge,
-                              ),
-                            ),
-                            if (links[index].count case final int count)
-                              Text(
-                                '$count',
-                                style: text.bodyMedium?.copyWith(
-                                  fontFamily: 'IBMPlexMono',
-                                  color: t.text2,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         ],
       ),
@@ -270,21 +232,8 @@ class _MoreLink {
 }
 
 class _MoreData {
-  const _MoreData({
-    required this.profile,
-    required this.teamCount,
-    required this.objectCount,
-    required this.projectCount,
-    required this.supplyCount,
-    required this.reviewCount,
-    required this.notificationCount,
-  });
+  const _MoreData({required this.profile, required this.notificationCount});
   final Map<String, dynamic> profile;
-  final int? teamCount;
-  final int? objectCount;
-  final int? projectCount;
-  final int? supplyCount;
-  final int? reviewCount;
   final int? notificationCount;
 
   String get name {
