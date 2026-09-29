@@ -89,8 +89,8 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
 
-    expect(find.text('Recent objects'), findsOneWidget);
-    expect(find.text('M4 screw'), findsOneWidget);
+    expect(find.text('Recent photos'), findsNothing);
+    expect(find.text('Workshop'), findsWidgets);
 
     await tester.tap(find.widgetWithText(TextButton, 'Places'));
     await tester.pump(const Duration(milliseconds: 500));
@@ -108,7 +108,10 @@ void main() {
 
     await tester.tap(find.widgetWithText(TextButton, 'Ask'));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Try asking'), findsOneWidget);
+    expect(
+      find.text('Find objects, places, or project supplies.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

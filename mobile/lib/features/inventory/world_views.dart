@@ -275,7 +275,11 @@ class WorldItems extends StatelessWidget {
         ),
       );
     }
+    final hasPhotoLessItems = items.any(
+      (item) => (item.imageUrl ?? '').trim().isEmpty,
+    );
     if (items.length > 40 ||
+        hasPhotoLessItems ||
         MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
         MediaQuery.sizeOf(context).width < 360) {
       return ListView.separated(
@@ -290,7 +294,7 @@ class WorldItems extends StatelessWidget {
               title: item.displayName,
               subtitle: item.displayDescription ?? item.category,
               count: '${item.quantity}',
-              showCrop: true,
+              showCrop: (item.imageUrl ?? '').trim().isNotEmpty,
               imageUrl: item.imageUrl,
               onTap: () => onOpen(item),
               onLongPress: onLongPress == null

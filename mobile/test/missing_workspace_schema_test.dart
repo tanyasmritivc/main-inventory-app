@@ -4,6 +4,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/home/home_dashboard.dart';
 import 'package:mobile/features/inventory/item_detail_sheet.dart';
+import 'package:mobile/features/profile/profile_avatar.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/features/shell/more_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,6 +62,17 @@ class _LegacyInventoryApi extends _LegacyApi {
         ],
         parsed: const {},
       );
+}
+
+class _AvatarApi extends _LegacyApi {
+  String avatarUrl = 'https://example.invalid/first.jpg';
+
+  @override
+  Future<Map<String, dynamic>> getMyProfile() async => {
+    'display_name': 'Test user',
+    'email': 'test@example.invalid',
+    'avatar_url': avatarUrl,
+  };
 }
 
 class _LegacyItemApi extends _LegacyApi {
@@ -142,6 +154,17 @@ void main() {
     expect(find.text('Find'), findsNothing);
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Choose a workspace'), findsNothing);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Ask'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byTooltip('History'), findsOneWidget);
+    expect(find.byTooltip('New chat'), findsOneWidget);
+    expect(find.byTooltip('Voice input'), findsOneWidget);
+    expect(find.text('Try asking'), findsNothing);
+    expect(
+      find.text('Find objects, places, or project supplies.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('navigation stays outside page content in both orientations', (
@@ -181,6 +204,26 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('bottom navigation stays usable with large text', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: const TextScaler.linear(2),
+          ),
+          child: child!,
+        ),
+        home: MainShell(api: _LegacyApi()),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.widgetWithText(TextButton, 'Capture'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Home uses derived review and omits unavailable low stock', (
     tester,
   ) async {
@@ -209,6 +252,7 @@ void main() {
 
     expect(find.text('to identify'), findsOneWidget);
     expect(find.text('running low'), findsNothing);
+    expect(find.text('Recent photos'), findsNothing);
     expect(find.text('Choose a workspace'), findsNothing);
   });
 
@@ -239,6 +283,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('More refreshes the saved profile photo', (tester) async {
+    final api = _AvatarApi();
+    Widget page(int token) => MaterialApp(
+      theme: AppTheme.light,
+      home: Scaffold(
+        body: MorePage(
+          api: api,
+          refreshToken: token,
+          workspaceName: 'Your inventory',
+          workspaceAvailable: false,
+          onOpen: (_) {},
+          onWorkspace: () {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(page(0));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<ProfileAvatar>(find.byType(ProfileAvatar)).url,
+      'https://example.invalid/first.jpg',
+    );
+
+    api.avatarUrl = 'https://example.invalid/second.jpg';
+    await tester.pumpWidget(page(1));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<ProfileAvatar>(find.byType(ProfileAvatar)).url,
+      'https://example.invalid/second.jpg',
+    );
+  });
+
   testWidgets('object opens from list data when detail routes are missing', (
     tester,
   ) async {
@@ -267,5 +342,17 @@ void main() {
     expect(find.text('Could not load this object.'), findsNothing);
     expect(find.text('Connects to'), findsNothing);
     expect(find.text('Reorder at'), findsNothing);
+    expect(find.text('Add photo'), findsOneWidget);
+    expect(find.text('No object photo yet'), findsNothing);
+    expect(find.text('No history recorded.'), findsNothing);
+    expect(find.text('No purchase details recorded.'), findsNothing);
+    expect(find.text('Stock'), findsOneWidget);
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit object'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.byType(TextField), findsNWidgets(5));
   });
 }

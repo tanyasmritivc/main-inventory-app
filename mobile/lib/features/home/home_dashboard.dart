@@ -184,7 +184,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             if (_loading && data == null)
               const Center(child: CircularProgressIndicator())
             else if (_error != null)
@@ -254,10 +254,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       _decision(3, data.metrics.lentOut, 'lent out', t.ink),
                   ],
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 18),
               ],
               if (recentItems.isNotEmpty) ...[
-                _sectionTitle('Recent objects'),
+                _sectionTitle('Recent photos'),
                 const SizedBox(height: 8),
                 Column(
                   children: [
@@ -287,7 +287,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     ],
                   ],
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 18),
               ],
               _sectionTitle('Places'),
               const SizedBox(height: 8),
@@ -421,8 +421,9 @@ class _HomeData {
   );
 
   List<InventoryItem> get recentItems {
-    final recent = List<InventoryItem>.of(items)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recent =
+        items.where((item) => (item.imageUrl ?? '').trim().isNotEmpty).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return recent.take(3).toList();
   }
 

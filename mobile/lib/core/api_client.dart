@@ -387,6 +387,24 @@ class ApiClient {
     return InventoryItem.fromJson(out);
   }
 
+  Future<InventoryItem> uploadItemPhoto({
+    required String itemId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final form = dio.FormData.fromMap({
+      'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/items/$itemId/photo',
+      data: form,
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
   Future<InventoryItem> setReorderPoint(String itemId, int? point) async {
     final path = _teamId != null && _teamSpaceId != null
         ? '/teams/$_teamId/spaces/$_teamSpaceId/items/$itemId'

@@ -67,6 +67,7 @@ from app.services.find_pipeline import (
 )
 from app.core.limiter import limiter
 from app.services.storage import upload_image
+from app.services.item_relationships_repo import authorized_item
 from app.services.supabase_client import get_supabase_admin
 from app.services.usage_service import (
     FREE_ITEM_LIMIT,
@@ -429,6 +430,62 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
+
+
+@router.post("/items/{item_id}/photo", response_model=UpdateItemResponse)
+@limiter.limit("10/minute")
+async def upload_item_photo_route(
+    request: Request,
+    item_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> UpdateItemResponse:
+    require_workspace_write(user)
+    try:
+        authorized_item(
+            user_id=user.user_id,
+            item_id=item_id,
+            write=True,
+            selected_workspace_id=user.workspace_id,
+        )
+    except (LookupError, ValueError) as exc:
+        raise HTTPException(404, "Object not found") from exc
+
+    raw = await file.read(10 * 1024 * 1024 + 1)
+    if not raw or len(raw) > 10 * 1024 * 1024:
+        raise HTTPException(400, "Choose a photo smaller than 10 MB.")
+    try:
+        image = Image.open(io.BytesIO(raw))
+        if image.width * image.height > 25_000_000:
+            raise ValueError("Image too large")
+        image.load()
+        image.thumbnail((2048, 2048))
+        output = io.BytesIO()
+        image.convert("RGB").save(output, format="JPEG", quality=84)
+    except Exception as exc:
+        raise HTTPException(400, "Choose a valid photo.") from exc
+
+    try:
+        stored = upload_image(
+            user_id=user.user_id,
+            filename=f"object-{item_id}-{uuid4().hex}.jpg",
+            content=output.getvalue(),
+        )
+        updated = update_item(
+            user_id=user.user_id,
+            item_id=item_id,
+            updates={"image_url": stored.url},
+            actor_user_id=user.user_id,
+            workspace_id=user.workspace_id,
+        )
+        if not updated:
+            raise LookupError("Object not found")
+        return UpdateItemResponse(item=updated)
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
+    except Exception as exc:
+        logger.exception("Could not attach object photo")
+        raise service_unavailable("Photo could not be saved. Try again.") from exc
 
 
 @router.post("/extract_from_image", response_model=ExtractFromImageResponse)

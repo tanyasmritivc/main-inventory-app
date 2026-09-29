@@ -153,3 +153,16 @@ small landscape screens. Forced regular text overrode an accessibility setting.
 **Implications:** New screens must remain scrollable to their final action at
 large text sizes. Navigation, Home, Places, and More have widget coverage; the
 iOS simulator smoke suite covers the primary tab journey.
+
+## 2026-09-28: Show photo activity separately from imported inventory
+
+**Decision:** Home's recent strip shows only objects with photos. Photo-less imports
+remain in Places and All objects, where mixed or photo-less sets use compact rows
+instead of empty gallery tiles. Object detail offers Add photo, and editing uses
+a full page rather than a compact dialog.
+
+**Reasoning:** A spreadsheet import should not fill Home with empty thumbnails.
+The full edit page gives fields room at larger text sizes.
+
+**Implications:** The new item-photo API must deploy before shipping this mobile
+build. Recent photos are not a complete activity history.

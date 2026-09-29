@@ -2178,49 +2178,30 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Widget _buildPillButton({
-    required String label,
+  Widget _headerAction({
+    required String tooltip,
+    required IconData icon,
     required VoidCallback onTap,
   }) {
-    return TextButton(onPressed: onTap, child: Text(label));
+    return IconButton(tooltip: tooltip, onPressed: onTap, icon: Icon(icon));
   }
 
   Widget _buildEmptyState() {
     final t = AppTokens.of(context);
-    const suggestions = [
-      'What did I capture recently?',
-      'What do I have in each place?',
-      'Which objects need identifying?',
-    ];
     return Center(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Try asking',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(color: t.text2),
-              ),
-              const SizedBox(height: 6),
-              for (final suggestion in suggestions)
-                TextButton(
-                  onPressed: () => unawaited(_submit(suggestion)),
-                  style: TextButton.styleFrom(
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 4,
-                    ),
-                  ),
-                  child: Text(suggestion, textAlign: TextAlign.left),
-                ),
-            ],
-          ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+        decoration: BoxDecoration(
+          color: t.s1,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          'Find objects, places, or project supplies.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: t.text2),
         ),
       ),
     );
@@ -2330,11 +2311,16 @@ class _ChatPageState extends State<ChatPage>
           : AppBar(
               title: const Text('Ask FindEZ'),
               actions: [
-                TextButton(
-                  onPressed: _openHistory,
-                  child: const Text('History'),
+                _headerAction(
+                  tooltip: 'History',
+                  icon: Icons.history,
+                  onTap: _openHistory,
                 ),
-                TextButton(onPressed: _resetChat, child: const Text('New')),
+                _headerAction(
+                  tooltip: 'New chat',
+                  icon: Icons.add,
+                  onTap: _resetChat,
+                ),
               ],
             ),
       body: SafeArea(
@@ -2351,8 +2337,16 @@ class _ChatPageState extends State<ChatPage>
                         style: TextStyle(color: t.ink, fontSize: 27),
                       ),
                     ),
-                    _buildPillButton(label: 'History', onTap: _openHistory),
-                    _buildPillButton(label: 'New', onTap: _resetChat),
+                    _headerAction(
+                      tooltip: 'History',
+                      icon: Icons.history,
+                      onTap: _openHistory,
+                    ),
+                    _headerAction(
+                      tooltip: 'New chat',
+                      icon: Icons.add,
+                      onTap: _resetChat,
+                    ),
                   ],
                 ),
               Expanded(
@@ -2477,17 +2471,21 @@ class _ChatPageState extends State<ChatPage>
                         ),
                       ),
                     ),
-                    TextButton(
+                    IconButton(
+                      tooltip: _isListening ? 'Stop listening' : 'Voice input',
                       onPressed: _toggleListening,
-                      child: Text(_isListening ? 'Stop' : 'Voice'),
+                      icon: Icon(_isListening ? Icons.stop : Icons.mic_none),
                     ),
-                    FilledButton(
+                    IconButton.filled(
+                      tooltip: 'Send',
                       onPressed: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
-                      child: Text(
-                        _sending && !_canQueueFollowUp ? 'Wait' : 'Send',
+                      style: IconButton.styleFrom(
+                        backgroundColor: t.ink,
+                        foregroundColor: t.bg,
                       ),
+                      icon: const Icon(Icons.arrow_upward),
                     ),
                   ],
                 ),

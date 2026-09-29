@@ -256,31 +256,37 @@ class _MainShellState extends State<MainShell> {
     _animateTo(index, haptic: true);
   }
 
-  Widget _barItem(int index, String label, {Key? key}) {
+  Widget _barItem(int index, String label, IconData icon, {Key? key}) {
     final tokens = AppTokens.of(context);
     final selected = _navigationIndex == index;
     return Expanded(
       child: SizedBox(
         key: key,
-        height: 54 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
+        height: 58 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
         child: Semantics(
           selected: selected,
           child: TextButton(
             onPressed: () => _onNavigationTap(index),
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
-              textStyle: Theme.of(context).textTheme.bodySmall,
-              backgroundColor: index == 2
-                  ? (selected ? tokens.accent : tokens.accentSoft)
-                  : (selected ? tokens.raised : Colors.transparent),
-              foregroundColor: index == 2
-                  ? (selected ? tokens.onAccent : tokens.accentText)
-                  : (selected ? tokens.ink : tokens.text2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(27),
-              ),
+              foregroundColor: selected ? tokens.ink : tokens.text2,
+              shape: const RoundedRectangleBorder(),
             ),
-            child: Text(label, maxLines: 2, textAlign: TextAlign.center),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 21),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -292,20 +298,37 @@ class _MainShellState extends State<MainShell> {
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: t.card,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: t.separator),
+          color: t.bg,
+          border: Border(top: BorderSide(color: t.separator)),
         ),
         child: Row(
           children: [
-            _barItem(0, 'Home'),
-            _barItem(1, 'Ask', key: TutorialController.assistTabKey),
-            _barItem(2, 'Capture', key: TutorialController.scanTabKey),
-            _barItem(3, 'Places', key: TutorialController.inventoryIconKey),
-            _barItem(4, 'More', key: TutorialController.moreTabKey),
+            _barItem(0, 'Home', Icons.home_outlined),
+            _barItem(
+              1,
+              'Ask',
+              Icons.chat_bubble_outline,
+              key: TutorialController.assistTabKey,
+            ),
+            _barItem(
+              2,
+              'Capture',
+              Icons.camera_alt_outlined,
+              key: TutorialController.scanTabKey,
+            ),
+            _barItem(
+              3,
+              'Places',
+              Icons.folder_outlined,
+              key: TutorialController.inventoryIconKey,
+            ),
+            _barItem(
+              4,
+              'More',
+              Icons.more_horiz,
+              key: TutorialController.moreTabKey,
+            ),
           ],
         ),
       ),
@@ -315,6 +338,13 @@ class _MainShellState extends State<MainShell> {
   Widget _sideNavigation() {
     final t = AppTokens.of(context);
     const labels = ['Home', 'Ask', 'Capture', 'Places', 'More'];
+    const icons = [
+      Icons.home_outlined,
+      Icons.chat_bubble_outline,
+      Icons.camera_alt_outlined,
+      Icons.folder_outlined,
+      Icons.more_horiz,
+    ];
     return SafeArea(
       right: false,
       child: Container(
@@ -336,13 +366,17 @@ class _MainShellState extends State<MainShell> {
                   minimumSize: const Size(84, 52),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   backgroundColor: _navigationIndex == index
-                      ? (index == 2 ? t.accent : t.raised)
+                      ? t.raised
                       : Colors.transparent,
-                  foregroundColor: _navigationIndex == index && index == 2
-                      ? t.onAccent
-                      : t.ink,
+                  foregroundColor: _navigationIndex == index ? t.ink : t.text2,
                 ),
-                child: Text(labels[index], textAlign: TextAlign.center),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icons[index], size: 20),
+                    Text(labels[index], textAlign: TextAlign.center),
+                  ],
+                ),
               ),
             ),
           ),
@@ -547,6 +581,14 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Future<void> _openProfile() async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ProfilePage(api: _activeApi)),
+    );
+    if (mounted) setState(() => _homeRefreshToken++);
+  }
+
   void _openMore(String destination) {
     switch (destination) {
       case 'places':
@@ -595,7 +637,7 @@ class _MainShellState extends State<MainShell> {
       case 'sharing':
         _openPage(const SharingPage());
       case 'profile':
-        _openPage(ProfilePage(api: _activeApi));
+        unawaited(_openProfile());
       case 'settings':
         _openPage(SettingsPage(api: _activeApi));
     }

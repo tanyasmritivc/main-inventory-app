@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 
@@ -92,6 +94,7 @@ class _ObjectSheet extends StatefulWidget {
 
 class _ObjectSheetState extends State<_ObjectSheet> {
   late Future<_ObjectData> _future;
+  InventoryItem? _currentItem;
   final _borrower = TextEditingController();
   final _checkoutNote = TextEditingController();
   bool _saving = false;
@@ -150,6 +153,7 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   Future<_ObjectData> _load() async {
     final item =
         await _optionalRead(() => widget.api.itemDetail(widget.item.itemId)) ??
+        _currentItem ??
         widget.item;
     final values = await Future.wait<dynamic>([
       _optionalRead(() => widget.api.itemHistory(widget.item.itemId)),
@@ -194,114 +198,43 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   }
 
   Future<void> _edit(InventoryItem item) async {
-    final name = TextEditingController(text: item.name);
-    final barcode = TextEditingController(text: item.barcode ?? '');
-    final quantity = TextEditingController(text: item.quantity.toString());
-    final reorder = TextEditingController(
-      text: item.reorderPoint?.toString() ?? '',
-    );
-    final note = TextEditingController(text: item.notes ?? '');
-    final supplier = TextEditingController(text: item.purchaseSource ?? '');
-    final changed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit object'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextField(
-                controller: barcode,
-                decoration: const InputDecoration(labelText: 'Barcode'),
-              ),
-              TextField(
-                controller: quantity,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'In stock'),
-              ),
-              if (item.reorderPointAvailable)
-                TextField(
-                  controller: reorder,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Reorder at'),
-                ),
-              TextField(
-                controller: supplier,
-                decoration: const InputDecoration(labelText: 'Bought from'),
-              ),
-              TextField(
-                controller: note,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Note'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: _saving
-                ? null
-                : () async {
-                    final count = int.tryParse(quantity.text.trim());
-                    final threshold = !item.reorderPointAvailable
-                        ? null
-                        : reorder.text.trim().isEmpty
-                        ? 0
-                        : int.tryParse(reorder.text.trim());
-                    if (name.text.trim().isEmpty ||
-                        count == null ||
-                        count < 0 ||
-                        (item.reorderPointAvailable &&
-                            (threshold == null || threshold < 0))) {
-                      _showError('Enter a name and valid stock numbers.');
-                      return;
-                    }
-                    try {
-                      await widget.api.updateItem(
-                        request: UpdateItemRequest(
-                          itemId: item.itemId,
-                          name: name.text.trim(),
-                          barcode: barcode.text.trim(),
-                          quantity: count,
-                          reorderPoint: threshold,
-                          purchaseSource: supplier.text.trim(),
-                          notes: note.text.trim(),
-                        ),
-                      );
-                      if (item.reorderPointAvailable) {
-                        widget.onThresholdChanged?.call(
-                          threshold == 0 ? null : threshold,
-                        );
-                      }
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext, true);
-                      }
-                    } catch (_) {
-                      _showError('Could not save the object. Try again.');
-                    }
-                  },
-            child: const Text('Save'),
-          ),
-        ],
+    final updated = await Navigator.push<InventoryItem>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _EditObjectPage(item: item, api: widget.api),
       ),
     );
-    // Dialog TextFields can remain mounted during the closing animation.
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    name.dispose();
-    barcode.dispose();
-    quantity.dispose();
-    reorder.dispose();
-    note.dispose();
-    supplier.dispose();
-    if (changed == true && mounted) _refresh();
+    if (updated == null || !mounted) return;
+    _currentItem = updated;
+    if (item.reorderPointAvailable) {
+      widget.onThresholdChanged?.call(updated.reorderPoint);
+    }
+    _refresh();
+  }
+
+  Future<void> _attachPhoto(InventoryItem item) async {
+    final photo = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 85,
+    );
+    if (photo == null || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      final updated = await widget.api.uploadItemPhoto(
+        itemId: item.itemId,
+        bytes: await photo.readAsBytes(),
+        filename: photo.name,
+      );
+      if (!mounted) return;
+      _currentItem = updated;
+      _refresh();
+    } catch (error) {
+      _showError(describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _lend(InventoryItem item) async {
@@ -491,11 +424,36 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _Photo(
-                          url: item.imageUrl,
-                          empty: 'No object photo yet',
-                          height: 230,
-                        ),
+                        if ((item.imageUrl ?? '').isNotEmpty) ...[
+                          _Photo(
+                            url: item.imageUrl,
+                            empty: 'Photo unavailable',
+                            height: 230,
+                          ),
+                          if (widget.canEdit)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: _saving
+                                    ? null
+                                    : () => _attachPhoto(item),
+                                icon: const Icon(Icons.photo_outlined),
+                                label: const Text('Change photo'),
+                              ),
+                            ),
+                        ] else if (widget.canEdit)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: _saving
+                                  ? null
+                                  : () => _attachPhoto(item),
+                              icon: const Icon(
+                                Icons.add_photo_alternate_outlined,
+                              ),
+                              label: const Text('Add photo'),
+                            ),
+                          ),
                         if (data.sourceFrameUrl != null) ...[
                           const SizedBox(height: 8),
                           _Photo(
@@ -514,7 +472,7 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                         ),
                         const SizedBox(height: 10),
                         _Section(
-                          title: 'How many',
+                          title: 'Stock',
                           rows: [
                             _RowData('In stock', '${item.quantity}'),
                             if (item.reorderPoint != null &&
@@ -530,7 +488,7 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                           ],
                         ),
                         _Section(
-                          title: 'What it is',
+                          title: 'Details',
                           rows: [
                             if ((item.partNumber ?? '').isNotEmpty)
                               _RowData('Part number', item.partNumber!),
@@ -580,7 +538,6 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                   ),
                               ],
                             ],
-                            empty: 'Catalog details unavailable.',
                           ),
                           _Section(
                             title: 'Compatible parts',
@@ -598,16 +555,14 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                         ),
                                 ),
                             ],
-                            empty: 'No compatible parts recorded.',
                           ),
                         ],
                         _Section(
-                          title: 'What it cost',
+                          title: 'Purchase',
                           rows: [
                             if ((item.purchaseSource ?? '').isNotEmpty)
                               _RowData('Bought from', item.purchaseSource!),
                           ],
-                          empty: 'No purchase details recorded.',
                         ),
                         _Section(
                           title: 'Note',
@@ -615,11 +570,10 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                             if ((item.notes ?? '').isNotEmpty)
                               _RowData('', item.notes!),
                           ],
-                          empty: 'No note yet.',
                         ),
                         if (data.relationships != null)
                           _Section(
-                            title: 'Connects to',
+                            title: 'Related',
                             rows: [
                               for (final relation in data.relationships!)
                                 _RowData(
@@ -634,11 +588,10 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                   onTap: () => _openRelationship(relation),
                                 ),
                             ],
-                            empty: 'No connections recorded.',
                           ),
                         if (data.history != null)
                           _Section(
-                            title: 'What has happened to it',
+                            title: 'History',
                             rows: [
                               for (final event in data.history!)
                                 _RowData(
@@ -646,11 +599,10 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                   _historyDetail(event),
                                 ),
                             ],
-                            empty: 'No history recorded.',
                           ),
                         if (data.documents != null)
                           _Section(
-                            title: 'Paper',
+                            title: 'Documents',
                             rows: [
                               for (final document in data.documents!)
                                 _RowData(
@@ -662,17 +614,16 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                             launchUrl(Uri.parse(document.url!)),
                                 ),
                             ],
-                            empty: 'No documents attached.',
                             action: widget.canEdit
                                 ? TextButton(
                                     onPressed: _uploadDocument,
-                                    child: const Text('Add paper'),
+                                    child: const Text('Add document'),
                                   )
                                 : null,
                           ),
                         if (data.checkouts != null)
                           _Section(
-                            title: 'Lent out',
+                            title: 'Loans',
                             rows: [
                               for (final checkout in data.checkouts!.where(
                                 (entry) => entry['returned_at'] == null,
@@ -686,7 +637,6 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                       : null,
                                 ),
                             ],
-                            empty: 'Nothing is lent out.',
                             action: widget.canEdit && item.quantity > 0
                                 ? TextButton(
                                     onPressed: () => _lend(item),
@@ -748,6 +698,153 @@ class _ObjectSheetState extends State<_ObjectSheet> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+}
+
+class _EditObjectPage extends StatefulWidget {
+  const _EditObjectPage({required this.item, required this.api});
+
+  final InventoryItem item;
+  final ApiClient api;
+
+  @override
+  State<_EditObjectPage> createState() => _EditObjectPageState();
+}
+
+class _EditObjectPageState extends State<_EditObjectPage> {
+  late final TextEditingController _name;
+  late final TextEditingController _barcode;
+  late final TextEditingController _quantity;
+  late final TextEditingController _reorder;
+  late final TextEditingController _supplier;
+  late final TextEditingController _note;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    _name = TextEditingController(text: item.name);
+    _barcode = TextEditingController(text: item.barcode ?? '');
+    _quantity = TextEditingController(text: item.quantity.toString());
+    _reorder = TextEditingController(text: item.reorderPoint?.toString() ?? '');
+    _supplier = TextEditingController(text: item.purchaseSource ?? '');
+    _note = TextEditingController(text: item.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _barcode.dispose();
+    _quantity.dispose();
+    _reorder.dispose();
+    _supplier.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  void _message(String value) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final count = int.tryParse(_quantity.text.trim());
+    final threshold = !widget.item.reorderPointAvailable
+        ? null
+        : _reorder.text.trim().isEmpty
+        ? 0
+        : int.tryParse(_reorder.text.trim());
+    if (_name.text.trim().isEmpty ||
+        count == null ||
+        count < 0 ||
+        (widget.item.reorderPointAvailable &&
+            (threshold == null || threshold < 0))) {
+      _message('Enter a name and valid stock numbers.');
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final updated = await widget.api.updateItem(
+        request: UpdateItemRequest(
+          itemId: widget.item.itemId,
+          name: _name.text.trim(),
+          barcode: _barcode.text.trim(),
+          quantity: count,
+          reorderPoint: threshold,
+          purchaseSource: _supplier.text.trim(),
+          notes: _note.text.trim(),
+        ),
+      );
+      if (mounted) Navigator.pop(context, updated);
+    } catch (error) {
+      if (mounted) _message(describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Widget _field(
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      textInputAction: maxLines == 1
+          ? TextInputAction.next
+          : TextInputAction.newline,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Scaffold(
+      backgroundColor: t.bg,
+      appBar: AppBar(
+        title: const Text('Edit object'),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: Text(_saving ? 'Saving' : 'Save'),
+          ),
+        ],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            children: [
+              _field('Name', _name),
+              _field('Barcode', _barcode),
+              _field('In stock', _quantity, keyboardType: TextInputType.number),
+              if (widget.item.reorderPointAvailable)
+                _field(
+                  'Reorder at',
+                  _reorder,
+                  keyboardType: TextInputType.number,
+                ),
+              _field('Bought from', _supplier),
+              _field('Note', _note, maxLines: 4),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -818,19 +915,14 @@ class _RowData {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.rows,
-    this.empty,
-    this.action,
-  });
+  const _Section({required this.title, required this.rows, this.action});
   final String title;
   final List<_RowData> rows;
-  final String? empty;
   final Widget? action;
 
   @override
   Widget build(BuildContext context) {
+    if (rows.isEmpty && action == null) return const SizedBox.shrink();
     final t = AppTokens.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 22),
@@ -852,73 +944,67 @@ class _Section extends StatelessWidget {
               if (action != null) action!,
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              color: t.card,
-              child: rows.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        empty ?? 'Nothing recorded yet.',
-                        style: TextStyle(color: t.text2, fontSize: 15),
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        for (var index = 0; index < rows.length; index++) ...[
-                          if (index > 0)
-                            Divider(
-                              height: 1,
-                              color: t.separator,
-                              indent: 16,
-                              endIndent: 16,
-                            ),
-                          InkWell(
-                            onTap: rows[index].onTap,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                              child: Row(
-                                children: [
-                                  if (rows[index].label.isNotEmpty) ...[
-                                    Expanded(
-                                      child: Text(
-                                        rows[index].label,
-                                        style: TextStyle(
-                                          color: t.ink,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                  ],
-                                  Flexible(
-                                    child: Text(
-                                      rows[index].value,
-                                      textAlign: rows[index].label.isEmpty
-                                          ? TextAlign.left
-                                          : TextAlign.right,
-                                      style: TextStyle(
-                                        color: rows[index].warning
-                                            ? t.warn
-                                            : t.text2,
-                                        fontSize: 14,
-                                      ),
+          if (rows.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                color: t.card,
+                child: Column(
+                  children: [
+                    for (var index = 0; index < rows.length; index++) ...[
+                      if (index > 0)
+                        Divider(
+                          height: 1,
+                          color: t.separator,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                      InkWell(
+                        onTap: rows[index].onTap,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            children: [
+                              if (rows[index].label.isNotEmpty) ...[
+                                Expanded(
+                                  child: Text(
+                                    rows[index].label,
+                                    style: TextStyle(
+                                      color: t.ink,
+                                      fontSize: 15,
                                     ),
                                   ),
-                                ],
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  rows[index].value,
+                                  textAlign: rows[index].label.isEmpty
+                                      ? TextAlign.left
+                                      : TextAlign.right,
+                                  style: TextStyle(
+                                    color: rows[index].warning
+                                        ? t.warn
+                                        : t.text2,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

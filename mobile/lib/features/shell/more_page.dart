@@ -6,6 +6,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/ui/visual_surfaces.dart';
+import '../profile/profile_avatar.dart';
 
 Future<T?> _optionalRead<T>(Future<T> Function() read) async {
   try {
@@ -125,10 +126,7 @@ class _MorePageState extends State<MorePage> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: t.raised,
-                            child: Text(data.initial, style: text.bodyLarge),
-                          ),
+                          ProfileAvatar(name: data.name, url: data.avatarUrl),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -242,5 +240,5 @@ class _MoreData {
   }
 
   String get email => (profile['email'] ?? '').toString().trim();
-  String get initial => name.isEmpty ? '' : name.substring(0, 1).toUpperCase();
+  String get avatarUrl => (profile['avatar_url'] ?? '').toString().trim();
 }

@@ -8,6 +8,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../inventory/world_views.dart';
+import 'profile_avatar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, required this.api});
@@ -99,6 +100,7 @@ class _ProfilePageState extends State<ProfilePage> {
         bytes: await photo.readAsBytes(),
         filename: photo.name,
       );
+      imageCache.evict(NetworkImage(url));
       if (mounted) setState(() => _avatarUrl = url);
     } catch (error) {
       if (!mounted) return;
@@ -200,23 +202,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       Center(
                         child: Column(
                           children: [
-                            CircleAvatar(
+                            ProfileAvatar(
+                              name: _name.text,
+                              url: _avatarUrl,
                               radius: 42,
-                              backgroundColor: t.s2,
-                              backgroundImage: _avatarUrl.isEmpty
-                                  ? null
-                                  : NetworkImage(_avatarUrl),
-                              child: _avatarUrl.isEmpty
-                                  ? Text(
-                                      _name.text.isEmpty
-                                          ? ''
-                                          : _name.text[0].toUpperCase(),
-                                      style: TextStyle(
-                                        color: t.ink,
-                                        fontSize: 30,
-                                      ),
-                                    )
-                                  : null,
                             ),
                             TextButton(
                               onPressed: _saving ? null : _changePhoto,
