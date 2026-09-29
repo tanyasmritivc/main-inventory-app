@@ -18,4 +18,12 @@ class InventoryCache {
       _items.where((item) => item.spaceId != spaceId),
     );
   }
+
+  static void updateItem(InventoryItem item) {
+    final index = _items.indexWhere((entry) => entry.itemId == item.itemId);
+    if (index == -1) return;
+    final next = List<InventoryItem>.from(_items);
+    next[index] = item;
+    _items = List<InventoryItem>.unmodifiable(next);
+  }
 }

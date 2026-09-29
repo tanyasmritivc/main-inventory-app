@@ -4,7 +4,18 @@ from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFil
 from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
-from app.schemas.inventory import AddItemRequest, UpdateItemRequest
+from app.schemas.inventory import (
+    AddItemRequest,
+    ItemPhotoMutationResponse,
+    ItemPhotosResponse,
+    UpdateItemRequest,
+)
+from app.services.item_photos import (
+    MAX_ITEM_PHOTO_BYTES,
+    add_item_photo,
+    delete_item_photo,
+    list_item_photos,
+)
 from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
@@ -274,6 +285,120 @@ def update_team_space_item(
         raise HTTPException(500, "The item could not be updated.")
     _record(team_id, user.user_id, "item_updated", f"Updated {item['name']} in {space['name']}", {"space_id": space_id, "item_id": item_id})
     return {"item": item}
+
+
+def _team_space_item_owner(
+    *, team_id: str, space_id: str, item_id: str, user_id: str, write: bool
+) -> str:
+    space, _ = _space_access(team_id, space_id, user_id, write=write)
+    rows = get_supabase_admin().table("items").select("item_id").eq(
+        "item_id", item_id
+    ).eq("user_id", space["user_id"]).eq("space_id", space_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "This item is not in the Team Space.")
+    return str(space["user_id"])
+
+
+@router.get(
+    "/spaces/{space_id}/items/{item_id}/photos",
+    response_model=ItemPhotosResponse,
+)
+def list_team_space_item_photos(
+    team_id: str,
+    space_id: str,
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotosResponse:
+    owner_user_id = _team_space_item_owner(
+        team_id=team_id,
+        space_id=space_id,
+        item_id=item_id,
+        user_id=user.user_id,
+        write=False,
+    )
+    _, photos = list_item_photos(user_id=owner_user_id, item_id=item_id)
+    return ItemPhotosResponse(photos=photos)
+
+
+@router.post(
+    "/spaces/{space_id}/items/{item_id}/photos",
+    response_model=ItemPhotoMutationResponse,
+)
+async def add_team_space_item_photo(
+    team_id: str,
+    space_id: str,
+    item_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    owner_user_id = _team_space_item_owner(
+        team_id=team_id,
+        space_id=space_id,
+        item_id=item_id,
+        user_id=user.user_id,
+        write=True,
+    )
+    try:
+        item, photos = add_item_photo(
+            user_id=owner_user_id,
+            item_id=item_id,
+            filename=file.filename or "photo.jpg",
+            content=await file.read(MAX_ITEM_PHOTO_BYTES + 1),
+        )
+        _record(
+            team_id,
+            user.user_id,
+            "item_photo_added",
+            f"Added a photo to {item['name']}",
+            {"space_id": space_id, "item_id": item_id},
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(404, "This item is not in the Team Space.") from exc
+    except Exception as exc:
+        logger.exception("Team item photo upload failed")
+        raise HTTPException(503, "Photo could not be saved. Try again.") from exc
+
+
+@router.delete(
+    "/spaces/{space_id}/items/{item_id}/photos/{photo_id}",
+    response_model=ItemPhotoMutationResponse,
+)
+def delete_team_space_item_photo(
+    team_id: str,
+    space_id: str,
+    item_id: str,
+    photo_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    owner_user_id = _team_space_item_owner(
+        team_id=team_id,
+        space_id=space_id,
+        item_id=item_id,
+        user_id=user.user_id,
+        write=True,
+    )
+    try:
+        item, photos = delete_item_photo(
+            user_id=owner_user_id,
+            item_id=item_id,
+            photo_id=photo_id,
+        )
+        _record(
+            team_id,
+            user.user_id,
+            "item_photo_deleted",
+            f"Deleted a photo from {item['name']}",
+            {"space_id": space_id, "item_id": item_id},
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Photo not found") from exc
+    except Exception as exc:
+        logger.exception("Team item photo deletion failed")
+        raise HTTPException(503, "Photo could not be deleted. Try again.") from exc
 
 
 @router.delete("/spaces/{space_id}/items/{item_id}")

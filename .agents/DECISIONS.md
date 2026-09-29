@@ -92,3 +92,18 @@ The public release is the known product baseline the user asked to recover.
 mobile recovery source. The TestFlight artifact differs only in version/build
 metadata. Keep later redesign work on its separate branch until it is explicitly
 accepted.
+
+## 2026-09-28: Keep item photo galleries backward compatible
+
+**Decision:** Keep `items.image_url` as the primary item thumbnail and store
+additional item photo references as `photo` records in `item_events`.
+
+**Reasoning:** Existing mobile, web, barcode, import, integration, and sharing
+paths already depend on the singular `image_url` field. The existing event table
+was designed for item photos and supports a gallery without a production schema
+migration.
+
+**Implications:** New uploads become the primary thumbnail, deleting the primary
+promotes the next photo, and scan-generated images remain compatible with older
+clients. Photo access must use the owning user's item scope, including Team Space
+and legacy Shared Space authorization.

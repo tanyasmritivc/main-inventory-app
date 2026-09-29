@@ -570,9 +570,20 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       context,
       item: item,
       api: widget.api,
-      permission: 'edit',
+      permission: widget.readOnly ? 'view' : 'edit',
       initialThreshold: existingThr,
       spaceName: widget.location,
+      onItemUpdated: (updated) {
+        if (!mounted) return;
+        final index = _items.indexWhere(
+          (entry) => entry.itemId == updated.itemId,
+        );
+        if (index == -1) return;
+        setState(() {
+          _items[index] = updated;
+          _changed = true;
+        });
+      },
       onThresholdChanged: (threshold) {
         if (!mounted) return;
         final next = Map<String, int>.from(_thresholds);

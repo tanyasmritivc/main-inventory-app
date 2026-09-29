@@ -1,8 +1,9 @@
 
+import logging
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -10,8 +11,16 @@ from app.services import sharing_service
 from app.services.supabase_client import get_supabase_admin
 from app.services.email_service import render_team_invitation, send_transactional_email
 from app.services.usage_service import check_limit, resolve_effective_plan
+from app.schemas.inventory import ItemPhotoMutationResponse, ItemPhotosResponse
+from app.services.item_photos import (
+    MAX_ITEM_PHOTO_BYTES,
+    add_item_photo,
+    delete_item_photo,
+    list_item_photos,
+)
 
 router = APIRouter(tags=["inventory"])
+logger = logging.getLogger(__name__)
 
 class CreateShareRequest(BaseModel):
     share_name: str = Field(default="My Inventory", max_length=100)
@@ -169,6 +178,98 @@ def update_shared_item_route(
         raise
     except ValueError as e:
         raise HTTPException(403, str(e))
+
+
+@router.get(
+    "/sharing/{share_id}/items/{item_id}/photos",
+    response_model=ItemPhotosResponse,
+)
+def list_shared_item_photos_route(
+    share_id: str,
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotosResponse:
+    try:
+        _, owner_user_id = sharing_service.get_share_item_access(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+            item_id=item_id,
+        )
+        _, photos = list_item_photos(user_id=owner_user_id, item_id=item_id)
+        return ItemPhotosResponse(photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Item not found") from exc
+    except ValueError as exc:
+        raise HTTPException(403, str(exc)) from exc
+
+
+@router.post(
+    "/sharing/{share_id}/items/{item_id}/photos",
+    response_model=ItemPhotoMutationResponse,
+)
+async def add_shared_item_photo_route(
+    share_id: str,
+    item_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    try:
+        _, owner_user_id = sharing_service.get_share_item_access(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+            item_id=item_id,
+            write=True,
+        )
+        item, photos = add_item_photo(
+            user_id=owner_user_id,
+            item_id=item_id,
+            filename=file.filename or "photo.jpg",
+            content=await file.read(MAX_ITEM_PHOTO_BYTES + 1),
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Item not found") from exc
+    except ValueError as exc:
+        message = str(exc)
+        status_code = (
+            400 if message.startswith("Choose") or "photos" in message else 403
+        )
+        raise HTTPException(status_code, message) from exc
+    except Exception as exc:
+        logger.exception("Shared item photo upload failed")
+        raise HTTPException(503, "Photo could not be saved. Try again.") from exc
+
+
+@router.delete(
+    "/sharing/{share_id}/items/{item_id}/photos/{photo_id}",
+    response_model=ItemPhotoMutationResponse,
+)
+def delete_shared_item_photo_route(
+    share_id: str,
+    item_id: str,
+    photo_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    try:
+        _, owner_user_id = sharing_service.get_share_item_access(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+            item_id=item_id,
+            write=True,
+        )
+        item, photos = delete_item_photo(
+            user_id=owner_user_id,
+            item_id=item_id,
+            photo_id=photo_id,
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Photo not found") from exc
+    except ValueError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Shared item photo deletion failed")
+        raise HTTPException(503, "Photo could not be deleted. Try again.") from exc
 
 
 @router.post("/sharing/{share_id}/invite")

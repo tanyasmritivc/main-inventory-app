@@ -23,9 +23,9 @@ Future<void> runSpaceBarcodeFlow({
     lookup = await api.barcodeLookup(barcode: scanCode);
   } catch (error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(describeError(error).$1)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     return;
   }
   if (!context.mounted) return;
@@ -46,9 +46,19 @@ Future<void> runSpaceBarcodeFlow({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Unknown barcode', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
+              const Text(
+                'Unknown barcode',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 8),
-              const Text('Photograph the product label so FindEZ can read its manufacturer and part number.', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15)),
+              const Text(
+                'Photograph the product label so FindEZ can read its manufacturer and part number.',
+                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+              ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -87,11 +97,16 @@ Future<void> runSpaceBarcodeFlow({
   final items = [
     ExtractedInventoryItem(
       name: isUnknown ? '' : name,
-      category: (lookup.category ?? '').trim().isEmpty ? 'Other' : lookup.category!.trim(),
+      category: (lookup.category ?? '').trim().isEmpty
+          ? 'Other'
+          : lookup.category!.trim(),
       quantity: 1,
       brand: (lookup.brand ?? '').trim().isEmpty ? null : lookup.brand!.trim(),
-      partNumber: (lookup.model ?? '').trim().isEmpty ? null : lookup.model!.trim(),
+      partNumber: (lookup.model ?? '').trim().isEmpty
+          ? null
+          : lookup.model!.trim(),
       barcode: scanCode,
+      imageUrl: lookup.imageUrl,
       location: preselectedSpace,
     ),
   ];
@@ -99,28 +114,38 @@ Future<void> runSpaceBarcodeFlow({
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) => ConfirmScanSheet(items: items, defaultLocation: preselectedSpace),
+    builder: (_) =>
+        ConfirmScanSheet(items: items, defaultLocation: preselectedSpace),
   );
   if (confirmed == null || confirmed.isEmpty || !context.mounted) return;
 
-  final payload = confirmed.map((item) => ExtractedInventoryItem(
-    name: item.name.trim(),
-    category: item.category.trim().isEmpty ? 'Other' : item.category.trim(),
-    quantity: item.quantity,
-    subcategory: item.subcategory,
-    brand: item.brand,
-    partNumber: item.partNumber,
-    barcode: item.barcode,
-    tags: item.tags,
-    confidence: item.confidence,
-    notes: item.notes,
-    location: preselectedSpace,
-    catalogMatch: item.catalogMatch,
-  )).where((item) => item.name.isNotEmpty).toList();
+  final payload = confirmed
+      .map(
+        (item) => ExtractedInventoryItem(
+          name: item.name.trim(),
+          category: item.category.trim().isEmpty
+              ? 'Other'
+              : item.category.trim(),
+          quantity: item.quantity,
+          subcategory: item.subcategory,
+          brand: item.brand,
+          partNumber: item.partNumber,
+          barcode: item.barcode,
+          tags: item.tags,
+          confidence: item.confidence,
+          imageUrl: item.imageUrl,
+          sourceFrameUrl: item.sourceFrameUrl,
+          notes: item.notes,
+          location: preselectedSpace,
+          catalogMatch: item.catalogMatch,
+        ),
+      )
+      .where((item) => item.name.isNotEmpty)
+      .toList();
   if (payload.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Name is required.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Name is required.')));
     return;
   }
 
@@ -129,21 +154,28 @@ Future<void> runSpaceBarcodeFlow({
     if (!context.mounted) return;
     if (result.inserted.isEmpty) {
       final reason = result.failures.isNotEmpty
-          ? (result.failures.first['reason'] ?? 'Could not save this item.').toString()
+          ? (result.failures.first['reason'] ?? 'Could not save this item.')
+                .toString()
           : 'Could not save this item.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(reason)));
       return;
     }
     await onItemsSaved();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved ${result.inserted.first.name} to $preselectedSpace')),
+      SnackBar(
+        content: Text(
+          'Saved ${result.inserted.first.name} to $preselectedSpace',
+        ),
+      ),
     );
   } catch (error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(describeError(error).$1)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
   }
 }
 
@@ -151,7 +183,8 @@ class _SpaceBarcodeScannerPage extends StatefulWidget {
   const _SpaceBarcodeScannerPage();
 
   @override
-  State<_SpaceBarcodeScannerPage> createState() => _SpaceBarcodeScannerPageState();
+  State<_SpaceBarcodeScannerPage> createState() =>
+      _SpaceBarcodeScannerPageState();
 }
 
 class _SpaceBarcodeScannerPageState extends State<_SpaceBarcodeScannerPage> {
@@ -174,7 +207,10 @@ class _SpaceBarcodeScannerPageState extends State<_SpaceBarcodeScannerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Scan Barcode'), backgroundColor: Colors.black),
+      appBar: AppBar(
+        title: const Text('Scan Barcode'),
+        backgroundColor: Colors.black,
+      ),
       body: MobileScanner(
         controller: _controller,
         onDetect: (capture) {

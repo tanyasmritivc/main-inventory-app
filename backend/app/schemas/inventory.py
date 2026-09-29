@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -73,6 +74,21 @@ class UpdateItemRequest(BaseModel):
 
 
 class UpdateItemResponse(BaseModel):
+    item: dict
+
+
+class ItemPhoto(BaseModel):
+    photo_id: str
+    image_url: str = Field(max_length=2000)
+    is_primary: bool = False
+    created_at: datetime | None = None
+
+
+class ItemPhotosResponse(BaseModel):
+    photos: list[ItemPhoto]
+
+
+class ItemPhotoMutationResponse(ItemPhotosResponse):
     item: dict
 
 

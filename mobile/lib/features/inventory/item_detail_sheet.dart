@@ -13,7 +13,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 
 /// Opens the comprehensive item detail bottom sheet.
@@ -27,9 +29,11 @@ Future<void> showItemDetailSheet(
   required InventoryItem item,
   required ApiClient api,
   String permission = 'edit',
+  String? shareId,
   int? initialThreshold,
   String spaceName = '',
   ValueChanged<int?>? onThresholdChanged,
+  ValueChanged<InventoryItem>? onItemUpdated,
 }) async {
   await showModalBottomSheet<void>(
     context: context,
@@ -39,9 +43,11 @@ Future<void> showItemDetailSheet(
       item: item,
       api: api,
       permission: permission,
+      shareId: shareId,
       initialThreshold: initialThreshold,
       spaceName: spaceName,
       onThresholdChanged: onThresholdChanged,
+      onItemUpdated: onItemUpdated,
     ),
   );
 }
@@ -52,22 +58,27 @@ class _ItemDetailSheet extends StatefulWidget {
     required this.api,
     required this.permission,
     required this.spaceName,
+    this.shareId,
     this.initialThreshold,
     this.onThresholdChanged,
+    this.onItemUpdated,
   });
 
   final InventoryItem item;
   final ApiClient api;
   final String permission;
+  final String? shareId;
   final String spaceName;
   final int? initialThreshold;
   final ValueChanged<int?>? onThresholdChanged;
+  final ValueChanged<InventoryItem>? onItemUpdated;
 
   @override
   State<_ItemDetailSheet> createState() => _ItemDetailSheetState();
 }
 
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
+  late InventoryItem _item;
   late final TextEditingController _notesCtrl;
   late final TextEditingController _purchaseSourceCtrl;
   late final TextEditingController _thresholdCtrl;
@@ -90,11 +101,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   bool _isEditingNotes = false;
   bool _checkingOut = false;
   bool _purchaseSourceSaveFailed = false;
+  bool _photosLoading = true;
+  bool _photoSaving = false;
+  int _selectedPhotoIndex = 0;
   Timer? _thresholdDebounce;
   int? _lastSavedThreshold;
   Timer? _purchaseSourceDebounce;
 
   List<DocumentEntry> _localDocs = [];
+  List<ItemPhoto> _photos = [];
 
   // Stable future — not recreated on every build; reset explicitly when checkout/return mutates state.
   Future<List<Map<String, dynamic>>>? _checkoutsFuture;
@@ -104,6 +119,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void initState() {
     super.initState();
+    _item = widget.item;
     _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
     _purchaseSourceCtrl = TextEditingController(
       text: widget.item.purchaseSource ?? '',
@@ -129,6 +145,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           .catchError((_) => null);
     }
     _loadDocuments();
+    _loadPhotos();
   }
 
   @override
@@ -157,6 +174,158 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           setState(() => _localDocs = docs);
         })
         .catchError((_) {});
+  }
+
+  List<ItemPhoto> _fallbackPhotos() {
+    final imageUrl = (_item.imageUrl ?? '').trim();
+    if (imageUrl.isEmpty) return const [];
+    return [
+      ItemPhoto(
+        photoId: 'primary',
+        imageUrl: imageUrl,
+        isPrimary: true,
+        createdAt: _item.createdAt,
+      ),
+    ];
+  }
+
+  Future<void> _loadPhotos() async {
+    try {
+      final photos = await widget.api.getItemPhotos(
+        itemId: _item.itemId,
+        shareId: widget.shareId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _photos = photos.isEmpty ? _fallbackPhotos() : photos;
+        _photosLoading = false;
+        if (_selectedPhotoIndex >= _photos.length) {
+          _selectedPhotoIndex = _photos.isEmpty ? 0 : _photos.length - 1;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _photos = _fallbackPhotos();
+        _photosLoading = false;
+      });
+    }
+  }
+
+  Future<void> _addPhoto() async {
+    if (_photoSaving) return;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppTheme.surface2(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from Library'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final photo = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 88,
+    );
+    if (photo == null || !mounted) return;
+
+    setState(() => _photoSaving = true);
+    try {
+      final result = await widget.api.addItemPhoto(
+        itemId: _item.itemId,
+        bytes: await photo.readAsBytes(),
+        filename: photo.name,
+        shareId: widget.shareId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _item = result.item;
+        _photos = result.photos;
+        _selectedPhotoIndex = 0;
+      });
+      InventoryCache.updateItem(result.item);
+      widget.onItemUpdated?.call(result.item);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Photo added')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _photoSaving = false);
+    }
+  }
+
+  Future<void> _deletePhoto(ItemPhoto photo) async {
+    if (_photoSaving) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete photo?'),
+        content: const Text('This photo will be removed from the item.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _photoSaving = true);
+    try {
+      final result = await widget.api.deleteItemPhoto(
+        itemId: _item.itemId,
+        photoId: photo.photoId,
+        shareId: widget.shareId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _item = result.item;
+        _photos = result.photos;
+        if (_selectedPhotoIndex >= _photos.length) {
+          _selectedPhotoIndex = _photos.isEmpty ? 0 : _photos.length - 1;
+        }
+      });
+      InventoryCache.updateItem(result.item);
+      widget.onItemUpdated?.call(result.item);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Photo deleted')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _photoSaving = false);
+    }
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -1004,6 +1173,181 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
+  Widget _photoGallery({required bool canEdit}) {
+    if (_photosLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+
+    if (_photos.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: InkWell(
+          onTap: canEdit && !_photoSaving ? _addPhoto : null,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+              color: const Color(0xFF171717),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0x1FFFFFFF)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: Color(0x66FFFFFF),
+                  size: 34,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  canEdit ? 'Add an item photo' : 'No photos yet',
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (canEdit) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Take a photo or choose one from your library',
+                    style: TextStyle(color: Color(0x55FFFFFF), fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: 220,
+            child: PageView.builder(
+              key: ValueKey(
+                '${_photos.length}:${_photos.map((photo) => photo.photoId).join(',')}',
+              ),
+              itemCount: _photos.length,
+              onPageChanged: (index) {
+                if (mounted) setState(() => _selectedPhotoIndex = index);
+              },
+              itemBuilder: (context, index) {
+                final photo = _photos[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(color: const Color(0xFF171717)),
+                        Image.network(
+                          photo.imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                              ? child
+                              : const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                          errorBuilder: (_, _, _) => const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Color(0x66FFFFFF),
+                                  size: 32,
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Photo unavailable',
+                                  style: TextStyle(
+                                    color: Color(0x66FFFFFF),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (canEdit)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: DecoratedBox(
+                              decoration: const BoxDecoration(
+                                color: Color(0xB3000000),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                tooltip: 'Delete photo',
+                                onPressed: _photoSaving
+                                    ? null
+                                    : () => _deletePhoto(photo),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_photoSaving)
+                          const ColoredBox(
+                            color: Color(0x66000000),
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                '${_selectedPhotoIndex + 1} of ${_photos.length}',
+                style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+              ),
+              const Spacer(),
+              if (canEdit)
+                TextButton.icon(
+                  onPressed: _photoSaving ? null : _addPhoto,
+                  icon: const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 18,
+                  ),
+                  label: Text(
+                    _photos.length == 1 ? 'Add another' : 'Add photo',
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _shareQrAsImage() async {
     try {
       final boundary =
@@ -1037,7 +1381,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
+    final item = _item;
     final canEdit = widget.permission == 'edit';
 
     return Container(
@@ -1090,7 +1434,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+            _photoGallery(canEdit: canEdit),
+            const SizedBox(height: 18),
 
             // ── Info rows ─────────────────────────────────────────────
             Padding(

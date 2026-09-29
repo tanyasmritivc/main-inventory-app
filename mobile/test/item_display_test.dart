@@ -31,4 +31,47 @@ void main() {
     );
     expect(inventoryItem.displayDescription, isNull);
   });
+
+  test('captured item photo survives extraction payload round trip', () {
+    final extracted = ExtractedInventoryItem.fromJson({
+      'name': 'Bearing',
+      'category': 'Hardware',
+      'quantity': 1,
+      'image_url': 'https://images.test/crop.jpg',
+      'source_frame_url': 'https://images.test/source.jpg',
+    });
+
+    expect(extracted.imageUrl, 'https://images.test/crop.jpg');
+    expect(extracted.sourceFrameUrl, 'https://images.test/source.jpg');
+    expect(extracted.toJson()['image_url'], 'https://images.test/crop.jpg');
+    expect(
+      extracted.toJson()['source_frame_url'],
+      'https://images.test/source.jpg',
+    );
+  });
+
+  test('item photo mutation returns the updated primary and gallery', () {
+    final result = ItemPhotoMutationResult.fromJson({
+      'item': {
+        'item_id': 'item-1',
+        'name': 'Bearing',
+        'category': 'Hardware',
+        'quantity': 1,
+        'location': 'Shop',
+        'image_url': 'https://images.test/new.jpg',
+        'created_at': '2026-09-28T12:00:00Z',
+      },
+      'photos': [
+        {
+          'photo_id': 'photo-1',
+          'image_url': 'https://images.test/new.jpg',
+          'is_primary': true,
+        },
+      ],
+    });
+
+    expect(result.item.imageUrl, 'https://images.test/new.jpg');
+    expect(result.photos, hasLength(1));
+    expect(result.photos.single.isPrimary, isTrue);
+  });
 }

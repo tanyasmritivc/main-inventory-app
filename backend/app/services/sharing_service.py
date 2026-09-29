@@ -177,6 +177,19 @@ def _get_share_item(*, share: dict, item_id: str) -> dict:
     raise ValueError('Item not found in this space')
 
 
+def get_share_item_access(
+    *, requesting_user_id: str, share_id: str, item_id: str, write: bool = False
+) -> tuple[dict, str]:
+    share, can_edit = get_share_access(
+        requesting_user_id=requesting_user_id,
+        share_id=share_id,
+    )
+    if write and not can_edit:
+        raise ValueError('You only have view access to this space')
+    item = _get_share_item(share=share, item_id=item_id)
+    return item, str(share['owner_user_id'])
+
+
 def update_share_item(*, requesting_user_id: str, share_id: str, item_id: str, updates: dict) -> dict | None:
     share, can_edit = get_share_access(requesting_user_id=requesting_user_id, share_id=share_id)
     if not can_edit:

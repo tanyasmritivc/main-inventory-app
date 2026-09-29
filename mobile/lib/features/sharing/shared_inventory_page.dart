@@ -589,6 +589,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       item: invItem,
       api: widget.api,
       permission: widget.permission,
+      shareId: widget.shareId,
       initialThreshold: threshold,
       spaceName: widget.shareName,
       onThresholdChanged: (nextThreshold) {
