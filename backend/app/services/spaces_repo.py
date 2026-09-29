@@ -11,6 +11,10 @@ class SpaceLimitExceeded(Exception):
     """Raised when a free-tier user tries to create a fourth named space."""
 
 
+def _scope(query, *, user_id: str, workspace_id: str | None):
+    return query.eq("workspace_id", workspace_id) if workspace_id else query.eq("user_id", user_id)
+
+
 def _execute_with_retry(fn, max_attempts: int = 3):
     last_error = None
     for attempt in range(1, max_attempts + 1):
@@ -27,14 +31,12 @@ def _execute_with_retry(fn, max_attempts: int = 3):
     raise last_error
 
 
-def count_spaces(*, user_id: str) -> int:
+def count_spaces(*, user_id: str, workspace_id: str | None = None) -> int:
     """Count real named spaces for the user, excluding any 'Unsorted' rows."""
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .select("id, name")
-        .eq("user_id", user_id)
-        .execute()
+        lambda: _scope(supabase.table("spaces").select("id, name"),
+                       user_id=user_id, workspace_id=workspace_id).execute()
     )
     return sum(
         1 for row in (resp.data or [])
@@ -42,14 +44,12 @@ def count_spaces(*, user_id: str) -> int:
     )
 
 
-def _find_space_by_name(*, user_id: str, name: str) -> dict | None:
+def _find_space_by_name(*, user_id: str, name: str, workspace_id: str | None = None) -> dict | None:
     """Return the user's space whose name matches exactly (case-insensitive)."""
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .select("id, name, created_at")
-        .eq("user_id", user_id)
-        .execute()
+        lambda: _scope(supabase.table("spaces").select("id, name, created_at"),
+                       user_id=user_id, workspace_id=workspace_id).execute()
     )
     target = (name or "").strip().lower()
     for row in resp.data or []:
@@ -58,24 +58,21 @@ def _find_space_by_name(*, user_id: str, name: str) -> dict | None:
     return None
 
 
-def space_exists(*, user_id: str, name: str) -> bool:
+def space_exists(*, user_id: str, name: str, workspace_id: str | None = None) -> bool:
     """Case-insensitive check whether a space with this name exists for the user."""
     name = (name or "").strip()
     if not name:
         return False
-    return _find_space_by_name(user_id=user_id, name=name) is not None
+    return _find_space_by_name(user_id=user_id, name=name, workspace_id=workspace_id) is not None
 
 
 
-def list_spaces(*, user_id: str) -> list[dict]:
+def list_spaces(*, user_id: str, workspace_id: str | None = None) -> list[dict]:
     """Return all spaces for user with item_count derived from items.space_id."""
     supabase = get_supabase_admin()
     spaces_resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .select("id, name, created_at")
-        .eq("user_id", user_id)
-        .order("name")
-        .execute()
+        lambda: _scope(supabase.table("spaces").select("id, name, created_at"),
+                       user_id=user_id, workspace_id=workspace_id).order("name").execute()
     )
     spaces = spaces_resp.data or []
     if not spaces:
@@ -83,11 +80,9 @@ def list_spaces(*, user_id: str) -> list[dict]:
 
     # Count items per space in one query, group in Python
     items_resp = _execute_with_retry(
-        lambda: supabase.table("items")
-        .select("space_id")
-        .eq("user_id", user_id)
-        .not_.is_("space_id", "null")
-        .execute()
+        lambda: _scope(supabase.table("items").select("space_id"),
+                       user_id=user_id, workspace_id=workspace_id)
+        .not_.is_("space_id", "null").execute()
     )
     counts: dict[str, int] = {}
     for row in (items_resp.data or []):
@@ -106,7 +101,7 @@ def list_spaces(*, user_id: str) -> list[dict]:
     ]
 
 
-def get_or_create_space(*, user_id: str, name: str) -> dict:
+def get_or_create_space(*, user_id: str, name: str, workspace_id: str | None = None) -> dict:
     """Case-insensitive lookup by name; insert if missing. Returns the space row."""
     name = (name or "").strip()
     if not name:
@@ -114,7 +109,7 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
 
     supabase = get_supabase_admin()
 
-    existing = _find_space_by_name(user_id=user_id, name=name)
+    existing = _find_space_by_name(user_id=user_id, name=name, workspace_id=workspace_id)
     if existing:
         return existing
 
@@ -122,7 +117,7 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     from app.services.limits import resolve_effective_limits
     eff_limits, _ = resolve_effective_limits(user_id)
     max_spaces = eff_limits["spaces"]
-    if max_spaces is not None and count_spaces(user_id=user_id) >= max_spaces:
+    if max_spaces is not None and count_spaces(user_id=user_id, workspace_id=workspace_id) >= max_spaces:
         raise SpaceLimitExceeded(
             f"Space limit of {max_spaces} reached."
         )
@@ -130,20 +125,20 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     try:
         resp = _execute_with_retry(
             lambda: supabase.table("spaces")
-            .insert({"user_id": user_id, "name": name})
+            .insert({"user_id": user_id, "name": name, **({"workspace_id": workspace_id} if workspace_id else {})})
             .execute()
         )
         return (resp.data or [{}])[0]
     except Exception:
         # Race condition — another request created it first; re-read
         logger.warning("Space insert conflict for user=%s name=%s, re-reading", user_id, name)
-        existing = _find_space_by_name(user_id=user_id, name=name)
+        existing = _find_space_by_name(user_id=user_id, name=name, workspace_id=workspace_id)
         if existing:
             return existing
         raise
 
 
-def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
+def rename_space(*, user_id: str, space_id: str, new_name: str, workspace_id: str | None = None) -> dict:
     """Rename a space and sync items.location for all items in that space."""
     new_name = (new_name or "").strip()
     if not new_name:
@@ -152,33 +147,27 @@ def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
     supabase = get_supabase_admin()
 
     resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .update({"name": new_name})
-        .eq("user_id", user_id)
-        .eq("id", space_id)
-        .execute()
+        lambda: _scope(supabase.table("spaces").update({"name": new_name}),
+                       user_id=user_id, workspace_id=workspace_id)
+        .eq("id", space_id).execute()
     )
 
     # Keep items.location in sync so the text field matches the canonical space name
     _execute_with_retry(
-        lambda: supabase.table("items")
-        .update({"location": new_name})
-        .eq("user_id", user_id)
-        .eq("space_id", space_id)
-        .execute()
+        lambda: _scope(supabase.table("items").update({"location": new_name}),
+                       user_id=user_id, workspace_id=workspace_id)
+        .eq("space_id", space_id).execute()
     )
 
     return (resp.data or [{}])[0]
 
 
-def delete_space(*, user_id: str, space_id: str) -> bool:
+def delete_space(*, user_id: str, space_id: str, workspace_id: str | None = None) -> bool:
     """Delete the space row and its items through the items FK cascade."""
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .delete()
-        .eq("user_id", user_id)
-        .eq("id", space_id)
-        .execute()
+        lambda: _scope(supabase.table("spaces").delete(),
+                       user_id=user_id, workspace_id=workspace_id)
+        .eq("id", space_id).execute()
     )
     return bool(resp.data)

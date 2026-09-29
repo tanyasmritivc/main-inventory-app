@@ -7,6 +7,10 @@ from app.services.supabase_client import get_supabase_admin
 logger = logging.getLogger(__name__)
 
 
+def _scope(query, *, user_id: str, workspace_id: str | None):
+    return query.eq("workspace_id", workspace_id) if workspace_id else query.eq("user_id", user_id)
+
+
 def _execute_with_retry(fn, max_attempts: int = 3):
     last_error = None
     for attempt in range(1, max_attempts + 1):
@@ -21,11 +25,12 @@ def _execute_with_retry(fn, max_attempts: int = 3):
     raise last_error
 
 
-def list_bins(*, user_id: str, space_id: str) -> list[dict]:
+def list_bins(*, user_id: str, space_id: str,
+              workspace_id: str | None = None) -> list[dict]:
     response = _execute_with_retry(
-        lambda: get_supabase_admin().table("bins")
-        .select("id, space_id, name, created_at")
-        .eq("user_id", user_id)
+        lambda: _scope(get_supabase_admin().table("bins")
+        .select("id, space_id, name, created_at"), user_id=user_id,
+        workspace_id=workspace_id)
         .eq("space_id", space_id)
         .order("name")
         .execute()
@@ -33,13 +38,13 @@ def list_bins(*, user_id: str, space_id: str) -> list[dict]:
     return response.data or []
 
 
-def create_bin(*, user_id: str, space_id: str, name: str) -> dict:
+def create_bin(*, user_id: str, space_id: str, name: str,
+               workspace_id: str | None = None) -> dict:
     # Do not let a caller create a bin in another user's space, even if they
     # somehow obtain that space UUID. The service role bypasses RLS.
     space = _execute_with_retry(
-        lambda: get_supabase_admin().table("spaces")
-        .select("id")
-        .eq("user_id", user_id)
+        lambda: _scope(get_supabase_admin().table("spaces")
+        .select("id"), user_id=user_id, workspace_id=workspace_id)
         .eq("id", space_id)
         .maybe_single()
         .execute()
@@ -48,28 +53,29 @@ def create_bin(*, user_id: str, space_id: str, name: str) -> dict:
         raise LookupError("Space not found")
     response = _execute_with_retry(
         lambda: get_supabase_admin().table("bins")
-        .insert({"user_id": user_id, "space_id": space_id, "name": name})
+        .insert({"user_id": user_id, "space_id": space_id, "name": name,
+                 **({"workspace_id": workspace_id} if workspace_id else {})})
         .execute()
     )
     return (response.data or [{}])[0]
 
 
-def rename_bin(*, user_id: str, bin_id: str, name: str) -> dict | None:
+def rename_bin(*, user_id: str, bin_id: str, name: str,
+               workspace_id: str | None = None) -> dict | None:
     response = _execute_with_retry(
-        lambda: get_supabase_admin().table("bins")
-        .update({"name": name})
-        .eq("user_id", user_id)
+        lambda: _scope(get_supabase_admin().table("bins")
+        .update({"name": name}), user_id=user_id, workspace_id=workspace_id)
         .eq("id", bin_id)
         .execute()
     )
     return (response.data or [None])[0]
 
 
-def delete_bin(*, user_id: str, bin_id: str) -> bool:
+def delete_bin(*, user_id: str, bin_id: str,
+               workspace_id: str | None = None) -> bool:
     response = _execute_with_retry(
-        lambda: get_supabase_admin().table("bins")
-        .delete()
-        .eq("user_id", user_id)
+        lambda: _scope(get_supabase_admin().table("bins")
+        .delete(), user_id=user_id, workspace_id=workspace_id)
         .eq("id", bin_id)
         .execute()
     )

@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../../core/push_notifications.dart';
-import '../../core/ui/app_colors.dart';
+import '../inventory/world_views.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key, required this.api, this.onRead});
@@ -24,6 +24,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _pushReady = false;
   bool _registeringPush = true;
   String? _pushError;
+  bool _markingRead = false;
 
   @override
   void initState() {
@@ -33,21 +34,20 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _registerPush() async {
-    if (mounted) {
-      setState(() {
-        _registeringPush = true;
-        _pushError = null;
-      });
-    }
+    setState(() {
+      _registeringPush = true;
+      _pushError = null;
+    });
     try {
       final ready = await PushNotifications.register(widget.api);
-      if (mounted) {
-        setState(() {
-          _pushReady = ready;
-          _registeringPush = false;
-          _pushError = ready ? null : 'This iPhone could not be registered.';
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _pushReady = ready;
+        _registeringPush = false;
+        _pushError = ready
+            ? null
+            : 'This phone could not receive notifications.';
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -55,6 +55,43 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _registeringPush = false;
         _pushError = describeError(error).$1;
       });
+    }
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await widget.api.getNotifications();
+      if (!mounted) return;
+      setState(() {
+        _items = List<Map<String, dynamic>>.from(
+          result['notifications'] ?? const [],
+        );
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeError(error).$1);
+    }
+  }
+
+  Future<void> _markAllRead() async {
+    if (_markingRead || _items == null) return;
+    setState(() => _markingRead = true);
+    try {
+      await widget.api.markNotificationsRead();
+      await PushNotifications.setBadgeCount(0);
+      if (!mounted) return;
+      setState(() {
+        _items = _items!.map((item) => {...item, 'is_read': true}).toList();
+      });
+      widget.onRead?.call();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _markingRead = false);
     }
   }
 
@@ -69,220 +106,105 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> _load() async {
-    try {
-      final result = await widget.api.getNotifications();
-      if (!mounted) return;
-      setState(() {
-        _items = List<Map<String, dynamic>>.from(
-          result['notifications'] ?? const [],
-        );
-        _error = null;
-      });
-      await widget.api.markNotificationsRead();
-      await PushNotifications.setBadgeCount(0);
-      widget.onRead?.call();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _error = describeError(error).$1);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final items = _items;
+    final unread = items?.where((item) => item['is_read'] != true).length ?? 0;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          if (_pushReady)
-            IconButton(
-              tooltip: 'Send test notification',
-              onPressed: _testPush,
-              icon: const Icon(CupertinoIcons.paperplane),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _pushStatus(),
-          Expanded(child: _inbox()),
-        ],
-      ),
-    );
-  }
-
-  Widget _pushStatus() {
-    if (_pushReady) return const SizedBox.shrink();
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _registeringPush ? CupertinoIcons.bell : CupertinoIcons.bell_slash,
-            color: _registeringPush ? AppColors.muted : AppColors.warning,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _registeringPush
-                      ? 'Connecting notifications…'
-                      : 'Phone notifications are off',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                if (!_registeringPush) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    _pushError ?? 'Tap Try Again to connect this iPhone.',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorldHeader(
+              title: 'Notifications',
+              onBack: () => Navigator.of(context).pop(),
+              actions: [
+                if (unread > 0)
+                  TextButton(
+                    onPressed: _markingRead ? null : _markAllRead,
+                    child: const Text('Read all'),
                   ),
-                ],
               ],
             ),
-          ),
-          if (_registeringPush)
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            TextButton(
-              onPressed: _registerPush,
-              child: const Text('Try Again'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                  children: [
+                    if (items == null && _error == null)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_error != null)
+                      WorldSection(
+                        title: 'Could not load notifications',
+                        children: [
+                          WorldRow(title: _error!, count: '', onTap: _load),
+                          WorldRow(title: 'Try again', count: '', onTap: _load),
+                        ],
+                      )
+                    else if (items!.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Text(
+                          'You are all caught up. Updates will appear here.',
+                          style: TextStyle(color: t.text2, fontSize: 15),
+                        ),
+                      ),
+                    if (items != null && items.isNotEmpty)
+                      WorldSection(
+                        title: unread == 0 ? 'Recent' : '$unread unread',
+                        children: [
+                          for (final item in items)
+                            WorldRow(
+                              title: _describedActivity(item),
+                              subtitle:
+                                  '${item['team_name'] ?? 'Your workspace'}  ·  ${_time(item['created_at']?.toString())}',
+                              count: (item['activity_type'] ?? '')
+                                  .toString()
+                                  .toUpperCase(),
+                            ),
+                        ],
+                      ),
+                    const SizedBox(height: 18),
+                    WorldSection(
+                      title: 'On this phone',
+                      children: [
+                        WorldRow(
+                          title: _registeringPush
+                              ? 'Connecting notifications'
+                              : _pushReady
+                              ? 'Phone notifications are on'
+                              : 'Phone notifications are off',
+                          subtitle: _pushReady
+                              ? 'FindEZ can send updates to this phone.'
+                              : _pushError ?? 'Trying to connect this phone.',
+                          count: '',
+                          onTap: _registeringPush || _pushReady
+                              ? null
+                              : _registerPush,
+                        ),
+                      ],
+                    ),
+                    if (_pushReady)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: TextButton(
+                          onPressed: _testPush,
+                          child: const Text('Send a test notification'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-
-  Widget _inbox() {
-    return _error != null
-        ? Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Text(_error!, textAlign: TextAlign.center),
-            ),
-          )
-        : _items == null
-        ? const Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-            onRefresh: _load,
-            child: _items!.isEmpty
-                ? ListView(
-                    children: [
-                      SizedBox(height: 190),
-                      Icon(
-                        CupertinoIcons.bell,
-                        color: AppColors.muted,
-                        size: 42,
-                      ),
-                      SizedBox(height: 14),
-                      Text(
-                        'You’re all caught up',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 7),
-                      Text(
-                        'Team updates will appear here.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted),
-                      ),
-                    ],
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _items!.length,
-                    separatorBuilder: (_, _) =>
-                        const Divider(height: 1, indent: 62),
-                    itemBuilder: (context, index) {
-                      final item = _items![index];
-                      final unread = item['is_read'] != true;
-                      final action = item['action']?.toString() ?? '';
-                      final color = _color(action);
-                      return Container(
-                        color: unread
-                            ? AppColors.accent.withValues(alpha: .07)
-                            : Colors.transparent,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 7,
-                          ),
-                          leading: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: .14),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _icon(action),
-                                  color: color,
-                                  size: 18,
-                                ),
-                              ),
-                              if (unread)
-                                Positioned(
-                                  right: -2,
-                                  top: -2,
-                                  child: CircleAvatar(
-                                    radius: 4,
-                                    backgroundColor: AppColors.accent,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          title: Text(
-                            _describedActivity(item),
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            '${item['activity_type'] ?? 'Team'} · ${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          );
-  }
-
-  Color _color(String action) {
-    if (action == 'task_completed') return AppColors.success;
-    if (action == 'task_deleted' ||
-        action == 'item_deleted' ||
-        action == 'member_removed') {
-      return AppColors.danger;
-    }
-    if (action.startsWith('task_')) return AppColors.warning;
-    if (action.startsWith('item_') || action.startsWith('space_')) {
-      return AppColors.info;
-    }
-    return AppColors.ai;
-  }
-
-  IconData _icon(String action) {
-    if (action.startsWith('task_')) return CupertinoIcons.check_mark_circled;
-    if (action.startsWith('item_')) return CupertinoIcons.cube_box;
-    if (action.startsWith('space_')) return CupertinoIcons.archivebox;
-    if (action.startsWith('member_')) return CupertinoIcons.person_2;
-    return CupertinoIcons.bell;
   }
 
   String _time(String? raw) {
@@ -299,10 +221,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final displayText = item['display_text']?.toString().trim() ?? '';
     if (displayText.isNotEmpty) return displayText;
     final actor = item['actor_name']?.toString().trim() ?? '';
-    final summary = item['summary']?.toString().trim() ?? 'updated the team';
+    final summary =
+        item['summary']?.toString().trim() ?? 'updated the workspace';
     if (actor.isEmpty) return summary;
     final action = summary.isEmpty
-        ? 'updated the team'
+        ? 'updated the workspace'
         : '${summary[0].toLowerCase()}${summary.substring(1)}';
     return '$actor $action';
   }

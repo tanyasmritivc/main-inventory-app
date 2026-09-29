@@ -285,21 +285,20 @@ async def ai_command_route(
             try:
                 supabase = get_supabase_admin()
                 if conv_id:
-                    check = (
-                        supabase.table("conversations")
-                        .select("id")
-                        .eq("id", conv_id)
-                        .eq("user_id", user.user_id)
-                        .limit(1)
-                        .execute()
-                    )
+                    query = supabase.table("conversations").select("id").eq(
+                        "id", conv_id
+                    ).eq("user_id", user.user_id)
+                    if user.workspace_id:
+                        query = query.eq("workspace_id", user.workspace_id)
+                    check = query.limit(1).execute()
                     if not check.data:
                         conv_id = None
                 if not conv_id:
                     title = payload.message[:60]
                     res = (
                         supabase.table("conversations")
-                        .insert({"user_id": user.user_id, "title": title})
+                        .insert({"user_id": user.user_id, "title": title,
+                                 **({"workspace_id": user.workspace_id} if user.workspace_id else {})})
                         .execute()
                     )
                     conv_id = ((res.data or [{}])[0]).get("id")
@@ -315,18 +314,19 @@ async def ai_command_route(
 
             # Fetch memory context (best-effort — failures are silent)
             memory_context = ""
-            try:
-                user_memory_str, similar_history_str = await asyncio.gather(
-                    fetch_user_memory(user.user_id),
-                    fetch_similar_history(user.user_id, payload.message),
-                )
-                if user_memory_str:
-                    memory_context += f"\n\n{user_memory_str}"
-                if similar_history_str:
-                    memory_context += f"\n\n{similar_history_str}"
-            except Exception:
-                logger.exception("Memory context fetch failed — continuing without")
-                memory_context = ""
+            if not user.workspace_id:
+                try:
+                    user_memory_str, similar_history_str = await asyncio.gather(
+                        fetch_user_memory(user.user_id),
+                        fetch_similar_history(user.user_id, payload.message),
+                    )
+                    if user_memory_str:
+                        memory_context += f"\n\n{user_memory_str}"
+                    if similar_history_str:
+                        memory_context += f"\n\n{similar_history_str}"
+                except Exception:
+                    logger.exception("Memory context fetch failed")
+                    memory_context = ""
 
             async def generate():
                 delta_buffer: list[str] = []
@@ -338,6 +338,8 @@ async def ai_command_route(
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
                         conversation_id=conv_id,
+                        workspace_id=user.workspace_id,
+                        workspace_role=user.workspace_role,
                     ):
                         if item.get("type") == "delta":
                             content = item.get("delta") or ""
@@ -361,9 +363,10 @@ async def ai_command_route(
                                     }).eq("id", conv_id).execute()
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
-                            asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
-                            asyncio.create_task(log_query(user.user_id, payload.message))
-                            asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
+                            if not user.workspace_id:
+                                asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
+                                asyncio.create_task(log_query(user.user_id, payload.message))
+                                asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
                             if nav_hint:
                                 yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
@@ -393,6 +396,8 @@ async def ai_command_route(
             first_name=user.first_name,
             conversation_history=payload.conversation_history or None,
             conversation_id=payload.conversation_id,
+            workspace_id=user.workspace_id,
+            workspace_role=user.workspace_role,
         )
     except Exception:
         logger.exception("AI command failed")
@@ -403,14 +408,16 @@ async def ai_command_route(
             user_id=user.user_id,
             summary="Used Assist",
             metadata={"type": "ai_chat", "tool": out.get("tool"), "message": payload.message},
+            workspace_id=user.workspace_id,
                     )
     except Exception:
         logger.exception("Failed to write ai_chat activity")
 
     assistant_message = out.get("assistant_message") or ""
-    background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
-    background_tasks.add_task(log_query, user.user_id, payload.message)
-    background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
+    if not user.workspace_id:
+        background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
+        background_tasks.add_task(log_query, user.user_id, payload.message)
+        background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
 
     return AICommandResponse(
         tool=out.get("tool"),

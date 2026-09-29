@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.core.errors import bad_request, service_unavailable
 from app.services.bins_repo import create_bin, delete_bin, list_bins, rename_bin
 
@@ -26,7 +26,8 @@ def _name_or_error(value: str) -> str:
 @router.get("/spaces/{space_id}/bins")
 def list_bins_route(space_id: str, user: AuthenticatedUser = Depends(get_current_user)):
     try:
-        return {"bins": list_bins(user_id=user.user_id, space_id=space_id)}
+        return {"bins": list_bins(user_id=user.user_id, space_id=space_id,
+                                   workspace_id=user.workspace_id)}
     except Exception:
         logger.exception("Failed to list bins")
         raise service_unavailable("Could not load bins. Please try again.")
@@ -38,8 +39,10 @@ def create_bin_route(
     payload: BinNameRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    require_workspace_write(user)
     try:
-        return {"bin": create_bin(user_id=user.user_id, space_id=space_id, name=_name_or_error(payload.name))}
+        return {"bin": create_bin(user_id=user.user_id, space_id=space_id,
+            name=_name_or_error(payload.name), workspace_id=user.workspace_id)}
     except LookupError:
         raise HTTPException(404, "Space not found")
     except HTTPException:
@@ -55,8 +58,10 @@ def rename_bin_route(
     payload: BinNameRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    require_workspace_write(user)
     try:
-        updated = rename_bin(user_id=user.user_id, bin_id=bin_id, name=_name_or_error(payload.name))
+        updated = rename_bin(user_id=user.user_id, bin_id=bin_id,
+            name=_name_or_error(payload.name), workspace_id=user.workspace_id)
         if not updated:
             raise HTTPException(404, "Bin not found")
         return {"bin": updated}
@@ -69,8 +74,10 @@ def rename_bin_route(
 
 @router.delete("/bins/{bin_id}")
 def delete_bin_route(bin_id: str, user: AuthenticatedUser = Depends(get_current_user)):
+    require_workspace_write(user)
     try:
-        return {"deleted": delete_bin(user_id=user.user_id, bin_id=bin_id)}
+        return {"deleted": delete_bin(user_id=user.user_id, bin_id=bin_id,
+                                       workspace_id=user.workspace_id)}
     except Exception:
         logger.exception("Failed to delete bin")
         raise service_unavailable("Could not delete bin. Please try again.")

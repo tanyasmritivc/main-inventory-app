@@ -13,6 +13,9 @@ class AddItemRequest(BaseModel):
     barcode: str | None = Field(default=None, max_length=100)
     purchase_source: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
+    bin_id: str | None = Field(default=None, max_length=36)
+    container: str | None = Field(default=None, max_length=200)
+    reorder_point: int | None = Field(default=None, ge=0, le=100000)
 
 
 class AddItemResponse(BaseModel):
@@ -70,6 +73,10 @@ class UpdateItemRequest(BaseModel):
     barcode: str | None = Field(default=None, max_length=100)
     purchase_source: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=2000)
+    bin_id: str | None = Field(default=None, max_length=36)
+    container: str | None = Field(default=None, max_length=200)
+    reorder_point: int | None = Field(default=None, ge=0, le=100000)
+    identity_confirmed: bool | None = None
 
 
 class UpdateItemResponse(BaseModel):
@@ -144,6 +151,8 @@ class ExtractedInventoryItem(BaseModel):
     source_frame_url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=2000)
     location: str | None = Field(default=None, max_length=200)
+    bin_id: str | None = Field(default=None, max_length=36)
+    container: str | None = Field(default=None, max_length=200)
     catalog_match: VerifiedCatalogMatch | None = None
     scan_evidence: ScanEvidence | None = None
 

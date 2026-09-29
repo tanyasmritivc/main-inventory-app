@@ -129,7 +129,7 @@ class _LimitSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'FindEZ Team covers your whole robotics team — learn more at findez.ai',
+                  'FindEZ Team covers your whole robotics team - learn more at findez.ai',
                   style: TextStyle(
                     color: AppTheme.textMuted(context),
                     fontSize: 13,

@@ -19,28 +19,22 @@ scans/mo. Some steps below deliberately test those limits.
 
 Delete the app completely, reinstall, sign up with a new email.
 
-**Pass:** onboarding runs, then the tutorial runs to completion.
-Every step has something to point at, and "Skip" is visible and
-tappable at every step.
+**Pass:** a brief introduction appears before account entry on a fresh install.
+After sign-up, the user can open inventory or choose an optional first photo.
+There is no required scan or tutorial.
 
 **Watch for:**
 
-- A dark screen with no card and no way out. That is the tutorial
-  targeting a widget that does not exist — the exact case with zero
-  spaces. Steps pointing at a space card should be skipped, not
-  shown empty.
-- "Skip" overlapping the icon underneath it — it should sit inside
-  the tooltip card, not float over the app bar.
-- On the chat step, the highlight ring should hug the input field.
-  If it sits low or is too tall, the hole was measured before the
-  layout settled.
+- A screen that stays on the launch logo. Release builds must include the
+  compile-time configuration check in `TESTING.md` and reach account entry.
+- An optional first photo that cannot be skipped or recovered after a failure.
 - The keyboard appearing and refusing to dismiss.
 
 ---
 
 ## 2. Inventory loads and stays loaded
 
-Open the inventory tab. Switch to chat and back. Do that **six
+Open Places. Switch to Ask and back. Do that **six
 times**.
 
 **Pass:** the same spaces appear every single time.
@@ -62,8 +56,7 @@ Create a space called `Test Workshop`. Add one item each way:
 - via chat: `add 3 HDMI cables to Test Workshop`
 - via scan (barcode or photo)
 
-**Pass:** all three appear in the space, and the space card shows
-**3 items**.
+**Pass:** all three appear in the place, and its row shows **3 objects**.
 
 **Watch for:** the card showing a lower count than the list inside
 it. That means `space_id` was not set on some items — a count query
@@ -78,7 +71,7 @@ so those are the likelier culprits.
 Create a space called `Empty Test`. Add nothing. Leave the page, go
 to chat, come back.
 
-**Pass:** `Empty Test` is still there, showing "0 items".
+**Pass:** `Empty Test` is still there, showing a count of `0`.
 
 **Watch for:** it disappearing. That would mean spaces are still
 being derived from item locations rather than read from the spaces
@@ -169,7 +162,7 @@ upgrade sheet.
 
 ## 9. Backend health, over time
 
-This one is not a single check — watch the Render logs across the
+This one is not a single check - watch the self-hosted FastAPI logs across the
 whole session and for a day of normal use.
 
 **Pass:** no `[Errno 11] Resource temporarily unavailable`, no
@@ -193,13 +186,12 @@ Import `test-data/import-samples/01-clean-baseline.xlsx`.
 **Pass:** 20 items land in the chosen space with correct names,
 categories and quantities.
 
-Then try `02-ftc-parts-gobilda.xlsx`.
+Then try `02-ftc-parts-gobilda.xlsx` and a CSV or JSON inventory.
 
-**Watch for:** 1000 rows attempted instead of 26 (trusting
-`max_row`), or 28 columns instead of 9. The importer currently
-takes `rows[0]` as the header unconditionally, so `03` and `05`
-are expected to fail — that is known, not a regression. Note what
-happens so the behaviour is at least loud rather than silent.
+**Watch for:** 1000 rows attempted instead of 26 (trusting `max_row`),
+or 28 columns instead of 9. Common Name, Description, Quantity, and Part
+Number headers should map locally without waiting for the language gateway.
+Record the outcome of unusual layouts instead of assuming they work.
 
 ---
 
@@ -214,5 +206,4 @@ annoying but not dangerous.
 
 Section 9 needs a day, not a session.
 
-Section 10 is a known-incomplete feature; record the behaviour and
-move on.
+Section 10 needs a live import timing and field-mapping check.

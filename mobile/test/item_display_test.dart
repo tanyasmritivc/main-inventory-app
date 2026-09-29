@@ -31,4 +31,19 @@ void main() {
     );
     expect(inventoryItem.displayDescription, isNull);
   });
+
+  test('item timestamps without a zone are read as UTC', () {
+    final parsed = InventoryItem.fromJson({
+      'item_id': 'item-2',
+      'name': 'Screwdriver',
+      'category': 'Tools',
+      'quantity': 1,
+      'location': 'Cabinet',
+      'created_at': '2026-09-28T05:22:39.14675',
+    });
+
+    expect(parsed.createdAt.isUtc, isTrue);
+    expect(parsed.createdAt.hour, 5);
+    expect(parsed.createdAt.day, 28);
+  });
 }

@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
-import '../../core/low_stock_prefs.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
@@ -16,9 +15,9 @@ import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
-import '../scan/import_sheet_page.dart';
-import '../scan/bom_readiness_page.dart';
-import '../scan/project_kits_page.dart';
+import '../import/import_sheet_page.dart';
+import '../projects/bom_readiness_page.dart';
+import '../projects/project_kits_page.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import '../showcase/tutorial_controller.dart';
@@ -137,12 +136,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      final results = await Future.wait([
-        widget.api.getShareInventory(widget.shareId),
-        LowStockPrefs.loadAll(),
-      ]);
-      final raw = results[0] as List<dynamic>;
-      final thresholds = results[1] as Map<String, int>;
+      final raw = await widget.api.getShareInventory(widget.shareId);
+      final thresholds = {
+        for (final item in raw)
+          if (InventoryItem.fromJson(item).reorderPoint case final int point
+              when point > 0)
+            (item['item_id'] ?? '').toString(): point,
+      };
       if (!mounted) return;
       setState(() {
         _items = raw.cast<Map<String, dynamic>>();
@@ -578,10 +578,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Future<void> _showItemDetail(Map<String, dynamic> item) async {
     // Convert the shared-space Map to a typed InventoryItem so we can open
     // the same comprehensive detail sheet used in personal spaces.
-    // Note: GET /sharing/{shareId}/inventory may omit `tags` — if so the
+    // Note: GET /sharing/{shareId}/inventory may omit `tags` - if so the
     // Tags section simply won't render (backend gap, not faked here).
     final invItem = InventoryItem.fromJson(item);
-    final threshold = (await LowStockPrefs.loadAll())[invItem.itemId];
+    final threshold = invItem.reorderPoint;
     if (!mounted) return;
     await showItemDetailSheet(
       context,
@@ -619,10 +619,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (result == null) return;
     try {
       await widget.api.updateItem(request: result.update);
-      await LowStockPrefs.setThreshold(
-        itemId: invItem.itemId,
-        threshold: result.threshold,
-      );
       if (!mounted) return;
       _load();
     } catch (_) {
@@ -654,7 +650,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (ok != true) return;
     try {
       await widget.api.deleteItem(itemId: item.itemId);
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: null);
       if (!mounted) return;
       _load();
     } catch (_) {
@@ -1212,7 +1207,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _addItem();
       case 'Upload Photo':
         _uploadPhoto();
-      case 'Import Spreadsheet':
+      case 'Import file':
         _importSpreadsheet();
       case 'Build Readiness':
         _openBuildReadiness();
@@ -1764,7 +1759,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   const SizedBox(height: 2),
                   Text(
                     overdue
-                        ? '⚠ Overdue — due ${_timeAgo(dueBackAt)}'
+                        ? '⚠ Overdue - due ${_timeAgo(dueBackAt)}'
                         : 'Due ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
                       color: overdue
@@ -2103,15 +2098,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   String _buildShoppingShareText(List<_SpaceShoppingItem> items) {
     final buf = StringBuffer();
-    buf.writeln('🛒 ${widget.shareName} — Shopping List');
+    buf.writeln('🛒 ${widget.shareName} - Shopping List');
     for (final si in items) {
       final name = (si.item['name'] ?? '').toString();
       final part = si.item['part_number']?.toString().trim() ?? '';
       final brand = si.item['brand']?.toString();
       final primary = part.isNotEmpty ? part : name;
-      final description = part.isNotEmpty ? ' — $name' : '';
+      final description = part.isNotEmpty ? ' - $name' : '';
       buf.writeln(
-        '  • $primary$description${brand != null ? ' — $brand' : ''}',
+        '  • $primary$description${brand != null ? ' - $brand' : ''}',
       );
       buf.writeln('    Qty: ${si.suggestedQty}  |  ${si.reason}');
     }
@@ -2173,10 +2168,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             itemBuilder: (_) => [
               if (widget.permission == 'edit')
                 const PopupMenuItem(
-                  value: 'Import Spreadsheet',
+                  value: 'Import file',
                   child: ListTile(
                     leading: Icon(Icons.table_chart_outlined),
-                    title: Text('Import Spreadsheet'),
+                    title: Text('Import file'),
                   ),
                 ),
               const PopupMenuItem(

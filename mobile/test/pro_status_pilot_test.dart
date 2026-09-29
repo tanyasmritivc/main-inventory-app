@@ -64,7 +64,7 @@ void main() {
     ProStatus.reset();
   });
 
-  group('ProStatus — pilot mode active', () {
+  group('ProStatus - pilot mode active', () {
     test('isPilotMode is true after refresh with pilot_mode=true', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
       expect(ProStatus.isPilotMode, isTrue);
@@ -82,7 +82,7 @@ void main() {
       expect(ProStatus.pilotNotice, contains('September 12'));
     });
 
-    test('isPro is false — pilot is not a paid tier', () async {
+    test('isPro is false - pilot is not a paid tier', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
       expect(ProStatus.isPro, isFalse);
     });
@@ -114,7 +114,7 @@ void main() {
       expect(ProStatus.pilotNotice, 'Cached notice text');
     });
 
-    test('API failure falls back to cached pilot values — never shows paywall', () async {
+    test('API failure falls back to cached pilot values - never shows paywall', () async {
       SharedPreferences.setMockInitialValues({
         'plan_tier': 'free',
         'pilot_mode': true,
@@ -137,7 +137,7 @@ void main() {
     });
   });
 
-  group('ProStatus — pilot mode inactive', () {
+  group('ProStatus - pilot mode inactive', () {
     test('isPilotMode is false when pilot_mode=false', () async {
       await ProStatus.refresh(_StubApi(_nonPilotPayload()));
       expect(ProStatus.isPilotMode, isFalse);
@@ -171,7 +171,7 @@ void main() {
     });
   });
 
-  group('ProStatus — reset', () {
+  group('ProStatus - reset', () {
     test('reset clears all pilot fields', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
       ProStatus.reset();

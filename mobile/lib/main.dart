@@ -8,19 +8,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
 import 'core/app_theme.dart';
+import 'core/theme_preference.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
 import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/visual_surfaces.dart';
 import 'core/ui/launch_loading_screen.dart';
-import 'features/auth/auth_page.dart';
 import 'features/auth/password_recovery_page.dart';
+import 'features/auth/auth_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
+import 'features/onboarding/first_launch_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
-import 'features/scan/shared_spreadsheet_page.dart';
+import 'features/import/shared_spreadsheet_page.dart';
 import 'features/teams/team_workspace_page.dart';
 
 Future<void> main() async {
@@ -47,26 +49,123 @@ Future<void> main() async {
     return;
   }
 
-  AppConfig.validate();
-  await ProStatus.loadCached();
-  await LowStockNotifications.initialize();
+  runApp(_StartupGate(launchMode: launchMode));
+}
 
-  await Supabase.initialize(
-    url: AppConfig.supabaseUrl,
-    anonKey: AppConfig.supabaseAnonKey,
-  );
+class _StartupGate extends StatefulWidget {
+  const _StartupGate({required this.launchMode});
 
-  if (launchMode == 1) {
-    runApp(
-      const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
-      ),
-    );
-    return;
+  final int launchMode;
+
+  @override
+  State<_StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<_StartupGate> {
+  bool _ready = false;
+  bool _loading = true;
+  bool _configurationError = false;
+  Future<Supabase>? _supabaseInitialization;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_initialize());
   }
 
-  runApp(const MyApp());
+  Future<void> _initialize() async {
+    setState(() => _loading = true);
+    try {
+      AppConfig.validate();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _configurationError = true;
+          _loading = false;
+        });
+      }
+      return;
+    }
+    try {
+      _supabaseInitialization ??= Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+      );
+      await _supabaseInitialization!.timeout(const Duration(seconds: 20));
+      // Local preferences and notification setup must not prevent account entry.
+      await Future.wait([
+        ProStatus.loadCached().catchError((Object _) {}),
+        ThemePreference.load().catchError((Object _) {}),
+        LowStockNotifications.initialize().catchError((Object _) {}),
+      ]).timeout(const Duration(seconds: 8), onTimeout: () => []);
+      if (mounted) {
+        setState(() {
+          _ready = true;
+          _loading = false;
+        });
+      }
+    } catch (error) {
+      if (error is! TimeoutException) _supabaseInitialization = null;
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_ready) {
+      if (widget.launchMode == 1) {
+        return const MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
+        );
+      }
+      return const MyApp();
+    }
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_loading) const CircularProgressIndicator(),
+                  const SizedBox(height: 20),
+                  Text(
+                      _loading
+                          ? 'Opening FindEZ'
+                          : _configurationError
+                          ? 'Update FindEZ'
+                          : 'Could not start FindEZ',
+                    style: const TextStyle(fontSize: 22),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (!_loading) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _configurationError
+                          ? 'Install the latest version to continue.'
+                          : 'Try again or reopen the app.',
+                      textAlign: TextAlign.center,
+                    ),
+                    if (!_configurationError) ...[
+                      const SizedBox(height: 18),
+                      FilledButton(
+                        onPressed: _initialize,
+                        child: const Text('Try again'),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -268,25 +367,25 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      scaffoldMessengerKey: _messengerKey,
-      debugShowCheckedModeBanner: false,
-      title: 'FindEZ',
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(boldText: false),
-          child: GestureDetector(
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemePreference.mode,
+      builder: (context, themeMode, _) => MaterialApp(
+        navigatorKey: _navigatorKey,
+        scaffoldMessengerKey: _messengerKey,
+        debugShowCheckedModeBanner: false,
+        title: 'FindEZ',
+        builder: (context, child) {
+          return GestureDetector(
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             behavior: HitTestBehavior.translucent,
             child: child ?? const SizedBox.shrink(),
-          ),
-        );
-      },
-      themeMode: ThemeMode.system,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      home: _SplashGate(api: _api),
+          );
+        },
+        themeMode: themeMode,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        home: _SplashGate(api: _api),
+      ),
     );
   }
 }
@@ -432,33 +531,33 @@ class _AuthGateState extends State<_AuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
   bool _previewDismissed = false;
-  Future<bool>? _onboardingCompletedFuture;
-  String? _onboardingFutureForUserId;
+  Future<bool>? _firstLaunchFuture;
+  bool _firstLaunchDismissed = false;
+  bool _initialSignup = false;
 
   void _bump() {
-    setState(() {
-      _refresh++;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-    });
+    setState(() => _refresh++);
   }
 
-  void _ensureOnboardingFuture() {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (_onboardingCompletedFuture == null) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-      return;
-    }
-
-    if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+  Future<void> _finishFirstLaunch({required bool createAccount}) async {
+    try {
+      await OnboardingPrefs.markFirstLaunchSeen();
+      if (!mounted) return;
+      setState(() {
+        _firstLaunchDismissed = true;
+        _initialSignup = createAccount;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not continue: $error')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // acceptable: no hasError branch on the auth stream — Supabase's
+    // acceptable: no hasError branch on the auth stream - Supabase's
     // onAuthStateChange stream does not emit errors in practice; any
     // auth failure surfaces as a signed-out event instead.
     return StreamBuilder<AuthState>(
@@ -467,6 +566,7 @@ class _AuthGateState extends State<_AuthGate> {
         if (_previewOnboarding && !_previewDismissed) {
           return AppSurfaceBackground(
             child: OnboardingPage(
+              api: widget.api,
               saveFirstSpace: false,
               onFinished: () => setState(() => _previewDismissed = true),
             ),
@@ -478,10 +578,20 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppSurfaceBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          if (!_firstLaunchDismissed) {
+            _firstLaunchDismissed = true;
+            _firstLaunchFuture = Future<bool>.value(false);
+            unawaited(
+              OnboardingPrefs.markFirstLaunchSeen().catchError(
+                (Object error) =>
+                    debugPrint('Could not save first launch state: $error'),
+              ),
+            );
+          }
           // If the stream just delivered the initial cached session AND the
           // access token is already expired, Supabase is attempting a
           // background refresh. Show loading instead of MainShell so we
-          // don't fire API calls with a stale token — the stream will fire
+          // don't fire API calls with a stale token - the stream will fire
           // again with either AuthChangeEvent.tokenRefreshed or .signedOut.
           final isInitialStaleSession =
               snapshot.data?.event == AuthChangeEvent.initialSession &&
@@ -493,45 +603,25 @@ class _AuthGateState extends State<_AuthGate> {
           }
           return AppSurfaceBackground(child: MainShell(api: widget.api));
         }
-
-        _ensureOnboardingFuture();
+        if (_firstLaunchDismissed) {
+          return AppSurfaceBackground(
+            child: AuthPage(
+              key: ValueKey(_refresh),
+              onAuthChanged: _bump,
+              initialSignup: _initialSignup,
+            ),
+          );
+        }
+        _firstLaunchFuture ??= OnboardingPrefs.shouldShowFirstLaunch();
         return AppSurfaceBackground(
           child: FutureBuilder<bool>(
-            key: ValueKey(_refresh),
-            future: _onboardingCompletedFuture,
-            builder: (context, onboardingSnap) {
-              if (onboardingSnap.hasError) {
-                return Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Something went wrong.',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _bump,
-                          child: const Text(
-                            'Retry',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+            future: _firstLaunchFuture,
+            builder: (context, firstLaunch) {
+              if (!firstLaunch.hasData && !firstLaunch.hasError) {
+                return const LaunchLoadingScreen();
               }
-              if (!onboardingSnap.hasData) {
-                return const LaunchLoadingScreen(
-                  message: 'Getting things ready…',
-                );
-              }
-              final completed = onboardingSnap.data ?? false;
-              if (!completed) {
-                return OnboardingPage(onFinished: _bump);
+              if (firstLaunch.data == true) {
+                return FirstLaunchPage(onContinue: _finishFirstLaunch);
               }
               return AuthPage(onAuthChanged: _bump);
             },

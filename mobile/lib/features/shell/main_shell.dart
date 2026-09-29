@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -20,25 +19,31 @@ import '../documents/documents_page.dart';
 import '../home/home_dashboard.dart';
 import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
+import '../inventory/labels_page.dart';
+import '../inventory/world_views.dart';
+import '../import/import_sheet_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
-import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
-import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
-import '../scan/project_kits_page.dart';
+import '../projects/project_kits_page.dart';
 import '../sharing/sharing_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../teams/teams_page.dart';
-import '../teams/team_workspace_page.dart';
+import '../teams/workspaces_page.dart';
 import '../profile/settings_page.dart';
 import 'more_page.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.api});
+  const MainShell({
+    super.key,
+    required this.api,
+    this.enablePushNotifications = true,
+  });
 
   final ApiClient api;
+  final bool enablePushNotifications;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -49,20 +54,26 @@ class _MainShellState extends State<MainShell> {
   StreamSubscription<AuthState>? _authSub;
   int _currentPage = 0;
   int _inventoryRefreshToken = 0;
+  CaptureMode? _captureRequest;
+  int _captureRequestSerial = 0;
   int _homeRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
-  VoidCallback? _resetChatCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
-  bool _hasActiveChat = false;
   int _notificationCount = 0;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
   double _pageOpacity = 1;
   int _pageTransitionGeneration = 0;
+  late ApiClient _activeApi;
+  List<Map<String, dynamic>> _workspaces = const [];
+  String? _workspaceId;
+  String _workspaceName = '';
+  bool _workspaceLoading = true;
+  bool _workspaceAvailable = false;
 
   Future<void> _prefetchInventoryCache() async {
     try {
-      final result = await widget.api.searchItems(query: '');
+      final result = await _activeApi.searchItems(query: '');
       InventoryCache.setItems(result.items);
     } catch (_) {
       // acceptable: read-only background cache warmup; silently skip if
@@ -89,18 +100,20 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  void _openCaptureMode(CaptureMode mode) {
+    setState(() {
+      _captureRequest = mode;
+      _captureRequestSerial++;
+    });
+    _animateTo(2);
+  }
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
-    unawaited(_prefetchInventoryCache());
-    unawaited(_loadNotificationCount());
-    unawaited(_initializePushNotifications());
-    _notificationTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => unawaited(_loadNotificationCount()),
-    );
-    unawaited(_maybeLaunchTutorial());
+    _activeApi = widget.api;
+    unawaited(_loadWorkspaces());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
     // screen. Without this, zombie widgets outlive their inherited dependencies
@@ -122,40 +135,100 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  Future<void> _loadWorkspaces() async {
+    setState(() {
+      _workspaceLoading = true;
+    });
+    try {
+      final workspaces = await widget.api.listWorkspaces();
+      if (workspaces.isEmpty) throw StateError('No workspace is available.');
+      final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString('active_workspace_$userId');
+      final selected = workspaces.firstWhere(
+        (row) => row['workspace_id'] == savedId,
+        orElse: () => workspaces.firstWhere(
+          (row) => row['kind'] == 'personal',
+          orElse: () => workspaces.first,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _workspaces = workspaces;
+        _workspaceId = selected['workspace_id'].toString();
+        _workspaceName = selected['name'].toString();
+        _activeApi = ApiClient.forWorkspace(
+          widget.api,
+          workspaceId: _workspaceId!,
+        );
+        _workspaceAvailable = true;
+        _workspaceLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _workspaces = const [];
+        _workspaceId = null;
+        _workspaceName = 'Your inventory';
+        _activeApi = widget.api;
+        _workspaceAvailable = false;
+        _workspaceLoading = false;
+      });
+      debugPrint('Workspace switching unavailable: $error');
+    }
+    unawaited(_prefetchInventoryCache());
+    unawaited(_loadNotificationCount());
+    if (widget.enablePushNotifications) {
+      unawaited(_initializePushNotifications());
+    }
+    _notificationTimer ??= Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => unawaited(_loadNotificationCount()),
+    );
+    unawaited(_maybeLaunchTutorial());
+  }
+
+  Future<void> _selectWorkspace(Map<String, dynamic> workspace) async {
+    if (!_workspaceAvailable) return;
+    final id = workspace['workspace_id'].toString();
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('active_workspace_$userId', id);
+    if (!mounted) return;
+    InventoryCache.clear();
+    setState(() {
+      _workspaceId = id;
+      _workspaceName = workspace['name'].toString();
+      _activeApi = ApiClient.forWorkspace(widget.api, workspaceId: id);
+      _captureRequest = null;
+      _captureRequestSerial = 0;
+      _inventoryRefreshToken++;
+      _homeRefreshToken++;
+    });
+    unawaited(_prefetchInventoryCache());
+    unawaited(_loadNotificationCount());
+  }
+
   Future<void> _maybeLaunchTutorial() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
     await _createPendingFirstSpace();
-    final postSignupPending = await OnboardingPrefs.isPostSignupPending();
-    if (OnboardingPrefs.justSignedUp || postSignupPending) {
-      OnboardingPrefs.justSignedUp = false;
-      await OnboardingPrefs.setCoachmarkPending(uid, true);
-      await OnboardingPrefs.setPostSignupPending(false);
-    }
-    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
-    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
-    if (!pending || seen) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await TutorialController.instance.maybeStart(
-        userId: uid,
-        pageController: _pageController,
-        context: context,
-      );
-    });
+    OnboardingPrefs.justSignedUp = false;
+    await OnboardingPrefs.setPostSignupPending(false);
+    await OnboardingPrefs.setCoachmarkPending(uid, false);
   }
 
   Future<void> _createPendingFirstSpace() async {
     final name = await OnboardingPrefs.getPendingFirstSpaceName();
     if (name == null) return;
     try {
-      final spaces = await widget.api.listSpaces();
+      final spaces = await _activeApi.listSpaces();
       final alreadyExists = spaces.any(
         (space) =>
             (space['name'] ?? '').toString().trim().toLowerCase() ==
             name.toLowerCase(),
       );
-      if (!alreadyExists) await widget.api.createSpace(name: name);
+      if (!alreadyExists) await _activeApi.createSpace(name: name);
       await OnboardingPrefs.setPendingFirstSpaceName(null);
       if (!mounted) return;
       setState(() {
@@ -183,29 +256,130 @@ class _MainShellState extends State<MainShell> {
     _animateTo(index, haptic: true);
   }
 
-  Widget _barItem(int index, String label, {Key? key}) {
+  Widget _barItem(int index, String label, IconData icon, {Key? key}) {
     final tokens = AppTokens.of(context);
     final selected = _navigationIndex == index;
     return Expanded(
       child: SizedBox(
         key: key,
-        height: 54,
-        child: TextButton(
-          onPressed: () => _onNavigationTap(index),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            textStyle: Theme.of(context).textTheme.bodySmall,
-            backgroundColor: index == 2
-                ? (selected ? tokens.accent : tokens.accentSoft)
-                : (selected ? tokens.raised : Colors.transparent),
-            foregroundColor: index == 2
-                ? (selected ? tokens.onAccent : tokens.accentText)
-                : (selected ? tokens.ink : tokens.text2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(27),
+        height: 58 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 1.5),
+        child: Semantics(
+          selected: selected,
+          child: TextButton(
+            onPressed: () => _onNavigationTap(index),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              foregroundColor: selected ? tokens.ink : tokens.text2,
+              shape: const RoundedRectangleBorder(),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 21),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Text(label, maxLines: 1),
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomNavigation() {
+    final t = AppTokens.of(context);
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: t.bg,
+          border: Border(top: BorderSide(color: t.separator)),
+        ),
+        child: Row(
+          children: [
+            _barItem(0, 'Home', Icons.home_outlined),
+            _barItem(
+              1,
+              'Ask',
+              Icons.chat_bubble_outline,
+              key: TutorialController.assistTabKey,
+            ),
+            _barItem(
+              2,
+              'Capture',
+              Icons.camera_alt_outlined,
+              key: TutorialController.scanTabKey,
+            ),
+            _barItem(
+              3,
+              'Places',
+              Icons.folder_outlined,
+              key: TutorialController.inventoryIconKey,
+            ),
+            _barItem(
+              4,
+              'More',
+              Icons.more_horiz,
+              key: TutorialController.moreTabKey,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sideNavigation() {
+    final t = AppTokens.of(context);
+    const labels = ['Home', 'Ask', 'Capture', 'Places', 'More'];
+    const icons = [
+      Icons.home_outlined,
+      Icons.chat_bubble_outline,
+      Icons.camera_alt_outlined,
+      Icons.folder_outlined,
+      Icons.more_horiz,
+    ];
+    return SafeArea(
+      right: false,
+      child: Container(
+        width: 96,
+        decoration: BoxDecoration(
+          color: t.card,
+          border: Border(right: BorderSide(color: t.separator)),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          itemCount: labels.length,
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Semantics(
+              selected: _navigationIndex == index,
+              child: TextButton(
+                onPressed: () => _onNavigationTap(index),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(84, 52),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  backgroundColor: _navigationIndex == index
+                      ? t.raised
+                      : Colors.transparent,
+                  foregroundColor: _navigationIndex == index ? t.ink : t.text2,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icons[index], size: 20),
+                    Text(labels[index], textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -213,7 +387,7 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> _loadNotificationCount() async {
     try {
-      final result = await widget.api.getNotifications();
+      final result = await _activeApi.getNotifications();
       if (!mounted) return;
       setState(
         () =>
@@ -234,7 +408,7 @@ class _MainShellState extends State<MainShell> {
           });
         },
       );
-      await PushNotifications.register(widget.api);
+      await PushNotifications.register(_activeApi);
     } catch (error) {
       debugPrint('Push notifications are unavailable: $error');
     }
@@ -249,7 +423,7 @@ class _MainShellState extends State<MainShell> {
         context,
         MaterialPageRoute(
           builder: (_) => NotificationsPage(
-            api: widget.api,
+            api: _activeApi,
             onRead: () {
               if (mounted) setState(() => _notificationCount = 0);
               unawaited(PushNotifications.setBadgeCount(0));
@@ -263,98 +437,45 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Widget _notificationBell() {
-    return TextButton(
-      onPressed: _openNotifications,
-      child: Text(
-        _notificationCount > 0 ? 'Inbox $_notificationCount' : 'Inbox',
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    switch (_currentPage) {
-      case 0:
-      case 4:
-        return const PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: SizedBox.shrink(),
-        );
-      case 3:
-        return AppBar(
-          title: const Text('Find'),
-          actions: [_notificationBell()],
-        );
-      case 2:
-        return AppBar(
-          title: const Text('Capture'),
-          actions: [_notificationBell()],
-        );
-      case 1:
-        return AppBar(
-          title: const Text('Ask FindEZ'),
-          actions: [
-            if (_hasActiveChat)
-              TextButton(
-                onPressed: _resetChatCallback,
-                child: const Text('New'),
-              ),
-            _notificationBell(),
-          ],
-        );
-      default:
-        return AppBar(title: const Text('Find'));
-    }
-  }
-
   Future<void> _openWorkspacePicker() async {
+    if (!_workspaceAvailable) return;
+    try {
+      _workspaces = await widget.api.listWorkspaces();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      return;
+    }
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: widget.api.listTeams(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(describeError(snapshot.error!).$1),
-              );
-            }
-            if (!snapshot.hasData) {
-              return const SizedBox(
-                height: 180,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return ListView(
-              shrinkWrap: true,
-              children: [
-                const ListTile(
-                  title: Text('My inventory'),
-                  subtitle: Text('Personal spaces'),
-                ),
-                for (final team in snapshot.data!)
-                  ListTile(
-                    title: Text((team['name'] ?? 'Team').toString()),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TeamWorkspacePage(
-                            api: widget.api,
-                            initialTeamId: team['team_id']?.toString(),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                if (snapshot.data!.isEmpty)
-                  const ListTile(title: Text('No team workspaces yet')),
-              ],
-            );
-          },
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Text(
+                'Workspaces',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            for (final workspace in _workspaces)
+              ListTile(
+                title: Text(workspace['name'].toString()),
+                subtitle: Text((workspace['kind'] ?? '').toString()),
+                trailing: workspace['workspace_id'] == _workspaceId
+                    ? const Text('Selected')
+                    : null,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_selectWorkspace(workspace));
+                },
+              ),
+          ],
         ),
       ),
     );
@@ -367,7 +488,7 @@ class _MainShellState extends State<MainShell> {
   void _openInventory({String? query}) {
     _openPage(
       InventoryPage(
-        api: widget.api,
+        api: _activeApi,
         refreshToken: _inventoryRefreshToken,
         initialQuery: query,
       ),
@@ -375,44 +496,157 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openProjects() {
-    _openPage(_ProjectLocationsPage(api: widget.api));
+    _openPage(ProjectKitsPage(api: _activeApi));
+  }
+
+  Future<void> _openImport() async {
+    try {
+      final spaces = await _activeApi.listSpaces();
+      if (!mounted) return;
+      String? location;
+      if (spaces.isNotEmpty) {
+        location = await showModalBottomSheet<String>(
+          context: context,
+          showDragHandle: true,
+          builder: (sheetContext) => SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const ListTile(title: Text('Import into which place?')),
+                for (final space in spaces)
+                  ListTile(
+                    title: Text((space['name'] ?? '').toString()),
+                    onTap: () =>
+                        Navigator.pop(sheetContext, space['name'].toString()),
+                  ),
+                ListTile(
+                  title: const Text('New place'),
+                  onTap: () => Navigator.pop(sheetContext, '__new__'),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        location = '__new__';
+      }
+      if (location == null || !mounted) return;
+      if (location == '__new__') {
+        final controller = TextEditingController();
+        final name = await showDialog<String>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Name this place'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Place name'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text.trim()),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        );
+        controller.dispose();
+        if (name == null || name.isEmpty) return;
+        await _activeApi.createSpace(name: name);
+        location = name;
+      }
+      if (!mounted) return;
+      final imported = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImportSheetPage(api: _activeApi, location: location!),
+        ),
+      );
+      if (imported == true && mounted) {
+        setState(() {
+          _homeRefreshToken++;
+          _inventoryRefreshToken++;
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
+  Future<void> _openProfile() async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ProfilePage(api: _activeApi)),
+    );
+    if (mounted) setState(() => _homeRefreshToken++);
   }
 
   void _openMore(String destination) {
     switch (destination) {
       case 'places':
+        _animateTo(3);
       case 'objects':
+        _openPage(AllObjectsPage(api: _activeApi));
       case 'labels':
-        _openInventory();
+        _openPage(
+          LabelsPage(
+            api: _activeApi,
+            onScan: () {
+              Navigator.pop(context);
+              _openCaptureMode(CaptureMode.scan);
+            },
+            onAddPlace: () {
+              Navigator.pop(context);
+              _openInventory();
+            },
+          ),
+        );
       case 'documents':
-        _openPage(DocumentsPage(api: widget.api));
+        _openPage(DocumentsPage(api: _activeApi));
       case 'projects':
         _openProjects();
       case 'supplies':
-        _openPage(ShoppingListPage(api: widget.api));
+        _openPage(ShoppingListPage(api: _activeApi));
       case 'checkouts':
-        _openPage(CheckoutPage(api: widget.api));
+        _openPage(CheckoutPage(api: _activeApi));
       case 'review':
-        _openPage(NeedsIdentifyingPage(api: widget.api));
+        _openPage(NeedsIdentifyingPage(api: _activeApi));
       case 'activity':
-        _openPage(ActivityPage(api: widget.api));
+        _openPage(ActivityPage(api: _activeApi));
       case 'inbox':
         unawaited(_openNotifications());
       case 'workspaces':
-        _openPage(TeamsPage(api: widget.api));
+        if (!_workspaceAvailable) return;
+        _openPage(
+          WorkspacesPage(
+            api: _activeApi,
+            currentWorkspaceId: _workspaceId,
+            onSelect: _selectWorkspace,
+          ),
+        );
+      case 'team-spaces':
+        _openPage(TeamsPage(api: _activeApi));
       case 'sharing':
         _openPage(const SharingPage());
       case 'profile':
-        _openPage(ProfilePage(api: widget.api));
+        unawaited(_openProfile());
       case 'settings':
-        _openPage(const SettingsPage());
+        _openPage(SettingsPage(api: _activeApi));
     }
   }
 
   void _openDecision(int index) {
     switch (index) {
       case 0:
-        _openPage(NeedsIdentifyingPage(api: widget.api));
+        _openPage(NeedsIdentifyingPage(api: _activeApi));
       case 1:
         _openMore('supplies');
       case 2:
@@ -433,7 +667,7 @@ class _MainShellState extends State<MainShell> {
         .toList();
     _openPage(
       LocationItemsPage(
-        api: widget.api,
+        api: _activeApi,
         location: name,
         spaceId: spaceId,
         items: placeItems,
@@ -445,18 +679,45 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_workspaceLoading) {
+      return Scaffold(
+        backgroundColor: AppTokens.of(context).bg,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: GroupedSurface(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Opening your inventory',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final landscape =
+        MediaQuery.sizeOf(context).width > MediaQuery.sizeOf(context).height;
     return Scaffold(
       backgroundColor: AppTokens.of(context).bg,
-      appBar: _buildAppBar(),
-      body: Stack(
+      bottomNavigationBar: landscape || keyboardVisible
+          ? null
+          : _bottomNavigation(),
+      body: Row(
         children: [
-          Positioned.fill(
+          if (landscape && !keyboardVisible) _sideNavigation(),
+          Expanded(
             child: AnimatedOpacity(
               opacity: _pageOpacity,
               duration: const Duration(milliseconds: 140),
               curve: Curves.easeOutCubic,
               child: PageView(
+                key: ValueKey(_workspaceId),
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (index) {
@@ -478,16 +739,21 @@ class _MainShellState extends State<MainShell> {
                 },
                 children: [
                   HomeDashboard(
-                    api: widget.api,
+                    api: _activeApi,
+                    workspaceName: _workspaceName,
+                    workspaceAvailable: _workspaceAvailable,
                     refreshToken: _homeRefreshToken,
                     onAsk: () => _animateTo(1),
                     onDecision: _openDecision,
                     onPlace: _openPlace,
-                    onAllPlaces: () => _openMore('places'),
+                    onAllPlaces: () => _animateTo(3),
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
+                    onCapture: () => _animateTo(2),
+                    onImport: () => unawaited(_openImport()),
+                    onWorkspaces: () => _openMore('workspaces'),
                   ),
                   ChatPage(
-                    api: widget.api,
+                    api: _activeApi,
                     inPageView: true,
                     pageController: _pageController,
                     onInventoryMutated: () {
@@ -497,9 +763,6 @@ class _MainShellState extends State<MainShell> {
                       });
                       unawaited(_prefetchInventoryCache());
                     },
-                    onRegisterReset: (fn) => _resetChatCallback = fn,
-                    onChatStateChanged: (hasMessages) =>
-                        setState(() => _hasActiveChat = hasMessages),
                     onOpenDestination: (hint) async {
                       _animateTo(3);
                       await Future<void>.delayed(
@@ -509,9 +772,11 @@ class _MainShellState extends State<MainShell> {
                     },
                   ),
                   ScanPage(
-                    api: widget.api,
+                    api: _activeApi,
                     isActive: _currentPage == 2,
                     showAppBar: false,
+                    requestedMode: _captureRequest,
+                    modeRequestSerial: _captureRequestSerial,
                     onSaved: () {
                       setState(() {
                         _inventoryRefreshToken++;
@@ -529,13 +794,18 @@ class _MainShellState extends State<MainShell> {
                     onSkipCoachmark: () {},
                   ),
                   InventoryPage(
-                    api: widget.api,
+                    api: _activeApi,
                     refreshToken: _inventoryRefreshToken,
+                    workspaceName: _workspaceName,
                     showAppBar: false,
                     onRegisterOpenAssistDestination: (fn) =>
                         _openAssistDestination = fn,
                   ),
                   MorePage(
+                    api: _activeApi,
+                    refreshToken: _homeRefreshToken,
+                    workspaceName: _workspaceName,
+                    workspaceAvailable: _workspaceAvailable,
                     onOpen: _openMore,
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
                   ),
@@ -543,588 +813,8 @@ class _MainShellState extends State<MainShell> {
               ),
             ),
           ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 8,
-            child: IgnorePointer(
-              ignoring: keyboardVisible,
-              child: AnimatedSlide(
-                offset: keyboardVisible ? const Offset(0, 1.35) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: AnimatedOpacity(
-                  opacity: keyboardVisible ? 0 : 1,
-                  duration: const Duration(milliseconds: 140),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppTokens.of(
-                            context,
-                          ).card.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(
-                            color: AppTokens.of(context).separator,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            _barItem(0, 'Home'),
-                            _barItem(
-                              1,
-                              'Ask',
-                              key: TutorialController.assistTabKey,
-                            ),
-                            _barItem(
-                              2,
-                              'Capture',
-                              key: TutorialController.scanTabKey,
-                            ),
-                            _barItem(
-                              3,
-                              'Find',
-                              key: TutorialController.inventoryIconKey,
-                            ),
-                            _barItem(
-                              4,
-                              'More',
-                              key: TutorialController.moreTabKey,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
-}
-
-// ─── Private helper widgets kept for potential reuse ─────────────────────────
-
-class _ProfileControlCenter extends StatefulWidget {
-  const _ProfileControlCenter();
-
-  @override
-  State<_ProfileControlCenter> createState() => _ProfileControlCenterState();
-}
-
-class _ProfileControlCenterState extends State<_ProfileControlCenter> {
-  TextStyle? _sectionTitleStyle(BuildContext context) {
-    return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
-      fontWeight: FontWeight.w600,
-    );
-  }
-
-  Widget _statRow({required String label, required String value}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Flexible(
-            fit: FlexFit.loose,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.70),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final items = InventoryCache.items;
-    final itemsTracked = items.length;
-
-    final locations = <String>{};
-    for (final it in items) {
-      final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      locations.add(loc.toLowerCase());
-    }
-    final spaces = locations.length;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Your Inventory', style: _sectionTitleStyle(context)),
-        const SizedBox(height: 10),
-        GroupedSurface(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _statRow(label: 'Items tracked', value: '$itemsTracked'),
-              const Divider(height: 1),
-              _statRow(label: 'Spaces', value: '$spaces'),
-              const Divider(height: 1),
-              _statRow(label: 'Scans this week', value: '0'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileSupportSection extends StatelessWidget {
-  const _ProfileSupportSection();
-
-  TextStyle? _sectionTitleStyle(BuildContext context) {
-    return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
-      fontWeight: FontWeight.w600,
-    );
-  }
-
-  Future<void> _launchEmail(BuildContext context, String subject) async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'info@findez.ai',
-      queryParameters: <String, String>{'subject': subject},
-    );
-    try {
-      final can = await canLaunchUrl(uri);
-      if (!context.mounted) return;
-      if (!can) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
-        );
-        return;
-      }
-
-      final ok = await launchUrl(uri);
-      if (!context.mounted) return;
-      if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
-        );
-      }
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open email app.')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Support', style: _sectionTitleStyle(context)),
-        const SizedBox(height: 10),
-        GroupedSurface(
-          padding: const EdgeInsets.all(6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.mail_outline),
-                title: const Text('Send feedback'),
-                onTap: () =>
-                    unawaited(_launchEmail(context, 'FindEZ Feedback')),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.bug_report_outlined),
-                title: const Text('Report a problem'),
-                onTap: () =>
-                    unawaited(_launchEmail(context, 'FindEZ Issue Report')),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// Retained as a legacy fallback while MainShell uses the feature ProfilePage.
-// ignore: unused_element
-class _ProfilePage extends StatelessWidget {
-  const _ProfilePage();
-
-  @override
-  Widget build(BuildContext context) {
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-
-    String emailFallbackName() {
-      final e = email.trim();
-      if (e.isEmpty) return '—';
-      final at = e.indexOf('@');
-      if (at <= 0) return e;
-      return e.substring(0, at);
-    }
-
-    Future<String?> loadFirstName() async {
-      if (userId.isEmpty) return null;
-      try {
-        final res = await Supabase.instance.client
-            .from('profiles')
-            .select('first_name')
-            .eq('id', userId)
-            .maybeSingle();
-        final first = (res?['first_name'] as String?)?.trim();
-        return (first != null && first.isNotEmpty) ? first : null;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Container(
-        color: Colors.black,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              'Account',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Signed in as',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.62),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    FutureBuilder<String?>(
-                      future: loadFirstName(),
-                      builder: (context, snap) {
-                        // acceptable: no hasError branch because emailFallbackName()
-                        // is a safe fallback, so the user still sees their email
-                        // rather than an empty or broken display name.
-                        final name =
-                            (snap.data != null && (snap.data ?? '').isNotEmpty)
-                            ? snap.data!
-                            : emailFallbackName();
-                        return Text(
-                          name,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: -0.1,
-                              ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const _ProfileControlCenter(),
-            const SizedBox(height: 16),
-            Text(
-              'Actions',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    OutlinedButton(
-                      onPressed: () async {
-                        await Supabase.instance.client.auth.signOut();
-                      },
-                      child: const Text('Logout'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Delete Account'),
-                              content: const Text(
-                                'Are you sure you want to permanently delete your account? This action cannot be undone.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                FilledButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (confirmed != true) return;
-
-                        try {
-                          final response = await Supabase
-                              .instance
-                              .client
-                              .functions
-                              .invoke('delete-user');
-
-                          if (response.data == null) {
-                            throw Exception('Failed to delete account');
-                          }
-
-                          final responseData =
-                              response.data as Map<String, dynamic>;
-                          if (responseData['error'] != null) {
-                            throw Exception(
-                              responseData['error'] ??
-                                  'Failed to delete account',
-                            );
-                          }
-
-                          InventoryCache.clear();
-                          await Supabase.instance.client.auth.signOut();
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
-                              ),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text('Delete Account'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const _ProfileSupportSection(),
-            const SizedBox(height: 16),
-            Text(
-              'Legal',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PrivacyPolicyPage(),
-                          ),
-                        );
-                      },
-                      child: const Text('Privacy Policy'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TermsOfServicePage(),
-                          ),
-                        );
-                      },
-                      child: const Text('Terms of Service'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'To delete your account and all associated data,\nemail us at info@findez.ai\nfrom your registered email address.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.75),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectLocationsPage extends StatefulWidget {
-  const _ProjectLocationsPage({required this.api});
-  final ApiClient api;
-
-  @override
-  State<_ProjectLocationsPage> createState() => _ProjectLocationsPageState();
-}
-
-class _ProjectLocationsPageState extends State<_ProjectLocationsPage> {
-  late final Future<List<Map<String, dynamic>>> _spaces = widget.api
-      .listSpaces();
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Projects')),
-    body: FutureBuilder<List<Map<String, dynamic>>>(
-      future: _spaces,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text(describeError(snapshot.error!).$1));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final locations = <String>{
-          'Unsorted',
-          for (final space in snapshot.data!)
-            if ((space['name'] ?? '').toString().trim().isNotEmpty)
-              (space['name'] ?? '').toString().trim(),
-        };
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          children: [
-            Text(
-              'Choose a place to see its project kits.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final name in locations)
-                    ListTile(
-                      title: Text(name),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ProjectKitsPage(api: widget.api, location: name),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
 }

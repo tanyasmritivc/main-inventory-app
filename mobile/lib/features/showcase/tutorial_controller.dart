@@ -95,7 +95,7 @@ class TutorialController {
       icon: Icons.search_rounded,
       title: 'Find anything fast',
       body:
-          'Search every item and space from Inventory — this is the fastest way to find what you own.',
+          'Search every item and space from Inventory - this is the fastest way to find what you own.',
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
@@ -249,7 +249,7 @@ class TutorialController {
         .toList();
 
     if (resolvedSteps.isEmpty) {
-      // Nothing to point at — mark done so we don't reshow on every launch.
+      // Nothing to point at - mark done so we don't reshow on every launch.
       if (!isSpaceStep && _userId.isNotEmpty) {
         SharedPreferences.getInstance().then(
           (prefs) => prefs.setBool('tutorial_done_$_userId', true),
@@ -434,7 +434,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
       await _holeEntryCtrl.forward(from: 0);
       if (mounted) await _fadeCtrl.forward();
 
-      // Re-measure after layout settles — the chat input resizes when
+      // Re-measure after layout settles - the chat input resizes when
       // the keyboard dismisses, which happens after the first frame.
       await Future<void>.delayed(const Duration(milliseconds: 250));
       if (!mounted) return;

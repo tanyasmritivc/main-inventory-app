@@ -46,9 +46,64 @@ class ApiClient {
        _teamId = teamId,
        _teamSpaceId = spaceId;
 
+  ApiClient.forWorkspace(ApiClient source, {required String workspaceId})
+    : _dio = dio.Dio(
+        dio.BaseOptions(
+          baseUrl: source._dio.options.baseUrl,
+          connectTimeout: source._dio.options.connectTimeout,
+          receiveTimeout: source._dio.options.receiveTimeout,
+          headers: {'X-Workspace-Id': workspaceId},
+        ),
+      ),
+      _teamId = null,
+      _teamSpaceId = null {
+    _dio.interceptors.add(
+      dio.InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token =
+              Supabase.instance.client.auth.currentSession?.accessToken;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+  }
+
   final dio.Dio _dio;
   final String? _teamId;
   final String? _teamSpaceId;
+
+  String? get workspaceId => _dio.options.headers['X-Workspace-Id']?.toString();
+  String get captureScopeId =>
+      workspaceId ??
+      (_teamId == null ? 'personal' : 'team:$_teamId:${_teamSpaceId ?? ''}');
+
+  Future<List<Map<String, dynamic>>> listWorkspaces() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/workspaces',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['workspaces'] ?? const []);
+  }
+
+  Future<Map<String, dynamic>> createWorkspace(String name) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/workspaces',
+      data: {'name': name},
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data?['workspace'] ?? const {});
+  }
+
+  Future<Map<String, dynamic>> getWorkspaceDetail(String workspaceId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/workspaces/$workspaceId',
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data ?? const {});
+  }
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -149,13 +204,13 @@ class ApiClient {
   }
 
   Future<List<ProjectKitSummary>> getProjectKits({
-    required String location,
+    String? location,
     String? shareId,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/project-kits',
       queryParameters: {
-        'location': location,
+        if (location != null) 'location': location,
         if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
       },
     );
@@ -330,6 +385,94 @@ class ApiClient {
     final data = res.data ?? {};
     final out = (data['item'] as Map<String, dynamic>? ?? {});
     return InventoryItem.fromJson(out);
+  }
+
+  Future<InventoryItem> uploadItemPhoto({
+    required String itemId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final form = dio.FormData.fromMap({
+      'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/items/$itemId/photo',
+      data: form,
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
+  Future<InventoryItem> setReorderPoint(String itemId, int? point) async {
+    final path = _teamId != null && _teamSpaceId != null
+        ? '/teams/$_teamId/spaces/$_teamSpaceId/items/$itemId'
+        : '/update_item';
+    final res = await _dio.patch<Map<String, dynamic>>(
+      path,
+      data: <String, dynamic>{'item_id': itemId, 'reorder_point': point},
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> itemHistory(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId/history',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['events'] ?? const []);
+  }
+
+  Future<InventoryItem> itemDetail(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId',
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> itemRelationships(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId/relationships',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(
+      res.data?['relationships'] ?? const [],
+    );
+  }
+
+  Future<Map<String, dynamic>> addItemRelationship(
+    String itemId, {
+    required String kind,
+    String? toItemId,
+    String? projectKitId,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/items/$itemId/relationships',
+      data: {
+        'kind': kind,
+        if (toItemId != null) 'to_item': toItemId,
+        if (projectKitId != null) 'project_kit_id': projectKitId,
+      },
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> deleteItemRelationship(
+    String itemId,
+    String relationshipId,
+  ) async {
+    await _dio.delete<void>(
+      '/items/$itemId/relationships/$relationshipId',
+      options: _authOptions(),
+    );
   }
 
   Future<bool> deleteItem({required String itemId}) async {
@@ -1197,16 +1340,27 @@ class ActivityEntry {
     required this.activityId,
     required this.summary,
     required this.createdAt,
+    this.userId,
+    this.eventType,
+    this.metadata = const {},
   });
 
   final String activityId;
   final String summary;
   final DateTime createdAt;
+  final String? userId;
+  final String? eventType;
+  final Map<String, dynamic> metadata;
 
   factory ActivityEntry.fromJson(Map<String, dynamic> json) {
     return ActivityEntry(
       activityId: (json['activity_id'] ?? '').toString(),
       summary: (json['summary'] ?? '').toString(),
+      userId: json['user_id']?.toString(),
+      eventType: json['event_type']?.toString(),
+      metadata: Map<String, dynamic>.from(
+        json['metadata'] is Map ? json['metadata'] as Map : const {},
+      ),
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -1464,6 +1618,17 @@ class BarcodeLookupResult {
 }
 
 class InventoryItem {
+  static DateTime _readCreatedAt(Object? value) {
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) return DateTime.now();
+    // The items.created_at column stores UTC in a timestamp without zone.
+    final hasZone = RegExp(
+      r'(Z|[+-]\d{2}:?\d{2})$',
+      caseSensitive: false,
+    ).hasMatch(raw);
+    return DateTime.tryParse(hasZone ? raw : '${raw}Z') ?? DateTime.now();
+  }
+
   InventoryItem({
     required this.itemId,
     required this.name,
@@ -1482,6 +1647,17 @@ class InventoryItem {
     this.tags,
     this.confidence,
     this.catalogId,
+    this.binId,
+    this.binName,
+    this.container,
+    this.reorderPoint,
+    this.workspaceId,
+    this.workspaceName,
+    this.spaceName,
+    this.identityConfirmed = false,
+    this.identityConfirmationAvailable = true,
+    this.reorderPointAvailable = true,
+    this.namedBy,
   });
 
   final String itemId;
@@ -1500,7 +1676,31 @@ class InventoryItem {
   final List<String>? tags;
   final double? confidence;
   final String? catalogId;
+  final String? binId;
+  final String? binName;
+  final String? container;
+  final int? reorderPoint;
+  final String? workspaceId;
+  final String? workspaceName;
+  final String? spaceName;
+  final bool identityConfirmed;
+  final bool identityConfirmationAvailable;
+  final bool reorderPointAvailable;
+  final String? namedBy;
   final DateTime createdAt;
+
+  bool get needsIdentifying {
+    if (identityConfirmationAvailable) return !identityConfirmed;
+    final normalizedName = name.trim().toLowerCase();
+    return normalizedName.isEmpty ||
+        normalizedName == 'unknown item' ||
+        normalizedName == 'unidentified item' ||
+        (confidence != null &&
+            confidence! < 0.75 &&
+            (catalogId ?? '').isEmpty &&
+            (barcode ?? '').isEmpty &&
+            (partNumber ?? '').isEmpty);
+  }
 
   /// The identifier users scan first in inventory lists. Robotics parts are
   /// commonly organized by part number, so prefer it whenever one is present.
@@ -1538,9 +1738,18 @@ class InventoryItem {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
       catalogId: json['catalog_id']?.toString(),
-      createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.now(),
+      binId: json['bin_id']?.toString(),
+      binName: json['bin_name']?.toString(),
+      container: json['container']?.toString(),
+      reorderPoint: (json['reorder_point'] as num?)?.toInt(),
+      workspaceId: json['workspace_id']?.toString(),
+      workspaceName: json['workspace_name']?.toString(),
+      spaceName: json['space_name']?.toString(),
+      identityConfirmed: json['identity_confirmed'] == true,
+      identityConfirmationAvailable: json.containsKey('identity_confirmed'),
+      reorderPointAvailable: json.containsKey('reorder_point'),
+      namedBy: json['named_by']?.toString(),
+      createdAt: _readCreatedAt(json['created_at']),
     );
   }
 }
@@ -1555,6 +1764,9 @@ class AddItemRequest {
     this.barcode,
     this.purchaseSource,
     this.notes,
+    this.binId,
+    this.container,
+    this.reorderPoint,
   });
 
   final String name;
@@ -1565,6 +1777,9 @@ class AddItemRequest {
   final String? barcode;
   final String? purchaseSource;
   final String? notes;
+  final String? binId;
+  final String? container;
+  final int? reorderPoint;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -1576,6 +1791,9 @@ class AddItemRequest {
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
       if (notes != null) 'notes': notes,
+      if (binId != null) 'bin_id': binId,
+      if (container != null) 'container': container,
+      if (reorderPoint != null) 'reorder_point': reorderPoint,
     };
   }
 }
@@ -1591,6 +1809,10 @@ class UpdateItemRequest {
     this.barcode,
     this.purchaseSource,
     this.notes,
+    this.binId,
+    this.container,
+    this.reorderPoint,
+    this.identityConfirmed,
   });
 
   final String itemId;
@@ -1602,6 +1824,10 @@ class UpdateItemRequest {
   final String? barcode;
   final String? purchaseSource;
   final String? notes;
+  final String? binId;
+  final String? container;
+  final int? reorderPoint;
+  final bool? identityConfirmed;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -1614,6 +1840,10 @@ class UpdateItemRequest {
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
       if (notes != null) 'notes': notes,
+      if (binId != null) 'bin_id': binId,
+      if (container != null) 'container': container,
+      if (reorderPoint != null) 'reorder_point': reorderPoint,
+      if (identityConfirmed != null) 'identity_confirmed': identityConfirmed,
     };
   }
 }
@@ -1636,6 +1866,8 @@ class ExtractedInventoryItem {
     this.barcode,
     this.tags,
     this.confidence,
+    this.imageUrl,
+    this.sourceFrameUrl,
     this.notes,
     this.location,
     this.catalogMatch,
@@ -1651,6 +1883,8 @@ class ExtractedInventoryItem {
   String? barcode;
   List<String>? tags;
   double? confidence;
+  String? imageUrl;
+  String? sourceFrameUrl;
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
@@ -1671,6 +1905,8 @@ class ExtractedInventoryItem {
       confidence: (json['confidence'] is num)
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
+      imageUrl: json['image_url']?.toString(),
+      sourceFrameUrl: json['source_frame_url']?.toString(),
       notes: json['notes']?.toString(),
       location: json['location']?.toString(),
       catalogMatch: json['catalog_match'] is Map<String, dynamic>
@@ -1695,6 +1931,8 @@ class ExtractedInventoryItem {
       if (barcode != null) 'barcode': barcode,
       if (tags != null) 'tags': tags,
       if (confidence != null) 'confidence': confidence,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (sourceFrameUrl != null) 'source_frame_url': sourceFrameUrl,
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
       if (catalogMatch != null)

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import 'shared_inventory_page.dart';
 
 class ShareSpaceSheet extends StatefulWidget {
@@ -672,7 +673,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: AppTokens.dark.card,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),

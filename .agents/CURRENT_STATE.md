@@ -41,10 +41,23 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   reviewed files. A blind pull, reset, or full checkout replacement can destroy work.
 - Numbered migrations alone do not reconstruct the database. The schema baseline
   and live verification are required.
+- Pending workspace migration 038 has no legacy personal/team data backfill before
+  replacing item RLS policies. It must not deploy until the transition and direct
+  JWT isolation acceptance are proven on a disposable copy of the live schema.
 - Three physical release gates remain documented: Google sign-in, Apple sign-in,
   and APNs delivery on a real iPhone. Password recovery also needs a fresh-link
   device check.
 - Offline inventory is not implemented. The mobile cache is memory-only.
+- The mobile rebuild branch now reserves layout space for navigation, presents
+  flatter Home/Places/More rows, respects Bold Text, and has a stubbed iOS
+  simulator navigation suite. Its latest unshipped pass also uses a neutral
+  icon tab bar, compact Ask actions, recent photos instead of photo-less import
+  rows, compact lists for photo-less inventory, a refreshed profile avatar,
+  and a full-page object editor. The new
+  item-photo upload route is tested locally but not deployed. The production VM
+  lacks the route's authorization helper and has an older item-update signature;
+  copying the branch file would overwrite unrelated VM changes. These changes
+  are not in build 28.
 - Low-stock thresholds are stored on one device and do not sync.
 - Two Stripe route families are mounted. The live webhook source and iOS payment
   strategy must be settled before changing pricing or shipping paid digital access.
@@ -54,9 +67,14 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 ## Release status requiring verification
 
-- `mobile/pubspec.yaml` declares `1.0.7+21`. `CLAUDE.md` last confirms TestFlight
-  build 19 as valid; source history contains later build work, but current App Store
-  Connect availability is not proven by the repository.
+- `mobile/pubspec.yaml` declares `1.0.7+28`. Build 27 omitted the required
+  compile-time production configuration and could not render its first frame.
+  Corrected TestFlight build 28 was delivered to App Store Connect on 2026-09-28
+  at 6:20 PM local time and was still processing when last checked.
+- The current rebuild branch passes a compiled release-config check, Flutter
+  analysis, 61 unit/widget tests, the simulator smoke journey, and a no-codesign
+  iOS release build. The full local test suite also passes. This is
+  not physical-device or public-release acceptance.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.

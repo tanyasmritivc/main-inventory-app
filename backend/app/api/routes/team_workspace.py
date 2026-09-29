@@ -244,7 +244,10 @@ def add_team_space_item(
     payload = body.model_dump()
     payload["location"] = space["name"]
     payload["space_id"] = space_id
-    inserted, failures = bulk_create_items(user_id=space["user_id"], items=[payload])
+    inserted, failures = bulk_create_items(
+        user_id=space["user_id"], items=[payload],
+        actor_user_id=user.user_id, cause="manual",
+    )
     if failures or not inserted:
         raise HTTPException(500, "The item could not be added.")
     item = inserted[0]
@@ -268,8 +271,11 @@ def update_team_space_item(
     ).eq("user_id", space["user_id"]).eq("space_id", space_id).limit(1).execute().data or []
     if not exists:
         raise HTTPException(404, "This item is not in the Team Space.")
-    updates = body.model_dump(exclude_none=True, exclude={"item_id", "location"})
-    item = update_item(user_id=space["user_id"], item_id=item_id, updates=updates)
+    updates = body.model_dump(exclude_unset=True, exclude={"item_id", "location"})
+    item = update_item(
+        user_id=space["user_id"], item_id=item_id, updates=updates,
+        actor_user_id=user.user_id,
+    )
     if not item:
         raise HTTPException(500, "The item could not be updated.")
     _record(team_id, user.user_id, "item_updated", f"Updated {item['name']} in {space['name']}", {"space_id": space_id, "item_id": item_id})

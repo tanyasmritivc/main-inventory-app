@@ -63,7 +63,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'The shared spreadsheet could not be opened.';
+        _errorMessage = 'The shared file could not be opened.';
         _state = _ImportState.ready;
       });
       debugPrint('[Import] shared file failed: $error');
@@ -114,11 +114,9 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     final extension = (file.extension ?? file.name.split('.').last)
         .trim()
         .toLowerCase();
-    if (extension != 'xlsx' && extension != 'csv') {
+    if (extension != 'xlsx' && extension != 'csv' && extension != 'json') {
       setState(() {
-        _errorMessage = extension == 'json'
-            ? 'JSON import is not supported yet. Choose an Excel (.xlsx) or CSV file.'
-            : 'Choose an Excel (.xlsx) or CSV file.';
+        _errorMessage = 'Choose an Excel (.xlsx), CSV, or JSON file.';
       });
       return;
     }
@@ -128,7 +126,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     }
     if (file.size > _maxFileBytes) {
       setState(() {
-        _errorMessage = 'Choose a spreadsheet smaller than 10 MB.';
+        _errorMessage = 'Choose a file smaller than 10 MB.';
       });
       return;
     }
@@ -177,9 +175,10 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
-          title: const Text('Import Spreadsheet'),
+          title: const Text('Import inventory'),
           centerTitle: true,
           backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: _state != _ImportState.uploading,
         ),
@@ -195,7 +194,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
               ),
               _ImportState.uploading => _UploadingView(
                 key: const ValueKey('uploading'),
-                filename: _filename ?? 'Spreadsheet',
+                filename: _filename ?? 'File',
                 location: widget.location,
               ),
               _ImportState.success => _SuccessView(
@@ -254,7 +253,7 @@ class _ReadyView extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Import a spreadsheet',
+                'Import an inventory file',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -279,7 +278,7 @@ class _ReadyView extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onChooseFile,
                   icon: const Icon(Icons.folder_open_outlined, size: 20),
-                  label: const Text('Choose Spreadsheet'),
+                  label: const Text('Choose file'),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
@@ -289,7 +288,7 @@ class _ReadyView extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Excel (.xlsx) or CSV · Maximum 10 MB',
+                'Excel (.xlsx), CSV, or JSON. Maximum 10 MB.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12),
               ),

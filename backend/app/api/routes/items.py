@@ -8,8 +8,9 @@ import anyio
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from PIL import Image
+from pydantic import BaseModel, Field
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.core.config import get_settings
 from app.core.errors import bad_gateway, bad_request, service_unavailable
 from app.schemas.inventory import (
@@ -66,6 +67,7 @@ from app.services.find_pipeline import (
 )
 from app.core.limiter import limiter
 from app.services.storage import upload_image
+from app.services.item_relationships_repo import authorized_item
 from app.services.supabase_client import get_supabase_admin
 from app.services.usage_service import (
     FREE_ITEM_LIMIT,
@@ -322,6 +324,7 @@ def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> s
 
 @router.post("/add_item", response_model=AddItemResponse)
 def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> AddItemResponse:
+    require_workspace_write(user)
     limit_check = check_item_limit(user.user_id)
     if not limit_check["allowed"]:
         raise HTTPException(
@@ -337,12 +340,18 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
     try:
         item_dict = payload.model_dump()
         location = (item_dict.get("location") or "").strip()
-        target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
-        _check_not_viewer_for_team_write(user.user_id, target_user_id)
-        created = add_item(user_id=target_user_id, item=item_dict)
+        target_user_id = user.user_id if user.workspace_id else _resolve_owner_for_joined_space(user.user_id, location)
+        if not user.workspace_id:
+            _check_not_viewer_for_team_write(user.user_id, target_user_id)
+        created = add_item(
+            user_id=target_user_id, item=item_dict, actor_user_id=user.user_id,
+            workspace_id=user.workspace_id,
+        )
         return AddItemResponse(item=created)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @router.post("/search_items", response_model=SearchItemsResponse)
@@ -356,12 +365,13 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
             parsed = parse_search_query_to_keywords(query=raw_query)
         q = (parsed.get("text") or raw_query).strip()
 
-        items = search_items_basic(user_id=user.user_id, q=q)
+        items = search_items_basic(user_id=user.user_id, q=q, workspace_id=user.workspace_id)
 
         # When the NL parser rewrites the query (e.g. strips "PN-" from "PN-F156"),
         # also search the raw text so identifier-like codes are never lost.
         if raw_query and q.lower() != raw_query.lower():
-            raw_items = search_items_basic(user_id=user.user_id, q=raw_query)
+            raw_items = search_items_basic(user_id=user.user_id, q=raw_query,
+                                           workspace_id=user.workspace_id)
             items = _merge_by_item_id(items, raw_items)
 
         category = parsed.get("category")
@@ -376,6 +386,7 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
                 user_id=user.user_id,
                 summary=f"Searched inventory: {payload.query}",
                 metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
+                workspace_id=user.workspace_id,
                             )
         except Exception:
             logger.exception("Failed to write search activity")
@@ -391,24 +402,90 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
 
 @router.delete("/delete_item", response_model=DeleteItemResponse)
 def delete_item_route(item_id: str, user: AuthenticatedUser = Depends(get_current_user)) -> DeleteItemResponse:
-    ok = delete_item(user_id=user.user_id, item_id=item_id)
+    require_workspace_write(user)
+    ok = delete_item(user_id=user.user_id, item_id=item_id,
+                     workspace_id=user.workspace_id)
     return DeleteItemResponse(deleted=ok)
 
 
 @router.patch("/update_item", response_model=UpdateItemResponse)
 def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> UpdateItemResponse:
+    require_workspace_write(user)
     try:
-        updates = payload.model_dump(exclude_none=True)
+        updates = payload.model_dump(exclude_unset=True)
         item_id = str(updates.pop("item_id"))
-        updated = update_item(user_id=user.user_id, item_id=item_id, updates=updates)
+        updated = update_item(
+            user_id=user.user_id, item_id=item_id, updates=updates,
+            actor_user_id=user.user_id,
+            cause="barcode" if updates.get("barcode") else "manual",
+            workspace_id=user.workspace_id,
+        )
         if not updated:
             raise bad_request("No updates applied")
         return UpdateItemResponse(item=updated)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
+
+
+@router.post("/items/{item_id}/photo", response_model=UpdateItemResponse)
+@limiter.limit("10/minute")
+async def upload_item_photo_route(
+    request: Request,
+    item_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> UpdateItemResponse:
+    require_workspace_write(user)
+    try:
+        authorized_item(
+            user_id=user.user_id,
+            item_id=item_id,
+            write=True,
+            selected_workspace_id=user.workspace_id,
+        )
+    except (LookupError, ValueError) as exc:
+        raise HTTPException(404, "Object not found") from exc
+
+    raw = await file.read(10 * 1024 * 1024 + 1)
+    if not raw or len(raw) > 10 * 1024 * 1024:
+        raise HTTPException(400, "Choose a photo smaller than 10 MB.")
+    try:
+        image = Image.open(io.BytesIO(raw))
+        if image.width * image.height > 25_000_000:
+            raise ValueError("Image too large")
+        image.load()
+        image.thumbnail((2048, 2048))
+        output = io.BytesIO()
+        image.convert("RGB").save(output, format="JPEG", quality=84)
+    except Exception as exc:
+        raise HTTPException(400, "Choose a valid photo.") from exc
+
+    try:
+        stored = upload_image(
+            user_id=user.user_id,
+            filename=f"object-{item_id}-{uuid4().hex}.jpg",
+            content=output.getvalue(),
+        )
+        updated = update_item(
+            user_id=user.user_id,
+            item_id=item_id,
+            updates={"image_url": stored.url},
+            actor_user_id=user.user_id,
+            workspace_id=user.workspace_id,
+        )
+        if not updated:
+            raise LookupError("Object not found")
+        return UpdateItemResponse(item=updated)
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
+    except Exception as exc:
+        logger.exception("Could not attach object photo")
+        raise service_unavailable("Photo could not be saved. Try again.") from exc
 
 
 @router.post("/extract_from_image", response_model=ExtractFromImageResponse)
@@ -571,6 +648,7 @@ async def inventory_extract_from_image_route(
             user_id=user.user_id,
             summary=f"Scanned image for inventory items ({len(items)} detected)",
             metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
+            workspace_id=user.workspace_id,
                     )
     except Exception:
         logger.exception("Failed to write scan activity")
@@ -583,6 +661,7 @@ def inventory_bulk_create_route(
     payload: BulkCreateRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BulkCreateResponse:
+    require_workspace_write(user)
     items_to_insert = [i.model_dump() for i in payload.items]
     if not is_pro_user(user.user_id):
         try:
@@ -608,16 +687,23 @@ def inventory_bulk_create_route(
         if loc:
             bulk_location = loc
             break
-    target_user_id = _resolve_owner_for_joined_space(user.user_id, bulk_location)
+    target_user_id = user.user_id if user.workspace_id else _resolve_owner_for_joined_space(user.user_id, bulk_location)
 
     try:
-        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
+        inserted, failures = bulk_create_items(
+            user_id=target_user_id, items=items_to_insert,
+            actor_user_id=user.user_id,
+            workspace_id=user.workspace_id,
+        )
+        from app.services.item_relationships_repo import seed_capture_relationships
+        seed_capture_relationships(user_id=user.user_id, items=inserted)
 
         try:
             create_activity(
                 user_id=user.user_id,
                 summary=f"Saved {len(inserted)} scanned items to inventory",
                 metadata={"type": "bulk_create", "inserted": len(inserted), "failures": len(failures)},
+                workspace_id=user.workspace_id,
                             )
         except Exception:
             logger.exception("Failed to write bulk create activity")
@@ -626,6 +712,8 @@ def inventory_bulk_create_route(
     except httpx.HTTPError:
         logger.exception("Upstream error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except Exception:
         logger.exception("Unhandled error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")
@@ -668,9 +756,12 @@ async def barcode_lookup_route(
     )
     if _UUID_RE.match(barcode):
         client = get_supabase_admin()
-        qr_item = client.table("items").select(
+        qr_query = client.table("items").select(
             "item_id, name, quantity, location, category, image_url"
-        ).eq("item_id", barcode).eq("user_id", user.user_id).execute()
+        ).eq("item_id", barcode)
+        qr_query = (qr_query.eq("workspace_id", user.workspace_id)
+                    if user.workspace_id else qr_query.eq("user_id", user.user_id))
+        qr_item = qr_query.execute()
         if qr_item.data:
             d = qr_item.data[0]
             return BarcodeLookupResponse(
@@ -706,9 +797,12 @@ async def barcode_lookup_route(
         )
 
     client = get_supabase_admin()
-    inv_check = client.table("items").select(
+    inv_query = client.table("items").select(
         "item_id, name, quantity, location, category, image_url"
-    ).eq("user_id", user.user_id).in_("barcode", barcode_candidates(barcode)).execute()
+    ).in_("barcode", barcode_candidates(barcode))
+    inv_query = (inv_query.eq("workspace_id", user.workspace_id)
+                 if user.workspace_id else inv_query.eq("user_id", user.user_id))
+    inv_check = inv_query.execute()
     if inv_check.data:
         existing = inv_check.data[0]
         return BarcodeLookupResponse(
@@ -813,11 +907,91 @@ async def barcode_lookup_route(
     )
 
 
+@router.get("/items/{item_id}")
+def get_item_detail_route(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_detail_repo import get_item_detail
+    try:
+        return {"item": get_item_detail(user_id=user.user_id, item_id=item_id,
+                                         selected_workspace_id=user.workspace_id)}
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 @router.get("/items/{item_id}/history")
 def get_item_history(
     item_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    from app.services.item_events_repo import get_events_for_item
-    events = get_events_for_item(user_id=user.user_id, item_id=item_id, limit=50)
+    from app.services.item_events_repo import get_item_history as read_history
+    try:
+        events = read_history(requesting_user_id=user.user_id, item_id=item_id,
+                              selected_workspace_id=user.workspace_id)
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
     return {"events": events}
+
+
+class ItemRelationshipRequest(BaseModel):
+    kind: str = Field(max_length=30)
+    to_item: str | None = Field(default=None, max_length=36)
+    project_kit_id: str | None = Field(default=None, max_length=36)
+
+
+@router.get("/items/{item_id}/relationships")
+def get_item_relationships(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import list_relationships
+    try:
+        return {"relationships": list_relationships(user_id=user.user_id,
+            item_id=item_id, selected_workspace_id=user.workspace_id)}
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.post("/items/{item_id}/relationships")
+def add_item_relationship_route(
+    item_id: str,
+    payload: ItemRelationshipRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import create_relationship
+    require_workspace_write(user)
+    try:
+        return create_relationship(
+            user_id=user.user_id, item_id=item_id, kind=payload.kind,
+            to_item=payload.to_item, project_kit_id=payload.project_kit_id,
+            selected_workspace_id=user.workspace_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.delete("/items/{item_id}/relationships/{relationship_id}")
+def delete_item_relationship_route(
+    item_id: str,
+    relationship_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import delete_relationship
+    require_workspace_write(user)
+    try:
+        delete_relationship(
+            user_id=user.user_id, item_id=item_id, relationship_id=relationship_id,
+            selected_workspace_id=user.workspace_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"deleted": True}

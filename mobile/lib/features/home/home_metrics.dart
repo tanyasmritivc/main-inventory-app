@@ -13,17 +13,8 @@ class HomeMetrics {
   final List<ProjectKitDetail> kits;
   final List<Map<String, dynamic>> checkouts;
 
-  List<InventoryItem> get needsIdentifyingItems => items.where((item) {
-    final name = item.name.trim().toLowerCase();
-    return name.isEmpty ||
-        name == 'unknown item' ||
-        name == 'unidentified item' ||
-        (item.confidence != null &&
-            item.confidence! < 0.75 &&
-            (item.catalogId ?? '').isEmpty &&
-            (item.barcode ?? '').isEmpty &&
-            (item.partNumber ?? '').isEmpty);
-  }).toList();
+  List<InventoryItem> get needsIdentifyingItems =>
+      items.where((item) => item.needsIdentifying).toList();
 
   int get needsIdentifying => needsIdentifyingItems.length;
 

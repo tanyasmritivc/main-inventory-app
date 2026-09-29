@@ -3,7 +3,7 @@ import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.core.limiter import limiter
 from app.services import sharing_service
 from app.services.agent_gateway_client import gateway_completion
@@ -159,11 +159,14 @@ async def analyze_bom_route(
     share_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    target_user_id, target_location = _resolve_analysis_target(
-        requesting_user_id=user.user_id,
-        location=location,
-        share_id=share_id,
-    )
+    if user.workspace_id:
+        target_user_id, target_location = user.user_id, location.strip() or 'Unsorted'
+    else:
+        target_user_id, target_location = _resolve_analysis_target(
+            requesting_user_id=user.user_id,
+            location=location,
+            share_id=share_id,
+        )
     raw = await file.read()
     if not raw:
         raise HTTPException(400, 'The selected file is empty.')
@@ -172,7 +175,8 @@ async def analyze_bom_route(
 
     bom_rows = _parse_bom_rows(raw=raw, filename=(file.filename or '').lower())
     inventory = [
-        item for item in list_items(user_id=target_user_id)
+        item for item in list_items(user_id=target_user_id,
+                                    workspace_id=user.workspace_id)
         if str(item.get('location') or 'Unsorted').strip().lower() == target_location.strip().lower()
     ]
 
@@ -221,13 +225,17 @@ async def import_spreadsheet_route(
     share_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    require_workspace_write(user)
     import json as _json
 
-    target_user_id, target_location = _resolve_import_target(
-        requesting_user_id=user.user_id,
-        location=location,
-        share_id=share_id,
-    )
+    if user.workspace_id:
+        target_user_id, target_location = user.user_id, location.strip() or 'Unsorted'
+    else:
+        target_user_id, target_location = _resolve_import_target(
+            requesting_user_id=user.user_id,
+            location=location,
+            share_id=share_id,
+        )
 
     raw = await file.read(MAX_IMPORT_BYTES + 1)
     try:
@@ -432,7 +440,9 @@ Always include name and quantity."""
     await increment_usage(user.user_id, 'spreadsheet_import')
 
     try:
-        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
+        inserted, failures = bulk_create_items(user_id=target_user_id,
+            items=items_to_insert, actor_user_id=user.user_id,
+            cause='import', workspace_id=user.workspace_id)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
 
@@ -448,6 +458,7 @@ Always include name and quantity."""
                 'location': target_location,
                 'requested_by': user.user_id,
             },
+            workspace_id=user.workspace_id,
         )
     except Exception:
         logger.warning('Spreadsheet import activity logging failed', exc_info=True)

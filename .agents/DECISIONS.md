@@ -79,3 +79,90 @@ edits to the same area. Use a branch or worktree for isolation.
 
 **Implications:** Register active work, inspect git state, keep changes scoped, and
 write a handoff only when another agent must continue unfinished work.
+
+## 2026-09-27: A project link is an object relationship
+
+**Decision:** `item_relationships` uses `to_item` for object links and
+`project_kit_id` for `needed_by` links. A personal item has no Team workspace ID.
+
+**Reasoning:** Project kits are projects, not inventory objects. The existing
+Team workspace model leaves personal items with a null `workspace_id`.
+
+**Implications:** Relationship reads return both directions for object links and
+return project details for project links. Server authorization checks every target.
+
+## 2026-09-27: Keep See unavailable until inference is measured
+
+**Decision:** The authenticated `/vision/observe` endpoint returns a prompt to use
+Photo, and the status endpoint reports unavailable.
+
+**Reasoning:** The local backend has no FIND endpoint for frame embeddings or
+workspace matching and no configured FIND connection. A p50 under 400 ms against a
+real workspace cannot be measured here. The existing photo job takes much longer
+and writes inventory, so it cannot safely serve See.
+
+**Implications:** The mobile See mode must show the unavailable state and let the
+user switch to Photo. Live inference requires a separate measured implementation.
+
+## 2026-09-28: Map common inventory files locally
+
+**Decision:** Import Excel, CSV, and JSON inventory files with deterministic column
+mapping for familiar headers. Use the agent gateway only when the item name column
+cannot be identified locally.
+
+**Reasoning:** A remote model call delayed ordinary imports without adding value
+for headers such as Name, Description, Quantity, or Part Number.
+
+**Implications:** Keep the local header list and import tests current. Unusual
+layouts retain the gateway path. A live large-file timing check is still needed.
+
+## 2026-09-28: Keep first launch short and remove See from mobile
+
+**Decision:** A fresh install shows one brief introduction before account entry.
+Photo capture happens inside the signed-in app. Mobile shows Photo and Scan, without
+See, until a measured live frame inference service exists.
+
+**Reasoning:** An onboarding scan that leads to sign in is confusing, and an
+unavailable camera mode promises a capability users cannot use.
+
+**Implications:** Returning users open account entry or their inventory directly.
+Capture review remains a required decision step and lets users delete wrong
+detections. Photo recognition quality still needs live acceptance.
+
+## 2026-09-28: Places replaces Find in mobile navigation
+
+**Decision:** Use the fourth mobile tab for Places. Keep object search inside the
+Places screen and show owned, shared-by-you, and joined inventory locations in one
+browser.
+
+**Reasoning:** Inventory browsing is a persistent daily destination. A separate
+Find tab duplicated search while pushing the actual inventory hierarchy into More.
+
+**Implications:** Home, Ask navigation hints, and capture handoffs open Places.
+More keeps All objects and inventory utilities but does not duplicate Places.
+
+## 2026-09-28: Reserve layout space for navigation and follow system text settings
+
+**Decision:** Mobile navigation occupies Scaffold layout space in portrait and a
+side rail in landscape. Screens do not add compensating bottom spacers. Respect
+the phone's Bold Text and text scaling settings.
+
+**Reasoning:** The overlay bar obscured final rows, and fixed spacing consumed
+small landscape screens. Forced regular text overrode an accessibility setting.
+
+**Implications:** New screens must remain scrollable to their final action at
+large text sizes. Navigation, Home, Places, and More have widget coverage; the
+iOS simulator smoke suite covers the primary tab journey.
+
+## 2026-09-28: Show photo activity separately from imported inventory
+
+**Decision:** Home's recent strip shows only objects with photos. Photo-less imports
+remain in Places and All objects, where mixed or photo-less sets use compact rows
+instead of empty gallery tiles. Object detail offers Add photo, and editing uses
+a full page rather than a compact dialog.
+
+**Reasoning:** A spreadsheet import should not fill Home with empty thumbnails.
+The full edit page gives fields room at larger text sizes.
+
+**Implications:** The new item-photo API must deploy before shipping this mobile
+build. Recent photos are not a complete activity history.

@@ -4,622 +4,325 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/api_client.dart';
+
 import '../../core/account_preferences.dart';
+import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
+import '../inventory/item_detail_sheet.dart';
+import '../inventory/world_views.dart';
 
 class ShoppingListPage extends StatefulWidget {
-  final ApiClient api;
   const ShoppingListPage({required this.api, super.key});
+  final ApiClient api;
+
   @override
   State<ShoppingListPage> createState() => _ShoppingListPageState();
 }
 
 class _ShoppingListPageState extends State<ShoppingListPage> {
-  List<_ShoppingItem> _items = [];
+  static const _checkedKey = 'shopping_list_checked';
+  List<InventoryItem> _items = const [];
+  Map<String, int> _thresholds = const {};
+  final Set<String> _ordered = {};
   bool _loading = true;
-  final Set<String> _checked = {};
-  static const _kCheckedKey = 'shopping_list_checked';
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _load();
-    _loadChecked();
+    unawaited(_load());
+    unawaited(_loadOrdered());
   }
 
-  Future<void> _loadChecked() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accountKey = accountPreferenceKey(_kCheckedKey);
-    var saved = prefs.getStringList(accountKey);
-    final legacy = prefs.getStringList(_kCheckedKey);
-    if (saved == null &&
-        legacy != null &&
-        !accountKey.endsWith(':signed-out')) {
-      saved = legacy;
-      await prefs.setStringList(accountKey, legacy);
-      await prefs.remove(_kCheckedKey);
+  Future<void> _loadOrdered() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getStringList(accountPreferenceKey(_checkedKey));
+      if (!mounted) return;
+      setState(() => _ordered.addAll(saved ?? const []));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     }
-    if (!mounted) return;
-    setState(() => _checked.addAll(saved ?? const <String>[]));
   }
 
-  Future<void> _saveChecked() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      accountPreferenceKey(_kCheckedKey),
-      _checked.toList(),
-    );
+  Future<void> _toggleOrdered(InventoryItem item) async {
+    final before = Set<String>.from(_ordered);
+    setState(() {
+      if (!_ordered.add(item.itemId)) _ordered.remove(item.itemId);
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = await prefs.setStringList(
+        accountPreferenceKey(_checkedKey),
+        _ordered.toList(),
+      );
+      if (!saved) throw StateError('Could not save the shopping list.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _ordered
+          ..clear()
+          ..addAll(before);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
   }
 
   Future<void> _load() async {
-    if (!mounted) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final result = await widget.api.searchItems(query: '');
-      final thresholds = await LowStockPrefs.loadAll();
-
-      final lowStock = <_ShoppingItem>[];
-
-      for (final item in result.items) {
-        final threshold = thresholds[item.itemId];
-        final isLow =
-            threshold != null && threshold > 0 && item.quantity <= threshold;
-        final isZero = item.quantity <= 0;
-
-        if (isLow || isZero) {
-          final needed = threshold != null && threshold > 0
-              ? (threshold * 2) - item.quantity
-              : 5;
-          lowStock.add(
-            _ShoppingItem(
-              item: item,
-              suggestedQty: needed.clamp(1, 999),
-              reason: isZero
-                  ? 'Out of stock'
-                  : 'Low stock (${item.quantity} left, need $threshold+)',
-            ),
-          );
-        }
-      }
-
-      lowStock.sort((a, b) {
-        if (a.item.quantity <= 0 && b.item.quantity > 0) return -1;
-        if (b.item.quantity <= 0 && a.item.quantity > 0) return 1;
-        return a.item.location.compareTo(b.item.location);
-      });
-
+      final thresholds = await LowStockPrefs.loadAll(widget.api);
       if (!mounted) return;
       setState(() {
-        _items = lowStock;
-        _loading = false;
+        _items = result.items;
+        _thresholds = thresholds;
       });
-    } on dio.DioException catch (e) {
-      if (e.response?.statusCode == 429) {
-        if (mounted) {
-          setState(() => _loading = false);
-          if (!ProStatus.isPro) {
-            showUpgradeSheet(
-              context,
-              widget.api,
-              reason: 'You\'ve reached the free limit.',
-            );
-          } else {
-            debugPrint('FINDEZ: Pro user got 429 — backend bug');
-            unawaited(ProStatus.refresh(widget.api));
-          }
-        }
-        return;
+    } on dio.DioException catch (error) {
+      if (!mounted) return;
+      if (error.response?.statusCode == 429 && !ProStatus.isPro) {
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: 'You have reached the free limit.',
+        );
       }
-      if (mounted) setState(() => _loading = false);
-    } catch (e) {
+      setState(() => _error = describeError(error).$1);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeError(error).$1);
+    } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  String _buildShareText() {
-    final buffer = StringBuffer();
-    buffer.writeln('🛒 FindEZ AI — Shopping List');
-    buffer.writeln('Generated ${DateTime.now().toString().split('.')[0]}');
-    buffer.writeln('');
+  int? _point(InventoryItem item) =>
+      _thresholds[item.itemId] ?? item.reorderPoint;
 
-    final bySpace = <String, List<_ShoppingItem>>{};
-    for (final item in _items) {
-      if (_checked.contains(item.item.itemId)) continue;
-      (bySpace[item.item.location] ??= []).add(item);
+  bool _needsRestock(InventoryItem item) {
+    final point = _point(item);
+    return item.quantity <= 0 ||
+        (point != null && point > 0 && item.quantity < point);
+  }
+
+  int _shortfall(InventoryItem item) {
+    final point = _point(item);
+    if (point == null || point <= 0) return 1;
+    return (point - item.quantity).clamp(1, 999);
+  }
+
+  Future<void> _copyList(List<InventoryItem> needed) async {
+    final text = needed
+        .map(
+          (item) =>
+              '${_shortfall(item)} × ${item.displayName}  ·  ${item.location}',
+        )
+        .join('\n');
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Shopping list copied.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     }
-
-    for (final space in bySpace.keys.toList()..sort()) {
-      buffer.writeln('📦 ${space.toUpperCase()}');
-      for (final si in bySpace[space]!) {
-        final description = si.item.displayDescription != null
-            ? ' — ${si.item.displayDescription}'
-            : '';
-        final brand = si.item.brand != null ? ' — ${si.item.brand}' : '';
-        buffer.writeln('  • ${si.item.displayName}$description$brand');
-        buffer.writeln('    Qty needed: ${si.suggestedQty}  |  ${si.reason}');
-      }
-      buffer.writeln('');
-    }
-
-    return buffer.toString();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final unchecked = _items
-        .where((i) => !_checked.contains(i.item.itemId))
-        .toList();
-    final checkedItems = _items
-        .where((i) => _checked.contains(i.item.itemId))
-        .toList();
-
-    return Scaffold(
-      backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(
-        backgroundColor: AppTheme.bg(context),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: AppTheme.textPrimary(context),
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Shopping List',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        actions: [
-          if (_checked.isNotEmpty)
-            IconButton(
-              icon: const Icon(
-                Icons.clear_all_outlined,
-                color: Colors.white70,
-                size: 20,
-              ),
-              onPressed: () async {
-                setState(() => _checked.clear());
-                await _saveChecked();
-              },
-              tooltip: 'Clear ordered items',
-            ),
-          if (_items.isNotEmpty)
-            IconButton(
-              icon: const Icon(
-                Icons.share_outlined,
-                color: Colors.white70,
-                size: 20,
-              ),
-              onPressed: () {
-                final text = _buildShareText();
-                Clipboard.setData(ClipboardData(text: text));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Shopping list copied to clipboard'),
-                  ),
-                );
-              },
-            ),
-          IconButton(
-            icon: const Icon(
-              Icons.refresh_outlined,
-              color: Colors.white70,
-              size: 20,
-            ),
-            onPressed: _load,
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _items.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _load,
-              color: AppTheme.textPrimary(context),
-              backgroundColor: AppTheme.surface2(context),
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: unchecked.isEmpty
-                          ? const Color(0x0A30D158)
-                          : const Color(0x0AEF4444),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: unchecked.isEmpty
-                            ? const Color(0x3330D158)
-                            : const Color(0x33EF4444),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          unchecked.isEmpty
-                              ? Icons.check_circle_outline
-                              : Icons.shopping_cart_outlined,
-                          color: unchecked.isEmpty
-                              ? const Color(0xFF30D158)
-                              : const Color(0xFFEF4444),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                unchecked.isEmpty
-                                    ? 'All items ordered!'
-                                    : '${unchecked.length} items need restocking',
-                                style: TextStyle(
-                                  color: unchecked.isEmpty
-                                      ? const Color(0xFF30D158)
-                                      : Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              if (unchecked.isNotEmpty)
-                                const Text(
-                                  'Tap items to mark as ordered',
-                                  style: TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (unchecked.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              final text = _buildShareText();
-                              Clipboard.setData(ClipboardData(text: text));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Shopping list copied — paste into WhatsApp, email, or notes',
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                              child: const Text(
-                                'Share',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  if (unchecked.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        'NEEDS RESTOCKING',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.4,
-                        ),
-                      ),
-                    ),
-                    ...unchecked.map(
-                      (si) => _ShoppingItemCard(
-                        shoppingItem: si,
-                        isChecked: false,
-                        onTap: () {
-                          setState(() => _checked.add(si.item.itemId));
-                          _saveChecked();
-                        },
-                        onQtyChanged: (qty) =>
-                            setState(() => si.suggestedQty = qty),
-                      ),
-                    ),
-                  ],
-
-                  if (checkedItems.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        'ORDERED',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.4,
-                        ),
-                      ),
-                    ),
-                    ...checkedItems.map(
-                      (si) => _ShoppingItemCard(
-                        shoppingItem: si,
-                        isChecked: true,
-                        onTap: () {
-                          setState(() => _checked.remove(si.item.itemId));
-                          _saveChecked();
-                        },
-                        onQtyChanged: (qty) =>
-                            setState(() => si.suggestedQty = qty),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.check_circle_outline,
-            color: Color(0xFF30D158),
-            size: 56,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'All stocked up!',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'No items are low on stock.\nSet thresholds on items to track them.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          GestureDetector(
-            onTap: _load,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
-              ),
-              child: const Text(
-                'Refresh',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShoppingItem {
-  final InventoryItem item;
-  int suggestedQty;
-  final String reason;
-  _ShoppingItem({
-    required this.item,
-    required this.suggestedQty,
-    required this.reason,
-  });
-}
-
-class _ShoppingItemCard extends StatelessWidget {
-  final _ShoppingItem shoppingItem;
-  final bool isChecked;
-  final VoidCallback onTap;
-  final ValueChanged<int> onQtyChanged;
-  const _ShoppingItemCard({
-    required this.shoppingItem,
-    required this.isChecked,
-    required this.onTap,
-    required this.onQtyChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final item = shoppingItem.item;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isChecked ? const Color(0x06FFFFFF) : const Color(0xFF171717),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isChecked
-                ? const Color(0xFF171717)
-                : item.quantity <= 0
-                ? const Color(0x33EF4444)
-                : const Color(0x33FBBF24),
-          ),
-        ),
-        child: Row(
+  Future<void> _actions(InventoryItem item) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: isChecked ? const Color(0xFF30D158) : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: isChecked
-                      ? const Color(0xFF30D158)
-                      : const Color(0x40FFFFFF),
+            ListTile(
+              title: const Text('Open object'),
+              onTap: () => Navigator.pop(context, 'open'),
+            ),
+            if (_needsRestock(item))
+              ListTile(
+                title: Text(
+                  _ordered.contains(item.itemId)
+                      ? 'Move back to shopping list'
+                      : 'Mark as ordered',
+                ),
+                onTap: () => Navigator.pop(context, 'ordered'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'ordered') {
+      await _toggleOrdered(item);
+      return;
+    }
+    if (action == 'open') {
+      showItemDetailSheet(
+        context,
+        item: item,
+        api: widget.api,
+        onDeleted: _load,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final needed = _items
+        .where((item) => _needsRestock(item) && !_ordered.contains(item.itemId))
+        .toList();
+    final ordered = _items
+        .where((item) => _needsRestock(item) && _ordered.contains(item.itemId))
+        .toList();
+    needed.sort((a, b) => a.quantity.compareTo(b.quantity));
+    final rows = <(String?, InventoryItem?)>[
+      if (needed.isNotEmpty) (null, null),
+      for (final item in needed) ('needed', item),
+      if (ordered.isNotEmpty) ('ordered-header', null),
+      for (final item in ordered) ('ordered', item),
+    ];
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorldHeader(
+              title: 'Restock list',
+              onBack: () => Navigator.pop(context),
+              actions: [
+                if (needed.isNotEmpty)
+                  TextButton(
+                    onPressed: () => _copyList(needed),
+                    child: const Text('Copy list'),
+                  ),
+              ],
+            ),
+            if (!_loading && _error == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${needed.length} need restocking',
+                    style: TextStyle(
+                      color: t.warn,
+                      fontSize: 15,
+                      fontFamily: 'IBMPlexMono',
+                    ),
+                  ),
                 ),
               ),
-              child: isChecked
-                  ? const Icon(Icons.check, color: Colors.white, size: 14)
-                  : null,
-            ),
-            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.displayName,
-                    style: TextStyle(
-                      color: isChecked ? const Color(0x60FFFFFF) : Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      decoration: isChecked ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: item.quantity <= 0
-                              ? const Color(0x1AEF4444)
-                              : const Color(0x1AFBBF24),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          item.quantity <= 0
-                              ? 'OUT OF STOCK'
-                              : '${item.quantity} left',
-                          style: TextStyle(
-                            color: item.quantity <= 0
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFFFBBF24),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, style: TextStyle(color: t.text2)),
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Try again'),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        item.location,
-                        style: const TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                        ),
-                      ),
-                      if (item.displayDescription != null) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          item.displayDescription!,
-                          style: const TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (!isChecked) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      shoppingItem.reason,
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
-                        fontSize: 11,
-                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: rows.isEmpty
+                          ? ListView(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Text(
+                                    'Nothing needs restocking. Objects with zero stock or below a reorder point appear here.',
+                                    style: TextStyle(
+                                      color: t.text2,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                0,
+                                20,
+                                100,
+                              ),
+                              itemCount: rows.length,
+                              itemBuilder: (context, index) {
+                                final row = rows[index];
+                                if (row.$2 == null) {
+                                  final title = row.$1 == 'ordered-header'
+                                      ? 'Ordered'
+                                      : 'Need restocking';
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      0,
+                                      18,
+                                      0,
+                                      8,
+                                    ),
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        color: t.text2,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final item = row.$2!;
+                                final point = _point(item);
+                                final subtitle = row.$1 == 'ordered'
+                                    ? 'Ordered  ·  ${item.location}'
+                                    : point != null && point > 0
+                                    ? '${item.location}  ·  reorder below $point'
+                                    : '${item.location}  ·  no reorder point';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 1),
+                                  child: Material(
+                                    color: t.card,
+                                    child: WorldRow(
+                                      title: item.displayName,
+                                      subtitle: subtitle,
+                                      count: '${item.quantity}',
+                                      warning: row.$1 == 'needed',
+                                      onTap: () => showItemDetailSheet(
+                                        context,
+                                        item: item,
+                                        api: widget.api,
+                                        onDeleted: _load,
+                                      ),
+                                      onLongPress: () => _actions(item),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
-                  ],
-                ],
-              ),
             ),
-            const SizedBox(width: 8),
-            if (!isChecked)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (shoppingItem.suggestedQty > 1) {
-                        onQtyChanged(shoppingItem.suggestedQty - 1);
-                      }
-                    },
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.remove,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 30,
-                    child: Text(
-                      '${shoppingItem.suggestedQty}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => onQtyChanged(shoppingItem.suggestedQty + 1),
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
           ],
         ),
       ),

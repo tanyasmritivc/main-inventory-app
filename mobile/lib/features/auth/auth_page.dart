@@ -10,9 +10,10 @@ import '../../core/app_theme.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, this.onAuthChanged});
+  const AuthPage({super.key, this.onAuthChanged, this.initialSignup = false});
 
   final VoidCallback? onAuthChanged;
+  final bool initialSignup;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -26,7 +27,7 @@ class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _email;
   late final TextEditingController _password;
 
-  bool _isLogin = true;
+  late bool _isLogin;
   bool _loading = false;
   bool _resending = false;
   String? _error;
@@ -42,6 +43,7 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
+    _isLogin = !widget.initialSignup;
     _firstName = TextEditingController();
     _lastName = TextEditingController();
     _profileRole = TextEditingController();
@@ -287,7 +289,7 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       // Apple only returns given/family name on the very first sign-in ever
-      // for a given user — capture and persist it now before it's lost.
+      // for a given user - capture and persist it now before it's lost.
       final givenName = credential.givenName;
       final familyName = credential.familyName;
       if ((givenName != null && givenName.isNotEmpty) ||
@@ -360,7 +362,7 @@ class _AuthPageState extends State<AuthPage> {
       final googleSignIn = GoogleSignIn(scopes: const ['email']);
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        // User cancelled the native sheet — no error to show.
+        // User cancelled the native sheet - no error to show.
         return;
       }
 
@@ -553,7 +555,7 @@ class _AuthPageState extends State<AuthPage> {
           },
         );
 
-        // Email confirmation required — user created but no active session yet
+        // Email confirmation required - user created but no active session yet
         if (res.session == null && res.user != null) {
           OnboardingPrefs.justSignedUp = false;
           if (!mounted) return;
@@ -693,37 +695,6 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          _isLogin ? 'Welcome back' : 'Welcome',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.4,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'by AI Robots Inc',
-                          style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _isLogin
-                              ? 'Sign in to upload documents and view activity.'
-                              : 'Sign up to start uploading documents.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppTokens.of(
-                                  context,
-                                ).ink.withValues(alpha: 0.60),
-                              ),
-                        ),
-                        const SizedBox(height: 18),
                         if (!_isLogin) ...[
                           TextField(
                             controller: _firstName,
@@ -736,36 +707,6 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: const InputDecoration(
                               labelText: 'First name',
                               counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
                             ),
                             autofillHints: const [AutofillHints.givenName],
                           ),
@@ -781,132 +722,8 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: const InputDecoration(
                               labelText: 'Last name',
                               counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
                             ),
                             autofillHints: const [AutofillHints.familyName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _profileRole,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Role (optional)',
-                              hintText: 'Student, mentor, coach…',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.jobTitle],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _organization,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Organization (optional)',
-                              hintText: 'School, team, or company',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.apartment_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [
-                              AutofillHints.organizationName,
-                            ],
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -921,41 +738,7 @@ class _AuthPageState extends State<AuthPage> {
                           onChanged: (_) => setState(() => _emailError = null),
                           decoration: const InputDecoration(
                             labelText: 'Email',
-                            hintText: 'you@company.com',
-                            hintStyle: TextStyle(
-                              color: Color(0x33FFFFFF),
-                              fontSize: 15,
-                            ),
-                            prefixIcon: Icon(Icons.alternate_email_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
+                            hintText: 'you@example.com',
                           ),
                           autofillHints: const [AutofillHints.email],
                         ),
@@ -964,8 +747,8 @@ class _AuthPageState extends State<AuthPage> {
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(
                               _emailError!,
-                              style: const TextStyle(
-                                color: Color(0xFFFF3B30),
+                              style: TextStyle(
+                                color: AppTokens.of(context).danger,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -984,36 +767,6 @@ class _AuthPageState extends State<AuthPage> {
                           ),
                           decoration: const InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
                           ),
                           autofillHints: const [AutofillHints.password],
                         ),
@@ -1330,7 +1083,11 @@ class _SocialButtonState extends State<_SocialButton> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [widget.icon, const SizedBox(width: 10), widget.label],
+              children: [
+                widget.icon,
+                const SizedBox(width: 10),
+                Flexible(child: widget.label),
+              ],
             ),
           ),
         ),

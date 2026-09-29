@@ -20,7 +20,8 @@ def recent_activity_route(
     limit: int = Query(default=10, ge=1, le=100),
 ) -> RecentActivityResponse:
     try:
-        activities = list_recent_activity(user_id=user.user_id, limit=limit)
+        activities = list_recent_activity(user_id=user.user_id, limit=limit,
+                                          workspace_id=user.workspace_id)
         return RecentActivityResponse(activities=activities)
     except httpx.HTTPError:
         logger.exception("Upstream error during recent activity")
