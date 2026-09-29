@@ -59,6 +59,13 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
     )
 
 
+def delete_image(*, path: str) -> None:
+    settings = get_settings()
+    get_supabase_admin().storage.from_(settings.supabase_storage_bucket).remove(
+        [path]
+    )
+
+
 def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredImage:
     settings = get_settings()
     supabase = get_supabase_admin()

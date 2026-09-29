@@ -22,6 +22,8 @@ from app.schemas.inventory import (
     BulkCreateResponse,
     DeleteItemResponse,
     ExtractFromImageResponse,
+    ItemPhotoMutationResponse,
+    ItemPhotosResponse,
     MultiExtractFromImageResponse,
     ProcessBarcodeRequest,
     ProcessBarcodeResponse,
@@ -54,6 +56,12 @@ from app.services.limits import (
     TeamSoftCapExceeded,
     check_and_increment_scan,
     check_item_limit,
+)
+from app.services.item_photos import (
+    MAX_ITEM_PHOTO_BYTES,
+    add_item_photo,
+    delete_item_photo,
+    list_item_photos,
 )
 from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.ai_service import (
@@ -409,6 +417,70 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
+
+
+@router.get("/items/{item_id}/photos", response_model=ItemPhotosResponse)
+def list_item_photos_route(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotosResponse:
+    try:
+        _, photos = list_item_photos(user_id=user.user_id, item_id=item_id)
+        return ItemPhotosResponse(photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Item not found") from exc
+
+
+@router.post(
+    "/items/{item_id}/photos",
+    response_model=ItemPhotoMutationResponse,
+)
+@limiter.limit("10/minute")
+async def add_item_photo_route(
+    request: Request,
+    item_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
+    try:
+        item, photos = add_item_photo(
+            user_id=user.user_id,
+            item_id=item_id,
+            filename=file.filename or "photo.jpg",
+            content=raw,
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Item not found") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Could not add item photo")
+        raise service_unavailable("Photo could not be saved. Try again.") from exc
+
+
+@router.delete(
+    "/items/{item_id}/photos/{photo_id}",
+    response_model=ItemPhotoMutationResponse,
+)
+def delete_item_photo_route(
+    item_id: str,
+    photo_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ItemPhotoMutationResponse:
+    try:
+        item, photos = delete_item_photo(
+            user_id=user.user_id,
+            item_id=item_id,
+            photo_id=photo_id,
+        )
+        return ItemPhotoMutationResponse(item=item, photos=photos)
+    except LookupError as exc:
+        raise HTTPException(404, "Photo not found") from exc
+    except Exception as exc:
+        logger.exception("Could not delete item photo")
+        raise service_unavailable("Photo could not be deleted. Try again.") from exc
 
 
 @router.post("/extract_from_image", response_model=ExtractFromImageResponse)

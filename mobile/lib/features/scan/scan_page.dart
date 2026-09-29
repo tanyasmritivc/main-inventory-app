@@ -607,6 +607,7 @@ class _ScanPageState extends State<ScanPage> {
                     ? null
                     : res.model?.trim(),
                 barcode: trimmedBarcode,
+                imageUrl: res.imageUrl,
               ),
             ),
           ];
@@ -982,6 +983,7 @@ class _ScanPageState extends State<ScanPage> {
                   ? null
                   : res.model?.trim(),
               barcode: barcode,
+              imageUrl: res.imageUrl,
             ),
           ),
         ];
@@ -1616,6 +1618,8 @@ class _ScanPageState extends State<ScanPage> {
             barcode: it.barcode,
             tags: it.tags,
             confidence: it.confidence,
+            imageUrl: it.imageUrl,
+            sourceFrameUrl: it.sourceFrameUrl,
             notes: it.notes,
             location: itemLocation,
             catalogMatch: it.catalogMatch,
@@ -2538,6 +2542,8 @@ class _ExtractedRowState extends State<_ExtractedRow> {
       barcode: widget.item.barcode,
       tags: widget.item.tags,
       confidence: widget.item.confidence,
+      imageUrl: widget.item.imageUrl,
+      sourceFrameUrl: widget.item.sourceFrameUrl,
       notes: widget.item.notes,
       catalogMatch: widget.item.catalogMatch,
     );

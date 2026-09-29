@@ -26,6 +26,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
 - Durable capture evidence and a review queue are not implemented. The web `/review`
   route states this explicitly.
+- Item photo galleries are implemented in source through PR #25: FIND captures
+  retain their crop or source photo, and personal, Team Space, and legacy Shared
+  Space items can add, view, and delete up to ten photos. The backend has not been
+  deployed, and no mobile build later than recovery build 30 has been uploaded.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -33,8 +37,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
-- FIND jobs are deleted after mapping. Object crops, masks, geometry, unresolved
-  objects, and correction signals do not survive as structured records.
+- FIND jobs are deleted after mapping. Uploaded source images and available object
+  crops survive as item photos, but masks, geometry, unresolved objects, and
+  correction signals do not survive as structured records.
 - Photo scans can take tens of seconds. The documented production smoke completed,
   but user reports include scans timing out or appearing stuck.
 - The production VM checkout is dirty and has been deployed by carefully copying

@@ -332,6 +332,59 @@ class ApiClient {
     return InventoryItem.fromJson(out);
   }
 
+  String _itemPhotosPath(String itemId, {String? shareId, String? photoId}) {
+    final encodedItemId = Uri.encodeComponent(itemId);
+    final base = shareId != null && shareId.isNotEmpty
+        ? '/sharing/${Uri.encodeComponent(shareId)}/items/$encodedItemId/photos'
+        : _teamId != null && _teamSpaceId != null
+        ? '/teams/${Uri.encodeComponent(_teamId)}/spaces/${Uri.encodeComponent(_teamSpaceId)}/items/$encodedItemId/photos'
+        : '/items/$encodedItemId/photos';
+    return photoId == null ? base : '$base/${Uri.encodeComponent(photoId)}';
+  }
+
+  Future<List<ItemPhoto>> getItemPhotos({
+    required String itemId,
+    String? shareId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      _itemPhotosPath(itemId, shareId: shareId),
+      options: _authOptions(),
+    );
+    return (res.data?['photos'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(ItemPhoto.fromJson)
+        .toList();
+  }
+
+  Future<ItemPhotoMutationResult> addItemPhoto({
+    required String itemId,
+    required List<int> bytes,
+    required String filename,
+    String? shareId,
+  }) async {
+    final form = dio.FormData.fromMap({
+      'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      _itemPhotosPath(itemId, shareId: shareId),
+      data: form,
+      options: _authOptions(),
+    );
+    return ItemPhotoMutationResult.fromJson(res.data ?? const {});
+  }
+
+  Future<ItemPhotoMutationResult> deleteItemPhoto({
+    required String itemId,
+    required String photoId,
+    String? shareId,
+  }) async {
+    final res = await _dio.delete<Map<String, dynamic>>(
+      _itemPhotosPath(itemId, shareId: shareId, photoId: photoId),
+      options: _authOptions(),
+    );
+    return ItemPhotoMutationResult.fromJson(res.data ?? const {});
+  }
+
   Future<bool> deleteItem({required String itemId}) async {
     if (_teamId != null && _teamSpaceId != null) {
       await deleteTeamSpaceItem(_teamId, _teamSpaceId, itemId);
@@ -1545,6 +1598,48 @@ class InventoryItem {
   }
 }
 
+class ItemPhoto {
+  const ItemPhoto({
+    required this.photoId,
+    required this.imageUrl,
+    required this.isPrimary,
+    this.createdAt,
+  });
+
+  final String photoId;
+  final String imageUrl;
+  final bool isPrimary;
+  final DateTime? createdAt;
+
+  factory ItemPhoto.fromJson(Map<String, dynamic> json) {
+    return ItemPhoto(
+      photoId: (json['photo_id'] ?? '').toString(),
+      imageUrl: (json['image_url'] ?? '').toString(),
+      isPrimary: json['is_primary'] == true,
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class ItemPhotoMutationResult {
+  const ItemPhotoMutationResult({required this.item, required this.photos});
+
+  final InventoryItem item;
+  final List<ItemPhoto> photos;
+
+  factory ItemPhotoMutationResult.fromJson(Map<String, dynamic> json) {
+    return ItemPhotoMutationResult(
+      item: InventoryItem.fromJson(
+        Map<String, dynamic>.from(json['item'] as Map? ?? const {}),
+      ),
+      photos: (json['photos'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(ItemPhoto.fromJson)
+          .toList(),
+    );
+  }
+}
+
 class AddItemRequest {
   AddItemRequest({
     required this.name,
@@ -1636,6 +1731,8 @@ class ExtractedInventoryItem {
     this.barcode,
     this.tags,
     this.confidence,
+    this.imageUrl,
+    this.sourceFrameUrl,
     this.notes,
     this.location,
     this.catalogMatch,
@@ -1650,6 +1747,8 @@ class ExtractedInventoryItem {
   String? barcode;
   List<String>? tags;
   double? confidence;
+  String? imageUrl;
+  String? sourceFrameUrl;
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
@@ -1669,6 +1768,8 @@ class ExtractedInventoryItem {
       confidence: (json['confidence'] is num)
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
+      imageUrl: json['image_url']?.toString(),
+      sourceFrameUrl: json['source_frame_url']?.toString(),
       notes: json['notes']?.toString(),
       location: json['location']?.toString(),
       catalogMatch: json['catalog_match'] is Map<String, dynamic>
@@ -1690,6 +1791,8 @@ class ExtractedInventoryItem {
       if (barcode != null) 'barcode': barcode,
       if (tags != null) 'tags': tags,
       if (confidence != null) 'confidence': confidence,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (sourceFrameUrl != null) 'source_frame_url': sourceFrameUrl,
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
       if (catalogMatch != null)

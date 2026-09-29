@@ -81,8 +81,16 @@ Photo flow:
    `qwen3vl` proposals, identification, OCR/barcode processing, and measurement.
 3. FastAPI polls the job, maps results into the existing inventory response, and
    returns transient `scan_evidence`.
-4. The FIND job is deleted in `finally`. Crops, masks, and geometry are not stored.
-5. On confirmation, useful human-readable evidence can be copied into item notes.
+4. The uploaded source image and available per-item crops are copied to the
+   `item-images` bucket before the FIND job is deleted in `finally`. Masks and
+   geometry are not stored.
+5. On confirmation, the selected crop or source image is saved as the item's
+   primary `image_url`; useful human-readable evidence can be copied into notes.
+
+Item photo galleries keep `items.image_url` as the primary thumbnail and store
+additional image references as `photo` rows in the existing `item_events` table.
+This preserves the established item contract and does not require another database
+column or migration.
 
 Language flow:
 
