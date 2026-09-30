@@ -1,15 +1,19 @@
 # Current state
 
-Last reviewed against `main` at `8979f40` on 2026-09-22.
+Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 release.
 
 ## Working and deployed
 
 - The self-hosted backend, web app, Supabase database, Auth, and Storage are the
-  production architecture. `/health` and `/health/db` were last documented healthy.
+  production architecture. `/health` and `/health/db` were verified healthy after
+  the item-photo backend deployment on 2026-09-29.
 - The public landing page and authenticated Next.js workspace are in source and
   first-class routes. The old redirect-only web description in `CLAUDE.md` is stale.
 - Mobile is a substantial iOS client with inventory, scan, Ask FindEZ, sharing,
   teams, projects, documents, check-outs, notifications, onboarding, and profile.
+- Item photo galleries are deployed in the backend and included in TestFlight build
+  31. FIND captures retain their crop or source photo, and personal, Team Space, and
+  legacy Shared Space items can add, view, and delete up to ten photos.
 - OpenAI runtime code has been removed. FIND serves photo analysis and the private
   agent gateway serves language tasks.
 - A real production parts-bin smoke test returned 18 mapped FIND items with scan
@@ -26,10 +30,6 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
 - Durable capture evidence and a review queue are not implemented. The web `/review`
   route states this explicitly.
-- Item photo galleries are implemented in source through PR #25: FIND captures
-  retain their crop or source photo, and personal, Team Space, and legacy Shared
-  Space items can add, view, and delete up to ten photos. The backend has not been
-  deployed, and no mobile build later than recovery build 30 has been uploaded.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -70,6 +70,12 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   Connect at 11:23 PM PDT on 2026-09-28. Apple finished processing it and App
   Store Connect lists build 30 in the internal TestFlight groups. An install from
   TestFlight remains to be verified.
+- Item-photo build 31 is FindEZ `1.0.7 (31)`. Its signed IPA contains the production
+  API configuration, passed Apple server-side validation without errors, uploaded on
+  2026-09-29, and finished processing with `VALID` and `APP_STORE_ELIGIBLE` status.
+  TestFlight group assignment and a physical install from TestFlight remain to be
+  verified; the camera/library add, gallery, and delete flows also need that device
+  check against the deployed backend.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.
