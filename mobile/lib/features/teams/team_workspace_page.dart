@@ -1200,11 +1200,21 @@ class _TeamSpaceInventoryPageState
                         const Divider(height: 1, indent: 54),
                     itemBuilder: (context, index) {
                       final item = _items[index];
+                      final imageUrl = (item.imageUrl ?? '').trim();
                       return ListTile(
-                        leading: const Icon(
-                          CupertinoIcons.cube_box,
-                          color: AppColors.accent,
-                        ),
+                        leading: imageUrl.isEmpty
+                            ? null
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Image.network(
+                                  imageUrl,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const SizedBox.shrink(),
+                                ),
+                              ),
                         title: Text(item.displayName),
                         subtitle: Text(
                           [

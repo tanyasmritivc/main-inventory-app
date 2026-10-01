@@ -19,6 +19,7 @@ import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import 'confirm_scan_sheet.dart';
+import 'review_capture.dart';
 import 'qr_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 
@@ -1623,9 +1624,15 @@ class _ScanPageState extends State<ScanPage> {
             notes: it.notes,
             location: itemLocation,
             catalogMatch: it.catalogMatch,
+            scanEvidence: it.scanEvidence,
+            reviewId: it.reviewId,
+            reviewStatus: it.reviewStatus,
           ),
         );
-        indexMap.add(s.id);
+        // The backend failure index is relative to the confident-only bulk
+        // payload. Uncertain objects stay in Review and never occupy an index
+        // in that request.
+        if (!it.needsReview) indexMap.add(s.id);
       }
 
       if (normalized.isEmpty) {
@@ -1637,13 +1644,33 @@ class _ScanPageState extends State<ScanPage> {
         return;
       }
 
-      debugPrint('FINDEZ bulkCreate: saving to space "$selectedSpace"');
-      debugPrint(
-        'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
-        '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
+      final plan = await prepareCaptureForSave(
+        api: widget.api,
+        items: normalized,
       );
+      final inventoryItems = plan.inventoryItems;
+      if (inventoryItems.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${plan.reviewCount} uncertain ${plan.reviewCount == 1 ? 'item is' : 'items are'} saved in Review.',
+            ),
+          ),
+        );
+        setState(() {
+          _scannedItems = const [];
+          _saveFailures = const {};
+          _error = null;
+        });
+        widget.onSaved();
+        return;
+      }
 
-      final res = await widget.api.bulkCreateInventory(items: normalized);
+      debugPrint('FINDEZ bulkCreate: saving to space "$selectedSpace"');
+      debugPrint('FINDEZ bulkCreate: sending ${inventoryItems.length} item(s)');
+
+      final res = await widget.api.bulkCreateInventory(items: inventoryItems);
       if (!mounted) return;
 
       debugPrint(
@@ -1674,11 +1701,11 @@ class _ScanPageState extends State<ScanPage> {
       // This happens when the backend deduplicates two items with the same
       // normalized name within a single batch.
       final silentDrops =
-          normalized.length - insertedCount - res.failures.length;
+          inventoryItems.length - insertedCount - res.failures.length;
       if (silentDrops > 0) {
         debugPrint(
           'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
-          '(server name deduplication). Sent=${normalized.length}, '
+          '(server name deduplication). Sent=${inventoryItems.length}, '
           'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
         );
       }
@@ -1686,7 +1713,7 @@ class _ScanPageState extends State<ScanPage> {
       if (insertedCount > 0) {
         final loc = selectedSpace;
         String? cat;
-        for (final it in normalized) {
+        for (final it in inventoryItems) {
           final c = _normalizeCategory(it.category);
           if (c.isNotEmpty) {
             cat = c;
@@ -1698,13 +1725,15 @@ class _ScanPageState extends State<ScanPage> {
         final allSucceeded =
             allFailures.isEmpty &&
             silentDrops == 0 &&
-            insertedCount == normalized.length;
+            insertedCount == inventoryItems.length;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               allSucceeded
-                  ? 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $loc'
+                  ? plan.reviewCount > 0
+                        ? 'Saved $insertedCount and kept ${plan.reviewCount} in Review'
+                        : 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $loc'
                   : 'Saved $insertedCount of $totalExpected items to $loc',
             ),
           ),

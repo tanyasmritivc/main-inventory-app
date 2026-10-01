@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 release.
+Last reviewed on 2026-09-30 during the physical-memory release candidate.
 
 ## Working and deployed
 
@@ -28,8 +28,10 @@ Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 relea
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
-- Durable capture evidence and a review queue are not implemented. The web `/review`
-  route states this explicitly.
+- Branch `feat/physical-memory-home-review` implements a Home/Capture/Ask/Find
+  shell, model-neutral structured scan evidence, a durable Review queue, and
+  conditional item thumbnails. Migration `036`, backend and web deployment, and
+  TestFlight build 32 are pending until this release candidate is deployed.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -38,8 +40,9 @@ Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 relea
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
 - FIND jobs are deleted after mapping. Uploaded source images and available object
-  crops survive as item photos, but masks, geometry, unresolved objects, and
-  correction signals do not survive as structured records.
+  crops survive as item photos. The release candidate persists unresolved objects,
+  public evidence, and review status. Masks, geometry, and training-quality
+  correction events remain outside the durable data contract.
 - Photo scans can take tens of seconds. The documented production smoke completed,
   but user reports include scans timing out or appearing stuck.
 - The production VM checkout is dirty and has been deployed by carefully copying
@@ -76,6 +79,8 @@ Last reviewed on 2026-09-29 through the item-photo and TestFlight build 31 relea
   TestFlight group assignment and a physical install from TestFlight remain to be
   verified; the camera/library add, gallery, and delete flows also need that device
   check against the deployed backend.
+- Physical-memory build 32 is staged in source as `1.0.7 (32)` and has not yet
+  been uploaded to TestFlight. The public App Store release remains `1.0.6 (17)`.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.

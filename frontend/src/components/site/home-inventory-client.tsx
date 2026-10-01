@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   getJoinedShares,
   getItemCheckouts,
   getMyShares,
+  getReviewItems,
   getSpaces,
   itemDisplayDescription,
   itemDisplayName,
@@ -28,6 +30,7 @@ import {
   renameSpace,
   searchItems,
   updateItem,
+  updateReviewItem,
 } from "@/lib/api";
 import { buildSpaceIndex, groupItemsBySpace, itemsInSpace, normalizeLocationName, resolveDisplaySpaces, spaceNameForItem } from "@/lib/spaces";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -218,6 +221,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   const [query, setQuery] = useState('');
   const [homePrompt, setHomePrompt] = useState('');
   const [activeCheckouts, setActiveCheckouts] = useState<Record<string, unknown>[]>([]);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -342,10 +346,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         const t = (await getAccessToken()) ?? '';
         if (!t) return;
         setToken(t);
-        const [itemsResult, spacesResult, checkoutsResult] = await Promise.allSettled([
+        const [itemsResult, spacesResult, checkoutsResult, reviewsResult] = await Promise.allSettled([
           searchItems({ token: t, query: '' }),
           getSpaces({ token: t }),
           getActiveCheckouts({ token: t }),
+          getReviewItems({ token: t, limit: 1 }),
         ]);
 
         if (itemsResult.status === 'fulfilled') {
@@ -366,6 +371,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
         if (checkoutsResult.status === 'fulfilled') {
           setActiveCheckouts(checkoutsResult.value.checkouts ?? []);
+        }
+        if (reviewsResult.status === 'fulfilled') {
+          setPendingReviewCount(reviewsResult.value.pending_count);
         }
       } catch (e) {
         console.error(e);
@@ -510,11 +518,21 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       if (!t) return;
       const res = await extractFromImageMulti({ token: t, file });
       if (res.items.length > 0) {
-        await bulkCreate({
-          token: t,
-          items: res.items.map((it: ExtractedInventoryItem) => ({ ...it, location: targetSpace })),
-        });
+        const located = res.items.map((it: ExtractedInventoryItem) => ({ ...it, location: targetSpace }));
+        const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
+        const ready = located.filter((item) => !item.scan_evidence?.needs_review);
+        for (const item of uncertain) {
+          if (!item.review_id) {
+            throw new Error('An uncertain item was not safely stored. Please scan the photo again.');
+          }
+          if (item.review_status !== 'pending') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+          await updateReviewItem({ token: t, reviewId: item.review_id, item });
+        }
+        if (ready.length > 0) await bulkCreate({ token: t, items: ready });
+        if (uncertain.length > 0) setSuccess(`${uncertain.length} uncertain item${uncertain.length === 1 ? '' : 's'} saved in Review.`);
         await load(t, '');
+        const reviews = await getReviewItems({ token: t, limit: 1 });
+        setPendingReviewCount(reviews.pending_count);
       }
     } catch (err: any) {
       if (!handleApiError(err)) {
@@ -558,9 +576,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   async function refreshAll(t?: string) {
     const tok = t || token || (await refreshToken());
     if (!tok) return;
-    const [itemsResult, spacesResult] = await Promise.allSettled([
+    const [itemsResult, spacesResult, reviewsResult] = await Promise.allSettled([
       searchItems({ token: tok, query: '' }),
       getSpaces({ token: tok }),
+      getReviewItems({ token: tok, limit: 1 }),
     ]);
     if (itemsResult.status === 'fulfilled') {
       setAllItems(itemsResult.value?.items ?? []);
@@ -573,6 +592,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       const reason = spacesResult.reason;
       console.error('[refreshAll] getSpaces failed:', reason instanceof Error ? reason.message : reason);
       setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
+    }
+    if (reviewsResult.status === 'fulfilled') {
+      setPendingReviewCount(reviewsResult.value.pending_count);
     }
   }
 
@@ -947,10 +969,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
           <section className="home-attention" aria-label="Needs your attention">
             <div className="home-section-label"><h2>Needs your attention</h2></div>
-            {lowStockCount === 0 && overdueCount === 0 ? (
+            {lowStockCount === 0 && overdueCount === 0 && pendingReviewCount === 0 ? (
               <p className="home-quiet">Nothing needs your attention.</p>
             ) : (
               <div className="home-attention-row">
+                {pendingReviewCount > 0 && <Link href="/review"><strong>{pendingReviewCount}</strong><span>uncertain capture{pendingReviewCount === 1 ? '' : 's'} to review</span><ArrowRight size={15} /></Link>}
                 {overdueCount > 0 && <Link href="/checkout"><strong>{overdueCount}</strong><span>overdue check-out{overdueCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
                 {lowStockCount > 0 && <Link href="/collections"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
               </div>
@@ -996,9 +1019,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           </div>
           {(visibleItems ?? []).map((item) => (
             <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
-                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+              <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                {item.image_url && <Image unoptimized width={42} height={42} src={item.image_url} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
+                  {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+                </div>
               </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
               <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
@@ -1054,10 +1080,19 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       try {
                         const res = await extractFromImageMulti({ token: t, file })
                         if (res.items?.length) {
-                          await bulkCreate({
-                            token: t,
-                            items: res.items.map((i: any) => ({ ...i, location: viewingSharedSpace.spaceName }))
-                          })
+                          const located = res.items.map((item) => ({ ...item, location: viewingSharedSpace.spaceName }));
+                          const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
+                          const ready = located.filter((item) => !item.scan_evidence?.needs_review);
+                          for (const item of uncertain) {
+                            if (!item.review_id) throw new Error('Uncertain capture was not stored safely.');
+                            if (item.review_status !== 'pending') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+                            await updateReviewItem({ token: t, reviewId: item.review_id, item });
+                          }
+                          if (ready.length) await bulkCreate({ token: t, items: ready });
+                          if (uncertain.length) {
+                            setPendingReviewCount((count) => Math.max(count, uncertain.length));
+                            setSuccess(`${uncertain.length} uncertain item${uncertain.length === 1 ? '' : 's'} saved in Review.`);
+                          }
                           await loadSharedSpace(viewingSharedSpace.shareId)
                         }
                       } catch (err) {
@@ -1129,10 +1164,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         <div
                           key="name"
                           onClick={() => setExpandedSharedItemId(expandedSharedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
-                          {itemDisplayName(item)}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
                       if (col.field === 'actions') return (
@@ -1338,10 +1374,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         <div
                           key="name"
                           onClick={() => setExpandedItemId(expandedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
-                          {itemDisplayName(item)}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
                       if (col.field === 'quantity') return (

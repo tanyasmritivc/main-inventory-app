@@ -1,864 +1,528 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart' as dio;
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/low_stock_prefs.dart';
-import '../../core/pro_status.dart';
-import '../../core/ui/glass_card.dart';
-import '../../core/ui/primary_gradient_button.dart';
-import '../chat/chat_page.dart';
-import '../documents/documents_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.api,
-    this.onOpenScan,
-    this.onOpenSpaces,
-    this.onInventoryMutated,
+    required this.onOpenCapture,
+    required this.onOpenAsk,
+    required this.onOpenFind,
+    required this.onOpenReview,
+    required this.onOpenDocuments,
+    this.refreshToken = 0,
   });
 
   final ApiClient api;
-  final VoidCallback? onOpenScan;
-  final VoidCallback? onOpenSpaces;
-  final VoidCallback? onInventoryMutated;
+  final VoidCallback onOpenCapture;
+  final void Function(String? question) onOpenAsk;
+  final VoidCallback onOpenFind;
+  final VoidCallback onOpenReview;
+  final VoidCallback onOpenDocuments;
+  final int refreshToken;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late final TextEditingController _ask;
-
-  bool _uploading = false;
-  String? _uploadMessage;
-  String? _uploadError;
-
+  late final TextEditingController _question;
   bool _loading = true;
   String? _error;
-  bool _pilotBannerDismissed = false;
-
-  List<ActivityEntry> _activities = const [];
   List<InventoryItem> _items = const [];
-  Map<String, int> _thresholds = const {};
-
-  String _friendlyRequestError(Object error) {
-    if (error is dio.DioException) {
-      final t = error.type;
-      if (t == dio.DioExceptionType.connectionTimeout ||
-          t == dio.DioExceptionType.sendTimeout ||
-          t == dio.DioExceptionType.receiveTimeout) {
-        return 'That took longer than expected. Try again.';
-      }
-    }
-    return 'That didn’t work. Try again.';
-  }
+  List<ActivityEntry> _activity = const [];
+  int _pendingReviews = 0;
 
   @override
   void initState() {
     super.initState();
-    _ask = TextEditingController();
+    _question = TextEditingController();
+    _items = InventoryCache.items;
+    unawaited(_load());
+  }
 
-    final cached = InventoryCache.items;
-    if (cached.isNotEmpty) {
-      _items = cached;
-      _loading = false;
-    }
-
-    unawaited(_loadAll());
-    unawaited(_loadBannerDismissed());
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) unawaited(_load());
   }
 
   @override
   void dispose() {
-    _ask.dispose();
+    _question.dispose();
     super.dispose();
   }
 
-  Future<void> _loadBannerDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _pilotBannerDismissed = prefs.getBool('pilot_banner_dismissed_v1') ?? false;
-    });
-  }
-
-  Future<void> _dismissPilotBanner() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('pilot_banner_dismissed_v1', true);
-    if (!mounted) return;
-    setState(() => _pilotBannerDismissed = true);
-  }
-
-  Future<void> _loadAll() async {
+  Future<void> _load() async {
     if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
     });
-
     try {
-      await Future.wait([
-        _loadItemsAndThresholds(),
-        _loadActivity(),
+      final results = await Future.wait<dynamic>([
+        widget.api.searchItems(query: ''),
+        widget.api
+            .getReviewItems(limit: 4)
+            .catchError(
+              (_) => ReviewQueueResult(
+                items: const [],
+                pendingCount: _pendingReviews,
+              ),
+            ),
+        widget.api.getRecentActivity(limit: 6).catchError((_) => _activity),
       ]);
+      final inventory = results[0] as SearchItemsResult;
+      final reviews = results[1] as ReviewQueueResult;
+      final activity = results[2] as List<ActivityEntry>;
+      InventoryCache.setItems(inventory.items);
+      if (!mounted) return;
+      setState(() {
+        _items = inventory.items;
+        _pendingReviews = reviews.pendingCount;
+        _activity = activity;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Your memory could not refresh. Pull down to try again.';
+        _items = InventoryCache.items;
+      });
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-
-  Future<void> _openChat({String? message}) async {
-    final m = (message ?? '').trim();
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatPage(
-          api: widget.api,
-          initialMessage: m.isEmpty ? null : m,
-          onInventoryMutated: () {
-            widget.onInventoryMutated?.call();
-            unawaited(_loadAll());
-          },
-        ),
-      ),
-    );
+  void _ask() {
+    final value = _question.text.trim();
+    _question.clear();
+    widget.onOpenAsk(value.isEmpty ? null : value);
   }
 
-  Future<void> _quickAddItem() async {
-    final name = TextEditingController();
-    final category = TextEditingController(text: 'Unsorted');
-    final location = TextEditingController(text: 'Unsorted');
-    final quantity = TextEditingController(text: '1');
-    final threshold = TextEditingController();
-
-    try {
-      final out = await showModalBottomSheet<_QuickAddPayload>(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          final bottom = MediaQuery.of(context).viewInsets.bottom;
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 14,
-              bottom: bottom + 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Add item',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: name,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: category,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: location,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: quantity,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: threshold,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                  decoration: const InputDecoration(
-                    labelText: 'Low stock threshold (optional)',
-                  ),
-                ),
-                const SizedBox(height: 14),
-                FilledButton(
-                  onPressed: () {
-                    final n = name.text.trim();
-                    if (n.isEmpty) return;
-                    final c = category.text.trim().isEmpty
-                        ? 'Unsorted'
-                        : category.text.trim();
-                    final loc = location.text.trim().isEmpty
-                        ? 'Unsorted'
-                        : location.text.trim();
-                    final qty = int.tryParse(quantity.text.trim()) ?? 1;
-                    final thrRaw = int.tryParse(threshold.text.trim());
-                    final thr = (thrRaw != null && thrRaw > 0) ? thrRaw : null;
-
-                    Navigator.of(context).pop(
-                      _QuickAddPayload(
-                        item: AddItemRequest(
-                          name: n,
-                          category: c,
-                          quantity: qty <= 0 ? 1 : qty,
-                          location: loc,
-                        ),
-                        threshold: thr,
-                      ),
-                    );
-                  },
-                  child: const Text('Save'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-
-      if (out == null) return;
-
-      final created = await widget.api.addItem(item: out.item);
-      if (out.threshold != null && out.threshold! > 0) {
-        await LowStockPrefs.setThreshold(
-          itemId: created.itemId,
-          threshold: out.threshold,
-        );
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('+1 item added')),
-      );
-      widget.onInventoryMutated?.call();
-      unawaited(_loadAll());
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyRequestError(e))),
-      );
-    } finally {
-      name.dispose();
-      category.dispose();
-      location.dispose();
-      quantity.dispose();
-      threshold.dispose();
-    }
+  String _greeting() {
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadataName = (user?.userMetadata?['first_name'] ?? '')
+        .toString()
+        .trim();
+    final fallback = (user?.email ?? '').split('@').first.trim();
+    final name = metadataName.isNotEmpty ? metadataName : fallback;
+    if (name.isEmpty) return 'Your physical memory';
+    return 'Good ${_dayPart()}, ${name[0].toUpperCase()}${name.substring(1)}';
   }
 
-  Future<void> _loadActivity() async {
-    try {
-      final items = await widget.api.getRecentActivity(limit: 10);
-      if (!mounted) return;
-      setState(() => _activities = items);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    }
+  String _dayPart() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
   }
 
-  Future<void> _loadItemsAndThresholds() async {
-    try {
-      final thresholds = await LowStockPrefs.loadAll();
-      if (mounted) {
-        setState(() => _thresholds = thresholds);
-      }
-
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      final resp = await supabase
-          .from('items')
-          .select('item_id,name,category,quantity,location,image_url,created_at')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
-      InventoryCache.setItems(items);
-      if (!mounted) return;
-      setState(() => _items = items);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    }
-  }
-
-  ({int totalQuantity, int totalTypes}) _weeklyStats() {
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    var quantitySum = 0;
-    var typeCount = 0;
-    for (final it in _items) {
-      if (it.createdAt.isAfter(cutoff)) {
-        quantitySum += (it.quantity <= 0 ? 0 : it.quantity);
-        typeCount++;
-      }
-    }
-    return (totalQuantity: quantitySum, totalTypes: typeCount);
-  }
-
-  int _lowStockCount() {
-    if (_thresholds.isEmpty || _items.isEmpty) return 0;
-    var n = 0;
-    for (final it in _items) {
-      final thr = _thresholds[it.itemId];
-      if (thr == null || thr <= 0) continue;
-      if (it.quantity <= thr) n++;
-    }
-    return n;
-  }
-
-  String _mostActiveLocation() {
-    if (_items.isEmpty) return '—';
+  Map<String, int> _spaces() {
     final counts = <String, int>{};
-    for (final it in _items) {
-      final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      counts[loc] = (counts[loc] ?? 0) + (it.quantity <= 0 ? 0 : it.quantity);
+    for (final item in _items) {
+      final location = item.location.trim().isEmpty
+          ? 'Unsorted'
+          : item.location.trim();
+      counts[location] = (counts[location] ?? 0) + 1;
     }
-    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    if (entries.isEmpty) return '—';
-    return entries.first.key;
-  }
-
-  Future<void> _logout() async {
-    await Supabase.instance.client.auth.signOut();
-  }
-
-  Future<void> _pickAndUpload() async {
-    if (!mounted) return;
-    setState(() {
-      _uploading = true;
-      _uploadMessage = null;
-      _uploadError = null;
-    });
-
-    try {
-      final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-        withData: true,
-      );
-
-      final file = picked?.files.single;
-      if (file == null) return;
-      if (file.bytes == null) throw Exception('Unable to read file bytes');
-
-      final ext = (file.extension ?? '').toLowerCase();
-      final mime = switch (ext) {
-        'pdf' => 'application/pdf',
-        'png' => 'image/png',
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        _ => 'application/octet-stream',
-      };
-
-      final mf = dio.MultipartFile.fromBytes(
-        file.bytes!,
-        filename: file.name,
-        contentType: MediaType.parse(mime),
-      );
-
-      final res = await widget.api.uploadDocument(file: mf);
-      if (!mounted) return;
-      setState(() => _uploadMessage = res.activitySummary.isNotEmpty ? res.activitySummary : 'Uploaded ${res.filename}');
-      await _loadAll();
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      setState(() => _uploadError = _friendlyRequestError(e));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _uploadError = _friendlyRequestError(e));
-    } finally {
-      if (mounted) {
-        setState(() => _uploading = false);
-      }
-    }
+    return counts;
   }
 
   @override
   Widget build(BuildContext context) {
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF6997DD),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
-    final overlay = Colors.white.withValues(alpha: 0.14);
-    final weeklyStats = _weeklyStats();
-    final lowCount = _lowStockCount();
-    final mostActive = _mostActiveLocation();
-    final recent = _items.take(12).toList();
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => DocumentsPage(api: widget.api),
-                ),
-              );
-            },
-            icon: const Icon(Icons.description_outlined),
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Container(
-        color: Colors.black,
+    final recent = _items.take(6).toList();
+    final spaces = _spaces().entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return ColoredBox(
+      color: Colors.black,
+      child: RefreshIndicator(
+        onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
-            AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: GlassCard(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _ask,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (v) {
-                          final q = v.trim();
-                          if (q.isEmpty) return;
-                          _ask.clear();
-                          unawaited(_openChat(message: q));
-                        },
-                        decoration: const InputDecoration(
-                          hintText: 'Ask anything about your stuff...',
-                          prefixIcon: Icon(Icons.search_rounded),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      height: 48,
-                      child: PrimaryGradientButton(
-                        borderRadius: 18,
-                        onPressed: () {
-                          final q = _ask.text.trim();
-                          if (q.isEmpty) return;
-                          _ask.clear();
-                          unawaited(_openChat(message: q));
-                        },
-                        child: const Text('Ask'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            if (ProStatus.isPilotMode && !_pilotBannerDismissed)
-              _PilotBanner(onDismiss: _dismissPilotBanner),
-
-            if (_error != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 12),
             Text(
-              'Insights',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            GlassCard(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _InsightRow(
-                    title: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? 'No items added'
-                        : '${weeklyStats.totalQuantity}',
-                    value: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? ''
-                        : 'items across',
-                    subtitle: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? 'this week'
-                        : '${weeklyStats.totalTypes} types',
-                    icon: Icons.add_box_outlined,
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 10),
-                  _InsightRow(
-                    title: 'Low on',
-                    value: '$lowCount',
-                    subtitle: 'items',
-                    icon: Icons.error_outline_rounded,
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 10),
-                  _InsightRow(
-                    title: 'Most active',
-                    value: mostActive,
-                    subtitle: 'location',
-                    icon: Icons.place_outlined,
-                    accent: accent,
-                  ),
-                ],
+              _greeting(),
+              style: const TextStyle(
+                fontSize: 25,
+                height: 1.15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
               ),
             ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Quick actions',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+            const SizedBox(height: 5),
+            const Text(
+              'Remember what you own, where it is, and what it means.',
+              style: TextStyle(color: Colors.white60, height: 1.4),
             ),
-            const SizedBox(height: 8),
-            AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: GlassCard(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: widget.onOpenScan,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  width: 1,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: Icon(
-                                Icons.center_focus_strong_outlined,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                              label: Text(
-                                'Scan Item',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: _quickAddItem,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  width: 1,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: Icon(
-                                Icons.add,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                              label: Text(
-                                'Add Item',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 5, 5, 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white12),
               ),
-            ),
-
-            const SizedBox(height: 12),
-            GlassCard(
-              padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  Expanded(
-                    child: PrimaryGradientButton(
-                      onPressed: () => unawaited(_openChat()),
-                      child: const Text('Open Assist'),
-                    ),
+                  const Icon(
+                    Icons.auto_awesome_outlined,
+                    color: Colors.white54,
+                    size: 20,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: SizedBox(
-                      height: 52,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: overlay,
-                          foregroundColor: Colors.white,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        onPressed: _uploading ? null : _pickAndUpload,
-                        child: Text(
-                          _uploading ? 'Uploading…' : 'Upload a document',
-                        ),
+                    child: TextField(
+                      controller: _question,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _ask(),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Where did I put…?',
+                        hintStyle: TextStyle(color: Colors.white38),
                       ),
                     ),
+                  ),
+                  IconButton.filled(
+                    tooltip: 'Ask',
+                    onPressed: _ask,
+                    icon: const Icon(Icons.arrow_upward_rounded),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-            if (_uploadMessage != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _uploadMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _MemoryAction(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Remember',
+                    subtitle: 'Capture things',
+                    onTap: widget.onOpenCapture,
+                  ),
                 ),
-              ),
-            if (_uploadError != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _uploadError!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MemoryAction(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    label: 'Ask',
+                    subtitle: 'Recall anything',
+                    onTap: () => widget.onOpenAsk(null),
+                  ),
                 ),
-              ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Recently added',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MemoryAction(
+                    icon: Icons.search_rounded,
+                    label: 'Find',
+                    subtitle: 'Browse places',
+                    onTap: widget.onOpenFind,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 104,
-              child: recent.isEmpty
-                  ? GlassCard(
-                      padding: const EdgeInsets.all(14),
-                      child: Center(
-                        child: Text(
-                          _loading
-                              ? 'Loading…'
-                              : 'No items yet. Try scanning something.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.65),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: widget.onOpenDocuments,
+                icon: const Icon(Icons.description_outlined, size: 18),
+                label: const Text('Documents and notes'),
+              ),
+            ),
+            if (_pendingReviews > 0) ...[
+              const SizedBox(height: 18),
+              Material(
+                color: const Color(0xFF241B0D),
+                borderRadius: BorderRadius.circular(18),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: widget.onOpenReview,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: const BoxDecoration(
+                            color: Color(0x24F5A623),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.rule_folder_outlined,
+                            color: Color(0xFFF5A623),
                           ),
                         ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$_pendingReviews ${_pendingReviews == 1 ? 'item needs' : 'items need'} your review',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                'Assign uncertain captures when you have a moment.',
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white54,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                _error!,
+                style: const TextStyle(color: Color(0xFFFF8A80), fontSize: 12),
+              ),
+            ],
+            const SizedBox(height: 24),
+            _SectionHeader(
+              title: 'Recently remembered',
+              action: 'See all',
+              onTap: widget.onOpenFind,
+            ),
+            const SizedBox(height: 9),
+            if (recent.isEmpty)
+              _EmptyMemory(loading: _loading, onCapture: widget.onOpenCapture)
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151515),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white10),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    for (var index = 0; index < recent.length; index++) ...[
+                      _RecentItemRow(
+                        item: recent[index],
+                        onTap: widget.onOpenFind,
+                      ),
+                      if (index < recent.length - 1)
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                    ],
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            _SectionHeader(
+              title: 'Your places',
+              action: 'Find',
+              onTap: widget.onOpenFind,
+            ),
+            const SizedBox(height: 9),
+            if (spaces.isEmpty)
+              const Text(
+                'Your places will appear as you remember items.',
+                style: TextStyle(color: Colors.white54),
+              )
+            else
+              Wrap(
+                spacing: 9,
+                runSpacing: 9,
+                children: spaces
+                    .take(8)
+                    .map(
+                      (entry) => _SpaceChip(
+                        name: entry.key,
+                        count: entry.value,
+                        onTap: widget.onOpenFind,
                       ),
                     )
-                  : ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: recent.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final it = recent[index];
-                        final loc = it.location.trim().isEmpty
-                            ? 'Unsorted'
-                            : it.location.trim();
-                        return SizedBox(
-                          width: 220,
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  it.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Qty ${it.quantity} · $loc',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.65),
-                                      ),
-                                ),
-                              ],
+                    .toList(),
+              ),
+            if (_activity.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const _SectionHeader(title: 'Memory activity'),
+              const SizedBox(height: 9),
+              ..._activity
+                  .take(3)
+                  .map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 9),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 5),
+                            child: Icon(
+                              Icons.circle,
+                              size: 6,
+                              color: Colors.white38,
                             ),
                           ),
-                        );
-                      },
-                    ),
-            ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Recent activity',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 260,
-              child: _activities.isEmpty
-                  ? const GlassCard(
-                      child: Center(child: Text('No activity yet.')),
-                    )
-                  : GlassCard(
-                      padding: const EdgeInsets.all(6),
-                      child: ListView.separated(
-                        itemCount: _activities.take(8).length,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final a = _activities[index];
-                          return ListTile(
-                            dense: true,
-                            title: Text(a.summary),
-                            subtitle: Text(
-                              a.createdAt.toLocal().toString(),
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              entry.summary,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 12,
+                                height: 1.4,
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MemoryAction extends StatelessWidget {
+  const _MemoryAction({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF171717),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 22, color: Colors.white),
+              const SizedBox(height: 18),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white38, fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.action, this.onTap});
+  final String title;
+  final String? action;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
+        if (action != null) TextButton(onPressed: onTap, child: Text(action!)),
+      ],
+    );
+  }
+}
+
+class _RecentItemRow extends StatelessWidget {
+  const _RecentItemRow({required this.item, required this.onTap});
+  final InventoryItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = (item.imageUrl ?? '').trim();
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            if (image.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  image,
+                  width: 54,
+                  height: 54,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${item.location} · ${item.category}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '${item.quantity}',
+              style: const TextStyle(
+                color: Colors.white60,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -867,118 +531,59 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _PilotBanner extends StatelessWidget {
-  const _PilotBanner({required this.onDismiss});
+class _SpaceChip extends StatelessWidget {
+  const _SpaceChip({
+    required this.name,
+    required this.count,
+    required this.onTap,
+  });
+  final String name;
+  final int count;
+  final VoidCallback onTap;
 
-  final VoidCallback onDismiss;
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      onPressed: onTap,
+      avatar: const Icon(Icons.place_outlined, size: 17),
+      label: Text('$name  $count'),
+      backgroundColor: const Color(0xFF171717),
+      side: const BorderSide(color: Colors.white12),
+    );
+  }
+}
+
+class _EmptyMemory extends StatelessWidget {
+  const _EmptyMemory({required this.loading, required this.onCapture});
+  final bool loading;
+  final VoidCallback onCapture;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0x0A34D399),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x2634D399)),
+        color: const Color(0xFF151515),
+        borderRadius: BorderRadius.circular(18),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          const Icon(Icons.rocket_launch_outlined,
-              color: Color(0xFF34D399), size: 16),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Free Pilot',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Unlimited access through September 11, 2026.',
-                  style: TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+          if (loading)
+            const CircularProgressIndicator()
+          else ...[
+            const Text(
+              'Your memory starts with one thing.',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
-          ),
-          GestureDetector(
-            onTap: onDismiss,
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onCapture,
+              icon: const Icon(Icons.camera_alt_outlined),
+              label: const Text('Capture it'),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
-}
-
-class _InsightRow extends StatelessWidget {
-  const _InsightRow({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.accent,
-  });
-
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final LinearGradient accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ShaderMask(
-          shaderCallback: (rect) => accent.createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: Icon(icon),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$title $value',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickAddPayload {
-  const _QuickAddPayload({required this.item, required this.threshold});
-
-  final AddItemRequest item;
-  final int? threshold;
 }

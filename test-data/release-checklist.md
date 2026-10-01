@@ -40,7 +40,7 @@ tappable at every step.
 
 ## 2. Inventory loads and stays loaded
 
-Open the inventory tab. Switch to chat and back. Do that **six
+Open Find. Switch to Ask and back. Do that **six
 times**.
 
 **Pass:** the same spaces appear every single time.
@@ -70,6 +70,22 @@ it. That means `space_id` was not set on some items — a count query
 by `space_id` misses anything that only has `location` text. The
 hand-added and scan-added paths were fixed later than the chat one,
 so those are the likelier culprits.
+
+### Photo confidence and Review
+
+Capture a clear object and an ambiguous group photo.
+
+**Pass:** a clear object can be saved to Find with its crop or source photo.
+Every uncertain object appears in Home → Review after an app restart and stays
+out of inventory until confirmed. Review shows available identity and detection
+confidence, visible text, barcode, measurements and assumptions, and a plain
+reason for review. It never shows internal model, endpoint, or infrastructure
+names.
+
+Confirm one Review item and dismiss another. Confirmation creates exactly one
+item on retry; dismissal creates none. An item with no photo has no empty
+thumbnail tile. For photo, barcode, spreadsheet, and manual items, verify that
+item detail can add and delete photos.
 
 ---
 

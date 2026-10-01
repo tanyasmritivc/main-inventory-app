@@ -1,6 +1,6 @@
 # Current architecture
 
-This describes the code on `main` as of 2026-09-22. Planned systems are labeled.
+This describes the 2026-09-30 release candidate. Planned systems are labeled.
 
 ## Repository
 
@@ -16,9 +16,10 @@ This describes the code on `main` as of 2026-09-22. Planned systems are labeled.
 ## Client applications
 
 The Flutter app uses Supabase Auth directly, then sends the Supabase access token to
-FastAPI through `mobile/lib/core/api_client.dart`. Its main shell contains Profile,
-Ask FindEZ, Scan, and Inventory, with additional team, sharing, project, document,
-checkout, notification, and settings flows.
+FastAPI through `mobile/lib/core/api_client.dart`. Its main shell has Home, Capture,
+Ask, and Find. Home surfaces recent items, places, natural-language recall, and
+pending Review items. Profile, team, sharing, project, document, checkout,
+notification, and settings flows remain.
 
 The Next.js app serves the animated marketing homepage and authenticated product
 routes such as `/home`, `/scan`, `/review`, `/inventory`, `/assist`, `/checkout`,
@@ -54,7 +55,7 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `034`, but they do not contain
+related services. Numbered migrations exist through `036`, but they do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -63,6 +64,11 @@ Items use `item_id`, `user_id`, `space_id`, a legacy `location` string, identity
 catalog fields, quantity, notes, and an optional `image_url`. Storage uses the
 `item-images` and `documents` buckets. Public or signed item URLs are configuration
 dependent; protected document access is authorized before issuing a signed URL.
+
+`capture_reviews` stores uncertain photo results separately from inventory.
+Authenticated clients can read only their own records; the backend creates, edits,
+dismisses, and resolves them through service-role operations. The resolver inserts
+the item and marks its review resolved in one transaction.
 
 Two collaboration models coexist:
 
@@ -77,15 +83,17 @@ There is no OpenAI runtime dependency or fallback.
 Photo flow:
 
 1. Web or mobile uploads an authenticated image to FastAPI.
-2. `find_pipeline.py` creates a FIND job and runs segmentation with depth and
-   `qwen3vl` proposals, identification, OCR/barcode processing, and measurement.
-3. FastAPI polls the job, maps results into the existing inventory response, and
-   returns transient `scan_evidence`.
+2. `find_pipeline.py` runs detection, identification, OCR/barcode processing,
+   and measurement. Model and infrastructure details stay on the server.
+3. FastAPI maps identity, detection, text, barcode, measurement, assumptions,
+   warnings, and review reasons into public `scan_evidence`.
 4. The uploaded source image and available per-item crops are copied to the
    `item-images` bucket before the FIND job is deleted in `finally`. Masks and
    geometry are not stored.
-5. On confirmation, the selected crop or source image is saved as the item's
-   primary `image_url`; useful human-readable evidence can be copied into notes.
+5. Clear results may be added to inventory. Uncertain results are saved in
+   `capture_reviews` until the user confirms or dismisses them.
+6. Review resolution saves the crop or source image as the item's primary
+   `image_url`. Lists render a thumbnail only when the item has an image.
 
 Item photo galleries keep `items.image_url` as the primary thumbnail and store
 additional image references as `photo` rows in the existing `item_events` table.
@@ -95,8 +103,8 @@ column or migration.
 Language flow:
 
 1. Ask FindEZ sends text and an authenticated user context to FastAPI.
-2. The backend calls the FTCTools agent gateway at its OpenAI-compatible chat
-   endpoint using `FINDEZ_AGENT_KEY` and the configured gateway model route.
+2. The backend calls the FTCTools agent gateway using `FINDEZ_AGENT_KEY` and
+   the configured private route.
 3. The gateway selects a tool call or response.
 4. FastAPI executes inventory tools in-process under the signed-in user's scope and
    streams the result to the client.
@@ -135,4 +143,5 @@ source and fallback copy.
   language tasks.
 - FIND and gateway credentials remain backend-only.
 - Team API access depends on migration `034` workspace synchronization and RLS.
+- Durable Review depends on migration `036` and its transactional resolver.
 - Next.js public environment values are fixed at build time.

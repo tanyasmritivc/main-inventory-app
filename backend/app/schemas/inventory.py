@@ -1,8 +1,8 @@
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AddItemRequest(BaseModel):
@@ -133,6 +133,7 @@ class CatalogCompatibilityResponse(BaseModel):
 
 class ScanEvidence(BaseModel):
     identification_reasoning: str | None = Field(default=None, max_length=700)
+    identity_confidence: float | None = Field(default=None, ge=0, le=1)
     ocr_text: str | None = Field(default=None, max_length=500)
     ocr_confidence: float | None = Field(default=None, ge=0, le=1)
     length_mm: float | None = Field(default=None, ge=0)
@@ -143,6 +144,12 @@ class ScanEvidence(BaseModel):
     barcode_symbology: str | None = Field(default=None, max_length=50)
     barcode_confidence: float | None = Field(default=None, ge=0, le=1)
     detection_confidence: float | None = Field(default=None, ge=0, le=1)
+    review_reasons: list[Annotated[str, Field(max_length=120)]] = Field(
+        default_factory=list, max_length=10
+    )
+    warnings: list[Annotated[str, Field(max_length=160)]] = Field(
+        default_factory=list, max_length=10
+    )
     needs_review: bool = False
 
 
@@ -162,6 +169,8 @@ class ExtractedInventoryItem(BaseModel):
     location: str | None = Field(default=None, max_length=200)
     catalog_match: VerifiedCatalogMatch | None = None
     scan_evidence: ScanEvidence | None = None
+    review_id: str | None = Field(default=None, max_length=36)
+    review_status: str | None = Field(default=None, max_length=20)
 
 
 class MultiExtractSummary(BaseModel):
@@ -186,3 +195,81 @@ class BulkCreateRequest(BaseModel):
 class BulkCreateResponse(BaseModel):
     inserted: list[dict]
     failures: list[dict]
+
+
+class ReviewItemUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    category: str | None = Field(default=None, min_length=1, max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    quantity: int | None = Field(default=None, ge=0, le=100000)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(
+        default=None, max_length=20
+    )
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    image_url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=2000)
+    location: str | None = Field(default=None, max_length=200)
+
+
+class ResolveReviewItemRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    category: str = Field(min_length=1, max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    quantity: int = Field(default=1, ge=0, le=100000)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(
+        default=None, max_length=20
+    )
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    image_url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=2000)
+    location: str = Field(min_length=1, max_length=200)
+
+
+class ReviewItemRecord(BaseModel):
+    """Client-safe review record; internal owner/source keys never leave the API."""
+
+    review_id: str = Field(max_length=36)
+    status: Literal["pending", "resolved", "dismissed"]
+    source_kind: Literal["photo_scan", "barcode", "spreadsheet", "manual"]
+    name: str = Field(max_length=200)
+    category: str = Field(max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    quantity: int = Field(ge=0, le=100000)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(
+        default=None, max_length=20
+    )
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    image_url: str | None = Field(default=None, max_length=2000)
+    source_frame_url: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=2000)
+    location: str | None = Field(default=None, max_length=200)
+    catalog_match: VerifiedCatalogMatch | None = None
+    scan_evidence: ScanEvidence = Field(default_factory=ScanEvidence)
+    created_at: datetime
+    updated_at: datetime
+
+
+class ReviewItemResponse(BaseModel):
+    review_item: ReviewItemRecord
+
+
+class ReviewItemsResponse(BaseModel):
+    items: list[ReviewItemRecord]
+    pending_count: int
+
+
+class ResolveReviewItemResponse(BaseModel):
+    item: dict

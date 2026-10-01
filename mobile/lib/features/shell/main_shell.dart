@@ -15,6 +15,8 @@ import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
+import '../documents/documents_page.dart';
+import '../home/home_page.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
@@ -22,6 +24,7 @@ import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
+import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
 import '../teams/teams_page.dart';
 
@@ -37,7 +40,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 3;
+  int _currentPage = 0;
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
@@ -50,6 +53,8 @@ class _MainShellState extends State<MainShell> {
   Timer? _notificationTimer;
   double _pageOpacity = 1;
   int _pageTransitionGeneration = 0;
+  int _chatGeneration = 0;
+  String? _chatInitialMessage;
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -83,7 +88,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 3);
+    _pageController = PageController(initialPage: 0);
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
     unawaited(_initializePushNotifications());
@@ -166,15 +171,61 @@ class _MainShellState extends State<MainShell> {
   }
 
   int get _navigationIndex => switch (_currentPage) {
-    3 => 0,
+    0 => 0,
     2 => 1,
     1 => 2,
     _ => 3,
   };
 
   void _onNavigationTap(int index) {
-    const pages = [3, 2, 1, 0];
+    const pages = [0, 2, 1, 3];
     _animateTo(pages[index], haptic: true);
+  }
+
+  void _openAsk(String? message) {
+    final question = (message ?? '').trim();
+    if (question.isNotEmpty) {
+      setState(() {
+        _chatInitialMessage = question;
+        _chatGeneration++;
+      });
+    }
+    _animateTo(1, haptic: true);
+  }
+
+  Future<void> _openProfile() async {
+    HapticFeedback.lightImpact();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(title: const Text('Profile')),
+          body: ProfilePage(api: widget.api),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openReview() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReviewQueuePage(
+          api: widget.api,
+          onInventoryMutated: () {
+            setState(() => _inventoryRefreshToken++);
+            unawaited(_prefetchInventoryCache());
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _inventoryRefreshToken++);
+  }
+
+  Future<void> _openDocuments() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => DocumentsPage(api: widget.api)));
   }
 
   Future<void> _loadNotificationCount() async {
@@ -303,12 +354,12 @@ class _MainShellState extends State<MainShell> {
         );
       case 2:
         return AppBar(
-          title: const Text('Scan'),
+          title: const Text('Capture'),
           actions: [_notificationBell()],
         );
       case 1:
         return AppBar(
-          title: const Text('Assist'),
+          title: const Text('Ask'),
           actions: [
             if (_hasActiveChat)
               IconButton(
@@ -321,8 +372,20 @@ class _MainShellState extends State<MainShell> {
         );
       default:
         return AppBar(
-          title: const Text('Profile'),
-          actions: [_notificationBell()],
+          title: const Text('FindEZ'),
+          actions: [
+            IconButton(
+              onPressed: _openReview,
+              icon: const Icon(Icons.rule_folder_outlined, size: 21),
+              tooltip: 'Review uncertain captures',
+            ),
+            _notificationBell(),
+            IconButton(
+              onPressed: _openProfile,
+              icon: const Icon(CupertinoIcons.person_crop_circle, size: 22),
+              tooltip: 'Profile',
+            ),
+          ],
         );
     }
   }
@@ -361,9 +424,19 @@ class _MainShellState extends State<MainShell> {
                   });
                 },
                 children: [
-                  ProfilePage(api: widget.api),
-                  ChatPage(
+                  HomePage(
                     api: widget.api,
+                    refreshToken: _inventoryRefreshToken,
+                    onOpenCapture: () => _animateTo(2, haptic: true),
+                    onOpenAsk: _openAsk,
+                    onOpenFind: () => _animateTo(3, haptic: true),
+                    onOpenReview: _openReview,
+                    onOpenDocuments: _openDocuments,
+                  ),
+                  ChatPage(
+                    key: ValueKey('chat-$_chatGeneration'),
+                    api: widget.api,
+                    initialMessage: _chatInitialMessage,
                     inPageView: true,
                     pageController: _pageController,
                     onInventoryMutated: () {
@@ -456,7 +529,7 @@ class _MainShellState extends State<MainShell> {
                               key: TutorialController.inventoryIconKey,
                             ),
                             selectedIcon: const Icon(CupertinoIcons.house_fill),
-                            label: 'Inventory',
+                            label: 'Home',
                           ),
                           NavigationDestination(
                             icon: Icon(
@@ -466,7 +539,7 @@ class _MainShellState extends State<MainShell> {
                             selectedIcon: const Icon(
                               CupertinoIcons.barcode_viewfinder,
                             ),
-                            label: 'Scan',
+                            label: 'Capture',
                           ),
                           NavigationDestination(
                             icon: Icon(
@@ -476,14 +549,14 @@ class _MainShellState extends State<MainShell> {
                             selectedIcon: const Icon(
                               CupertinoIcons.chat_bubble_fill,
                             ),
-                            label: 'Assist',
+                            label: 'Ask',
                           ),
                           const NavigationDestination(
-                            icon: Icon(CupertinoIcons.person_crop_circle),
+                            icon: Icon(CupertinoIcons.search),
                             selectedIcon: Icon(
-                              CupertinoIcons.person_crop_circle_fill,
+                              CupertinoIcons.search_circle_fill,
                             ),
-                            label: 'Profile',
+                            label: 'Find',
                           ),
                         ],
                       ),

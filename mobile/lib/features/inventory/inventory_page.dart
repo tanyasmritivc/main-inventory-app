@@ -265,6 +265,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     final threshold = _thresholds[item.itemId];
     final isLow =
         threshold != null && threshold > 0 && item.quantity <= threshold;
+    final imageUrl = (item.imageUrl ?? '').trim();
     return Dismissible(
       key: ValueKey(item.itemId),
       direction: widget.readOnly
@@ -299,6 +300,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
+              if (imageUrl.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    imageUrl,
+                    width: 52,
+                    height: 52,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3627,246 +3641,93 @@ class _SearchResultsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImages = rows.any((e) => (e.imageUrl ?? '').trim().isNotEmpty);
-    if (!hasImages) {
-      return ListView.separated(
-        itemCount: rows.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final item = rows[index];
-          final threshold = thresholds[item.itemId];
-          final isLow =
-              (threshold != null &&
-              threshold > 0 &&
-              item.quantity <= threshold);
-          return Dismissible(
-            key: ValueKey(item.itemId),
-            background: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 16),
-              color: AppColors.swipe,
-              child: const Icon(Icons.edit_outlined),
-            ),
-            secondaryBackground: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 16),
-              color: Theme.of(
-                context,
-              ).colorScheme.error.withValues(alpha: 0.15),
-              child: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-            confirmDismiss: (direction) async {
-              if (direction == DismissDirection.startToEnd) {
-                await onEdit(item);
-                return false;
-              }
-              if (direction == DismissDirection.endToStart) {
-                await onDelete(item);
-                return false;
-              }
-              return false;
-            },
-            child: ListTile(
-              dense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
-              title: Text(item.displayName),
-              subtitle: Text(
-                [
-                  if (item.displayDescription != null) item.displayDescription!,
-                  item.category,
-                  item.location,
-                ].join(' · '),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isLow) ...[
-                    Icon(
-                      Icons.error_outline_rounded,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.70),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    'Qty ${item.quantity}',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ),
-              onTap: () => onEdit(item),
-            ),
-          );
-        },
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.98,
-      ),
+    return ListView.separated(
       itemCount: rows.length,
+      separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final item = rows[index];
         final threshold = thresholds[item.itemId];
         final isLow =
             (threshold != null && threshold > 0 && item.quantity <= threshold);
-        return _ItemGridCard(
-          item: item,
-          isLow: isLow,
-          onEdit: () => onEdit(item),
-          onDelete: () => onDelete(item),
+        final imageUrl = (item.imageUrl ?? '').trim();
+        return Dismissible(
+          key: ValueKey(item.itemId),
+          background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 16),
+            color: AppColors.swipe,
+            child: const Icon(Icons.edit_outlined),
+          ),
+          secondaryBackground: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 16),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+            child: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.startToEnd) {
+              await onEdit(item);
+              return false;
+            }
+            if (direction == DismissDirection.endToStart) {
+              await onDelete(item);
+              return false;
+            }
+            return false;
+          },
+          child: ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 5,
+            ),
+            leading: imageUrl.isEmpty
+                ? null
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.network(
+                      imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+            title: Text(item.displayName),
+            subtitle: Text(
+              [
+                if (item.displayDescription != null) item.displayDescription!,
+                item.category,
+                item.location,
+              ].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLow) ...[
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 18,
+                    color: Colors.white.withValues(alpha: 0.70),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  'Qty ${item.quantity}',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                ),
+              ],
+            ),
+            onTap: () => onEdit(item),
+          ),
         );
       },
-    );
-  }
-}
-
-class _ItemGridCard extends StatelessWidget {
-  const _ItemGridCard({
-    required this.item,
-    required this.isLow,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final InventoryItem item;
-  final bool isLow;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = (item.imageUrl ?? '').trim();
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onEdit,
-      onLongPress: onDelete,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: url.isEmpty
-                        ? Container(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: Colors.white.withValues(alpha: 0.35),
-                            ),
-                          )
-                        : Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.white.withValues(alpha: 0.04),
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.displayDescription ?? item.location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.65),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                  ),
-                  child: Text(
-                    'Qty ${item.quantity}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
-                    ),
-                  ),
-                ),
-              ),
-              if (isLow)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.error_outline_rounded,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.92),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

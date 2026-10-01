@@ -80,17 +80,48 @@ class TutorialController {
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0 — inventory search
+    // Step 0 — Home is the product's physical-memory front door.
+    _StepConfig(
+      pageIndex: 0,
+      icon: Icons.home_outlined,
+      title: 'Your physical memory',
+      body:
+          'Home brings together things you remember, questions you can ask, and anything waiting for your review.',
+      cornerRadius: 14,
+      targetKey: inventoryIconKey,
+    ),
+    // Step 1 — capture
+    _StepConfig(
+      pageIndex: 2,
+      icon: Icons.qr_code_scanner,
+      secondIcon: Icons.camera_alt_outlined,
+      title: 'Remember what you have',
+      body:
+          'Scan a barcode or take a photo. Clear results are remembered; anything uncertain waits safely in Review.',
+      cornerRadius: 99,
+      targetKey: scanToggleKey,
+    ),
+    // Step 2 — Ask
+    _StepConfig(
+      pageIndex: 1,
+      icon: Icons.auto_awesome,
+      title: 'Ask your physical memory',
+      body:
+          'Ask where something is, what you have, or what you need using natural language.',
+      cornerRadius: 14,
+      targetKey: assistTabKey,
+    ),
+    // Step 3 — Find
     _StepConfig(
       pageIndex: 3,
       icon: Icons.search_rounded,
       title: 'Find anything fast',
       body:
-          'Search every item and space from Inventory — this is the fastest way to find what you own.',
+          'Search every remembered item and place when you want to browse directly.',
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
-    // Step 1 — first space card
+    // Step 4 — first space card
     _StepConfig(
       pageIndex: 3,
       icon: Icons.folder_outlined,
@@ -109,27 +140,6 @@ class TutorialController {
       targetKey: teamsSegmentKey,
       targetRectTransform: (rect) =>
           Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
-    ),
-    // Step 2 — scan mode toggle
-    _StepConfig(
-      pageIndex: 2,
-      icon: Icons.qr_code_scanner,
-      secondIcon: Icons.camera_alt_outlined,
-      title: 'Two ways to add items',
-      body:
-          'Scan a barcode or snap a photo. AI extracts and adds it automatically.',
-      cornerRadius: 99,
-      targetKey: scanToggleKey,
-    ),
-    // Step 3 — Assist tab
-    _StepConfig(
-      pageIndex: 1,
-      icon: Icons.auto_awesome,
-      title: 'Ask when search is not enough',
-      body:
-          'Assist can answer questions and help work with your inventory using natural language.',
-      cornerRadius: 14,
-      targetKey: assistTabKey,
     ),
   ];
 
@@ -180,7 +190,7 @@ class TutorialController {
     });
 
     // Ensure we start on the product's front door.
-    await _navigateToPage(3);
+    await _navigateToPage(0);
     await _waitFrames(2);
     if (!context.mounted) {
       _active = false;

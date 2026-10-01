@@ -59,6 +59,29 @@ def _clean_string(value: Any, *, limit: int) -> str | None:
     return cleaned[:limit] or None
 
 
+def _public_reasoning(identity: dict[str, Any]) -> str | None:
+    """Describe the visible basis for a result without exposing internals.
+
+    Pipeline-provided free text is intentionally not returned to clients. It can
+    contain implementation names, infrastructure details, or debugging prose.
+    """
+    name = _clean_string(identity.get("name"), limit=200)
+    vendor = _clean_string(identity.get("vendor"), limit=100)
+    sku = _clean_string(identity.get("sku"), limit=100)
+    if bool(identity.get("unknown")) or not name:
+        return "The visible details were not distinctive enough for a reliable identification."
+    details: list[str] = []
+    if vendor:
+        details.append(f"brand markings match {vendor}")
+    if sku:
+        details.append(f"the visible part number is {sku}")
+    if details:
+        return f"Identified as {name} because " + " and ".join(details) + "."
+    return (
+        f"Visible shape, markings, and surrounding context support the identification {name}."
+    )
+
+
 def _category(value: Any) -> str:
     raw = str(value or "other").strip().lower()
     categories = {
@@ -82,7 +105,7 @@ def _category(value: Any) -> str:
 
 def _notes(item: dict[str, Any], identity: dict[str, Any]) -> str | None:
     parts: list[str] = []
-    reasoning = _clean_string(identity.get("reasoning"), limit=700)
+    reasoning = _public_reasoning(identity)
     if reasoning:
         parts.append(reasoning)
 
@@ -146,15 +169,34 @@ def _scan_evidence(
             width_mm = None
 
     errors = item.get("errors")
-    needs_review = bool(
-        identity.get("unknown")
-        or item.get("low_confidence")
-        or (isinstance(errors, list) and errors)
-    )
+    identity_confidence = _confidence(identity.get("confidence"))
+    review_reasons: list[str] = []
+    warnings: list[str] = []
+    if identity.get("unknown"):
+        review_reasons.append("The item could not be identified reliably.")
+    if item.get("low_confidence") or (
+        identity_confidence is not None and identity_confidence < 0.65
+    ):
+        review_reasons.append("The identification confidence is low.")
+    if isinstance(errors, list) and errors:
+        review_reasons.append("Some details could not be read from this photo.")
+        warnings.append("Only part of the photo analysis completed.")
+    if not _clean_string(identity.get("name"), limit=200):
+        review_reasons.append("A clear item name is still needed.")
+    needs_review = bool(review_reasons)
+
+    method = _clean_string(dimensions.get("method"), limit=20)
+    if method:
+        lowered_method = method.lower()
+        if "ruler" in lowered_method or "reference" in lowered_method:
+            method = "ruler"
+        elif "scale" in lowered_method or "calibrat" in lowered_method:
+            method = "calibrated scale"
+        else:
+            method = "visual estimate"
     return {
-        "identification_reasoning": _clean_string(
-            identity.get("reasoning"), limit=700
-        ),
+        "identification_reasoning": _public_reasoning(identity),
+        "identity_confidence": identity_confidence,
         "ocr_text": _clean_string(ocr.get("text"), limit=500),
         "ocr_confidence": _confidence(ocr.get("mean_conf")),
         "length_mm": length_mm,
@@ -162,7 +204,7 @@ def _scan_evidence(
         "measurement_confidence": _clean_string(
             dimensions.get("confidence"), limit=20
         ),
-        "measurement_method": _clean_string(dimensions.get("method"), limit=20),
+        "measurement_method": method,
         "measurement_assumption": measurement_assumption,
         "barcode_symbology": _clean_string(barcode.get("symbology"), limit=50),
         "barcode_confidence": _confidence(barcode.get("confidence")),
@@ -170,6 +212,8 @@ def _scan_evidence(
             item.get("confidence") if item.get("confidence") is not None
             else item.get("mask_score")
         ),
+        "review_reasons": list(dict.fromkeys(review_reasons)),
+        "warnings": warnings,
         "needs_review": needs_review,
     }
 
