@@ -113,6 +113,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final surface = tester.widget<Material>(
+      find
+          .ancestor(
+            of: find.byType(ExpansionTile),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(surface.color, const Color(0xFF111214));
+    expect(surface.clipBehavior, Clip.antiAlias);
+
     expect(find.text('Needs your review'), findsOneWidget);
     expect(find.text('The identification confidence is low.'), findsOneWidget);
     expect(find.text('M4 · 80% confidence'), findsOneWidget);
@@ -122,5 +133,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('model'), findsNothing);
+    await tester.tap(find.text('Needs your review'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Needs your review'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('The identification confidence is low.'), findsOneWidget);
   });
 }

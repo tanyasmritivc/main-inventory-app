@@ -23,11 +23,14 @@ class ScanEvidencePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasMeasurements =
         evidence.lengthMm != null || evidence.widthMm != null;
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF111214),
+    // ExpansionTile's ListTile paints its background and ink on Material.
+    // Keep that surface inside the border instead of hiding it with a container.
+    return Material(
+      color: const Color(0xFF111214),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
+        side: BorderSide(
           color: evidence.needsReview
               ? const Color(0x55F5A623)
               : const Color(0x1430D158),
