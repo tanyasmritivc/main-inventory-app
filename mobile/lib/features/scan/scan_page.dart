@@ -1854,7 +1854,7 @@ class _ScanPageState extends State<ScanPage> {
       floatingActionButton: _scannedItems.isEmpty
           ? null
           : Padding(
-              padding: const EdgeInsets.only(bottom: 94),
+              padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
               child: GestureDetector(
                 onTap: _saving ? null : _onSaveAllTapped,
                 child: ClipRRect(
@@ -1884,7 +1884,12 @@ class _ScanPageState extends State<ScanPage> {
       body: Container(
         color: Colors.transparent,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 128),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            isIOS ? 16 : 18,
+            16,
+            widget.showAppBar ? 128 : 72,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

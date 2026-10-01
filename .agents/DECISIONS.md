@@ -162,5 +162,6 @@ checkout counts; unknown reads show a dash, not a false zero. Use "out of stock"
 instead of inventing physical missingness. Older photos use "Recent captures"
 rather than claiming "Captured today". Documents, notifications, and profile
 remain reachable through Find's More menu; bottom navigation reserves layout
-space and does not overlay the list. The user-requested navigation restoration
+space and does not overlay the list. Embedded Ask, Capture and Find must not add
+the old overlay-clearance padding on top of that reserved space. The user-requested navigation restoration
 supersedes the reference's text-only five-tab bar without changing Home content.

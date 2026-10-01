@@ -39,7 +39,8 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   Builds 32 and 33 were rejected visually. The current Home matches the user's
   supplied reference with actual Spaces, four decision cards, and retained-photo
   captures. The user subsequently requested restoring the previous four-tab icon
-  bar; this is staged as build 35, with analysis and all 33 Flutter tests passing.
+  rounded pill; this is staged as build 35, with analysis and all 34 Flutter tests
+  passing, including embedded Ask composer spacing.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 

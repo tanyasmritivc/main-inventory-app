@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +8,7 @@ import 'package:mobile/core/inventory_cache.dart';
 import 'package:mobile/features/home/home_page.dart';
 import 'package:mobile/features/home/home_overview.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
+import 'package:mobile/features/chat/chat_page.dart';
 
 class _HomeApi extends ApiClient {
   _HomeApi({this.fail = false}) : super(baseUrl: 'https://api.test');
@@ -285,6 +287,47 @@ void main() {
     await tester.tap(find.text('need identifying'));
     expect(reviewed, isTrue);
   });
+
+  testWidgets(
+    'embedded Ask composer stays near the reserved pill without overlay spacing',
+    (tester) async {
+      const speechChannel = MethodChannel('plugin.csdcorp.com/speech_to_text');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        speechChannel,
+        (_) async => false,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          speechChannel,
+          null,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(
+            body: ChatPage(api: _HomeApi(), inPageView: true),
+            bottomNavigationBar: HomeNavigation(
+              selectedIndex: 2,
+              onSelected: (_) {},
+            ),
+          ),
+        ),
+      );
+      // The empty Ask screen has a repeating shimmer animation.
+      await tester.pump(const Duration(milliseconds: 300));
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump(const Duration(milliseconds: 100));
+      final gap =
+          tester.getTopLeft(find.byType(HomeNavigation)).dy -
+          tester.getBottomLeft(find.byType(TextField)).dy;
+      // Includes the composer's internal padding, but not the old 110pt gap.
+      expect(gap, inInclusiveRange(12, 40));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets(
     'narrow screens and large text keep the overview scrollable without overflow',

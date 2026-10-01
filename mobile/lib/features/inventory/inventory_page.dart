@@ -3624,7 +3624,7 @@ class _InventoryPageState extends State<InventoryPage>
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 94),
+        padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
         child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
       ),
     );
