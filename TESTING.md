@@ -178,7 +178,8 @@ these interactions.
 destination, unchanged pill/order, every utility callback, actual shell routing
 to account details/settings and back to Home, safe read/retry/save failures,
 disposed late reads, malformed avatar-color fallback, separate account/settings
-reads, confirmed deletion cancellation with no request, and narrow/large-text
+reads, a real Material ink surface for utility rows (including newer Flutter),
+confirmed deletion cancellation with no request, and narrow/large-text
 scrolling above the reserved navigation area. `home_page_test.dart` also locks
 the five-tab order. Existing account APIs and billing behavior are not changed.
 

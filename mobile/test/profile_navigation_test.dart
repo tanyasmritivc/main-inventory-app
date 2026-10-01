@@ -137,6 +137,13 @@ void main() {
     expect(find.text('3'), findsOneWidget);
     expect(find.text('More'), findsNothing);
     expect(find.byType(Image), findsNothing);
+    final settingsSurface = tester.widget<Material>(
+      find
+          .ancestor(of: find.text('Settings'), matching: find.byType(Material))
+          .first,
+    );
+    expect(settingsSurface.color, const Color(0xFF171719));
+    expect(settingsSurface.clipBehavior, Clip.antiAlias);
   });
 
   testWidgets('all profile utilities open their existing destinations', (
