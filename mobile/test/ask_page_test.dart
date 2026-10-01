@@ -61,6 +61,33 @@ class _AskApi extends ApiClient {
   final bool fail;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
+  final List<AskPhoto> photos = [];
+  final List<String> photoQuestions = [];
+  @override
+  Stream<AiStreamEvent> aiPhotoQuestionStream({
+    required String message,
+    required AskPhoto photo,
+    String? conversationId,
+  }) async* {
+    photos.add(photo);
+    photoQuestions.add(message);
+    if (fail) {
+      throw const AskRequestException(
+        'Your photo could not be analyzed. Please try again.',
+      );
+    }
+    yield AiStreamEvent(type: 'status', message: 'Reading your photo...');
+    if (pending != null) {
+      yield* pending!.stream;
+      return;
+    }
+    yield AiStreamEvent(
+      type: 'delta',
+      delta: 'This appears to be a servo. No inventory item has been added.',
+    );
+    yield AiStreamEvent(type: 'done', conversationId: 'photo-conversation');
+  }
+
   @override
   Future<SearchItemsResult> searchItems({required String query}) async =>
       SearchItemsResult(items: const [], parsed: const {});
@@ -91,6 +118,7 @@ Widget _page(
   _AskApi api, {
   String? initialMessage,
   TextScaler scaler = TextScaler.noScaling,
+  Future<AskPhoto?> Function(bool camera)? photoPicker,
 }) => MaterialApp(
   theme: ThemeData.dark(),
   builder: (context, child) => MediaQuery(
@@ -98,12 +126,27 @@ Widget _page(
     child: child!,
   ),
   home: Scaffold(
-    body: ChatPage(api: api, inPageView: true, initialMessage: initialMessage),
+    body: ChatPage(
+      api: api,
+      inPageView: true,
+      initialMessage: initialMessage,
+      photoPicker: photoPicker,
+    ),
     bottomNavigationBar: HomeNavigation(selectedIndex: 2, onSelected: (_) {}),
   ),
 );
 
 void main() {
+  final png = base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==',
+  );
+  Future<void> attach(WidgetTester tester, {bool camera = false}) async {
+    await tester.tap(find.byTooltip('Attach photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(camera ? 'Take photo' : 'Choose photo'));
+    await tester.pumpAndSettle();
+  }
+
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
@@ -355,5 +398,225 @@ void main() {
       ),
     );
     expect(find.byType(Image), findsNothing);
+  });
+
+  test(
+    'photo sources restore and previews reject arbitrary origins and owners',
+    () {
+      final path =
+          '/storage/v1/object/public/item-images/account-a/ask-${'a' * 32}.jpg';
+      final url = 'https://api.test$path';
+      String? safe(String? value, {String? owner = 'account-a'}) =>
+          trustedAskPhotoUrl(
+            value,
+            owner: owner,
+            origins: ['https://api.test', ''],
+          );
+      expect(safe(url), url);
+      expect(
+        safe('${url.replaceFirst('/public/', '/sign/')}?token=valid'),
+        isNotNull,
+      );
+      for (final value in [
+        url.replaceFirst('api.test', 'evil.test'),
+        url.replaceFirst('https:', 'http:'),
+        url.replaceFirst('account-a', 'account-b'),
+        url.replaceFirst('ask-', '../ask-'),
+        url.replaceFirst('ask-', 'item-'),
+        'https://api.test@evil.test$path',
+        '$url#fragment',
+      ]) {
+        expect(safe(value), isNull);
+      }
+      expect(safe(url, owner: null), isNull);
+      final context = AskAnswerContext.fromJson({
+        'photo_url': url,
+        'sources': [
+          {'kind': 'photo', 'label': 'Attached photo'},
+        ],
+      });
+      expect(context.photoUrl, url);
+      expect(context.sources.single.kind, 'photo');
+    },
+  );
+
+  test(
+    'photo stream errors are safe, specific, and never expose raw details',
+    () async {
+      await expectLater(
+        decodeAiCommandEvents(
+          Stream.value(
+            utf8.encode(
+              'data: {"type":"error","code":"photo_timeout","message":"SECRET"}\n\n',
+            ),
+          ),
+        ).toList(),
+        throwsA(
+          predicate(
+            (e) =>
+                e is AskRequestException &&
+                e.message.contains('too long') &&
+                !e.message.contains('SECRET'),
+          ),
+        ),
+      );
+      await expectLater(
+        ApiClient(baseUrl: 'https://api.test')
+            .aiPhotoQuestionStream(
+              message: 'What is this?',
+              photo: AskPhoto(bytes: Uint8List(AskPhoto.maxBytes + 1)),
+            )
+            .toList(),
+        throwsA(isA<AskRequestException>()),
+      );
+    },
+  );
+
+  testWidgets('photo preview can be removed, replaced, and sent without text', (
+    tester,
+  ) async {
+    final api = _AskApi();
+    var picks = 0;
+    await tester.pumpWidget(
+      _page(
+        api,
+        photoPicker: (_) async {
+          picks++;
+          return AskPhoto(bytes: png);
+        },
+      ),
+    );
+    await attach(tester);
+    expect(find.byKey(const Key('ask-photo-preview')), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove photo'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
+    await attach(tester);
+    await tester.tap(find.bySemanticsLabel('Attached photo. Tap to replace.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose photo'));
+    await tester.pumpAndSettle();
+    expect(picks, 3);
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
+    expect(api.photos, hasLength(1));
+    expect(api.photoQuestions.single, contains('Do I already have it?'));
+    expect(api.conversationIds, isEmpty);
+    expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
+    expect(find.byType(AskQuestionCard), findsOneWidget);
+    expect(
+      tester.widget<AskQuestionCard>(find.byType(AskQuestionCard)).photoBytes,
+      png,
+    );
+    expect(
+      find.textContaining('No inventory item has been added'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('camera choice and typed question use the photo endpoint', (
+    tester,
+  ) async {
+    final api = _AskApi();
+    bool? camera;
+    await tester.pumpWidget(
+      _page(
+        api,
+        photoPicker: (value) async {
+          camera = value;
+          return AskPhoto(bytes: png);
+        },
+      ),
+    );
+    await attach(tester, camera: true);
+    await tester.enterText(find.byType(TextField), 'What is this used for?');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
+    expect(camera, isTrue);
+    expect(api.photoQuestions.single, 'What is this used for?');
+    expect(api.conversationIds, isEmpty);
+  });
+
+  testWidgets('picker cancellation leaves composer unchanged', (tester) async {
+    await tester.pumpWidget(_page(_AskApi(), photoPicker: (_) async => null));
+    await tester.enterText(find.byType(TextField), 'Keep this question');
+    await attach(tester);
+    expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
+    expect(find.text('Keep this question'), findsOneWidget);
+  });
+
+  testWidgets('photo permission errors are visible without internal details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _page(
+        _AskApi(),
+        photoPicker: (_) async => throw StateError('SECRET permission stack'),
+      ),
+    );
+    await attach(tester);
+    expect(find.textContaining('Check camera or photo access'), findsOneWidget);
+    expect(find.textContaining('SECRET'), findsNothing);
+    expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
+  });
+
+  testWidgets('photo analysis failure is visible and keeps the sent photo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _page(
+        _AskApi(fail: true),
+        photoPicker: (_) async => AskPhoto(bytes: png),
+      ),
+    );
+    await attach(tester);
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('could not be analyzed'), findsOneWidget);
+    expect(
+      tester.widget<AskQuestionCard>(find.byType(AskQuestionCard)).photoBytes,
+      png,
+    );
+  });
+
+  testWidgets('reset ignores late photo picker completion', (tester) async {
+    final picker = Completer<AskPhoto?>();
+    await tester.pumpWidget(
+      _page(
+        _AskApi(),
+        initialMessage: 'Question',
+        photoPicker: (_) => picker.future,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Attach photo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose photo'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('New chat'));
+    picker.complete(AskPhoto(bytes: png));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
+  });
+
+  testWidgets('narrow large-text photo composer stays above the pill', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      _page(
+        _AskApi(),
+        scaler: const TextScaler.linear(2),
+        photoPicker: (_) async => AskPhoto(bytes: png),
+      ),
+    );
+    await attach(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('ask-photo-preview')), findsOneWidget);
   });
 }

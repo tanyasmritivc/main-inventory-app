@@ -1,11 +1,21 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../core/ask_answer.dart';
 
 class AskQuestionCard extends StatelessWidget {
-  const AskQuestionCard({super.key, required this.question});
+  const AskQuestionCard({
+    super.key,
+    required this.question,
+    this.photoBytes,
+    this.photoUrl,
+  });
   final String question;
+  final Uint8List? photoBytes;
+  // Only a validated app-owned URL may be passed here by the chat controller.
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -15,14 +25,43 @@ class AskQuestionCard extends StatelessWidget {
       color: const Color(0xFF171719),
       borderRadius: BorderRadius.circular(16),
     ),
-    child: SelectableText(
-      question,
-      style: const TextStyle(
-        color: Color(0xFFF2F2F2),
-        fontSize: 17,
-        height: 1.5,
-        fontWeight: FontWeight.w400,
-      ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (photoBytes != null || photoUrl != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: photoBytes != null
+                  ? Image.memory(
+                      photoBytes!,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Attached photo',
+                      errorBuilder: (_, _, _) =>
+                          const Text('Photo unavailable'),
+                    )
+                  : Image.network(
+                      photoUrl!,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Attached photo',
+                      errorBuilder: (_, _, _) =>
+                          const Text('Photo unavailable'),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        SelectableText(
+          question,
+          style: const TextStyle(
+            color: Color(0xFFF2F2F2),
+            fontSize: 17,
+            height: 1.5,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -33,11 +72,13 @@ class AskAnswerView extends StatefulWidget {
     required this.answer,
     this.contextData,
     this.isLoading = false,
+    this.pendingMessage = 'Checking your things...',
     this.onOpenSource,
   });
   final String answer;
   final AskAnswerContext? contextData;
   final bool isLoading;
+  final String pendingMessage;
   final VoidCallback? onOpenSource;
 
   @override
@@ -141,11 +182,14 @@ class _AskAnswerViewState extends State<AskAnswerView> {
           const SizedBox(height: 12),
         ],
         if (widget.answer.trim().isEmpty && widget.isLoading)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-            child: Text(
-              'Checking your things...',
-              style: TextStyle(color: secondary, fontSize: 16),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                widget.pendingMessage,
+                style: const TextStyle(color: secondary, fontSize: 16),
+              ),
             ),
           )
         else

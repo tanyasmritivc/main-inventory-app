@@ -151,3 +151,23 @@ also ensures generated Markdown images do not trigger third-party requests.
 On a physical iPhone, additionally test keyboard/voice input, tab switching,
 project-source navigation, an ambiguous project, and account changes. Automated
 tests do not replace this hands-on acceptance check.
+
+## Ask photo attachment regressions
+
+`backend/tests/test_ask_photo_questions.py` covers authenticated multipart uploads,
+10 MB/25-megapixel validation, metadata-stripping normalization, owned
+conversations, quotas, current access-scoped inventory reads, strong identifiers
+versus possible name matches, uncertainty into Review, no implicit inventory
+changes, photo-history URL refresh, follow-up memory, bounded output, and safe
+analysis/snapshot failures. External services remain stubbed. The existing
+conversation snapshot migration and PostgreSQL ownership checks also cover photo
+metadata; no new schema is required.
+
+`mobile/test/ask_page_test.dart` includes camera/library selection, preview,
+replace/remove, picker cancellation/permission errors, image-only default
+questions, correct photo endpoint selection, safe failures, reset isolation,
+trusted owner/origin checks, and narrow/large-text photo layouts. On an actual
+iPhone, additionally check camera/library permissions, cancel/replace/remove,
+identification, an owned product match, an uncertain Review result, follow-up
+questions, and switching accounts. Native install/launch alone does not verify
+these interactions.

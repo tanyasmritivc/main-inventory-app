@@ -57,6 +57,19 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   groups confirmed. Failed conversation or
   snapshot writes now surface safe errors rather than silently losing history.
 
+- Ask photo attachments are implemented on `feat/ask-fast-photo-questions` in
+  `/private/tmp/findez-ask-reference` (a separate lane based on build 36). One
+  camera/library image can be previewed/replaced/removed, sent with a question or
+  the default identification/ownership question, and retained in saved answer
+  context. Photo identification checks access-scoped inventory, labels possible
+  matches honestly, and sends uncertain objects to Review without automatically
+  adding inventory. The user cancelled text-speed work; it is excluded. All 327
+  backend and 55 mobile tests, clean analysis, and all five CI test jobs pass on
+  implementation `6944ed3` (PR #29 stacked on #28). The selected backend files
+  are deployed and healthy; build `1.0.7 (37)` is valid and in both internal
+  TestFlight groups. Native physical install/launch passed. Hands-on photo
+  acceptance is not yet claimed.
+
 ## Known limitations and risks
 
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
@@ -155,3 +168,27 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   ambiguous-project, and multi-account checks remain unverified. The broader
   physical-memory vision and existing launch-image warning remain separate work;
   the public App Store release is still `1.0.6 (17)`.
+
+- Build 37 (`1.0.7`) adds one camera/library attachment to Ask with preview,
+  replace/remove, image-only default question, photo identification, strong
+  identifier versus possible-name inventory matches, public saved photo context,
+  and uncertain objects in Home Review. No attached object is automatically
+  added to inventory. Text-chat speed, Home, Capture, FIND, and navigation are
+  unchanged. Existing migration `037` stores the photo snapshot; no new schema
+  was required. Uploads are validated/downscaled with metadata stripped; quota,
+  conversation ownership, URL owner/origin and safe failure tests are included.
+  All 327 backend and 55 Flutter tests with coverage, clean Flutter analysis,
+  and all five CI test jobs passed on `6944ed3`. The signed final archive passed
+  Apple validation, physical install/launch (installed `1.0.7 (37)`), upload,
+  `VALID` processing and `APP_STORE_ELIGIBLE`. Delivery/build ID:
+  `e671ac63-e931-48bc-ba52-655258142a9e`; uploaded 00:09:43 PDT on 2026-10-01;
+  assigned to `Testers` and `Internal Pilot Findez AI`. Build-36 archive and IPA
+  are retained under `mobile/build/ios/archive-build36` and `ipa-build36`.
+  Four selected Ask backend files were deployed only after matching the build-36
+  base hashes; backup: `/home/ubuntu/findez-backup-ask-photo-20261001.tar.gz`.
+  Deployed hashes match, service/database health passes, unauthenticated photo
+  requests return 401, and unrelated production changes are preserved. PR #29
+  is stacked on #28. TestFlight-app installation and hands-on camera/library,
+  matching/Review, follow-up and account-switch acceptance remain unverified.
+  The existing public-HTTP FIND transport security limitation and default launch
+  image warning remain; this is not a claim that the whole app is production-ready.
