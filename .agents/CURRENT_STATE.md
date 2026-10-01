@@ -39,8 +39,10 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   Builds 32 and 33 were rejected visually. The current Home matches the user's
   supplied reference with actual Spaces, four decision cards, and retained-photo
   captures. The user subsequently requested restoring the previous four-tab icon
-  rounded pill; this is staged as build 35, with analysis and all 34 Flutter tests
-  passing, including embedded Ask composer spacing.
+  rounded pill; build 35 has uploaded, with analysis and all 34 Flutter tests
+  passing, including embedded Ask composer spacing. All five CI test jobs passed
+  on implementation commit `c4c95fa`; Apple processing/group availability remains
+  under verification.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -103,7 +105,17 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   text-only five-tab bar. Analysis, all 33 Flutter tests, signed archive, Apple
   validation, upload, and native physical-device install/launch passed. The user
   requested the previous four-tab icon navigation while upload was underway;
-  build 34 is superseded by build 35. Build 35's Apple release status is pending.
+  build 34 is superseded by build 35.
+- Build 35 (`1.0.7`) restores the user's exact floating rounded four-tab pill,
+  keeps the reference-matching Home, and removes duplicate overlay-clearance
+  padding from embedded Ask/Capture/Find. The scan evidence panel has its own
+  Material ink surface for compatibility with the newer Flutter CI runner.
+  Analysis, all 34 Flutter tests with coverage, all five CI jobs, signed archive,
+  Apple server-side validation, upload, and native physical install/launch passed.
+  Upload delivery ID: `58ec17b7-1985-4cce-a101-c487ac1d1c08` at 9:43 PM PDT on
+  2026-09-30. Apple processing and internal group assignment are pending checks.
+  Installation through the TestFlight app and the hands-on release checklist
+  remain unverified. Existing default-launch-image archive warning is unchanged.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.
