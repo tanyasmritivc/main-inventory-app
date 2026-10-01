@@ -46,9 +46,7 @@ class _MainShellState extends State<MainShell> {
   int _currentPage = 0;
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
-  VoidCallback? _resetChatCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
-  bool _hasActiveChat = false;
   int _inventorySection = 0;
   VoidCallback? _joinSpaceCallback;
   int _notificationCount = 0;
@@ -449,18 +447,7 @@ class _MainShellState extends State<MainShell> {
           actions: [_notificationBell()],
         );
       case 1:
-        return AppBar(
-          title: const Text('Ask'),
-          actions: [
-            if (_hasActiveChat)
-              IconButton(
-                icon: const Icon(CupertinoIcons.square_pencil, size: 20),
-                tooltip: 'New chat',
-                onPressed: _resetChatCallback,
-              ),
-            _notificationBell(),
-          ],
-        );
+        return null;
       default:
         return null;
     }
@@ -515,9 +502,6 @@ class _MainShellState extends State<MainShell> {
                 setState(() => _inventoryRefreshToken++);
                 unawaited(_prefetchInventoryCache());
               },
-              onRegisterReset: (fn) => _resetChatCallback = fn,
-              onChatStateChanged: (hasMessages) =>
-                  setState(() => _hasActiveChat = hasMessages),
               onOpenDestination: (hint) async {
                 _animateTo(3);
                 await Future<void>.delayed(const Duration(milliseconds: 350));

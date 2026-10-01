@@ -347,14 +347,16 @@ async def ai_command_route(
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer)
+                            full_response = "".join(delta_buffer) or item.get("assistant_message") or "Something went wrong. Please try again."
+                            answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
                                     sb = get_supabase_admin()
                                     sb.table("messages").insert({
                                         "conversation_id": conv_id,
                                         "role": "assistant",
-                                        "content": full_response or "Let me think about that...",
+                                        "content": full_response,
+                                        "answer_context": answer_context,
                                     }).execute()
                                     sb.table("conversations").update({
                                         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -365,12 +367,11 @@ async def ai_command_route(
                             asyncio.create_task(log_query(user.user_id, payload.message))
                             asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
-                            if nav_hint:
-                                yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
+                            yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
-                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    yield b'data: {"type":"error","error":"Ask is temporarily unavailable. Please try again."}\n\n'
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
@@ -416,6 +417,7 @@ async def ai_command_route(
         tool=out.get("tool"),
         result=out.get("result"),
         assistant_message=assistant_message or "Let me think about that...",
+        answer_context=out.get("answer_context"),
     )
 
 

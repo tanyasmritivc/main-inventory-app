@@ -54,7 +54,7 @@ def get_conversation(
 
     msgs_res = (
         client.table("messages")
-        .select("id,role,content,created_at")
+        .select("id,role,content,created_at,answer_context")
         .eq("conversation_id", conversation_id)
         .order("created_at", desc=False)
         .execute()

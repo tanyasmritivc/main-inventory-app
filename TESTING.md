@@ -42,7 +42,10 @@ API integrations also have a PostgreSQL 17 CI job that executes
 the real RLS policies and triggers, including cross-team isolation, write-only
 updates, repeat imports, aggregate queries, revocation, Space detachment, and
 Review queue ownership, backend-only mutations, transactional resolution,
-idempotency, and photo preservation. To run locally, point the standard
+idempotency, and photo preservation. Ask regressions also verify that saved
+answer context belongs to the conversation owner, cannot be read or inserted
+across accounts, accepts only assistant object snapshots, and cascades with its
+owned conversation. To run locally, point the standard
 `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and
 `PGDATABASE` variables at an **empty test database**, then run:
 
@@ -128,3 +131,21 @@ Automation does not replace physical-device checks for OAuth, APNs, camera/barco
 scanning, share-extension handoff, or multi-account permissions. Before a release,
 also complete `test-data/release-checklist.md`; its access-revocation and offline-write
 sections are release gates.
+
+## Grounded Ask regressions
+
+`backend/tests/test_ask_presentation.py` covers authorized project matching,
+ambiguous and unknown projects, revoked sharing, reservation-aware quantities,
+duplicate requirement allocation, stock reductions, bounded public evidence,
+SSE metadata persistence, and safe errors. It stubs the assistant gateway and all
+external reads. Project-readiness prose and status badges must come from the same
+current requirements/stock calculation, not generated counts.
+
+`mobile/test/ask_page_test.dart` covers fragmented UTF-8 streaming, old stream
+compatibility, saved source snapshots, account-scope resets, collapsed sources,
+reference result rows, text-only legacy answers, visible failures, follow-up
+conversation IDs, reset/late-event isolation, and large-text/narrow layouts. It
+also ensures generated Markdown images do not trigger third-party requests.
+On a physical iPhone, additionally test keyboard/voice input, tab switching,
+project-source navigation, an ambiguous project, and account changes. Automated
+tests do not replace this hands-on acceptance check.

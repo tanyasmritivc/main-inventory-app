@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,8 +13,9 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/ask_answer.dart';
 import '../../core/ui/glass_card.dart';
+import 'ask_answer_view.dart';
 import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
@@ -146,11 +144,21 @@ class _AiIntent {
 
 class _ChatSession {
   static final _ChatSession _instance = _ChatSession._internal();
-  factory _ChatSession() => _instance;
+  static final _scope = AskSessionScope();
+  factory _ChatSession() {
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    if (_scope.selectAccount(owner)) {
+      _instance.messages.clear();
+      _instance.hasStarted = false;
+      _instance.conversationId = null;
+    }
+    return _instance;
+  }
   _ChatSession._internal();
 
   List<_ChatMessage> messages = [];
   bool hasStarted = false;
+  String? conversationId;
 }
 
 class _ChatPageState extends State<ChatPage>
@@ -164,10 +172,11 @@ class _ChatPageState extends State<ChatPage>
   bool _sending = false;
   String? _progress;
   final _session = _ChatSession();
-  String _userInitial = '';
+  int _requestGeneration = 0;
 
   // Conversation history
-  String? _currentConversationId;
+  String? get _currentConversationId => _session.conversationId;
+  set _currentConversationId(String? value) => _session.conversationId = value;
   // Retained for the intentionally detached history panel (68f5e83).
   // ignore: unused_field
   bool _historyOpen = false;
@@ -193,8 +202,6 @@ class _ChatPageState extends State<ChatPage>
   List<InventoryItem>? _inventorySnapshot;
 
   final List<String> _pendingAttachments = [];
-
-  Map<String, dynamic>? _pendingNavHint;
 
   final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
@@ -234,17 +241,6 @@ class _ChatPageState extends State<ChatPage>
         context,
       ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     }
-  }
-
-  String _navHintLabel(Map<String, dynamic> hint) {
-    final name = (hint['name'] ?? hint['space_name'] ?? '').toString();
-    if (hint['type'] == 'project_kit') {
-      return 'Open project kit${name.isEmpty ? '' : ': $name'}';
-    }
-    if (hint['type'] == 'item') {
-      return 'Open ${hint['space_name'] ?? 'item location'}';
-    }
-    return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
   String _renderableStreamingMarkdown(String content) {
@@ -339,6 +335,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _requestGeneration++;
     _presentationTimer?.cancel();
     _presentationTimer = null;
     _presentationIdleTimer?.cancel();
@@ -1311,6 +1308,12 @@ class _ChatPageState extends State<ChatPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_scrollController.hasClients) return;
+      // Keep the first question and its collapsed evidence visible as the
+      // response grows instead of jumping to the bottom of a long results card.
+      if (_session.messages.length <= 2) {
+        _scrollController.jumpTo(0);
+        return;
+      }
       final target = _scrollController.position.maxScrollExtent;
       if (animated) {
         _scrollController.animateTo(
@@ -1913,9 +1916,8 @@ class _ChatPageState extends State<ChatPage>
       setState(() => _isListening = false);
     }
 
-    developer.log('ChatPage: Submitting message "$q"');
-
     if (!mounted) return;
+    final requestGeneration = ++_requestGeneration;
 
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
@@ -1946,66 +1948,40 @@ class _ChatPageState extends State<ChatPage>
 
     final assistantIndex = _session.messages.length - 1;
     try {
-      developer.log('ChatPage: Calling AI stream...');
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
-      if (token == null) throw StateError('Not authenticated');
-      final baseUrl = AppConfig.apiBaseUrl.endsWith('/')
-          ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
-          : AppConfig.apiBaseUrl;
-
-      final request = http.Request(
-        'POST',
-        Uri.parse('$baseUrl/ai_command?stream=true'),
-      );
-      request.headers['Content-Type'] = 'application/json';
-      request.headers['Accept'] = 'text/event-stream';
-      request.headers['Authorization'] = 'Bearer $token';
-      request.body = json.encode(<String, dynamic>{
-        'message': q,
-        if (_currentConversationId != null)
-          'conversation_id': _currentConversationId,
-      });
-
-      final httpClient = http.Client();
-      try {
-        final streamedResponse = await httpClient
-            .send(request)
-            .timeout(const Duration(minutes: 2));
-        if (streamedResponse.statusCode != 200) {
-          throw StateError('HTTP ${streamedResponse.statusCode}');
+      AskAnswerContext? answerContext;
+      Map<String, dynamic>? hint;
+      String? conversationId;
+      var completed = false;
+      await for (final event in widget.api.aiCommandStream(
+        message: q,
+        conversationId: _currentConversationId,
+      )) {
+        if (!mounted || requestGeneration != _requestGeneration) return;
+        if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
+          _enqueuePresentation(assistantIndex, event.delta!);
         }
-
-        await for (final line
-            in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          if (!mounted) break;
-          final l = line.trimRight();
-          if (!l.startsWith('data: ')) continue;
-          final raw = l.substring(6).trim();
-          if (raw == '[DONE]') break;
-          try {
-            final decoded = json.decode(raw);
-            if (decoded is! Map) continue;
-            final content = (decoded['content'] ?? '') as String;
-            if (content.isNotEmpty) {
-              _enqueuePresentation(assistantIndex, content);
-            }
-            final navHintData = decoded['nav_hint'];
-            if (navHintData is Map) {
-              _pendingNavHint = Map<String, dynamic>.from(
-                navHintData.cast<String, dynamic>(),
-              );
-            }
-          } catch (_) {}
+        if (event.navHint != null) hint = event.navHint;
+        if (event.answerContext != null) answerContext = event.answerContext;
+        if (event.conversationId != null) conversationId = event.conversationId;
+        if (event.type == 'done') {
+          completed = true;
+          if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
+              !_presentationQueue.any(
+                (chunk) => chunk.index == assistantIndex,
+              ) &&
+              _session.messages[assistantIndex].content.isEmpty &&
+              (event.assistantMessage ?? '').isNotEmpty) {
+            _enqueuePresentation(assistantIndex, event.assistantMessage!);
+          }
         }
-      } finally {
-        httpClient.close();
       }
+      if (!completed) throw StateError('Ask response interrupted');
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _currentConversationId = conversationId ?? _currentConversationId;
+      _session.messages[assistantIndex] = _session.messages[assistantIndex]
+          .copyWith(answerContext: answerContext);
 
       if (mounted) {
-        final hint = _pendingNavHint;
-        _pendingNavHint = null;
         _completePresentation(assistantIndex, hint);
         setState(() {
           _sending = false;
@@ -2016,8 +1992,8 @@ class _ChatPageState extends State<ChatPage>
         unawaited(_prefetchInventorySnapshot());
       }
     } on dio.DioException catch (e) {
-      developer.log('ChatPage: DioException: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       final dioErrMsg = _friendlyRequestError(e);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
@@ -2034,8 +2010,8 @@ class _ChatPageState extends State<ChatPage>
         context,
       ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
     } catch (e) {
-      developer.log('ChatPage: Exception: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
@@ -2048,7 +2024,7 @@ class _ChatPageState extends State<ChatPage>
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
-      if (mounted) {
+      if (mounted && requestGeneration == _requestGeneration) {
         setState(() {
           _progress = null;
           _sending = false;
@@ -2059,7 +2035,6 @@ class _ChatPageState extends State<ChatPage>
           unawaited(_submit(next, userAlreadyAdded: true));
         }
       }
-      developer.log('ChatPage: stream finished');
     }
   }
 
@@ -2068,8 +2043,6 @@ class _ChatPageState extends State<ChatPage>
     super.initState();
     _controller = TextEditingController();
     unawaited(_speech.initialize());
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2107,11 +2080,6 @@ class _ChatPageState extends State<ChatPage>
         _controller.text = initial;
         unawaited(_submit(initial));
       });
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _focusNode.requestFocus();
-      });
     }
   }
 
@@ -2142,6 +2110,7 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void dispose() {
+    _requestGeneration++;
     _presentationTimer?.cancel();
     _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
@@ -2205,6 +2174,7 @@ class _ChatPageState extends State<ChatPage>
               role: m.role,
               content: m.content,
               timestamp: m.createdAt.millisecondsSinceEpoch,
+              answerContext: m.answerContext,
             ),
           )
           .toList();
@@ -2460,199 +2430,68 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  Widget _buildPillButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.70)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildHeader() {
+    const title = Text(
+      'Ask FindEZ',
+      style: TextStyle(
+        color: Color(0xFFF2F2F2),
+        fontSize: 28,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.8,
+        height: 1.2,
       ),
+    );
+    final reset = TextButton(
+      onPressed: _resetChat,
+      child: const Text(
+        'New chat',
+        style: TextStyle(color: Color(0xFF85858E), fontSize: 13),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: MediaQuery.textScalerOf(context).scale(28) > 36
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [title, if (_session.messages.isNotEmpty) reset],
+            )
+          : Row(
+              children: [
+                const Expanded(child: title),
+                if (_session.messages.isNotEmpty) reset,
+              ],
+            ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: Color(0xFFF2F2F7),
-                size: 31,
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _ShimmerTitle('Ask FindEZ'),
-          ],
-        ),
+  Widget _buildEmptyState() => const Align(
+    alignment: Alignment.topLeft,
+    child: Padding(
+      padding: EdgeInsets.only(top: 8, left: 4),
+      child: Text(
+        'Ask about your things, places, or projects.',
+        style: TextStyle(color: Color(0xFF85858E), fontSize: 16, height: 1.5),
       ),
-    );
-  }
-
-  MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
-    p: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.42,
-      letterSpacing: -0.15,
     ),
-    strong: const TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w600,
-      fontSize: 16,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    em: const TextStyle(
-      color: Color(0xFFAEAEB2),
-      fontStyle: FontStyle.italic,
-      fontSize: 16,
-    ),
-    listBullet: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      height: 1.42,
-    ),
-    blockSpacing: 8,
-    listIndent: 18,
   );
 
-  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.92,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(2, 4, 12, 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.ai.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: AppColors.ai,
-                      size: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: Color(0xFF8E8E93),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                switchInCurve: Curves.easeOutCubic,
-                child: message.content.trim().isEmpty && isTyping
-                    ? const Padding(
-                        key: ValueKey('thinking'),
-                        padding: EdgeInsets.symmetric(vertical: 7),
-                        child: _TypingDots(),
-                      )
-                    : MarkdownBody(
-                        key: ValueKey('answer'),
-                        data: isTyping
-                            ? _renderableStreamingMarkdown(message.content)
-                            : message.content,
-                        styleSheet: _assistantMarkdownStyle(),
-                        softLineBreak: true,
-                      ),
-              ),
-              if (!isTyping && message.navHint != null)
-                GestureDetector(
-                  onTap: () => unawaited(_openNavHint(message.navHint!)),
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          message.navHint!['type'] == 'project_kit'
-                              ? Icons.construction_outlined
-                              : Icons.folder_open_outlined,
-                          color: const Color(0xFFF2F2F7),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            _navHintLabel(message.navHint!),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFF2F2F7),
-                          size: 17,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) =>
+      AskAnswerView(
+        key: ValueKey('answer-${message.timestamp}'),
+        answer: isTyping
+            ? _renderableStreamingMarkdown(message.content)
+            : message.content,
+        contextData: message.answerContext,
+        isLoading: isTyping,
+        onOpenSource:
+            message.navHint?['type'] != 'project_kit' ||
+                message.answerContext?.sources
+                        .where((source) => source.kind == 'project')
+                        .length !=
+                    1
+            ? null
+            : () => unawaited(_openNavHint(message.navHint!)),
+      );
 
   Widget _messageEntrance(_ChatMessage message, Widget child) {
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
@@ -2670,161 +2509,66 @@ class _ChatPageState extends State<ChatPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final canSend =
         _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: widget.inPageView
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              surfaceTintColor: Colors.transparent,
-              leadingWidth: 52,
-              leading: Padding(
-                padding: const EdgeInsets.all(10),
-                child: GestureDetector(
-                  onTap: widget.onProfileTap,
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFF2C2C2E),
-                    radius: 16,
-                    child: Text(
-                      _userInitial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPillButton(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    onTap: () => _focusNode.requestFocus(),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan',
-                    onTap: widget.onScanTap ?? () {},
-                  ),
-                ],
-              ),
-              centerTitle: true,
-              actions: [
-                if (widget.onOpenInventory != null)
-                  IconButton(
-                    onPressed: widget.onOpenInventory,
-                    icon: Icon(
-                      Icons.article_outlined,
-                      color: Colors.white.withValues(alpha: 0.60),
-                    ),
-                  ),
-                IconButton(
-                  onPressed: _resetChat,
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white.withValues(alpha: 0.60),
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: const Color(0xFF09090B),
+
       body: Container(
         color: Colors.transparent,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-            12,
-            isIOS ? 16 : 18,
-            12,
+            16,
+            18,
+            16,
             // MainShell reserves space for its pill below the page.
             keyboardVisible || widget.inPageView ? 12 : 110,
           ),
           child: Column(
             children: [
               Expanded(
-                child: _session.messages.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.separated(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.only(top: 4, bottom: 12),
-                        itemCount: _session.messages.length,
-                        separatorBuilder: (context, index) {
-                          final curr = _session.messages[index];
-                          final next = _session.messages[index + 1];
-                          return SizedBox(
-                            height: curr.role == next.role ? 6 : 18,
-                          );
-                        },
-                        itemBuilder: (context, index) {
-                          final m = _session.messages[index];
-                          final isUser = m.role == 'user';
-                          final isTyping =
-                              !isUser &&
-                              (m.isStreaming ||
-                                  index == _fakeTypingAssistantIndex ||
-                                  m.content == 'Typing…' ||
-                                  m.content == 'Thinking…' ||
-                                  m.content == 'Thinking...');
-                          if (!isUser) {
-                            return _messageEntrance(
-                              m,
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: _buildAssistantMessage(m, isTyping),
-                              ),
-                            );
-                          }
-                          return _messageEntrance(
-                            m,
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width * 0.78,
-                                ),
-                                child: Container(
-                                  margin: const EdgeInsets.only(
-                                    left: 54,
-                                    bottom: 2,
-                                    top: 2,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 15,
-                                    vertical: 10,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF2F2F7),
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(18),
-                                      topRight: Radius.circular(18),
-                                      bottomLeft: Radius.circular(18),
-                                      bottomRight: Radius.circular(5),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    m.content,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1C1C1E),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                child: ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(top: 4, bottom: 12),
+                  itemCount: _session.messages.isEmpty
+                      ? 2
+                      : _session.messages.length + 1,
+                  separatorBuilder: (context, index) {
+                    if (index == 0) return const SizedBox(height: 24);
+                    final curr = _session.messages[index - 1];
+                    final next = _session.messages[index];
+                    return SizedBox(height: curr.role == next.role ? 12 : 8);
+                  },
+                  itemBuilder: (context, index) {
+                    if (index == 0) return _buildHeader();
+                    if (_session.messages.isEmpty) return _buildEmptyState();
+                    final messageIndex = index - 1;
+                    final m = _session.messages[messageIndex];
+                    final isUser = m.role == 'user';
+                    final isTyping =
+                        !isUser &&
+                        (m.isStreaming ||
+                            messageIndex == _fakeTypingAssistantIndex ||
+                            m.content == 'Typing…' ||
+                            m.content == 'Thinking…' ||
+                            m.content == 'Thinking...');
+                    if (!isUser) {
+                      return _messageEntrance(
+                        m,
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildAssistantMessage(m, isTyping),
+                        ),
+                      );
+                    }
+                    return _messageEntrance(
+                      m,
+                      AskQuestionCard(question: m.content),
+                    );
+                  },
+                ),
               ),
               if (_sending && _progress != null) ...[
                 const SizedBox(height: 10),
@@ -2846,12 +2590,8 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
+                  color: const Color(0xFF171719),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -2870,7 +2610,7 @@ class _ChatPageState extends State<ChatPage>
                           fontSize: 16,
                         ),
                         decoration: const InputDecoration(
-                          hintText: 'Ask about your inventory',
+                          hintText: 'Ask about your things',
                           isDense: true,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
@@ -2945,70 +2685,6 @@ class _ChatPageState extends State<ChatPage>
   }
 }
 
-class _ShimmerTitle extends StatefulWidget {
-  const _ShimmerTitle(this.text);
-
-  final String text;
-
-  @override
-  State<_ShimmerTitle> createState() => _ShimmerTitleState();
-}
-
-class _ShimmerTitleState extends State<_ShimmerTitle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = _controller.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
-        ),
-      ),
-    );
-  }
-}
-
 class _ChatMessage {
   _ChatMessage({
     required this.role,
@@ -3016,6 +2692,7 @@ class _ChatMessage {
     required this.timestamp,
     this.isStreaming = false,
     this.navHint,
+    this.answerContext,
   });
 
   final String role;
@@ -3023,12 +2700,14 @@ class _ChatMessage {
   final int timestamp;
   final bool isStreaming;
   final Map<String, dynamic>? navHint;
+  final AskAnswerContext? answerContext;
 
   _ChatMessage copyWith({
     String? content,
     int? timestamp,
     bool? isStreaming,
     Map<String, dynamic>? navHint,
+    AskAnswerContext? answerContext,
   }) {
     return _ChatMessage(
       role: role,
@@ -3036,6 +2715,7 @@ class _ChatMessage {
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
       navHint: navHint ?? this.navHint,
+      answerContext: answerContext ?? this.answerContext,
     );
   }
 }

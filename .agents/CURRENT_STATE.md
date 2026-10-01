@@ -46,6 +46,12 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   TestFlight groups.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
+- Branch `feat/ask-grounded-reference`, based on build 35, recreates the supplied
+  Ask reference without changing Home or the pill. It adds collapsed checked
+  sources, authorized project-readiness rows, and saved public answer snapshots
+  through migration `037`. Flutter analysis, all 46 mobile tests with coverage,
+  and all 289 backend tests pass. Signed build `1.0.7 (36)` and the narrowly
+  scoped backend deployment are underway; this is not yet a TestFlight release.
 
 ## Known limitations and risks
 
