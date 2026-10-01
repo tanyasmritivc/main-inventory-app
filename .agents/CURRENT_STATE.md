@@ -41,8 +41,9 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   captures. The user subsequently requested restoring the previous four-tab icon
   rounded pill; build 35 has uploaded, with analysis and all 34 Flutter tests
   passing, including embedded Ask composer spacing. All five CI test jobs passed
-  on implementation commit `c4c95fa`; Apple processing/group availability remains
-  under verification.
+  on implementation commit `c4c95fa`. Apple processing completed with `VALID` and
+  `APP_STORE_ELIGIBLE` status, and build 35 is available in both internal
+  TestFlight groups.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -113,7 +114,9 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   Analysis, all 34 Flutter tests with coverage, all five CI jobs, signed archive,
   Apple server-side validation, upload, and native physical install/launch passed.
   Upload delivery ID: `58ec17b7-1985-4cce-a101-c487ac1d1c08` at 9:43 PM PDT on
-  2026-09-30. Apple processing and internal group assignment are pending checks.
+  2026-09-30. Apple processing completed with `VALID` and `APP_STORE_ELIGIBLE`
+  status; App Store Connect confirms assignment to `Testers` and
+  `Internal Pilot Findez AI`, both internal TestFlight groups.
   Installation through the TestFlight app and the hands-on release checklist
   remain unverified. Existing default-launch-image archive warning is unchanged.
 - Deployment notes and source agree on self-hosting, but older documents still name
