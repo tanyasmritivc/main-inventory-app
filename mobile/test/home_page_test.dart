@@ -236,7 +236,8 @@ void main() {
       final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(bar.height, 70);
       expect(bar.backgroundColor, Colors.transparent);
-      expect(tester.getTopLeft(find.byType(NavigationBar)).dx, 18);
+      // The previous pill has an 18pt outer inset plus its 1pt border.
+      expect(tester.getTopLeft(find.byType(NavigationBar)).dx, 19);
       final pill = tester.widget<ClipRRect>(
         find.descendant(
           of: find.byType(HomeNavigation),
