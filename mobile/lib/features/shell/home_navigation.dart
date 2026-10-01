@@ -62,6 +62,14 @@ class HomeNavigation extends StatelessWidget {
               selectedIcon: Icon(CupertinoIcons.search_circle_fill),
               label: 'Find',
             ),
+            NavigationDestination(
+              icon: Icon(
+                CupertinoIcons.person_crop_circle,
+                key: destinationKeys[4],
+              ),
+              selectedIcon: const Icon(CupertinoIcons.person_crop_circle_fill),
+              label: 'Profile',
+            ),
           ],
         ),
       ),

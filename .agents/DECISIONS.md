@@ -204,3 +204,19 @@ owned generated storage path, and mobile validates the origin and owner before
 loading them. Uploads are validated/downscaled and stripped of metadata, and
 consume the existing photo/chat quotas. Text-chat speed and FIND behavior are
 unchanged: the user explicitly withdrew the speed request.
+
+## 2026-10-01: Profile is the fifth pill destination and utility hub
+
+**Decision:** The user's explicit follow-up adds a circular Profile destination
+after Home / Capture / Ask / Find in the existing inset rounded icon pill. This
+supersedes the earlier four-tab decision without changing the approved Home or
+Ask designs. Keep existing PageView indices and tutorial targets intact; Profile
+is appended at page 4.
+
+**Implications:** Move the old Find More destinations and duplicate notification
+header icons into Profile. Group profile editing separately from settings;
+retain existing scanning, subscription, support, legal, sign-out and confirmed
+account-deletion behavior. Documents/notes, notifications, lent items and app tour
+remain explicit existing destinations, not invented settings. The hub uses real
+account data, safe read errors and stale-response/account guards. This is a
+mobile-only navigation change, not a billing or backend redesign.

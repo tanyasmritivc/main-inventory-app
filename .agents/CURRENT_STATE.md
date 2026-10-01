@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
+Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation update.
 
 ## Working and deployed
 
@@ -69,6 +69,16 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   are deployed and healthy; build `1.0.7 (37)` is valid and in both internal
   TestFlight groups. Native physical install/launch passed. Hands-on photo
   acceptance is not yet claimed.
+
+- `feat/profile-nav-hub` adds the user's requested fifth circular Profile tab
+  to the restored rounded icon pill. Profile groups account editing, settings,
+  documents/notes, notifications, lent items and the app tour; duplicate utility
+  header icons and Find's old More sheet are replaced by this destination.
+  Existing account, billing, scanning and support actions are preserved. Home,
+  Ask/photo attachments, text speed, backend and web are unchanged. All 66 Flutter
+  tests with coverage and clean analysis pass. Build 38 is being released; no
+  TestFlight availability or hands-on acceptance is claimed until its release
+  checks below are recorded.
 
 ## Known limitations and risks
 

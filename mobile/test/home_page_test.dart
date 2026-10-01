@@ -217,7 +217,7 @@ void main() {
   });
 
   testWidgets(
-    'previous four-tab icon navigation reserves space below the page',
+    'rounded five-tab icon navigation reserves space below the page',
     (tester) async {
       var selected = -1;
       await tester.pumpWidget(
@@ -247,12 +247,12 @@ void main() {
         ),
       );
       expect(pill.borderRadius, BorderRadius.circular(30));
-      expect(bar.destinations.length, 4);
+      expect(bar.destinations.length, 5);
       expect(
         bar.destinations.map(
           (destination) => (destination as NavigationDestination).label,
         ),
-        ['Home', 'Capture', 'Ask', 'Find'],
+        ['Home', 'Capture', 'Ask', 'Find', 'Profile'],
       );
       expect(find.byType(Icon), findsWidgets);
       expect(find.text('More'), findsNothing);
@@ -267,6 +267,8 @@ void main() {
       expect(selected, 2);
       await tester.tap(find.text('Find'));
       expect(selected, 3);
+      await tester.tap(find.text('Profile'));
+      expect(selected, 4);
     },
   );
 
