@@ -234,6 +234,16 @@ void main() {
         lessThanOrEqualTo(tester.getTopLeft(find.byType(HomeNavigation)).dy),
       );
       final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(bar.height, 70);
+      expect(bar.backgroundColor, Colors.transparent);
+      expect(tester.getTopLeft(find.byType(NavigationBar)).dx, 18);
+      final pill = tester.widget<ClipRRect>(
+        find.descendant(
+          of: find.byType(HomeNavigation),
+          matching: find.byType(ClipRRect),
+        ),
+      );
+      expect(pill.borderRadius, BorderRadius.circular(30));
       expect(bar.destinations.length, 4);
       expect(
         bar.destinations.map(
@@ -250,6 +260,10 @@ void main() {
       );
       await tester.tap(find.text('Capture'));
       expect(selected, 1);
+      await tester.tap(find.text('Ask'));
+      expect(selected, 2);
+      await tester.tap(find.text('Find'));
+      expect(selected, 3);
     },
   );
 

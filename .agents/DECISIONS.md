@@ -146,7 +146,8 @@ spreadsheet, and manual items can receive photos later from item detail.
 **Decision:** Match the user's supplied matte-dark Home reference: "My home",
 one borderless Ask field, two real-item question suggestions, four "Needs a
 decision" cards, retained-photo captures, and grouped persistent Spaces. Use
-the previous four-tab icon Home / Capture / Ask / Find navigation, per the user's
+the previous floating rounded-pill four-tab icon Home / Capture / Ask / Find
+navigation (30pt corners, inset 18pt, 70pt bar), per the user's
 follow-up request; no separate Home app bar,
 header gradient/divider, oversized greeting, or duplicate action tiles.
 

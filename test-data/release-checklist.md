@@ -23,7 +23,8 @@ On Home, verify "My home", one borderless Ask field, up to two real-item questio
 suggestions, four decision cards, retained-photo captures, and grouped saved
 Spaces (including empty ones). There must be no header gradient/divider, extra
 icons, greeting, or duplicate Capture/Ask/Find action tiles. The previous four-tab
-icon Home / Capture / Ask / Find navigation must reserve layout space. Find's
+icon Home / Capture / Ask / Find navigation must be the inset rounded pill with
+the previous selected-tab highlight, and must reserve layout space. Find's
 More menu must still open documents, notifications, and settings. Repeat on a small screen and at
 larger text size; Home must not overflow.
 
