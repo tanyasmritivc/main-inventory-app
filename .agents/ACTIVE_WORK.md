@@ -26,7 +26,7 @@ list ideas as active work.
   Review, follow-up and account-switch acceptance remain unverified. Existing
   FIND public-HTTP transport remains a separate security limitation.
 
-## Profile navigation in progress
+## Profile navigation release
 
 - `feat/profile-nav-hub` in `/private/tmp/findez-ask-reference`, based on the
   released build 37. Mobile only: add a fifth circular Profile destination to
@@ -34,8 +34,9 @@ list ideas as active work.
   utilities there. Preserve Home, Ask attachments/speed, Capture, Find inventory,
   tutorial page indices, API contracts, backend and existing account actions.
   Implementation, all 66 Flutter tests with coverage and clean analysis are
-  complete. Build `1.0.7 (38)` is being signed and released; Apple processing,
-  group assignment and native install/launch are not yet claimed. Hands-on
+  complete, with all five CI test jobs passing on `b4aa726` (PR #30). Build
+  `1.0.7 (38)` passed Apple validation, upload, `VALID` processing, both internal
+  group assignment and native install/launch. Hands-on
   account/settings/camera and TestFlight-app checks remain unverified.
 
 ## Known blocked product work

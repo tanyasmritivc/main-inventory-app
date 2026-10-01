@@ -1,6 +1,6 @@
 # Current architecture
 
-This describes the 2026-09-30 release candidate. Planned systems are labeled.
+This describes the 2026-10-01 release candidate. Planned systems are labeled.
 
 ## Repository
 
@@ -17,7 +17,7 @@ This describes the 2026-09-30 release candidate. Planned systems are labeled.
 
 The Flutter app uses Supabase Auth directly, then sends the Supabase access token to
 FastAPI through `mobile/lib/core/api_client.dart`. Its main shell has Home, Capture,
-Ask, and Find. Home surfaces recent items, places, natural-language recall, and
+Ask, Find and Profile in the restored rounded icon pill. Home surfaces recent items, places, natural-language recall, and
 pending Review items. Profile, team, sharing, project, document, checkout,
 notification, and settings flows remain.
 
@@ -55,7 +55,7 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `036`, but they do not contain
+related services. Numbered migrations exist through `037`, but they do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
