@@ -6,6 +6,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,6 +34,7 @@ class ChatPage extends StatefulWidget {
     this.onChatStateChanged,
     this.pageController,
     this.onOpenDestination,
+    this.photoPicker,
   });
 
   final ApiClient api;
@@ -47,6 +49,7 @@ class ChatPage extends StatefulWidget {
   final void Function(bool hasMessages)? onChatStateChanged;
   final PageController? pageController;
   final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
+  final Future<AskPhoto?> Function(bool camera)? photoPicker;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -202,6 +205,8 @@ class _ChatPageState extends State<ChatPage>
   List<InventoryItem>? _inventorySnapshot;
 
   final List<String> _pendingAttachments = [];
+  AskPhoto? _photo;
+  bool _pickingPhoto = false;
 
   final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
@@ -356,6 +361,8 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
+      _photo = null;
+      _pickingPhoto = false;
       _sending = false;
       _canQueueFollowUp = false;
       _progress = null;
@@ -1894,8 +1901,12 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
-    final q = text.trim();
+    final photo = _photo;
+    final q = text.trim().isEmpty && photo != null
+        ? 'What is in this photo? Do I already have it?'
+        : text.trim();
     if (q.isEmpty) return;
+    if (_pickingPhoto) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
       _queuedFollowUps.add(q);
@@ -1925,12 +1936,19 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) return;
     setState(() {
       _sending = true;
+      _progress = photo == null ? null : 'Reading your photo...';
+      _photo = null;
       _canQueueFollowUp = false;
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
         final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
         _session.messages.add(
-          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+          _ChatMessage(
+            role: 'user',
+            content: safeQ,
+            timestamp: _nowTs(),
+            photo: photo,
+          ),
         );
       }
       _session.messages.add(
@@ -1952,13 +1970,24 @@ class _ChatPageState extends State<ChatPage>
       Map<String, dynamic>? hint;
       String? conversationId;
       var completed = false;
-      await for (final event in widget.api.aiCommandStream(
-        message: q,
-        conversationId: _currentConversationId,
-      )) {
+      final events = photo == null
+          ? widget.api.aiCommandStream(
+              message: q,
+              conversationId: _currentConversationId,
+            )
+          : widget.api.aiPhotoQuestionStream(
+              message: q,
+              photo: photo,
+              conversationId: _currentConversationId,
+            );
+      await for (final event in events) {
         if (!mounted || requestGeneration != _requestGeneration) return;
         if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
+          if (photo != null) _progress = null;
           _enqueuePresentation(assistantIndex, event.delta!);
+        }
+        if (event.type == 'status' && (event.message ?? '').isNotEmpty) {
+          setState(() => _progress = event.message);
         }
         if (event.navHint != null) hint = event.navHint;
         if (event.answerContext != null) answerContext = event.answerContext;
@@ -2015,7 +2044,9 @@ class _ChatPageState extends State<ChatPage>
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
-          content: 'Something went wrong. Please try again.',
+          content: e is AskRequestException
+              ? e.message
+              : 'Something went wrong. Please try again.',
           timestamp: _session.messages[assistantIndex].timestamp,
           isStreaming: false,
         );
@@ -2165,9 +2196,15 @@ class _ChatPageState extends State<ChatPage>
 
   Future<void> _loadConversation(String id) async {
     _closeHistory();
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
       final result = await widget.api.getConversation(id);
-      if (!mounted) return;
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
       final msgs = result.messages
           .map(
             (m) => _ChatMessage(
@@ -2178,6 +2215,17 @@ class _ChatPageState extends State<ChatPage>
             ),
           )
           .toList();
+      for (var i = 1; i < msgs.length; i++) {
+        if (msgs[i].role != 'assistant' || msgs[i - 1].role != 'user') continue;
+        final photoUrl = trustedAskPhotoUrl(
+          msgs[i].answerContext?.photoUrl,
+          owner: Supabase.instance.client.auth.currentUser?.id,
+          origins: [widget.api.baseUrl, AppConfig.supabaseUrl],
+        );
+        if (photoUrl != null) {
+          msgs[i - 1] = msgs[i - 1].copyWith(photoUrl: photoUrl);
+        }
+      }
       setState(() {
         _session.messages = msgs;
         _session.hasStarted = msgs.isNotEmpty;
@@ -2475,6 +2523,82 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
+  Future<void> _attachPhoto() async {
+    if (_sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    final camera = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: const Color(0xFF171719),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, true),
+            ),
+            ListTile(
+              title: const Text('Choose photo'),
+              onTap: () => Navigator.pop(context, false),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (camera == null || !mounted || generation != _requestGeneration) return;
+    setState(() => _pickingPhoto = true);
+    try {
+      AskPhoto? photo;
+      if (widget.photoPicker != null) {
+        photo = await widget.photoPicker!(camera);
+      } else {
+        final file = await ImagePicker().pickImage(
+          source: camera ? ImageSource.camera : ImageSource.gallery,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        );
+        if (file != null) {
+          if (await file.length() > AskPhoto.maxBytes) {
+            throw const AskRequestException(
+              'Choose a photo smaller than 10 MB.',
+            );
+          }
+          photo = AskPhoto(bytes: await file.readAsBytes());
+        }
+      }
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
+      if (photo != null &&
+          (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes)) {
+        throw const AskRequestException(
+          'Choose a valid photo smaller than 10 MB.',
+        );
+      }
+      if (photo != null) setState(() => _photo = photo);
+    } catch (error) {
+      if (!mounted || generation != _requestGeneration) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is AskRequestException
+                ? error.message
+                : 'Could not open the photo. Check camera or photo access in Settings.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _pickingPhoto = false);
+      }
+    }
+  }
+
   Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) =>
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
@@ -2483,6 +2607,7 @@ class _ChatPageState extends State<ChatPage>
             : message.content,
         contextData: message.answerContext,
         isLoading: isTyping,
+        pendingMessage: _progress ?? 'Checking your things...',
         onOpenSource:
             message.navHint?['type'] != 'project_kit' ||
                 message.answerContext?.sources
@@ -2511,7 +2636,9 @@ class _ChatPageState extends State<ChatPage>
     super.build(context);
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final canSend =
-        _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
+        !_pickingPhoto &&
+        (_controller.text.trim().isNotEmpty || _photo != null) &&
+        (!_sending || _canQueueFollowUp);
 
     return Scaffold(
       backgroundColor: const Color(0xFF09090B),
@@ -2565,12 +2692,18 @@ class _ChatPageState extends State<ChatPage>
                     }
                     return _messageEntrance(
                       m,
-                      AskQuestionCard(question: m.content),
+                      AskQuestionCard(
+                        question: m.content,
+                        photoBytes: m.photo?.bytes,
+                        photoUrl: m.photoUrl,
+                      ),
                     );
                   },
                 ),
               ),
-              if (_sending && _progress != null) ...[
+              if (_sending &&
+                  _progress != null &&
+                  !_session.messages.any((message) => message.isStreaming)) ...[
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -2583,12 +2716,51 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 const SizedBox(height: 10),
               ],
+              if (_photo != null)
+                Padding(
+                  key: const Key('ask-photo-preview'),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: _sending ? null : _attachPhoto,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            _photo!.bytes,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            semanticLabel: 'Attached photo. Tap to replace.',
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              width: 64,
+                              height: 64,
+                              child: Center(child: Text('Photo')),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Photo attached',
+                          style: TextStyle(color: Color(0xFF9999A2)),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Remove photo',
+                        onPressed: () => setState(() => _photo = null),
+                        icon: const Icon(Icons.close, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
               Container(
                 constraints: const BoxConstraints(
                   minHeight: 48,
                   maxHeight: 116,
                 ),
-                padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+                padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF171719),
                   borderRadius: BorderRadius.circular(18),
@@ -2596,6 +2768,25 @@ class _ChatPageState extends State<ChatPage>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    IconButton(
+                      tooltip: 'Attach photo',
+                      onPressed: _sending || _pickingPhoto
+                          ? null
+                          : _attachPhoto,
+                      icon: _pickingPhoto
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white54,
+                              size: 22,
+                            ),
+                    ),
                     Expanded(
                       child: TextField(
                         controller: _controller,
@@ -2693,6 +2884,8 @@ class _ChatMessage {
     this.isStreaming = false,
     this.navHint,
     this.answerContext,
+    this.photo,
+    this.photoUrl,
   });
 
   final String role;
@@ -2701,6 +2894,8 @@ class _ChatMessage {
   final bool isStreaming;
   final Map<String, dynamic>? navHint;
   final AskAnswerContext? answerContext;
+  final AskPhoto? photo;
+  final String? photoUrl;
 
   _ChatMessage copyWith({
     String? content,
@@ -2708,6 +2903,7 @@ class _ChatMessage {
     bool? isStreaming,
     Map<String, dynamic>? navHint,
     AskAnswerContext? answerContext,
+    String? photoUrl,
   }) {
     return _ChatMessage(
       role: role,
@@ -2716,6 +2912,8 @@ class _ChatMessage {
       isStreaming: isStreaming ?? this.isStreaming,
       navHint: navHint ?? this.navHint,
       answerContext: answerContext ?? this.answerContext,
+      photo: photo,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

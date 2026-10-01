@@ -47,7 +47,7 @@ def _matches_knowledge_query(row: dict, query: str) -> bool:
     return all(token in searchable for token in tokens)
 
 
-def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
+def _inventory_knowledge(*, user_id: str, query: str = '', include_projects: bool = True) -> dict:
     """Return live, access-scoped inventory structure for read-only AI answers."""
     from app.services.sharing_service import get_joined_shares, get_my_shares, get_share_inventory
     from app.services.spaces_repo import list_spaces
@@ -149,6 +149,9 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
             'permission': info['permission'],
         } for item in matching)
 
+    if not include_projects:
+        return {'query': query, 'spaces': spaces, 'personal_items': personal_items,
+                'shared_and_joined_items': shared_items, 'project_kits': []}
     client = get_supabase_admin()
     kit_fields = 'id,name,location,share_id,owner_user_id,created_by_user_id,updated_at'
     raw_kits = client.table('project_kits').select(

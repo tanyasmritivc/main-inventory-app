@@ -189,3 +189,18 @@ Conversation setup and snapshot write failures must surface a safe error;
 missing/foreign conversation IDs are rejected instead of silently opening a new
 thread. Optional memory retrieval remains best-effort and is not claimed as a
 successful history write.
+
+## 2026-10-01: Ask photos identify and compare, not silently add inventory
+
+**Decision:** Ask supports one camera/library image per question, with a removable
+and replaceable preview. Reuse FIND's existing extraction and verified catalog
+enrichment, then compare only access-scoped inventory. Barcode or brand/part
+identifiers can support a product match; names alone are possible matches, not
+proof of ownership. Uncertain objects go to Home Review with their retained
+source/crop photos. Photo questions never automatically create inventory items.
+Read-only explanations have no mutation tools. Public photo snapshots use the
+existing assistant `answer_context`; history URLs are reconstructed from an
+owned generated storage path, and mobile validates the origin and owner before
+loading them. Uploads are validated/downscaled and stripped of metadata, and
+consume the existing photo/chat quotas. Text-chat speed and FIND behavior are
+unchanged: the user explicitly withdrew the speed request.

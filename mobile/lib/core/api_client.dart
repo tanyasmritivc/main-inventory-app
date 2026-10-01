@@ -13,6 +13,13 @@ class SessionExpiredException implements Exception {
   String toString() => 'Session expired. Please sign in again.';
 }
 
+class AskRequestException implements Exception {
+  const AskRequestException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
   ApiClient({required String baseUrl})
     : _dio = dio.Dio(
@@ -49,6 +56,7 @@ class ApiClient {
   final dio.Dio _dio;
   final String? _teamId;
   final String? _teamSpaceId;
+  String get baseUrl => _dio.options.baseUrl;
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -705,6 +713,51 @@ class ApiClient {
     }
   }
 
+  Stream<AiStreamEvent> aiPhotoQuestionStream({
+    required String message,
+    required AskPhoto photo,
+    String? conversationId,
+  }) async* {
+    if (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes) {
+      throw const AskRequestException(
+        'Choose a valid photo smaller than 10 MB.',
+      );
+    }
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${baseUrl.replaceFirst(RegExp(r"/$"), "")}/ai_photo_question'),
+    );
+    request.headers['Accept'] = 'text/event-stream';
+    request.headers['Authorization'] = 'Bearer ${_requireToken()}';
+    request.fields['message'] = message;
+    if (conversationId != null) {
+      request.fields['conversation_id'] = conversationId;
+    }
+    request.files.add(
+      http.MultipartFile.fromBytes('file', photo.bytes, filename: 'photo.jpg'),
+    );
+    final client = http.Client();
+    try {
+      final response = await client
+          .send(request)
+          .timeout(const Duration(minutes: 2));
+      if (response.statusCode != 200) {
+        throw AskRequestException(switch (response.statusCode) {
+          401 => 'Session expired. Please sign in again.',
+          403 => 'Your account photo or chat limit has been reached.',
+          404 => 'This conversation is unavailable. Start a new chat.',
+          413 => 'Choose a photo smaller than 10 MB.',
+          400 || 422 => 'Choose a valid photo and a shorter question.',
+          429 => 'Too many photo requests. Please wait a moment.',
+          _ => 'Your photo question could not be completed. Please try again.',
+        });
+      }
+      yield* decodeAiCommandEvents(response.stream);
+    } finally {
+      client.close();
+    }
+  }
+
   Future<Map<String, dynamic>> getMyLimits() async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/me/limits',
@@ -1237,7 +1290,14 @@ Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) async* {
     if (decoded is! Map<String, dynamic>) continue;
     final event = AiStreamEvent.fromJson(decoded);
     if (event.type == 'error') {
-      throw StateError('Ask is temporarily unavailable. Please try again.');
+      throw AskRequestException(switch (decoded['code']) {
+        'photo_timeout' =>
+          'Photo analysis took too long. Try a clearer, closer photo.',
+        'photo_failed' => 'Your photo could not be analyzed. Please try again.',
+        'history_save_failed' =>
+          'The answer could not be saved. Please try again.',
+        _ => 'Ask is temporarily unavailable. Please try again.',
+      });
     }
     yield event;
   }

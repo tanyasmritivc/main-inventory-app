@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class AskSessionScope {
   String? _owner;
 
@@ -41,10 +43,12 @@ class AskAnswerContext {
     this.sources = const [],
     this.rows = const [],
     this.rowsTruncated = false,
+    this.photoUrl,
   });
   final List<AskSource> sources;
   final List<AskResultRow> rows;
   final bool rowsTruncated;
+  final String? photoUrl;
 
   factory AskAnswerContext.fromJson(Map<String, dynamic> json) {
     String text(Object? value, [int limit = 200]) {
@@ -70,6 +74,7 @@ class AskAnswerContext {
               'document',
               'history',
               'spaces',
+              'photo',
             }.contains(kind)) {
           continue;
         }
@@ -110,6 +115,49 @@ class AskAnswerContext {
       sources: sources,
       rows: rows,
       rowsTruncated: json['rows_truncated'] == true,
+      photoUrl: text(json['photo_url'], 2000).isEmpty
+          ? null
+          : text(json['photo_url'], 2000),
     );
   }
+}
+
+class AskPhoto {
+  const AskPhoto({required this.bytes});
+  final Uint8List bytes;
+  static const maxBytes = 10 * 1024 * 1024;
+}
+
+// History previews load only app-owned photos on a configured origin.
+String? trustedAskPhotoUrl(
+  String? value, {
+  required String? owner,
+  required List<String> origins,
+}) {
+  if (value == null || owner == null || owner.isEmpty) return null;
+  final uri = Uri.tryParse(value);
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      uri.userInfo.isNotEmpty ||
+      uri.fragment.isNotEmpty) {
+    return null;
+  }
+  if (!origins.any(
+    (origin) =>
+        Uri.tryParse(origin)?.hasAuthority == true &&
+        Uri.parse(origin).origin == uri.origin,
+  )) {
+    return null;
+  }
+  final path = uri.pathSegments;
+  if (path.length != 7 ||
+      path[0] != 'storage' ||
+      path[1] != 'v1' ||
+      path[2] != 'object' ||
+      !{'public', 'sign'}.contains(path[3]) ||
+      path[4].isEmpty ||
+      path[5] != owner) {
+    return null;
+  }
+  return RegExp(r'^ask-[a-f0-9]{32}\.jpg$').hasMatch(path[6]) ? value : null;
 }

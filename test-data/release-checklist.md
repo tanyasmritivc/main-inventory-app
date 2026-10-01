@@ -55,6 +55,19 @@ tappable at every step.
 
 ## 2. Inventory loads and stays loaded
 
+### Ask photo attachment acceptance
+
+On a physical iPhone, use Ask's add button for both camera and library. Verify
+permission denial and cancellation are safe; the preview can be removed or
+replaced; sending a photo without text supplies an identification/ownership
+question; and the sent photo remains visible. Check a known barcode/brand-part
+match, a name-only possible match, no match, and an uncertain result that appears
+in Home Review with its photo. No inventory item should be added merely by asking
+about a photo. Send a follow-up about the object, try New chat during analysis,
+and switch accounts; no prior account's photo or late response should appear.
+Try a narrow device and larger text/keyboard. Native install/launch and widget
+tests do not count as passing this hands-on check.
+
 Open Find. Switch to Ask and back. Do that **six
 times**.
 

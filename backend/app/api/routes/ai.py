@@ -3,7 +3,7 @@ import json as json_module
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -24,13 +24,124 @@ from app.services.ai_memory import (
     save_conversation,
 )
 from app.services.documents_repo import create_activity
+from app.services.ask_photo_questions import answer_photo_question, remember_photo_answer
+from app.services.find_pipeline import FindPipelineError
+from app.services.item_photos import MAX_ITEM_PHOTO_BYTES, _jpeg_bytes
 from app.services.ai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
-from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat
+from app.services.limits import ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat, check_and_increment_scan
 
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: str | None) -> str:
+    client = get_supabase_admin()
+    if conversation_id:
+        rows = client.table('conversations').select('id').eq('id', conversation_id).eq('user_id', user_id).limit(1).execute().data
+        if not rows:
+            raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+    else:
+        rows = client.table('conversations').insert({'user_id': user_id, 'title': message[:60]}).execute().data
+        conversation_id = ((rows or [{}])[0]).get('id')
+        if not conversation_id:
+            raise RuntimeError('Conversation insert returned no identity')
+    client.table('messages').insert({'conversation_id': conversation_id, 'role': 'user', 'content': message}).execute()
+    return conversation_id
+
+
+def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
+    client = get_supabase_admin()
+    client.table('messages').insert({
+        'conversation_id': conversation_id, 'role': 'assistant',
+        'content': answer['assistant_message'], 'answer_context': answer.get('answer_context'),
+    }).execute()
+    client.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).execute()
+
+
+@router.post('/ai_photo_question', response_model=None)
+@limiter.limit('10/minute')
+async def ai_photo_question_route(
+    request: Request,
+    file: UploadFile = File(...),
+    message: str = Form('What is in this photo? Do I already have it?', max_length=2000),
+    conversation_id: str | None = Form(None, max_length=100),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> StreamingResponse:
+    raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
+    if len(raw) > MAX_ITEM_PHOTO_BYTES:
+        raise HTTPException(413, 'Choose a photo smaller than 10 MB.')
+    try:
+        jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
+    except ValueError:
+        raise bad_request('Choose a valid photo smaller than 10 MB and 25 megapixels.')
+    question = message.strip() or 'What is in this photo? Do I already have it?'
+    if conversation_id:
+        def check_owner():
+            rows = get_supabase_admin().table('conversations').select('id').eq('id', conversation_id).eq('user_id', user.user_id).limit(1).execute().data
+            if not rows:
+                raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+        try:
+            await asyncio.to_thread(check_owner)
+        except HTTPException:
+            raise
+        except Exception:
+            raise bad_gateway('Your conversation could not be checked. Please try again.')
+    try:
+        await asyncio.to_thread(check_and_increment_scan, user.user_id)
+        await asyncio.to_thread(check_and_increment_chat, user.user_id)
+    except (ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded):
+        raise HTTPException(403, 'Your account photo or chat limit has been reached.')
+    except Exception:
+        raise bad_gateway('Your account limits could not be checked. Please try again.')
+    try:
+        conv_id = await asyncio.to_thread(_prepare_ask_conversation, user_id=user.user_id, message=question, conversation_id=conversation_id)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Could not save the photo question')
+        raise bad_gateway('Your photo question could not be saved. Please try again.')
+
+    async def generate():
+        task = asyncio.create_task(answer_photo_question(user_id=user.user_id, message=question, image_bytes=jpeg))
+        try:
+            yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
+            while not task.done():
+                await asyncio.wait({task}, timeout=5)
+                if not task.done():
+                    yield b'data: {"type":"status","message":"Photo analysis is still running..."}\n\n'
+            answer = await task
+            yield f"data: {json_module.dumps({'type': 'delta', 'delta': answer['assistant_message']})}\n\n".encode()
+            try:
+                await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
+            except Exception:
+                logger.exception('Photo answer snapshot could not be saved')
+                yield b'data: {"type":"error","code":"history_save_failed"}\n\n'
+                yield b'data: [DONE]\n\n'
+                return
+            try:
+                await asyncio.to_thread(remember_photo_answer, user_id=user.user_id, message=question, answer=answer['assistant_message'])
+            except Exception:
+                logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
+            yield f"data: {json_module.dumps({'type': 'done', 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except FindPipelineError as exc:
+            code = 'photo_timeout' if exc.status_code == 504 else 'photo_failed'
+            yield f"data: {json_module.dumps({'type': 'error', 'code': code})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except Exception:
+            logger.exception('Photo question could not be completed')
+            yield b'data: {"type":"error","code":"photo_failed"}\n\n'
+            yield b'data: [DONE]\n\n'
+        finally:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+    return StreamingResponse(generate(), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
 
 
 def _wrap_sse(gen):

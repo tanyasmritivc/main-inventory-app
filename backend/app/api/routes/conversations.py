@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
+from app.services.ask_photo_questions import refresh_photo_context
 
 router = APIRouter(tags=["conversations"])
 logger = logging.getLogger(__name__)
@@ -59,7 +60,16 @@ def get_conversation(
         .order("created_at", desc=False)
         .execute()
     )
-    return {"conversation": conv_res.data[0], "messages": msgs_res.data or []}
+    messages = msgs_res.data or []
+    for message in messages:
+        context = message.get('answer_context')
+        if message.get('role') == 'assistant' and isinstance(context, dict) and ('photo_path' in context or 'photo_url' in context):
+            try:
+                message['answer_context'] = refresh_photo_context(context, user.user_id)
+            except Exception:
+                logger.warning('Saved Ask photo preview unavailable')
+                message['answer_context'] = {key: value for key, value in context.items() if key != 'photo_url'}
+    return {"conversation": conv_res.data[0], "messages": messages}
 
 
 @router.delete("/conversations/{conversation_id}")

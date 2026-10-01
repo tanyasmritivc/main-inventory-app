@@ -59,6 +59,16 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
 
 ## Known limitations and risks
 
+- Ask photo attachments are implemented on `feat/ask-fast-photo-questions` in
+  `/private/tmp/findez-ask-reference` (a separate lane based on build 36). One
+  camera/library image can be previewed/replaced/removed, sent with a question or
+  the default identification/ownership question, and retained in saved answer
+  context. Photo identification checks access-scoped inventory, labels possible
+  matches honestly, and sends uncertain objects to Review without automatically
+  adding inventory. The user cancelled text-speed work; it is excluded. All 327
+  backend and 55 mobile tests pass. Build 37 is being validated/released;
+  deployment, Apple processing, and hands-on photo acceptance are not yet claimed.
+
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
 - FIND jobs are deleted after mapping. Uploaded source images and available object
