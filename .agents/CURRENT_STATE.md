@@ -52,8 +52,9 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   through migration `037`. Flutter analysis, all 46 mobile tests with coverage,
   and all 292 backend tests pass. The narrowly scoped backend and migration are
   deployed and healthy. Signed build `1.0.7 (36)` passed Apple validation,
-  uploaded, and installed/launched on the physical iPhone. Apple processing and
-  TestFlight group availability are not yet confirmed. Failed conversation or
+  uploaded, and installed/launched on the physical iPhone. Apple processing is
+  `VALID` and `APP_STORE_ELIGIBLE`, with assignment to both internal TestFlight
+  groups confirmed. Failed conversation or
   snapshot writes now surface safe errors rather than silently losing history.
 
 ## Known limitations and risks
@@ -131,3 +132,26 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.
+
+- Build 36 (`1.0.7`) implements the supplied Ask reference: plain title/question
+  card, collapsed "What it read", readable streamed answer, and grouped real
+  quantity rows with missing/low/have badges. Home and the original four-tab pill
+  are unchanged. Named project questions use authorized requirements and
+  reservation-aware stock; unknown or ambiguous projects ask for clarification.
+  No invented requirements, private reasoning, or internal provider/tool names
+  are added to the public evidence contract. Saved snapshots use migration `037`
+  and existing conversation RLS; safe errors report history-write failures.
+  Flutter analysis, all 46 mobile tests with coverage, all 292 backend tests,
+  PostgreSQL 17 ownership/constraint checks, and all five CI test jobs pass on
+  implementation `f1204d8`; the final server safeguard is `44a2a14`.
+  Signed archive, Apple validation, upload, and native physical install/launch
+  passed. Delivery/build ID: `02154bba-e589-4447-b529-8e7331ddac9a`; App Store
+  Connect uploaded date: 10:59 PM PDT on 2026-09-30. Processing completed with
+  `VALID` and `APP_STORE_ELIGIBLE` status, and assignment to `Testers` and
+  `Internal Pilot Findez AI` is confirmed. The deployed backend and public
+  database health checks pass, unauthenticated Ask/history reads return 401, and
+  deployed file hashes match the reviewed source. PR #28 is stacked on #27.
+  TestFlight-app installation and hands-on keyboard, voice, source navigation,
+  ambiguous-project, and multi-account checks remain unverified. The broader
+  physical-memory vision and existing launch-image warning remain separate work;
+  the public App Store release is still `1.0.6 (17)`.
