@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
+Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation update.
 
 ## Working and deployed
 
@@ -69,6 +69,16 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   are deployed and healthy; build `1.0.7 (37)` is valid and in both internal
   TestFlight groups. Native physical install/launch passed. Hands-on photo
   acceptance is not yet claimed.
+
+- `feat/profile-nav-hub` adds the user's requested fifth circular Profile tab
+  to the restored rounded icon pill. Profile groups account editing, settings,
+  documents/notes, notifications, lent items and the app tour; duplicate utility
+  header icons and Find's old More sheet are replaced by this destination.
+  Existing account, billing, scanning and support actions are preserved. Home,
+  Ask/photo attachments, text speed, backend and web are unchanged. All 66 Flutter
+  tests with coverage, clean analysis and all five CI test jobs pass. Build 38
+  is valid and available in both internal TestFlight groups. Native physical
+  install/launch passed; full hands-on acceptance remains unverified.
 
 ## Known limitations and risks
 
@@ -192,3 +202,17 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   matching/Review, follow-up and account-switch acceptance remain unverified.
   The existing public-HTTP FIND transport security limitation and default launch
   image warning remain; this is not a claim that the whole app is production-ready.
+
+- Build 38 (`1.0.7`) adds the requested fifth circular Profile pill destination
+  and utility hub, with separate account editing/settings and existing documents,
+  notifications, lent items and app tour. Duplicate utility header icons and
+  Find More are replaced by Profile. All 66 mobile tests with coverage, clean
+  analysis and all five CI jobs pass on `b4aa726`; newer-Flutter Material ink
+  compatibility is included. Apple validation, signed native install/launch,
+  upload and `VALID` processing passed. Delivery/build ID:
+  `f3fd1470-274e-4b93-be11-f9aba147546e`; uploaded 00:43:33 PDT on 2026-10-01;
+  both internal groups are assigned. Build 37 archive/IPA are preserved in
+  `archive-build37`/`ipa-build37`. PR #30 is stacked on #29. Home, Ask attachments,
+  text speed, backend and web are unchanged. Hands-on acceptance remains
+  unverified. The user subsequently reported cramped profile editing, missing
+  overview avatars and old Documents styling; a scoped follow-up is required.

@@ -12,7 +12,6 @@ import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/push_notifications.dart';
-import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../checkout/checkout_page.dart';
@@ -25,6 +24,8 @@ import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
+import '../profile/profile_hub_page.dart';
+import '../onboarding/onboarding_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
@@ -56,7 +57,6 @@ class _MainShellState extends State<MainShell> {
   int _pageTransitionGeneration = 0;
   int _chatGeneration = 0;
   String? _chatInitialMessage;
-  bool _openingMore = false;
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -176,11 +176,12 @@ class _MainShellState extends State<MainShell> {
     0 => 0,
     2 => 1,
     1 => 2,
+    4 => 4,
     _ => 3,
   };
 
   void _onNavigationTap(int index) {
-    const pages = [0, 2, 1, 3];
+    const pages = [0, 2, 1, 3, 4];
     _animateTo(pages[index], haptic: true);
   }
 
@@ -201,8 +202,8 @@ class _MainShellState extends State<MainShell> {
       MaterialPageRoute(
         builder: (_) => Scaffold(
           backgroundColor: Colors.black,
-          appBar: AppBar(title: const Text('Profile')),
-          body: ProfilePage(api: widget.api),
+          appBar: AppBar(title: const Text('Your profile')),
+          body: ProfilePage(api: widget.api, accountOnly: true),
         ),
       ),
     );
@@ -271,45 +272,27 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Future<void> _openMore() async {
-    if (_openingMore) return;
-    _openingMore = true;
-    final destination = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: HomeColors.surface,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Documents and notes'),
-              onTap: () => Navigator.pop(context, 'documents'),
-            ),
-            ListTile(
-              title: const Text('Notifications'),
-              trailing: _notificationCount > 0
-                  ? Text('$_notificationCount')
-                  : null,
-              onTap: () => Navigator.pop(context, 'notifications'),
-            ),
-            ListTile(
-              title: const Text('Profile and settings'),
-              onTap: () => Navigator.pop(context, 'profile'),
-            ),
-          ],
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: HomeColors.background,
+          appBar: AppBar(title: const Text('Settings')),
+          body: ProfilePage(api: widget.api, settingsOnly: true),
         ),
       ),
     );
-    _openingMore = false;
-    if (!mounted) return;
-    switch (destination) {
-      case 'documents':
-        await _openDocuments();
-      case 'notifications':
-        await _openNotifications();
-      case 'profile':
-        await _openProfile();
-    }
+  }
+
+  Future<void> _openTour() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (tourContext) => OnboardingPage(
+          saveFirstSpace: false,
+          onFinished: () => Navigator.of(tourContext).pop(),
+        ),
+      ),
+    );
   }
 
   Future<void> _loadNotificationCount() async {
@@ -364,41 +347,6 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Widget _notificationBell() {
-    return IconButton(
-      tooltip: 'Notifications',
-      onPressed: _openNotifications,
-      icon: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(CupertinoIcons.bell, size: 21),
-          if (_notificationCount > 0)
-            Positioned(
-              right: -7,
-              top: -7,
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: const BoxDecoration(
-                  color: AppColors.danger,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _notificationCount > 99 ? '99+' : '$_notificationCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   PreferredSizeWidget? _buildAppBar() {
     switch (_currentPage) {
       case 3:
@@ -433,19 +381,10 @@ class _MainShellState extends State<MainShell> {
                 icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
                 tooltip: 'Join Shared Space',
               ),
-            _notificationBell(),
-            IconButton(
-              tooltip: 'More',
-              icon: const Icon(CupertinoIcons.ellipsis, size: 22),
-              onPressed: _openMore,
-            ),
           ],
         );
       case 2:
-        return AppBar(
-          title: const Text('Capture'),
-          actions: [_notificationBell()],
-        );
+        return AppBar(title: const Text('Capture'));
       case 1:
         return null;
       default:
@@ -538,6 +477,16 @@ class _MainShellState extends State<MainShell> {
                 ),
                 TeamsPage(api: widget.api),
               ],
+            ),
+            ProfileHubPage(
+              api: widget.api,
+              onOpenProfile: _openProfile,
+              onOpenSettings: _openSettings,
+              onOpenDocuments: _openDocuments,
+              onOpenNotifications: _openNotifications,
+              onOpenCheckouts: _openCheckouts,
+              onOpenTour: _openTour,
+              unreadCount: _notificationCount,
             ),
           ],
         ),

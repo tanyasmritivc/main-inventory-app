@@ -171,3 +171,20 @@ iPhone, additionally check camera/library permissions, cancel/replace/remove,
 identification, an owned product match, an uncertain Review result, follow-up
 questions, and switching accounts. Native install/launch alone does not verify
 these interactions.
+
+## Profile navigation regressions
+
+`mobile/test/profile_navigation_test.dart` covers the fifth circular Profile
+destination, unchanged pill/order, every utility callback, actual shell routing
+to account details/settings and back to Home, safe read/retry/save failures,
+disposed late reads, malformed avatar-color fallback, separate account/settings
+reads, a real Material ink surface for utility rows (including newer Flutter),
+confirmed deletion cancellation with no request, and narrow/large-text
+scrolling above the reserved navigation area. `home_page_test.dart` also locks
+the five-tab order. Existing account APIs and billing behavior are not changed.
+
+On a physical iPhone, check tab switching, profile editing and avatar selection,
+settings persistence, documents, notifications/APNs links, lent items, support,
+app tour, sign-out and account switching. Test delete confirmation with a
+throwaway account only. Native installation/launch does not pass these hands-on
+checks.

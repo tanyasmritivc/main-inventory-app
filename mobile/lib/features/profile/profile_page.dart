@@ -18,9 +18,16 @@ import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key, required this.api});
+  const ProfilePage({
+    super.key,
+    required this.api,
+    this.accountOnly = false,
+    this.settingsOnly = false,
+  }) : assert(!(accountOnly && settingsOnly));
 
   final ApiClient api;
+  final bool accountOnly;
+  final bool settingsOnly;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -52,8 +59,10 @@ class _ProfilePageState extends State<ProfilePage> {
     _isTeamCovered = ProStatus.isTeamCovered;
     _isPilotMode = ProStatus.isPilotMode;
     _proLoading = !ProStatus.isPro && !ProStatus.isPilotMode;
-    _loadScanSettings();
-    _loadSubscriptionStatus();
+    if (!widget.accountOnly) {
+      _loadScanSettings();
+      _loadSubscriptionStatus();
+    }
     _displayNameCtrl = TextEditingController();
     _contactEmailCtrl = TextEditingController();
     _organizationCtrl = TextEditingController();
@@ -70,7 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _displayNameCtrl.text = cachedName;
     }
 
-    _loadFullProfile();
+    if (!widget.settingsOnly) _loadFullProfile();
   }
 
   @override
@@ -106,9 +115,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadFullProfile() async {
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
       final profile = await widget.api.getMyProfile();
-      if (mounted) {
+      if (mounted && owner == Supabase.instance.client.auth.currentUser?.id) {
         setState(() {
           _displayName = profile['display_name'] ?? '';
           _contactEmail = profile['contact_email'] ?? '';
@@ -123,7 +133,9 @@ class _ProfilePageState extends State<ProfilePage> {
         });
       }
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Couldn’t load your profile.')),
       );
@@ -139,15 +151,16 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _chooseAvatarPhoto() async {
-    final image = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 512,
-      maxHeight: 512,
-      imageQuality: 78,
-    );
-    if (image == null) return;
-    if (mounted) setState(() => _avatarUploading = true);
+    if (_avatarUploading) return;
+    setState(() => _avatarUploading = true);
     try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 78,
+      );
+      if (image == null || !mounted) return;
       final url = await widget.api.uploadProfilePhoto(
         bytes: await image.readAsBytes(),
         filename: image.name,
@@ -166,12 +179,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _removeAvatarPhoto() async {
+    if (_avatarUploading) return;
     setState(() => _avatarUploading = true);
     try {
       await widget.api.deleteProfilePhoto();
       if (!mounted) return;
       HapticFeedback.selectionClick();
       setState(() => _avatarUrl = '');
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _avatarUploading = false);
     }
@@ -268,9 +287,8 @@ class _ProfilePageState extends State<ProfilePage> {
           content: const Text('Email us at info@findez.ai'),
           action: SnackBarAction(
             label: 'Copy',
-            onPressed: () => Clipboard.setData(
-              const ClipboardData(text: 'info@findez.ai'),
-            ),
+            onPressed: () =>
+                Clipboard.setData(const ClipboardData(text: 'info@findez.ai')),
           ),
         ),
       );
@@ -322,11 +340,24 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _signOut() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   Color _hexToColor(String hex) {
     final h = hex.replaceAll('#', '');
-    return Color(int.parse('FF$h', radix: 16));
+    return RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(h)
+        ? Color(int.parse('FF$h', radix: 16))
+        : const Color(0xFF636366);
   }
 
   Widget _sectionLabel(String text) => Padding(
@@ -467,604 +498,469 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 132),
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
         children: [
           // ── Account ──────────────────────────────────────────────────────
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    width: 0.5,
+          if (!widget.settingsOnly)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      width: 0.5,
+                    ),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: _editingProfile
-                              ? _editAvatarPhoto
-                              : () => setState(() => _editingProfile = true),
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: _hexToColor(_avatarColor),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.18),
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: _avatarUploading
-                                ? const Padding(
-                                    padding: EdgeInsets.all(19),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : _avatarUrl.isNotEmpty
-                                ? Image.network(
-                                    _avatarUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => Center(
-                                      child: Text(
-                                        _displayName.isNotEmpty
-                                            ? _displayName[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Tooltip(
+                            message: 'Edit profile photo',
+                            child: GestureDetector(
+                              onTap: _editingProfile
+                                  ? _editAvatarPhoto
+                                  : () =>
+                                        setState(() => _editingProfile = true),
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: _hexToColor(_avatarColor),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: _avatarUploading
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(19),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : _avatarUrl.isNotEmpty
+                                    ? Image.network(
+                                        _avatarUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Center(
+                                          child: Text(
+                                            _displayName.isNotEmpty
+                                                ? _displayName[0].toUpperCase()
+                                                : '?',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          _displayName.isNotEmpty
+                                              ? _displayName[0].toUpperCase()
+                                              : '?',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_editingProfile)
+                                  TextField(
+                                    controller: _displayNameCtrl,
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => FocusManager
+                                        .instance
+                                        .primaryFocus
+                                        ?.unfocus(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Display name',
+                                      hintStyle: TextStyle(
+                                        color: Color(0x4DFFFFFF),
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
                                     ),
                                   )
-                                : Center(
-                                    child: Text(
-                                      _displayName.isNotEmpty
-                                          ? _displayName[0].toUpperCase()
-                                          : '?',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                else
+                                  Text(
+                                    _displayName.isNotEmpty
+                                        ? _displayName
+                                        : 'Set your name',
+                                    style: TextStyle(
+                                      color: _displayName.isNotEmpty
+                                          ? Colors.white
+                                          : const Color(0x4DFFFFFF),
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_editingProfile)
-                                TextField(
-                                  controller: _displayNameCtrl,
-                                  textInputAction: TextInputAction.done,
-                                  onSubmitted: (_) => FocusManager
-                                      .instance
-                                      .primaryFocus
-                                      ?.unfocus(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Display name',
-                                    hintStyle: TextStyle(
-                                      color: Color(0x4DFFFFFF),
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.zero,
-                                  ),
-                                )
-                              else
+                                const SizedBox(height: 2),
                                 Text(
-                                  _displayName.isNotEmpty
-                                      ? _displayName
-                                      : 'Set your name',
-                                  style: TextStyle(
-                                    color: _displayName.isNotEmpty
-                                        ? Colors.white
-                                        : const Color(0x4DFFFFFF),
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              const SizedBox(height: 2),
-                              Text(
-                                Supabase
-                                        .instance
-                                        .client
-                                        .auth
-                                        .currentUser
-                                        ?.email ??
-                                    '',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Color(0xFF8E8E93),
-                                  fontSize: 13,
-                                ),
-                              ),
-                              if (!_editingProfile &&
-                                  (_profileRole.isNotEmpty ||
-                                      _organization.isNotEmpty)) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  [_profileRole, _organization]
-                                      .where((value) => value.isNotEmpty)
-                                      .join(' · '),
+                                  Supabase
+                                          .instance
+                                          .client
+                                          .auth
+                                          .currentUser
+                                          ?.email ??
+                                      '',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Color(0xFF8E8E93),
-                                    fontSize: 12,
+                                    fontSize: 13,
                                   ),
                                 ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (_editingProfile) {
-                              try {
-                                await widget.api.updateProfile(
-                                  displayName: _displayNameCtrl.text.trim(),
-                                  contactEmail: _contactEmailCtrl.text.trim(),
-                                  organization: _organizationCtrl.text.trim(),
-                                  profileRole: _profileRoleCtrl.text.trim(),
-                                );
-                                if (!context.mounted) return;
-                                setState(() {
-                                  _displayName = _displayNameCtrl.text.trim();
-                                  _contactEmail = _contactEmailCtrl.text.trim();
-                                  _organization = _organizationCtrl.text.trim();
-                                  _profileRole = _profileRoleCtrl.text.trim();
-                                  _editingProfile = false;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Profile updated'),
+                                if (!_editingProfile &&
+                                    (_profileRole.isNotEmpty ||
+                                        _organization.isNotEmpty)) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    [_profileRole, _organization]
+                                        .where((value) => value.isNotEmpty)
+                                        .join(' · '),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFF8E8E93),
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                );
-                              } catch (e) {
-                                debugPrint(
-                                  '[ProfilePage] profile save error: $e',
-                                );
-                                if (context.mounted) {
+                                ],
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              if (_editingProfile) {
+                                try {
+                                  await widget.api.updateProfile(
+                                    displayName: _displayNameCtrl.text.trim(),
+                                    contactEmail: _contactEmailCtrl.text.trim(),
+                                    organization: _organizationCtrl.text.trim(),
+                                    profileRole: _profileRoleCtrl.text.trim(),
+                                  );
+                                  if (!context.mounted) return;
+                                  setState(() {
+                                    _displayName = _displayNameCtrl.text.trim();
+                                    _contactEmail = _contactEmailCtrl.text
+                                        .trim();
+                                    _organization = _organizationCtrl.text
+                                        .trim();
+                                    _profileRole = _profileRoleCtrl.text.trim();
+                                    _editingProfile = false;
+                                  });
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
-                                        'Couldn\'t save profile. Try again.',
-                                      ),
+                                      content: Text('Profile updated'),
                                     ),
                                   );
-                                }
-                                // _editingProfile stays true — user's input is not lost
-                              }
-                            } else {
-                              setState(() => _editingProfile = true);
-                            }
-                          },
-                          child: Text(
-                            _editingProfile ? 'Save' : 'Edit',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_editingProfile) ...[
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: _editAvatarPhoto,
-                          icon: const Icon(
-                            Icons.add_a_photo_outlined,
-                            size: 17,
-                          ),
-                          label: Text(
-                            _avatarUrl.isEmpty
-                                ? 'Add profile photo'
-                                : 'Change profile photo',
-                          ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.groups_2_outlined,
-                            color: Color(0x4DFFFFFF),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _organizationCtrl,
-                              textCapitalization: TextCapitalization.words,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: 'Organization or team (optional)',
-                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.badge_outlined,
-                            color: Color(0x4DFFFFFF),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _profileRoleCtrl,
-                              textCapitalization: TextCapitalization.words,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: 'Role (optional)',
-                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.email_outlined,
-                            color: Color(0x4DFFFFFF),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _contactEmailCtrl,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) =>
-                                  FocusManager.instance.primaryFocus?.unfocus(),
-                              decoration: const InputDecoration(
-                                hintText: 'Contact email (optional)',
-                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 26, top: 5),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Visible only to people you collaborate with.',
-                            style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Profile color',
-                          style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 10,
-                        children:
-                            [
-                                  '#8FB5EE',
-                                  '#93D8C4',
-                                  '#B7A4E8',
-                                  '#F2A9B8',
-                                  '#F3C78B',
-                                  '#F0A98D',
-                                  '#8FCFD1',
-                                  '#A9ADB5',
-                                ]
-                                .map(
-                                  (color) => GestureDetector(
-                                    onTap: () async {
-                                      setState(() => _avatarColor = color);
-                                      await widget.api.updateProfile(
-                                        avatarColor: color,
-                                      );
-                                    },
-                                    child: Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: _hexToColor(color),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _avatarColor == color
-                                              ? Colors.white
-                                              : Colors.transparent,
-                                          width: 2,
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Couldn\'t save profile. Try again.',
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                    );
+                                  }
+                                  // _editingProfile stays true — user's input is not lost
+                                }
+                              } else {
+                                setState(() => _editingProfile = true);
+                              }
+                            },
+                            child: Text(
+                              _editingProfile ? 'Save' : 'Edit',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ] else if (_contactEmail.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      GestureDetector(
-                        onTap: () async {
-                          final uri = Uri.parse('mailto:$_contactEmail');
-                          if (await canLaunchUrl(uri)) launchUrl(uri);
-                        },
-                        child: Row(
+                      if (_editingProfile) ...[
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: _editAvatarPhoto,
+                            icon: const Icon(
+                              Icons.add_a_photo_outlined,
+                              size: 17,
+                            ),
+                            label: Text(
+                              _avatarUrl.isEmpty
+                                  ? 'Add profile photo'
+                                  : 'Change profile photo',
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.groups_2_outlined,
+                              color: Color(0x4DFFFFFF),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _organizationCtrl,
+                                textCapitalization: TextCapitalization.words,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Organization or team (optional)',
+                                  hintStyle: TextStyle(
+                                    color: Color(0x4DFFFFFF),
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.badge_outlined,
+                              color: Color(0x4DFFFFFF),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _profileRoleCtrl,
+                                textCapitalization: TextCapitalization.words,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Role (optional)',
+                                  hintStyle: TextStyle(
+                                    color: Color(0x4DFFFFFF),
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
                           children: [
                             const Icon(
                               Icons.email_outlined,
                               color: Color(0x4DFFFFFF),
-                              size: 14,
+                              size: 16,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _contactEmail,
-                              style: const TextStyle(
-                                color: Color(0x73FFFFFF),
-                                fontSize: 13,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _contactEmailCtrl,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => FocusManager
+                                    .instance
+                                    .primaryFocus
+                                    ?.unfocus(),
+                                decoration: const InputDecoration(
+                                  hintText: 'Contact email (optional)',
+                                  hintStyle: TextStyle(
+                                    color: Color(0x4DFFFFFF),
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            const Icon(
-                              Icons.open_in_new,
-                              color: Color(0x4DFFFFFF),
-                              size: 12,
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Pro / Upgrade ────────────────────────────────────────────────
-          if (_proLoading)
-            Container(
-              margin: const EdgeInsets.only(top: 16),
-              height: 60,
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF)),
-              ),
-              child: const Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    color: Color(0x73FFFFFF),
-                  ),
-                ),
-              ),
-            )
-          else if (_isPilotMode)
-            Container(
-              margin: const EdgeInsets.only(top: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0x0A34D399),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x3334D399)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.rocket_launch_outlined,
-                        color: Color(0xFF34D399),
-                        size: 20,
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Free Pilot',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    ProStatus.pilotNotice ??
-                        'Unlimited access through September 11, 2026. '
-                            'Standard free-plan limits and optional paid plans begin September 12. '
-                            'You will not be charged automatically.',
-                    style: const TextStyle(
-                      color: Color(0x99FFFFFF),
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  GestureDetector(
-                    onTap: () => unawaited(_sendFeedback()),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1A34D399),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0x3334D399)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.mail_outline,
-                            color: Color(0xFF34D399),
-                            size: 15,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Send feedback',
-                            style: TextStyle(
-                              color: Color(0xFF34D399),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                        const Padding(
+                          padding: EdgeInsets.only(left: 26, top: 5),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Visible only to people you collaborate with.',
+                              style: TextStyle(
+                                color: Color(0x4DFFFFFF),
+                                fontSize: 11,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (_isTeamCovered)
-            Container(
-              margin: const EdgeInsets.only(top: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0x0AA78BFA),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33A78BFA)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'FindEZ Team — Active',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
-                        if (ProStatus.teamName != null)
-                          Text(
-                            'Covered by ${ProStatus.teamName}',
-                            style: const TextStyle(
-                              color: Color(0x73FFFFFF),
+                        const SizedBox(height: 12),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Profile color',
+                            style: TextStyle(
+                              color: Color(0x4DFFFFFF),
                               fontSize: 12,
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 10,
+                          children:
+                              [
+                                    '#8FB5EE',
+                                    '#93D8C4',
+                                    '#B7A4E8',
+                                    '#F2A9B8',
+                                    '#F3C78B',
+                                    '#F0A98D',
+                                    '#8FCFD1',
+                                    '#A9ADB5',
+                                  ]
+                                  .map(
+                                    (color) => GestureDetector(
+                                      onTap: () async {
+                                        setState(() => _avatarColor = color);
+                                        await widget.api.updateProfile(
+                                          avatarColor: color,
+                                        );
+                                      },
+                                      child: Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: _hexToColor(color),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _avatarColor == color
+                                                ? Colors.white
+                                                : Colors.transparent,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ] else if (_contactEmail.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse('mailto:$_contactEmail');
+                            if (await canLaunchUrl(uri)) launchUrl(uri);
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.email_outlined,
+                                color: Color(0x4DFFFFFF),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _contactEmail,
+                                style: const TextStyle(
+                                  color: Color(0x73FFFFFF),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(
+                                Icons.open_in_new,
+                                color: Color(0x4DFFFFFF),
+                                size: 12,
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Pro / Upgrade ────────────────────────────────────────────────
+          if (!widget.accountOnly) ...[
+            if (_proLoading)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171717),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x14FFFFFF)),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: Color(0x73FFFFFF),
                     ),
                   ),
-                ],
-              ),
-            )
-          else if (_isPro)
-            Container(
-              margin: const EdgeInsets.only(top: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0x0A30D158),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x3330D158)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Color(0xFF30D158), size: 20),
-                  SizedBox(width: 10),
-                  Text(
-                    'FindEZ Pro — Active',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              margin: const EdgeInsets.only(top: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+                ),
+              )
+            else if (_isPilotMode)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0x0A34D399),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x3334D399)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0x1AA78BFA),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.group_outlined,
-                            color: Color(0xFFA78BFA),
-                            size: 16,
-                          ),
+                        Icon(
+                          Icons.rocket_launch_outlined,
+                          color: Color(0xFF34D399),
+                          size: 20,
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'FindEZ Team',
+                        SizedBox(width: 10),
+                        Text(
+                          'Free Pilot',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -1073,132 +969,284 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Your whole robotics team shares one inventory. Ask your coach for a join code.',
-                      style: TextStyle(
-                        color: Color(0x73FFFFFF),
+                    const SizedBox(height: 10),
+                    Text(
+                      ProStatus.pilotNotice ??
+                          'Unlimited access through September 11, 2026. '
+                              'Standard free-plan limits and optional paid plans begin September 12. '
+                              'You will not be charged automatically.',
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
                         fontSize: 13,
-                        height: 1.45,
+                        height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     GestureDetector(
-                      onTap: () => showJoinTeamDialog(context, widget.api),
+                      onTap: () => unawaited(_sendFeedback()),
                       child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFA78BFA),
-                          borderRadius: BorderRadius.circular(12),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 14,
                         ),
-                        child: const Text(
-                          'Enter join code',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1A34D399),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x3334D399)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.mail_outline,
+                              color: Color(0xFF34D399),
+                              size: 15,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Send feedback',
+                              style: TextStyle(
+                                color: Color(0xFF34D399),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
+              )
+            else if (_isTeamCovered)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0x0AA78BFA),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x33A78BFA)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'FindEZ Team — Active',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (ProStatus.teamName != null)
+                            Text(
+                              'Covered by ${ProStatus.teamName}',
+                              style: const TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_isPro)
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0x0A30D158),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x3330D158)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF30D158),
+                      size: 20,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'FindEZ Pro — Active',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                margin: const EdgeInsets.only(top: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171717),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x14FFFFFF)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0x1AA78BFA),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.group_outlined,
+                              color: Color(0xFFA78BFA),
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'FindEZ Team',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Your whole robotics team shares one inventory. Ask your coach for a join code.',
+                        style: TextStyle(
+                          color: Color(0x73FFFFFF),
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: () => showJoinTeamDialog(context, widget.api),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFA78BFA),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Enter join code',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // ── Scanning ─────────────────────────────────────────────────────
+            _sectionLabel('Scanning'),
+            _glassCard(
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _toggleRow(
+                    label: 'Confirm before saving',
+                    subtitle: 'Review AI results before saving.',
+                    value: _confirmBeforeSave,
+                    onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
+                    last: true,
+                  ),
+                ],
               ),
             ),
 
-          // ── Scanning ─────────────────────────────────────────────────────
-          _sectionLabel('Scanning'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _toggleRow(
-                  label: 'Confirm before saving',
-                  subtitle: 'Review AI results before saving.',
-                  value: _confirmBeforeSave,
-                  onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
-                  last: true,
-                ),
-              ],
+            _sectionLabel('Support'),
+            _glassCard(
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _actionRow(
+                    icon: Icons.mail_outline,
+                    label: 'Send feedback',
+                    onTap: () => unawaited(_sendFeedback()),
+                  ),
+                  _actionRow(
+                    icon: Icons.bug_report_outlined,
+                    label: 'Report a problem',
+                    onTap: () => unawaited(_reportProblem()),
+                    last: true,
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          _sectionLabel('Support'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.mail_outline,
-                  label: 'Send feedback',
-                  onTap: () => unawaited(_sendFeedback()),
-                ),
-                _actionRow(
-                  icon: Icons.bug_report_outlined,
-                  label: 'Report a problem',
-                  onTap: () => unawaited(_reportProblem()),
-                  last: true,
-                ),
-              ],
-            ),
-          ),
-
-          _sectionLabel('Legal'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.shield_outlined,
-                  label: 'Privacy Policy',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyPage(),
+            _sectionLabel('Legal'),
+            _glassCard(
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _actionRow(
+                    icon: Icons.shield_outlined,
+                    label: 'Privacy Policy',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyPage(),
+                      ),
                     ),
                   ),
-                ),
-                _actionRow(
-                  icon: Icons.description_outlined,
-                  label: 'Terms of Service',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TermsOfServicePage(),
+                  _actionRow(
+                    icon: Icons.description_outlined,
+                    label: 'Terms of Service',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TermsOfServicePage(),
+                      ),
                     ),
+                    last: true,
                   ),
-                  last: true,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          _sectionLabel('Account'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.logout,
-                  label: 'Sign out',
-                  color: const Color(0xFFB8B8BD),
-                  showChevron: false,
-                  onTap: () =>
-                      unawaited(Supabase.instance.client.auth.signOut()),
-                ),
-                _actionRow(
-                  icon: Icons.delete_outline,
-                  label: 'Delete account',
-                  color: const Color(0xFFFF453A),
-                  showChevron: false,
-                  onTap: () => unawaited(_deleteAccount()),
-                  last: true,
-                ),
-              ],
+            _sectionLabel('Account'),
+            _glassCard(
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _actionRow(
+                    icon: Icons.logout,
+                    label: 'Sign out',
+                    color: const Color(0xFFB8B8BD),
+                    showChevron: false,
+                    onTap: () => unawaited(_signOut()),
+                  ),
+                  _actionRow(
+                    icon: Icons.delete_outline,
+                    label: 'Delete account',
+                    color: const Color(0xFFFF453A),
+                    showChevron: false,
+                    onTap: () => unawaited(_deleteAccount()),
+                    last: true,
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 32),
         ],
       ),

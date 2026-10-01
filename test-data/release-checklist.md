@@ -22,11 +22,16 @@ Delete the app completely, reinstall, sign up with a new email.
 On Home, verify "My home", one borderless Ask field, up to two real-item question
 suggestions, four decision cards, retained-photo captures, and grouped saved
 Spaces (including empty ones). There must be no header gradient/divider, extra
-icons, greeting, or duplicate Capture/Ask/Find action tiles. The previous four-tab
-icon Home / Capture / Ask / Find navigation must be the inset rounded pill with
-the previous selected-tab highlight, and must reserve layout space. Find's
-More menu must still open documents, notifications, and settings. Repeat on a small screen and at
-larger text size; Home must not overflow.
+icons, greeting, or duplicate Capture/Ask/Find action tiles. The icon Home /
+Capture / Ask / Find / Profile navigation must be the inset rounded pill with
+the previous selected-tab highlight and a circular Profile icon; it must reserve
+layout space. Profile must open account editing, settings, documents/notes,
+notifications, lent items and app tour. There must be no duplicate Find More
+sheet or notification header icons. Repeat on a small screen and at larger text
+size; Home and Profile must not overflow. Check profile read/save failures,
+avatar selection/removal, settings persistence, support/legal links and sign-out.
+Cancel account deletion and verify no data changes; confirm deletion only with a
+throwaway account. Switch accounts and ensure no prior account details remain.
 
 Review opens from "need identifying". Verify card counts against the live data:
 positive low stock excludes zero stock, and lent out counts owned distinct items,
