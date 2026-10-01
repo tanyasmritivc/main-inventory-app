@@ -185,3 +185,7 @@ reuse the same units. Migration `037` saves this snapshot on assistant messages
 under existing conversation ownership/RLS, so later history does not imply a
 fresh stock check. Older answers without a snapshot have no fabricated trace.
 General streaming, voice input, and existing inventory actions remain intact.
+Conversation setup and snapshot write failures must surface a safe error;
+missing/foreign conversation IDs are rejected instead of silently opening a new
+thread. Optional memory retrieval remains best-effort and is not claimed as a
+successful history write.

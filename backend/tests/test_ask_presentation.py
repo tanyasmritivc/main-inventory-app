@@ -227,6 +227,40 @@ def test_sse_internal_exception_is_not_exposed(stub_ai_io):
     assert 'temporarily unavailable' in response.text
 
 
+def test_chat_setup_failure_is_visible_without_starting_an_answer(stub_ai_io):
+    stub_ai_io.table.return_value.execute.side_effect = RuntimeError('SECRET database failure')
+    with patch.object(ai, 'iter_ai_command_events_async') as events:
+        response = _api_client().post('/ai_command?stream=true', json={'message': 'Question'})
+    assert response.status_code == 502
+    assert 'could not be saved' in response.text and 'SECRET' not in response.text
+    events.assert_not_called()
+
+
+def test_answer_snapshot_save_failure_emits_error_instead_of_saved_done(stub_ai_io):
+    query = stub_ai_io.table.return_value
+    def insert(row):
+        if row.get('role') == 'assistant':
+            raise RuntimeError('SECRET snapshot failure')
+        return query
+    query.insert.side_effect = insert
+    async def events(**kwargs):
+        yield {'type': 'delta', 'delta': 'Grounded answer'}
+        yield {'type': 'done', 'answer_context': project_answer_context(_project())}
+    with patch.object(ai, 'iter_ai_command_events_async', new=events):
+        response = _api_client().post('/ai_command?stream=true', json={'message': 'Question'})
+    assert 'could not be saved' in response.text and 'SECRET' not in response.text
+    assert '"type":"error"' in response.text and '"type": "done"' not in response.text
+
+
+def test_unknown_or_foreign_conversation_is_not_redirected_to_a_new_chat(stub_ai_io):
+    stub_ai_io.table.return_value.execute.return_value = SimpleNamespace(data=[])
+    with patch.object(ai, 'iter_ai_command_events_async') as events:
+        response = _api_client().post('/ai_command?stream=true', json={'message': 'Question', 'conversation_id': 'foreign'})
+    assert response.status_code == 404
+    stub_ai_io.table.return_value.insert.assert_not_called()
+    events.assert_not_called()
+
+
 def test_conversation_read_denies_other_user_before_loading_context():
     client = MagicMock()
     client.table.return_value = _query([])

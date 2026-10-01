@@ -50,8 +50,11 @@ Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
   Ask reference without changing Home or the pill. It adds collapsed checked
   sources, authorized project-readiness rows, and saved public answer snapshots
   through migration `037`. Flutter analysis, all 46 mobile tests with coverage,
-  and all 289 backend tests pass. Signed build `1.0.7 (36)` and the narrowly
-  scoped backend deployment are underway; this is not yet a TestFlight release.
+  and all 292 backend tests pass. The narrowly scoped backend and migration are
+  deployed and healthy. Signed build `1.0.7 (36)` passed Apple validation,
+  uploaded, and installed/launched on the physical iPhone. Apple processing and
+  TestFlight group availability are not yet confirmed. Failed conversation or
+  snapshot writes now surface safe errors rather than silently losing history.
 
 ## Known limitations and risks
 

@@ -138,7 +138,9 @@ sections are release gates.
 ambiguous and unknown projects, revoked sharing, reservation-aware quantities,
 duplicate requirement allocation, stock reductions, bounded public evidence,
 SSE metadata persistence, and safe errors. It stubs the assistant gateway and all
-external reads. Project-readiness prose and status badges must come from the same
+external reads. Failed conversation setup or answer-snapshot writes must surface
+a safe error, and a missing/foreign conversation ID must not silently become a
+new chat. Project-readiness prose and status badges must come from the same
 current requirements/stock calculation, not generated counts.
 
 `mobile/test/ask_page_test.dart` covers fragmented UTF-8 streaming, old stream

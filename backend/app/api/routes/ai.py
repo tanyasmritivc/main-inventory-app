@@ -280,7 +280,7 @@ async def ai_command_route(
 
     if wants_stream:
         try:
-            # Setup conversation persistence (best-effort — AI always works even if DB fails)
+            # Never silently claim an answer was saved if its history write fails.
             conv_id: str | None = payload.conversation_id
             try:
                 supabase = get_supabase_admin()
@@ -294,7 +294,7 @@ async def ai_command_route(
                         .execute()
                     )
                     if not check.data:
-                        conv_id = None
+                        raise HTTPException(404, 'This conversation no longer exists or is not accessible. Start a new chat.')
                 if not conv_id:
                     title = payload.message[:60]
                     res = (
@@ -303,15 +303,19 @@ async def ai_command_route(
                         .execute()
                     )
                     conv_id = ((res.data or [{}])[0]).get("id")
+                    if not conv_id:
+                        raise RuntimeError('Conversation insert returned no identity')
                 if conv_id:
                     supabase.table("messages").insert({
                         "conversation_id": conv_id,
                         "role": "user",
                         "content": payload.message,
                     }).execute()
+            except HTTPException:
+                raise
             except Exception:
-                logger.exception("Failed to setup conversation — continuing without persistence")
-                conv_id = None
+                logger.exception("Failed to set up conversation history")
+                raise bad_gateway("Your chat could not be saved. Please try again.")
 
             # Fetch memory context (best-effort — failures are silent)
             memory_context = ""
@@ -363,6 +367,9 @@ async def ai_command_route(
                                     }).eq("id", conv_id).execute()
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
+                                    yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
+                                    yield b"data: [DONE]\n\n"
+                                    return
                             asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
                             asyncio.create_task(log_query(user.user_id, payload.message))
                             asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
@@ -383,6 +390,8 @@ async def ai_command_route(
                     "Connection": "keep-alive",
                 },
             )
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("AI command stream failed")
             raise bad_gateway("AI temporarily unavailable. Please try again.")
