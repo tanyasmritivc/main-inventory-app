@@ -134,11 +134,10 @@ class _ProfileHubPageState extends State<ProfileHubPage>
         onTap: () => unawaited(_open(onTap)),
       );
 
-  Widget _group(List<Widget> rows) => Container(
-    decoration: BoxDecoration(
-      color: HomeColors.surface,
-      borderRadius: BorderRadius.circular(16),
-    ),
+  Widget _group(List<Widget> rows) => Material(
+    color: HomeColors.surface,
+    borderRadius: BorderRadius.circular(16),
+    clipBehavior: Clip.antiAlias,
     child: Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
