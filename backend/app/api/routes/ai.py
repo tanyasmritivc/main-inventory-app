@@ -280,7 +280,7 @@ async def ai_command_route(
 
     if wants_stream:
         try:
-            # Setup conversation persistence (best-effort — AI always works even if DB fails)
+            # Never silently claim an answer was saved if its history write fails.
             conv_id: str | None = payload.conversation_id
             try:
                 supabase = get_supabase_admin()
@@ -294,7 +294,7 @@ async def ai_command_route(
                         .execute()
                     )
                     if not check.data:
-                        conv_id = None
+                        raise HTTPException(404, 'This conversation no longer exists or is not accessible. Start a new chat.')
                 if not conv_id:
                     title = payload.message[:60]
                     res = (
@@ -303,15 +303,19 @@ async def ai_command_route(
                         .execute()
                     )
                     conv_id = ((res.data or [{}])[0]).get("id")
+                    if not conv_id:
+                        raise RuntimeError('Conversation insert returned no identity')
                 if conv_id:
                     supabase.table("messages").insert({
                         "conversation_id": conv_id,
                         "role": "user",
                         "content": payload.message,
                     }).execute()
+            except HTTPException:
+                raise
             except Exception:
-                logger.exception("Failed to setup conversation — continuing without persistence")
-                conv_id = None
+                logger.exception("Failed to set up conversation history")
+                raise bad_gateway("Your chat could not be saved. Please try again.")
 
             # Fetch memory context (best-effort — failures are silent)
             memory_context = ""
@@ -347,30 +351,34 @@ async def ai_command_route(
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer)
+                            full_response = "".join(delta_buffer) or item.get("assistant_message") or "Something went wrong. Please try again."
+                            answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
                                     sb = get_supabase_admin()
                                     sb.table("messages").insert({
                                         "conversation_id": conv_id,
                                         "role": "assistant",
-                                        "content": full_response or "Let me think about that...",
+                                        "content": full_response,
+                                        "answer_context": answer_context,
                                     }).execute()
                                     sb.table("conversations").update({
                                         "updated_at": datetime.now(timezone.utc).isoformat(),
                                     }).eq("id", conv_id).execute()
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
+                                    yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
+                                    yield b"data: [DONE]\n\n"
+                                    return
                             asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
                             asyncio.create_task(log_query(user.user_id, payload.message))
                             asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
-                            if nav_hint:
-                                yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
+                            yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
-                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    yield b'data: {"type":"error","error":"Ask is temporarily unavailable. Please try again."}\n\n'
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
@@ -382,6 +390,8 @@ async def ai_command_route(
                     "Connection": "keep-alive",
                 },
             )
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("AI command stream failed")
             raise bad_gateway("AI temporarily unavailable. Please try again.")
@@ -416,6 +426,7 @@ async def ai_command_route(
         tool=out.get("tool"),
         result=out.get("result"),
         assistant_message=assistant_message or "Let me think about that...",
+        answer_context=out.get("answer_context"),
     )
 
 

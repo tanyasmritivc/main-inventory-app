@@ -12,6 +12,8 @@ import json as _json_dumps
 from typing import Any, Iterator
 
 from app.services.agent_gateway_client import AgentGatewayClient
+from app.services.ask_presentation import answer_context_from_reads, project_answer_text
+from app.services.project_kits_service import get_project_readiness
 
 from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
@@ -213,6 +215,32 @@ def _requires_inventory_knowledge(message: str) -> bool:
         'which space', 'what space', 'shared space', 'joined space',
         'what is in', "what's in", 'contents of',
     ))
+
+
+def _project_readiness_for_question(*, user_id: str, message: str) -> dict | None:
+    """Resolve a named project without guessing a project or allowing writes."""
+    text = (message or '').lower()
+    if not re.search(r'\b(need|missing|finish|complete|ready|requirements|enough|short)\b', text):
+        return None
+    if re.search(r'\b(add|delete|remove|update|change|set|move|create|reserve|release)\b', text):
+        return None
+    knowledge = _inventory_knowledge(user_id=user_id, query='')
+    question_tokens = set(re.findall(r'[a-z0-9]+', text))
+    matches = []
+    for kit in knowledge.get('project_kits') or []:
+        name_tokens = set(re.findall(r'[a-z0-9]+', str(kit.get('name') or '').lower()))
+        if name_tokens and name_tokens.issubset(question_tokens):
+            matches.append(kit)
+    if not matches and re.search(r'\b(my|our|this|the)\s+(project|kit)\b', text):
+        matches = knowledge.get('project_kits') or []
+    if len(matches) > 1:
+        names = [str(kit.get('name') or 'Unnamed project')[:120] for kit in matches[:5]]
+        return {'_clarification': 'Which project do you mean: ' + ', '.join(names) + '?', 'candidate_names': names}
+    if not matches and re.search(r'\b(project|kit)\b', text):
+        return {'_clarification': 'I could not find a matching project. Add its requirements or tell me its exact name first.', 'candidate_names': []}
+    if len(matches) != 1:
+        return None
+    return get_project_readiness(kit_id=matches[0]['project_kit_id'], user_id=user_id)
 
 
 def _knowledge_navigation_hint(result: dict, query: str = '') -> dict | None:
@@ -436,6 +464,9 @@ def _sanitize_history(history: list[dict]) -> list[dict]:
 
 
 _SYSTEM_PROMPT = (
+    "Keep answers grounded in authorized records. Never invent project requirements, "
+    "stock quantities, or documents. Do not expose model names, providers, internal "
+    "tools, infrastructure, or private reasoning. Explain evidence in ordinary product terms.\n"
     "You are FindEZ, an AI assistant built exclusively "
     "for inventory management. Your only purpose is to "
     "help users manage physical items they own. You are "
@@ -1307,6 +1338,10 @@ def _run_agent(
     if not user_id:
         return {'tool': None, 'result': None, 'assistant_message': 'Missing user session.'}
 
+    readiness = _project_readiness_for_question(user_id=user_id, message=message)
+    if readiness is not None:
+        return _project_readiness_answer(user_id=user_id, message=message, detail=readiness)
+
     provider = _get_chat_provider(conversation_id)
     client = provider.client
 
@@ -1384,7 +1419,7 @@ def _run_agent(
                     result = _execute_tool_call(user_id=user_id, tool_name=tool_name, args=args if isinstance(args, dict) else {})
                 except Exception as e:
                     logger.exception('Tool call failed: %s', tool_name)
-                    result = {'success': False, 'error': str(e)}
+                    result = {'success': False, 'error': 'The requested operation could not be completed. Please try again.'}
 
                 tool_trace.append({'tool': tool_name, 'args': args, 'result': result})
                 last_tool = tool_name
@@ -1422,6 +1457,7 @@ def _run_agent(
             'tool': last_tool,
             'result': {'tool_trace': tool_trace},
             'assistant_message': assistant_message,
+            'answer_context': answer_context_from_reads(context, tool_trace),
         }
 
     _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
@@ -1454,6 +1490,38 @@ def _run_agent(
         'tool': last_tool,
         'result': {'tool_trace': tool_trace},
         'assistant_message': assistant_message,
+        'answer_context': answer_context_from_reads(context, tool_trace),
+    }
+
+
+def _project_readiness_answer(*, user_id: str, message: str, detail: dict) -> dict:
+    answer = detail.get('_clarification') or project_answer_text(detail)
+    state = _get_state(user_id)
+    state.conversation_history.extend([
+        {'role': 'user', 'content': message},
+        {'role': 'assistant', 'content': answer},
+    ])
+    state.conversation_history = state.conversation_history[-MAX_HISTORY:]
+    state.last_user_message = message
+    state.updated_at = time.time()
+    _persist_state(user_id)
+    trace = [{'tool': 'project_kit_readiness', 'result': detail}]
+    public_context = answer_context_from_reads({}, trace)
+    if detail.get('_clarification'):
+        public_context = {'sources': [
+            {'kind': 'project', 'label': name, 'detail': 'Accessible project checked'}
+            for name in detail.get('candidate_names') or []
+        ], 'rows': [], 'rows_truncated': False}
+    return {
+        'tool': 'project_kit_readiness',
+        'result': {'tool_trace': trace},
+        'assistant_message': answer,
+        'answer_context': public_context,
+        'nav_hint': {
+            'type': 'project_kit', 'id': detail.get('id'),
+            'name': detail.get('name'), 'space_name': detail.get('location'),
+            'share_id': detail.get('share_id'),
+        } if detail.get('id') else None,
     }
 
 
@@ -1467,6 +1535,12 @@ def _iter_agent_streaming(
     contract. FindEZ still emits response events to clients.
     Yields {'type':'delta','delta':str} for each token as it arrives, then
     {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
+    readiness = _project_readiness_for_question(user_id=user_id, message=message)
+    if readiness is not None:
+        answer = _project_readiness_answer(user_id=user_id, message=message, detail=readiness)
+        yield {'type': 'delta', 'delta': answer['assistant_message']}
+        yield {'type': 'done', **answer}
+        return
     provider = _get_chat_provider(conversation_id)
     client = provider.client
     allow_tools = _should_enable_tools(message=message)
@@ -1560,7 +1634,7 @@ def _iter_agent_streaming(
                     result = _execute_tool_call(user_id=user_id, tool_name=tool_name, args=args if isinstance(args, dict) else {})
                 except Exception as e:
                     logger.exception('Tool call failed: %s', tool_name)
-                    result = {'success': False, 'error': str(e)}
+                    result = {'success': False, 'error': 'The requested operation could not be completed. Please try again.'}
                 tool_trace.append({'tool': tool_name, 'args': args, 'result': result})
                 last_tool = tool_name
                 messages.append({'role': 'tool', 'tool_call_id': tc['id'], 'content': _json_dumps(result)})
@@ -1585,7 +1659,7 @@ def _iter_agent_streaming(
 
     nav_hint = _navigation_hint_from_trace(tool_trace)
 
-    yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text, 'nav_hint': nav_hint}
+    yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text, 'nav_hint': nav_hint, 'answer_context': answer_context_from_reads(context, tool_trace)}
 
 
 def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> Iterator[str]:

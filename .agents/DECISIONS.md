@@ -165,3 +165,27 @@ remain reachable through Find's More menu; bottom navigation reserves layout
 space and does not overlay the list. Embedded Ask, Capture and Find must not add
 the old overlay-clearance padding on top of that reserved space. The user-requested navigation restoration
 supersedes the reference's text-only five-tab bar without changing Home content.
+
+## 2026-09-30: Ask presents checked records, not internal reasoning
+
+**Decision:** Match the supplied Ask reference with a plain question card,
+collapsed "What it read", readable response, and one grouped set of actual
+quantity rows. Keep the restored four-tab pill and Home unchanged.
+
+**Reasoning:** Evidence should explain which accessible records informed an
+answer without exposing provider names, private reasoning, or tool internals.
+Project readiness cannot be based on invented requirements or stock.
+
+**Implications:** The additive public `answer_context` contract contains only
+bounded source labels/details and item quantities. Named project readiness uses
+the same authorization and reservation-aware calculation as project kits;
+ambiguous or unknown projects request clarification. Status badges are derived
+from available versus required quantities, and duplicate requirements cannot
+reuse the same units. Migration `037` saves this snapshot on assistant messages
+under existing conversation ownership/RLS, so later history does not imply a
+fresh stock check. Older answers without a snapshot have no fabricated trace.
+General streaming, voice input, and existing inventory actions remain intact.
+Conversation setup and snapshot write failures must surface a safe error;
+missing/foreign conversation IDs are rejected instead of silently opening a new
+thread. Optional memory retrieval remains best-effort and is not claimed as a
+successful history write.

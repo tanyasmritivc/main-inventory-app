@@ -8,99 +8,17 @@ from app.api.routes.imports import (
 )
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.items_repo import list_items
+from app.services.project_kits_service import (
+    _analyze,
+    _get_authorized_kit,
+    _list_reservations,
+    get_project_readiness,
+)
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(prefix='/project-kits', tags=['project-kits'])
 
 
-def _list_reservations() -> list[dict]:
-    """Read reservations in bounded pages; never encode a large inventory ID list in a URL."""
-    client = get_supabase_admin()
-    reservations: list[dict] = []
-    page_size = 1000
-    offset = 0
-    while True:
-        page = client.table('project_kit_reservations').select(
-            'kit_id,kit_item_id,inventory_item_id,quantity').range(
-                offset, offset + page_size - 1).execute().data or []
-        reservations.extend(page)
-        if len(page) < page_size:
-            return reservations
-        offset += page_size
-
-
-def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str | None = None) -> dict:
-    inventory = [
-        item for item in list_items(user_id=owner_user_id)
-        if str(item.get('location') or 'Unsorted').strip().lower() == location.strip().lower()
-    ]
-    inventory_ids = [item['item_id'] for item in inventory]
-    inventory_id_set = set(inventory_ids)
-    reservations = [reservation for reservation in _list_reservations()
-                    if reservation['inventory_item_id'] in inventory_id_set]
-    results = []
-    for row in rows:
-        part_key = _normalized_identifier(row.get('part_number'))
-        name_key = _normalized_identifier(row.get('name'))
-        matches = [item for item in inventory if (
-            (part_key and _normalized_identifier(item.get('part_number')) == part_key)
-            or (not part_key and name_key and _normalized_identifier(item.get('name')) == name_key)
-        )]
-        match_ids = {item['item_id'] for item in matches}
-        total_stock = sum(max(0, int(item.get('quantity') or 0)) for item in matches)
-        reserved_for_kit = sum(int(reservation['quantity']) for reservation in reservations if (
-            reservation['inventory_item_id'] in match_ids and reservation['kit_id'] == kit_id
-            and reservation['kit_item_id'] == row.get('id')))
-        reserved_elsewhere = sum(int(reservation['quantity']) for reservation in reservations if (
-            reservation['inventory_item_id'] in match_ids and reservation['kit_id'] != kit_id))
-        unreserved = max(0, total_stock - reserved_for_kit - reserved_elsewhere)
-        available = reserved_for_kit + unreserved
-        required = int(row['required_quantity'])
-        missing = max(0, required - available)
-        results.append({
-            **row,
-            'available_quantity': available,
-            'reserved_quantity': reserved_for_kit,
-            'unreserved_available_quantity': unreserved,
-            'missing_quantity': missing,
-            'status': 'ready' if not missing else ('partial' if available else 'missing'),
-        })
-    ready = sum(row['status'] == 'ready' for row in results)
-    partial = sum(row['status'] == 'partial' for row in results)
-    missing = sum(row['status'] == 'missing' for row in results)
-    return {
-        'summary': {
-            'total_lines': len(results), 'ready_lines': ready,
-            'partial_lines': partial, 'missing_lines': missing,
-            'readiness_percent': round(ready * 100 / len(results)) if results else 0,
-        },
-        'items': results,
-    }
-
-
-def _get_authorized_kit(kit_id: str, user_id: str) -> tuple[dict, bool]:
-    client = get_supabase_admin()
-    response = client.table('project_kits').select('*').eq('id', kit_id).limit(1).execute()
-    if not response.data:
-        raise HTTPException(404, 'This project kit no longer exists.')
-    kit = response.data[0]
-    share_id = kit.get('share_id')
-    if share_id:
-        try:
-            from app.services import sharing_service
-            share, can_edit = sharing_service.get_share_access(
-                requesting_user_id=user_id, share_id=share_id)
-        except ValueError as exc:
-            raise HTTPException(403, str(exc)) from exc
-        owner_id = (share.get('owner_user_id') or '').strip()
-        location = (share.get('share_name') or '').strip()
-        if owner_id != kit['owner_user_id'] or location.lower() != kit['location'].lower():
-            raise HTTPException(403, 'You no longer have access to this project kit.')
-    elif kit['created_by_user_id'] != user_id:
-        raise HTTPException(403, 'You do not have access to this project kit.')
-    else:
-        can_edit = True
-    return kit, can_edit
 
 
 @router.post('')
@@ -158,10 +76,7 @@ def list_project_kits(
 
 @router.get('/{kit_id}')
 def get_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    kit, can_edit = _get_authorized_kit(kit_id, user.user_id)
-    items = get_supabase_admin().table('project_kit_items').select(
-        'id,name,part_number,brand,required_quantity').eq('kit_id', kit_id).execute().data or []
-    return {**kit, 'can_reserve': can_edit, **_analyze(rows=items, owner_user_id=kit['owner_user_id'], location=kit['location'], kit_id=kit_id)}
+    return get_project_readiness(kit_id=kit_id, user_id=user.user_id)
 
 
 @router.post('/{kit_id}/reserve')

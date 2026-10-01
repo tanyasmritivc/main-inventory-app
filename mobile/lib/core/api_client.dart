@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'ask_answer.dart';
 
 class SessionExpiredException implements Exception {
   @override
@@ -699,37 +699,7 @@ class ApiClient {
         throw StateError('HTTP ${response.statusCode}');
       }
 
-      var partialLine = '';
-      await for (final bytes in response.stream) {
-        final chunk = utf8.decode(bytes);
-        partialLine += chunk;
-        final lines = partialLine.split('\n');
-        partialLine = lines.removeLast();
-        for (final line in lines) {
-          final l = line.trimRight();
-          if (l.isEmpty || !l.startsWith('data:')) continue;
-          final jsonStr = l.substring(5).trim();
-          if (jsonStr.isEmpty) continue;
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is! Map) continue;
-            yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-          } catch (_) {}
-        }
-      }
-      // Flush any remaining partial line
-      final l = partialLine.trimRight();
-      if (l.startsWith('data:')) {
-        final jsonStr = l.substring(5).trim();
-        if (jsonStr.isNotEmpty) {
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is Map) {
-              yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-            }
-          } catch (_) {}
-        }
-      }
+      yield* decodeAiCommandEvents(response.stream);
     } finally {
       client.close();
     }
@@ -1207,6 +1177,8 @@ class AiStreamEvent {
     this.result,
     this.assistantMessage,
     this.conversationId,
+    this.answerContext,
+    this.navHint,
   });
 
   final String type;
@@ -1216,17 +1188,58 @@ class AiStreamEvent {
   final Object? result;
   final String? assistantMessage;
   final String? conversationId;
+  final AskAnswerContext? answerContext;
+  final Map<String, dynamic>? navHint;
 
   factory AiStreamEvent.fromJson(Map<String, dynamic> json) {
     return AiStreamEvent(
-      type: (json['type'] ?? '').toString(),
+      type:
+          (json['type'] ??
+                  (json.containsKey('error')
+                      ? 'error'
+                      : json.containsKey('content')
+                      ? 'delta'
+                      : ''))
+              .toString(),
       message: json['message']?.toString(),
-      delta: json['delta']?.toString(),
+      delta: (json['delta'] ?? json['content'])?.toString(),
       tool: json['tool']?.toString(),
       result: json['result'],
       assistantMessage: json['assistant_message']?.toString(),
       conversationId: json['conversation_id']?.toString(),
+      answerContext: json['answer_context'] is Map<String, dynamic>
+          ? AskAnswerContext.fromJson(
+              json['answer_context'] as Map<String, dynamic>,
+            )
+          : null,
+      navHint: json['nav_hint'] is Map<String, dynamic>
+          ? json['nav_hint'] as Map<String, dynamic>
+          : null,
     );
+  }
+}
+
+Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) async* {
+  await for (final line
+      in bytes
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .timeout(const Duration(minutes: 2))) {
+    final data = line.trimRight();
+    if (!data.startsWith('data:')) continue;
+    final payload = data.substring(5).trim();
+    if (payload == '[DONE]') {
+      yield AiStreamEvent(type: 'done');
+      break;
+    }
+    if (payload.isEmpty) continue;
+    final decoded = json.decode(payload);
+    if (decoded is! Map<String, dynamic>) continue;
+    final event = AiStreamEvent.fromJson(decoded);
+    if (event.type == 'error') {
+      throw StateError('Ask is temporarily unavailable. Please try again.');
+    }
+    yield event;
   }
 }
 
@@ -1263,18 +1276,25 @@ class ConversationMessage {
     required this.role,
     required this.content,
     required this.createdAt,
+    this.answerContext,
   });
 
   final String id;
   final String role;
   final String content;
   final DateTime createdAt;
+  final AskAnswerContext? answerContext;
 
   factory ConversationMessage.fromJson(Map<String, dynamic> json) {
     return ConversationMessage(
       id: (json['id'] ?? '').toString(),
       role: (json['role'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
+      answerContext: json['answer_context'] is Map<String, dynamic>
+          ? AskAnswerContext.fromJson(
+              json['answer_context'] as Map<String, dynamic>,
+            )
+          : null,
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
