@@ -19,6 +19,20 @@ scans/mo. Some steps below deliberately test those limits.
 
 Delete the app completely, reinstall, sign up with a new email.
 
+On Home, verify "My home", one borderless Ask field, up to two real-item question
+suggestions, four decision cards, retained-photo captures, and grouped saved
+Spaces (including empty ones). There must be no header gradient/divider, extra
+icons, greeting, or duplicate Capture/Ask/Find action tiles. The previous four-tab
+icon Home / Capture / Ask / Find navigation must reserve layout space. Find's
+More menu must still open documents, notifications, and settings. Repeat on a small screen and at
+larger text size; Home must not overflow.
+
+Review opens from "need identifying". Verify card counts against the live data:
+positive low stock excludes zero stock, and lent out counts owned distinct items,
+not checkout rows or teammates' items. Failed first reads show dashes and an
+error, not fabricated zeroes. Each Space opens by its ID even if names differ only
+in case. Photo captions open item details; no-photo items have no blank square.
+
 **Pass:** onboarding runs, then the tutorial runs to completion.
 Every step has something to point at, and "Skip" is visible and
 tappable at every step.

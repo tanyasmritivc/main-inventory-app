@@ -1,12 +1,14 @@
 # Current state
 
-Last reviewed on 2026-09-30 during the physical-memory release candidate.
+Last reviewed on 2026-09-30 during the physical-memory TestFlight release.
 
 ## Working and deployed
 
 - The self-hosted backend, web app, Supabase database, Auth, and Storage are the
   production architecture. `/health` and `/health/db` were verified healthy after
-  the item-photo backend deployment on 2026-09-29.
+  the physical-memory backend and web deployment on 2026-09-30. Migration `036`
+  is applied in production with RLS enabled; direct authenticated mutations and
+  authenticated resolver execution are denied.
 - The public landing page and authenticated Next.js workspace are in source and
   first-class routes. The old redirect-only web description in `CLAUDE.md` is stale.
 - Mobile is a substantial iOS client with inventory, scan, Ask FindEZ, sharing,
@@ -14,6 +16,9 @@ Last reviewed on 2026-09-30 during the physical-memory release candidate.
 - Item photo galleries are deployed in the backend and included in TestFlight build
   31. FIND captures retain their crop or source photo, and personal, Team Space, and
   legacy Shared Space items can add, view, and delete up to ten photos.
+- The live backend and web now persist uncertain FIND captures for Review and show
+  structured, model-neutral scan evidence. The authenticated web workspace and
+  public integration bundle were deployed and checked against the public host.
 - OpenAI runtime code has been removed. FIND serves photo analysis and the private
   agent gateway serves language tasks.
 - A real production parts-bin smoke test returned 18 mapped FIND items with scan
@@ -30,8 +35,11 @@ Last reviewed on 2026-09-30 during the physical-memory release candidate.
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
 - Branch `feat/physical-memory-home-review` implements a Home/Capture/Ask/Find
   shell, model-neutral structured scan evidence, a durable Review queue, and
-  conditional item thumbnails. Migration `036`, backend and web deployment, and
-  TestFlight build 32 are pending until this release candidate is deployed.
+  conditional item thumbnails. Its backend, migration, and web are deployed.
+  Builds 32 and 33 were rejected visually. The current Home matches the user's
+  supplied reference with actual Spaces, four decision cards, and retained-photo
+  captures. The user subsequently requested restoring the previous four-tab icon
+  bar; this is staged as build 35, with analysis and all 33 Flutter tests passing.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
@@ -40,8 +48,8 @@ Last reviewed on 2026-09-30 during the physical-memory release candidate.
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
 - FIND jobs are deleted after mapping. Uploaded source images and available object
-  crops survive as item photos. The release candidate persists unresolved objects,
-  public evidence, and review status. Masks, geometry, and training-quality
+  crops survive as item photos. Unresolved objects, public evidence, and review
+  status persist. Masks, geometry, and training-quality
   correction events remain outside the durable data contract.
 - Photo scans can take tens of seconds. The documented production smoke completed,
   but user reports include scans timing out or appearing stuck.
@@ -79,8 +87,22 @@ Last reviewed on 2026-09-30 during the physical-memory release candidate.
   TestFlight group assignment and a physical install from TestFlight remain to be
   verified; the camera/library add, gallery, and delete flows also need that device
   check against the deployed backend.
-- Physical-memory build 32 is staged in source as `1.0.7 (32)` and has not yet
-  been uploaded to TestFlight. The public App Store release remains `1.0.6 (17)`.
+- Physical-memory build 32 passed Apple validation, uploaded and processed as
+  `VALID` and `APP_STORE_ELIGIBLE`, and is linked to the two internal TestFlight
+  groups. It installed and launched on the paired iPhone as `1.0.7 (32)`. The user
+  rejected its crowded Home layout; later build 33 was also rejected visually.
+- Build 33 (`1.0.7`) passed Flutter analysis, all 27 Flutter tests, signed archive,
+  and Apple server-side validation. It uploaded on 2026-09-30, processed as
+  `VALID` and `APP_STORE_ELIGIBLE`, and is linked to both internal TestFlight
+  groups. Its signed release installed and launched on the paired iPhone, which
+  reports `1.0.7 (33)`. Installation through the TestFlight app and hands-on
+  capture, review, photo editing, and multi-account checks remain unverified.
+  The public App Store release remains `1.0.6 (17)`.
+- Build 34 (`1.0.7`) recreated the supplied Home and initially used the reference's
+  text-only five-tab bar. Analysis, all 33 Flutter tests, signed archive, Apple
+  validation, upload, and native physical-device install/launch passed. The user
+  requested the previous four-tab icon navigation while upload was underway;
+  build 34 is superseded by build 35. Build 35's Apple release status is pending.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.

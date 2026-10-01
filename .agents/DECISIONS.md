@@ -140,3 +140,26 @@ item photo gallery for adding and deleting photos on items from every source.
 
 **Implications:** Photo captures retain their crop or source image. Barcode,
 spreadsheet, and manual items can receive photos later from item detail.
+
+## 2026-09-30: Home is a concise overview, not a second navigation menu
+
+**Decision:** Match the user's supplied matte-dark Home reference: "My home",
+one borderless Ask field, two real-item question suggestions, four "Needs a
+decision" cards, retained-photo captures, and grouped persistent Spaces. Use
+the previous four-tab icon Home / Capture / Ask / Find navigation, per the user's
+follow-up request; no separate Home app bar,
+header gradient/divider, oversized greeting, or duplicate action tiles.
+
+**Reasoning:** Duplicated actions and an oversized greeting obscured the user's
+inventory. The bottom navigation must reserve layout space rather than overlay
+content.
+
+**Implications:** "Where things live" uses actual Space records, including empty
+ones, and opens by exact ID rather than ambiguous names or legacy locations.
+Cards use real pending Review, positive low stock, zero stock, and owned distinct
+checkout counts; unknown reads show a dash, not a false zero. Use "out of stock"
+instead of inventing physical missingness. Older photos use "Recent captures"
+rather than claiming "Captured today". Documents, notifications, and profile
+remain reachable through Find's More menu; bottom navigation reserves layout
+space and does not overlay the list. The user-requested navigation restoration
+supersedes the reference's text-only five-tab bar without changing Home content.

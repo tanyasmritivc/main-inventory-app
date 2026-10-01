@@ -1605,6 +1605,7 @@ class _InventoryPageState extends State<InventoryPage>
     await _openLocation(
       location: spaceName,
       thresholds: await LowStockPrefs.loadAll(),
+      spaceId: hint['space_id']?.toString(),
     );
   }
 
@@ -1691,6 +1692,7 @@ class _InventoryPageState extends State<InventoryPage>
   Future<void> _openLocation({
     required String location,
     required Map<String, int> thresholds,
+    String? spaceId,
   }) async {
     if (!mounted) return;
     final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
@@ -1705,7 +1707,7 @@ class _InventoryPageState extends State<InventoryPage>
         break;
       }
     }
-    if (matchedShare != null) {
+    if (matchedShare != null && spaceId == null) {
       final shareId = (matchedShare['share_id'] ?? '').toString();
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -1721,17 +1723,20 @@ class _InventoryPageState extends State<InventoryPage>
       return;
     }
 
-    final String? spaceId = (loc == 'Unsorted')
-        ? null
-        : (_spaces.firstWhere(
-                (s) =>
-                    (s['name'] as String? ?? '').toLowerCase() ==
-                    loc.toLowerCase(),
-                orElse: () => const <String, dynamic>{},
-              )['id']
-              as String?);
-    final source = _baseItemsForSelectedCategory();
-    final items = source.where((it) => it.spaceId == spaceId).toList();
+    final String? resolvedSpaceId =
+        spaceId ??
+        ((loc == 'Unsorted')
+            ? null
+            : (_spaces.firstWhere(
+                    (s) =>
+                        (s['name'] as String? ?? '').toLowerCase() ==
+                        loc.toLowerCase(),
+                    orElse: () => const <String, dynamic>{},
+                  )['id']
+                  as String?));
+    // A Home Space opens its complete inventory, independent of Find's filter.
+    final source = spaceId == null ? _baseItemsForSelectedCategory() : _items;
+    final items = source.where((it) => it.spaceId == resolvedSpaceId).toList();
 
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -1741,7 +1746,7 @@ class _InventoryPageState extends State<InventoryPage>
           items: items,
           thresholds: thresholds,
           allItems: _items,
-          spaceId: spaceId,
+          spaceId: resolvedSpaceId,
         ),
       ),
     );
