@@ -765,7 +765,10 @@ class _AuthGateState extends State<_AuthGate> {
           if (isInitialStaleSession) {
             return const AppGradientBackground(child: LaunchLoadingScreen());
           }
-          return AppGradientBackground(child: MainShell(api: widget.api));
+          return ColoredBox(
+            color: const Color(0xFF09090B),
+            child: SafeArea(child: MainShell(api: widget.api)),
+          );
         }
 
         _ensureOnboardingFuture();

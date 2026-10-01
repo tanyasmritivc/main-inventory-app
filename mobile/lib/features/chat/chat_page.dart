@@ -2744,7 +2744,8 @@ class _ChatPageState extends State<ChatPage>
             12,
             isIOS ? 16 : 18,
             12,
-            keyboardVisible ? 12 : 110,
+            // MainShell reserves space for its pill below the page.
+            keyboardVisible || widget.inPageView ? 12 : 110,
           ),
           child: Column(
             children: [

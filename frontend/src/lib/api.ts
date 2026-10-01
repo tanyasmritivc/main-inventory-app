@@ -173,6 +173,7 @@ export async function searchItems(params: { token: string; query: string }) {
 
 export type ScanEvidence = {
   identification_reasoning?: string | null;
+  identity_confidence?: number | null;
   ocr_text?: string | null;
   ocr_confidence?: number | null;
   length_mm?: number | null;
@@ -183,6 +184,8 @@ export type ScanEvidence = {
   barcode_symbology?: string | null;
   barcode_confidence?: number | null;
   detection_confidence?: number | null;
+  review_reasons?: string[];
+  warnings?: string[];
   needs_review: boolean;
 };
 
@@ -196,9 +199,20 @@ export type ExtractedInventoryItem = {
   barcode?: string | null;
   tags?: string[] | null;
   confidence?: number | null;
+  image_url?: string | null;
+  source_frame_url?: string | null;
   notes?: string | null;
   location?: string | null;
   scan_evidence?: ScanEvidence | null;
+  review_id?: string | null;
+  review_status?: string | null;
+};
+
+export type ReviewItem = ExtractedInventoryItem & {
+  review_id: string;
+  status: "pending" | "resolved" | "dismissed";
+  source_kind: string;
+  created_at: string;
 };
 
 export type MultiExtractSummary = {
@@ -236,6 +250,63 @@ export async function bulkCreate(params: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: params.items }),
     }
+  );
+}
+
+export async function getReviewItems(params: { token: string; limit?: number }) {
+  const limit = Math.max(1, Math.min(200, params.limit ?? 100));
+  return apiFetch<{ items: ReviewItem[]; pending_count: number }>(
+    `/review-items?limit=${limit}`,
+    { token: params.token },
+  );
+}
+
+function reviewItemPayload(item: ExtractedInventoryItem) {
+  return {
+    name: item.name,
+    category: item.category,
+    subcategory: item.subcategory,
+    quantity: item.quantity,
+    brand: item.brand,
+    part_number: item.part_number,
+    barcode: item.barcode,
+    tags: item.tags,
+    confidence: item.confidence,
+    image_url: item.image_url,
+    notes: item.notes,
+    location: item.location?.trim() || "Unsorted",
+  };
+}
+
+export async function updateReviewItem(params: {
+  token: string;
+  reviewId: string;
+  item: ExtractedInventoryItem;
+}) {
+  return apiFetch<{ review_item: ReviewItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}`,
+    { method: "PATCH", token: params.token, body: reviewItemPayload(params.item) },
+  );
+}
+
+export async function resolveReviewItem(params: {
+  token: string;
+  reviewId: string;
+  item: ExtractedInventoryItem;
+}) {
+  return apiFetch<{ item: InventoryItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}/resolve`,
+    { method: "POST", token: params.token, body: reviewItemPayload(params.item) },
+  );
+}
+
+export async function dismissReviewItem(params: {
+  token: string;
+  reviewId: string;
+}) {
+  return apiFetch<{ review_item: ReviewItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}`,
+    { method: "DELETE", token: params.token },
   );
 }
 

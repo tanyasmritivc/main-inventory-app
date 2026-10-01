@@ -17,10 +17,9 @@ Reprioritize it when production state changes.
 
 - Finish and review the Flutter UIScene lifecycle migration. Validate the signed iOS
   build and record its TestFlight status.
-- Persist capture source images and per-object crops or geometry, FIND evidence,
-  review status, and user corrections. Define retention and deletion behavior before
-  storing training-quality data. Then build the durable Review flow on mobile first
-  and mirror it on web.
+- Define retention and deletion behavior before persisting masks, geometry,
+  and training-quality correction events beyond the source/crop images, evidence,
+  and Review state now in the release candidate.
 - Instrument FIND queue and job duration, then reproduce and resolve photo scans that
   time out or remain in a loading state.
 - Resolve the duplicate Stripe route families and choose a StoreKit-compliant iOS

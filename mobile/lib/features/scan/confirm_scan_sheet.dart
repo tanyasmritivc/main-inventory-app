@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
+import 'scan_evidence_panel.dart';
 
 const _kLabelStyle = TextStyle(
   color: Color(0x4DFFFFFF),
@@ -158,6 +159,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
+        scanEvidence: orig.scanEvidence,
+        reviewId: orig.reviewId,
+        reviewStatus: orig.reviewStatus,
       );
     });
   }
@@ -479,6 +483,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ],
           ],
+          if (widget.items[i].scanEvidence != null) ...[
+            const SizedBox(height: 14),
+            ScanEvidencePanel(
+              evidence: widget.items[i].scanEvidence!,
+              barcode: widget.items[i].barcode,
+            ),
+          ],
           const SizedBox(height: 16),
           // QUANTITY label
           const Text('QUANTITY', style: _kLabelStyle),
@@ -610,8 +621,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Confirm Items',
                     style: TextStyle(
                       color: Colors.white,
@@ -619,10 +630,15 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Review what AI found before saving.',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                    widget.items.any((item) => item.isPendingReview)
+                        ? 'Confirm clear items now. Uncertain items stay safely in Review until you assign them.'
+                        : 'Review every visible detail before saving.',
+                    style: const TextStyle(
+                      color: Color(0x73FFFFFF),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -662,7 +678,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       ),
                       child: Center(
                         child: Text(
-                          'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}',
+                          () {
+                            final reviewCount = widget.items
+                                .where((item) => item.isPendingReview)
+                                .length;
+                            final saveCount = n - reviewCount;
+                            if (reviewCount == 0) {
+                              return 'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}';
+                            }
+                            if (saveCount == 0) {
+                              return 'Keep $reviewCount in Review';
+                            }
+                            return 'Save $saveCount · Review $reviewCount';
+                          }(),
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 15,

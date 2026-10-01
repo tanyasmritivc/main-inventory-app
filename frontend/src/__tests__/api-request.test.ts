@@ -1,4 +1,4 @@
-import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, getSpaces } from "@/lib/api";
+import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, getReviewItems, getSpaces, resolveReviewItem } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 
 jest.mock("@/lib/session", () => ({ getAccessToken: jest.fn() }));
@@ -90,4 +90,36 @@ test("a network failure maps to a connection ApiError", async () => {
   const error = await apiRequest("/spaces").catch((reason: unknown) => reason);
   expect(error).toBeInstanceOf(ApiError);
   expect((error as ApiError).status).toBe(0);
+});
+
+test("review queue requests stay authenticated and send only editable fields", async () => {
+  jest.mocked(getAccessToken).mockResolvedValue("live-token");
+  fetchMock
+    .mockResolvedValueOnce(jsonResponse(200, { items: [], pending_count: 0 }))
+    .mockResolvedValueOnce(jsonResponse(200, { item: { item_id: "item-1" } }));
+
+  await getReviewItems({ token: "fallback", limit: 500 });
+  await resolveReviewItem({
+    token: "fallback",
+    reviewId: "10000000-0000-0000-0000-000000000001",
+    item: {
+      name: "Bolt",
+      category: "Hardware",
+      quantity: 1,
+      location: "Drawer",
+      review_id: "private-review-id",
+      review_status: "pending",
+      scan_evidence: { needs_review: true },
+    },
+  });
+
+  expect(fetchMock.mock.calls[0][0]).toContain("/review-items?limit=200");
+  expect(fetchMock.mock.calls[1][0]).toContain("/review-items/10000000-0000-0000-0000-000000000001/resolve");
+  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer live-token");
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual({
+    name: "Bolt",
+    category: "Hardware",
+    quantity: 1,
+    location: "Drawer",
+  });
 });

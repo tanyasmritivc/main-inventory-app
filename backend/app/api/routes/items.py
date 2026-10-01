@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import re
@@ -81,10 +82,14 @@ from app.services.usage_service import (
     increment_usage,
     is_pro_user,
 )
+from app.services.review_queue import enqueue_uncertain_items
 
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+MAX_SCAN_IMAGE_BYTES = 20 * 1024 * 1024
+MAX_SCAN_IMAGE_PIXELS = 40_000_000
 
 
 @router.get("/inventory/catalog/{catalog_id}", response_model=VerifiedCatalogPart)
@@ -274,6 +279,20 @@ def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
         except Exception:
             pass
     return image_bytes, filename
+
+
+def _prepare_scan_image(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
+    try:
+        # Check the compressed source before any conversion loads its full
+        # pixel buffer into memory.
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            width, height = image.size
+            if width <= 0 or height <= 0 or width * height > MAX_SCAN_IMAGE_PIXELS:
+                raise ValueError("invalid dimensions")
+            image.verify()
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise bad_request("Upload a valid photo smaller than 40 megapixels.") from exc
+    return _convert_to_jpeg(image_bytes, filename)
 
 
 def _check_not_viewer_for_team_write(requesting_user_id: str, target_user_id: str) -> None:
@@ -490,9 +509,14 @@ async def extract_from_image_route(
     file: UploadFile = File(...),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> ExtractFromImageResponse:
-    raw = await file.read()
+    raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
     if not raw:
         raise bad_request("Empty file")
+    if len(raw) > MAX_SCAN_IMAGE_BYTES:
+        raise HTTPException(413, "Photo is too large. Choose a file under 20 MB.")
+
+    filename = file.filename or "upload.png"
+    analysis_bytes, analysis_filename = _prepare_scan_image(raw, filename)
 
     try:
         check_and_increment_scan(user.user_id)
@@ -525,12 +549,12 @@ async def extract_from_image_route(
             },
         )
 
-    filename = file.filename or "upload.png"
+    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
     stored = upload_image(
         user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+        filename=f"capture-{uuid4().hex}-{analysis_filename}",
+        content=analysis_bytes,
     )
-    analysis_bytes, analysis_filename = _convert_to_jpeg(raw, filename)
     try:
         data = await extract_inventory_items_with_find(
             filename=analysis_filename,
@@ -540,13 +564,23 @@ async def extract_from_image_route(
             source_frame_url=stored.url,
         )
         items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-        extracted = items[0] if items else {}
     except FindPipelineError as exc:
         logger.warning("FIND single item extraction failed: %s", exc.public_message)
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
         logger.exception("FIND single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
+
+    try:
+        items = enqueue_uncertain_items(
+            user_id=user.user_id, source_digest=source_digest, items=items
+        )
+    except Exception as exc:
+        logger.exception("Could not durably queue an uncertain capture result")
+        raise service_unavailable(
+            "The uncertain item could not be saved for review. Please try again."
+        ) from exc
+    extracted = items[0] if items else {}
 
     return ExtractFromImageResponse(extracted=extracted, image_url=stored.url)
 
@@ -558,9 +592,14 @@ async def inventory_extract_from_image_route(
     file: UploadFile = File(...),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> MultiExtractFromImageResponse:
-    raw = await file.read()
+    raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
     if not raw:
         raise bad_request("Empty file")
+    if len(raw) > MAX_SCAN_IMAGE_BYTES:
+        raise HTTPException(413, "Photo is too large. Choose a file under 20 MB.")
+
+    filename = file.filename or "upload.png"
+    analysis_bytes, analysis_filename = _prepare_scan_image(raw, filename)
 
     try:
         check_and_increment_scan(user.user_id)
@@ -593,17 +632,17 @@ async def inventory_extract_from_image_route(
             },
         )
 
-    filename = file.filename or "upload.png"
+    source_digest = hashlib.sha256(analysis_bytes).hexdigest()
     stored = upload_image(
         user_id=user.user_id,
-        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+        filename=f"capture-{uuid4().hex}-{analysis_filename}",
+        content=analysis_bytes,
     )
-    raw, filename = _convert_to_jpeg(raw, filename)
 
     try:
         data = await extract_inventory_items_with_find(
-            filename=filename,
-            image_bytes=raw,
+            filename=analysis_filename,
+            image_bytes=analysis_bytes,
             content_type="image/jpeg",
             user_id=user.user_id,
             source_frame_url=stored.url,
@@ -612,7 +651,7 @@ async def inventory_extract_from_image_route(
         logger.warning(
             "FIND inventory extraction failed (file=%s, size=%d, status=%d)",
             file.filename,
-            len(raw),
+            len(analysis_bytes),
             exc.status_code,
         )
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
@@ -620,7 +659,7 @@ async def inventory_extract_from_image_route(
         logger.exception(
             "FIND inventory extraction failed unexpectedly (file=%s, size=%d)",
             file.filename,
-            len(raw),
+            len(analysis_bytes),
         )
         raise HTTPException(
             status_code=503,
@@ -628,6 +667,15 @@ async def inventory_extract_from_image_route(
         )
 
     items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
+    try:
+        items = enqueue_uncertain_items(
+            user_id=user.user_id, source_digest=source_digest, items=items
+        )
+    except Exception as exc:
+        logger.exception("Could not durably queue uncertain capture results")
+        raise service_unavailable(
+            "Uncertain items could not be saved for review. Please try again."
+        ) from exc
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
 
     if not isinstance(summary, dict):

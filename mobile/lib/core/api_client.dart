@@ -448,6 +448,50 @@ class ApiClient {
     return BulkCreateResult.fromJson(data);
   }
 
+  Future<ReviewQueueResult> getReviewItems({int limit = 100}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/review-items',
+      queryParameters: {'limit': limit},
+      options: _authOptions(),
+    );
+    return ReviewQueueResult.fromJson(res.data ?? const {});
+  }
+
+  Future<ReviewItem> updateReviewItem({
+    required String reviewId,
+    required ExtractedInventoryItem item,
+  }) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}',
+      data: item.toReviewJson(),
+      options: _authOptions(),
+    );
+    return ReviewItem.fromJson(
+      (res.data?['review_item'] as Map<String, dynamic>?) ?? const {},
+    );
+  }
+
+  Future<InventoryItem> resolveReviewItem({
+    required String reviewId,
+    required ExtractedInventoryItem item,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}/resolve',
+      data: item.toReviewJson(),
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      (res.data?['item'] as Map<String, dynamic>?) ?? const {},
+    );
+  }
+
+  Future<void> dismissReviewItem({required String reviewId}) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}',
+      options: _authOptions(),
+    );
+  }
+
   Future<VerifiedCatalogPart> getVerifiedCatalogPart(String catalogId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/inventory/catalog/$catalogId',
@@ -1736,6 +1780,9 @@ class ExtractedInventoryItem {
     this.notes,
     this.location,
     this.catalogMatch,
+    this.scanEvidence,
+    this.reviewId,
+    this.reviewStatus,
   });
 
   String name;
@@ -1752,6 +1799,13 @@ class ExtractedInventoryItem {
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
+  ScanEvidence? scanEvidence;
+  String? reviewId;
+  String? reviewStatus;
+
+  bool get needsReview => scanEvidence?.needsReview == true;
+  bool get isPendingReview =>
+      needsReview && reviewId != null && reviewStatus == 'pending';
 
   factory ExtractedInventoryItem.fromJson(Map<String, dynamic> json) {
     return ExtractedInventoryItem(
@@ -1777,6 +1831,13 @@ class ExtractedInventoryItem {
               json['catalog_match'] as Map<String, dynamic>,
             )
           : null,
+      scanEvidence: json['scan_evidence'] is Map
+          ? ScanEvidence.fromJson(
+              Map<String, dynamic>.from(json['scan_evidence'] as Map),
+            )
+          : null,
+      reviewId: json['review_id']?.toString(),
+      reviewStatus: json['review_status']?.toString(),
     );
   }
 
@@ -1800,7 +1861,185 @@ class ExtractedInventoryItem {
           'catalog_id': catalogMatch!.catalogId,
           'verified': catalogMatch!.verified,
         },
+      if (scanEvidence != null) 'scan_evidence': scanEvidence!.toJson(),
+      if (reviewId != null) 'review_id': reviewId,
+      if (reviewStatus != null) 'review_status': reviewStatus,
     };
+  }
+
+  Map<String, dynamic> toReviewJson() {
+    return <String, dynamic>{
+      'name': name,
+      'category': category,
+      'quantity': quantity,
+      if (subcategory != null) 'subcategory': subcategory,
+      if (brand != null) 'brand': brand,
+      if (partNumber != null) 'part_number': partNumber,
+      if (barcode != null) 'barcode': barcode,
+      if (tags != null) 'tags': tags,
+      if (confidence != null) 'confidence': confidence,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (notes != null) 'notes': notes,
+      'location': (location ?? '').trim().isEmpty ? 'Unsorted' : location,
+    };
+  }
+}
+
+class ScanEvidence {
+  const ScanEvidence({
+    this.identificationReasoning,
+    this.identityConfidence,
+    this.ocrText,
+    this.ocrConfidence,
+    this.lengthMm,
+    this.widthMm,
+    this.measurementConfidence,
+    this.measurementMethod,
+    this.measurementAssumption,
+    this.barcodeSymbology,
+    this.barcodeConfidence,
+    this.detectionConfidence,
+    this.reviewReasons = const [],
+    this.warnings = const [],
+    this.needsReview = false,
+  });
+
+  final String? identificationReasoning;
+  final double? identityConfidence;
+  final String? ocrText;
+  final double? ocrConfidence;
+  final double? lengthMm;
+  final double? widthMm;
+  final String? measurementConfidence;
+  final String? measurementMethod;
+  final String? measurementAssumption;
+  final String? barcodeSymbology;
+  final double? barcodeConfidence;
+  final double? detectionConfidence;
+  final List<String> reviewReasons;
+  final List<String> warnings;
+  final bool needsReview;
+
+  static double? _number(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse((value ?? '').toString());
+
+  factory ScanEvidence.fromJson(Map<String, dynamic> json) {
+    return ScanEvidence(
+      identificationReasoning: json['identification_reasoning']?.toString(),
+      identityConfidence: _number(json['identity_confidence']),
+      ocrText: json['ocr_text']?.toString(),
+      ocrConfidence: _number(json['ocr_confidence']),
+      lengthMm: _number(json['length_mm']),
+      widthMm: _number(json['width_mm']),
+      measurementConfidence: json['measurement_confidence']?.toString(),
+      measurementMethod: json['measurement_method']?.toString(),
+      measurementAssumption: json['measurement_assumption']?.toString(),
+      barcodeSymbology: json['barcode_symbology']?.toString(),
+      barcodeConfidence: _number(json['barcode_confidence']),
+      detectionConfidence: _number(json['detection_confidence']),
+      reviewReasons: (json['review_reasons'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      warnings: (json['warnings'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      needsReview: json['needs_review'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (identificationReasoning != null)
+      'identification_reasoning': identificationReasoning,
+    if (identityConfidence != null) 'identity_confidence': identityConfidence,
+    if (ocrText != null) 'ocr_text': ocrText,
+    if (ocrConfidence != null) 'ocr_confidence': ocrConfidence,
+    if (lengthMm != null) 'length_mm': lengthMm,
+    if (widthMm != null) 'width_mm': widthMm,
+    if (measurementConfidence != null)
+      'measurement_confidence': measurementConfidence,
+    if (measurementMethod != null) 'measurement_method': measurementMethod,
+    if (measurementAssumption != null)
+      'measurement_assumption': measurementAssumption,
+    if (barcodeSymbology != null) 'barcode_symbology': barcodeSymbology,
+    if (barcodeConfidence != null) 'barcode_confidence': barcodeConfidence,
+    if (detectionConfidence != null)
+      'detection_confidence': detectionConfidence,
+    'review_reasons': reviewReasons,
+    'warnings': warnings,
+    'needs_review': needsReview,
+  };
+}
+
+class ReviewItem extends ExtractedInventoryItem {
+  ReviewItem({
+    required this.id,
+    required this.status,
+    required super.name,
+    required super.category,
+    required super.quantity,
+    super.subcategory,
+    super.brand,
+    super.partNumber,
+    super.barcode,
+    super.tags,
+    super.confidence,
+    super.imageUrl,
+    super.sourceFrameUrl,
+    super.notes,
+    super.location,
+    super.catalogMatch,
+    super.scanEvidence,
+    this.createdAt,
+  }) : super(reviewId: id, reviewStatus: status);
+
+  final String id;
+  final String status;
+  final DateTime? createdAt;
+
+  factory ReviewItem.fromJson(Map<String, dynamic> json) {
+    final item = ExtractedInventoryItem.fromJson({
+      ...json,
+      'review_id': json['review_id'],
+      'review_status': json['status'],
+    });
+    return ReviewItem(
+      id: (json['review_id'] ?? '').toString(),
+      status: (json['status'] ?? 'pending').toString(),
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      subcategory: item.subcategory,
+      brand: item.brand,
+      partNumber: item.partNumber,
+      barcode: item.barcode,
+      tags: item.tags,
+      confidence: item.confidence,
+      imageUrl: item.imageUrl,
+      sourceFrameUrl: item.sourceFrameUrl,
+      notes: item.notes,
+      location: item.location,
+      catalogMatch: item.catalogMatch,
+      scanEvidence: item.scanEvidence,
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class ReviewQueueResult {
+  const ReviewQueueResult({required this.items, required this.pendingCount});
+
+  final List<ReviewItem> items;
+  final int pendingCount;
+
+  factory ReviewQueueResult.fromJson(Map<String, dynamic> json) {
+    return ReviewQueueResult(
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(ReviewItem.fromJson)
+          .toList(),
+      pendingCount: (json['pending_count'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 

@@ -31,6 +31,8 @@ School, Makerspace, Club, Business, and Other.
 - Personal inventory grouped into persistent Spaces
 - Photo, barcode, manual, spreadsheet, and BOM-based capture
 - FIND photo segmentation, identification, OCR/barcode evidence, and measurement
+- Durable Review for uncertain photo results, with retained source photos and
+  model-neutral scan evidence
 - Search and Ask FindEZ with authenticated inventory tools
 - Space sharing with view or edit permissions
 - Teams, Team Spaces, board work, members, documents, and activity
@@ -60,11 +62,12 @@ School, Makerspace, Club, Business, and Other.
 - **Shared Space**: the older `team_shares` and `team_members` sharing model.
 - **Team**: the newer `teams` and `team_memberships` collaboration and licensing
   model. Both models currently exist.
-- **Scan evidence**: transient FIND reasoning, confidence, OCR, barcode, and
-  measurement information returned before save. It is not a durable evidence
-  record today.
-- **Review queue**: a planned durable queue for unresolved captured objects. The
-  web route exists with an honest empty state, but persistence is not implemented.
+- **Scan evidence**: the public, model-neutral identity, detection, text/barcode,
+  measurement, assumptions, warnings, and review reasons returned by capture.
+  It persists with unresolved Review records; raw masks/geometry do not persist.
+- **Review queue**: durable unresolved photo results in `capture_reviews`, deployed
+  with migration `036`. Confirmation creates one inventory item transactionally;
+  dismissal creates none. Mobile and web provide the review flow.
 
 ## Product invariants
 

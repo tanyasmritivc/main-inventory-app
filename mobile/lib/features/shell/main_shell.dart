@@ -15,6 +15,10 @@ import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
+import '../checkout/checkout_page.dart';
+import '../documents/documents_page.dart';
+import '../home/home_page.dart';
+import '../home/home_overview.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
@@ -22,8 +26,10 @@ import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
+import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
 import '../teams/teams_page.dart';
+import 'home_navigation.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.api});
@@ -37,7 +43,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 3;
+  int _currentPage = 0;
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
@@ -50,6 +56,9 @@ class _MainShellState extends State<MainShell> {
   Timer? _notificationTimer;
   double _pageOpacity = 1;
   int _pageTransitionGeneration = 0;
+  int _chatGeneration = 0;
+  String? _chatInitialMessage;
+  bool _openingMore = false;
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -83,7 +92,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 3);
+    _pageController = PageController(initialPage: 0);
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
     unawaited(_initializePushNotifications());
@@ -166,15 +175,143 @@ class _MainShellState extends State<MainShell> {
   }
 
   int get _navigationIndex => switch (_currentPage) {
-    3 => 0,
+    0 => 0,
     2 => 1,
     1 => 2,
     _ => 3,
   };
 
   void _onNavigationTap(int index) {
-    const pages = [3, 2, 1, 0];
+    const pages = [0, 2, 1, 3];
     _animateTo(pages[index], haptic: true);
+  }
+
+  void _openAsk(String? message) {
+    final question = (message ?? '').trim();
+    if (question.isNotEmpty) {
+      setState(() {
+        _chatInitialMessage = question;
+        _chatGeneration++;
+      });
+    }
+    _animateTo(1, haptic: true);
+  }
+
+  Future<void> _openProfile() async {
+    HapticFeedback.lightImpact();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(title: const Text('Profile')),
+          body: ProfilePage(api: widget.api),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openReview() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReviewQueuePage(
+          api: widget.api,
+          onInventoryMutated: () {
+            setState(() => _inventoryRefreshToken++);
+            unawaited(_prefetchInventoryCache());
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _inventoryRefreshToken++);
+  }
+
+  Future<void> _openDocuments() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => DocumentsPage(api: widget.api)));
+  }
+
+  Future<void> _openCheckouts() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)),
+    );
+    if (mounted) setState(() => _inventoryRefreshToken++);
+  }
+
+  Future<void> _openHomeSpace(Map<String, dynamic> space) async {
+    setState(() => _inventorySection = 0);
+    _animateTo(3, haptic: true);
+    for (
+      var attempt = 0;
+      attempt < 12 && _openAssistDestination == null;
+      attempt++
+    ) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    if (!mounted) return;
+    final open = _openAssistDestination;
+    if (open == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open this Space. Please try again.'),
+        ),
+      );
+      return;
+    }
+    try {
+      await open({'space_name': space['name'], 'space_id': space['id']});
+      if (mounted) setState(() => _inventoryRefreshToken++);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open this Space. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _openMore() async {
+    if (_openingMore) return;
+    _openingMore = true;
+    final destination = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: HomeColors.surface,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Documents and notes'),
+              onTap: () => Navigator.pop(context, 'documents'),
+            ),
+            ListTile(
+              title: const Text('Notifications'),
+              trailing: _notificationCount > 0
+                  ? Text('$_notificationCount')
+                  : null,
+              onTap: () => Navigator.pop(context, 'notifications'),
+            ),
+            ListTile(
+              title: const Text('Profile and settings'),
+              onTap: () => Navigator.pop(context, 'profile'),
+            ),
+          ],
+        ),
+      ),
+    );
+    _openingMore = false;
+    if (!mounted) return;
+    switch (destination) {
+      case 'documents':
+        await _openDocuments();
+      case 'notifications':
+        await _openNotifications();
+      case 'profile':
+        await _openProfile();
+    }
   }
 
   Future<void> _loadNotificationCount() async {
@@ -264,7 +401,7 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget? _buildAppBar() {
     switch (_currentPage) {
       case 3:
         return AppBar(
@@ -299,16 +436,21 @@ class _MainShellState extends State<MainShell> {
                 tooltip: 'Join Shared Space',
               ),
             _notificationBell(),
+            IconButton(
+              tooltip: 'More',
+              icon: const Icon(CupertinoIcons.ellipsis, size: 22),
+              onPressed: _openMore,
+            ),
           ],
         );
       case 2:
         return AppBar(
-          title: const Text('Scan'),
+          title: const Text('Capture'),
           actions: [_notificationBell()],
         );
       case 1:
         return AppBar(
-          title: const Text('Assist'),
+          title: const Text('Ask'),
           actions: [
             if (_hasActiveChat)
               IconButton(
@@ -320,10 +462,7 @@ class _MainShellState extends State<MainShell> {
           ],
         );
       default:
-        return AppBar(
-          title: const Text('Profile'),
-          actions: [_notificationBell()],
-        );
+        return null;
     }
   }
 
@@ -331,170 +470,105 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: HomeColors.background,
       appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: AnimatedOpacity(
-              opacity: _pageOpacity,
-              duration: const Duration(milliseconds: 140),
-              curve: Curves.easeOutCubic,
-              child: PageView(
-                controller: _pageController,
-                reverse: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) {
-                  unawaited(_loadNotificationCount());
-                  final now = DateTime.now();
-                  final tooSoon =
-                      index == 3 &&
-                      _lastTabSwitchRefreshAt != null &&
-                      now.difference(_lastTabSwitchRefreshAt!) <
-                          const Duration(seconds: 5);
-                  setState(() {
-                    _currentPage = index;
-                    if (index == 3 && !tooSoon) {
-                      _inventoryRefreshToken++;
-                      _lastTabSwitchRefreshAt = now;
-                    }
-                  });
-                },
-                children: [
-                  ProfilePage(api: widget.api),
-                  ChatPage(
-                    api: widget.api,
-                    inPageView: true,
-                    pageController: _pageController,
-                    onInventoryMutated: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
-                    },
-                    onRegisterReset: (fn) => _resetChatCallback = fn,
-                    onChatStateChanged: (hasMessages) =>
-                        setState(() => _hasActiveChat = hasMessages),
-                    onOpenDestination: (hint) async {
-                      _animateTo(3);
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 350),
-                      );
-                      await _openAssistDestination?.call(hint);
-                    },
-                  ),
-                  ScanPage(
-                    api: widget.api,
-                    isActive: _currentPage == 2,
-                    showAppBar: false,
-                    onSaved: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
-                    },
-                    onSpaceScanned: (spaceName) {
-                      setState(() => _inventoryRefreshToken++);
-                      _animateTo(3);
-                    },
-                    onSkipCoachmark: () {},
-                  ),
-                  IndexedStack(
-                    index: _inventorySection,
-                    children: [
-                      InventoryPage(
-                        api: widget.api,
-                        refreshToken: _inventoryRefreshToken,
-                        showAppBar: false,
-                        onRegisterJoinSpace: (fn) {
-                          if (_joinSpaceCallback == fn) return;
-                          setState(() => _joinSpaceCallback = fn);
-                        },
-                        onRegisterOpenAssistDestination: (fn) =>
-                            _openAssistDestination = fn,
-                      ),
-                      TeamsPage(api: widget.api),
-                    ],
-                  ),
-                ],
-              ),
+      body: AnimatedOpacity(
+        opacity: _pageOpacity,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: PageView(
+          controller: _pageController,
+          reverse: true,
+          physics: const NeverScrollableScrollPhysics(),
+          onPageChanged: (index) {
+            unawaited(_loadNotificationCount());
+            final now = DateTime.now();
+            final tooSoon =
+                index == 3 &&
+                _lastTabSwitchRefreshAt != null &&
+                now.difference(_lastTabSwitchRefreshAt!) <
+                    const Duration(seconds: 5);
+            setState(() {
+              _currentPage = index;
+              if (index == 3 && !tooSoon) {
+                _inventoryRefreshToken++;
+                _lastTabSwitchRefreshAt = now;
+              }
+            });
+          },
+          children: [
+            HomePage(
+              api: widget.api,
+              refreshToken: _inventoryRefreshToken,
+              onOpenAsk: _openAsk,
+              onOpenReview: _openReview,
+              onOpenCheckouts: _openCheckouts,
+              onOpenSpace: _openHomeSpace,
             ),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 8,
-            child: IgnorePointer(
-              ignoring: keyboardVisible,
-              child: AnimatedSlide(
-                offset: keyboardVisible ? const Offset(0, 1.35) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: AnimatedOpacity(
-                  opacity: keyboardVisible ? 0 : 1,
-                  duration: const Duration(milliseconds: 140),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xF2131418),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x66000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: NavigationBar(
-                        height: 70,
-                        backgroundColor: Colors.transparent,
-                        selectedIndex: _navigationIndex,
-                        onDestinationSelected: _onNavigationTap,
-                        destinations: [
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.house,
-                              key: TutorialController.inventoryIconKey,
-                            ),
-                            selectedIcon: const Icon(CupertinoIcons.house_fill),
-                            label: 'Inventory',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                              key: TutorialController.scanTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                            ),
-                            label: 'Scan',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.chat_bubble,
-                              key: TutorialController.assistTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.chat_bubble_fill,
-                            ),
-                            label: 'Assist',
-                          ),
-                          const NavigationDestination(
-                            icon: Icon(CupertinoIcons.person_crop_circle),
-                            selectedIcon: Icon(
-                              CupertinoIcons.person_crop_circle_fill,
-                            ),
-                            label: 'Profile',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+            ChatPage(
+              key: ValueKey('chat-$_chatGeneration'),
+              api: widget.api,
+              initialMessage: _chatInitialMessage,
+              inPageView: true,
+              pageController: _pageController,
+              onInventoryMutated: () {
+                setState(() => _inventoryRefreshToken++);
+                unawaited(_prefetchInventoryCache());
+              },
+              onRegisterReset: (fn) => _resetChatCallback = fn,
+              onChatStateChanged: (hasMessages) =>
+                  setState(() => _hasActiveChat = hasMessages),
+              onOpenDestination: (hint) async {
+                _animateTo(3);
+                await Future<void>.delayed(const Duration(milliseconds: 350));
+                await _openAssistDestination?.call(hint);
+              },
+            ),
+            ScanPage(
+              api: widget.api,
+              isActive: _currentPage == 2,
+              showAppBar: false,
+              onSaved: () {
+                setState(() => _inventoryRefreshToken++);
+                unawaited(_prefetchInventoryCache());
+              },
+              onSpaceScanned: (spaceName) {
+                setState(() => _inventoryRefreshToken++);
+                _animateTo(3);
+              },
+              onSkipCoachmark: () {},
+            ),
+            IndexedStack(
+              index: _inventorySection,
+              children: [
+                InventoryPage(
+                  api: widget.api,
+                  refreshToken: _inventoryRefreshToken,
+                  showAppBar: false,
+                  onRegisterJoinSpace: (fn) {
+                    if (_joinSpaceCallback == fn) return;
+                    setState(() => _joinSpaceCallback = fn);
+                  },
+                  onRegisterOpenAssistDestination: (fn) =>
+                      _openAssistDestination = fn,
                 ),
-              ),
+                TeamsPage(api: widget.api),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+      bottomNavigationBar: keyboardVisible
+          ? null
+          : HomeNavigation(
+              selectedIndex: _navigationIndex,
+              onSelected: _onNavigationTap,
+              destinationKeys: {
+                0: TutorialController.inventoryIconKey,
+                1: TutorialController.scanTabKey,
+                2: TutorialController.assistTabKey,
+              },
+            ),
     );
   }
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
-import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
+import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode, updateReviewItem } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
@@ -28,19 +29,23 @@ function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
     ? `${evidence.length_mm} × ${evidence.width_mm} mm`
     : null;
   const facts = [
-    percent(item.confidence) && ["Identity", percent(item.confidence)],
+    percent(evidence.identity_confidence ?? item.confidence) && ["Identity", percent(evidence.identity_confidence ?? item.confidence)],
     percent(evidence.detection_confidence) && ["Detection", percent(evidence.detection_confidence)],
-    dimensions && ["Measured", dimensions],
-    evidence.barcode_symbology && ["Barcode", evidence.barcode_symbology],
+    dimensions && ["Measured", `${dimensions}${evidence.measurement_confidence ? ` · ${evidence.measurement_confidence}` : ""}`],
+    item.barcode && ["Barcode value", item.barcode],
+    evidence.barcode_symbology && ["Barcode format", `${evidence.barcode_symbology}${percent(evidence.barcode_confidence) ? ` · ${percent(evidence.barcode_confidence)}` : ""}`],
   ].filter(Boolean) as string[][];
   return (
     <div className="find-evidence">
       <div className="find-evidence-facts">
         {facts.map(([label, value]) => <span key={label}><small>{label}</small>{value}</span>)}
       </div>
-      {evidence.identification_reasoning && <p><strong>Visual match</strong>{evidence.identification_reasoning}</p>}
+      {(evidence.review_reasons ?? []).map((reason) => <p className="find-evidence-warning" key={reason}><strong>Needs review</strong>{reason}</p>)}
+      {evidence.identification_reasoning && <p><strong>Why this identification</strong>{evidence.identification_reasoning}</p>}
       {evidence.ocr_text && <p><strong>Text read from item{percent(evidence.ocr_confidence) ? ` · ${percent(evidence.ocr_confidence)}` : ""}</strong>{evidence.ocr_text}</p>}
-      {dimensions && evidence.measurement_assumption && <p className="find-evidence-note">{evidence.measurement_assumption}</p>}
+      {dimensions && evidence.measurement_method && <p><strong>Measurement method</strong>{evidence.measurement_method}</p>}
+      {dimensions && evidence.measurement_assumption && <p className="find-evidence-note"><strong>Measurement note</strong>{evidence.measurement_assumption}</p>}
+      {(evidence.warnings ?? []).map((warning) => <p className="find-evidence-note" key={warning}><strong>Analysis note</strong>{warning}</p>)}
     </div>
   );
 }
@@ -99,7 +104,27 @@ export function ScanCenterClient() {
     if (!token || items.length === 0) return;
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     setWorking(true); setError(null);
-    try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); setScanSummary(null); }
+    try {
+      const located = items.map((item) => ({ ...item, location: space }));
+      const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
+      const ready = located.filter((item) => !item.scan_evidence?.needs_review);
+      for (const item of uncertain) {
+        if (!item.review_id) {
+          throw new Error("An uncertain item was not safely stored. Please scan the photo again.");
+        }
+        if (item.review_status !== "pending") throw new Error("This photo was already reviewed. Take a new photo to capture it again.");
+        await updateReviewItem({ token, reviewId: item.review_id, item });
+      }
+      const result = ready.length > 0
+        ? await bulkCreate({ token, items: ready })
+        : { inserted: [], failures: [] };
+      const messages = [];
+      if (result.inserted.length) messages.push(`${result.inserted.length} added to ${space}`);
+      if (uncertain.length) messages.push(`${uncertain.length} kept in Review`);
+      setSaved(`${messages.join(" · ")}.`);
+      setItems([]);
+      setScanSummary(null);
+    }
     catch (reason) { setError(userFacingError(reason, "The detected items could not be saved.")); }
     finally { setWorking(false); }
   }
@@ -151,13 +176,14 @@ export function ScanCenterClient() {
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">
                 <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
-                <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>Save to {space || "a Space"}</button>
+                <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>
               </div>
               <div className="find-review-list">
                 {items.map((item, index) => {
                   const update = (changes: Partial<ExtractedInventoryItem>) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...changes } : row));
                   return <article className="find-review-card" key={`${item.name}-${index}`}>
                     <header><span>Object {index + 1}</span>{item.scan_evidence?.needs_review ? <b className="find-review-warning">Review needed</b> : <b>{percent(item.confidence) ? `${percent(item.confidence)} identity` : "Detected"}</b>}<button type="button" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></header>
+                    {item.image_url && <Image unoptimized width={720} height={480} className="find-review-image" src={item.image_url} alt={`Captured ${item.name || `object ${index + 1}`}`} />}
                     <div className="find-review-primary">
                       <label><span>Name</span><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => update({ name: event.target.value })} /></label>
                       <label><span>Category</span><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => update({ category: event.target.value })} /></label>

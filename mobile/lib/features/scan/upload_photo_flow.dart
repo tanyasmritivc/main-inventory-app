@@ -11,6 +11,7 @@ import '../../core/api_error.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
+import 'review_capture.dart';
 import 'qr_sheet.dart';
 
 List<int> _compressImageBytes(Uint8List bytes) {
@@ -435,9 +436,15 @@ Future<void> runUploadPhotoFlow({
         notes: it.notes,
         location: itemLocation,
         catalogMatch: it.catalogMatch,
+        scanEvidence: it.scanEvidence,
+        reviewId: it.reviewId,
+        reviewStatus: it.reviewStatus,
       ),
     );
-    indexMap.add(name);
+    // The backend failure index is relative to the confident-only bulk
+    // payload. Uncertain objects stay in Review and never occupy an index in
+    // that request.
+    if (!it.needsReview) indexMap.add(name);
   }
 
   if (normalized.isEmpty) {
@@ -451,16 +458,37 @@ Future<void> runUploadPhotoFlow({
     return;
   }
 
+  ReviewCapturePlan plan;
+  try {
+    plan = await prepareCaptureForSave(api: api, items: normalized);
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    return;
+  }
+  final inventoryItems = plan.inventoryItems;
+  if (inventoryItems.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${plan.reviewCount} uncertain ${plan.reviewCount == 1 ? 'item is' : 'items are'} saved in Review.',
+        ),
+      ),
+    );
+    await onItemsSaved();
+    return;
+  }
+
   debugPrint('FINDEZ bulkCreate: saving to space "$preselectedSpace"');
-  debugPrint(
-    'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
-    '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
-  );
+  debugPrint('FINDEZ bulkCreate: sending ${inventoryItems.length} item(s)');
 
   // Step 7: save
   BulkCreateResult res;
   try {
-    res = await api.bulkCreateInventory(items: normalized);
+    res = await api.bulkCreateInventory(items: inventoryItems);
   } on dio.DioException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
@@ -500,12 +528,13 @@ Future<void> runUploadPhotoFlow({
     ...backendFailures,
   };
   final insertedCount = res.inserted.length;
-  final silentDrops = normalized.length - insertedCount - res.failures.length;
+  final silentDrops =
+      inventoryItems.length - insertedCount - res.failures.length;
 
   if (silentDrops > 0) {
     debugPrint(
       'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
-      '(server name deduplication). Sent=${normalized.length}, '
+      '(server name deduplication). Sent=${inventoryItems.length}, '
       'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
     );
   }
@@ -514,14 +543,16 @@ Future<void> runUploadPhotoFlow({
   final allSucceeded =
       allFailures.isEmpty &&
       silentDrops == 0 &&
-      insertedCount == normalized.length;
+      insertedCount == inventoryItems.length;
 
   if (insertedCount > 0) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           allSucceeded
-              ? 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $preselectedSpace'
+              ? plan.reviewCount > 0
+                    ? 'Saved $insertedCount and kept ${plan.reviewCount} in Review'
+                    : 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $preselectedSpace'
               : 'Saved $insertedCount of $totalExpected items to $preselectedSpace',
         ),
       ),

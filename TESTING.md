@@ -40,8 +40,10 @@ GitHub Actions runs these jobs independently on pull requests and pushes to
 API integrations also have a PostgreSQL 17 CI job that executes
 `backend/tests/sql/api_key_rls.sql` against an empty disposable database. It verifies
 the real RLS policies and triggers, including cross-team isolation, write-only
-updates, repeat imports, aggregate queries, revocation, and Space detachment. To run
-locally, point the standard `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and
+updates, repeat imports, aggregate queries, revocation, Space detachment, and
+Review queue ownership, backend-only mutations, transactional resolution,
+idempotency, and photo preservation. To run locally, point the standard
+`PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and
 `PGDATABASE` variables at an **empty test database**, then run:
 
 ```bash

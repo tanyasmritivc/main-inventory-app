@@ -1,984 +1,290 @@
 import 'dart:async';
-
-import 'package:dio/dio.dart' as dio;
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/pro_status.dart';
-import '../../core/ui/glass_card.dart';
-import '../../core/ui/primary_gradient_button.dart';
-import '../chat/chat_page.dart';
-import '../documents/documents_page.dart';
+import '../inventory/item_detail_sheet.dart';
+import 'home_overview.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.api,
-    this.onOpenScan,
-    this.onOpenSpaces,
-    this.onInventoryMutated,
+    required this.onOpenAsk,
+    required this.onOpenReview,
+    required this.onOpenCheckouts,
+    required this.onOpenSpace,
+    this.refreshToken = 0,
   });
-
   final ApiClient api;
-  final VoidCallback? onOpenScan;
-  final VoidCallback? onOpenSpaces;
-  final VoidCallback? onInventoryMutated;
-
+  final ValueChanged<String> onOpenAsk;
+  final VoidCallback onOpenReview, onOpenCheckouts;
+  final Future<void> Function(Map<String, dynamic>) onOpenSpace;
+  final int refreshToken;
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late final TextEditingController _ask;
-
-  bool _uploading = false;
-  String? _uploadMessage;
-  String? _uploadError;
-
-  bool _loading = true;
-  String? _error;
-  bool _pilotBannerDismissed = false;
-
-  List<ActivityEntry> _activities = const [];
   List<InventoryItem> _items = const [];
-  Map<String, int> _thresholds = const {};
-
-  String _friendlyRequestError(Object error) {
-    if (error is dio.DioException) {
-      final t = error.type;
-      if (t == dio.DioExceptionType.connectionTimeout ||
-          t == dio.DioExceptionType.sendTimeout ||
-          t == dio.DioExceptionType.receiveTimeout) {
-        return 'That took longer than expected. Try again.';
-      }
-    }
-    return 'That didn’t work. Try again.';
-  }
+  List<Map<String, dynamic>> _spaces = const [];
+  Map<String, int>? _thresholds;
+  List<Map<String, dynamic>>? _checkouts;
+  int? _pendingReviews;
+  bool _inventoryAvailable = false;
+  String? _error;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    _ask = TextEditingController();
-
-    final cached = InventoryCache.items;
-    if (cached.isNotEmpty) {
-      _items = cached;
-      _loading = false;
-    }
-
-    unawaited(_loadAll());
-    unawaited(_loadBannerDismissed());
+    _items = InventoryCache.items;
+    unawaited(_load());
   }
 
   @override
-  void dispose() {
-    _ask.dispose();
-    super.dispose();
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) unawaited(_load());
   }
 
-  Future<void> _loadBannerDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _load() async {
+    final generation = ++_loadGeneration;
     if (!mounted) return;
-    setState(() {
-      _pilotBannerDismissed = prefs.getBool('pilot_banner_dismissed_v1') ?? false;
-    });
-  }
-
-  Future<void> _dismissPilotBanner() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('pilot_banner_dismissed_v1', true);
-    if (!mounted) return;
-    setState(() => _pilotBannerDismissed = true);
-  }
-
-  Future<void> _loadAll() async {
-    if (!mounted) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      await Future.wait([
-        _loadItemsAndThresholds(),
-        _loadActivity(),
-      ]);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
+    setState(() => _error = null);
+    var failed = false;
+    Future<T?> read<T>(Future<T> request) async {
+      try {
+        return await request;
+      } catch (_) {
+        failed = true;
+        return null;
       }
     }
+
+    final results = await Future.wait<Object?>([
+      read(widget.api.searchItems(query: '')),
+      read(widget.api.listSpaces()),
+      read(widget.api.getReviewItems(limit: 1)),
+      read(widget.api.getActiveCheckouts()),
+      read(LowStockPrefs.loadAll()),
+    ]);
+    if (!mounted || generation != _loadGeneration) return;
+    final inventory = results[0] as SearchItemsResult?;
+    if (inventory != null) InventoryCache.setItems(inventory.items);
+    setState(() {
+      _items = inventory?.items ?? _items;
+      if (inventory != null) _inventoryAvailable = true;
+      _spaces = results[1] as List<Map<String, dynamic>>? ?? _spaces;
+      _pendingReviews =
+          (results[2] as ReviewQueueResult?)?.pendingCount ?? _pendingReviews;
+      _checkouts = results[3] as List<Map<String, dynamic>>? ?? _checkouts;
+      _thresholds = results[4] as Map<String, int>? ?? _thresholds;
+      _error = failed
+          ? 'Some details could not refresh. Pull down to try again.'
+          : null;
+    });
   }
 
+  List<InventoryItem> get _lowStock => _items.where((item) {
+    final threshold = _thresholds?[item.itemId];
+    return threshold != null &&
+        threshold > 0 &&
+        item.quantity > 0 &&
+        item.quantity <= threshold;
+  }).toList();
+  List<InventoryItem> get _outOfStock =>
+      _items.where((item) => item.quantity <= 0).toList();
+  int? get _lentOutCount {
+    if (_checkouts == null || !_inventoryAvailable) return null;
+    final ownedIds = _items.map((item) => item.itemId).toSet();
+    return _checkouts!
+        .where((checkout) => ownedIds.contains(checkout['item_id']))
+        .map((checkout) => checkout['item_id'])
+        .toSet()
+        .length;
+  }
 
-  Future<void> _openChat({String? message}) async {
-    final m = (message ?? '').trim();
-    if (!mounted) return;
-    await Navigator.of(context).push(
+  Future<void> _openItem(InventoryItem item) async {
+    await showItemDetailSheet(
+      context,
+      api: widget.api,
+      item: item,
+      spaceName: item.location,
+      initialThreshold: _thresholds?[item.itemId],
+    );
+    if (mounted) unawaited(_load());
+  }
+
+  Future<void> _openAttention(String title, List<InventoryItem> items) async {
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => ChatPage(
+        builder: (_) => _AttentionItemsPage(
+          title: title,
           api: widget.api,
-          initialMessage: m.isEmpty ? null : m,
-          onInventoryMutated: () {
-            widget.onInventoryMutated?.call();
-            unawaited(_loadAll());
-          },
+          items: items,
+          thresholds: _thresholds ?? const {},
         ),
       ),
     );
+    if (mounted) unawaited(_load());
   }
 
-  Future<void> _quickAddItem() async {
-    final name = TextEditingController();
-    final category = TextEditingController(text: 'Unsorted');
-    final location = TextEditingController(text: 'Unsorted');
-    final quantity = TextEditingController(text: '1');
-    final threshold = TextEditingController();
-
-    try {
-      final out = await showModalBottomSheet<_QuickAddPayload>(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          final bottom = MediaQuery.of(context).viewInsets.bottom;
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 14,
-              bottom: bottom + 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Add item',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: name,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: category,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: location,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: quantity,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: threshold,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                  decoration: const InputDecoration(
-                    labelText: 'Low stock threshold (optional)',
-                  ),
-                ),
-                const SizedBox(height: 14),
-                FilledButton(
-                  onPressed: () {
-                    final n = name.text.trim();
-                    if (n.isEmpty) return;
-                    final c = category.text.trim().isEmpty
-                        ? 'Unsorted'
-                        : category.text.trim();
-                    final loc = location.text.trim().isEmpty
-                        ? 'Unsorted'
-                        : location.text.trim();
-                    final qty = int.tryParse(quantity.text.trim()) ?? 1;
-                    final thrRaw = int.tryParse(threshold.text.trim());
-                    final thr = (thrRaw != null && thrRaw > 0) ? thrRaw : null;
-
-                    Navigator.of(context).pop(
-                      _QuickAddPayload(
-                        item: AddItemRequest(
-                          name: n,
-                          category: c,
-                          quantity: qty <= 0 ? 1 : qty,
-                          location: loc,
-                        ),
-                        threshold: thr,
-                      ),
-                    );
-                  },
-                  child: const Text('Save'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-
-      if (out == null) return;
-
-      final created = await widget.api.addItem(item: out.item);
-      if (out.threshold != null && out.threshold! > 0) {
-        await LowStockPrefs.setThreshold(
-          itemId: created.itemId,
-          threshold: out.threshold,
-        );
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('+1 item added')),
-      );
-      widget.onInventoryMutated?.call();
-      unawaited(_loadAll());
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyRequestError(e))),
-      );
-    } finally {
-      name.dispose();
-      category.dispose();
-      location.dispose();
-      quantity.dispose();
-      threshold.dispose();
-    }
-  }
-
-  Future<void> _loadActivity() async {
-    try {
-      final items = await widget.api.getRecentActivity(limit: 10);
-      if (!mounted) return;
-      setState(() => _activities = items);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    }
-  }
-
-  Future<void> _loadItemsAndThresholds() async {
-    try {
-      final thresholds = await LowStockPrefs.loadAll();
-      if (mounted) {
-        setState(() => _thresholds = thresholds);
-      }
-
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      final resp = await supabase
-          .from('items')
-          .select('item_id,name,category,quantity,location,image_url,created_at')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
-      InventoryCache.setItems(items);
-      if (!mounted) return;
-      setState(() => _items = items);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    }
-  }
-
-  ({int totalQuantity, int totalTypes}) _weeklyStats() {
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    var quantitySum = 0;
-    var typeCount = 0;
-    for (final it in _items) {
-      if (it.createdAt.isAfter(cutoff)) {
-        quantitySum += (it.quantity <= 0 ? 0 : it.quantity);
-        typeCount++;
-      }
-    }
-    return (totalQuantity: quantitySum, totalTypes: typeCount);
-  }
-
-  int _lowStockCount() {
-    if (_thresholds.isEmpty || _items.isEmpty) return 0;
-    var n = 0;
-    for (final it in _items) {
-      final thr = _thresholds[it.itemId];
-      if (thr == null || thr <= 0) continue;
-      if (it.quantity <= thr) n++;
-    }
-    return n;
-  }
-
-  String _mostActiveLocation() {
-    if (_items.isEmpty) return '—';
-    final counts = <String, int>{};
-    for (final it in _items) {
-      final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      counts[loc] = (counts[loc] ?? 0) + (it.quantity <= 0 ? 0 : it.quantity);
-    }
-    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    if (entries.isEmpty) return '—';
-    return entries.first.key;
-  }
-
-  Future<void> _logout() async {
-    await Supabase.instance.client.auth.signOut();
-  }
-
-  Future<void> _pickAndUpload() async {
-    if (!mounted) return;
-    setState(() {
-      _uploading = true;
-      _uploadMessage = null;
-      _uploadError = null;
-    });
-
-    try {
-      final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-        withData: true,
-      );
-
-      final file = picked?.files.single;
-      if (file == null) return;
-      if (file.bytes == null) throw Exception('Unable to read file bytes');
-
-      final ext = (file.extension ?? '').toLowerCase();
-      final mime = switch (ext) {
-        'pdf' => 'application/pdf',
-        'png' => 'image/png',
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        _ => 'application/octet-stream',
-      };
-
-      final mf = dio.MultipartFile.fromBytes(
-        file.bytes!,
-        filename: file.name,
-        contentType: MediaType.parse(mime),
-      );
-
-      final res = await widget.api.uploadDocument(file: mf);
-      if (!mounted) return;
-      setState(() => _uploadMessage = res.activitySummary.isNotEmpty ? res.activitySummary : 'Uploaded ${res.filename}');
-      await _loadAll();
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      setState(() => _uploadError = _friendlyRequestError(e));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _uploadError = _friendlyRequestError(e));
-    } finally {
-      if (mounted) {
-        setState(() => _uploading = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF6997DD),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
-    final overlay = Colors.white.withValues(alpha: 0.14);
-    final weeklyStats = _weeklyStats();
-    final lowCount = _lowStockCount();
-    final mostActive = _mostActiveLocation();
-    final recent = _items.take(12).toList();
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => DocumentsPage(api: widget.api),
-                ),
-              );
-            },
-            icon: const Icon(Icons.description_outlined),
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Container(
-        color: Colors.black,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+  Future<void> _chooseSpace() async {
+    final space = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: HomeColors.surface,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: GlassCard(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _ask,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (v) {
-                          final q = v.trim();
-                          if (q.isEmpty) return;
-                          _ask.clear();
-                          unawaited(_openChat(message: q));
-                        },
-                        decoration: const InputDecoration(
-                          hintText: 'Ask anything about your stuff...',
-                          prefixIcon: Icon(Icons.search_rounded),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      height: 48,
-                      child: PrimaryGradientButton(
-                        borderRadius: 18,
-                        onPressed: () {
-                          final q = _ask.text.trim();
-                          if (q.isEmpty) return;
-                          _ask.clear();
-                          unawaited(_openChat(message: q));
-                        },
-                        child: const Text('Ask'),
-                      ),
-                    ),
-                  ],
-                ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: Text(
+                'Spaces',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
-
-            const SizedBox(height: 12),
-            if (ProStatus.isPilotMode && !_pilotBannerDismissed)
-              _PilotBanner(onDismiss: _dismissPilotBanner),
-
-            if (_error != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Insights',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            GlassCard(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
                 children: [
-                  _InsightRow(
-                    title: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? 'No items added'
-                        : '${weeklyStats.totalQuantity}',
-                    value: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? ''
-                        : 'items across',
-                    subtitle: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
-                        ? 'this week'
-                        : '${weeklyStats.totalTypes} types',
-                    icon: Icons.add_box_outlined,
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 10),
-                  _InsightRow(
-                    title: 'Low on',
-                    value: '$lowCount',
-                    subtitle: 'items',
-                    icon: Icons.error_outline_rounded,
-                    accent: accent,
-                  ),
-                  const SizedBox(height: 10),
-                  _InsightRow(
-                    title: 'Most active',
-                    value: mostActive,
-                    subtitle: 'location',
-                    icon: Icons.place_outlined,
-                    accent: accent,
-                  ),
+                  for (final space in _spaces)
+                    ListTile(
+                      title: Text((space['name'] ?? '').toString()),
+                      onTap: () => Navigator.pop(context, space),
+                    ),
+                  if (_spaces.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      child: Text(
+                        'No Spaces yet',
+                        style: TextStyle(color: HomeColors.secondary),
+                      ),
+                    ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Quick actions',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: GlassCard(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: widget.onOpenScan,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  width: 1,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: Icon(
-                                Icons.center_focus_strong_outlined,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                              label: Text(
-                                'Scan Item',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: _quickAddItem,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  width: 1,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                              ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: Icon(
-                                Icons.add,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                              label: Text(
-                                'Add Item',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            GlassCard(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: PrimaryGradientButton(
-                      onPressed: () => unawaited(_openChat()),
-                      child: const Text('Open Assist'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 52,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: overlay,
-                          foregroundColor: Colors.white,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        onPressed: _uploading ? null : _pickAndUpload,
-                        child: Text(
-                          _uploading ? 'Uploading…' : 'Upload a document',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-            if (_uploadMessage != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _uploadMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_uploadError != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                borderRadius: 16,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.error_outline_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _uploadError!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Recently added',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 104,
-              child: recent.isEmpty
-                  ? GlassCard(
-                      padding: const EdgeInsets.all(14),
-                      child: Center(
-                        child: Text(
-                          _loading
-                              ? 'Loading…'
-                              : 'No items yet. Try scanning something.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ),
-                    )
-                  : ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: recent.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final it = recent[index];
-                        final loc = it.location.trim().isEmpty
-                            ? 'Unsorted'
-                            : it.location.trim();
-                        return SizedBox(
-                          width: 220,
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  it.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Qty ${it.quantity} · $loc',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.65),
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-
-            const SizedBox(height: 12),
-            Text(
-              'Recent activity',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 260,
-              child: _activities.isEmpty
-                  ? const GlassCard(
-                      child: Center(child: Text('No activity yet.')),
-                    )
-                  : GlassCard(
-                      padding: const EdgeInsets.all(6),
-                      child: ListView.separated(
-                        itemCount: _activities.take(8).length,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final a = _activities[index];
-                          return ListTile(
-                            dense: true,
-                            title: Text(a.summary),
-                            subtitle: Text(
-                              a.createdAt.toLocal().toString(),
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
             ),
           ],
         ),
       ),
     );
+    if (space != null && mounted) await widget.onOpenSpace(space);
   }
-}
-
-class _PilotBanner extends StatelessWidget {
-  const _PilotBanner({required this.onDismiss});
-
-  final VoidCallback onDismiss;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0x0A34D399),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x2634D399)),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.rocket_launch_outlined,
-              color: Color(0xFF34D399), size: 16),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Free Pilot',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Unlimited access through September 11, 2026.',
-                  style: TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onDismiss,
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RefreshIndicator(
+    onRefresh: _load,
+    child: HomeOverview(
+      items: _items,
+      spaces: _spaces,
+      pendingReviews: _pendingReviews,
+      lowStock: _thresholds == null || !_inventoryAvailable
+          ? null
+          : _lowStock.length,
+      outOfStock: !_inventoryAvailable ? null : _outOfStock.length,
+      lentOut: _lentOutCount,
+      error: _error,
+      onAsk: widget.onOpenAsk,
+      onChooseSpace: _chooseSpace,
+      onOpenReview: widget.onOpenReview,
+      onOpenLowStock: () => _openAttention('Running low', _lowStock),
+      onOpenOutOfStock: () => _openAttention('Out of stock', _outOfStock),
+      onOpenCheckouts: widget.onOpenCheckouts,
+      onOpenItem: _openItem,
+      onOpenSpace: widget.onOpenSpace,
+    ),
+  );
 }
 
-class _InsightRow extends StatelessWidget {
-  const _InsightRow({
+class _AttentionItemsPage extends StatefulWidget {
+  const _AttentionItemsPage({
     required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.accent,
+    required this.api,
+    required this.items,
+    required this.thresholds,
   });
-
   final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final LinearGradient accent;
-
+  final ApiClient api;
+  final List<InventoryItem> items;
+  final Map<String, int> thresholds;
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ShaderMask(
-          shaderCallback: (rect) => accent.createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: Icon(icon),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$title $value',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  State<_AttentionItemsPage> createState() => _AttentionItemsPageState();
 }
 
-class _QuickAddPayload {
-  const _QuickAddPayload({required this.item, required this.threshold});
+class _AttentionItemsPageState extends State<_AttentionItemsPage> {
+  late final List<InventoryItem> _items = List.of(widget.items);
+  late final Map<String, int> _thresholds = Map.of(widget.thresholds);
+  bool _matches(InventoryItem item) => widget.title == 'Out of stock'
+      ? item.quantity <= 0
+      : item.quantity > 0 && item.quantity <= (_thresholds[item.itemId] ?? 0);
+  void _updateItem(InventoryItem updated) {
+    if (!mounted) return;
+    setState(() {
+      final index = _items.indexWhere((item) => item.itemId == updated.itemId);
+      if (index < 0) return;
+      if (_matches(updated)) {
+        _items[index] = updated;
+      } else {
+        _items.removeAt(index);
+      }
+    });
+  }
 
-  final AddItemRequest item;
-  final int? threshold;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: HomeColors.background,
+    appBar: AppBar(title: Text(widget.title)),
+    body: _items.isEmpty
+        ? const Center(
+            child: Text(
+              'No items',
+              style: TextStyle(color: HomeColors.secondary),
+            ),
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            itemCount: _items.length,
+            itemBuilder: (context, index) {
+              final item = _items[index];
+              return ListTile(
+                leading: (item.imageUrl ?? '').trim().isEmpty
+                    ? null
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.imageUrl!,
+                          width: 42,
+                          height: 42,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                        ),
+                      ),
+                title: Text(item.displayName),
+                subtitle: Text(item.location),
+                trailing: Text('${item.quantity}'),
+                onTap: () => showItemDetailSheet(
+                  context,
+                  item: item,
+                  api: widget.api,
+                  spaceName: item.location,
+                  initialThreshold: _thresholds[item.itemId],
+                  onItemUpdated: _updateItem,
+                  onThresholdChanged: (threshold) {
+                    if (threshold == null) {
+                      _thresholds.remove(item.itemId);
+                    } else {
+                      _thresholds[item.itemId] = threshold;
+                    }
+                    final current = _items.where(
+                      (entry) => entry.itemId == item.itemId,
+                    );
+                    if (current.isNotEmpty) _updateItem(current.first);
+                  },
+                ),
+              );
+            },
+          ),
+  );
 }

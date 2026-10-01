@@ -865,6 +865,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final isLow =
         threshold != null && threshold > 0 && invItem.quantity <= threshold;
     final canEdit = widget.permission == 'edit';
+    final imageUrl = (invItem.imageUrl ?? '').trim();
 
     final rowChild = InkWell(
       onTap: canEdit ? () => _editItemRow(item) : () => _showItemDetail(item),
@@ -872,6 +873,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
+            if (imageUrl.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  imageUrl,
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

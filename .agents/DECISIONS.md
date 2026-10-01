@@ -107,3 +107,61 @@ migration.
 promotes the next photo, and scan-generated images remain compatible with older
 clients. Photo access must use the owning user's item scope, including Team Space
 and legacy Shared Space authorization.
+
+## 2026-09-30: Uncertainty is Review state
+
+**Decision:** Persist uncertain photo results in `capture_reviews`; create an
+inventory item only after explicit user confirmation.
+
+**Reasoning:** A guessed identity should not silently become a remembered fact.
+Review must survive app restarts and work across mobile and web.
+
+**Implications:** Clients read their own queue. The authenticated backend owns
+mutations. Resolution is transactional and idempotent. Save flows require a
+durable review identity for uncertain results.
+
+## 2026-09-30: Evidence stays useful and implementation-neutral
+
+**Decision:** Show identity, detection, text, barcode, measurement, assumptions,
+warnings, and review reasons. Filter pipeline free text and infrastructure names
+at the backend boundary.
+
+**Reasoning:** Users need the evidence to correct an item without exposure to
+changing implementation details.
+
+**Implications:** Clients render only the public `scan_evidence` contract.
+
+## 2026-09-30: Image-less inventory rows are text-only
+
+**Decision:** Render a thumbnail only when `image_url` exists. Keep the existing
+item photo gallery for adding and deleting photos on items from every source.
+
+**Reasoning:** Empty thumbnail squares waste list space and look broken.
+
+**Implications:** Photo captures retain their crop or source image. Barcode,
+spreadsheet, and manual items can receive photos later from item detail.
+
+## 2026-09-30: Home is a concise overview, not a second navigation menu
+
+**Decision:** Match the user's supplied matte-dark Home reference: "My home",
+one borderless Ask field, two real-item question suggestions, four "Needs a
+decision" cards, retained-photo captures, and grouped persistent Spaces. Use
+the previous floating rounded-pill four-tab icon Home / Capture / Ask / Find
+navigation (30pt corners, inset 18pt, 70pt bar), per the user's
+follow-up request; no separate Home app bar,
+header gradient/divider, oversized greeting, or duplicate action tiles.
+
+**Reasoning:** Duplicated actions and an oversized greeting obscured the user's
+inventory. The bottom navigation must reserve layout space rather than overlay
+content.
+
+**Implications:** "Where things live" uses actual Space records, including empty
+ones, and opens by exact ID rather than ambiguous names or legacy locations.
+Cards use real pending Review, positive low stock, zero stock, and owned distinct
+checkout counts; unknown reads show a dash, not a false zero. Use "out of stock"
+instead of inventing physical missingness. Older photos use "Recent captures"
+rather than claiming "Captured today". Documents, notifications, and profile
+remain reachable through Find's More menu; bottom navigation reserves layout
+space and does not overlay the list. Embedded Ask, Capture and Find must not add
+the old overlay-clearance padding on top of that reserved space. The user-requested navigation restoration
+supersedes the reference's text-only five-tab bar without changing Home content.
