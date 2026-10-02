@@ -65,26 +65,33 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
       _contact.clear();
       _loaded = false;
       _initial = {};
-      if (_owner != null) unawaited(_load());
+    }
+    if (!_loaded &&
+        !_store.loading &&
+        !_store.failed &&
+        _store.profile.isNotEmpty) {
+      _populate();
     }
     setState(() {});
+  }
+
+  void _populate() {
+    _name.text = _store.name;
+    _organization.text = _store.text('organization');
+    _role.text = _store.text('profile_role');
+    _contact.text = _store.text('contact_email');
+    _color = RegExp(r'^#[a-fA-F0-9]{6}$').hasMatch(_store.color)
+        ? _store.color
+        : '#636366';
+    _initial = _values;
+    _loaded = true;
   }
 
   Future<void> _load({bool force = false}) async {
     final owner = _store.owner;
     await _store.load(force: force);
     if (!mounted || owner != _store.owner || _store.failed) return;
-    setState(() {
-      _name.text = _store.name;
-      _organization.text = _store.text('organization');
-      _role.text = _store.text('profile_role');
-      _contact.text = _store.text('contact_email');
-      _color = RegExp(r'^#[a-fA-F0-9]{6}$').hasMatch(_store.color)
-          ? _store.color
-          : '#636366';
-      _initial = _values;
-      _loaded = true;
-    });
+    setState(_populate);
   }
 
   void _message(String message) {
@@ -173,6 +180,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                 ));
         if (picked == null || !mounted || owner != _store.owner) return;
         final bytes = await picked.readAsBytes();
+        if (!mounted || owner != _store.owner) return;
         if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
           _message('Choose a photo smaller than 5 MB.');
           return;

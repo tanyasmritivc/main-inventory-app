@@ -420,6 +420,10 @@ void main() {
         'https://api.test/storage/v1/object/sign/documents/other/photo.png';
     await _action(tester, 'image.png', 'Open');
     expect(find.byType(InteractiveViewer), findsNothing);
+    api.openUrl =
+        'https://api.test/storage/v1/object/sign/documents/owner/%2e%2e/other/photo.png';
+    await _action(tester, 'image.png', 'Open');
+    expect(find.byType(InteractiveViewer), findsNothing);
     expect(find.textContaining('SECRET'), findsNothing);
   });
   testWidgets(

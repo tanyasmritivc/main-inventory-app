@@ -79,7 +79,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
         p[2] != 'object' ||
         !{'sign', 'public'}.contains(p[3]) ||
         p[4] != 'documents' ||
-        p[5] != owner) {
+        p[5] != owner ||
+        p
+            .skip(6)
+            .any(
+              (part) =>
+                  part == '..' ||
+                  part == '.' ||
+                  part.contains('/') ||
+                  part.contains('\\'),
+            )) {
       return null;
     }
     return uri.toString();
@@ -600,38 +609,38 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<void> _removeLinkedItem(DocumentEntry d) async {
     final owner = _currentOwner;
-    final prev = _links[d.documentId];
-    final next = Map<String, Map<String, String>>.from(_links);
-    next.remove(d.documentId);
-    if (mounted) setState(() => _links = next);
-
     try {
       await _setBackendLink(storagePath: d.documentId, itemId: null);
+    } catch (_) {
       if (!mounted || owner != _currentOwner) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't remove link. Try again.")),
+      );
+      return;
+    }
+    if (!mounted || owner != _currentOwner) return;
+    final next = Map<String, Map<String, String>>.from(_links)
+      ..remove(d.documentId);
+    setState(() => _links = next);
+    try {
       await DocumentLinkPrefs.setLink(
         documentId: d.documentId,
         itemId: null,
         itemName: null,
       );
-      if (!mounted || owner != _currentOwner) return;
-      await _load();
-    } on dio.DioException {
-      if (!mounted || owner != _currentOwner) return;
-      final rollback = Map<String, Map<String, String>>.from(_links);
-      if (prev != null) rollback[d.documentId] = prev;
-      setState(() => _links = rollback);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t remove link. Try again.')),
-      );
     } catch (_) {
-      if (!mounted || owner != _currentOwner) return;
-      final rollback = Map<String, Map<String, String>>.from(_links);
-      if (prev != null) rollback[d.documentId] = prev;
-      setState(() => _links = rollback);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t remove link. Try again.')),
-      );
+      if (mounted && owner == _currentOwner) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Link removed, but could not refresh its label. Try again.',
+            ),
+          ),
+        );
+      }
+      return;
     }
+    if (mounted && owner == _currentOwner) await _load();
   }
 
   Future<void> _uploadDocument() async {

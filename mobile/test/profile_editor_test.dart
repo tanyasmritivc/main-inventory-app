@@ -77,6 +77,13 @@ class _Api extends ApiClient {
   }
 }
 
+class _DelayedPhoto extends XFile {
+  _DelayedPhoto() : super('photo.png');
+  final bytes = Completer<Uint8List>();
+  @override
+  Future<Uint8List> readAsBytes() => bytes.future;
+}
+
 Widget _editor(
   _Api api,
   ProfileStore store, {
@@ -396,6 +403,26 @@ void main() {
     for (final widget in tester.widgetList<Image>(find.byType(Image))) {
       expect((widget.image as NetworkImage).url, _photo('changed'));
     }
+  });
+  testWidgets('an account change while photo bytes load prevents upload', (
+    tester,
+  ) async {
+    String? owner = 'owner';
+    final api = _Api();
+    final store = ProfileStore(api: api, ownerId: () => owner);
+    addTearDown(store.dispose);
+    final file = _DelayedPhoto();
+    await _open(tester, api, store, picker: () async => file);
+    await _choose(tester, 'Choose photo');
+    owner = 'other';
+    api.data = {'user_id': owner, 'display_name': 'Other account'};
+    await store.load(force: true);
+    file.bytes.complete(Uint8List.fromList([1, 2]));
+    await tester.pumpAndSettle();
+    expect(api.uploads, 0);
+    expect(store.photoUrl, isEmpty);
+    expect(find.text('Tanya'), findsNothing);
+    expect(find.text('Other account'), findsOneWidget);
   });
   testWidgets(
     'pending profile saves cannot submit twice or discard mid-write',
