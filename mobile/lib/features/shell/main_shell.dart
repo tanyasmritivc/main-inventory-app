@@ -11,6 +11,8 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
+import '../../core/profile_store.dart';
+import '../../core/ui/member_avatar.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
@@ -43,6 +45,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
+  late final ProfileStore _profileStore;
   StreamSubscription<AuthState>? _authSub;
   int _currentPage = 0;
   int _inventoryRefreshToken = 0;
@@ -91,6 +94,8 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _profileStore = ProfileStore(api: widget.api);
+    unawaited(_profileStore.load());
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
     unawaited(_initializePushNotifications());
@@ -169,6 +174,7 @@ class _MainShellState extends State<MainShell> {
     _authSub?.cancel();
     _notificationTimer?.cancel();
     _pageController.dispose();
+    _profileStore.dispose();
     super.dispose();
   }
 
@@ -200,10 +206,10 @@ class _MainShellState extends State<MainShell> {
     HapticFeedback.lightImpact();
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(title: const Text('Your profile')),
-          body: ProfilePage(api: widget.api, accountOnly: true),
+        builder: (_) => ProfilePage(
+          api: widget.api,
+          accountOnly: true,
+          store: _profileStore,
         ),
       ),
     );
@@ -407,6 +413,7 @@ class _MainShellState extends State<MainShell> {
           reverse: true,
           physics: const NeverScrollableScrollPhysics(),
           onPageChanged: (index) {
+            if (index == 4) unawaited(_profileStore.load());
             unawaited(_loadNotificationCount());
             final now = DateTime.now();
             final tooSoon =
@@ -480,6 +487,7 @@ class _MainShellState extends State<MainShell> {
             ),
             ProfileHubPage(
               api: widget.api,
+              store: _profileStore,
               onOpenProfile: _openProfile,
               onOpenSettings: _openSettings,
               onOpenDocuments: _openDocuments,
@@ -493,14 +501,26 @@ class _MainShellState extends State<MainShell> {
       ),
       bottomNavigationBar: keyboardVisible
           ? null
-          : HomeNavigation(
-              selectedIndex: _navigationIndex,
-              onSelected: _onNavigationTap,
-              destinationKeys: {
-                0: TutorialController.inventoryIconKey,
-                1: TutorialController.scanTabKey,
-                2: TutorialController.assistTabKey,
-              },
+          : ListenableBuilder(
+              listenable: _profileStore,
+              builder: (context, _) => HomeNavigation(
+                profileAvatar: _profileStore.photoUrl.isEmpty
+                    ? null
+                    : MemberAvatar(
+                        key: ValueKey(_profileStore.photoRevision),
+                        name: _profileStore.name,
+                        photoUrl: _profileStore.photoUrl,
+                        colorHex: _profileStore.color,
+                        size: 24,
+                      ),
+                selectedIndex: _navigationIndex,
+                onSelected: _onNavigationTap,
+                destinationKeys: {
+                  0: TutorialController.inventoryIconKey,
+                  1: TutorialController.scanTabKey,
+                  2: TutorialController.assistTabKey,
+                },
+              ),
             ),
     );
   }

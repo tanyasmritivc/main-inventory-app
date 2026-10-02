@@ -220,3 +220,21 @@ account-deletion behavior. Documents/notes, notifications, lent items and app to
 remain explicit existing destinations, not invented settings. The hub uses real
 account data, safe read errors and stale-response/account guards. This is a
 mobile-only navigation change, not a billing or backend redesign.
+
+## 2026-10-01: Shared profile identity and scoped Documents polish
+
+**Decision:** Use one shell-owned, memory-only, account-scoped profile snapshot
+for the profile editor, utility hub and navigation avatar. Confirm writes before
+updating it; invalidate stale reads and image cache on photo replacement/removal.
+Profile editing is a labeled, scrollable form with one Save changes action,
+validation, preserved drafts on failure and explicit discard. Keep the existing
+account API and profile photo bucket/5 MB contract; multipart uploads must declare
+their actual supported image MIME type.
+
+**Scope:** Documents and its note/link/rename subflows adopt the existing matte
+grouped design, retaining all authorized actions. Reject foreign document/photo
+URLs, guard late responses and account changes, and do not log private upload
+payloads. Capture document-link preference keys before asynchronous work. The
+supplied Settings images are style guidance, not implemented training, retention,
+offline, export or text-size controls. Home, Ask speed, Capture, web, backend and
+native lifecycle work remain unchanged.

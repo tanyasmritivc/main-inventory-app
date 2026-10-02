@@ -216,3 +216,26 @@ Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation 
   text speed, backend and web are unchanged. Hands-on acceptance remains
   unverified. The user subsequently reported cramped profile editing, missing
   overview avatars and old Documents styling; a scoped follow-up is required.
+
+- Build 39 (`1.0.7`) follow-up is released on `fix/profile-documents-polish` in the
+  existing `/private/tmp/findez-ask-reference` worktree: labeled profile editing,
+  shared saved avatars in editor/overview/pill, correct image MIME uploads and
+  matte Documents/note/link/rename flows. Private upload logs are removed;
+  foreign URLs, stale account reads/draft writes and asynchronous document-link
+  cache keys are guarded. All 94 Flutter tests with coverage and clean analysis
+  pass, including 28 new failure/security/keyboard and note Back-autosave
+  regressions. All five CI jobs pass on final implementation `6a0118e` (run
+  `36958595854`); PR #31 is stacked on #30. Fake-data layout captures were
+  inspected. Final signed archive, Apple validation/upload, `VALID` processing,
+  `APP_STORE_ELIGIBLE` and assignment to `Testers`/`Internal Pilot Findez AI` are
+  confirmed. Delivery/build ID: `8b7ff936-fefa-4ff1-8cd7-095c40aab00f`; uploaded
+  20:11:17 PDT on 2026-10-01. The exact final app installed on the paired iPhone
+  and reports `1.0.7 (39)`, but final launch was blocked by iOS `Locked`; user
+  unlock was requested. An earlier superseded build-39 binary launched, not the
+  final source, so do not report final launch as passed. Final launch,
+  TestFlight-app install and hands-on photo/document/account-switch acceptance
+  remain unverified. Build-38 artifacts are retained in `archive-build38` and
+  `ipa-build38`. Home, Ask speed/attachments, Capture, Find, backend/web and
+  existing settings behavior remain unchanged; no server deployment/migration
+  was required. The public App Store stays `1.0.6 (17)` and existing broader
+  FIND transport/native acceptance limitations remain separate work.

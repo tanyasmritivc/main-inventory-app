@@ -13,9 +13,11 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
+import '../../core/profile_store.dart';
 import '../../core/upgrade_sheet.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
+import 'profile_editor_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -23,11 +25,13 @@ class ProfilePage extends StatefulWidget {
     required this.api,
     this.accountOnly = false,
     this.settingsOnly = false,
+    this.store,
   }) : assert(!(accountOnly && settingsOnly));
 
   final ApiClient api;
   final bool accountOnly;
   final bool settingsOnly;
+  final ProfileStore? store;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -79,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _displayNameCtrl.text = cachedName;
     }
 
-    if (!widget.settingsOnly) _loadFullProfile();
+    if (!widget.settingsOnly && !widget.accountOnly) _loadFullProfile();
   }
 
   @override
@@ -495,6 +499,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.accountOnly) {
+      return ProfileEditorPage(api: widget.api, store: widget.store);
+    }
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(

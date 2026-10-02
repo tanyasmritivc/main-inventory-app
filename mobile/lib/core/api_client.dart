@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
+import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ask_answer.dart';
 
@@ -18,6 +18,31 @@ class AskRequestException implements Exception {
   final String message;
   @override
   String toString() => message;
+}
+
+/// Profile uploads must declare the image MIME type required by the API.
+dio.MultipartFile profilePhotoMultipartFile({
+  required List<int> bytes,
+  required String filename,
+}) {
+  if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+    throw const FormatException('Profile photo must be smaller than 5 MB');
+  }
+  final extension = filename.split('.').last.toLowerCase();
+  final mime = switch (extension) {
+    'jpg' || 'jpeg' => 'image/jpeg',
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'heic' => 'image/heic',
+    'heif' => 'image/heif',
+    _ => null,
+  };
+  if (mime == null) throw const FormatException('Choose a supported image');
+  return dio.MultipartFile.fromBytes(
+    bytes,
+    filename: 'avatar.$extension',
+    contentType: MediaType.parse(mime),
+  );
 }
 
 class ApiClient {
@@ -116,7 +141,6 @@ class ApiClient {
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
-    developer.log('UPLOAD RESPONSE: ${jsonEncode(data)}');
     return UploadDocumentResult.fromJson(data);
   }
 
@@ -594,7 +618,7 @@ class ApiClient {
     required String filename,
   }) async {
     final form = dio.FormData.fromMap({
-      'photo': dio.MultipartFile.fromBytes(bytes, filename: filename),
+      'photo': profilePhotoMultipartFile(bytes: bytes, filename: filename),
     });
     final res = await _dio.post<Map<String, dynamic>>(
       '/profile/photo',
