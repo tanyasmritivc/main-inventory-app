@@ -9,5 +9,7 @@ describe("OAuth callback", () => {
     expect(normalizeAuthNext(null)).toBe("/home");
     expect(normalizeAuthNext("https://attacker.example")).toBe("/home");
     expect(normalizeAuthNext("//attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("/\\attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("/\nattacker.example")).toBe("/home");
   });
 });

@@ -160,7 +160,7 @@ def join_team_route(
             raise HTTPException(404, "Invalid join code")
         raise HTTPException(400, str(exc))
     except Exception:
-        logger.exception("Failed to join team user=%s code=%s", user.user_id, payload.code)
+        logger.exception("Failed to join team user=%s", user.user_id)
         raise HTTPException(500, "Could not join team. Please try again.")
 
 

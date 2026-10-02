@@ -6,7 +6,7 @@ Exactly-one-owner invariant is enforced here, not in the DB.
 """
 
 import logging
-import random
+import secrets
 from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
@@ -26,7 +26,7 @@ VALID_ROLES = frozenset(("owner", "mentor", "member", "viewer"))
 
 
 def _gen_join_code() -> str:
-    return "".join(random.choices(_CODE_CHARS, k=6))
+    return "".join(secrets.choice(_CODE_CHARS) for _ in range(6))
 
 
 def _unique_join_code() -> str:
@@ -109,13 +109,24 @@ def join_team(*, user_id: str, code: str) -> dict:
         return {**team, **existing.data[0], "newly_joined": False}
 
     member_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships").insert({
+        lambda: supabase.table("team_memberships").upsert({
             "team_id": team_id,
             "user_id": user_id,
             "role": "member",
-        }).execute()
+        }, on_conflict="team_id,user_id", ignore_duplicates=True).execute()
     )
-    return {**team, **(member_resp.data or [{}])[0], "newly_joined": True}
+    inserted = member_resp.data or []
+    if inserted:
+        return {**team, **inserted[0], "newly_joined": True}
+    # A concurrent acceptance may have won the unique membership insert. Read
+    # its actual role instead of overwriting an owner/mentor/viewer as member.
+    current = supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships").select("member_id,role,joined_at")
+        .eq("team_id", team_id).eq("user_id", user_id).execute()
+    ).data or []
+    if not current:
+        raise ValueError("Membership could not be saved. Please try again.")
+    return {**team, **current[0], "newly_joined": False}
 
 
 def list_user_teams(*, user_id: str) -> list[dict]:
@@ -143,6 +154,9 @@ def list_user_teams(*, user_id: str) -> list[dict]:
     for m in members_resp.data:
         t = team_map.get(m["team_id"])
         if t:
+            t = dict(t)
+            if m["role"] not in ("owner", "mentor"):
+                t.pop("join_code", None)
             result.append({**t, "role": m["role"], "joined_at": m["joined_at"]})
     return result
 

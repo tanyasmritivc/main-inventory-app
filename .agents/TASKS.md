@@ -15,6 +15,11 @@ Reprioritize it when production state changes.
 
 ## P1 important
 
+- Patch Next.js 16.3.4 to the minimal 16.3.6 security release in a separate web
+  lane; run web tests/typecheck/production build and deploy with preserved VM
+  dependencies/output. October 1 audit flags GHSA-vcvr-r3jv-pc5j; the current
+  source has no `next/og` or `ImageResponse` usage (its vulnerable path), but the
+  dependency audit is not clean. MCP production-dependency audit is clean.
 - Finish and review the Flutter UIScene lifecycle migration. Validate the signed iOS
   build and record its TestFlight status.
 - Define retention and deletion behavior before persisting masks, geometry,

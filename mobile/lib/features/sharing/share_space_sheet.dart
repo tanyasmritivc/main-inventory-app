@@ -1,674 +1,463 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/invitation.dart';
+import '../../core/ui/app_colors.dart';
+import 'invitation_dialog.dart';
 import 'shared_inventory_page.dart';
 
+/// Shared/joined spaces forward the owner's link, not a new share of the
+/// recipient's own inventory with the same name.
 class ShareSpaceSheet extends StatefulWidget {
   const ShareSpaceSheet({
     super.key,
     required this.spaceName,
     required this.api,
+    this.shareId,
+    this.teamId,
   });
-
   final String spaceName;
   final ApiClient api;
-
+  final String? shareId;
+  final String? teamId;
   @override
   State<ShareSpaceSheet> createState() => _ShareSpaceSheetState();
 }
 
-class _ShareSpaceSheetState extends State<ShareSpaceSheet>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
-  late final TextEditingController _joinCtrl;
+class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
+  final _code = TextEditingController();
+  final _owner = Supabase.instance.client.auth.currentUser?.id;
+  List<Map<String, dynamic>> _owned = [], _joined = [];
+  Map<String, dynamic>? _invite;
   String _permission = 'view';
-  bool _loading = false;
-  bool _joiningSpace = false;
-  String? _createdCode;
-  String? _generateError;
-  String? _joinError;
-  List<dynamic> _myShares = [];
-  List<dynamic> _joinedShares = [];
-  final ScrollController _shareScrollCtrl = ScrollController();
-
+  String? _error;
+  bool _busy = false, _loading = true;
+  bool get _personal => widget.shareId == null && widget.teamId == null;
+  bool get _sameAccount =>
+      _owner != null && Supabase.instance.client.auth.currentUser?.id == _owner;
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
-    _joinCtrl = TextEditingController();
-    _loadShares();
+    _load();
   }
 
   @override
   void dispose() {
-    _tabs.dispose();
-    _joinCtrl.dispose();
-    _shareScrollCtrl.dispose();
+    _code.dispose();
     super.dispose();
   }
 
-  Future<void> _loadShares() async {
+  Future<void> _load() async {
     try {
-      final my = await widget.api.getMyShares();
-      final joined = await widget.api.getJoinedShares();
-      if (mounted) setState(() { _myShares = my; _joinedShares = joined; });
-    } catch (_) {
-      // acceptable: read-only sidebar load for the share sheet; sheet is still
-      // usable without the share list (user can still generate a new code).
-    }
-  }
-
-  Future<void> _generateCode() async {
-    setState(() { _loading = true; _generateError = null; });
-    try {
-      final result = await widget.api.createShare(
-        shareName: widget.spaceName,
-        permission: _permission,
-      );
-      final code = result['code']?.toString() ??
-          result['share_code']?.toString() ?? '';
-      if (mounted) {
-        setState(() => _createdCode = code);
-        await _loadShares();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _generateError = friendlyApiError(e));
-        // Scroll to reveal active shares so the user can revoke one.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_shareScrollCtrl.hasClients) {
-            _shareScrollCtrl.animateTo(
-              _shareScrollCtrl.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOut,
-            );
-          }
+      if (!_personal) {
+        final raw = widget.teamId != null
+            ? await widget.api.getTeamInvite(widget.teamId!)
+            : await widget.api.getSpaceInvite(widget.shareId!);
+        final invite = widget.teamId != null
+            ? {
+                ...raw,
+                'share_code': raw['join_code'],
+                'share_name': raw['team_name'],
+                'permission': 'member',
+              }
+            : raw;
+        if (mounted && _sameAccount) setState(() => _invite = invite);
+      } else {
+        final results = await Future.wait([
+          widget.api.getMyShares(),
+          widget.api.getJoinedShares(),
+        ]);
+        if (!mounted || !_sameAccount) return;
+        setState(() {
+          _owned = results[0]
+              .map((s) => Map<String, dynamic>.from(s as Map))
+              .where((s) => s['share_name'] == widget.spaceName)
+              .toList();
+          _joined = results[1]
+              .map((s) => Map<String, dynamic>.from(s as Map))
+              .toList();
         });
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _revokeShare(String shareId) async {
-    try {
-      await widget.api.deleteShare(shareId);
-      await _loadShares();
-    } catch (e) {
-      debugPrint('[ShareSpaceSheet] _revokeShare error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn\'t revoke access. Try again.')),
-        );
+      if (mounted && _sameAccount) setState(() => _error = null);
+    } catch (error) {
+      if (mounted && _sameAccount) {
+        setState(() => _error = friendlyApiError(error));
       }
+    } finally {
+      if (mounted && _sameAccount) setState(() => _loading = false);
     }
   }
 
-  Widget _permChip(String value, String label) {
-    final selected = _permission == value;
-    return GestureDetector(
-      onTap: () => setState(() => _permission = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(99),
-          border: Border.all(
-            color: selected ? Colors.white.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.15),
-          ),
-          boxShadow: selected
-              ? [BoxShadow(color: const Color(0xFF6997DD).withValues(alpha: 0.30), blurRadius: 10)]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : const Color(0x73FFFFFF),
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+  Future<void> _run(Future<void> Function() work) async {
+    if (_busy || !_sameAccount) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await work();
+    } catch (error) {
+      if (mounted && _sameAccount) {
+        setState(() => _error = friendlyApiError(error));
+      }
+    } finally {
+      if (mounted && _sameAccount) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _generate() => _run(() async {
+    final created = await widget.api.createShare(
+      shareName: widget.spaceName,
+      permission: _permission,
+    );
+    if (!mounted || !_sameAccount) return;
+    final id = created['share_id']?.toString() ?? '';
+    if (id.isEmpty) throw StateError('Invitation unavailable');
+    final invite = await widget.api.getSpaceInvite(id);
+    if (!mounted || !_sameAccount) return;
+    setState(() => _invite = invite);
+    await _load();
+  });
+  String _url(Map<String, dynamic> invite) {
+    final parsed = Invitation.fromUri(
+      Uri(
+        scheme: 'findez',
+        host: widget.teamId == null ? 'space-invite' : 'team-invite',
+        queryParameters: {'code': invite['share_code']?.toString() ?? ''},
       ),
     );
+    if (parsed == null) throw StateError('Invitation unavailable');
+    return parsed.url;
   }
 
-  Widget _buildShareTab() {
-    final spaceShares = _myShares.where(
-      (s) => (s['share_name']?.toString() ?? '') == widget.spaceName,
-    ).toList();
-
-    return SingleChildScrollView(
-      controller: _shareScrollCtrl,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Permission',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+  Future<void> _copy(Map<String, dynamic> invite) => _run(() async {
+    await Clipboard.setData(ClipboardData(text: _url(invite)));
+    if (mounted && _sameAccount) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invitation link copied')));
+    }
+  });
+  Future<void> _share(Map<String, dynamic> invite, BuildContext source) =>
+      _run(() async {
+        final box = source.findRenderObject() as RenderBox?;
+        await SharePlus.instance.share(
+          ShareParams(
+            subject: 'Join ${widget.spaceName} on FindEZ',
+            text: 'Join ${widget.spaceName} on FindEZ.\n${_url(invite)}',
+            sharePositionOrigin: box == null
+                ? null
+                : box.localToGlobal(Offset.zero) & box.size,
           ),
-          const SizedBox(height: 10),
-          Row(children: [
-            _permChip('view', 'View only'),
-            const SizedBox(width: 8),
-            _permChip('edit', 'Can edit'),
-          ]),
-          const SizedBox(height: 20),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6997DD).withValues(alpha: 0.25),
-                  blurRadius: 16,
+        );
+      });
+  Future<void> _revoke(Map<String, dynamic> share) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Stop sharing?'),
+        content: const Text(
+          'This link will stop working and everyone who joined through it will lose access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Stop sharing'),
+          ),
+        ],
+      ),
+    );
+    if (yes != true) return;
+    await _run(() async {
+      await widget.api.deleteShare(share['share_id'].toString());
+      if (!mounted || !_sameAccount) return;
+      if (_invite?['share_id'] == share['share_id']) {
+        setState(() => _invite = null);
+      }
+      await _load();
+    });
+  }
+
+  Future<void> _join() => _run(() async {
+    final invitation = Invitation.fromUri(
+      Uri(
+        scheme: 'findez',
+        host: 'space-invite',
+        queryParameters: {'code': _code.text.trim().toUpperCase()},
+      ),
+    );
+    if (invitation == null) {
+      setState(() => _error = 'Enter the 6-character invitation code.');
+      return;
+    }
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => InvitationDialog(
+        api: widget.api,
+        invitation: invitation,
+        userId: _owner!,
+      ),
+    );
+    if (!mounted || !_sameAccount || result?['accepted'] != true) return;
+    _code.clear();
+    await _load();
+    if (mounted && _sameAccount) _open(result!);
+  });
+  void _open(Map<String, dynamic> share) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => SharedInventoryPage(
+        api: widget.api,
+        shareId: share['share_id'].toString(),
+        shareName: (share['share_name'] ?? 'Shared space').toString(),
+        permission: (share['permission'] ?? 'view').toString(),
+      ),
+    ),
+  );
+
+  Widget _linkCard(
+    Map<String, dynamic> invite, {
+    bool owner = false,
+  }) => Material(
+    color: AppColors.surface2,
+    borderRadius: BorderRadius.circular(18),
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.teamId != null
+                ? 'Team member access'
+                : invite['permission'] == 'edit'
+                ? 'Can edit inventory'
+                : 'View-only access',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Anyone with this link can join. The owner can revoke it at any time.',
+            style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          SelectableText(
+            _url(invite),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Builder(
+            builder: (source) => Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _busy ? null : () => _share(invite, source),
+                    child: const Text('Share link'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => _copy(invite),
+                    child: const Text('Copy link'),
+                  ),
                 ),
               ],
             ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _generateCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.12),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                      color: const Color(0xFF6997DD).withValues(alpha: 0.60),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: _loading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white.withValues(alpha: 0.70),
-                        ),
-                      )
-                    : const Text(
-                        'Generate Code',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                      ),
+          ),
+          Text(
+            'Code: ${invite['share_code']}',
+            style: const TextStyle(color: AppColors.hint, fontSize: 12),
+          ),
+          if (owner)
+            TextButton(
+              onPressed: _busy ? null : () => _revoke(invite),
+              child: const Text(
+                'Stop sharing',
+                style: TextStyle(color: AppColors.danger),
               ),
             ),
-          ),
-          if (_generateError != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0x1AF59E0B),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x40F59E0B)),
-              ),
+        ],
+      ),
+    ),
+  );
+  @override
+  Widget build(BuildContext context) => DefaultTabController(
+    length: _personal ? 2 : 1,
+    child: Material(
+      color: AppColors.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline,
-                      color: Color(0xFFF59E0B), size: 15),
-                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _generateError!,
-                          style: const TextStyle(
-                              color: Color(0xFFF59E0B),
-                              fontSize: 13,
-                              height: 1.45),
-                        ),
-                        if (spaceShares.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          GestureDetector(
-                            onTap: () => _shareScrollCtrl.animateTo(
-                              _shareScrollCtrl.position.maxScrollExtent,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            ),
-                            child: const Text(
-                              'Manage shares ↓',
-                              style: TextStyle(
-                                color: Color(0xFFF59E0B),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Color(0xFFF59E0B),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    child: Text(
+                      widget.spaceName,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
                   ),
                 ],
               ),
             ),
-          ],
-          if (_createdCode != null && _createdCode!.isNotEmpty) ...[
-            const SizedBox(height: 28),
-            Center(
-              child: Text(
-                _createdCode!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 8,
+            if (_personal)
+              const TabBar(
+                tabs: [
+                  Tab(text: 'Share'),
+                  Tab(text: 'Join'),
+                ],
+              ),
+            if (_busy || _loading) const LinearProgressIndicator(minHeight: 2),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: AppColors.danger),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: GestureDetector(
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: _createdCode!));
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code copied!')),
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Text(
-                    'Copy Code',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
-              ),
-            ),
-          ],
-          if (spaceShares.isNotEmpty) ...[
-            const SizedBox(height: 28),
-            const Text(
-              'ACTIVE SHARES',
-              style: TextStyle(
-                color: Color(0x4DFFFFFF),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.6,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-              ),
-              child: Column(
-                children: spaceShares.asMap().entries.map((e) {
-                  final s = e.value;
-                  final isLast = e.key == spaceShares.length - 1;
-                  final sid = (s['id'] ?? s['share_id'] ?? '').toString();
-                  return Column(
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ListView(
+                    padding: const EdgeInsets.all(24),
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                      if (_invite != null && !_personal) _linkCard(_invite!),
+                      if (_personal) ...[
+                        const Text(
+                          'Invite people to this space',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    s['share_code']?.toString() ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                  Text(
-                                    s['permission']?.toString() ?? '',
-                                    style: const TextStyle(
-                                      color: Color(0x4DFFFFFF),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Choose the access everyone joining this link will have.',
+                          style: TextStyle(color: AppColors.muted, height: 1.4),
+                        ),
+                        const SizedBox(height: 18),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'view',
+                              label: Text('View only'),
                             ),
-                            GestureDetector(
-                              onTap: () => _revokeShare(sid),
-                              child: const Text(
-                                'Stop Sharing',
-                                style: TextStyle(
-                                  color: Color(0xFFFF453A),
-                                  fontSize: 13,
-                                ),
-                              ),
+                            ButtonSegment(
+                              value: 'edit',
+                              label: Text('Can edit'),
                             ),
                           ],
+                          selected: {_permission},
+                          onSelectionChanged: _busy
+                              ? null
+                              : (values) =>
+                                    setState(() => _permission = values.first),
                         ),
-                      ),
-                      if (!isLast)
-                        Container(
-                          height: 0.5,
-                          color: const Color(0x14FFFFFF),
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                        const SizedBox(height: 18),
+                        FilledButton(
+                          onPressed: _busy || _loading ? null : _generate,
+                          child: const Text('Create invitation link'),
+                        ),
+                        if (_owned.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Active invitations',
+                            style: TextStyle(color: AppColors.muted),
+                          ),
+                          const SizedBox(height: 12),
+                          for (final share in _owned)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _linkCard(share, owner: true),
+                            ),
+                        ],
+                        if (_invite != null &&
+                            !_owned.any(
+                              (s) => s['share_id'] == _invite!['share_id'],
+                            ))
+                          _linkCard(_invite!, owner: true),
+                      ] else if (_invite == null && !_loading)
+                        OutlinedButton(
+                          onPressed: _load,
+                          child: const Text('Try again'),
                         ),
                     ],
-                  );
-                }).toList(),
+                  ),
+                  if (_personal)
+                    ListView(
+                      padding: const EdgeInsets.all(24),
+                      children: [
+                        TextField(
+                          controller: _code,
+                          textCapitalization: TextCapitalization.characters,
+                          maxLength: 6,
+                          decoration: const InputDecoration(
+                            labelText: 'Invitation code',
+                          ),
+                          onSubmitted: (_) => _join(),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _busy ? null : _join,
+                          child: const Text('Review invitation'),
+                        ),
+                        if (_joined.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Joined spaces',
+                            style: TextStyle(color: AppColors.muted),
+                          ),
+                          for (final membership in _joined)
+                            Builder(
+                              builder: (context) {
+                                final share = Map<String, dynamic>.from(
+                                  membership['team_shares'] ?? const {},
+                                );
+                                return ListTile(
+                                  title: Text(
+                                    (share['share_name'] ?? 'Shared space')
+                                        .toString(),
+                                  ),
+                                  subtitle: Text(
+                                    share['permission'] == 'edit'
+                                        ? 'Can edit'
+                                        : 'View only',
+                                  ),
+                                  onTap: () => _open(share),
+                                );
+                              },
+                            ),
+                        ],
+                      ],
+                    ),
+                ],
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Future<void> _joinSpace() async {
-    final code = _joinCtrl.text.trim().toUpperCase();
-    if (code.length != 6) {
-      setState(() => _joinError = 'Enter a 6-character code.');
-      return;
-    }
-    setState(() { _joiningSpace = true; _joinError = null; });
-    try {
-      await widget.api.joinShare(code);
-      _joinCtrl.clear();
-      if (mounted) {
-        await _loadShares();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Joined space!')),
-        );
-      }
-    } catch (_) {
-      if (mounted) setState(() => _joinError = 'Invalid code or already joined.');
-    } finally {
-      if (mounted) setState(() => _joiningSpace = false);
-    }
-  }
-
-  Widget _buildJoinedTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Join a Space',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _joinCtrl,
-                  maxLength: 6,
-                  textCapitalization: TextCapitalization.characters,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    letterSpacing: 4,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '6-char code',
-                    hintStyle: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-                    counterText: '',
-                    filled: true,
-                    fillColor: Color(0xFF171717),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6997DD).withValues(alpha: 0.25),
-                      blurRadius: 16,
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _joiningSpace ? null : _joinSpace,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.12),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: const Color(0xFF6997DD).withValues(alpha: 0.60),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: _joiningSpace
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white.withValues(alpha: 0.70),
-                            ),
-                          )
-                        : const Text('Join'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (_joinError != null) ...[  
-            const SizedBox(height: 6),
-            Text(
-              _joinError!,
-              style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12),
-            ),
-          ],
-          if (_joinedShares.isEmpty) ...[  
-            const SizedBox(height: 32),
-            const Center(
-              child: Text(
-                'No joined spaces yet.',
-                style: TextStyle(color: Color(0x4DFFFFFF)),
-              ),
-            ),
-          ] else ...[  
-            const SizedBox(height: 24),
-            const Text(
-              'JOINED SPACES',
-              style: TextStyle(
-                color: Color(0x4DFFFFFF),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.6,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...List.generate(_joinedShares.length, (i) {
-              final s = _joinedShares[i];
-              final ts = (s['team_shares'] as Map<String, dynamic>?) ?? {};
-              final shareName = ts['share_name']?.toString() ?? '';
-              final permission = ts['permission']?.toString() ?? '';
-              final shareId = (ts['share_id'] ?? s['share_id'] ?? '').toString();
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              shareName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              permission,
-                              style: const TextStyle(
-                                color: Color(0x4DFFFFFF),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: shareId.isEmpty ? null : () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => SharedInventoryPage(
-                                shareId: shareId,
-                                shareName: shareName,
-                                permission: permission,
-                                api: widget.api,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: const Color(0x14FFFFFF),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: const Text(
-                            'View',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(24),
-        topRight: Radius.circular(24),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1),
         ),
       ),
-      child: Column(
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 4),
-              decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Text(
-              'Share "${widget.spaceName}"',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TabBar(
-            controller: _tabs,
-            labelColor: Colors.white,
-            unselectedLabelColor: const Color(0x73FFFFFF),
-            indicatorColor: Colors.white,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: const [Tab(text: 'Share'), Tab(text: 'Joined Spaces')],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabs,
-              children: [_buildShareTab(), _buildJoinedTab()],
-            ),
-          ),
-        ],
-      ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

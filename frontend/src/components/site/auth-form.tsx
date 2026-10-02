@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { userFacingError } from "@/lib/user-facing-error";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { FindEZMark } from "@/components/site/findez-brand";
+import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
+import { normalizeAuthNext } from "@/lib/auth-callback";
 
 type Mode = "signin" | "signup";
 
@@ -50,9 +52,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/home";
-  const normalizedRedirect = redirect.startsWith("/") && !redirect.startsWith("//")
-    ? redirect
-    : "/home";
+  const normalizedRedirect = normalizeAuthNext(redirect);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { showNotice } = useAppDialog();
@@ -181,6 +181,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             // Confirmation links return through the existing /auth/callback page.
             emailRedirectTo: authCallbackUrl(),
             data: {
+              ...(normalizedRedirect.endsWith("?download=1") && invitationHandoff(normalizedRedirect)
+                ? { [INVITATION_METADATA_KEY]: invitationHandoff(normalizedRedirect) } : {}),
               display_name: displayName,
               full_name: displayName,
               given_name: cleanFirstName,
@@ -491,14 +493,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             <>Already have an account?{" "}
               {onToggleMode
                 ? <button onClick={() => onToggleMode("signin")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
-                : <Link href="/signin" style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
+                : <Link href={`/signin?redirect=${encodeURIComponent(normalizedRedirect)}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
               }
             </>
           ) : (
             <>Don&apos;t have an account?{" "}
               {onToggleMode
                 ? <button onClick={() => onToggleMode("signup")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
-                : <Link href="/signup" style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
+                : <Link href={`/signup?redirect=${encodeURIComponent(normalizedRedirect)}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
               }
             </>
           )}

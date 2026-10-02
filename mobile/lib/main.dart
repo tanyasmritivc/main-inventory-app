@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:app_links/app_links.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,7 +19,7 @@ import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
-import 'features/teams/team_workspace_page.dart';
+import 'features/sharing/invitation_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,14 +78,12 @@ class _MyAppState extends State<MyApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   StreamSubscription<SharedMedia>? _sharedMediaSub;
-  StreamSubscription<Uri>? _inviteLinkSub;
   StreamSubscription<AuthState>? _shareAuthSub;
   SharedAttachment? _pendingSpreadsheet;
   String? _lastHandledSharePath;
   bool _presentingSharedSpreadsheet = false;
   bool _presentingPasswordRecovery = false;
-  bool _presentingTeamInvite = false;
-  String? _pendingTeamInviteCode;
+  bool _invitationReady = false;
   late final ApiClient _api;
 
   @override
@@ -94,87 +91,12 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
     _initializeIncomingShares();
-    _initializeIncomingLinks();
     _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((
       state,
     ) {
       _tryPresentSharedSpreadsheet();
-      _tryPresentTeamInvite();
       if (state.event == AuthChangeEvent.passwordRecovery) {
         _presentPasswordRecovery();
-      }
-    });
-  }
-
-  Future<void> _initializeIncomingLinks() async {
-    final appLinks = AppLinks();
-    try {
-      final initial = await appLinks.getInitialLink();
-      if (initial != null) _queueTeamInvite(initial);
-    } catch (error) {
-      debugPrint('[TeamInvite] initial link failed: $error');
-    }
-    _inviteLinkSub = appLinks.uriLinkStream.listen(
-      _queueTeamInvite,
-      onError: (Object error) {
-        debugPrint('[TeamInvite] link stream failed: $error');
-      },
-    );
-  }
-
-  void _queueTeamInvite(Uri uri) {
-    String code = '';
-    if (uri.scheme == 'findez' && uri.host == 'team-invite') {
-      code = uri.queryParameters['code'] ?? '';
-    } else if ((uri.host == 'findez.ai' || uri.host == 'www.findez.ai') &&
-        uri.pathSegments.length >= 3 &&
-        uri.pathSegments[0] == 'join' &&
-        uri.pathSegments[1] == 'team') {
-      code = uri.pathSegments[2];
-    }
-    code = code.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    if (code.length != 6) return;
-    _pendingTeamInviteCode = code;
-    _tryPresentTeamInvite();
-  }
-
-  void _tryPresentTeamInvite() {
-    if (_presentingTeamInvite ||
-        _pendingTeamInviteCode == null ||
-        Supabase.instance.client.auth.currentSession == null) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || _presentingTeamInvite) return;
-      final navigator = _navigatorKey.currentState;
-      final code = _pendingTeamInviteCode;
-      if (navigator == null || code == null) return;
-      _presentingTeamInvite = true;
-      try {
-        final result = await _api.joinTeam(code);
-        final membership = Map<String, dynamic>.from(
-          result['membership'] ?? const {},
-        );
-        final teamId = membership['team_id']?.toString() ?? '';
-        if (teamId.isEmpty) throw StateError('Team invitation is unavailable');
-        _pendingTeamInviteCode = null;
-        if (!mounted) return;
-        await navigator.push<void>(
-          MaterialPageRoute(
-            builder: (_) => TeamWorkspacePage(api: _api, initialTeamId: teamId),
-          ),
-        );
-      } catch (error) {
-        _pendingTeamInviteCode = null;
-        if (!mounted) return;
-        _messengerKey.currentState?.showSnackBar(
-          const SnackBar(
-            content: Text('This team invitation is no longer available.'),
-          ),
-        );
-        debugPrint('[TeamInvite] could not join: $error');
-      } finally {
-        _presentingTeamInvite = false;
       }
     });
   }
@@ -260,7 +182,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _sharedMediaSub?.cancel();
-    _inviteLinkSub?.cancel();
     _shareAuthSub?.cancel();
     super.dispose();
   }
@@ -553,22 +474,33 @@ class _MyAppState extends State<MyApp> {
           child: GestureDetector(
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             behavior: HitTestBehavior.translucent,
-            child: child ?? const SizedBox.shrink(),
+            child: InvitationHost(
+              api: _api,
+              navigatorKey: _navigatorKey,
+              ready: _invitationReady,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
       },
       themeMode: ThemeMode.dark,
       theme: darkTheme,
       darkTheme: darkTheme,
-      home: _SplashGate(api: _api),
+      home: _SplashGate(
+        api: _api,
+        onReady: () {
+          if (mounted) setState(() => _invitationReady = true);
+        },
+      ),
     );
   }
 }
 
 class _SplashGate extends StatefulWidget {
-  const _SplashGate({required this.api});
+  const _SplashGate({required this.api, required this.onReady});
 
   final ApiClient api;
+  final VoidCallback onReady;
 
   @override
   State<_SplashGate> createState() => _SplashGateState();
@@ -586,6 +518,7 @@ class _SplashGateState extends State<_SplashGate> {
       onFinished: () {
         if (!mounted) return;
         setState(() => _done = true);
+        widget.onReady();
       },
     );
   }

@@ -10,10 +10,11 @@ const signUp = jest.fn();
 const signInWithPassword = jest.fn();
 const upsert = jest.fn();
 const from = jest.fn(() => ({ upsert }));
+let mockRedirect = "/inventory";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh, replace: jest.fn() }),
-  useSearchParams: () => new URLSearchParams("redirect=/inventory"),
+  useSearchParams: () => new URLSearchParams({ redirect: mockRedirect }),
 }));
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithPassword }, from }),
@@ -33,6 +34,7 @@ async function submitSignup() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRedirect = "/inventory";
   window.localStorage.clear();
 });
 
@@ -102,4 +104,14 @@ test("sign-in trims the email and keeps the existing redirect", async () => {
 
   await waitFor(() => expect(push).toHaveBeenCalledWith("/inventory"));
   expect(signInWithPassword).toHaveBeenCalledWith({ email: "ada@example.com", password: "secret-password" });
+});
+
+test("signup preserves an install invitation in account metadata before email confirmation", async () => {
+  mockRedirect = "/join/team/TEAM23?download=1";
+  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  await submitSignup();
+  await screen.findByRole("status");
+  expect(signUp.mock.calls[0][0].options.data.findez_pending_invitation).toEqual({ v: 1, kind: "team", code: "TEAM23", created_at: expect.any(Number) });
+  expect(new URL(signUp.mock.calls[0][0].options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
+  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin?redirect=%2Fjoin%2Fteam%2FTEAM23%3Fdownload%3D1");
 });

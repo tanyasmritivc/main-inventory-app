@@ -1328,8 +1328,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, _) =>
-                ShareSpaceSheet(spaceName: widget.location, api: widget.api),
+            builder: (_, _) => ShareSpaceSheet(
+              spaceName: widget.location,
+              teamId: widget.api.teamId,
+              api: widget.api,
+            ),
           ),
         );
       case 'Join Space':
@@ -2846,6 +2849,23 @@ class _InventoryPageState extends State<InventoryPage>
                                 color: Color(0x73FFFFFF),
                               ),
                               onSelected: (value) {
+                                if (value == 'share') {
+                                  showModalBottomSheet<void>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) => SizedBox(
+                                      height:
+                                          MediaQuery.sizeOf(context).height *
+                                          .72,
+                                      child: ShareSpaceSheet(
+                                        spaceName: name,
+                                        shareId: shareId,
+                                        api: widget.api,
+                                      ),
+                                    ),
+                                  );
+                                }
                                 if (value == 'leave') {
                                   unawaited(
                                     _leaveJoinedSpace(
@@ -2856,6 +2876,10 @@ class _InventoryPageState extends State<InventoryPage>
                                 }
                               },
                               itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 'share',
+                                  child: Text('Share invitation link'),
+                                ),
                                 PopupMenuItem(
                                   value: 'leave',
                                   child: Text(

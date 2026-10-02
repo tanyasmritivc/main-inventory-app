@@ -46,14 +46,16 @@ dio.MultipartFile profilePhotoMultipartFile({
 }
 
 class ApiClient {
-  ApiClient({required String baseUrl})
-    : _dio = dio.Dio(
-        dio.BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      ),
+  ApiClient({required String baseUrl, dio.Dio? httpClient})
+    : _dio =
+          httpClient ??
+          dio.Dio(
+            dio.BaseOptions(
+              baseUrl: baseUrl,
+              connectTimeout: const Duration(seconds: 20),
+              receiveTimeout: const Duration(seconds: 30),
+            ),
+          ),
       _teamId = null,
       _teamSpaceId = null {
     _dio.interceptors.add(
@@ -61,7 +63,12 @@ class ApiClient {
         onRequest: (options, handler) {
           final token =
               Supabase.instance.client.auth.currentSession?.accessToken;
-          if (token != null && token.isNotEmpty) {
+          // Explicit auth options capture the account that initiated a request.
+          // Never replace that token after an account switch while queued.
+          final hasAuthorization = options.headers.keys.any(
+            (key) => key.toLowerCase() == 'authorization',
+          );
+          if (!hasAuthorization && token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
@@ -82,6 +89,7 @@ class ApiClient {
   final String? _teamId;
   final String? _teamSpaceId;
   String get baseUrl => _dio.options.baseUrl;
+  String? get teamId => _teamId;
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -564,6 +572,26 @@ class ApiClient {
       options: _authOptions(),
     );
     return resp.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> previewInvitation(
+    String kind,
+    String code,
+  ) async {
+    final result = await _dio.post<Map<String, dynamic>>(
+      '/invitations/preview',
+      data: {'kind': kind, 'code': code},
+      options: _authOptions(),
+    );
+    return result.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> getSpaceInvite(String shareId) async {
+    final result = await _dio.get<Map<String, dynamic>>(
+      '/sharing/${Uri.encodeComponent(shareId)}/invite',
+      options: _authOptions(),
+    );
+    return result.data ?? {};
   }
 
   Future<List<dynamic>> getMyShares() async {

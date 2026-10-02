@@ -276,6 +276,39 @@ native installation/launch alone do not satisfy this acceptance checklist.
 
 ## Result
 
+### Space and Team invitation gates
+
+Before App Store submission, repeat the invitation acceptance checks in
+`TESTING.md` on the exact selected build. Check cold/warm URLs, signed-out
+account creation, restart, decline and acceptance, revocation while a prompt is
+open, joined-Space forwarding with the original permission, and account-first
+download continuity. Use isolated throwaway accounts; never join or revoke a
+real workspace merely to test. Download-first users must reopen their link.
+
+Build 40's signed-in physical cold-link prompt check failed despite passing Dart
+tests. On build 41 the user confirmed the cold Team prompt and a real Safari
+Space link's “Open in FindEZ” prompt. A launch-only warm Space payload produced
+no prompt; it was not a valid substitute for browser URL delivery. Final build
+42 adds actor-bound requests and queued-link regression tests. Its exact signed
+archive installed, reports build 42, and launched; the user confirmed the cold
+Team prompt and Space prompt from a real Safari fallback tap on that binary.
+These checks do not prove real acceptance,
+revocation, Messages routing, or a fresh App Store install.
+
+Release record: runtime source `0b4c207`, all five CI gates pass (run
+`36969482272`), 343 backend/133 web/114 mobile tests plus MCP/bundle checks,
+clean analysis/typecheck and production web compilation. Build 42 passed Apple
+validation/upload, processing is `VALID` and `APP_STORE_ELIGIBLE`, and both
+internal TestFlight groups are assigned. The App Store 1.0.7 manual draft selects
+build 42 and is `PREPARE_FOR_SUBMISSION`, not submitted or public. The existing
+placeholder launch-image warning remains a quality follow-up.
+
+The App Store draft must remain manual and unsubmitted until the hands-on gates
+pass and current screenshots/privacy/review information have been checked.
+After the compatible version is publicly live, expand AASA to Space URLs and
+repeat real Safari/Messages routing. Do not publish that association expansion
+while public build 17 cannot handle it.
+
 Sections 2, 5, 6, and 7 are the release gates — each covers a bug
 that silently corrupted data or leaked access. If any of those
 fail, do not ship.

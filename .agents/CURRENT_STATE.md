@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation update.
+Last reviewed on 2026-10-01 during the Space/Team invitation release preparation.
 
 ## Working and deployed
 
@@ -29,6 +29,47 @@ Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation 
   CI through the commands documented in `TESTING.md`.
 
 ## Active development
+
+- `feat/workspace-invite-links`, based on released build 39, adds authenticated
+  read-only Space/Team previews, explicit join consent, existing-owner links for
+  joined/shared Spaces, and restart/account-safe mobile presentation. An optional
+  account-first download handoff uses a private, expiring invitation pointer;
+  downloading first still requires reopening the link. No membership is granted
+  by the handoff. The public Team-only AASA remains unchanged while App Store
+  build 17 is live. The reviewed backend/web are deployed, public backend/DB
+  health pass, anonymous previews return 401, and all five CI gates passed on
+  `47aa8ef` (PR #32). Build `1.0.7 (40)` is valid in both internal groups and
+  installed/launched, but the signed-in user did not see its cold Team prompt.
+  The application-only link library does not register scene callbacks. Build
+  41 pins the scene-compatible library and minimum compatible auth adapter;
+  the user confirmed its cold Team prompt and Space prompt from a real Safari
+  tap. Final build 42 adds actor-bound membership requests so a queued request
+  cannot use a switched account's token. Runtime source `0b4c207` passes all five
+  CI gates (run `36969482272`), 343 backend/133 web/114 mobile tests,
+  MCP/bundle checks, analysis, typecheck and production web compilation. The
+  final web actor-binding files are deployed byte-for-byte with rollback output
+  retained. Signed `1.0.7 (42)` passed Apple validation/upload, `VALID`
+  processing and `APP_STORE_ELIGIBLE`; both internal TestFlight groups are
+  assigned. Exact final archived app installed, reports 42, and launched. The
+  user repeated cold Team and real Safari Space prompt confirmations on build
+  42; nonexistent test codes added no membership. App Store 1.0.7 now selects
+  build 42 with manual release and release notes, in `PREPARE_FOR_SUBMISSION`;
+  it is not submitted/published. Fresh-install/account-confirmation continuity,
+  real acceptance/revocation, additional platform/browser checks and the broader
+  physical/security checklist remain before submission. The public 1.0.6(17)
+  and Team-only AASA are unchanged.
+
+  Build-40/41 archives and IPAs remain local. The older build-39 originals were
+  removed only after the private server backup passed gzip validation and listed
+  both artifacts: `/home/ubuntu/findez-preserved-build39.tar.gz` (683 entries,
+  SHA-256 `349809879acea986d541fe1c7c96b11dbdb6c1db73ec092efae52437cfaa4151`).
+  Builds 36–38 remain recoverable from the previously verified local tar backup.
+
+- A production-dependency audit flags Next.js 16.3.4 under
+  GHSA-vcvr-r3jv-pc5j, patched in 16.3.6. No `next/og` or `ImageResponse` usage
+  exists in this source, so its vulnerable SVG-generation condition is absent.
+  A separate minimal web patch and validation remain; do not report a clean
+  web dependency audit from the invitation tests.
 
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and
