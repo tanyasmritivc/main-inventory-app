@@ -83,6 +83,8 @@ export type ApiRequestOptions = {
   method?: string;
   /** Fallback only; the current session token from `getAccessToken()` wins. */
   token?: string | null;
+  /** Invitation consent belongs to its captured account, not a later session. */
+  bindToToken?: boolean;
   body?: BodyInit | Record<string, unknown>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
@@ -104,7 +106,7 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
 async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
   // Prefer the live session token: a token captured earlier by a component can be
   // stale after Supabase's hourly refresh. The explicit token is the fallback.
-  const token = (await getAccessToken()) || opts.token;
+  const token = opts.bindToToken ? opts.token : (await getAccessToken()) || opts.token;
   if (!token) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
   let bodyToSend: BodyInit | undefined;
   const autoHeaders: Record<string, string> = {};
@@ -449,10 +451,11 @@ export async function deleteShare(params: { token: string; share_id: string }) {
   });
 }
 
-export async function joinShare(params: { token: string; share_code: string }) {
+export async function joinShare(params: { token: string; share_code: string; bindToToken?: boolean }) {
   return apiFetch<{ share_id: string; share_name: string; permission: string }>("/sharing/join", {
     method: "POST",
     token: params.token,
+    bindToToken: params.bindToToken,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ share_code: params.share_code }),
   });
@@ -849,10 +852,11 @@ export type TeamDocument = {
   created_at: string;
 };
 
-export async function joinTeam({ token, code }: { token: string; code: string }) {
+export async function joinTeam({ token, code, bindToToken }: { token: string; code: string; bindToToken?: boolean }) {
   return apiFetch<{ membership: { team_id: string; user_id: string; role: TeamRole } }>('/teams/join', {
     method: 'POST',
     token,
+    bindToToken,
     body: { code: code.trim().toUpperCase() },
   });
 }

@@ -45,7 +45,29 @@ test("Team acceptance uses the Team endpoint", async () => {
   await screen.findByRole("button", { name: "Join team" });
   await userEvent.click(screen.getByRole("button", { name: "Join team" }));
   await waitFor(() => expect(replace).toHaveBeenCalledWith("/teams"));
-  expect(joinTeam).toHaveBeenCalledWith({ token: "test-token", code: "TEAM23" });
+  expect(joinTeam).toHaveBeenCalledWith({ token: "test-token", code: "TEAM23", bindToToken: true });
+});
+
+test("account switch before acceptance prevents the membership request", async () => {
+  render(<JoinInvitationClient kind="space" code="ABC123" />);
+  await screen.findByRole("button", { name: "Join space" });
+  getSession.mockResolvedValue({ data: { session: { access_token: "other-token", user: { id: "other" } } }, error: null });
+  await userEvent.click(screen.getByRole("button", { name: "Join space" }));
+  expect(await screen.findByRole("alert")).toBeTruthy();
+  expect(joinShare).not.toHaveBeenCalled();
+  expect(replace).not.toHaveBeenCalled();
+});
+
+test("account switch while accepting cannot navigate the next account into the space", async () => {
+  jest.mocked(joinShare).mockResolvedValue({ share_id: "space-123", share_name: "Garage", permission: "view" });
+  getSession.mockResolvedValueOnce({ data: { session: { access_token: "test-token", user: { id: "recipient" } } }, error: null })
+    .mockResolvedValueOnce({ data: { session: { access_token: "other-token", user: { id: "other" } } }, error: null });
+  render(<JoinInvitationClient kind="space" code="ABC123" />);
+  await screen.findByRole("button", { name: "Join space" });
+  await userEvent.click(screen.getByRole("button", { name: "Join space" }));
+  await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+  expect(joinShare).toHaveBeenCalledWith({ token: "test-token", share_code: "ABC123", bindToToken: true });
+  expect(replace).not.toHaveBeenCalled();
 });
 
 test("download saves an account handoff, never membership, before leaving", async () => {

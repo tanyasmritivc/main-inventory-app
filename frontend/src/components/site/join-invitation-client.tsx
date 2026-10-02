@@ -44,8 +44,20 @@ export function JoinInvitationClient({ code, kind, navigate = (url) => window.lo
     if (!token || busy || !preview) return;
     setBusy(true); setError(null);
     try {
-      if (kind === "team") { await joinTeam({ token, code }); router.replace("/teams"); }
-      else { const share = await joinShare({ token, share_code: code }); router.replace(`/sharing/${encodeURIComponent(share.share_id)}`); }
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const owner = data.session?.user.id;
+      if (!owner || data.session?.access_token !== token) throw new Error("Please refresh this invitation before joining.");
+      let destination: string;
+      if (kind === "team") {
+        await joinTeam({ token, code, bindToToken: true });
+        destination = "/teams";
+      } else {
+        const share = await joinShare({ token, share_code: code, bindToToken: true });
+        destination = `/sharing/${encodeURIComponent(share.share_id)}`;
+      }
+      const { data: current } = await supabase.auth.getSession();
+      if (current.session?.user.id === owner) router.replace(destination);
     } catch (reason) { setError(userFacingError(reason, "This invitation could not be accepted. Ask the owner for a current link.")); }
     finally { setBusy(false); }
   }

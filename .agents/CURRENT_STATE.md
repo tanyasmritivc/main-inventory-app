@@ -42,9 +42,19 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   installed/launched, but the signed-in user did not see its cold Team prompt.
   The application-only link library does not register scene callbacks. Build
   41 pins the scene-compatible library and minimum compatible auth adapter;
-  repeat validation and physical acceptance are underway. The App Store draft
+  the user confirmed its cold Team prompt and Space prompt from a real Safari
+  tap. Final build 42 adds actor-bound membership requests so a queued request
+  cannot use a switched account's token. The 343 backend/133 web/114 mobile
+  tests, analysis and typecheck pass; final-source CI, signed build and Apple
+  processing are still underway. The App Store draft
   exists with manual release and release notes, currently selecting build 40;
   it is not submitted/published and must select the corrected build after validation.
+
+- A production-dependency audit flags Next.js 16.3.4 under
+  GHSA-vcvr-r3jv-pc5j, patched in 16.3.6. No `next/og` or `ImageResponse` usage
+  exists in this source, so its vulnerable SVG-generation condition is absent.
+  A separate minimal web patch and validation remain; do not report a clean
+  web dependency audit from the invitation tests.
 
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and

@@ -105,7 +105,8 @@ authenticated read-only previews, no automatic membership, active/expired and
 rotated codes, strict URI parsing, repeated acceptance, owner/member forwarding,
 Team role protection, account handoff before confirmation, blocked download on
 save failure, restart/sign-in persistence, duplicate warm links, account-switch
-dismissal, late-response isolation and large-text layout.
+dismissal, actor-token binding across queued requests, late-response isolation,
+a different warm link queued behind an open prompt, and large-text layout.
 
 Physical release checks are still required:
 
@@ -133,8 +134,11 @@ The iOS scene-link dependency contract is guarded in `invitation_test.dart`.
 Build 40's application-only linker passed Dart tests but failed the user's
 physical prompt check. `app_links` 7.0.0 registers scene delegates; the first
 compatible Supabase Flutter adapter (2.12.1) permits it without an unsupported
-override. Cold and warm physical URL delivery must be repeated for build 41;
-the source-level guard alone does not prove native behavior.
+override. The user confirmed build 41's cold Team prompt and a real Safari
+Space-link fallback prompt. Build 42 retains that native fix and adds actor-bound
+request tests; repeat final-binary install/launch checks. The source-level guard
+alone does not prove native behavior, and neither observed prompt proves fresh
+App Store installation, real membership acceptance, or revocation.
 
 The Claude Desktop extension and ChatGPT Actions import live in
 `integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.

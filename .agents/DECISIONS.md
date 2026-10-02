@@ -31,7 +31,17 @@ for the current Flutter 3.41 toolchain; 7.1+ requires Flutter 3.44. Use the mini
 compatible Supabase Flutter adapter 2.12.1 (and its required lockfile updates),
 not an unsupported dependency override or an unrelated latest-auth upgrade. Do not merge
 the separate AppDelegate/Podfile lifecycle lane merely to fix link delivery.
-Build 41 supersedes build 40 after repeat validation and device acceptance.
+Build 41 passed the user's cold Team prompt and real Safari Space fallback
+checks. Build 42 retains that native fix and binds membership requests to the
+account that pressed Join: neither Dio nor the web helper may substitute a later
+account's token. Late responses must not navigate the switched account.
+
+The October 1 production-dependency audit reports Next.js 16.3.4 in the range
+of GHSA-vcvr-r3jv-pc5j (patched in 16.3.6). Source inspection finds no `next/og`
+or `ImageResponse` usage, so the advisory's attacker-controlled SVG generation
+condition is not present. Keep a separate minimal web security-patch lane; do
+not call a dependency audit clean or mix a framework upgrade into native release
+source without its own validation.
 
 ## 2026-08-22: Production is self hosted
 

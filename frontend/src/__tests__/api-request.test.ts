@@ -1,4 +1,4 @@
-import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, getReviewItems, getSpaces, resolveReviewItem } from "@/lib/api";
+import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, getReviewItems, getSpaces, joinShare, joinTeam, resolveReviewItem } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 
 jest.mock("@/lib/session", () => ({ getAccessToken: jest.fn() }));
@@ -30,6 +30,22 @@ test("falls back to an explicit token when no session is readable", async () => 
 
   await apiRequest("/profile/me", { token: "explicit-token" });
   expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer explicit-token");
+});
+
+test.each(["space", "team"])("%s consent keeps the accepting account token after a session switch", async (kind) => {
+  jest.mocked(getAccessToken).mockResolvedValue("other-account-token");
+  fetchMock.mockResolvedValue(jsonResponse(200, {}));
+  if (kind === "space") await joinShare({ token: "accepting-account-token", share_code: "ABC123", bindToToken: true });
+  else await joinTeam({ token: "accepting-account-token", code: "TEAM23", bindToToken: true });
+  expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer accepting-account-token");
+  expect(getAccessToken).not.toHaveBeenCalled();
+});
+
+test("bound consent without its captured token cannot fall back to another account", async () => {
+  jest.mocked(getAccessToken).mockResolvedValue("other-account-token");
+  await expect(apiRequest("/sharing/join", { bindToToken: true, method: "POST" })).rejects.toMatchObject({ status: 401 });
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(getAccessToken).not.toHaveBeenCalled();
 });
 
 test("an unauthenticated request fails consistently without calling the API", async () => {

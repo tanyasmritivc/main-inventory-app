@@ -46,14 +46,16 @@ dio.MultipartFile profilePhotoMultipartFile({
 }
 
 class ApiClient {
-  ApiClient({required String baseUrl})
-    : _dio = dio.Dio(
-        dio.BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      ),
+  ApiClient({required String baseUrl, dio.Dio? httpClient})
+    : _dio =
+          httpClient ??
+          dio.Dio(
+            dio.BaseOptions(
+              baseUrl: baseUrl,
+              connectTimeout: const Duration(seconds: 20),
+              receiveTimeout: const Duration(seconds: 30),
+            ),
+          ),
       _teamId = null,
       _teamSpaceId = null {
     _dio.interceptors.add(
@@ -61,7 +63,12 @@ class ApiClient {
         onRequest: (options, handler) {
           final token =
               Supabase.instance.client.auth.currentSession?.accessToken;
-          if (token != null && token.isNotEmpty) {
+          // Explicit auth options capture the account that initiated a request.
+          // Never replace that token after an account switch while queued.
+          final hasAuthorization = options.headers.keys.any(
+            (key) => key.toLowerCase() == 'authorization',
+          );
+          if (!hasAuthorization && token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);

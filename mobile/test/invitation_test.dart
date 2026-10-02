@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -122,6 +123,28 @@ class FailingInbox extends InvitationInbox {
   }
 }
 
+class CapturingAdapter implements dio.HttpClientAdapter {
+  String? authorization;
+  @override
+  Future<dio.ResponseBody> fetch(
+    dio.RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    authorization = options.headers['Authorization'] as String?;
+    return dio.ResponseBody.fromString(
+      '{"share_id":"space-1","membership":{"team_id":"team-1","role":"member"}}',
+      200,
+      headers: {
+        dio.Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 Future<void> openDialog(
   WidgetTester tester,
   Api api, [
@@ -204,6 +227,42 @@ void main() {
     metadata = {};
     await login();
   });
+  for (final kind in ['space', 'team']) {
+    test(
+      '$kind acceptance preserves its actor while the request is queued',
+      () async {
+        final started = Completer<void>(), release = Completer<void>();
+        final adapter = CapturingAdapter();
+        final httpClient = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+          ..httpClientAdapter = adapter;
+        // Pause before ApiClient's auth interceptor, then switch sessions.
+        httpClient.interceptors.add(
+          dio.InterceptorsWrapper(
+            onRequest: (options, handler) async {
+              started.complete();
+              await release.future;
+              handler.next(options);
+            },
+          ),
+        );
+        final api = ApiClient(
+          baseUrl: 'https://api.test',
+          httpClient: httpClient,
+        );
+        final actorToken =
+            Supabase.instance.client.auth.currentSession!.accessToken;
+        final request = kind == 'space'
+            ? api.joinShare('ABC123')
+            : api.joinTeam('TEAM23');
+        await started.future;
+        await login('other');
+        release.complete();
+        await request;
+        expect(adapter.authorization, 'Bearer $actorToken');
+        httpClient.close();
+      },
+    );
+  }
   test('resolved iOS linker registers cold and warm scene callbacks', () {
     // A native dependency contract guard, not a substitute for device checks.
     // The old application-only plugin passed Dart tests but lost cold links.
@@ -529,6 +588,46 @@ void main() {
       await links.close();
     },
   );
+
+  testWidgets('a different warm Space link waits behind the Team prompt', (
+    tester,
+  ) async {
+    final api = Api(),
+        key = GlobalKey<NavigatorState>(),
+        links = StreamController<Uri>.broadcast();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: key,
+        theme: ThemeData.dark(),
+        builder: (_, child) => InvitationHost(
+          api: api,
+          navigatorKey: key,
+          ready: true,
+          incomingLinks: links.stream,
+          initialLink: () async =>
+              Uri.parse('findez://team-invite?code=TEAM23'),
+          child: child!,
+        ),
+        home: const Scaffold(body: Text('Home')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Join team'), findsOneWidget);
+    links.add(Uri.parse('findez://space-invite?code=ABC123'));
+    await tester.pumpAndSettle();
+    expect(find.text('Join space'), findsNothing);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(find.text('Join space'), findsOneWidget);
+    expect(find.byType(InvitationDialog), findsOneWidget);
+    expect(api.joins, 0);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(find.byType(InvitationDialog), findsNothing);
+    expect(api.joins, 0);
+    await tester.pumpWidget(const SizedBox());
+    await links.close();
+  });
 
   testWidgets('a storage failure does not loop or grant membership', (
     tester,
