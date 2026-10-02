@@ -289,9 +289,19 @@ Build 40's signed-in physical cold-link prompt check failed despite passing Dart
 tests. On build 41 the user confirmed the cold Team prompt and a real Safari
 Space link's “Open in FindEZ” prompt. A launch-only warm Space payload produced
 no prompt; it was not a valid substitute for browser URL delivery. Final build
-42 adds actor-bound requests and queued-link regression tests. Repeat its exact
-binary install/launch check. These checks do not prove real acceptance,
+42 adds actor-bound requests and queued-link regression tests. Its exact signed
+archive installed, reports build 42, and launched; the user confirmed the cold
+Team prompt and Space prompt from a real Safari fallback tap on that binary.
+These checks do not prove real acceptance,
 revocation, Messages routing, or a fresh App Store install.
+
+Release record: runtime source `0b4c207`, all five CI gates pass (run
+`36969482272`), 343 backend/133 web/114 mobile tests plus MCP/bundle checks,
+clean analysis/typecheck and production web compilation. Build 42 passed Apple
+validation/upload, processing is `VALID` and `APP_STORE_ELIGIBLE`, and both
+internal TestFlight groups are assigned. The App Store 1.0.7 manual draft selects
+build 42 and is `PREPARE_FOR_SUBMISSION`, not submitted or public. The existing
+placeholder launch-image warning remains a quality follow-up.
 
 The App Store draft must remain manual and unsubmitted until the hands-on gates
 pass and current screenshots/privacy/review information have been checked.

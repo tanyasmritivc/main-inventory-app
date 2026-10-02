@@ -136,7 +136,8 @@ physical prompt check. `app_links` 7.0.0 registers scene delegates; the first
 compatible Supabase Flutter adapter (2.12.1) permits it without an unsupported
 override. The user confirmed build 41's cold Team prompt and a real Safari
 Space-link fallback prompt. Build 42 retains that native fix and adds actor-bound
-request tests; repeat final-binary install/launch checks. The source-level guard
+request tests; its exact binary installed/launched and the user repeated both
+prompt confirmations. The source-level guard
 alone does not prove native behavior, and neither observed prompt proves fresh
 App Store installation, real membership acceptance, or revocation.
 

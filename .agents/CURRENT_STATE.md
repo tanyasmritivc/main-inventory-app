@@ -44,11 +44,26 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   41 pins the scene-compatible library and minimum compatible auth adapter;
   the user confirmed its cold Team prompt and Space prompt from a real Safari
   tap. Final build 42 adds actor-bound membership requests so a queued request
-  cannot use a switched account's token. The 343 backend/133 web/114 mobile
-  tests, analysis and typecheck pass; final-source CI, signed build and Apple
-  processing are still underway. The App Store draft
-  exists with manual release and release notes, currently selecting build 40;
-  it is not submitted/published and must select the corrected build after validation.
+  cannot use a switched account's token. Runtime source `0b4c207` passes all five
+  CI gates (run `36969482272`), 343 backend/133 web/114 mobile tests,
+  MCP/bundle checks, analysis, typecheck and production web compilation. The
+  final web actor-binding files are deployed byte-for-byte with rollback output
+  retained. Signed `1.0.7 (42)` passed Apple validation/upload, `VALID`
+  processing and `APP_STORE_ELIGIBLE`; both internal TestFlight groups are
+  assigned. Exact final archived app installed, reports 42, and launched. The
+  user repeated cold Team and real Safari Space prompt confirmations on build
+  42; nonexistent test codes added no membership. App Store 1.0.7 now selects
+  build 42 with manual release and release notes, in `PREPARE_FOR_SUBMISSION`;
+  it is not submitted/published. Fresh-install/account-confirmation continuity,
+  real acceptance/revocation, additional platform/browser checks and the broader
+  physical/security checklist remain before submission. The public 1.0.6(17)
+  and Team-only AASA are unchanged.
+
+  Build-40/41 archives and IPAs remain local. The older build-39 originals were
+  removed only after the private server backup passed gzip validation and listed
+  both artifacts: `/home/ubuntu/findez-preserved-build39.tar.gz` (683 entries,
+  SHA-256 `349809879acea986d541fe1c7c96b11dbdb6c1db73ec092efae52437cfaa4151`).
+  Builds 36–38 remain recoverable from the previously verified local tar backup.
 
 - A production-dependency audit flags Next.js 16.3.4 under
   GHSA-vcvr-r3jv-pc5j, patched in 16.3.6. No `next/og` or `ImageResponse` usage
