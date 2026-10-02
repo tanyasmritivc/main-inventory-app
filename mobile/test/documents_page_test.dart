@@ -408,6 +408,41 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     expect(tester.takeException(), isNull);
   });
+  testWidgets('Back autosaves a changed note after typing', (tester) async {
+    final api = _Api();
+    await tester.pumpWidget(_page(api));
+    await tester.pumpAndSettle();
+    await _add(tester, 'New note');
+    await tester.enterText(find.byType(TextField).last, 'Save me on Back');
+    await tester.pump();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(api.uploads, 1);
+    expect(find.byType(NotesEditorPage), findsNothing);
+  });
+  testWidgets(
+    'failed Back autosave requires explicit discard and keeps edits',
+    (tester) async {
+      final api = _Api()..failWrite = true;
+      await tester.pumpWidget(_page(api));
+      await tester.pumpAndSettle();
+      await _add(tester, 'New note');
+      await tester.enterText(find.byType(TextField).last, 'Never lose this');
+      await tester.pump();
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Note was not saved'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Never lose this'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NotesEditorPage), findsNothing);
+      expect(find.text('Note saved successfully'), findsNothing);
+    },
+  );
   testWidgets('note and image URLs reject external and foreign storage paths', (
     tester,
   ) async {

@@ -50,7 +50,7 @@ list ideas as active work.
   Settings screenshots are visual guidance, not authorization for pretend
   training, retention, offline or export toggles. Release in the next build after
   scoped regressions and full mobile/CI/native checks. The implementation and
-  92 mobile tests with coverage/clean analysis pass locally; new profile and
+  94 mobile tests with coverage/clean analysis pass locally; new profile and
   Documents security/failure/layout regressions are included. Build 39 is pending
   CI, signed archive, Apple validation/processing and exact native install/launch.
 

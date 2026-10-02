@@ -222,7 +222,7 @@ Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation 
   shared saved avatars in editor/overview/pill, correct image MIME uploads and
   matte Documents/note/link/rename flows. Private upload logs are removed;
   foreign URLs, stale account reads/draft writes and asynchronous document-link
-  cache keys are guarded. All 92 Flutter tests with coverage and clean analysis
+  cache keys are guarded. All 94 Flutter tests with coverage and clean analysis
   pass locally, including new failure/security/keyboard regressions. Fake-data
   layout captures were inspected. CI, signed build, Apple and native checks are
   pending; this is not yet a TestFlight release. Home, Ask speed/attachments,

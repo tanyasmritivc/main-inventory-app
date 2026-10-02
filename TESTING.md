@@ -199,7 +199,7 @@ avatars and narrow layouts with large text and keyboard insets.
 
 `mobile/test/documents_page_test.dart` covers matte grouped Notes/PDFs/Images/Files,
 content search, safe read/retry states, upload types, rename identity, deletion
-confirmation/failures, summaries, item links/retry/failures, note saving and draft
+confirmation/failures, summaries, item links/retry/failures, note Save/Back autosave and draft
 retention, account isolation, rejected foreign URLs and large-text scrolling.
 All external reads/writes are stubbed. No production account or document is used.
 

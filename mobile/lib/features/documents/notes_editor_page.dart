@@ -247,6 +247,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _controller,
+              onChanged: (_) => setState(() {}),
               style: const TextStyle(
                 color: HomeColors.text,
                 fontSize: 17,
