@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-02 during the icon-only mobile navigation release.
+Last reviewed on 2026-10-02 during the item-info swipe-down update.
 
 ## Working and deployed
 
@@ -50,13 +50,29 @@ Last reviewed on 2026-10-02 during the icon-only mobile navigation release.
   CI gates (run `36976126350`). Signed build 44 installed, reports 44, and
   launched; the user approved the slimmer pill and circular highlight. Apple
   validation and upload passed (delivery `350a7049-8b9d-4654-bccc-722be9d53916`);
-  processing and internal group assignment are pending. Production compile
+  processing is `VALID` / `APP_STORE_ELIGIBLE`, with both internal groups
+  (Testers and Internal Pilot Findez AI) assigned. Production compile
   configuration matches the existing mobile environment without logging values.
   IPA SHA-256 is `0dbc24b0db6776679c9c8c073e471b496f5aff90c723a8117ae09111cc905949`.
+  Signed build 44 is preserved in verified private backup
+  `/home/ubuntu/findez-preserved-build44.tar.gz` (mode 600, 683 entries, SHA-256
+  `3b196d02806bf20691a95aad4d7a46771770ba90f683c10ddf40fa5a0b44429d`).
   Build 42 remains local and recoverable from verified private server backup
   `/home/ubuntu/findez-preserved-build42.tar.gz` (683 entries, SHA-256
   `ba374f01046d82ce2b6c98b45e1213a190152cd827a8ff1f6a716c705b67ad6b`).
   App Store draft still selects build 42 and remains manual/unsubmitted.
+
+- `fix/item-detail-swipe-dismiss`, stacked on navbar PR #33, updates the shared
+  item information panel used by personal, joined/shared and Team Spaces, not
+  the separate Edit item form. Its content uses the draggable sheet's scroll
+  controller: pulling down at the top closes, scrolling inside the body does
+  not. Small pulls restore the full sheet and horizontal photo swipes stay in
+  the gallery. Downward dismissal, Close, system Back and barrier dismissal
+  share unsaved-note confirmation and confirmed autosave flushing; read-only
+  access cannot write. All 133 mobile tests with coverage and clean analysis
+  pass, including 16 new item-info tests. Signed build 45, CI and physical
+  validation are in progress; it has not been uploaded yet.
+  Backend/web, API/schema, navbar and native lifecycle files are unchanged.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
   read-only Space/Team previews, explicit join consent, existing-owner links for

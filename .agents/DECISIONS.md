@@ -296,3 +296,17 @@ Use a 56pt visible bar and a small circular selected highlight rather than the
 wide badge. Keep SafeArea outside the decorated pill so the inset does not grow
 the pill; a parent that already consumes it must not add it a second time. This
 supersedes the earlier 70pt labeled-bar height, retaining 44pt-or-larger targets.
+
+## 2026-10-02: Swipe dismissal belongs to item information in every Space
+
+**Decision:** Give the existing item-info panel coordinated downward dismissal
+and content scrolling through the same controller, across personal, shared/joined
+and Team Spaces. Keep the separate Edit item form unchanged. Retain the existing
+visual handle and Close fallback, with an accessible dismissal action.
+
+**Safety:** The modal's independent drag pop is disabled so it cannot bypass save
+checks. Pulls from the top dismiss; a short pull restores the panel. Notes require
+Save/Discard/Keep editing consent, pending photo/note saves keep the panel open,
+and debounced purchase-source and low-stock changes are flushed before closing.
+Failed writes preserve drafts and show safe errors. Read-only dismissal never
+writes, and dispose never starts a new write under a potentially changed account.

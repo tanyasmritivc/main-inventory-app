@@ -39,6 +39,14 @@ not checkout rows or teammates' items. Failed first reads show dashes and an
 error, not fabricated zeroes. Each Space opens by its ID even if names differ only
 in case. Photo captions open item details; no-photo items have no blank square.
 
+Item information (opened with the info button, not the Edit item form) must
+dismiss with a downward swipe at the top in personal, shared/joined and Team
+Spaces. Confirm long-content scrolling and horizontal photo paging do not close
+it. A short pull restores the panel. Unsaved notes require Save/Discard/Keep
+editing; pending photo/note/document/return writes keep it open. Failed autosaves
+preserve drafts, and read-only dismissal creates no write. Use a throwaway item
+for mutation checks; Close remains a fallback.
+
 **Pass:** onboarding runs, then the tutorial runs to completion.
 Every step has something to point at, and "Skip" is visible and
 tappable at every step.
