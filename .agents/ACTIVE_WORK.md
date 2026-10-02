@@ -39,6 +39,21 @@ list ideas as active work.
   group assignment and native install/launch. Hands-on
   account/settings/camera and TestFlight-app checks remain unverified.
 
+## Profile and Documents polish in progress
+
+- `fix/profile-documents-polish` in `/private/tmp/findez-ask-reference`, based on
+  released build 38. Mobile only: replace cramped account editing with a labeled,
+  scrollable form and reliable save/photo actions; use the saved avatar in the
+  Profile hub and pill; restyle Documents and its local subflows to the matte
+  grouped design. Preserve document API/actions, Home, Ask speed/attachments,
+  Capture, Find, settings behavior, backend/web and native lifecycle files. The
+  Settings screenshots are visual guidance, not authorization for pretend
+  training, retention, offline or export toggles. Release in the next build after
+  scoped regressions and full mobile/CI/native checks. The implementation and
+  91 mobile tests with coverage/clean analysis pass locally; new profile and
+  Documents security/failure/layout regressions are included. Build 39 is pending
+  CI, signed archive, Apple validation/processing and exact native install/launch.
+
 ## Known blocked product work
 
 | Work | Blocker |

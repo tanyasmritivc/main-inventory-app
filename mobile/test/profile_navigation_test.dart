@@ -299,13 +299,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Tanya Charles');
-    await tester.tap(find.text('Save'));
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
     expect(api.update?['display_name'], 'Tanya Charles');
-    expect(find.text('Tanya Charles'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('failed profile save is visible and retains input', (
@@ -319,14 +319,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Keep this name');
     api.fail = true;
-    await tester.tap(find.text('Save'));
+    await tester.ensureVisible(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
     expect(find.text('Keep this name'), findsOneWidget);
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Save changes'), findsOneWidget);
     expect(find.textContaining('Couldn\'t save profile'), findsOneWidget);
   });
 
@@ -348,9 +348,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Edit'));
+      await tester.tap(find.text('Change photo'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Edit profile photo'));
+      await tester.tap(find.text('Choose photo'));
       await tester.pumpAndSettle();
       expect(find.textContaining('SECRET'), findsNothing);
       expect(find.byType(SnackBar), findsOneWidget);

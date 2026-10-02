@@ -216,3 +216,14 @@ Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation 
   text speed, backend and web are unchanged. Hands-on acceptance remains
   unverified. The user subsequently reported cramped profile editing, missing
   overview avatars and old Documents styling; a scoped follow-up is required.
+
+- Build 39 follow-up is implemented on `fix/profile-documents-polish` in the
+  existing `/private/tmp/findez-ask-reference` worktree: labeled profile editing,
+  shared saved avatars in editor/overview/pill, correct image MIME uploads and
+  matte Documents/note/link/rename flows. Private upload logs are removed;
+  foreign URLs, stale account reads/draft writes and asynchronous document-link
+  cache keys are guarded. All 91 Flutter tests with coverage and clean analysis
+  pass locally, including new failure/security/keyboard regressions. Fake-data
+  layout captures were inspected. CI, signed build, Apple and native checks are
+  pending; this is not yet a TestFlight release. Home, Ask speed/attachments,
+  Capture, Find, backend/web and existing settings behavior remain unchanged.

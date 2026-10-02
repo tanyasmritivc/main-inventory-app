@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/profile_store.dart';
+import '../../core/ui/member_avatar.dart';
 import '../home/home_overview.dart';
 
 /// The shell's utility destination; inventory browsing stays in Find.
@@ -19,6 +21,7 @@ class ProfileHubPage extends StatefulWidget {
     required this.onOpenCheckouts,
     required this.onOpenTour,
     this.unreadCount = 0,
+    this.store,
   });
   final ApiClient api;
   final Future<void> Function() onOpenProfile;
@@ -28,6 +31,7 @@ class ProfileHubPage extends StatefulWidget {
   final Future<void> Function() onOpenCheckouts;
   final Future<void> Function() onOpenTour;
   final int unreadCount;
+  final ProfileStore? store;
 
   @override
   State<ProfileHubPage> createState() => _ProfileHubPageState();
@@ -35,61 +39,32 @@ class ProfileHubPage extends StatefulWidget {
 
 class _ProfileHubPageState extends State<ProfileHubPage>
     with AutomaticKeepAliveClientMixin {
-  Map<String, dynamic> _profile = {};
-  bool _failed = false;
-  int _generation = 0;
-  StreamSubscription<AuthState>? _auth;
-  String? _owner;
+  late final ProfileStore _store;
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _owner = Supabase.instance.client.auth.currentUser?.id;
-    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
-      final owner = state.session?.user.id;
-      if (!mounted || owner == _owner) return;
-      _owner = owner;
-      _generation++;
-      setState(() {
-        _profile = {};
-        _failed = false;
-      });
-      if (owner != null) unawaited(_load());
-    });
-    unawaited(_load());
+    _store = widget.store ?? ProfileStore(api: widget.api);
+    _store.addListener(_changed);
+    unawaited(_store.load());
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _auth?.cancel();
-    _generation++;
+    _store.removeListener(_changed);
+    if (widget.store == null) _store.dispose();
     super.dispose();
-  }
-
-  Future<void> _load() async {
-    final owner = Supabase.instance.client.auth.currentUser?.id;
-    final generation = ++_generation;
-    try {
-      final profile = await widget.api.getMyProfile();
-      if (!mounted ||
-          generation != _generation ||
-          owner != Supabase.instance.client.auth.currentUser?.id) {
-        return;
-      }
-      setState(() {
-        _profile = profile;
-        _failed = false;
-      });
-    } catch (_) {
-      if (mounted && generation == _generation) setState(() => _failed = true);
-    }
   }
 
   Future<void> _editProfile() async {
     await widget.onOpenProfile();
-    if (mounted) await _load();
+    if (mounted) await _store.load(force: true);
   }
 
   Future<void> _open(Future<void> Function() action) async {
@@ -160,7 +135,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
     final user = Supabase.instance.client.auth.currentUser;
     final metadata = user?.userMetadata ?? {};
     String text(Object? value) => value is String ? value.trim() : '';
-    final savedName = text(_profile['display_name']);
+    final savedName = _store.name;
     final cachedName = text(metadata['full_name']).isNotEmpty
         ? text(metadata['full_name'])
         : text(metadata['name']);
@@ -191,14 +166,12 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Color(0xFF2A2A2E),
-                        child: Icon(
-                          Icons.person_outline_rounded,
-                          color: HomeColors.text,
-                          size: 27,
-                        ),
+                      MemberAvatar(
+                        key: ValueKey(_store.photoRevision),
+                        name: name,
+                        photoUrl: _store.photoUrl,
+                        colorHex: _store.color,
+                        size: 48,
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -207,7 +180,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                           children: [
                             Text(
                               name.isEmpty ? 'Your profile' : name,
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: HomeColors.text,
@@ -218,7 +191,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                               const SizedBox(height: 4),
                               Text(
                                 user!.email!,
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: HomeColors.secondary,
@@ -247,7 +220,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                 ),
               ),
             ),
-            if (_failed)
+            if (_store.failed)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
@@ -258,7 +231,10 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                         style: TextStyle(color: HomeColors.secondary),
                       ),
                     ),
-                    TextButton(onPressed: _load, child: const Text('Retry')),
+                    TextButton(
+                      onPressed: () => _store.load(force: true),
+                      child: const Text('Retry'),
+                    ),
                   ],
                 ),
               ),

@@ -218,7 +218,7 @@ upgrade sheet.
 
 ## 9. Backend health, over time
 
-This one is not a single check — watch the Render logs across the
+This one is not a single check — watch the production backend logs across the
 whole session and for a day of normal use.
 
 **Pass:** no `[Errno 11] Resource temporarily unavailable`, no
@@ -251,6 +251,28 @@ are expected to fail — that is known, not a regression. Note what
 happens so the behaviour is at least loud rather than silent.
 
 ---
+
+## 11. Profile and Documents physical acceptance
+
+On the exact new TestFlight build:
+
+- Edit name and optional collaboration fields; check a long account email does
+  not wrap awkwardly, and Save works above the keyboard with large text.
+- Replace and remove the profile photo. Verify the same saved photo appears in
+  the editor, Profile overview and bottom pill, including after relaunch. Cancel
+  the photo picker and deny Photos permission; drafts must remain intact.
+- Navigate back with unsaved profile changes and choose Keep editing/Discard.
+  Interrupt a save or upload with connectivity failure; never show false success.
+- In Documents, add/open/edit a note and upload/open an image and PDF. Verify
+  search, rename, summarize, link/unlink and confirmed deletion. Cancel deletion
+  and cause a failed write; the record and draft must remain available.
+- Switch accounts/sign out while a profile read, photo picker, document read or
+  note draft is open. Do not show the old account's content or submit its draft
+  into the new account. Verify with throwaway accounts, not destructive actions
+  against real user data.
+
+Record hands-on results separately. Automated widget tests, layout PNGs and
+native installation/launch alone do not satisfy this acceptance checklist.
 
 ## Result
 

@@ -8,10 +8,12 @@ class HomeNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.destinationKeys = const {},
+    this.profileAvatar,
   });
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Map<int, Key> destinationKeys;
+  final Widget? profileAvatar;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
@@ -63,11 +65,15 @@ class HomeNavigation extends StatelessWidget {
               label: 'Find',
             ),
             NavigationDestination(
-              icon: Icon(
-                CupertinoIcons.person_crop_circle,
-                key: destinationKeys[4],
-              ),
-              selectedIcon: const Icon(CupertinoIcons.person_crop_circle_fill),
+              icon:
+                  profileAvatar ??
+                  Icon(
+                    CupertinoIcons.person_crop_circle,
+                    key: destinationKeys[4],
+                  ),
+              selectedIcon:
+                  profileAvatar ??
+                  const Icon(CupertinoIcons.person_crop_circle_fill),
               label: 'Profile',
             ),
           ],

@@ -188,3 +188,28 @@ settings persistence, documents, notifications/APNs links, lent items, support,
 app tour, sign-out and account switching. Test delete confirmation with a
 throwaway account only. Native installation/launch does not pass these hands-on
 checks.
+
+## Profile editor and Documents regressions
+
+`mobile/test/profile_editor_test.dart` covers labeled fields, validation,
+confirmed saves, duplicate-submit prevention, failed-save draft retention,
+explicit discard, photo replace/remove failures, the 5 MB/MIME upload contract,
+trusted owner/origin URLs, account and late-read isolation, shared overview/nav
+avatars and narrow layouts with large text and keyboard insets.
+
+`mobile/test/documents_page_test.dart` covers matte grouped Notes/PDFs/Images/Files,
+content search, safe read/retry states, upload types, rename identity, deletion
+confirmation/failures, summaries, item links/retry/failures, note saving and draft
+retention, account isolation, rejected foreign URLs and large-text scrolling.
+All external reads/writes are stubbed. No production account or document is used.
+
+For optional macOS layout captures with the system font and fake data, run:
+
+```bash
+cd mobile
+flutter test --no-pub --dart-define=FINDEZ_VISUAL_QA=true test/profile_editor_test.dart test/documents_page_test.dart --name 'labeled form saves|matte sections classify'
+```
+
+This writes layout-only PNGs to `/private/tmp/findez-profile-editor-qa.png` and
+`/private/tmp/findez-documents-qa.png`; native fonts, permissions and photos still
+require the physical-device checks in release-checklist section 11.
