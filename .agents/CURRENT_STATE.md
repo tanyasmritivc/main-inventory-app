@@ -57,7 +57,7 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   Signed build 44 is preserved in verified private backup
   `/home/ubuntu/findez-preserved-build44.tar.gz` (mode 600, 683 entries, SHA-256
   `3b196d02806bf20691a95aad4d7a46771770ba90f683c10ddf40fa5a0b44429d`).
-  Build 42 remains local and recoverable from verified private server backup
+  Build 42 remains recoverable from verified private server backup
   `/home/ubuntu/findez-preserved-build42.tar.gz` (683 entries, SHA-256
   `ba374f01046d82ce2b6c98b45e1213a190152cd827a8ff1f6a716c705b67ad6b`).
   App Store draft still selects build 42 and remains manual/unsubmitted.
@@ -75,10 +75,27 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   late scroll-end events restoring the sheet to full height during route exit;
   build 46 keeps accepted dismissal latched until disposal. All 135 mobile
   tests with coverage and clean analysis pass, including 18 item-info tests and
-  two animation regressions. Build 46 signed/CI/physical validation is pending.
+  two animation regressions. Runtime `78404fa` passed all five CI gates
+  (run `37033574121`). Signed build 46 installed, reports 46, and launched on
+  the paired iPhone; the user confirmed a smooth Parts Room info-panel exit.
+  Apple validation and upload passed; delivery
+  `6d44ee23-5d42-4abb-a196-0df58223f415`. Apple processing completed with
+  `VALID` and `APP_STORE_ELIGIBLE`; build 46 is assigned to both internal groups
+  (`Testers` and `Internal Pilot Findez AI`). No external review/submission was
+  started. The public App Store release and manual build-42 draft are unchanged;
+  broader project acceptance/security gates remain before submission.
+  IPA SHA-256:
+  `0c0bf3a0db16dc2603acf7576eae9ddb8713423b6d8bc5678624517209b65a0e`.
   Build 45 is recoverable from verified private backup
   `/home/ubuntu/findez-preserved-build45.tar.gz` (mode 600, 683 entries, SHA-256
   `7868dd3e8aa84baddff2f12f1cc4836b83be76ea4675e8a175d89a5f4ee1014e`).
+  Signed build 46 remains local and is also preserved in verified private backup
+  `/home/ubuntu/findez-preserved-build46.tar.gz` (mode 600, 683 entries, SHA-256
+  `1e3d6a916af48c7795d2e1a754c8a6d12561a672e6e503f51e938623116a3133`).
+  Its extracted IPA matches the signed/uploaded hash above.
+  Redundant local build-42/45 archives and IPAs were removed with approval after
+  backup integrity and extracted IPA hashes matched. Test caches were cleared
+  and are regenerable. The original shared checkout and device data are untouched.
   Backend/web, API/schema, navbar and native lifecycle files are unchanged.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
@@ -116,11 +133,16 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   `45ef01c99b682200645ab605805d13306787e38e27a98b44fd9eb70628e7c9b2`;
   `/home/ubuntu/findez-preserved-build41.tar.gz`, SHA-256
   `c0d2650597535615df2c371b767f9eb0be763a9e1e7397c775e9d1342b74dc68`.
-  Build 42 remains local. The older build-39 originals were
+  Build 42 is preserved in its verified private server backup above. The older
+  build-39 originals were
   removed only after the private server backup passed gzip validation and listed
   both artifacts: `/home/ubuntu/findez-preserved-build39.tar.gz` (683 entries,
   SHA-256 `349809879acea986d541fe1c7c96b11dbdb6c1db73ec092efae52437cfaa4151`).
-  Builds 36–38 remain recoverable from the previously verified local tar backup.
+  Builds 36-38 remain recoverable from verified private server backup
+  `/home/ubuntu/findez-preserved-builds36-38.tar.gz` (mode 600, SHA-256
+  `e997c5fab2520bc49fdf7a6b76d96ca65096d53b894e17b5933fe3162b2d4caf`).
+  Its SHA-256 matches the local tar; gzip validation passed, with 2,049 GNU tar
+  entries (2,046 on macOS tar). Only the redundant local backup was removed.
 
 - A production-dependency audit flags Next.js 16.3.4 under
   GHSA-vcvr-r3jv-pc5j, patched in 16.3.6. No `next/og` or `ImageResponse` usage
