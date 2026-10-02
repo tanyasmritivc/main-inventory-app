@@ -255,6 +255,28 @@ app tour, sign-out and account switching. Test delete confirmation with a
 throwaway account only. Native installation/launch does not pass these hands-on
 checks.
 
+## Item-info swipe dismissal regressions
+
+`mobile/test/item_detail_sheet_test.dart` tests the actual item-info buttons in
+personal/Team `LocationItemsPage` and shared/joined `SharedInventoryPage`, in edit
+and view modes. It verifies handle/top-content dismissal, normal mid-body
+scrolling, small-pull restoration, horizontal gallery paging, accessible dismiss,
+unsaved-note Save/Discard/Keep editing, failed-save draft retention, pending-save
+protection, serialized purchase autosaves, low-stock flushing, read-only no-write,
+pending return and safe return failures, late reads/reopening, Close/Back
+protection, large text and keyboard insets. Animation regressions verify that
+late scroll-end events do not restore accepted dismissal and that the actual
+modal moves only downward throughout its exit. All
+API calls use fake data and stubs; no production inventory is changed.
+
+On a physical iPhone, open an item's info button in personal, shared/joined and
+Team Spaces (not Edit item). Pull down on the handle/header and at the top of the
+body. Verify a smooth downward exit to the same Space, without an upward jump
+or re-expansion. Scroll a long panel both directions
+and swipe gallery photos; these must not unexpectedly close it. With a throwaway
+item, test note confirmation and pending/failed photo or autosave operations.
+Keep Close as an accessible fallback. An install/launch is not a gesture check.
+
 ## Profile editor and Documents regressions
 
 `mobile/test/profile_editor_test.dart` covers labeled fields, validation,

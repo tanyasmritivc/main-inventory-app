@@ -17,6 +17,7 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import 'item_detail_drag_sheet.dart';
 
 /// Opens the comprehensive item detail bottom sheet.
 ///
@@ -39,6 +40,9 @@ Future<void> showItemDetailSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
+    useSafeArea: true,
+    enableDrag: false,
+    showDragHandle: false,
     builder: (_) => _ItemDetailSheet(
       item: item,
       api: api,
@@ -99,10 +103,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   final GlobalKey _qrCardKey = GlobalKey();
 
   bool _isEditingNotes = false;
+  bool _notesSaving = false;
+  bool _closing = false;
+  bool _allowPop = false;
+  late String _lastSavedNotes;
+  late String _lastSavedPurchaseSource;
+  Future<bool>? _purchaseSourceSave;
+  Future<bool>? _thresholdSave;
   bool _checkingOut = false;
   bool _purchaseSourceSaveFailed = false;
   bool _photosLoading = true;
   bool _photoSaving = false;
+  bool _documentSaving = false;
+  bool _returnSaving = false;
   int _selectedPhotoIndex = 0;
   Timer? _thresholdDebounce;
   int? _lastSavedThreshold;
@@ -121,15 +134,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     super.initState();
     _item = widget.item;
     _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
+    _lastSavedNotes = _notesCtrl.text.trim();
     _purchaseSourceCtrl = TextEditingController(
       text: widget.item.purchaseSource ?? '',
     );
+    _lastSavedPurchaseSource = _purchaseSourceCtrl.text.trim();
     _thresholdCtrl = TextEditingController(
       text: (widget.initialThreshold != null && widget.initialThreshold! > 0)
           ? widget.initialThreshold.toString()
           : '',
     );
-    _lastSavedThreshold = widget.initialThreshold;
+    _lastSavedThreshold = _parsedThreshold();
     _checkoutNameCtrl = TextEditingController();
     _checkoutNotesCtrl = TextEditingController();
     _checkoutsFuture = _fetchCheckouts();
@@ -151,10 +166,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   @override
   void dispose() {
     _thresholdDebounce?.cancel();
-    final pendingThreshold = _parsedThreshold();
-    if (pendingThreshold != _lastSavedThreshold) {
-      unawaited(_saveThresholdValue(pendingThreshold));
-    }
+    // All user dismissals flush edits before popping. Never start a write
+    // from dispose, where failures cannot be shown and accounts may have changed.
     _notesCtrl.dispose();
     _purchaseSourceCtrl.dispose();
     _thresholdCtrl.dispose();
@@ -213,7 +226,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Future<void> _addPhoto() async {
-    if (_photoSaving) return;
+    if (_photoSaving || _closing) return;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppTheme.surface2(context),
@@ -246,7 +259,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       maxHeight: 2048,
       imageQuality: 88,
     );
-    if (photo == null || !mounted) return;
+    if (photo == null || !mounted || _closing) return;
 
     setState(() => _photoSaving = true);
     try {
@@ -278,7 +291,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Future<void> _deletePhoto(ItemPhoto photo) async {
-    if (_photoSaving) return;
+    if (_photoSaving || _closing) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -330,19 +343,31 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
-  Future<void> _saveNotes() async {
+  Future<bool> _saveNotes() async {
+    if (_notesSaving || widget.permission != 'edit') return false;
     final notes = _notesCtrl.text.trim();
+    setState(() => _notesSaving = true);
     try {
-      await widget.api.updateItem(
+      final updated = await widget.api.updateItem(
         request: UpdateItemRequest(itemId: widget.item.itemId, notes: notes),
       );
-      if (!mounted) return;
-      setState(() => _isEditingNotes = false);
+      if (!mounted) return false;
+      setState(() {
+        _isEditingNotes = false;
+        _lastSavedNotes = notes;
+        _item = updated;
+      });
+      InventoryCache.updateItem(updated);
+      widget.onItemUpdated?.call(updated);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save notes. Try again.')),
+        const SnackBar(content: Text('Could not save notes. Try again.')),
       );
+      return false;
+    } finally {
+      if (mounted) setState(() => _notesSaving = false);
     }
   }
 
@@ -358,13 +383,24 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     return (raw != null && raw > 0) ? raw : null;
   }
 
-  Future<void> _saveThresholdNow() async {
+  Future<bool> _saveThresholdNow() {
     _thresholdDebounce?.cancel();
-    await _saveThresholdValue(_parsedThreshold());
+    if (widget.permission != 'edit') return Future.value(true);
+    return _thresholdSave ??= _flushThreshold().whenComplete(() {
+      _thresholdSave = null;
+    });
   }
 
-  Future<void> _saveThresholdValue(int? threshold) async {
-    if (threshold == _lastSavedThreshold) return;
+  Future<bool> _flushThreshold() async {
+    while (mounted) {
+      final threshold = _parsedThreshold();
+      if (threshold == _lastSavedThreshold) return true;
+      if (!await _saveThresholdValue(threshold)) return false;
+    }
+    return false;
+  }
+
+  Future<bool> _saveThresholdValue(int? threshold) async {
     try {
       await LowStockPrefs.setThreshold(
         itemId: widget.item.itemId,
@@ -372,34 +408,133 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       );
       _lastSavedThreshold = threshold;
       widget.onThresholdChanged?.call(threshold);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save the low-stock threshold.')),
+        const SnackBar(
+          content: Text('Could not save the low-stock threshold.'),
+        ),
       );
+      return false;
     }
   }
 
   void _schedulePurchaseSourceSave() {
     _purchaseSourceDebounce?.cancel();
     _purchaseSourceDebounce = Timer(const Duration(milliseconds: 600), () {
-      _savePurchaseSourceSilent();
+      unawaited(_savePurchaseSourceNow());
     });
   }
 
-  Future<void> _savePurchaseSourceSilent() async {
-    final source = _purchaseSourceCtrl.text.trim();
+  Future<bool> _savePurchaseSourceNow() {
+    _purchaseSourceDebounce?.cancel();
+    if (widget.permission != 'edit') return Future.value(true);
+    return _purchaseSourceSave ??= _flushPurchaseSource().whenComplete(() {
+      _purchaseSourceSave = null;
+    });
+  }
+
+  Future<bool> _flushPurchaseSource() async {
+    while (mounted) {
+      final source = _purchaseSourceCtrl.text.trim();
+      if (source == _lastSavedPurchaseSource) return true;
+      if (!await _persistPurchaseSource(source)) return false;
+    }
+    return false;
+  }
+
+  Future<bool> _persistPurchaseSource(String source) async {
     try {
-      await widget.api.updateItem(
+      final updated = await widget.api.updateItem(
         request: UpdateItemRequest(
           itemId: widget.item.itemId,
-          purchaseSource: source.isEmpty ? null : source,
+          purchaseSource: source,
         ),
       );
-      if (mounted) setState(() => _purchaseSourceSaveFailed = false);
-    } catch (e) {
-      debugPrint('[ItemDetailSheet] _savePurchaseSourceSilent error: $e');
+      _lastSavedPurchaseSource = source;
+      if (mounted) {
+        setState(() {
+          _purchaseSourceSaveFailed = false;
+          _item = updated;
+        });
+        InventoryCache.updateItem(updated);
+        widget.onItemUpdated?.call(updated);
+      }
+      return true;
+    } catch (_) {
       if (mounted) setState(() => _purchaseSourceSaveFailed = true);
+      return false;
+    }
+  }
+
+  Future<bool> _requestClose() async {
+    if (_closing || ModalRoute.of(context)?.isCurrent != true) return false;
+    if (_notesSaving ||
+        _photoSaving ||
+        _checkingOut ||
+        _documentSaving ||
+        _returnSaving) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please wait for the current save to finish.'),
+        ),
+      );
+      return false;
+    }
+    setState(() => _closing = true);
+    try {
+      FocusManager.instance.primaryFocus?.unfocus();
+      if (widget.permission == 'edit') {
+        if (_notesCtrl.text.trim() != _lastSavedNotes) {
+          final choice = await showDialog<String>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Save your notes?'),
+              content: const Text('Your notes have unsaved changes.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Keep editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, 'discard'),
+                  child: const Text('Discard'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, 'save'),
+                  child: const Text('Save and close'),
+                ),
+              ],
+            ),
+          );
+          if (!mounted || choice == null) return false;
+          if (choice == 'save' && !await _saveNotes()) return false;
+          if (choice == 'discard') {
+            _notesCtrl.text = _lastSavedNotes;
+            setState(() => _isEditingNotes = false);
+          }
+        }
+        if (!await _savePurchaseSourceNow()) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Could not save the purchase source. Try again before closing.',
+                ),
+              ),
+            );
+          }
+          return false;
+        }
+        if (!await _saveThresholdNow()) return false;
+      }
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
+      setState(() => _allowPop = true);
+      Navigator.pop(context);
+      return true;
+    } finally {
+      if (mounted && !_allowPop) setState(() => _closing = false);
     }
   }
 
@@ -408,7 +543,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       .catchError((_) => <Map<String, dynamic>>[]);
 
   Future<void> _showCheckoutDialog() async {
-    if (_checkingOut) return;
+    if (_checkingOut || _closing) return;
     setState(() => _checkingOut = true);
     debugPrint('[CheckOut] dialog opening for item=${widget.item.itemId}');
 
@@ -810,6 +945,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Future<void> _pickAndUploadDocument() async {
+    if (_documentSaving || _closing) return;
     final choice = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: AppTheme.surface2(context),
@@ -873,7 +1009,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       filename = picked.name;
     }
 
-    if (!mounted) return;
+    if (!mounted || _closing) return;
+    setState(() => _documentSaving = true);
     try {
       final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
       await widget.api.uploadDocument(file: file, itemId: widget.item.itemId);
@@ -888,6 +1025,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Upload failed. Please try again.')),
       );
+    } finally {
+      if (mounted) setState(() => _documentSaving = false);
+    }
+  }
+
+  Future<void> _returnCheckout(String checkoutId) async {
+    if (_returnSaving || _closing) return;
+    setState(() => _returnSaving = true);
+    try {
+      await widget.api.returnItem(checkoutId: checkoutId);
+      if (mounted) setState(() => _checkoutsFuture = _fetchCheckouts());
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not return the item. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _returnSaving = false);
     }
   }
 
@@ -1192,13 +1350,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           borderRadius: BorderRadius.circular(18),
           child: Container(
             width: double.infinity,
-            height: 150,
+            constraints: const BoxConstraints(minHeight: 150),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: const Color(0x1FFFFFFF)),
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(
@@ -1209,6 +1369,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 const SizedBox(height: 8),
                 Text(
                   canEdit ? 'Add an item photo' : 'No photos yet',
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 14,
@@ -1219,6 +1380,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 4),
                   const Text(
                     'Take a photo or choose one from your library',
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0x55FFFFFF), fontSize: 12),
                   ),
                 ],
@@ -1381,6 +1543,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope<void>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_requestClose());
+      },
+      child: ItemDetailDragSheet(
+        onDismiss: _requestClose,
+        builder: (context, scrollController) =>
+            _buildContent(context, scrollController),
+      ),
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
     final item = _item;
     final canEdit = widget.permission == 'edit';
 
@@ -1397,19 +1576,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       child: SingleChildScrollView(
+        key: const ValueKey('item-detail-scroll'),
+        controller: scrollController,
+        physics: const ClampingScrollPhysics(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Drag handle
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
+            Semantics(
+              label: 'Dismiss item details',
+              onDismiss: () => unawaited(_requestClose()),
+              child: Center(
+                child: Container(
+                  key: const ValueKey('item-detail-drag-handle'),
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0x33FFFFFF),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
             ),
@@ -1517,16 +1704,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'CHECK OUT',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      const Expanded(
+                        child: Text(
+                          'CHECK OUT',
+                          style: TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       if (canEdit)
                         GestureDetector(
                           onTap: _checkingOut ? null : _showCheckoutDialog,
@@ -1588,11 +1777,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 size: 14,
                               ),
                               SizedBox(width: 8),
-                              Text(
-                                'Available — not checked out',
-                                style: TextStyle(
-                                  color: Color(0xFF30D158),
-                                  fontSize: 12,
+                              Expanded(
+                                child: Text(
+                                  'Available - not checked out',
+                                  style: TextStyle(
+                                    color: Color(0xFF30D158),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1627,17 +1818,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                             if (canEdit)
                               GestureDetector(
-                                onTap: () async {
-                                  await widget.api.returnItem(
-                                    checkoutId:
-                                        checkout['checkout_id'] as String,
-                                  );
-                                  if (mounted) {
-                                    setState(() {
-                                      _checkoutsFuture = _fetchCheckouts();
-                                    });
-                                  }
-                                },
+                                onTap: () => _returnCheckout(
+                                  checkout['checkout_id'] as String,
+                                ),
                                 child: const Text(
                                   'Return',
                                   style: TextStyle(
@@ -1678,7 +1861,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       if (canEdit)
                         _isEditingNotes
                             ? GestureDetector(
-                                onTap: _saveNotes,
+                                onTap: _notesSaving || _closing
+                                    ? null
+                                    : _saveNotes,
                                 child: const Text(
                                   'Save',
                                   style: TextStyle(
@@ -1716,6 +1901,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     padding: const EdgeInsets.all(14),
                     child: _isEditingNotes
                         ? TextField(
+                            key: const ValueKey('item-detail-notes'),
+                            readOnly: _notesSaving || _closing,
                             controller: _notesCtrl,
                             maxLines: null,
                             autofocus: true,
@@ -1969,16 +2156,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'WHERE TO BUY',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      const Expanded(
+                        child: Text(
+                          'WHERE TO BUY',
+                          style: TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: _showStoreLinks,
                         child: Container(
@@ -2026,11 +2215,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       vertical: 4,
                     ),
                     child: TextField(
+                      key: const ValueKey('item-detail-purchase-source'),
                       controller: _purchaseSourceCtrl,
-                      readOnly: !canEdit,
+                      readOnly: !canEdit || _closing,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) async {
-                        await _saveThresholdNow();
+                        if (canEdit) await _savePurchaseSourceNow();
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
                       style: const TextStyle(
@@ -2245,12 +2435,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       vertical: 4,
                     ),
                     child: TextField(
+                      key: const ValueKey('item-detail-threshold'),
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) =>
                           FocusManager.instance.primaryFocus?.unfocus(),
-                      readOnly: !canEdit,
+                      readOnly: !canEdit || _closing,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -2279,10 +2470,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: () async {
-                  await _saveThresholdNow();
-                  if (context.mounted) Navigator.pop(context);
-                },
+                onTap: () => unawaited(_requestClose()),
                 child: Container(
                   width: double.infinity,
                   height: 54,
