@@ -34,6 +34,7 @@ class HomeNavigation extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         child: NavigationBar(
           height: 70,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           backgroundColor: Colors.transparent,
           indicatorColor: const Color(0x18FFFFFF),
           surfaceTintColor: Colors.transparent,

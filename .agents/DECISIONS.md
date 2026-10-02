@@ -279,3 +279,14 @@ payloads. Capture document-link preference keys before asynchronous work. The
 supplied Settings images are style guidance, not implemented training, retention,
 offline, export or text-size controls. Home, Ask speed, Capture, web, backend and
 native lifecycle work remain unchanged.
+
+## 2026-10-01: Mobile pill uses icons without visible tab labels
+
+**Decision:** Hide every bottom-navigation label, including the selected tab,
+at the user's request. Retain the existing five icons and their order, selected
+indicator, inset pill, saved profile avatar, routing and tutorial targets.
+
+**Accessibility:** Keep the destination names in semantics and long-press
+tooltips. Icons stay centered and the full destination remains a touch target;
+removing painted labels must not remove screen-reader names or selected state.
+This changes mobile navigation only, not branding or screen content.

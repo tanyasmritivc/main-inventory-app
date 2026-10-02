@@ -237,6 +237,7 @@ void main() {
       );
       final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(bar.height, 70);
+      expect(bar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
       expect(bar.backgroundColor, Colors.transparent);
       // The previous pill has an 18pt outer inset plus its 1pt border.
       expect(tester.getTopLeft(find.byType(NavigationBar)).dx, 19);
@@ -261,13 +262,13 @@ void main() {
         tester.getSize(find.byKey(const Key('body'))).height,
         greaterThan(400),
       );
-      await tester.tap(find.text('Capture'));
+      await tester.tap(find.byType(NavigationDestination).at(1));
       expect(selected, 1);
-      await tester.tap(find.text('Ask'));
+      await tester.tap(find.byType(NavigationDestination).at(2));
       expect(selected, 2);
-      await tester.tap(find.text('Find'));
+      await tester.tap(find.byType(NavigationDestination).at(3));
       expect(selected, 3);
-      await tester.tap(find.text('Profile'));
+      await tester.tap(find.byType(NavigationDestination).at(4));
       expect(selected, 4);
     },
   );

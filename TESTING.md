@@ -227,6 +227,14 @@ confirmed deletion cancellation with no request, and narrow/large-text
 scrolling above the reserved navigation area. `home_page_test.dart` also locks
 the five-tab order. Existing account APIs and billing behavior are not changed.
 
+`mobile/test/home_navigation_test.dart` locks the icon-only presentation for
+every selected tab, retained screen-reader names/selected state/tap actions and
+long-press tooltip names. It checks the saved profile avatar selected and
+unselected, centered icons, full destination touch targets of at least 44 points,
+narrow/landscape layout, large text and reserved bottom safe-area space. Hidden
+text remains in the semantic tree but must have zero paint opacity. Shell tests
+tap the actual destinations rather than depend on painted labels.
+
 On a physical iPhone, check tab switching, profile editing and avatar selection,
 settings persistence, documents, notifications/APNs links, lent items, support,
 app tour, sign-out and account switching. Test delete confirmation with a

@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-01 during the Space/Team invitation release preparation.
+Last reviewed on 2026-10-01 during the icon-only mobile navigation update.
 
 ## Working and deployed
 
@@ -29,6 +29,13 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   CI through the commands documented in `TESTING.md`.
 
 ## Active development
+
+- `fix/icon-only-mobile-nav`, based on released build 42, hides visible labels
+  in the existing five-icon navigation pill. Icons, selection, touch targets,
+  accessible names, profile avatar, routes and tutorial targets are preserved.
+  Branding and screen content are unchanged; backend/web/native lifecycle files
+  are not modified. Flutter analysis and all 117 mobile tests with coverage pass.
+  CI and signed build `1.0.7 (43)` verification are in progress.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
   read-only Space/Team previews, explicit join consent, existing-owner links for
@@ -59,7 +66,13 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   physical/security checklist remain before submission. The public 1.0.6(17)
   and Team-only AASA are unchanged.
 
-  Build-40/41 archives and IPAs remain local. The older build-39 originals were
+  Build-40/41 archives and IPAs were removed locally only after private server
+  backups passed gzip validation and each listed both artifacts (683 entries):
+  `/home/ubuntu/findez-preserved-build40.tar.gz`, SHA-256
+  `45ef01c99b682200645ab605805d13306787e38e27a98b44fd9eb70628e7c9b2`;
+  `/home/ubuntu/findez-preserved-build41.tar.gz`, SHA-256
+  `c0d2650597535615df2c371b767f9eb0be763a9e1e7397c775e9d1342b74dc68`.
+  Build 42 remains local. The older build-39 originals were
   removed only after the private server backup passed gzip validation and listed
   both artifacts: `/home/ubuntu/findez-preserved-build39.tar.gz` (683 entries,
   SHA-256 `349809879acea986d541fe1c7c96b11dbdb6c1db73ec092efae52437cfaa4151`).
