@@ -39,7 +39,7 @@ list ideas as active work.
   group assignment and native install/launch. Hands-on
   account/settings/camera and TestFlight-app checks remain unverified.
 
-## Profile and Documents polish in progress
+## Profile and Documents polish release
 
 - `fix/profile-documents-polish` in `/private/tmp/findez-ask-reference`, based on
   released build 38. Mobile only: replace cramped account editing with a labeled,
@@ -48,11 +48,16 @@ list ideas as active work.
   grouped design. Preserve document API/actions, Home, Ask speed/attachments,
   Capture, Find, settings behavior, backend/web and native lifecycle files. The
   Settings screenshots are visual guidance, not authorization for pretend
-  training, retention, offline or export toggles. Release in the next build after
-  scoped regressions and full mobile/CI/native checks. The implementation and
-  94 mobile tests with coverage/clean analysis pass locally; new profile and
-  Documents security/failure/layout regressions are included. Build 39 is pending
-  CI, signed archive, Apple validation/processing and exact native install/launch.
+  training, retention, offline or export toggles. Implementation `6a0118e` and
+  all 94 mobile tests with coverage/clean analysis pass; all five CI jobs are
+  green on that exact source (PR #31, stacked on #30). Final build `1.0.7 (39)`
+  passed signed archive, Apple validation/upload, `VALID` processing,
+  `APP_STORE_ELIGIBLE` and assignment to both internal TestFlight groups. The
+  exact final signed app installed and reports build 39. Its launch checks were
+  blocked by the locked iPhone; an earlier superseded build-39 binary launched,
+  which does not pass the final-binary gate. User unlock was requested. Final
+  launch, TestFlight-app installation and hands-on photo/document/account-switch
+  acceptance remain unverified. Build-38 archive/IPA are preserved.
 
 ## Known blocked product work
 
