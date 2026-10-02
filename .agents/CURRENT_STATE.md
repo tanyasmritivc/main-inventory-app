@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-01 during the icon-only mobile navigation update.
+Last reviewed on 2026-10-02 during the icon-only mobile navigation release.
 
 ## Working and deployed
 
@@ -46,8 +46,16 @@ Last reviewed on 2026-10-01 during the icon-only mobile navigation update.
   reduces visible navigation height to 56pt, keeps safe insets outside the pill,
   and uses a subtle circular selected indicator. All 117 mobile tests with
   coverage, focused glyph-loaded layout capture and clean analysis pass. The
-  captured fake-data pill was inspected; signed build/device and CI checks are
-  in progress. Visual acceptance is required before TestFlight upload.
+  captured fake-data pill was inspected. Exact runtime `42f977c` passes all five
+  CI gates (run `36976126350`). Signed build 44 installed, reports 44, and
+  launched; the user approved the slimmer pill and circular highlight. Apple
+  validation and upload passed (delivery `350a7049-8b9d-4654-bccc-722be9d53916`);
+  processing and internal group assignment are pending. Production compile
+  configuration matches the existing mobile environment without logging values.
+  IPA SHA-256 is `0dbc24b0db6776679c9c8c073e471b496f5aff90c723a8117ae09111cc905949`.
+  Build 42 remains local and recoverable from verified private server backup
+  `/home/ubuntu/findez-preserved-build42.tar.gz` (683 entries, SHA-256
+  `ba374f01046d82ce2b6c98b45e1213a190152cd827a8ff1f6a716c705b67ad6b`).
   App Store draft still selects build 42 and remains manual/unsubmitted.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
