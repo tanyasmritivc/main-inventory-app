@@ -41,7 +41,8 @@ in case. Photo captions open item details; no-photo items have no blank square.
 
 Item information (opened with the info button, not the Edit item form) must
 dismiss with a downward swipe at the top in personal, shared/joined and Team
-Spaces. Confirm long-content scrolling and horizontal photo paging do not close
+Spaces, smoothly and without jumping upward or re-expanding during exit.
+Confirm long-content scrolling and horizontal photo paging do not close
 it. A short pull restores the panel. Unsaved notes require Save/Discard/Keep
 editing; pending photo/note/document/return writes keep it open. Failed autosaves
 preserve drafts, and read-only dismissal creates no write. Use a throwaway item

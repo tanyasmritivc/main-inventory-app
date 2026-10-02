@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/low_stock_prefs.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
+import 'package:mobile/features/inventory/item_detail_drag_sheet.dart';
 import 'package:mobile/features/inventory/item_detail_sheet.dart';
 import 'package:mobile/features/sharing/shared_inventory_page.dart';
 
@@ -175,6 +176,72 @@ void main() {
     );
   });
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('accepted dismissal never restores sheet height during route exit', (
+    tester,
+  ) async {
+    var dismissals = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ItemDetailDragSheet(
+            onDismiss: () async {
+              dismissals++;
+              return true;
+            },
+            builder: (context, controller) => SingleChildScrollView(
+              key: const ValueKey('exit-scroll'),
+              controller: controller,
+              child: const SizedBox(height: 1500, width: double.infinity),
+            ),
+          ),
+        ),
+      ),
+    );
+    final scroll = find.byKey(const ValueKey('exit-scroll'));
+    await tester.dragFrom(
+      tester.getTopLeft(scroll) + const Offset(100, 30),
+      const Offset(0, 250),
+    );
+    await tester.pump();
+    final sheet = tester
+        .widget<DraggableScrollableSheet>(find.byType(DraggableScrollableSheet))
+        .controller!;
+    expect(dismissals, 1);
+    expect(sheet.size, closeTo(0.7, 0.001));
+    final controller = tester.widget<SingleChildScrollView>(scroll).controller!;
+    // Layout/scroll notifications can arrive while the modal exit animation is
+    // still painting. They must not restart expansion behind the user's finger.
+    ScrollEndNotification(
+      metrics: controller.position,
+      context: tester.element(scroll),
+    ).dispatch(tester.element(scroll));
+    await tester.pumpAndSettle();
+    expect(sheet.size, closeTo(0.7, 0.001));
+    expect(dismissals, 1);
+  });
+
+  testWidgets(
+    'item-info exit moves downward without a height-restoration jump',
+    (tester) async {
+      await _open(tester, _Api());
+      await tester.dragFrom(tester.getCenter(_handle), const Offset(0, 350));
+      await tester.pump();
+      var previousTop = tester.getTopLeft(_scroll).dy;
+      for (
+        var frame = 0;
+        frame < 20 && _scroll.evaluate().isNotEmpty;
+        frame++
+      ) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (_scroll.evaluate().isEmpty) break;
+        final nextTop = tester.getTopLeft(_scroll).dy;
+        expect(nextTop, greaterThanOrEqualTo(previousTop - 0.5));
+        previousTop = nextTop;
+      }
+      expect(_scroll, findsNothing);
+    },
+  );
 
   testWidgets(
     'item info dismisses from handle or top content without any writes',

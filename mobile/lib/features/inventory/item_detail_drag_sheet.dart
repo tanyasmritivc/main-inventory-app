@@ -38,9 +38,11 @@ class _ItemDetailDragSheetState extends State<ItemDetailDragSheet> {
   Future<void> _dismiss() async {
     if (!mounted) return;
     final closed = await widget.onDismiss();
-    if (!mounted) return;
+    // Keep dismissal latched throughout the modal's exit animation. Late idle
+    // notifications must not expand the sheet while it is sliding offscreen.
+    if (!mounted || closed) return;
     _dismissRequested = false;
-    if (!closed) _restore();
+    _restore();
   }
 
   @override

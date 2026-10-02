@@ -310,3 +310,8 @@ Save/Discard/Keep editing consent, pending photo/note saves keep the panel open,
 and debounced purchase-source and low-stock changes are flushed before closing.
 Failed writes preserve drafts and show safe errors. Read-only dismissal never
 writes, and dispose never starts a new write under a potentially changed account.
+
+**Animation:** Accepted dismissal stays latched until route disposal. A late
+scroll-end notification must not restore height during the exit animation;
+only canceled or blocked dismissal restores the sheet. Build 45's unlatching
+caused a reproduced upward jump and must not be reintroduced.

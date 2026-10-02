@@ -69,9 +69,16 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   not. Small pulls restore the full sheet and horizontal photo swipes stay in
   the gallery. Downward dismissal, Close, system Back and barrier dismissal
   share unsaved-note confirmation and confirmed autosave flushing; read-only
-  access cannot write. All 133 mobile tests with coverage and clean analysis
-  pass, including 16 new item-info tests. Signed build 45, CI and physical
-  validation are in progress; it has not been uploaded yet.
+  access cannot write. Build 45/runtime `55dd4fd` passed all five CI gates
+  (run `37032241160`), Apple validation, signed installation and launch, but the
+  user reported an uneven exit. It was not uploaded. A regression reproduced
+  late scroll-end events restoring the sheet to full height during route exit;
+  build 46 keeps accepted dismissal latched until disposal. All 135 mobile
+  tests with coverage and clean analysis pass, including 18 item-info tests and
+  two animation regressions. Build 46 signed/CI/physical validation is pending.
+  Build 45 is recoverable from verified private backup
+  `/home/ubuntu/findez-preserved-build45.tar.gz` (mode 600, 683 entries, SHA-256
+  `7868dd3e8aa84baddff2f12f1cc4836b83be76ea4675e8a175d89a5f4ee1014e`).
   Backend/web, API/schema, navbar and native lifecycle files are unchanged.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
