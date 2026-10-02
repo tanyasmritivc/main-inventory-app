@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-01 during the Space/Team invitation release preparation.
+Last reviewed on 2026-10-02 during the icon-only mobile navigation release.
 
 ## Working and deployed
 
@@ -29,6 +29,34 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   CI through the commands documented in `TESTING.md`.
 
 ## Active development
+
+- `fix/icon-only-mobile-nav`, based on released build 42, hides visible labels
+  in the existing five-icon navigation pill (PR #33). Icons, touch targets,
+  accessible names, profile avatar, routes and tutorial targets are preserved.
+  Branding and screen content are unchanged; backend/web/native lifecycle files
+  are not modified. Build-43 source `4adaea9` passes all 117 mobile tests with
+  coverage, clean analysis and all five CI gates (run `36973804731`). Its signed
+  app installed, reports 43, and launched; the user confirmed icons-only but
+  rejected the appearance. The supplied screenshot shows the old tall pill and
+  wide selected badge. Build 43 was not uploaded: Apple validation hit low disk
+  and was stopped. Its archive/IPA are recoverable from the verified private
+  server backup `/home/ubuntu/findez-preserved-build43.tar.gz` (683 entries,
+  SHA-256 `d5a7e68f4bf61cef91910889c9b8f2155b799e8c0bd02c2c9811832dc71bdc34`);
+  only the local copies were removed. The compact build-44 correction
+  reduces visible navigation height to 56pt, keeps safe insets outside the pill,
+  and uses a subtle circular selected indicator. All 117 mobile tests with
+  coverage, focused glyph-loaded layout capture and clean analysis pass. The
+  captured fake-data pill was inspected. Exact runtime `42f977c` passes all five
+  CI gates (run `36976126350`). Signed build 44 installed, reports 44, and
+  launched; the user approved the slimmer pill and circular highlight. Apple
+  validation and upload passed (delivery `350a7049-8b9d-4654-bccc-722be9d53916`);
+  processing and internal group assignment are pending. Production compile
+  configuration matches the existing mobile environment without logging values.
+  IPA SHA-256 is `0dbc24b0db6776679c9c8c073e471b496f5aff90c723a8117ae09111cc905949`.
+  Build 42 remains local and recoverable from verified private server backup
+  `/home/ubuntu/findez-preserved-build42.tar.gz` (683 entries, SHA-256
+  `ba374f01046d82ce2b6c98b45e1213a190152cd827a8ff1f6a716c705b67ad6b`).
+  App Store draft still selects build 42 and remains manual/unsubmitted.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
   read-only Space/Team previews, explicit join consent, existing-owner links for
@@ -59,7 +87,13 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   physical/security checklist remain before submission. The public 1.0.6(17)
   and Team-only AASA are unchanged.
 
-  Build-40/41 archives and IPAs remain local. The older build-39 originals were
+  Build-40/41 archives and IPAs were removed locally only after private server
+  backups passed gzip validation and each listed both artifacts (683 entries):
+  `/home/ubuntu/findez-preserved-build40.tar.gz`, SHA-256
+  `45ef01c99b682200645ab605805d13306787e38e27a98b44fd9eb70628e7c9b2`;
+  `/home/ubuntu/findez-preserved-build41.tar.gz`, SHA-256
+  `c0d2650597535615df2c371b767f9eb0be763a9e1e7397c775e9d1342b74dc68`.
+  Build 42 remains local. The older build-39 originals were
   removed only after the private server backup passed gzip validation and listed
   both artifacts: `/home/ubuntu/findez-preserved-build39.tar.gz` (683 entries,
   SHA-256 `349809879acea986d541fe1c7c96b11dbdb6c1db73ec092efae52437cfaa4151`).

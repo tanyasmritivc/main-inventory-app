@@ -189,7 +189,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Profile'));
+      await tester.tap(find.byType(NavigationDestination).at(4));
       await tester.pumpAndSettle();
       expect(find.byType(ProfileHubPage), findsOneWidget);
       expect(
@@ -213,7 +213,7 @@ void main() {
       );
       await tester.pageBack();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Home'));
+      await tester.tap(find.byType(NavigationDestination).at(0));
       await tester.pumpAndSettle();
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
