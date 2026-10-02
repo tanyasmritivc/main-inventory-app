@@ -1,8 +1,12 @@
-import 'dart:ui' show SemanticsAction, Tristate;
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/app_colors.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
 
 const _labels = ['Home', 'Capture', 'Ask', 'Find', 'Profile'];
@@ -10,6 +14,7 @@ const _labels = ['Home', 'Capture', 'Ask', 'Find', 'Profile'];
 void _expectHiddenLabels(WidgetTester tester) {
   final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
   expect(bar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
+  expect(bar.indicatorShape, isA<CircleBorder>());
   for (final label in _labels) {
     // The names remain in the semantic tree, but are never painted.
     final fades = tester.widgetList<FadeTransition>(
@@ -70,10 +75,10 @@ void main() {
             );
             expect(
               node.flagsCollection.isSelected,
-              destination == index ? Tristate.isTrue : Tristate.isFalse,
+              destination == index ? ui.Tristate.isTrue : ui.Tristate.isFalse,
             );
             expect(
-              node.getSemanticsData().hasAction(SemanticsAction.tap),
+              node.getSemanticsData().hasAction(ui.SemanticsAction.tap),
               isTrue,
             );
           }
@@ -115,52 +120,134 @@ void main() {
   });
 
   testWidgets(
-    'narrow and landscape pills keep centered icons and tap targets',
+    'compact pills keep safe insets outside, centered icons and full tap targets',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
-      for (final size in [const Size(320, 568), const Size(844, 390)]) {
-        tester.view.physicalSize = size;
-        var selected = -1;
-        await tester.pumpWidget(
-          MaterialApp(
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(3),
-                padding: const EdgeInsets.only(bottom: 34),
-              ),
-              child: child!,
+      const visualQa = bool.fromEnvironment('FINDEZ_VISUAL_QA');
+      if (visualQa) {
+        final font = FontLoader('packages/cupertino_icons/CupertinoIcons')
+          ..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
             ),
-            home: Scaffold(
-              body: const SizedBox.expand(key: Key('page-content')),
-              bottomNavigationBar: HomeNavigation(
+          );
+        await font.load();
+      }
+      for (final size in [
+        const Size(320, 568),
+        const Size(390, 844),
+        const Size(844, 390),
+      ]) {
+        for (final parentSafeArea in [false, true]) {
+          tester.view.physicalSize = size;
+          var selected = -1;
+          final insets = EdgeInsets.fromLTRB(
+            size.width > size.height ? 44 : 0,
+            0,
+            size.width > size.height ? 44 : 0,
+            34,
+          );
+          final scaffold = Scaffold(
+            backgroundColor: const Color(0xFF09090B),
+            body: const SizedBox.expand(key: Key('page-content')),
+            bottomNavigationBar: RepaintBoundary(
+              key: const Key('nav-visual-qa'),
+              child: HomeNavigation(
                 selectedIndex: 0,
                 onSelected: (index) => selected = index,
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        _expectHiddenLabels(tester);
-        expect(
-          tester.getBottomLeft(find.byKey(const Key('page-content'))).dy,
-          lessThanOrEqualTo(tester.getTopLeft(find.byType(HomeNavigation)).dy),
-        );
-        for (var index = 0; index < _labels.length; index++) {
-          final destination = find.byType(NavigationDestination).at(index);
-          final bounds = tester.getRect(destination);
-          expect(bounds.width, greaterThanOrEqualTo(44));
-          expect(bounds.height, greaterThanOrEqualTo(44));
-          final icon = find.descendant(
-            of: destination,
-            matching: find.byType(Icon),
           );
-          expect(tester.getCenter(icon).dy, closeTo(bounds.center.dy, 0.1));
-          await tester.tapAt(Offset(bounds.left + 2, bounds.center.dy));
-          expect(selected, index);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: ThemeData.dark().copyWith(
+                navigationBarTheme: NavigationBarThemeData(
+                  iconTheme: WidgetStateProperty.resolveWith(
+                    (states) => IconThemeData(
+                      color: states.contains(WidgetState.selected)
+                          ? Colors.white
+                          : AppColors.muted,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(3),
+                  padding: insets,
+                  viewPadding: insets,
+                ),
+                child: child!,
+              ),
+              home: parentSafeArea ? SafeArea(child: scaffold) : scaffold,
+            ),
+          );
+          await tester.pumpAndSettle();
+          _expectHiddenLabels(tester);
+          final pill = find.descendant(
+            of: find.byType(HomeNavigation),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is DecoratedBox &&
+                  widget.decoration is BoxDecoration &&
+                  (widget.decoration as BoxDecoration).borderRadius ==
+                      BorderRadius.circular(30),
+            ),
+          );
+          expect(pill, findsOneWidget);
+          final pillBounds = tester.getRect(pill);
+          expect(pillBounds.height, 58); // 56pt bar plus its 1pt border.
+          expect(pillBounds.bottom, size.height - 34 - 8);
+          expect(pillBounds.left, insets.left + 18);
+          expect(pillBounds.right, size.width - insets.right - 18);
+          expect(
+            tester.getBottomLeft(find.byKey(const Key('page-content'))).dy,
+            lessThanOrEqualTo(
+              tester.getTopLeft(find.byType(HomeNavigation)).dy,
+            ),
+          );
+          for (var index = 0; index < _labels.length; index++) {
+            final destination = find.byType(NavigationDestination).at(index);
+            final bounds = tester.getRect(destination);
+            expect(bounds.width, greaterThanOrEqualTo(44));
+            expect(bounds.height, greaterThanOrEqualTo(44));
+            final icon = find.descendant(
+              of: destination,
+              matching: find.byType(Icon),
+            );
+            expect(
+              tester.getCenter(icon).dy,
+              closeTo(pillBounds.center.dy, 0.1),
+            );
+            await tester.tapAt(Offset(bounds.left + 2, bounds.center.dy));
+            expect(selected, index);
+          }
+          expect(tester.takeException(), isNull);
+          if (visualQa && size.width == 390 && parentSafeArea) {
+            await tester.pumpAndSettle();
+            await tester.runAsync(() async {
+              final boundary = tester.renderObject<RenderRepaintBoundary>(
+                find.byKey(const Key('nav-visual-qa')),
+              );
+              final snapshot = await boundary.toImage(pixelRatio: 3);
+              try {
+                final png = await snapshot.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                await File(
+                  '/private/tmp/findez-compact-nav-qa.png',
+                ).writeAsBytes(
+                  png!.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes),
+                );
+              } finally {
+                snapshot.dispose();
+              }
+            });
+          }
         }
-        expect(tester.takeException(), isNull);
       }
     },
   );

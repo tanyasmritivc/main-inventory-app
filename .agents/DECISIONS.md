@@ -290,3 +290,9 @@ indicator, inset pill, saved profile avatar, routing and tutorial targets.
 tooltips. Icons stay centered and the full destination remains a touch target;
 removing painted labels must not remove screen-reader names or selected state.
 This changes mobile navigation only, not branding or screen content.
+
+**Screenshot correction:** The user rejected build 43's label-era proportions.
+Use a 56pt visible bar and a small circular selected highlight rather than the
+wide badge. Keep SafeArea outside the decorated pill so the inset does not grow
+the pill; a parent that already consumes it must not add it a second time. This
+supersedes the earlier 70pt labeled-bar height, retaining 44pt-or-larger targets.

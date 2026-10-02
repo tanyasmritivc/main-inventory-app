@@ -31,11 +31,24 @@ Last reviewed on 2026-10-01 during the icon-only mobile navigation update.
 ## Active development
 
 - `fix/icon-only-mobile-nav`, based on released build 42, hides visible labels
-  in the existing five-icon navigation pill. Icons, selection, touch targets,
+  in the existing five-icon navigation pill (PR #33). Icons, touch targets,
   accessible names, profile avatar, routes and tutorial targets are preserved.
   Branding and screen content are unchanged; backend/web/native lifecycle files
-  are not modified. Flutter analysis and all 117 mobile tests with coverage pass.
-  CI and signed build `1.0.7 (43)` verification are in progress.
+  are not modified. Build-43 source `4adaea9` passes all 117 mobile tests with
+  coverage, clean analysis and all five CI gates (run `36973804731`). Its signed
+  app installed, reports 43, and launched; the user confirmed icons-only but
+  rejected the appearance. The supplied screenshot shows the old tall pill and
+  wide selected badge. Build 43 was not uploaded: Apple validation hit low disk
+  and was stopped. Its archive/IPA are recoverable from the verified private
+  server backup `/home/ubuntu/findez-preserved-build43.tar.gz` (683 entries,
+  SHA-256 `d5a7e68f4bf61cef91910889c9b8f2155b799e8c0bd02c2c9811832dc71bdc34`);
+  only the local copies were removed. The compact build-44 correction
+  reduces visible navigation height to 56pt, keeps safe insets outside the pill,
+  and uses a subtle circular selected indicator. All 117 mobile tests with
+  coverage, focused glyph-loaded layout capture and clean analysis pass. The
+  captured fake-data pill was inspected; signed build/device and CI checks are
+  in progress. Visual acceptance is required before TestFlight upload.
+  App Store draft still selects build 42 and remains manual/unsubmitted.
 
 - `feat/workspace-invite-links`, based on released build 39, adds authenticated
   read-only Space/Team previews, explicit join consent, existing-owner links for

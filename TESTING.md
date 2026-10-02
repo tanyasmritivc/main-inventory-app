@@ -231,9 +231,23 @@ the five-tab order. Existing account APIs and billing behavior are not changed.
 every selected tab, retained screen-reader names/selected state/tap actions and
 long-press tooltip names. It checks the saved profile avatar selected and
 unselected, centered icons, full destination touch targets of at least 44 points,
-narrow/landscape layout, large text and reserved bottom safe-area space. Hidden
+narrow/landscape layout, large text, circular selection and reserved safe-area
+space outside the 56pt visible bar. Test both standalone navigation and the
+actual app's parent-SafeArea arrangement: no doubled inset, stretched pill or
+vertically displaced icons. Hidden
 text remains in the semantic tree but must have zero paint opacity. Shell tests
 tap the actual destinations rather than depend on painted labels.
+
+To capture the compact pill with loaded icon glyphs and fake data:
+
+```bash
+cd mobile
+flutter test --no-pub --concurrency=1 --dart-define=FINDEZ_VISUAL_QA=true test/home_navigation_test.dart
+```
+
+This writes `/private/tmp/findez-compact-nav-qa.png`; it does not replace the
+physical-device visual check. Optional capture runs in the real async zone so
+image rendering/file I/O cannot stall the normal widget test clock.
 
 On a physical iPhone, check tab switching, profile editing and avatar selection,
 settings persistence, documents, notifications/APNs links, lent items, support,

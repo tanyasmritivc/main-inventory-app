@@ -236,7 +236,7 @@ void main() {
         lessThanOrEqualTo(tester.getTopLeft(find.byType(HomeNavigation)).dy),
       );
       final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(bar.height, 70);
+      expect(bar.height, 56);
       expect(bar.labelBehavior, NavigationDestinationLabelBehavior.alwaysHide);
       expect(bar.backgroundColor, Colors.transparent);
       // The previous pill has an 18pt outer inset plus its 1pt border.
