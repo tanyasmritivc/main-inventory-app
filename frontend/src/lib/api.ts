@@ -171,6 +171,17 @@ export async function searchItems(params: { token: string; query: string }) {
   );
 }
 
+export type InvitationPreview = {
+  kind: "space" | "team"; name: string; target_id: string;
+  permission: string; already_joined: boolean;
+};
+export function previewInvitation({ token, kind, code }: { token: string; kind: "space" | "team"; code: string }) {
+  return apiFetch<InvitationPreview>("/invitations/preview", { method: "POST", token, body: { kind, code } });
+}
+export function getSpaceInvite({ token, share_id }: { token: string; share_id: string }) {
+  return apiFetch<{ share_id: string; share_name: string; share_code: string; permission: string; invite_url: string }>(`/sharing/${encodeURIComponent(share_id)}/invite`, { token });
+}
+
 export type ScanEvidence = {
   identification_reasoning?: string | null;
   identity_confidence?: number | null;

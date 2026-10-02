@@ -2,6 +2,29 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-01: Invitation links require consent and an explicit install handoff
+
+Opening a link previews a Space or Team after authentication; it never grants
+membership until the recipient chooses Join. Forwarding a joined Space keeps
+the existing owner's code and permission. Team invitation management remains
+owner/mentor only. Codes are capabilities, not public inventory search keys.
+
+The mobile inbox persists through restart and binds a presented invitation to
+the signed-in account. The download page can save a versioned, 30-day invitation
+pointer in private account metadata; signup stores it before email confirmation.
+That pointer is untrusted and must be revalidated by the backend before joining.
+No device fingerprinting, silent clipboard reads or pretend App Store deferred
+links are used. Download-first users must reopen their link; account-first users
+sign into the same account in the new app to get the prompt automatically.
+
+Keep the existing Team-only AASA rules until a compatible Space-link handler is
+released publicly. App Store build 17 cannot handle Space invitations: publishing
+`/join/*` now would strand those users in the old app. TestFlight uses the web
+landing and explicit custom-scheme/Safari banner fallback for Spaces. Publishing
+an App Store update is a separate release decision, not part of a beta upload.
+The user authorized preparing a manual-release App Store draft on 2026-10-01;
+submission/publication and the subsequent AASA expansion remain separate gates.
+
 ## 2026-08-22: Production is self hosted
 
 **Decision:** Run the backend, web app, database, Auth, and Storage on the OpenStack

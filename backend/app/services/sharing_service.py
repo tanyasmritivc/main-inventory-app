@@ -1,9 +1,25 @@
 
 import secrets
 import string
+from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import create_profile_photo_signed_url
+
+
+def invitation_is_current(share: dict) -> bool:
+    if share.get('is_active') is False:
+        return False
+    expires = share.get('expires_at')
+    if not expires:
+        return True
+    try:
+        deadline = datetime.fromisoformat(str(expires).replace('Z', '+00:00'))
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        return deadline > datetime.now(timezone.utc)
+    except (ValueError, TypeError):
+        return False
 
 
 def generate_unique_code(client) -> str:
@@ -69,8 +85,10 @@ def join_share(*, user_id: str, share_code: str) -> dict:
     if not share.data:
         raise ValueError('Share not found or revoked')
     s = share.data[0]
+    if not invitation_is_current(s):
+        raise ValueError('Share not found or revoked')
     if s['owner_user_id'] == user_id:
-        raise ValueError('You cannot join your own share')
+        return s
     existing = (
         client.table('team_members')
         .select('member_id')
@@ -79,11 +97,11 @@ def join_share(*, user_id: str, share_code: str) -> dict:
         .execute()
     )
     if existing.data:
-        raise ValueError('Already a member')
-    client.table('team_members').insert({
+        return s
+    client.table('team_members').upsert({
         'share_id': s['share_id'],
         'member_user_id': user_id,
-    }).execute()
+    }, on_conflict='share_id,member_user_id', ignore_duplicates=True).execute()
     return s
 
 
@@ -147,6 +165,8 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
         raise ValueError('Share not found')
 
     result = share.data[0]
+    if not invitation_is_current(result):
+        raise ValueError('Share not found')
     if result['owner_user_id'] == requesting_user_id:
         return result, True
 

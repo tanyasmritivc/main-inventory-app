@@ -97,6 +97,38 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Space and Team invitation acceptance
+
+`backend/tests/test_invitation_links.py`, the invitation/auth Jest tests and
+`mobile/test/invitation_test.dart` run in the existing suites. They verify
+authenticated read-only previews, no automatic membership, active/expired and
+rotated codes, strict URI parsing, repeated acceptance, owner/member forwarding,
+Team role protection, account handoff before confirmation, blocked download on
+save failure, restart/sign-in persistence, duplicate warm links, account-switch
+dismissal, late-response isolation and large-text layout.
+
+Physical release checks are still required:
+
+1. Open Space and Team links with the app cold, warm, signed out and signed in.
+   Verify the named prompt and access level; Not now must create no membership.
+2. Accept with a second test account, verify the destination and owner-selected
+   permissions, then reopen. A third unrelated account must have no access.
+3. Revoke a Space link or rotate a Team code while its prompt is open. Acceptance
+   must fail safely; the recipient must not get inventory before membership.
+4. With no app installed, create/confirm an account from the invitation landing,
+   save the invitation, download, and sign into that same account. Verify the
+   prompt. Download-first flow explicitly requires reopening the invitation.
+5. Test Safari, Messages/email and an in-app browser. Spaces use the web/custom
+   scheme fallback while App Store build 17 remains public. Do not broaden AASA
+   until the compatible mobile handler is public. Universal links do not prove
+   deferred installation, nor does a widget test prove native routing.
+6. Confirm iPad share-sheet anchoring and Android custom-scheme reception on real
+   devices. Android verified HTTPS routing/Play Store download are not shipped.
+
+The account handoff is invitation metadata, not a new database grant. No database
+migration is required; production table columns and both membership uniqueness
+constraints must be verified before deploying the idempotent join changes.
+
 The Claude Desktop extension and ChatGPT Actions import live in
 `integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.
 The operation allowlist contains eight inventory/key-identity operations and never

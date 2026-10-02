@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation update.
+Last reviewed on 2026-10-01 during the Space/Team invitation release preparation.
 
 ## Working and deployed
 
@@ -29,6 +29,15 @@ Last reviewed on 2026-10-01 during the Ask-photo release and Profile navigation 
   CI through the commands documented in `TESTING.md`.
 
 ## Active development
+
+- `feat/workspace-invite-links`, based on released build 39, adds authenticated
+  read-only Space/Team previews, explicit join consent, existing-owner links for
+  joined/shared Spaces, and restart/account-safe mobile presentation. An optional
+  account-first download handoff uses a private, expiring invitation pointer;
+  downloading first still requires reopening the link. No membership is granted
+  by the handoff. The public Team-only AASA remains unchanged while App Store
+  build 17 is live. Build `1.0.7 (40)` and a manual-release App Store draft are
+  being prepared; upload, deployment and physical acceptance are not yet claimed.
 
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and

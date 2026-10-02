@@ -1262,8 +1262,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, _) =>
-                ShareSpaceSheet(spaceName: widget.shareName, api: widget.api),
+            builder: (_, _) => ShareSpaceSheet(
+              spaceName: widget.shareName,
+              shareId: widget.shareId,
+              api: widget.api,
+            ),
           ),
         );
       case 'Join Space':

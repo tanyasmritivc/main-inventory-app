@@ -252,10 +252,15 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       final inviteUrl = invite['invite_url']?.toString() ?? '';
       final code = invite['join_code']?.toString() ?? '';
       if (inviteUrl.isEmpty) throw StateError('Invitation link unavailable');
+      if (!mounted) return;
+      final box = context.findRenderObject() as RenderBox?;
       await SharePlus.instance.share(
         ShareParams(
           subject: 'Join $teamName on FindEZ',
           text: 'Join $teamName on FindEZ.\n$inviteUrl\n\nJoin code: $code',
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
         ),
       );
     } catch (error) {

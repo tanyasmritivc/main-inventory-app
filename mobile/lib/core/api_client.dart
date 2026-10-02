@@ -82,6 +82,7 @@ class ApiClient {
   final String? _teamId;
   final String? _teamSpaceId;
   String get baseUrl => _dio.options.baseUrl;
+  String? get teamId => _teamId;
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -564,6 +565,26 @@ class ApiClient {
       options: _authOptions(),
     );
     return resp.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> previewInvitation(
+    String kind,
+    String code,
+  ) async {
+    final result = await _dio.post<Map<String, dynamic>>(
+      '/invitations/preview',
+      data: {'kind': kind, 'code': code},
+      options: _authOptions(),
+    );
+    return result.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> getSpaceInvite(String shareId) async {
+    final result = await _dio.get<Map<String, dynamic>>(
+      '/sharing/${Uri.encodeComponent(shareId)}/invite',
+      options: _authOptions(),
+    );
+    return result.data ?? {};
   }
 
   Future<List<dynamic>> getMyShares() async {

@@ -10,6 +10,7 @@ import {
   getShareMembers,
   getMyShares,
   getJoinedShares,
+  getSpaceInvite,
   itemDisplayDescription,
   itemDisplayName,
   removeShareMember,
@@ -60,7 +61,7 @@ function getInitials(name: string): string {
 
 export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const supabase = createSupabaseBrowserClient();
-  const { confirmAction } = useAppDialog();
+  const { confirmAction, promptValue } = useAppDialog();
 
   const [token, setToken] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -72,6 +73,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
+  const [copyingInvite, setCopyingInvite] = useState(false);
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('Other');
@@ -340,6 +342,16 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
           </span>
         </div>
 
+        <button type="button" disabled={copyingInvite || !token} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, border: '1px solid var(--light-line)', background: 'var(--light-panel)', color: 'var(--text-primary)', cursor: 'pointer' }} onClick={async () => {
+          if (!token || copyingInvite) return;
+          setCopyingInvite(true); setError(null);
+          try {
+            const invite = await getSpaceInvite({ token, share_id: shareId });
+            try { await navigator.clipboard.writeText(invite.invite_url); }
+            catch { await promptValue({ title: 'Copy invitation link', message: 'Anyone with this link can join with the access set by the owner.', label: 'Invitation link', initialValue: invite.invite_url, confirmLabel: 'Done' }); }
+          } catch (reason) { setError(userFacingError(reason, 'This invitation could not be shared.')); }
+          finally { setCopyingInvite(false); }
+        }}>{copyingInvite ? 'Copying...' : 'Copy invitation link'}</button>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '6px 0 0', letterSpacing: '-0.01em' }}>
           {items.length} item{items.length !== 1 ? 's' : ''} · {members.length} member{members.length !== 1 ? 's' : ''}
         </p>
