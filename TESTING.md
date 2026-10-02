@@ -129,6 +129,13 @@ The account handoff is invitation metadata, not a new database grant. No databas
 migration is required; production table columns and both membership uniqueness
 constraints must be verified before deploying the idempotent join changes.
 
+The iOS scene-link dependency contract is guarded in `invitation_test.dart`.
+Build 40's application-only linker passed Dart tests but failed the user's
+physical prompt check. `app_links` 7.0.0 registers scene delegates; the first
+compatible Supabase Flutter adapter (2.12.1) permits it without an unsupported
+override. Cold and warm physical URL delivery must be repeated for build 41;
+the source-level guard alone does not prove native behavior.
+
 The Claude Desktop extension and ChatGPT Actions import live in
 `integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.
 The operation allowlist contains eight inventory/key-identity operations and never

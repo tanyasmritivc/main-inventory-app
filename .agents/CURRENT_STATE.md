@@ -36,8 +36,15 @@ Last reviewed on 2026-10-01 during the Space/Team invitation release preparation
   account-first download handoff uses a private, expiring invitation pointer;
   downloading first still requires reopening the link. No membership is granted
   by the handoff. The public Team-only AASA remains unchanged while App Store
-  build 17 is live. Build `1.0.7 (40)` and a manual-release App Store draft are
-  being prepared; upload, deployment and physical acceptance are not yet claimed.
+  build 17 is live. The reviewed backend/web are deployed, public backend/DB
+  health pass, anonymous previews return 401, and all five CI gates passed on
+  `47aa8ef` (PR #32). Build `1.0.7 (40)` is valid in both internal groups and
+  installed/launched, but the signed-in user did not see its cold Team prompt.
+  The application-only link library does not register scene callbacks. Build
+  41 pins the scene-compatible library and minimum compatible auth adapter;
+  repeat validation and physical acceptance are underway. The App Store draft
+  exists with manual release and release notes, currently selecting build 40;
+  it is not submitted/published and must select the corrected build after validation.
 
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and

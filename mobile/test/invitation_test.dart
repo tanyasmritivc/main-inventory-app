@@ -204,6 +204,30 @@ void main() {
     metadata = {};
     await login();
   });
+  test('resolved iOS linker registers cold and warm scene callbacks', () {
+    // A native dependency contract guard, not a substitute for device checks.
+    // The old application-only plugin passed Dart tests but lost cold links.
+    final config = File('.dart_tool/package_config.json').absolute;
+    final packages = jsonDecode(config.readAsStringSync())['packages'] as List;
+    final entry = packages.singleWhere((value) => value['name'] == 'app_links');
+    final root = Directory.fromUri(
+      config.uri.resolve(entry['rootUri'] as String),
+    ).uri;
+    final native = File.fromUri(
+      root.resolve('ios/app_links/Sources/app_links/AppLinksIosPlugin.swift'),
+    ).readAsStringSync();
+    expect(native, contains('FlutterSceneLifeCycleDelegate'));
+    expect(native, contains('registrar.addSceneDelegate(instance)'));
+    expect(
+      native,
+      contains('options connectionOptions: UIScene.ConnectionOptions?'),
+    );
+    expect(
+      native,
+      contains('openURLContexts URLContexts: Set<UIOpenURLContext>'),
+    );
+    expect(native, contains('continue userActivity: NSUserActivity'));
+  });
   test(
     'strict links accept only supported domains, schemes and exact routes',
     () {

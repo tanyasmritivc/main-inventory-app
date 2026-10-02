@@ -25,6 +25,14 @@ an App Store update is a separate release decision, not part of a beta upload.
 The user authorized preparing a manual-release App Store draft on 2026-10-01;
 submission/publication and the subsequent AASA expansion remain separate gates.
 
+The build-40 physical check exposed the old `app_links` 6.x callback mismatch
+with the existing iOS scene lifecycle. Pin `app_links` to scene-compatible 7.0.0
+for the current Flutter 3.41 toolchain; 7.1+ requires Flutter 3.44. Use the minimum
+compatible Supabase Flutter adapter 2.12.1 (and its required lockfile updates),
+not an unsupported dependency override or an unrelated latest-auth upgrade. Do not merge
+the separate AppDelegate/Podfile lifecycle lane merely to fix link delivery.
+Build 41 supersedes build 40 after repeat validation and device acceptance.
+
 ## 2026-08-22: Production is self hosted
 
 **Decision:** Run the backend, web app, database, Auth, and Storage on the OpenStack
