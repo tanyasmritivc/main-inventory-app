@@ -285,6 +285,33 @@ native installation/launch alone do not satisfy this acceptance checklist.
 
 ## Result
 
+### October 4, 2026 build-46 submission preflight
+
+- App Store `1.0.7` selects valid/eligible build `46`, manual release,
+  `PREPARE_FOR_SUBMISSION`; not submitted or public. Next-release privacy URL is
+  saved and the new dedicated Apple review login was verified and configured.
+  Three isolated, admin-created accounts are not evidence of public signup.
+- Review account: five sample entries in three categories plus an empty Space.
+  Six Ask-to-Find cycles pass on the build-46 simulator client. API-only checks
+  pass for recipient visibility, unrelated-account denial, read-only edit denial,
+  member removal, share revocation and revoked-code rejection. Physical
+  multi-account and invitation UI checks remain outstanding.
+- Section 5 FAIL: simulator rename `Test Workshop` -> `Main Workshop` left the
+  Space card at `0 items`; all five entries remained inside by Space ID. A live
+  API reproduction at `2026-10-04T22:10:26Z` renamed the same test Space again:
+  canonical count stayed 5 and the old Space was absent, but all five search
+  results retained the previous location. Matching production source confirms
+  `rename_space` does not invalidate the 60-second inventory cache. Do not submit
+  until a scoped correction is approved, validated, deployed and this gate is
+  repeated, including with a category filter. No items were lost.
+- Current store screenshots are outdated and have not been replaced. Offline
+  writes, camera/photos, profile/Documents and actual invitation acceptance are
+  not passed. Physical Mirroring repeatedly reports iPhone in use. No real user
+  data was mutated and no new app version was submitted.
+- Main build 46 is valid/eligible, but embedded ShareExtension build is still 17;
+  native handoff is unverified. FIND's public-HTTP transport remains a separate
+  security limitation. The exact signed IPA and its verified backup are preserved.
+
 ### Space and Team invitation gates
 
 Before App Store submission, repeat the invitation acceptance checks in
@@ -308,8 +335,9 @@ Release record: runtime source `0b4c207`, all five CI gates pass (run
 `36969482272`), 343 backend/133 web/114 mobile tests plus MCP/bundle checks,
 clean analysis/typecheck and production web compilation. Build 42 passed Apple
 validation/upload, processing is `VALID` and `APP_STORE_ELIGIBLE`, and both
-internal TestFlight groups are assigned. The App Store 1.0.7 manual draft selects
-build 42 and is `PREPARE_FOR_SUBMISSION`, not submitted or public. The existing
+internal TestFlight groups are assigned. At that delivery the App Store 1.0.7
+manual draft selected build 42. It now selects 46 as recorded above and remains
+`PREPARE_FOR_SUBMISSION`, not submitted or public. The existing
 placeholder launch-image warning remains a quality follow-up.
 
 The App Store draft must remain manual and unsubmitted until the hands-on gates

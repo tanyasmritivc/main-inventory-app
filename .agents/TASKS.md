@@ -5,6 +5,11 @@ Reprioritize it when production state changes.
 
 ## P0 critical
 
+- Fix and verify inventory-cache invalidation after Space rename before App Store
+  submission. October 4 build-46 preflight reproduced a renamed card showing zero
+  entries despite five stored items, and live `/search_items` returning the five
+  old locations. No runtime correction/deployment is authorized or performed yet;
+  use a separate backend lane and repeat the filtered/unfiltered rename gate.
 - Replace FIND's public plain-HTTP connection with TLS or a reachable private route,
   then remove `FIND_API_ALLOW_INSECURE_HTTP` from production.
 - Reconcile and back up the dirty production VM checkout before returning to normal

@@ -1,6 +1,50 @@
 # Current state
 
-Last reviewed on 2026-10-02 during the item-info swipe-down update.
+Last reviewed on 2026-10-04 during App Store build-46 preflight.
+
+## App Store submission preflight
+
+- User requested submission and authorized isolated QA accounts and a dedicated
+  Apple review account. App Store `1.0.7` now selects build `46`, remains
+  `PREPARE_FOR_SUBMISSION` with manual release, and has not been submitted.
+  The public `1.0.6 (17)`, pricing, real memberships and Team-only AASA are
+  unchanged. The next-release privacy URL is saved as
+  `https://www.findez.ai/privacy`.
+- The previous saved review login failed. Three new task-only accounts were
+  created with confirmed emails; password sign-in passed for each. Dedicated
+  review credentials were saved to Apple and re-read successfully, without
+  logging secrets. Its inventory contains five sample items across Hardware,
+  Tools and Electronics, plus an empty sample Space. This admin-created setup
+  does not prove public signup/email-confirmation acceptance.
+- Live API-only checks passed for recipient access to the five sample items,
+  denial before joining, unrelated-account denial, view-only write denial,
+  individual-member removal, share revocation, and revoked-code rejoin denial.
+  No real account inventory or memberships were changed. These results do not
+  satisfy the physical multi-account/invitation acceptance gates by themselves.
+- The build-46 simulator app built, installed and signed in to the review
+  account. All six Ask-to-Find cycles retained the two Spaces and their counts.
+  The rename check failed: changing `Test Workshop` to `Main Workshop` showed
+  `0 items` on the Space card, while all five entries remained accessible by
+  Space ID inside it. An isolated live API reproduction at
+  `2026-10-04T22:10:26Z` confirmed canonical Space count 5 and no old Space, but
+  all five `/search_items` results still had the old location (zero new-location
+  results). Production `spaces_repo.py` and `items_repo.py` match the inspected
+  source byte-for-byte. `rename_space` updates storage but does not invalidate
+  the 60-second per-user inventory cache. Section 5 is not passed; hold submission
+  pending approval of a scoped backend correction and repeat acceptance.
+- Updated screenshots are not uploaded; existing iPhone/iPad screenshots still
+  show old navigation/Ask. Camera, profile/Documents, offline writes and real
+  invitation acceptance remain unverified. iPhone Mirroring repeatedly reports
+  the phone in use despite the user's lock confirmation. No real-account sign-out
+  was performed in this preflight.
+- Exact signed IPA hash remains
+  `0c0bf3a0db16dc2603acf7576eae9ddb8713423b6d8bc5678624517209b65a0e`;
+  all five CI jobs remain green on runtime `78404fa` (run `37033574121`).
+  Regenerable Xcode compiler/intermediate caches were removed with approval to
+  make the simulator build; source, signed archive/IPA and verified backups were
+  preserved. The embedded ShareExtension still declares build 17 (Apple already
+  marks main build 46 valid/eligible); native handoff remains unverified.
+  Production FIND plain-HTTP transport remains a separate security limitation.
 
 ## Working and deployed
 
@@ -60,7 +104,8 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   Build 42 remains recoverable from verified private server backup
   `/home/ubuntu/findez-preserved-build42.tar.gz` (683 entries, SHA-256
   `ba374f01046d82ce2b6c98b45e1213a190152cd827a8ff1f6a716c705b67ad6b`).
-  App Store draft still selects build 42 and remains manual/unsubmitted.
+  At build-44 delivery the App Store draft still selected build 42. The current
+  build-46 draft and submission hold are recorded above.
 
 - `fix/item-detail-swipe-dismiss`, stacked on navbar PR #33, updates the shared
   item information panel used by personal, joined/shared and Team Spaces, not
@@ -82,8 +127,8 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   `6d44ee23-5d42-4abb-a196-0df58223f415`. Apple processing completed with
   `VALID` and `APP_STORE_ELIGIBLE`; build 46 is assigned to both internal groups
   (`Testers` and `Internal Pilot Findez AI`). No external review/submission was
-  started. The public App Store release and manual build-42 draft are unchanged;
-  broader project acceptance/security gates remain before submission.
+  started during that delivery. The public App Store release remains unchanged;
+  the later build-46 draft selection and acceptance hold are recorded above.
   IPA SHA-256:
   `0c0bf3a0db16dc2603acf7576eae9ddb8713423b6d8bc5678624517209b65a0e`.
   Build 45 is recoverable from verified private backup
@@ -120,8 +165,9 @@ Last reviewed on 2026-10-02 during the item-info swipe-down update.
   processing and `APP_STORE_ELIGIBLE`; both internal TestFlight groups are
   assigned. Exact final archived app installed, reports 42, and launched. The
   user repeated cold Team and real Safari Space prompt confirmations on build
-  42; nonexistent test codes added no membership. App Store 1.0.7 now selects
-  build 42 with manual release and release notes, in `PREPARE_FOR_SUBMISSION`;
+  42; nonexistent test codes added no membership. At that delivery App Store
+  1.0.7 selected build 42 with manual release and release notes, in
+  `PREPARE_FOR_SUBMISSION`. The current selection is build 46 as recorded above;
   it is not submitted/published. Fresh-install/account-confirmation continuity,
   real acceptance/revocation, additional platform/browser checks and the broader
   physical/security checklist remain before submission. The public 1.0.6(17)
