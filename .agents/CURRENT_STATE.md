@@ -45,6 +45,10 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   is covered automatically; broader physical/filtered acceptance remains open.
   The existing two database writes are not transactional; this fix invalidates
   stale snapshots and propagates failures, rather than claiming atomic rollback.
+  Runtime `6027a87` is pushed in PR #35 against the release-record branch; all five
+  CI gates pass (run `37240403382`). Live API-only access/revocation checks were
+  repeated after deployment and again passed, including unrelated-user and
+  read-only-write denial, member removal, revoked reads and revoked-code reuse.
 - Updated screenshots are not uploaded; existing iPhone/iPad screenshots still
   show old navigation/Ask. Camera, profile/Documents, offline writes and real
   invitation acceptance remain unverified. iPhone Mirroring repeatedly reports

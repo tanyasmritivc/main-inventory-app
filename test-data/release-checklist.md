@@ -312,6 +312,9 @@ native installation/launch alone do not satisfy this acceptance checklist.
   `Sample Workshop / 5 items` and retained the empty Space. Automatic tests cover
   all categories; physical/filtered acceptance remains open. Do not relabel the
   original failure or these simulator/API checks as a physical pass.
+- Cache-only PR #35 runtime `6027a87` passes all five CI gates (run
+  `37240403382`). Post-deployment live API-only sharing/revocation checks also
+  pass again. Physical access/offline gates are not replaced by those results.
 - Current store screenshots are outdated and have not been replaced. Offline
   writes, camera/photos, profile/Documents and actual invitation acceptance are
   not passed. Physical Mirroring repeatedly reports iPhone in use. No real user
