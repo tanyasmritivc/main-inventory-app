@@ -287,6 +287,10 @@ native installation/launch alone do not satisfy this acceptance checklist.
 
 ### October 4, 2026 build-46 submission preflight
 
+- User asked to wait for their new logo SVG and required App Store screenshots.
+  No logo recreation, store screenshot replacement, branded build or submission
+  should proceed while those assets are pending. This does not mark the remaining
+  acceptance checks as passed.
 - App Store `1.0.7` selects valid/eligible build `46`, manual release,
   `PREPARE_FOR_SUBMISSION`; not submitted or public. Next-release privacy URL is
   saved and the new dedicated Apple review login was verified and configured.
@@ -322,9 +326,12 @@ native installation/launch alone do not satisfy this acceptance checklist.
 - Main build 46 is valid/eligible, but embedded ShareExtension build is still 17;
   native handoff is unverified. FIND's public-HTTP transport remains a separate
   security limitation. HTTPS probes fail with a TLS internal-error alert from both
-  Mac and backend VM; user-approved correction waits for the working URL/proxy
-  host alias. No keys/images were sent over HTTP during this preflight. The exact
-  signed IPA and its verified backup are preserved.
+  Mac and backend VM. The user subsequently explicitly withdrew the transport
+  change and instructed preserving the existing connection; no FIND configuration
+  or proxy change was deployed. Record its unencrypted hop as a known risk, not a
+  passed security check. Transport migration is excluded from the requested
+  release work. No keys/images were sent over HTTP during this preflight. The
+  exact signed IPA and its verified backup are preserved.
 
 ### Space and Team invitation gates
 

@@ -10,6 +10,11 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   The public `1.0.6 (17)`, pricing, real memberships and Team-only AASA are
   unchanged. The next-release privacy URL is saved as
   `https://www.findez.ai/privacy`.
+- The user subsequently asked to wait and will provide the new logo's SVG and
+  the required App Store screenshots. The supplied logo screenshots are references,
+  not original vector assets. Do not recreate the logo, replace store screenshots,
+  generate a branded build or submit while waiting for those materials. Existing
+  release checks remain recorded separately; no submission has occurred.
 - The previous saved review login failed. Three new task-only accounts were
   created with confirmed emails; password sign-in passed for each. Dedicated
   review credentials were saved to Apple and re-read successfully, without
@@ -62,14 +67,19 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   preserved. The embedded ShareExtension still declares build 17 (Apple already
   marks main build 46 valid/eligible); native handoff remains unverified.
   Production FIND plain-HTTP transport remains a separate security limitation.
-  The approved TLS correction is not deployed: verified-certificate probes of
+  No TLS correction was deployed: verified-certificate probes of
   `https://pipeline.findez.ai/health` fail with a TLS internal-error alert from
   both the Mac and the backend VM, including a TLS-1.2 probe. Current production
   settings still select HTTP with the explicit insecure allowance. Caddy runs on
   a separate operator-managed machine, not the accessible FindEZ VM. The user
-  says administrator access and valid HTTPS exist; the working HTTPS URL or
-  proxy SSH host alias is still needed. No certificate bypass, credentials or
-  images were sent in these probes, and photo extraction was not disabled.
+  subsequently explicitly withdrew the transport change and instructed keeping
+  the existing working connection unchanged. Preserve the FIND URL, HTTP
+  allowance, key and proxy settings; do not continue this transport change
+  without new authorization. No certificate bypass, credentials or images were
+  sent in these probes, and photo extraction was not disabled. The unencrypted
+  server-to-FIND hop remains a documented risk, not a completed security fix.
+  Transport migration is no longer part of this release's requested work;
+  the outstanding release checks and screenshots still remain.
 
 ## Working and deployed
 
@@ -275,6 +285,9 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
 
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
+  On October 4 the user explicitly instructed preserving this connection and
+  withdrew the proposed TLS migration. Keep the risk visible without changing
+  runtime configuration or representing it as encrypted.
 - FIND jobs are deleted after mapping. Uploaded source images and available object
   crops survive as item photos. Unresolved objects, public evidence, and review
   status persist. Masks, geometry, and training-quality
