@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-04 during App Store build-46 preflight.
+Last reviewed on 2026-10-04 during the approved backend correction and build-46 preflight.
 
 ## App Store submission preflight
 
@@ -29,9 +29,22 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
   `2026-10-04T22:10:26Z` confirmed canonical Space count 5 and no old Space, but
   all five `/search_items` results still had the old location (zero new-location
   results). Production `spaces_repo.py` and `items_repo.py` match the inspected
-  source byte-for-byte. `rename_space` updates storage but does not invalidate
-  the 60-second per-user inventory cache. Section 5 is not passed; hold submission
-  pending approval of a scoped backend correction and repeat acceptance.
+  source byte-for-byte. The root cause was missing invalidation of the 60-second
+  per-user inventory cache. The user then approved the scoped correction.
+- `fix/release-cache-find-transport`, based on `2376d0f`, now invalidates only
+  the affected owner's inventory after Space rename and cascade deletion,
+  including failure paths without swallowing errors. Six hermetic regressions
+  and all 349 backend/API-documentation tests pass. Only `spaces_repo.py` was
+  selectively deployed after matching its original hash, preserving unrelated VM
+  work and a mode-600 backup in
+  `/home/ubuntu/findez-space-cache-backup-es4heqOb`. Backend and database health
+  pass. The live QA rename at `2026-10-04T22:27:04Z` retained all five items,
+  returned five new locations and zero old locations immediately, with no old
+  Space. A subsequent build-46 simulator UI rename also immediately displayed
+  `Sample Workshop / 5 items` and retained the empty Space. All-category behavior
+  is covered automatically; broader physical/filtered acceptance remains open.
+  The existing two database writes are not transactional; this fix invalidates
+  stale snapshots and propagates failures, rather than claiming atomic rollback.
 - Updated screenshots are not uploaded; existing iPhone/iPad screenshots still
   show old navigation/Ask. Camera, profile/Documents, offline writes and real
   invitation acceptance remain unverified. iPhone Mirroring repeatedly reports
@@ -45,6 +58,14 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
   preserved. The embedded ShareExtension still declares build 17 (Apple already
   marks main build 46 valid/eligible); native handoff remains unverified.
   Production FIND plain-HTTP transport remains a separate security limitation.
+  The approved TLS correction is not deployed: verified-certificate probes of
+  `https://pipeline.findez.ai/health` fail with a TLS internal-error alert from
+  both the Mac and the backend VM, including a TLS-1.2 probe. Current production
+  settings still select HTTP with the explicit insecure allowance. Caddy runs on
+  a separate operator-managed machine, not the accessible FindEZ VM. The user
+  says administrator access and valid HTTPS exist; the working HTTPS URL or
+  proxy SSH host alias is still needed. No certificate bypass, credentials or
+  images were sent in these probes, and photo extraction was not disabled.
 
 ## Working and deployed
 

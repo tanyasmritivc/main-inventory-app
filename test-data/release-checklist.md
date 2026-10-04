@@ -301,16 +301,27 @@ native installation/launch alone do not satisfy this acceptance checklist.
   API reproduction at `2026-10-04T22:10:26Z` renamed the same test Space again:
   canonical count stayed 5 and the old Space was absent, but all five search
   results retained the previous location. Matching production source confirms
-  `rename_space` does not invalidate the 60-second inventory cache. Do not submit
-  until a scoped correction is approved, validated, deployed and this gate is
-  repeated, including with a category filter. No items were lost.
+  `rename_space` did not invalidate the 60-second inventory cache. No items were
+  lost. The user approved a separate backend correction; rename and cascade
+  deletion now evict only the owner's cache, also on failure without hiding errors.
+  Six new hermetic regressions and all 349 backend/API-doc tests pass. Exact
+  reviewed `spaces_repo.py` selectively deployed with a private rollback copy;
+  public health/database checks pass. Live QA at `2026-10-04T22:27:04Z` returned
+  five new-location results, zero old-location results, canonical count 5 and no
+  old Space immediately. A build-46 simulator UI rename also immediately showed
+  `Sample Workshop / 5 items` and retained the empty Space. Automatic tests cover
+  all categories; physical/filtered acceptance remains open. Do not relabel the
+  original failure or these simulator/API checks as a physical pass.
 - Current store screenshots are outdated and have not been replaced. Offline
   writes, camera/photos, profile/Documents and actual invitation acceptance are
   not passed. Physical Mirroring repeatedly reports iPhone in use. No real user
   data was mutated and no new app version was submitted.
 - Main build 46 is valid/eligible, but embedded ShareExtension build is still 17;
   native handoff is unverified. FIND's public-HTTP transport remains a separate
-  security limitation. The exact signed IPA and its verified backup are preserved.
+  security limitation. HTTPS probes fail with a TLS internal-error alert from both
+  Mac and backend VM; user-approved correction waits for the working URL/proxy
+  host alias. No keys/images were sent over HTTP during this preflight. The exact
+  signed IPA and its verified backup are preserved.
 
 ### Space and Team invitation gates
 
