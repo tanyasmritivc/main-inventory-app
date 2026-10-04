@@ -7,9 +7,12 @@ list ideas as active work.
 
 The user asked to wait on October 4 for their release assets. Original mark,
 icon and outlined-wordmark SVGs plus a 1024px RGBA icon PNG have now arrived
-in their Downloads directory and were inspected read-only. App Store screenshots
-remain pending. Hold asset replacement/build/submission; use the provided
-originals rather than recreating the reference logo. No assets are installed yet.
+in their Downloads directory and were inspected read-only. Six iPhone PNGs have
+also arrived: all 1320x2868 without alpha. Do not upload as-is: their depicted
+text navigation/More and unimplemented drawer-location diagram do not match
+build 46. Corrected real-app artwork or a user-approved revision is needed under
+Apple's accurate-metadata rules; no automatic app redesign is authorized.
+Use the provided original logo assets rather than recreating them. None are installed yet.
 The FIND transport change was explicitly withdrawn and remains out of scope.
 
 | Work | Area | State | Dependencies and handoff |

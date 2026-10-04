@@ -15,10 +15,16 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   `findez-icon-1024.png` have now been supplied in their Downloads directory.
   All three SVGs are readable path-based assets; the wordmark uses outlines,
   not a font dependency. The PNG is 1024x1024 RGBA with alpha. No assets were
-  modified or installed in this preflight. App Store screenshots are still
-  pending: do not recreate the logo, replace store screenshots, generate a
-  branded build or submit while waiting. Existing release checks remain recorded
-  separately; no submission has occurred.
+  modified or installed in this preflight. Six supplied `findez-appstore-1.png`
+  through `findez-appstore-6.png` have now arrived in Downloads. All are
+  1320x2868 PNGs without alpha, accepted iPhone screenshot dimensions. They are
+  not uploaded: depicted phone UI differs from build 46's icons-only navigation
+  and Profile destination, and image 5 includes a drawer-location diagram and
+  `Mark as taken` action absent from the current mobile source. Apple guidelines
+  2.3/2.3.3 require metadata to reflect the shipping app. Request corrected
+  current-app captures or permission to revise the artwork; do not silently
+  expand into a redesign or publish these as accurate build-46 screenshots.
+  Existing release checks remain recorded separately; no submission occurred.
 - The previous saved review login failed. Three new task-only accounts were
   created with confirmed emails; password sign-in passed for each. Dedicated
   review credentials were saved to Apple and re-read successfully, without
@@ -58,7 +64,8 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   CI gates pass (run `37240403382`). Live API-only access/revocation checks were
   repeated after deployment and again passed, including unrelated-user and
   read-only-write denial, member removal, revoked reads and revoked-code reuse.
-- Updated screenshots are not uploaded; existing iPhone/iPad screenshots still
+- Updated screenshots are not uploaded; supplied new iPhone artwork needs
+  current-app UI correction as noted above, and existing iPhone/iPad screenshots still
   show old navigation/Ask. Camera, profile/Documents, offline writes and real
   invitation acceptance remain unverified. iPhone Mirroring repeatedly reports
   the phone in use despite the user's lock confirmation. No real-account sign-out

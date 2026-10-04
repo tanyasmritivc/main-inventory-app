@@ -289,9 +289,14 @@ native installation/launch alone do not satisfy this acceptance checklist.
 
 - User asked to wait for their release assets. Original icon, mark and outlined
   wordmark SVGs and a 1024x1024 RGBA icon PNG have arrived and were inspected
-  read-only; none are installed. Required App Store screenshots remain pending.
-  No logo recreation, store screenshot replacement, branded build or submission
-  should proceed while waiting. This does not pass remaining acceptance checks.
+  read-only; none are installed. Six iPhone artwork PNGs have now arrived, all
+  1320x2868 without alpha. Upload format passes, content accuracy does not: text
+  navigation/More differs from build 46, and image 5 shows an unimplemented
+  drawer-location diagram and `Mark as taken` action. Do not upload as-is or
+  redesign the app without a new scope decision. Request real current-app
+  captures or approval to revise the artwork while retaining its visual layout.
+  Apple guidelines 2.3/2.3.3 require accurate app-in-use metadata. This does not
+  pass remaining acceptance checks or authorize submission.
 - App Store `1.0.7` selects valid/eligible build `46`, manual release,
   `PREPARE_FOR_SUBMISSION`; not submitted or public. Next-release privacy URL is
   saved and the new dedicated Apple review login was verified and configured.
@@ -320,7 +325,8 @@ native installation/launch alone do not satisfy this acceptance checklist.
 - Cache-only PR #35 runtime `6027a87` passes all five CI gates (run
   `37240403382`). Post-deployment live API-only sharing/revocation checks also
   pass again. Physical access/offline gates are not replaced by those results.
-- Current store screenshots are outdated and have not been replaced. Offline
+- Current store screenshots are outdated and have not been replaced; newly
+  supplied iPhone artwork needs accurate current-app UI as described above. Offline
   writes, camera/photos, profile/Documents and actual invitation acceptance are
   not passed. Physical Mirroring repeatedly reports iPhone in use. No real user
   data was mutated and no new app version was submitted.
