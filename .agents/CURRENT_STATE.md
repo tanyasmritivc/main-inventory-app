@@ -10,11 +10,15 @@ Last reviewed on 2026-10-04 during the approved backend correction and build-46 
   The public `1.0.6 (17)`, pricing, real memberships and Team-only AASA are
   unchanged. The next-release privacy URL is saved as
   `https://www.findez.ai/privacy`.
-- The user subsequently asked to wait and will provide the new logo's SVG and
-  the required App Store screenshots. The supplied logo screenshots are references,
-  not original vector assets. Do not recreate the logo, replace store screenshots,
-  generate a branded build or submit while waiting for those materials. Existing
-  release checks remain recorded separately; no submission has occurred.
+- The user subsequently asked to wait for their assets. Original
+  `findez-wordmark.svg`, `findez-icon.svg`, `findez-mark.svg` and
+  `findez-icon-1024.png` have now been supplied in their Downloads directory.
+  All three SVGs are readable path-based assets; the wordmark uses outlines,
+  not a font dependency. The PNG is 1024x1024 RGBA with alpha. No assets were
+  modified or installed in this preflight. App Store screenshots are still
+  pending: do not recreate the logo, replace store screenshots, generate a
+  branded build or submit while waiting. Existing release checks remain recorded
+  separately; no submission has occurred.
 - The previous saved review login failed. Three new task-only accounts were
   created with confirmed emails; password sign-in passed for each. Dedicated
   review credentials were saved to Apple and re-read successfully, without

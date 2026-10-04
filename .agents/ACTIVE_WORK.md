@@ -5,9 +5,11 @@ list ideas as active work.
 
 ## Verified active work
 
-The user asked to wait on October 4 while they supply the new logo SVG and
-App Store screenshots. Hold asset replacement/build/submission; use the exact
-provided assets after arrival rather than recreating the reference logo.
+The user asked to wait on October 4 for their release assets. Original mark,
+icon and outlined-wordmark SVGs plus a 1024px RGBA icon PNG have now arrived
+in their Downloads directory and were inspected read-only. App Store screenshots
+remain pending. Hold asset replacement/build/submission; use the provided
+originals rather than recreating the reference logo. No assets are installed yet.
 The FIND transport change was explicitly withdrawn and remains out of scope.
 
 | Work | Area | State | Dependencies and handoff |

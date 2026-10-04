@@ -287,10 +287,11 @@ native installation/launch alone do not satisfy this acceptance checklist.
 
 ### October 4, 2026 build-46 submission preflight
 
-- User asked to wait for their new logo SVG and required App Store screenshots.
+- User asked to wait for their release assets. Original icon, mark and outlined
+  wordmark SVGs and a 1024x1024 RGBA icon PNG have arrived and were inspected
+  read-only; none are installed. Required App Store screenshots remain pending.
   No logo recreation, store screenshot replacement, branded build or submission
-  should proceed while those assets are pending. This does not mark the remaining
-  acceptance checks as passed.
+  should proceed while waiting. This does not pass remaining acceptance checks.
 - App Store `1.0.7` selects valid/eligible build `46`, manual release,
   `PREPARE_FOR_SUBMISSION`; not submitted or public. Next-release privacy URL is
   saved and the new dedicated Apple review login was verified and configured.
