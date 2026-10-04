@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-04 during App Store build-46 preflight.
+Last reviewed on 2026-10-04 during the approved backend correction and build-46 preflight.
 
 ## App Store submission preflight
 
@@ -10,6 +10,21 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
   The public `1.0.6 (17)`, pricing, real memberships and Team-only AASA are
   unchanged. The next-release privacy URL is saved as
   `https://www.findez.ai/privacy`.
+- The user subsequently asked to wait for their assets. Original
+  `findez-wordmark.svg`, `findez-icon.svg`, `findez-mark.svg` and
+  `findez-icon-1024.png` have now been supplied in their Downloads directory.
+  All three SVGs are readable path-based assets; the wordmark uses outlines,
+  not a font dependency. The PNG is 1024x1024 RGBA with alpha. No assets were
+  modified or installed in this preflight. Six supplied `findez-appstore-1.png`
+  through `findez-appstore-6.png` have now arrived in Downloads. All are
+  1320x2868 PNGs without alpha, accepted iPhone screenshot dimensions. They are
+  not uploaded: depicted phone UI differs from build 46's icons-only navigation
+  and Profile destination, and image 5 includes a drawer-location diagram and
+  `Mark as taken` action absent from the current mobile source. Apple guidelines
+  2.3/2.3.3 require metadata to reflect the shipping app. Request corrected
+  current-app captures or permission to revise the artwork; do not silently
+  expand into a redesign or publish these as accurate build-46 screenshots.
+  Existing release checks remain recorded separately; no submission occurred.
 - The previous saved review login failed. Three new task-only accounts were
   created with confirmed emails; password sign-in passed for each. Dedicated
   review credentials were saved to Apple and re-read successfully, without
@@ -29,10 +44,28 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
   `2026-10-04T22:10:26Z` confirmed canonical Space count 5 and no old Space, but
   all five `/search_items` results still had the old location (zero new-location
   results). Production `spaces_repo.py` and `items_repo.py` match the inspected
-  source byte-for-byte. `rename_space` updates storage but does not invalidate
-  the 60-second per-user inventory cache. Section 5 is not passed; hold submission
-  pending approval of a scoped backend correction and repeat acceptance.
-- Updated screenshots are not uploaded; existing iPhone/iPad screenshots still
+  source byte-for-byte. The root cause was missing invalidation of the 60-second
+  per-user inventory cache. The user then approved the scoped correction.
+- `fix/release-cache-find-transport`, based on `2376d0f`, now invalidates only
+  the affected owner's inventory after Space rename and cascade deletion,
+  including failure paths without swallowing errors. Six hermetic regressions
+  and all 349 backend/API-documentation tests pass. Only `spaces_repo.py` was
+  selectively deployed after matching its original hash, preserving unrelated VM
+  work and a mode-600 backup in
+  `/home/ubuntu/findez-space-cache-backup-es4heqOb`. Backend and database health
+  pass. The live QA rename at `2026-10-04T22:27:04Z` retained all five items,
+  returned five new locations and zero old locations immediately, with no old
+  Space. A subsequent build-46 simulator UI rename also immediately displayed
+  `Sample Workshop / 5 items` and retained the empty Space. All-category behavior
+  is covered automatically; broader physical/filtered acceptance remains open.
+  The existing two database writes are not transactional; this fix invalidates
+  stale snapshots and propagates failures, rather than claiming atomic rollback.
+  Runtime `6027a87` is pushed in PR #35 against the release-record branch; all five
+  CI gates pass (run `37240403382`). Live API-only access/revocation checks were
+  repeated after deployment and again passed, including unrelated-user and
+  read-only-write denial, member removal, revoked reads and revoked-code reuse.
+- Updated screenshots are not uploaded; supplied new iPhone artwork needs
+  current-app UI correction as noted above, and existing iPhone/iPad screenshots still
   show old navigation/Ask. Camera, profile/Documents, offline writes and real
   invitation acceptance remain unverified. iPhone Mirroring repeatedly reports
   the phone in use despite the user's lock confirmation. No real-account sign-out
@@ -45,6 +78,19 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
   preserved. The embedded ShareExtension still declares build 17 (Apple already
   marks main build 46 valid/eligible); native handoff remains unverified.
   Production FIND plain-HTTP transport remains a separate security limitation.
+  No TLS correction was deployed: verified-certificate probes of
+  `https://pipeline.findez.ai/health` fail with a TLS internal-error alert from
+  both the Mac and the backend VM, including a TLS-1.2 probe. Current production
+  settings still select HTTP with the explicit insecure allowance. Caddy runs on
+  a separate operator-managed machine, not the accessible FindEZ VM. The user
+  subsequently explicitly withdrew the transport change and instructed keeping
+  the existing working connection unchanged. Preserve the FIND URL, HTTP
+  allowance, key and proxy settings; do not continue this transport change
+  without new authorization. No certificate bypass, credentials or images were
+  sent in these probes, and photo extraction was not disabled. The unencrypted
+  server-to-FIND hop remains a documented risk, not a completed security fix.
+  Transport migration is no longer part of this release's requested work;
+  the outstanding release checks and screenshots still remain.
 
 ## Working and deployed
 
@@ -250,6 +296,9 @@ Last reviewed on 2026-10-04 during App Store build-46 preflight.
 
 - FIND production transport currently uses a public plain-HTTP endpoint behind an
   explicit temporary allow flag because the private route was unreachable.
+  On October 4 the user explicitly instructed preserving this connection and
+  withdrew the proposed TLS migration. Keep the risk visible without changing
+  runtime configuration or representing it as encrypted.
 - FIND jobs are deleted after mapping. Uploaded source images and available object
   crops survive as item photos. Unresolved objects, public evidence, and review
   status persist. Masks, geometry, and training-quality

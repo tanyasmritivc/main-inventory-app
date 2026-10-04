@@ -5,13 +5,11 @@ Reprioritize it when production state changes.
 
 ## P0 critical
 
-- Fix and verify inventory-cache invalidation after Space rename before App Store
-  submission. October 4 build-46 preflight reproduced a renamed card showing zero
-  entries despite five stored items, and live `/search_items` returning the five
-  old locations. No runtime correction/deployment is authorized or performed yet;
-  use a separate backend lane and repeat the filtered/unfiltered rename gate.
-- Replace FIND's public plain-HTTP connection with TLS or a reachable private route,
-  then remove `FIND_API_ALLOW_INSECURE_HTTP` from production.
+- Finish physical/filtered release acceptance after the approved Space cache fix.
+  On October 4, owner-scoped rename/delete invalidation and six regressions passed
+  all 349 backend/API-doc tests; the reviewed file was selectively deployed with
+  a private rollback copy. Live QA and build-46 simulator renames now immediately
+  retain all five entries. Broader physical acceptance remains outstanding.
 - Reconcile and back up the dirty production VM checkout before returning to normal
   pull-based deploys. Preserve unrelated server work and verify every migration
   before restarting services.
@@ -19,6 +17,12 @@ Reprioritize it when production state changes.
   fresh-link password recovery, and background APNs delivery.
 
 ## P1 important
+
+- FIND transport security follow-up is deferred by the user's explicit October 4
+  instruction to preserve the existing connection. Current server-to-FIND HTTP
+  is unencrypted, but no URL, allowance, key or proxy changes are authorized.
+  Obtain new authorization before starting any TLS/private-route migration;
+  do not treat it as active work or a completed security correction.
 
 - Patch Next.js 16.3.4 to the minimal 16.3.6 security release in a separate web
   lane; run web tests/typecheck/production build and deploy with preserved VM

@@ -315,3 +315,26 @@ writes, and dispose never starts a new write under a potentially changed account
 scroll-end notification must not restore height during the exit animation;
 only canceled or blocked dismissal restores the sheet. Build 45's unlatching
 caused a reproduced upward jump and must not be reintroduced.
+
+## 2026-10-04: Space mutations invalidate the owner's inventory snapshot
+
+**Decision:** Rename and cascade deletion clear the same per-user inventory cache
+used by search and shared reads. Invalidate on failure too, because a preceding
+database write may already have succeeded; propagate the error rather than
+reporting success. Do not evict unrelated users or solve stale backend state by
+changing mobile field grouping. Existing ownership predicates, API contracts and
+schema remain unchanged. This cache fix does not make the two rename writes
+transactional.
+
+## 2026-10-04: Preserve the existing FIND connection
+
+**Decision:** The user explicitly withdrew the proposed FIND transport change
+after the connection review. Leave the existing server-to-FIND HTTP URL,
+allowance, credentials and proxy configuration unchanged. No transport change
+was deployed; do not keep pursuing proxy access or silently switch protocols
+while preparing build 46 for submission.
+
+**Risk:** This preserves functionality, not end-to-end encryption. Keep the
+unencrypted server-to-FIND hop documented. A future TLS/private-route migration
+requires new authorization and its own verification. Other release checks and
+screenshots remain outstanding.

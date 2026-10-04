@@ -62,6 +62,14 @@ validation of every target workspace before a batch write, and independent
 per-key standard/bulk request limits. These run automatically in the existing
 backend and PostgreSQL CI jobs; no real API key is needed.
 
+Space mutation cache regressions in `backend/tests/test_space_inventory_cache.py`
+warm the real per-user cache against a deep-copying database stub. They verify
+immediate all-category location refresh after rename, cascade deletion refresh,
+foreign-owner isolation, unrelated-user cache preservation, blank-name rejection,
+and cache eviction with propagated errors after failed mutations. They run in
+the normal backend suite without credentials or network I/O. Live release checks
+must still repeat the Space rename and filtered/unfiltered inventory flows.
+
 ## Public API documentation
 
 The public `/docs/api` page and downloadable OpenAPI 3.1 reference use

@@ -150,35 +150,50 @@ def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
         raise ValueError("New name is required")
 
     supabase = get_supabase_admin()
+    # Local import avoids the items_repo -> spaces_repo import cycle. Every
+    # reader of the cached inventory, including shared inventory, must see the
+    # updated legacy location immediately after this mutation.
+    from app.services.items_repo import invalidate_inventory_cache
 
-    resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .update({"name": new_name})
-        .eq("user_id", user_id)
-        .eq("id", space_id)
-        .execute()
-    )
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("spaces")
+            .update({"name": new_name})
+            .eq("user_id", user_id)
+            .eq("id", space_id)
+            .execute()
+        )
 
-    # Keep items.location in sync so the text field matches the canonical space name
-    _execute_with_retry(
-        lambda: supabase.table("items")
-        .update({"location": new_name})
-        .eq("user_id", user_id)
-        .eq("space_id", space_id)
-        .execute()
-    )
+        # Sync all owned items, independent of a client's category filter.
+        _execute_with_retry(
+            lambda: supabase.table("items")
+            .update({"location": new_name})
+            .eq("user_id", user_id)
+            .eq("space_id", space_id)
+            .execute()
+        )
 
-    return (resp.data or [{}])[0]
+        return (resp.data or [{}])[0]
+    finally:
+        # Also clear a cached snapshot after an upstream failure: the first
+        # database write may already have succeeded. Never hide that failure.
+        invalidate_inventory_cache(user_id)
 
 
 def delete_space(*, user_id: str, space_id: str) -> bool:
     """Delete the space row and its items through the items FK cascade."""
     supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .delete()
-        .eq("user_id", user_id)
-        .eq("id", space_id)
-        .execute()
-    )
-    return bool(resp.data)
+    from app.services.items_repo import invalidate_inventory_cache
+
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("spaces")
+            .delete()
+            .eq("user_id", user_id)
+            .eq("id", space_id)
+            .execute()
+        )
+        return bool(resp.data)
+    finally:
+        # Space deletion cascades to items, so it invalidates the same cache.
+        invalidate_inventory_cache(user_id)
