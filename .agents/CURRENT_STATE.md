@@ -1,8 +1,25 @@
 # Current state
 
-Last reviewed on 2026-10-04 during mobile brand-theme verification and the held build-46 preflight.
+Last reviewed on 2026-10-04 during mobile Space-icon verification and the held build-46 preflight.
 
 ## App Store submission preflight
+
+- Optional personal Space icons are implemented as local `1.0.7 (49)` on
+  `feat/mobile-space-icon-picker`, stacked on brand PR #37 (`1d49e27`). Tap the
+  leading icon in personal/owned, joined/shared or Team Space lists to open a
+  searchable 24-icon picker, with Automatic reset and explicit Save/Cancel.
+  Choices are saved per account and stable Space/share ID on this device only;
+  they survive rename/restart and do not change shared data or permissions.
+  Confirmed-write, safe read/write failures, duplicate saves, stale account
+  reads/writes, draft retention and disposal are guarded. The themed picker has
+  one native handle, named selected semantics, 44pt icon targets and adaptive
+  large-text columns. All 226 mobile tests with coverage, clean analysis and
+  native simulator build pass. Simulator confirms search, Cancel/no save,
+  immediate saved card icon, restart persistence and Dark/Light with Larger text.
+  Inventory, memberships and documents are untouched. There is no backend/web/
+  schema/FIND or native lifecycle change, phone install or Apple upload/submission.
+  Physical accessibility/touch acceptance remains deferred; existing broader
+  release gates and the cold Home-to-Space issue remain separate.
 
 - The user authorized the supplied FindEZ brand on mobile and identified two
   duplicated grabbers in Edit item. Local `1.0.7 (48)` on

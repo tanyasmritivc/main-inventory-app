@@ -24,6 +24,7 @@ import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
 import 'item_sort.dart';
+import 'space_icon_picker.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import '../scan/import_sheet_page.dart';
@@ -2458,45 +2459,6 @@ class _InventoryPageState extends State<InventoryPage>
     );
   }
 
-  IconData _spaceIcon(String name) {
-    final value = name.toLowerCase();
-    if (value.contains('robot') ||
-        value.contains('ftc') ||
-        value.contains('frc') ||
-        value.contains('electronics')) {
-      return CupertinoIcons.gear_alt_fill;
-    }
-    if (value.contains('tool') ||
-        value.contains('hardware') ||
-        value.contains('fastener') ||
-        value.contains('workshop')) {
-      return CupertinoIcons.wrench;
-    }
-    if (value.contains('food') ||
-        value.contains('kitchen') ||
-        value.contains('grocery')) {
-      return CupertinoIcons.cart;
-    }
-    if (value.contains('home') ||
-        value.contains('house') ||
-        value.contains('personal')) {
-      return CupertinoIcons.house;
-    }
-    if (value.contains('book') ||
-        value.contains('school') ||
-        value.contains('class')) {
-      return CupertinoIcons.book;
-    }
-    if (value.contains('car') || value.contains('vehicle')) {
-      return CupertinoIcons.car_detailed;
-    }
-    return CupertinoIcons.archivebox;
-  }
-
-  Color _spaceIconColor(String name) {
-    return AppTheme.textSecondary(context);
-  }
-
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
     // Keep the approved default card height, but let accessibility text grow it.
@@ -2703,12 +2665,12 @@ class _InventoryPageState extends State<InventoryPage>
                               ),
                               child: Row(
                                 children: [
-                                  Icon(
-                                    _spaceIcon(loc),
-                                    color: _spaceIconColor(loc),
-                                    size: 22,
+                                  SpaceIconButton(
+                                    key: ValueKey('space-icon-button-$spaceId'),
+                                    spaceId: spaceId,
+                                    spaceName: loc,
                                   ),
-                                  const SizedBox(width: 14),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
                                       mainAxisAlignment:
@@ -2928,26 +2890,13 @@ class _InventoryPageState extends State<InventoryPage>
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(
-                                    0xFFF2F2F7,
-                                  ).withValues(alpha: 0.14),
-                                ),
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              child: Icon(
-                                CupertinoIcons.folder_badge_person_crop,
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0xFFF2F2F7),
-                                ),
-                                size: 20,
-                              ),
+                            SpaceIconButton(
+                              key: ValueKey('share-icon-button-$shareId'),
+                              namespace: 'share',
+                              spaceId: shareId == 'null' ? '' : shareId,
+                              spaceName: name,
+                              fallbackIcon:
+                                  CupertinoIcons.folder_badge_person_crop,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
