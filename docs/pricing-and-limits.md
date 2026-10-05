@@ -1,190 +1,120 @@
-# FindEZ — pricing and usage limits
+# FindEZ pricing and usage limits
 
-A starting point, not a verdict. The tier structure and the cap
-*shapes* are grounded in what the code actually costs to run. The
-specific dollar figures are judgement calls that should be tested
-against real users before they harden.
+## Approved product decision, not deployed billing
 
----
+The user confirmed this pricing structure on 2026-10-05. These prices and the
+annual-first presentation supersede the earlier pricing hypotheses in this file.
+Numeric usage limits, included member counts, and feature boundaries still need
+an explicit decision and capacity validation. Entitlement readiness is in scope
+for the current mobile rebuild; implementing Stripe and billing is a separate
+milestone.
 
-## What actually costs money
+FindEZ serves individuals, small businesses, labs, factories, schools, makerspaces,
+and robotics teams. Robotics is one use case within the broader product market.
 
-Read from the code, not assumed:
+## Settled plans
 
-| Feature | Runtime | Relative capacity use |
-|---|---|---|
-| AI chat | FTCTools agent gateway | low |
-| Memory extraction | FTCTools agent gateway | very low |
-| Search query parsing | FTCTools agent gateway | negligible |
-| **Photo scan / extract_from_image** | **FIND** | **highest** |
-| Spreadsheet import mapping | FTCTools agent gateway | moderate, rare |
-| Barcode lookup | Catalog APIs plus gateway fallback | negligible |
+All prices are in USD. Annual prices are the full yearly charge.
 
-The asymmetry still matters. Chat is a core feature and uses shared private model capacity. Photo scanning runs segmentation, identification, OCR, and measurement, so it needs the tighter operational limit. Limits now protect GPU capacity and latency rather than a per-request external model bill.
----
+| Plan | Monthly | Annual | Positioning |
+|---|---:|---:|---|
+| FREE | $0 | $0 | Individuals trying the basic FindEZ experience, with limited usage |
+| PRO | $19 | $149 | Individuals and serious users who depend on FindEZ for belongings and projects |
+| TEAM | $99 | $790 | Collaborative groups, including robotics teams, schools, and makerspaces |
+| BUSINESS | $299 | $2,490 | Businesses, labs, factories, makerspaces, and larger shared environments |
+| ENTERPRISE | Custom | Custom | Larger organizations with negotiated scale, requirements, support, or integrations |
 
-## Tiers
+Positioning describes the planned offer, not proof that every capability is ready:
 
-### Free
+- FREE introduces the basic experience with limited usage.
+- PRO provides the full individual physical-memory experience.
+- TEAM provides shared physical memory, multiple members, and shared spaces,
+  objects, projects, and documents. TEAM is the featured tier in public pricing.
+- BUSINESS supports larger shared physical-world environments. Its boundary from
+  TEAM must be defined through included capacity and capabilities before sale.
+- ENTERPRISE is negotiated. Custom support or integrations require delivery review
+  before they are included in a contract.
 
-Unchanged except where noted. The job of this tier is to prove the
-product works on the user's own stuff, then run out.
+## Annual-first presentation
 
-| | |
-|---|---|
-| Items | 30 |
-| Spaces | 3 |
-| AI chat | 20 / month |
-| Photo scans | 5 / month |
-| Barcode scans | 10 / month |
-| Spreadsheet imports | 2 / month |
-| Active shares | 1 |
+Public pricing defaults to annual billing and offers a clear monthly toggle. Show
+the complete annual charge, the comparison with twelve monthly payments, and the
+savings. Any monthly equivalent must remain adjacent to "billed annually" and the
+full yearly charge.
 
-**One change worth considering:** 30 items is tight. A single
-kitchen drawer is 30 items. A user who imports a spreadsheet hits
-the wall before they have seen the product work, which converts
-nobody — it just annoys them. 50 would let someone finish
-cataloguing one real space.
+| Plan | Twelve monthly payments | Annual charge | Annual saving | Saving | Monthly equivalent |
+|---|---:|---:|---:|---:|---:|
+| PRO | $228 | $149 | $79 | 34.6% | $12.42 |
+| TEAM | $1,188 | $790 | $398 | 33.5% | $65.83 |
+| BUSINESS | $3,588 | $2,490 | $1,098 | 30.6% | $207.50 |
 
-Test this rather than assuming. If free users are churning at
-exactly 30 items, that is your answer.
+These savings compare the settled monthly and annual prices; they are not claims
+about a previous sale price. Monthly billing remains available.
 
-### Pro — $6.99/mo, $59.99/yr
+## Entitlement readiness and milestone boundary
 
-Keep the price. It is normal for this category and the annual
-discount (28%) is in the right range.
+These are requirements for the rebuild and later billing work, not completed
+implementation:
 
-Replace `"limit": 999999` with real ceilings:
+- Preserve the five named tiers in the product contract: `free`, `pro`, `team`,
+  `business`, and `enterprise`. Legacy `team_member` status needs an explicit
+  compatibility mapping rather than being treated as a new commercial plan.
+- Distinguish personal entitlement from access provided by a shared workspace or
+  organization. Membership alone must not imply entitlement to every paid feature.
+- Prepare client presentation for server-authorized capabilities and limits, with
+  clear handling of unavailable entitlement data. Client caches are not authority
+  for granting server access.
+- Define member counts, inventory records, spaces, AI usage, storage, and pooled
+  versus personal allowances before publishing a detailed feature comparison.
+  Do not carry forward old numeric quota proposals as approved limits or promise
+  unlimited usage without capacity validation.
+- Keep checkout, payment collection, Stripe products and subscriptions, purchase
+  verification, and billing lifecycle implementation in the separate billing
+  milestone. That milestone must also settle the iOS purchasing path and verify
+  renewal, cancellation, downgrade, and provisioning behavior.
 
-| | Monthly | Daily |
-|---|---|---|
-| AI chat | 1,000 | — |
-| Photo scans | **300** | **30** |
-| Spreadsheet imports | 20 | — |
-| Barcode scans | unlimited | — |
-| Items | unlimited | — |
-| Spaces | unlimited | — |
-| Active shares | unlimited | — |
+## Current source differs from the approved offer
 
-These are set so that a genuine power user never sees them. 300
-photo scans a month is ten a day, every day — far beyond normal
-cataloguing. The daily cap of 30 is what actually stops scripted
-abuse, because it bounds the damage to one day rather than one
-month.
+The inspected rebuild branch still has legacy billing and entitlement code:
 
-The Pro caps bound shared GPU demand and queue latency. They should be tuned from measured FIND job duration, gateway throughput, and concurrent usage rather than an external per-token bill.
+- `backend/app/api/routes/billing.py` creates one-time seasonal purchases with
+  `mode="payment"`. Its checkout plans are `ftc_season`, `frc_season`, and
+  `district`, not these recurring subscriptions.
+- `backend/app/api/router.py` mounts the billing router; the old `stripe_routes.py`
+  router is intentionally not mounted. The earlier claim that both are mounted
+  was stale.
+- `mobile/lib/core/pro_status.dart` uses legacy free/pro/team-member status and a
+  cached paid-status check. This does not establish readiness for all five tiers.
+- `backend/app/services/usage_service.py` contains existing Free and Pro limits.
+  Those values do not settle the new tiers' allowances.
 
-### Team — new tier
+Recording these prices changes documentation only. It does not configure Stripe,
+Apple purchases, a public pricing page, runtime quotas, or production entitlements.
 
-The gap in the current model. An FTC team of 20 sharing one
-inventory has no sensible way to buy today: either one person pays
-personally, or everyone squeezes onto a single login.
+## December 31, 2026 ARR target
 
-| | |
-|---|---|
-| Members | up to 20 on shared spaces |
-| Everything in Pro | per member |
-| Photo scans | 300 / month pooled across the team |
-| Admin | one billing owner, members join by code |
+The user's target is $250,000 annual recurring revenue (ARR), equivalent to
+$20,833.33 in monthly recurring revenue (MRR). Because annual billing is preferred,
+use the actual discounted annual charge in annual-plan calculations.
 
-**Pricing shape matters more than the number here.** Two options:
+One illustrative all-annual subscription mix is:
 
-- **$19.99/month** — familiar, recurring, easy to reason about
-- **$99 / season** — FTC runs Sept–April; a coach expensing one
-  line item for the season is an easier sell than a subscription
-  they have to justify renewing, and it sidesteps summer churn
+| Plan | Active paying accounts | Annual subscription value |
+|---|---:|---:|
+| BUSINESS | 80 | $199,200 |
+| TEAM | 50 | $39,500 |
+| PRO | 80 | $11,920 |
+| Total | 210 | $250,620 |
 
-The seasonal option is the more interesting bet and the one your
-market is most likely to respond to. It is also the one you can
-validate with four phone calls.
+This is $20,885 of monthly-normalized recurring revenue. It is target arithmetic,
+not a validated acquisition forecast. Organizational accounts can include multiple
+users, so account counts and registered or active user counts are separate metrics.
 
----
+Alternatively, 101 BUSINESS annual subscriptions alone produce $251,490 ARR.
+Fifty subscriptions in each paid tier at the monthly prices produce $20,850 MRR
+and $250,200 ARR; that calculation must not be used for annual-plan buyers.
 
-## Enforcement — three layers
-
-**1. Per-route rate limits (already built).** slowapi is in place
-and the expensive routes are already covered:
-
-```
-/ai_command              20/minute
-/ai_upload               10/minute
-/extract_from_image      10/minute
-/inventory/extract...    10/minute
-/import/spreadsheet       5/minute
-/search_items            30/minute
-```
-
-These are your burst protection and they are fine as they are.
-
-**2. Quotas (needs the change).** `check_limit` currently returns
-`{"limit": 999999}` for any Pro user — genuinely uncapped. Replace
-with a `PRO_LIMITS` dict mirroring `FREE_LIMITS`.
-
-The existing `usage_limits` table is keyed by month, which is the
-right granularity for everything except photo scans. Those need a
-daily counter as well.
-
-**3. Fair use in the terms.** A clause reserving the right to
-throttle abusive usage. This is the backstop for the case nobody
-predicted, and it costs nothing to add.
-
----
-
-## When a limit is hit
-
-The difference between a good and bad experience here is larger
-than the limit itself.
-
-**Free user hits a cap** → upgrade sheet. This is the conversion
-moment and it already works.
-
-**Pro user hits a cap** → *not* an upgrade prompt. They already
-paid. Show what reset looks like:
-
-> "You've used today's 30 photo scans. Resets at midnight."
-
-A paying customer who gets sold to when they hit a ceiling churns.
-A paying customer who gets told when it resets waits.
-
-**Never fail silently.** A quota rejection that renders as an
-empty screen is indistinguishable from the app being broken —
-which is the failure mode that already cost real debugging time on
-this codebase.
-
----
-
-## Implementation
-
-Backend only. Roughly an afternoon.
-
-1. Add `PRO_LIMITS` to `usage_service.py` alongside `FREE_LIMITS`.
-2. `check_limit`: replace the `is_pro → 999999` branch with a
-   `PRO_LIMITS` lookup. Unlimited features map to `None`, checked
-   explicitly rather than by magic number.
-3. Add a daily period alongside the monthly one in `usage_limits`
-   (a `period_type` column, or a `YYYY-MM-DD` period string),
-   applied only to `photo_scan`.
-4. `increment_usage` writes both counters where both apply.
-5. Return `resets_at` in the limit-exceeded response so the client
-   can say when, not just no.
-6. Mobile: distinguish free (upgrade sheet) from pro (reset time)
-   in the 402/403 handler.
-
-Team tier is a larger piece of work — billing owner, seat
-management, pooled quotas — and is a v1.1 item. The Pro caps are
-the part worth doing before launch, because uncapped Pro is a
-live liability.
-
----
-
-## What to validate before treating any of this as settled
-
-- Ask three or four FTC coaches how they would want to buy, and
-  what a team seat is worth to them. Monthly or seasonal.
-- Watch where free users stop. If it clusters at 30 items, raise
-  it.
-- Instrument FIND job duration, gateway latency, GPU utilization, and per-user request volume for a month before finalising the Pro caps.
-
-The last one matters most. Every figure in this document is an
-estimate until you have a month of real usage data, and that data
-will be more persuasive than any framework.
+Count actual recurring subscriptions after discounts and churn. Free users,
+trials, and one-time seasonal payments do not contribute to this subscription ARR
+target. Annual cash collected is a separate measure from revenue recognized during
+the year. See [Stripe's recurring-revenue definitions](https://docs.stripe.com/billing/subscriptions/analytics).

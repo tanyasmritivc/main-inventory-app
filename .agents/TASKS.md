@@ -23,8 +23,12 @@ Reprioritize it when production state changes.
   and mirror it on web.
 - Instrument FIND queue and job duration, then reproduce and resolve photo scans that
   time out or remain in a loading state.
-- Resolve the duplicate Stripe route families and choose a StoreKit-compliant iOS
-  payment path before changing paid access.
+- Complete entitlement readiness during the mobile rebuild, then implement the
+  separate billing milestone for the approved FREE / PRO / TEAM / BUSINESS /
+  ENTERPRISE offer in `docs/pricing-and-limits.md`. Reconcile the legacy one-time
+  seasonal checkout, define allowances, verify reliable provisioning and renewal,
+  and settle the iOS purchase path before shipping paid access. The older Stripe
+  router is unmounted in the inspected rebuild source.
 - Add encrypted off-machine database and configuration backups and test restoration.
 - Reconcile stale top-level documentation that still describes retired hosting or a
   mobile-only web product surface.

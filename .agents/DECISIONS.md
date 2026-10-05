@@ -1,6 +1,25 @@
 # Decisions
 
-Only decisions supported by current code or repository records belong here.
+Only decisions supported by current code, repository records, or explicit user
+instructions belong here. Label product decisions that are not implemented.
+
+## 2026-10-05: Use the settled five-tier pricing and separate billing milestone
+
+**Decision:** The user confirmed FREE ($0), PRO ($19/month or $149/year), TEAM
+($99/month or $790/year), BUSINESS ($299/month or $2,490/year), and ENTERPRISE
+(custom). Public pricing defaults to annual billing with the full yearly charge
+and savings visible, retains monthly billing, and highlights TEAM. Prepare the
+mobile rebuild for entitlements; implement Stripe and billing separately.
+
+**Reasoning:** Preserve the user's settled commercial plan and the rebuild's scope.
+FindEZ serves individuals, small businesses, labs, factories, and collaborative
+groups including robotics teams. The year-end goal is $250,000 ARR by 2026-12-31.
+
+**Implications:** Earlier pricing hypotheses are superseded. Numeric quotas, member
+allowances, and the TEAM/BUSINESS capability boundary still require decisions and
+capacity validation. Use discounted annual prices for annual-plan ARR. These are
+approved product decisions, not deployed billing or completed five-tier entitlement
+support. See [pricing and limits](../docs/pricing-and-limits.md).
 
 ## 2026-08-22: Production is self hosted
 

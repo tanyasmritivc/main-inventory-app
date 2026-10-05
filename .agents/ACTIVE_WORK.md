@@ -9,6 +9,15 @@ list ideas as active work.
 |---|---|---|---|
 | Interior v2 complete mobile rebuild | `backend/`, `mobile/` | Active on `mobile/interior-v2-full-rebuild` | Wave 1 and Wave 2 are merged. The optional first-capture onboarding and signed-in More navigation now work in the simulator. Photo persistence and public Storage URL fixes were merged and deployed as PRs #21 and #22. Common spreadsheet mapping and JSON import were merged and deployed as PR #23. No backend migration is deployed from the rebuild branch. |
 
+## Completed documentation awaiting integration
+
+The settled pricing and ARR target are documented on
+`docs/settled-pricing-launch-target` (2026-10-05), based on the production database
+audit branch. See [pricing and limits](../docs/pricing-and-limits.md) and the dated
+decision. Documentation and arithmetic checks pass. This branch is not merged;
+public pricing, payment configuration, production entitlements, and mobile runtime
+behavior are not changed by this documentation work.
+
 ## Open release gates
 
 | Work | Required proof before deployment |

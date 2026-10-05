@@ -24,6 +24,11 @@ see [the database launch audit](../docs/database-launch-audit-2026-10-05.md).
 
 ## Active development
 
+- The user confirmed FREE / PRO / TEAM / BUSINESS / ENTERPRISE pricing on
+  2026-10-05, with annual-first presentation and a $250,000 ARR goal by year-end.
+  See [pricing and limits](../docs/pricing-and-limits.md). The mobile rebuild must
+  prepare for entitlements; Stripe and billing implementation are a separate
+  milestone. This decision does not change deployed billing or settle usage caps.
 - A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
   and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
@@ -65,8 +70,12 @@ see [the database launch audit](../docs/database-launch-audit-2026-10-05.md).
   copying the branch file would overwrite unrelated VM changes. These changes
   are not in build 28.
 - Low-stock thresholds are stored on one device and do not sync.
-- Two Stripe route families are mounted. The live webhook source and iOS payment
-  strategy must be settled before changing pricing or shipping paid digital access.
+- In the inspected rebuild source, only the billing router is mounted; the older
+  Stripe router is deliberately unmounted. The current checkout creates one-time
+  seasonal purchases, not the approved recurring plans, and acknowledges handler
+  failures with HTTP 200. The separate billing milestone must reconcile production,
+  implement reliable provisioning and recurring entitlements, and settle the iOS
+  purchase path before shipping paid access.
 - Backups are restore-checked on the same disk. Off-machine backup is not implemented.
 - The broader AI grounding path can still rely on bounded previews and remembered
   facts outside the explicit inventory knowledge tool.

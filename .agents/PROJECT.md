@@ -16,15 +16,23 @@ questions.
 - Make physical inventory easy to capture, understand, retrieve, and act on.
 - Preserve trustworthy context about an item, including where it is, what evidence
   identified it, and its history.
-- Serve individual workshops and teams without making robotics the only use case.
-- Keep the product useful under real workshop and competition conditions.
+- Serve individuals, small businesses, labs, factories, and collaborative groups,
+  including robotics teams.
+- Keep the product useful in everyday environments, workshops, labs, and factories.
 
 ## Users and markets
 
-Robotics teams are the first and most developed market. The product and data model
-also support schools, makerspaces, clubs, businesses, and other teams with physical
-parts or equipment. The current team context choices include FTC, FRC, FLL, VEX,
-School, Makerspace, Club, Business, and Other.
+FindEZ serves individuals, small businesses, labs, factories, schools, makerspaces,
+clubs, and robotics teams with physical belongings, parts, supplies, or equipment.
+The user confirmed this broad positioning on 2026-10-05; robotics is one use case,
+not the boundary of the company or product. The current team context choices
+include FTC, FRC, FLL, VEX, School, Makerspace, Club, Business, and Other.
+
+The approved commercial tiers are FREE, PRO, TEAM, BUSINESS, and ENTERPRISE, with
+annual billing preferred in public pricing. See
+[the settled pricing decision](../docs/pricing-and-limits.md). Entitlement readiness
+belongs in the current mobile rebuild; Stripe and billing implementation belong
+in a separate milestone. The approved offer is not proof of deployed billing.
 
 ## Current capabilities
 
