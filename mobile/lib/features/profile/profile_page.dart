@@ -1090,22 +1090,21 @@ class _ProfilePageState extends State<ProfilePage> {
                           size: 20,
                         ),
                         SizedBox(width: 10),
-                        Text(
-                          'Free Pilot',
-                          style: TextStyle(
-                            color: AppTheme.foreground(context, Colors.white),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                        Expanded(
+                          child: Text(
+                            'Free Pilot',
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      ProStatus.pilotNotice ??
-                          'Unlimited access through September 11, 2026. '
-                              'Standard free-plan limits and optional paid plans begin September 12. '
-                              'You will not be charged automatically.',
+                      ProStatus.pilotNotice ?? ProStatus.defaultPilotNotice,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                         fontSize: 13,
@@ -1134,12 +1133,14 @@ class _ProfilePageState extends State<ProfilePage> {
                               size: 15,
                             ),
                             SizedBox(width: 6),
-                            Text(
-                              'Send feedback',
-                              style: TextStyle(
-                                color: AppTheme.textPrimary(context),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                            Flexible(
+                              child: Text(
+                                'Send feedback',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary(context),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],

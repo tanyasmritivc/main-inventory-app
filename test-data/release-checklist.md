@@ -9,7 +9,12 @@ incompletely fixed or to regress.
 
 You need: a second device or simulator, and a throwaway email.
 
-**Note:** a new account is on the free tier — 3 spaces, 30 items,
+**Note:** production currently has `PILOT_MODE=true`; the free-pilot notice runs
+through November 1, 2026 and active-pilot accounts have unlimited access.
+The date is informational and does not automatically enable billing. Verify
+`GET /me/limits` before testing caps; do not disable the production pilot for QA.
+Section 8's cap checks apply to a controlled non-pilot test environment.
+Outside pilot mode, a new account is on the free tier — 3 spaces, 30 items,
 1 active share, 20 AI chats/mo, 5 photo scans/mo, 10 barcode
 scans/mo. Some steps below deliberately test those limits.
 

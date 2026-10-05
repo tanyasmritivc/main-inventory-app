@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/inventory_cache.dart';
+import 'package:mobile/core/pro_status.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
 import 'package:mobile/features/profile/profile_page.dart';
@@ -102,6 +103,18 @@ class _InventoryAppearanceApi extends _ProfileApi {
   Future<List<dynamic>> getMyShares() async => [];
   @override
   Future<List<dynamic>> getJoinedShares() async => [];
+}
+
+class _PilotProfileApi extends _ProfileApi {
+  _PilotProfileApi(this.notice);
+  final String? notice;
+
+  @override
+  Future<Map<String, dynamic>> getMyLimits() async => {
+    'tier': 'free',
+    'pilot_mode': true,
+    'pilot_notice': notice,
+  };
 }
 
 Widget _hub(
@@ -248,6 +261,59 @@ void main() {
           (_) async => null,
         );
   });
+
+  for (final brightness in Brightness.values) {
+    for (final serverNotice in [true, false]) {
+      for (final scale in [1.0, 2.6, 3.4]) {
+        testWidgets(
+          '${brightness.name} pilot date uses ${serverNotice ? 'API' : 'fallback'} at $scale text',
+          (tester) async {
+            SharedPreferences.setMockInitialValues({});
+            ProStatus.reset();
+            tester.view.physicalSize = const Size(320, 568);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            const notice =
+                'Free Pilot: Unlimited access through November 1, 2026. '
+                'Standard free-plan limits and optional paid plans begin November 2. '
+                'You will not be charged automatically.';
+            await tester.pumpWidget(
+              MaterialApp(
+                theme: AppTheme.create(brightness),
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: child!,
+                ),
+                home: ProfilePage(
+                  api: _PilotProfileApi(serverNotice ? notice : null),
+                  settingsOnly: true,
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            final date = find.textContaining('through November 1, 2026');
+            await tester.scrollUntilVisible(date, 200);
+            await tester.pumpAndSettle();
+            expect(date, findsOneWidget);
+            expect(find.textContaining('begin November 2'), findsOneWidget);
+            expect(
+              find.textContaining('not be charged automatically'),
+              findsOneWidget,
+            );
+            expect(find.textContaining('September'), findsNothing);
+            expect(ProStatus.isPilotMode, isTrue);
+            expect(ProStatus.isPro, isFalse);
+            expect(tester.takeException(), isNull);
+            await tester.pumpWidget(const SizedBox());
+            ProStatus.reset();
+          },
+        );
+      }
+    }
+  }
 
   testWidgets('profile destination retains rounded pill and selected circle', (
     tester,
