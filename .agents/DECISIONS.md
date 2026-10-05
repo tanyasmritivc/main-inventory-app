@@ -416,3 +416,18 @@ while preparing build 46 for submission.
 unencrypted server-to-FIND hop documented. A future TLS/private-route migration
 requires new authorization and its own verification. Other release checks and
 screenshots remain outstanding.
+
+## 2026-10-04: Free pilot is advertised through November 1, 2026
+
+**Decision:** November 1 is the final free-pilot day requested by the user;
+following-day plan copy says November 2. Keep backend `/me/limits`, web pricing
+copy and the mobile fallback consistent. API notice remains authoritative on
+refresh; offline clients retain their cached notice until a successful refresh.
+
+**Scope:** This is a date/copy correction, not activation of billing or automatic
+expiry. Preserve the existing manual `PILOT_MODE` gate, optional informational
+`PILOT_ENDS_AT`, public visibility flag, Stripe guards and plan limits. No exact
+cutoff timezone or automatic switching was specified. Billing activation needs
+a separate authorized release/check; users are not charged automatically.
+The mobile fallback is source for the next approved binary, not a new Apple
+upload. Apple upload/submission remains explicitly held.

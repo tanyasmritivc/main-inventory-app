@@ -1,6 +1,55 @@
 # Current state
 
-Last reviewed on 2026-10-04 during physical-memory onboarding verification and the held build-46 preflight.
+Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot-date correction.
+
+## November pilot date and current launch verdict
+
+- User requested free pilot through **November 1, 2026**, inclusive. The API
+  notice, dormant web pricing copy and mobile fallback now use that date, with
+  November 2 as the following-day plan copy. Lane: `fix/free-pilot-november1`
+  in `/private/tmp/findez-pilot-november`, based on `19da889` / onboarding PR #39.
+  `PILOT_MODE=true`, optional `PILOT_ENDS_AT` (still unset in production), public
+  visibility flags, Stripe guards, limits and manual activation are unchanged.
+  This does not schedule a cutoff, enable payments or charge users automatically.
+  Mobile fallback and narrow-card wrapping are source-only for the next approved
+  binary; no native build, phone install or Apple upload/submission was performed.
+  Active clients receive the API notice on successful Profile refresh; offline
+  clients intentionally retain cached values rather than changing their plan.
+- All 350 backend/API-doc, 134 web and 260 mobile tests pass, with clean Flutter
+  analysis, TypeScript and local web production build. Pilot card regressions
+  cover API/fallback copy in Light/Dark at 320pt and 1x/2.6x/3.4x text, preserving
+  the existing free tier and failed-read cache behavior. Connector tests, exact
+  Desktop bundle check and standalone bundle smoke test pass with lockfile-local
+  dependencies (the initial symlinked dependency check had nonhermetic notices).
+- Only `backend/app/services/limits.py` and the unused
+  `frontend/src/lib/pilot.ts` were selectively copied to production after exact
+  pre-change hashes matched. Rollback copies and the isolated web build are in
+  `/home/ubuntu/findez-pilot-november.1t5vaz` (private directory). Backend restarted;
+  both services are active. The current dirty deployed frontend built successfully
+  in isolation, but `/pricing` redirects to `/` and does not render this copy;
+  preserve that redirect and existing live web artifact rather than adding a
+  pricing screen. Environment-file hashes are unchanged, including FIND and
+  billing configuration. A read-only nil-user deployed-service probe confirms
+  the exact new notice and unlimited maxima; it creates no account/data. Public
+  API and database health from the Mac return healthy. The server's requests to
+  its own public API timed out; local service checks and independent public
+  checks pass. Public `/pricing` still returns its existing 307 redirect.
+- **Not yet ready for broad public launch or Apple submission.** Automated CI
+  and simulator passes do not close the physical release checklist. Latest
+  mobile feature source is local build-50-era work, while the last verified
+  unsubmitted App Store draft selects build 46. The exact final release binary,
+  accurate final screenshots and physical fresh-auth/photo/profile/Documents,
+  offline draft protection, second-account revoke and real invitation acceptance
+  remain outstanding. The previously observed cold Home -> Space empty-list
+  issue is still unresolved; it was not fixed or freshly reproduced in this lane.
+- Live storage metadata rechecked read-only: `documents` and `item-images` are
+  public, `profile-photos` is private. Public file URLs remain a privacy/access
+  concern even when authenticated inventory reads are revoked. No storage
+  policy was changed. Legal review PR #40 is draft/unpublished and still needs
+  provider/deletion verification and final publication/mobile alignment. The
+  user's no-current-customer-training clarification is not proof of all provider
+  practices. The existing unencrypted server-to-FIND hop is also a retained,
+  documented risk; the user explicitly withdrew changing it. Apple holds remain.
 
 ## App Store submission preflight
 
