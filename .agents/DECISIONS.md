@@ -416,3 +416,28 @@ while preparing build 46 for submission.
 unencrypted server-to-FIND hop documented. A future TLS/private-route migration
 requires new authorization and its own verification. Other release checks and
 screenshots remain outstanding.
+
+## 2026-10-04: Legal revisions are prospective review drafts, not immunity
+
+**Decision:** Prepare the Privacy Policy and Terms in a web-only lane at the
+existing public routes. Use the supplied outlined FindEZ wordmark and readable
+neutral tokens; preserve all other site/mobile/backend behavior. Keep a clear
+non-effective draft notice, unresolved review markers and noindex metadata until
+actual data practices and counsel's review are resolved. Do not deploy this draft
+or treat a revised policy as retroactive consent for customer-content training.
+
+**Confirmed facts:** AI Robots Inc, California, 13+ with guardian permission and
+public email `info@findez.ai`. The user subsequently clarified that customer
+photos, chats and documents are not currently used by FindEZ for model training;
+their earlier answer referred to a future possibility. This replaces the earlier
+training assertion. Keep feature processing and model training distinct. Any
+future training needs a separately disclosed, explicit opt-in program, not a
+license implied by today's Terms or a pretend settings toggle. Provider training,
+retention and deletion arrangements remain independently unverified. No postal
+address or worldwide compliance certification may be invented.
+
+**Safety boundary:** Public file buckets and the existing FIND HTTP hop are
+disclosed as limitations, not made secure by wording. Separate storage, deletion,
+consent and mobile-alignment work is needed before related guarantees. Retain
+mandatory consumer rights; do not add an unreviewed arbitration/class waiver or
+claim a custom Apple EULA was filed. Apple submission remains held.
