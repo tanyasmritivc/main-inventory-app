@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -98,7 +99,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
     return PopScope(
       canPop: !_busy,
       child: Dialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppTheme.adaptive(context, AppColors.surface),
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(28),
@@ -108,8 +109,8 @@ class _InvitationDialogState extends State<InvitationDialog> {
             children: [
               Text(
                 team ? 'TEAM INVITATION' : 'SPACE INVITATION',
-                style: const TextStyle(
-                  color: AppColors.muted,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, AppColors.muted),
                   fontSize: 11,
                   letterSpacing: 1.2,
                 ),
@@ -131,7 +132,10 @@ class _InvitationDialogState extends State<InvitationDialog> {
                       : team
                       ? 'Join this team to work together in FindEZ.'
                       : 'Join this space to see its inventory in FindEZ.',
-                  style: const TextStyle(color: AppColors.muted, height: 1.5),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, AppColors.muted),
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text('Access: $access', style: const TextStyle(fontSize: 14)),
@@ -156,8 +160,8 @@ class _InvitationDialogState extends State<InvitationDialog> {
                   padding: const EdgeInsets.only(top: 18),
                   child: Text(
                     _error!,
-                    style: const TextStyle(
-                      color: AppColors.danger,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.danger),
                       height: 1.4,
                     ),
                   ),
@@ -166,8 +170,14 @@ class _InvitationDialogState extends State<InvitationDialog> {
               if (_preview != null)
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFF2F2F7),
-                    foregroundColor: const Color(0xFF1C1C1E),
+                    backgroundColor: AppTheme.adaptive(
+                      context,
+                      const Color(0xFFF2F2F7),
+                    ),
+                    foregroundColor: AppTheme.adaptive(
+                      context,
+                      const Color(0xFF1C1C1E),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -188,7 +198,9 @@ class _InvitationDialogState extends State<InvitationDialog> {
                   child: const Text('Try again'),
                 ),
               TextButton(
-                style: TextButton.styleFrom(foregroundColor: AppColors.muted),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.adaptive(context, AppColors.muted),
+                ),
                 onPressed: _busy
                     ? null
                     : () => Navigator.of(

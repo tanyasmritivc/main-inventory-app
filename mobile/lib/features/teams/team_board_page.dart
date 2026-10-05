@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -250,13 +251,15 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               ),
             if (_canEdit)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   CupertinoIcons.delete,
-                  color: AppColors.danger,
+                  color: AppTheme.foreground(context, AppColors.danger),
                 ),
-                title: const Text(
+                title: Text(
                   'Delete',
-                  style: TextStyle(color: AppColors.danger),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, AppColors.danger),
+                  ),
                 ),
                 onTap: () => Navigator.pop(context, 'delete'),
               ),
@@ -350,7 +353,9 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     const SizedBox(height: 3),
                     Text(
                       '${_tasks.where((task) => task['status'] != 'done').length} open · ${doing.length} in progress',
-                      style: const TextStyle(color: AppColors.muted),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.muted),
+                      ),
                     ),
                   ],
                 ),
@@ -409,7 +414,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     final type = task['task_type']?.toString() ?? 'task';
     final priority = task['priority']?.toString() ?? 'normal';
     return Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _openTask(task),
@@ -427,10 +432,10 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     ? CupertinoIcons.list_bullet
                     : CupertinoIcons.circle,
                 color: done
-                    ? AppColors.success
+                    ? AppTheme.foreground(context, AppColors.success)
                     : task['status'] == 'doing'
-                    ? AppColors.info
-                    : AppColors.accent,
+                    ? AppTheme.foreground(context, AppColors.info)
+                    : AppTheme.foreground(context, AppColors.accent),
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -448,8 +453,8 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     const SizedBox(height: 4),
                     Text(
                       _subtitle(task),
-                      style: const TextStyle(
-                        color: AppColors.muted,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.muted),
                         fontSize: 13,
                       ),
                     ),
@@ -465,8 +470,8 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   decoration: BoxDecoration(
                     color:
                         (priority == 'urgent'
-                                ? AppColors.danger
-                                : AppColors.warning)
+                                ? AppTheme.adaptive(context, AppColors.danger)
+                                : AppTheme.adaptive(context, AppColors.warning))
                             .withValues(alpha: .15),
                     borderRadius: BorderRadius.circular(99),
                   ),
@@ -474,17 +479,17 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     priority == 'urgent' ? 'Urgent' : 'High',
                     style: TextStyle(
                       color: priority == 'urgent'
-                          ? AppColors.danger
-                          : AppColors.warning,
+                          ? AppTheme.foreground(context, AppColors.danger)
+                          : AppTheme.foreground(context, AppColors.warning),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: AppColors.muted,
+                color: AppTheme.foreground(context, AppColors.muted),
                 size: 15,
               ),
             ],
@@ -524,10 +529,10 @@ class _TaskSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sectionColor = title == 'COMPLETED'
-        ? AppColors.success
+        ? AppTheme.adaptive(context, AppColors.success)
         : title == 'IN PROGRESS'
-        ? AppColors.info
-        : AppColors.muted;
+        ? AppTheme.adaptive(context, AppColors.info)
+        : AppTheme.adaptive(context, AppColors.muted);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -574,7 +579,7 @@ class _BoardEmpty extends StatelessWidget {
             completed
                 ? CupertinoIcons.check_mark_circled
                 : CupertinoIcons.square_list,
-            color: AppColors.muted,
+            color: AppTheme.foreground(context, AppColors.muted),
             size: 40,
           ),
           const SizedBox(height: 14),
@@ -588,7 +593,10 @@ class _BoardEmpty extends StatelessWidget {
                 ? 'Completed work will stay here for reference.'
                 : 'Add a task, part request, or checklist item.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+              height: 1.4,
+            ),
           ),
           if (!completed && canEdit) ...[
             const SizedBox(height: 18),
@@ -633,7 +641,10 @@ class _MessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, height: 1.4),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.muted),
+                height: 1.4,
+              ),
             ),
             if (action != null && actionLabel != null) ...[
               const SizedBox(height: 20),

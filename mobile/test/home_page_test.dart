@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,8 +67,9 @@ Widget _overview({
   ValueChanged<String>? onAsk,
   VoidCallback? onReview,
   TextScaler textScaler = TextScaler.noScaling,
+  Brightness brightness = Brightness.dark,
 }) => MaterialApp(
-  theme: ThemeData.dark(),
+  theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(textScaler: textScaler),
     child: child!,
@@ -109,6 +111,57 @@ Widget _page(_HomeApi api, {ValueChanged<Map<String, dynamic>>? onSpace}) =>
     );
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6]) {
+      testWidgets('${brightness.name} Home supports $scale text at 320pt', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          _overview(
+            brightness: brightness,
+            textScaler: TextScaler.linear(scale),
+            items: [_item('A very long part name for the suggestion chip')],
+          ),
+        );
+        await tester.pumpAndSettle();
+        final title = tester.widget<Text>(find.text('My home'));
+        expect(
+          title.style!.color,
+          AppTheme.resolve(brightness, HomeColors.text),
+        );
+        for (final count
+            in find
+                .descendant(
+                  of: find.byType(FittedBox),
+                  matching: find.byType(Text),
+                )
+                .evaluate()) {
+          final text = count.widget as Text;
+          expect(text.style!.color, isNotNull);
+          if (brightness == Brightness.light) {
+            expect(text.style!.color!.computeLuminance(), lessThan(0.3));
+          }
+        }
+        await tester.scrollUntilVisible(
+          find.text('Shelf'),
+          250,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ColorFiltered), findsNothing);
+      });
+    }
+  }
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(

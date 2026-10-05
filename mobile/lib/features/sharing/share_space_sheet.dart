@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -226,7 +227,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
     Map<String, dynamic> invite, {
     bool owner = false,
   }) => Material(
-    color: AppColors.surface2,
+    color: AppTheme.adaptive(context, AppColors.surface2),
     borderRadius: BorderRadius.circular(18),
     child: Padding(
       padding: const EdgeInsets.all(18),
@@ -242,14 +243,21 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Anyone with this link can join. The owner can revoke it at any time.',
-            style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.4),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 14),
           SelectableText(
             _url(invite),
-            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 12),
           Builder(
@@ -273,14 +281,19 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
           ),
           Text(
             'Code: ${invite['share_code']}',
-            style: const TextStyle(color: AppColors.hint, fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.hint),
+              fontSize: 12,
+            ),
           ),
           if (owner)
             TextButton(
               onPressed: _busy ? null : () => _revoke(invite),
-              child: const Text(
+              child: Text(
                 'Stop sharing',
-                style: TextStyle(color: AppColors.danger),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, AppColors.danger),
+                ),
               ),
             ),
         ],
@@ -291,7 +304,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
   Widget build(BuildContext context) => DefaultTabController(
     length: _personal ? 2 : 1,
     child: Material(
-      color: AppColors.surface,
+      color: AppTheme.adaptive(context, AppColors.surface),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: SafeArea(
         top: false,
@@ -334,7 +347,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                 ),
                 child: Text(
                   _error!,
-                  style: const TextStyle(color: AppColors.danger),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, AppColors.danger),
+                  ),
                 ),
               ),
             Expanded(
@@ -353,9 +368,12 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
+                        Text(
                           'Choose the access everyone joining this link will have.',
-                          style: TextStyle(color: AppColors.muted, height: 1.4),
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, AppColors.muted),
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 18),
                         SegmentedButton<String>(
@@ -382,9 +400,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                         ),
                         if (_owned.isNotEmpty) ...[
                           const SizedBox(height: 24),
-                          const Text(
+                          Text(
                             'Active invitations',
-                            style: TextStyle(color: AppColors.muted),
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                AppColors.muted,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 12),
                           for (final share in _owned)
@@ -425,9 +448,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet> {
                         ),
                         if (_joined.isNotEmpty) ...[
                           const SizedBox(height: 24),
-                          const Text(
+                          Text(
                             'Joined spaces',
-                            style: TextStyle(color: AppColors.muted),
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                AppColors.muted,
+                              ),
+                            ),
                           ),
                           for (final membership in _joined)
                             Builder(

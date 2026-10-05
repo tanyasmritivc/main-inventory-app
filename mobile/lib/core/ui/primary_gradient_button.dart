@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_theme.dart';
 
 import 'app_colors.dart';
 
@@ -27,8 +28,9 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
 
-    final bg = enabled ? Colors.transparent : AppColors.surface;
-    final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
+    final bg = enabled ? Colors.transparent : AppTheme.surface(context);
+    final fg = enabled ? Colors.white : AppTheme.textSecondary(context);
+    final accent = AppTheme.adaptive(context, AppColors.accent);
 
     return AnimatedScale(
       duration: const Duration(milliseconds: 160),
@@ -39,25 +41,33 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
         child: Material(
           color: Colors.transparent,
           child: Ink(
-            height: widget.height,
             decoration: BoxDecoration(
               color: bg,
-              gradient: enabled ? AppColors.primaryGradient : null,
+              gradient: enabled
+                  ? LinearGradient(colors: [accent, accent])
+                  : null,
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),
             child: InkWell(
               onTap: widget.onPressed,
               onHighlightChanged: (v) => setState(() => _pressed = v),
-              child: Center(
-                child: DefaultTextStyle.merge(
-                  style: const TextStyle(
-                    letterSpacing: 0.2,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: widget.height),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
-                  child: IconTheme.merge(
-                    data: IconThemeData(color: fg),
+                  child: Center(
                     child: DefaultTextStyle.merge(
-                      style: TextStyle(color: fg),
-                      child: widget.child,
+                      style: const TextStyle(letterSpacing: 0.2),
+                      child: IconTheme.merge(
+                        data: IconThemeData(color: fg),
+                        child: DefaultTextStyle.merge(
+                          style: TextStyle(color: fg),
+                          child: widget.child,
+                        ),
+                      ),
                     ),
                   ),
                 ),

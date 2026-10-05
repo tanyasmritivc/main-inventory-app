@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -75,9 +76,12 @@ class _TeamsPageState extends State<TeamsPage> {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'A team brings people, spaces, and work together.',
-                  style: TextStyle(color: AppColors.muted, height: 1.35),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, AppColors.muted),
+                    height: 1.35,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
@@ -212,7 +216,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.add,
                   title: 'Create Team',
-                  color: const Color(0xFFF2F2F7),
+                  color: AppTheme.adaptive(context, const Color(0xFFF2F2F7)),
                   onTap: _createTeam,
                 ),
               ),
@@ -221,7 +225,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.person_badge_plus,
                   title: 'Join Team',
-                  color: const Color(0xFF8FCDB2),
+                  color: AppTheme.adaptive(context, const Color(0xFF8FCDB2)),
                   onTap: _joinTeam,
                 ),
               ),
@@ -235,10 +239,10 @@ class _TeamsPageState extends State<TeamsPage> {
                   'Create a team for your group, or join one with a team code. Shared Spaces remain separate.',
             )
           else ...[
-            const Text(
+            Text(
               'Your Teams',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -246,9 +250,14 @@ class _TeamsPageState extends State<TeamsPage> {
             const SizedBox(height: 10),
             DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0xFF19191B),
+                color: AppTheme.adaptive(context, const Color(0xFF19191B)),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withValues(alpha: .08)),
+                border: Border.all(
+                  color: AppTheme.adaptive(
+                    context,
+                    Colors.white.withValues(alpha: .08),
+                  ),
+                ),
               ),
               child: Column(
                 children: [
@@ -261,7 +270,10 @@ class _TeamsPageState extends State<TeamsPage> {
                       Divider(
                         height: 1,
                         indent: 60,
-                        color: Colors.white.withValues(alpha: .08),
+                        color: AppTheme.adaptive(
+                          context,
+                          Colors.white.withValues(alpha: .08),
+                        ),
                       ),
                   ],
                 ],
@@ -290,7 +302,7 @@ class _TeamAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -321,14 +333,14 @@ class _TeamRow extends StatelessWidget {
   final Map<String, dynamic> team;
   final VoidCallback onTap;
 
-  Color get _teamColor {
-    const palette = [
-      Color(0xFFAA9BDE),
-      Color(0xFF8FCDB2),
-      Color(0xFFE3C36D),
-      Color(0xFFD99BBC),
-      Color(0xFF91BEDB),
-      Color(0xFFE39A86),
+  Color _teamColor(BuildContext context) {
+    final palette = [
+      AppTheme.adaptive(context, Color(0xFFAA9BDE)),
+      AppTheme.adaptive(context, Color(0xFF8FCDB2)),
+      AppTheme.adaptive(context, Color(0xFFE3C36D)),
+      AppTheme.adaptive(context, Color(0xFFD99BBC)),
+      AppTheme.adaptive(context, Color(0xFF91BEDB)),
+      AppTheme.adaptive(context, Color(0xFFE39A86)),
     ];
     final identity = '${team['team_id'] ?? ''}:${team['name'] ?? ''}';
     final seed = identity.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
@@ -341,7 +353,11 @@ class _TeamRow extends StatelessWidget {
     final program = team['program']?.toString().toUpperCase() ?? '';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      leading: Icon(CupertinoIcons.person_2, color: _teamColor, size: 22),
+      leading: Icon(
+        CupertinoIcons.person_2,
+        color: _teamColor(context),
+        size: 22,
+      ),
       title: Text(
         team['name']?.toString() ?? 'Team',
         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -352,9 +368,9 @@ class _TeamRow extends StatelessWidget {
           role == 'owner' ? 'Owner' : role,
         ].join(' · '),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         CupertinoIcons.chevron_forward,
-        color: AppColors.muted,
+        color: AppTheme.foreground(context, AppColors.muted),
         size: 16,
       ),
       onTap: onTap,
@@ -390,7 +406,10 @@ class _TeamsMessage extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+              height: 1.4,
+            ),
           ),
           if (action != null && actionLabel != null) ...[
             const SizedBox(height: 18),

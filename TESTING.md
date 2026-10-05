@@ -105,6 +105,34 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Mobile appearance and text size
+
+Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from
+`mobile/`. `appearance_controller_test.dart` covers all persisted theme/size
+combinations, invalid stored values, read/write failures, duplicate pending
+writes, disposal, nonlinear OS scaling, semantic contrast and Dark palette
+preservation. `appearance_widget_test.dart` exercises the actual app root,
+live System brightness, status-bar styling, OS bold text/scaling, route/draft
+retention, pending/error UI and narrow choice wrapping.
+
+The Home, Ask, Documents, profile editor, navigation and item-info tests run in
+both themes at normal and large text. Populated Space tests additionally cover
+320pt screens through 3.4x scaling, restocking notices, counts and reachable
+creation actions. Existing photo, profile/document-save, invitation and protected
+item-info swipe regressions remain in the full suite. These tests use stubbed
+accounts/data; they do not perform production writes.
+
+Local build 47 simulator acceptance verifies Light/Dark switching, System
+mode following live iOS brightness, saved preferences after force-quit/relaunch,
+OS accessibility text combined with Larger, status-bar/readable Home counts,
+Capture label wrapping, populated Space layouts and item-info navigation.
+The user requested simulator-only checks for now. Before a later release, repeat
+on a physical phone: all five tabs, scrolling/keyboard with accessibility text,
+Light/Dark/System and restart persistence, VoiceOver names/touch targets,
+photo/avatar/camera presentation, printed QR scanability, Documents/profile forms
+and item-info swipe/save protection. Do not infer physical passes from widgets
+or simulator screenshots. No Apple upload or submission is authorized yet.
+
 ### Space and Team invitation acceptance
 
 `backend/tests/test_invitation_links.py`, the invitation/auth Jest tests and

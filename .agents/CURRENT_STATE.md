@@ -1,8 +1,32 @@
 # Current state
 
-Last reviewed on 2026-10-04 during the approved backend correction and build-46 preflight.
+Last reviewed on 2026-10-04 during mobile appearance verification and the held build-46 preflight.
 
 ## App Store submission preflight
+
+- The user explicitly renewed the Apple submission hold while requesting mobile
+  Light/Dark/System appearance and text-size settings. Work is isolated on
+  `feat/mobile-appearance-accessibility` in `/private/tmp/findez-appearance`,
+  based on `df7e1d1`. Local `1.0.7 (47)` adds persisted device-local
+  Light/Dark/System and Small/Default/Large/Larger text choices under
+  Profile → Settings → Appearance. Default remains Dark with OS text scaling;
+  other sizes compose with OS accessibility scaling, and OS bold text is honored.
+  Legacy fixed-color presentation now adapts across mobile screens without
+  recoloring photos, identity colors, camera imagery or printed QR output.
+  Light foreground/semantic contrast and status-bar styling have regressions.
+  Large-text fixes cover item-info fields, populated Space cards/restock notices,
+  Capture controls and scrollable forms. Routes, drafts, five-icon/56pt nav and
+  protected swipe dismissal remain intact. All 190 mobile tests with coverage,
+  clean Flutter analysis and the local iOS simulator build pass. Simulator
+  checks are complete; this is not a phone/TestFlight/App Store release.
+  The user explicitly chose simulator checks for now, so physical appearance,
+  camera/photo/QR and accessibility acceptance remain deferred. FIND, real
+  inventory, native lifecycle and the App Store draft are unchanged.
+  Item-info presentation/navigation was checked in the simulator; CUA mouse
+  drag attempts did not dismiss it, so native swipe is not marked passed.
+  The existing protected-swipe widget regressions still pass in both themes.
+  The user chose raw app screenshots; the image-edit
+  trial was rejected and no generated artwork was uploaded.
 
 - User requested submission and authorized isolated QA accounts and a dedicated
   Apple review account. App Store `1.0.7` now selects build `46`, remains

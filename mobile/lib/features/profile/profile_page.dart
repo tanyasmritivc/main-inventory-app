@@ -18,6 +18,7 @@ import '../../core/upgrade_sheet.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 import 'profile_editor_page.dart';
+import 'appearance_settings.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -207,7 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -223,13 +224,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.delete_outline,
-                  color: Color(0xFFFF6961),
+                  color: AppTheme.foreground(sheetContext, Color(0xFFFF6961)),
                 ),
-                title: const Text(
+                title: Text(
                   'Remove photo',
-                  style: TextStyle(color: Color(0xFFFF6961)),
+                  style: TextStyle(
+                    color: AppTheme.foreground(sheetContext, Color(0xFFFF6961)),
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -315,7 +318,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppTheme.adaptive(
+                dialogContext,
+                const Color(0xFFEF4444),
+              ),
             ),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Delete'),
@@ -361,15 +367,15 @@ class _ProfilePageState extends State<ProfilePage> {
     final h = hex.replaceAll('#', '');
     return RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(h)
         ? Color(int.parse('FF$h', radix: 16))
-        : const Color(0xFF636366);
+        : AppTheme.adaptive(context, const Color(0xFF636366));
   }
 
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
     child: Text(
       text,
-      style: const TextStyle(
-        color: Color(0xFF8E8E93),
+      style: TextStyle(
+        color: AppTheme.foreground(context, Color(0xFF8E8E93)),
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.1,
@@ -383,10 +389,16 @@ class _ProfilePageState extends State<ProfilePage> {
       filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+          color: AppTheme.adaptive(
+            context,
+            const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+          ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.09),
+            color: AppTheme.adaptive(
+              context,
+              Colors.white.withValues(alpha: 0.09),
+            ),
             width: 0.5,
           ),
         ),
@@ -415,8 +427,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 15,
                       fontWeight: FontWeight.w400,
                     ),
@@ -424,8 +436,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: Color(0x4DFFFFFF),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
@@ -438,18 +450,27 @@ class _ProfilePageState extends State<ProfilePage> {
               value: value,
               onChanged: onChanged,
               activeThumbColor: Colors.white,
-              activeTrackColor: const Color(0xFF6997DD),
-              inactiveThumbColor: const Color(0x33FFFFFF),
-              inactiveTrackColor: const Color(0x14FFFFFF),
+              activeTrackColor: AppTheme.adaptive(
+                context,
+                const Color(0xFF6997DD),
+              ),
+              inactiveThumbColor: AppTheme.adaptive(
+                context,
+                const Color(0x33FFFFFF),
+              ),
+              inactiveTrackColor: AppTheme.adaptive(
+                context,
+                const Color(0x14FFFFFF),
+              ),
             ),
           ],
         ),
       ),
       if (!last)
-        const Divider(
+        Divider(
           height: 0.5,
           thickness: 0.5,
-          color: Color(0x14FFFFFF),
+          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
           indent: 0,
           endIndent: 0,
         ),
@@ -472,18 +493,31 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
           child: Row(
             children: [
-              Icon(icon, color: color.withValues(alpha: 0.75), size: 19),
+              Icon(
+                icon,
+                color: AppTheme.foreground(
+                  context,
+                  color.withValues(alpha: 0.75),
+                ),
+                size: 19,
+              ),
               const SizedBox(width: 13),
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(color: color, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, color),
+                    fontSize: 15,
+                  ),
                 ),
               ),
               if (showChevron)
                 Icon(
                   Icons.chevron_right,
-                  color: color.withValues(alpha: 0.25),
+                  color: AppTheme.foreground(
+                    context,
+                    color.withValues(alpha: 0.25),
+                  ),
                   size: 20,
                 ),
             ],
@@ -491,7 +525,11 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       if (!last)
-        const Divider(height: 0.5, thickness: 0.5, color: Color(0x14FFFFFF)),
+        Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        ),
     ],
   );
 
@@ -516,10 +554,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+                    color: AppTheme.adaptive(
+                      context,
+                      const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.12),
+                      ),
                       width: 0.5,
                     ),
                   ),
@@ -541,7 +585,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                   color: _hexToColor(_avatarColor),
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.18),
+                                    color: AppTheme.adaptive(
+                                      context,
+                                      Colors.white.withValues(alpha: 0.18),
+                                    ),
                                   ),
                                 ),
                                 clipBehavior: Clip.antiAlias,
@@ -561,8 +608,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                             _displayName.isNotEmpty
                                                 ? _displayName[0].toUpperCase()
                                                 : '?',
-                                            style: const TextStyle(
-                                              color: Colors.white,
+                                            style: TextStyle(
+                                              color: AppTheme.foreground(
+                                                context,
+                                                Colors.white,
+                                              ),
                                               fontSize: 24,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -574,8 +624,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                           _displayName.isNotEmpty
                                               ? _displayName[0].toUpperCase()
                                               : '?',
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: AppTheme.foreground(
+                                              context,
+                                              Colors.white,
+                                            ),
                                             fontSize: 24,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -597,15 +650,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                         .instance
                                         .primaryFocus
                                         ?.unfocus(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       hintText: 'Display name',
                                       hintStyle: TextStyle(
-                                        color: Color(0x4DFFFFFF),
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x4DFFFFFF),
+                                        ),
                                       ),
                                       border: InputBorder.none,
                                       contentPadding: EdgeInsets.zero,
@@ -618,8 +677,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                         : 'Set your name',
                                     style: TextStyle(
                                       color: _displayName.isNotEmpty
-                                          ? Colors.white
-                                          : const Color(0x4DFFFFFF),
+                                          ? AppTheme.foreground(
+                                              context,
+                                              Colors.white,
+                                            )
+                                          : AppTheme.foreground(
+                                              context,
+                                              const Color(0x4DFFFFFF),
+                                            ),
                                       fontSize: 19,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -635,8 +700,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                       '',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF8E8E93),
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0xFF8E8E93),
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -650,8 +718,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                         .join(' · '),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Color(0xFF8E8E93),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0xFF8E8E93),
+                                      ),
                                       fontSize: 12,
                                     ),
                                   ),
@@ -702,8 +773,11 @@ class _ProfilePageState extends State<ProfilePage> {
                             },
                             child: Text(
                               _editingProfile ? 'Save' : 'Edit',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -727,7 +801,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                   : 'Change profile photo',
                             ),
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppTheme.adaptive(
+                                context,
+                                Colors.white,
+                              ),
                               padding: EdgeInsets.zero,
                             ),
                           ),
@@ -735,9 +812,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.groups_2_outlined,
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               size: 16,
                             ),
                             const SizedBox(width: 10),
@@ -745,14 +825,20 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: TextField(
                                 controller: _organizationCtrl,
                                 textCapitalization: TextCapitalization.words,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   fontSize: 14,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Organization or team (optional)',
                                   hintStyle: TextStyle(
-                                    color: Color(0x4DFFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x4DFFFFFF),
+                                    ),
                                   ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
@@ -763,9 +849,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.badge_outlined,
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               size: 16,
                             ),
                             const SizedBox(width: 10),
@@ -773,14 +862,20 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: TextField(
                                 controller: _profileRoleCtrl,
                                 textCapitalization: TextCapitalization.words,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   fontSize: 14,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Role (optional)',
                                   hintStyle: TextStyle(
-                                    color: Color(0x4DFFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x4DFFFFFF),
+                                    ),
                                   ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
@@ -791,17 +886,23 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.email_outlined,
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               size: 16,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: TextField(
                                 controller: _contactEmailCtrl,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   fontSize: 14,
                                 ),
                                 keyboardType: TextInputType.emailAddress,
@@ -810,10 +911,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                     .instance
                                     .primaryFocus
                                     ?.unfocus(),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Contact email (optional)',
                                   hintStyle: TextStyle(
-                                    color: Color(0x4DFFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x4DFFFFFF),
+                                    ),
                                   ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
@@ -822,26 +926,32 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ],
                         ),
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(left: 26, top: 5),
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Visible only to people you collaborate with.',
                               style: TextStyle(
-                                color: Color(0x4DFFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x4DFFFFFF),
+                                ),
                                 fontSize: 11,
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Align(
+                        Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Profile color',
                             style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -876,7 +986,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: _avatarColor == color
-                                                ? Colors.white
+                                                ? AppTheme.adaptive(
+                                                    context,
+                                                    Colors.white,
+                                                  )
                                                 : Colors.transparent,
                                             width: 2,
                                           ),
@@ -895,23 +1008,32 @@ class _ProfilePageState extends State<ProfilePage> {
                           },
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.email_outlined,
-                                color: Color(0x4DFFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x4DFFFFFF),
+                                ),
                                 size: 14,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 _contactEmail,
-                                style: const TextStyle(
-                                  color: Color(0x73FFFFFF),
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
                               const Spacer(),
-                              const Icon(
+                              Icon(
                                 Icons.open_in_new,
-                                color: Color(0x4DFFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x4DFFFFFF),
+                                ),
                                 size: 12,
                               ),
                             ],
@@ -931,17 +1053,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: const EdgeInsets.only(top: 16),
                 height: 60,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  ),
                 ),
-                child: const Center(
+                child: Center(
                   child: SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
-                      color: Color(0x73FFFFFF),
+                      color: AppTheme.adaptive(context, Color(0x73FFFFFF)),
                     ),
                   ),
                 ),
@@ -951,25 +1075,30 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: const EdgeInsets.only(top: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0x0A34D399),
+                  color: AppTheme.adaptive(context, const Color(0x0A34D399)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0x3334D399)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x3334D399)),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(
                           Icons.rocket_launch_outlined,
-                          color: Color(0xFF34D399),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFF34D399),
+                          ),
                           size: 20,
                         ),
                         SizedBox(width: 10),
                         Text(
                           'Free Pilot',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.foreground(context, Colors.white),
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                           ),
@@ -982,8 +1111,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           'Unlimited access through September 11, 2026. '
                               'Standard free-plan limits and optional paid plans begin September 12. '
                               'You will not be charged automatically.',
-                      style: const TextStyle(
-                        color: Color(0x99FFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -997,23 +1126,37 @@ class _ProfilePageState extends State<ProfilePage> {
                           horizontal: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0x1A34D399),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x1A34D399),
+                          ),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x3334D399)),
+                          border: Border.all(
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x3334D399),
+                            ),
+                          ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.mail_outline,
-                              color: Color(0xFF34D399),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFF34D399),
+                              ),
                               size: 15,
                             ),
                             SizedBox(width: 6),
                             Text(
                               'Send feedback',
                               style: TextStyle(
-                                color: Color(0xFF34D399),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFF34D399),
+                                ),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1030,30 +1173,39 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: const EdgeInsets.only(top: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0x0AA78BFA),
+                  color: AppTheme.adaptive(context, const Color(0x0AA78BFA)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0x33A78BFA)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x33A78BFA)),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
+                    Icon(
+                      Icons.group,
+                      color: AppTheme.foreground(context, Color(0xFFA78BFA)),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'FindEZ Team — Active',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.foreground(context, Colors.white),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           if (ProStatus.teamName != null)
                             Text(
                               'Covered by ${ProStatus.teamName}',
-                              style: const TextStyle(
-                                color: Color(0x73FFFFFF),
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 12,
                               ),
                             ),
@@ -1068,22 +1220,24 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: const EdgeInsets.only(top: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0x0A30D158),
+                  color: AppTheme.adaptive(context, const Color(0x0A30D158)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0x3330D158)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x3330D158)),
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.check_circle,
-                      color: Color(0xFF30D158),
+                      color: AppTheme.foreground(context, Color(0xFF30D158)),
                       size: 20,
                     ),
                     SizedBox(width: 10),
                     Text(
                       'FindEZ Pro — Active',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.foreground(context, Colors.white),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1094,9 +1248,11 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 margin: const EdgeInsets.only(top: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -1108,20 +1264,26 @@ class _ProfilePageState extends State<ProfilePage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0x1AA78BFA),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0x1AA78BFA),
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.group_outlined,
-                              color: Color(0xFFA78BFA),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFA78BFA),
+                              ),
                               size: 16,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          Text(
                             'FindEZ Team',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.foreground(context, Colors.white),
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
@@ -1129,10 +1291,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Your whole robotics team shares one inventory. Ask your coach for a join code.',
                         style: TextStyle(
-                          color: Color(0x73FFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 13,
                           height: 1.45,
                         ),
@@ -1144,14 +1309,17 @@ class _ProfilePageState extends State<ProfilePage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFA78BFA),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0xFFA78BFA),
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Enter join code',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.foreground(context, Colors.white),
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
                             ),
@@ -1162,6 +1330,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+
+            const AppearanceSettings(),
 
             // ── Scanning ─────────────────────────────────────────────────────
             _sectionLabel('Scanning'),
@@ -1238,14 +1408,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   _actionRow(
                     icon: Icons.logout,
                     label: 'Sign out',
-                    color: const Color(0xFFB8B8BD),
+                    color: AppTheme.adaptive(context, const Color(0xFFB8B8BD)),
                     showChevron: false,
                     onTap: () => unawaited(_signOut()),
                   ),
                   _actionRow(
                     icon: Icons.delete_outline,
                     label: 'Delete account',
-                    color: const Color(0xFFFF453A),
+                    color: AppTheme.adaptive(context, const Color(0xFFFF453A)),
                     showChevron: false,
                     onTap: () => unawaited(_deleteAccount()),
                     last: true,

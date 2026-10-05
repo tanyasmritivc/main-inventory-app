@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -85,7 +86,7 @@ class _HomeOverviewState extends State<HomeOverview> {
     }).toList();
     final captures = (today.isEmpty ? photos : today).take(12).toList();
     return ColoredBox(
-      color: HomeColors.background,
+      color: AppTheme.adaptive(context, HomeColors.background),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
@@ -98,7 +99,7 @@ class _HomeOverviewState extends State<HomeOverview> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: widget.onChooseSpace,
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -111,7 +112,10 @@ class _HomeOverviewState extends State<HomeOverview> {
                             height: 1.15,
                             fontWeight: FontWeight.w400,
                             letterSpacing: -0.8,
-                            color: HomeColors.text,
+                            color: AppTheme.foreground(
+                              context,
+                              HomeColors.text,
+                            ),
                           ),
                         ),
                       ),
@@ -119,7 +123,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       Icon(
                         CupertinoIcons.chevron_down,
                         size: 15,
-                        color: HomeColors.hint,
+                        color: AppTheme.foreground(context, HomeColors.hint),
                       ),
                     ],
                   ),
@@ -132,20 +136,20 @@ class _HomeOverviewState extends State<HomeOverview> {
             controller: _question,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _ask(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w400,
-              color: HomeColors.text,
+              color: AppTheme.foreground(context, HomeColors.text),
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Where is the soldering iron?',
               hintStyle: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w400,
-                color: HomeColors.hint,
+                color: AppTheme.foreground(context, HomeColors.hint),
               ),
               filled: true,
-              fillColor: HomeColors.surface,
+              fillColor: AppTheme.adaptive(context, HomeColors.surface),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 15,
@@ -196,7 +200,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.pendingReviews,
                         label: 'need identifying',
-                        color: HomeColors.orange,
+                        color: AppTheme.adaptive(context, HomeColors.orange),
                         onTap: widget.onOpenReview,
                       ),
                     ),
@@ -205,7 +209,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.lowStock,
                         label: 'running low',
-                        color: HomeColors.amber,
+                        color: AppTheme.adaptive(context, HomeColors.amber),
                         onTap: widget.onOpenLowStock,
                       ),
                     ),
@@ -241,7 +245,10 @@ class _HomeOverviewState extends State<HomeOverview> {
             const SizedBox(height: 12),
             Text(
               widget.error!,
-              style: const TextStyle(fontSize: 12, color: HomeColors.secondary),
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.foreground(context, HomeColors.secondary),
+              ),
             ),
           ],
           const SizedBox(height: 24),
@@ -252,12 +259,12 @@ class _HomeOverviewState extends State<HomeOverview> {
           ),
           const SizedBox(height: 12),
           if (captures.isEmpty)
-            const Text(
+            Text(
               'No photo captures yet',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: HomeColors.hint,
+                color: AppTheme.foreground(context, HomeColors.hint),
               ),
             )
           else
@@ -286,17 +293,17 @@ class _HomeOverviewState extends State<HomeOverview> {
           const _SectionLabel('Where things live'),
           const SizedBox(height: 12),
           if (widget.spaces.isEmpty)
-            const Text(
+            Text(
               'No Spaces yet',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: HomeColors.hint,
+                color: AppTheme.foreground(context, HomeColors.hint),
               ),
             )
           else
             Material(
-              color: HomeColors.surface,
+              color: AppTheme.adaptive(context, HomeColors.surface),
               borderRadius: BorderRadius.circular(14),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -314,27 +321,36 @@ class _HomeOverviewState extends State<HomeOverview> {
                             Expanded(
                               child: Text(
                                 (space['name'] ?? '').toString(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
-                                  color: HomeColors.text,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    HomeColors.text,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Text(
                               '${(space['item_count'] as num?)?.toInt() ?? 0}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                color: HomeColors.hint,
+                                color: AppTheme.foreground(
+                                  context,
+                                  HomeColors.hint,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 14),
-                            const Icon(
+                            Icon(
                               CupertinoIcons.chevron_right,
                               size: 14,
-                              color: HomeColors.hint,
+                              color: AppTheme.foreground(
+                                context,
+                                HomeColors.hint,
+                              ),
                             ),
                           ],
                         ),
@@ -355,10 +371,10 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     label,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
-      color: HomeColors.secondary,
+      color: AppTheme.foreground(context, HomeColors.secondary),
     ),
   );
 }
@@ -369,7 +385,7 @@ class _Suggestion extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
-    color: HomeColors.surface,
+    color: AppTheme.adaptive(context, HomeColors.surface),
     borderRadius: BorderRadius.circular(24),
     child: InkWell(
       borderRadius: BorderRadius.circular(24),
@@ -384,10 +400,10 @@ class _Suggestion extends StatelessWidget {
             '$name?',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: HomeColors.secondary,
+              color: AppTheme.foreground(context, HomeColors.secondary),
             ),
           ),
         ),
@@ -409,7 +425,7 @@ class _DecisionTile extends StatelessWidget {
   final Color color;
   @override
   Widget build(BuildContext context) => Material(
-    color: HomeColors.surface,
+    color: AppTheme.adaptive(context, HomeColors.surface),
     borderRadius: BorderRadius.circular(14),
     child: InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -428,18 +444,18 @@ class _DecisionTile extends StatelessWidget {
                   fontSize: 32,
                   height: 1.1,
                   fontWeight: FontWeight.w400,
-                  color: color,
+                  color: AppTheme.foreground(context, color),
                 ),
               ),
             ),
             const SizedBox(height: 10),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 height: 1.25,
                 fontWeight: FontWeight.w400,
-                color: HomeColors.secondary,
+                color: AppTheme.foreground(context, HomeColors.secondary),
               ),
             ),
           ],
@@ -482,11 +498,11 @@ class _CaptureCard extends StatelessWidget {
             item.displayName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               height: 1.3,
               fontWeight: FontWeight.w400,
-              color: HomeColors.secondary,
+              color: AppTheme.foreground(context, HomeColors.secondary),
             ),
           ),
         ],

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -206,7 +207,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
   Future<void> _choosePhoto() async {
     final choice = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: HomeColors.surface,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.surface),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -251,16 +252,16 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
           : TextCapitalization.words,
       textInputAction: TextInputAction.next,
       onChanged: (_) => setState(() {}),
-      style: const TextStyle(
-        color: HomeColors.text,
+      style: TextStyle(
+        color: AppTheme.foreground(context, HomeColors.text),
         fontSize: 17,
         fontWeight: FontWeight.w400,
       ),
       decoration: InputDecoration(
         labelText: label,
         counterText: '',
-        labelStyle: const TextStyle(
-          color: HomeColors.secondary,
+        labelStyle: TextStyle(
+          color: AppTheme.foreground(context, HomeColors.secondary),
           fontWeight: FontWeight.w400,
         ),
         filled: false,
@@ -286,16 +287,16 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
   );
 
   Widget _group(List<Widget> children) => Material(
-    color: HomeColors.surface,
+    color: AppTheme.adaptive(context, HomeColors.surface),
     borderRadius: BorderRadius.circular(16),
     clipBehavior: Clip.antiAlias,
     child: Column(
       children: [
         for (var i = 0; i < children.length; i++) ...[
           if (i > 0)
-            const Divider(
+            Divider(
               height: 1,
-              color: Color(0xFF2A2A2E),
+              color: AppTheme.adaptive(context, Color(0xFF2A2A2E)),
               indent: 16,
               endIndent: 16,
             ),
@@ -323,9 +324,9 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
       if (!didPop) unawaited(_close());
     },
     child: Scaffold(
-      backgroundColor: HomeColors.background,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: AppBar(
-        backgroundColor: HomeColors.background,
+        backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         surfaceTintColor: Colors.transparent,
         leading: BackButton(onPressed: _close),
         title: const Text(
@@ -381,8 +382,11 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                                 _store.email,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: HomeColors.secondary,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    HomeColors.secondary,
+                                  ),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -395,10 +399,13 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                         _field('Name', _name, limit: 100, required: true),
                       ]),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'Collaboration details',
                         style: TextStyle(
-                          color: HomeColors.secondary,
+                          color: AppTheme.foreground(
+                            context,
+                            HomeColors.secondary,
+                          ),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
@@ -417,12 +424,15 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                           limit: 200,
                         ),
                       ]),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 8),
                         child: Text(
                           'Visible only to people you collaborate with.',
                           style: TextStyle(
-                            color: HomeColors.secondary,
+                            color: AppTheme.foreground(
+                              context,
+                              HomeColors.secondary,
+                            ),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -430,10 +440,13 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       ),
                       if (_store.photoUrl.isEmpty) ...[
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'Avatar color',
                           style: TextStyle(
-                            color: HomeColors.secondary,
+                            color: AppTheme.foreground(
+                              context,
+                              HomeColors.secondary,
+                            ),
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -472,7 +485,10 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                                       ),
                                       border: Border.all(
                                         color: _color == color
-                                            ? HomeColors.text
+                                            ? AppTheme.adaptive(
+                                                context,
+                                                HomeColors.text,
+                                              )
                                             : Colors.transparent,
                                         width: 2,
                                       ),
@@ -487,8 +503,14 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       FilledButton(
                         onPressed: _busy ? null : _save,
                         style: FilledButton.styleFrom(
-                          backgroundColor: HomeColors.text,
-                          foregroundColor: HomeColors.background,
+                          backgroundColor: AppTheme.adaptive(
+                            context,
+                            HomeColors.text,
+                          ),
+                          foregroundColor: AppTheme.adaptive(
+                            context,
+                            HomeColors.background,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(

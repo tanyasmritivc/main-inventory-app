@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/app_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -99,6 +100,7 @@ Future<void> _open(
   TextScaler scaler = TextScaler.noScaling,
   double keyboard = 0,
   ValueChanged<int?>? onThresholdChanged,
+  Brightness brightness = Brightness.dark,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
@@ -106,7 +108,7 @@ Future<void> _open(
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData.dark(),
+      theme: AppTheme.create(brightness),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
           textScaler: scaler,
@@ -166,6 +168,28 @@ Future<void> _editNotes(WidgetTester tester, String text) async {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6]) {
+      testWidgets(
+        '${brightness.name} item info supports $scale text and swipe dismissal',
+        (tester) async {
+          final api = _Api();
+          await _open(
+            tester,
+            api,
+            brightness: brightness,
+            scaler: TextScaler.linear(scale),
+          );
+          expect(find.text('servo extension cable'), findsWidgets);
+          expect(tester.takeException(), isNull);
+          await _pull(tester);
+          await tester.pumpAndSettle();
+          expect(_scroll, findsNothing);
+          expect(api.writes, isEmpty);
+        },
+      );
+    }
+  }
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(

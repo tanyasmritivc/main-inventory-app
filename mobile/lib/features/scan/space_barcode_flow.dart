@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -35,7 +36,7 @@ Future<void> runSpaceBarcodeFlow({
   if (isUnknown) {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -46,18 +47,21 @@ Future<void> runSpaceBarcodeFlow({
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Unknown barcode',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 21,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Photograph the product label so FindEZ can read its manufacturer and part number.',
-                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
+                  fontSize: 15,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -206,10 +210,10 @@ class _SpaceBarcodeScannerPageState extends State<_SpaceBarcodeScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
         title: const Text('Scan Barcode'),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
       ),
       body: MobileScanner(
         controller: _controller,

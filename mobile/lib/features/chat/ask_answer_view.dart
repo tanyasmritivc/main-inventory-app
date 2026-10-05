@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class AskQuestionCard extends StatelessWidget {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: const Color(0xFF171719),
+      color: AppTheme.adaptive(context, const Color(0xFF171719)),
       borderRadius: BorderRadius.circular(16),
     ),
     child: Column(
@@ -54,8 +55,8 @@ class AskQuestionCard extends StatelessWidget {
         ],
         SelectableText(
           question,
-          style: const TextStyle(
-            color: Color(0xFFF2F2F2),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
             fontSize: 17,
             height: 1.5,
             fontWeight: FontWeight.w400,
@@ -90,8 +91,8 @@ class _AskAnswerViewState extends State<AskAnswerView> {
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFFF2F2F2);
-    const secondary = Color(0xFF85858E);
+    final primary = AppTheme.adaptive(context, Color(0xFFF2F2F2));
+    final secondary = AppTheme.adaptive(context, Color(0xFF85858E));
     final data = widget.contextData;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +104,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
             child: InkWell(
               borderRadius: BorderRadius.circular(6),
               onTap: () => setState(() => _expanded = !_expanded),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                 child: Text(
                   'What it read',
@@ -111,7 +112,10 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     color: primary,
                     fontSize: 15,
                     decoration: TextDecoration.underline,
-                    decorationColor: Color(0xFF3A3A40),
+                    decorationColor: AppTheme.foreground(
+                      context,
+                      Color(0xFF3A3A40),
+                    ),
                     decorationThickness: 1.2,
                   ),
                 ),
@@ -124,7 +128,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               margin: const EdgeInsets.only(top: 4, bottom: 8),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF171719),
+                color: AppTheme.adaptive(context, const Color(0xFF171719)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -146,7 +150,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                                 ),
                                 child: Text(
                                   source.label,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: primary,
                                     fontSize: 15,
                                     decoration: TextDecoration.underline,
@@ -157,16 +161,13 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                           else
                             Text(
                               source.label,
-                              style: const TextStyle(
-                                color: primary,
-                                fontSize: 15,
-                              ),
+                              style: TextStyle(color: primary, fontSize: 15),
                             ),
                           if (source.detail.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               source.detail,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: secondary,
                                 fontSize: 13,
                                 height: 1.4,
@@ -188,7 +189,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               liveRegion: true,
               child: Text(
                 widget.pendingMessage,
-                style: const TextStyle(color: secondary, fontSize: 16),
+                style: TextStyle(color: secondary, fontSize: 16),
               ),
             ),
           )
@@ -202,18 +203,18 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               // Generated images must not trigger arbitrary third-party requests.
               sizedImageBuilder: (_) => const SizedBox.shrink(),
               styleSheet: MarkdownStyleSheet(
-                p: const TextStyle(
+                p: TextStyle(
                   color: primary,
                   fontSize: 17,
                   height: 1.5,
                   fontWeight: FontWeight.w400,
                 ),
-                strong: const TextStyle(
+                strong: TextStyle(
                   color: primary,
                   fontSize: 17,
                   fontWeight: FontWeight.w500,
                 ),
-                listBullet: const TextStyle(
+                listBullet: TextStyle(
                   color: primary,
                   fontSize: 17,
                   height: 1.5,
@@ -228,15 +229,15 @@ class _AskAnswerViewState extends State<AskAnswerView> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: ColoredBox(
-              color: const Color(0xFF171719),
+              color: AppTheme.adaptive(context, const Color(0xFF171719)),
               child: Column(
                 children: [
                   for (var index = 0; index < data.rows.length; index++) ...[
                     if (index > 0)
-                      const Divider(
+                      Divider(
                         height: 1,
                         thickness: 1,
-                        color: Color(0xFF29292E),
+                        color: AppTheme.adaptive(context, Color(0xFF29292E)),
                       ),
                     _ResultRow(row: data.rows[index]),
                   ],
@@ -245,7 +246,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
             ),
           ),
           if (data.rowsTruncated)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 10, left: 4),
               child: Text(
                 'Additional results are not shown here.',
@@ -272,8 +273,8 @@ class _ResultRow extends StatelessWidget {
       children: [
         Text(
           row.name,
-          style: const TextStyle(
-            color: Color(0xFFF2F2F2),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
             fontSize: 17,
             height: 1.4,
           ),
@@ -281,8 +282,8 @@ class _ResultRow extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: const TextStyle(
-            color: Color(0xFF85858E),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFF85858E)),
             fontSize: 14,
             height: 1.4,
           ),
@@ -290,9 +291,18 @@ class _ResultRow extends StatelessWidget {
       ],
     );
     final colors = switch (row.status) {
-      'missing' => (const Color(0xFFF16B74), const Color(0xFF281316)),
-      'low' => (const Color(0xFFE2AE43), const Color(0xFF282110)),
-      _ => (const Color(0xFF59BE96), const Color(0xFF13241E)),
+      'missing' => (
+        AppTheme.adaptive(context, const Color(0xFFF16B74)),
+        AppTheme.adaptive(context, const Color(0xFF281316)),
+      ),
+      'low' => (
+        AppTheme.adaptive(context, const Color(0xFFE2AE43)),
+        AppTheme.adaptive(context, const Color(0xFF282110)),
+      ),
+      _ => (
+        AppTheme.adaptive(context, const Color(0xFF59BE96)),
+        AppTheme.adaptive(context, const Color(0xFF13241E)),
+      ),
     };
     final badge = row.status == null
         ? null

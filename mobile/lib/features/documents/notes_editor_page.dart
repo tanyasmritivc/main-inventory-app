@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
@@ -218,9 +219,9 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: HomeColors.background,
+        backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         appBar: AppBar(
-          backgroundColor: HomeColors.background,
+          backgroundColor: AppTheme.adaptive(context, HomeColors.background),
           surfaceTintColor: Colors.transparent,
           title: Text(
             title,
@@ -233,8 +234,8 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
               onPressed: _saving ? null : () => _save(popOnSuccess: true),
               child: Text(
                 _saving ? 'Saving...' : 'Save',
-                style: const TextStyle(
-                  color: HomeColors.text,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -248,8 +249,8 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
             child: TextField(
               controller: _controller,
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(
-                color: HomeColors.text,
+              style: TextStyle(
+                color: AppTheme.foreground(context, HomeColors.text),
                 fontSize: 17,
                 fontWeight: FontWeight.w400,
                 height: 1.5,
@@ -258,10 +259,10 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
               keyboardType: TextInputType.multiline,
               maxLines: null,
               expands: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Start typing...',
                 hintStyle: TextStyle(
-                  color: HomeColors.hint,
+                  color: AppTheme.foreground(context, HomeColors.hint),
                   fontWeight: FontWeight.w400,
                 ),
                 filled: false,

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -282,7 +283,7 @@ class _MainShellState extends State<MainShell> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => Scaffold(
-          backgroundColor: HomeColors.background,
+          backgroundColor: AppTheme.adaptive(context, HomeColors.background),
           appBar: AppBar(title: const Text('Settings')),
           body: ProfilePage(api: widget.api, settingsOnly: true),
         ),
@@ -402,7 +403,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
-      backgroundColor: HomeColors.background,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: _buildAppBar(),
       body: AnimatedOpacity(
         opacity: _pageOpacity,
@@ -538,7 +539,7 @@ class _ProfileControlCenter extends StatefulWidget {
 class _ProfileControlCenterState extends State<_ProfileControlCenter> {
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
+      color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
       fontWeight: FontWeight.w600,
     );
   }
@@ -553,7 +554,10 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.85),
+                ),
               ),
             ),
           ),
@@ -561,7 +565,10 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.70),
+              color: AppTheme.adaptive(
+                context,
+                Colors.white.withValues(alpha: 0.70),
+              ),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -612,7 +619,7 @@ class _ProfileSupportSection extends StatelessWidget {
 
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
+      color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
       fontWeight: FontWeight.w600,
     );
   }
@@ -718,22 +725,25 @@ class _ProfilePage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: AppTheme.adaptive(context, Colors.black),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Text(
               'Account',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -745,10 +755,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -764,7 +780,10 @@ class _ProfilePage extends StatelessWidget {
                       Text(
                         'Signed in as',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.62),
+                          color: AppTheme.adaptive(
+                            context,
+                            Colors.white.withValues(alpha: 0.62),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -800,7 +819,10 @@ class _ProfilePage extends StatelessWidget {
             Text(
               'Actions',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -812,10 +834,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -851,8 +879,9 @@ class _ProfilePage extends StatelessWidget {
                                     child: Text(
                                       'Cancel',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.7,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Colors.white.withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ),
@@ -861,7 +890,9 @@ class _ProfilePage extends StatelessWidget {
                                     onPressed: () =>
                                         Navigator.of(context).pop(true),
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
                                       foregroundColor: Colors.white,
                                     ),
                                     child: const Text('Delete'),
@@ -922,7 +953,10 @@ class _ProfilePage extends StatelessWidget {
             Text(
               'Legal',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -934,10 +968,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -982,7 +1022,10 @@ class _ProfilePage extends StatelessWidget {
             Text(
               'To delete your account and all associated data,\nemail us at info@findez.ai\nfrom your registered email address.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.75),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.75),
+                ),
                 height: 1.4,
               ),
             ),

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -77,10 +78,12 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Use a password you don’t use anywhere else.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white54),
+                  ),
                 ),
                 const SizedBox(height: 28),
                 TextField(

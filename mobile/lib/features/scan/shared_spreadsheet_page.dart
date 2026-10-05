@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -92,7 +93,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.fromLTRB(
           20,
@@ -130,7 +131,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(title: const Text('Import to FindEZ')),
       body: SafeArea(
         child: FutureBuilder<List<String>>(
@@ -156,21 +157,27 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                   _filename,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Choose where these items should be saved.',
-                  style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 22),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  tileColor: const Color(0xFF1C1C1E),
+                  tileColor: AppTheme.adaptive(
+                    context,
+                    const Color(0xFF1C1C1E),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -181,10 +188,10 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                 ),
                 if (spaces.isNotEmpty) ...[
                   const SizedBox(height: 22),
-                  const Text(
+                  Text(
                     'EXISTING SPACES',
                     style: TextStyle(
-                      color: Color(0x66FFFFFF),
+                      color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.7,
@@ -198,7 +205,10 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                         ),
-                        tileColor: const Color(0xFF111111),
+                        tileColor: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF111111),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),

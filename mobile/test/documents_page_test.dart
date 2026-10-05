@@ -13,6 +13,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/documents/documents_page.dart';
 import 'package:mobile/features/documents/notes_editor_page.dart';
 
@@ -154,31 +155,34 @@ class _Picker extends FilePicker {
   }) async => result;
 }
 
-Widget _page(_Api api, {String? Function()? owner, TextScaler? scaler}) =>
-    RepaintBoundary(
-      key: const ValueKey('documents-qa'),
-      child: MaterialApp(
-        theme: ThemeData.dark().copyWith(
-          textTheme: ThemeData.dark().textTheme.apply(
-            fontFamily: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
-                ? 'FindEZQA'
-                : null,
-          ),
-        ),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: scaler),
-          child: child!,
-        ),
-        home: DocumentsPage(
-          api: api,
-          ownerId: owner ?? () => 'owner',
-          contentClient: MockClient(
-            (_) async =>
-                http.Response('The soldering iron is on the shelf.', 200),
-          ),
-        ),
+Widget _page(
+  _Api api, {
+  String? Function()? owner,
+  TextScaler? scaler,
+  Brightness brightness = Brightness.dark,
+}) => RepaintBoundary(
+  key: const ValueKey('documents-qa'),
+  child: MaterialApp(
+    theme: AppTheme.create(brightness).copyWith(
+      textTheme: AppTheme.create(brightness).textTheme.apply(
+        fontFamily: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
+            ? 'FindEZQA'
+            : null,
       ),
-    );
+    ),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: scaler),
+      child: child!,
+    ),
+    home: DocumentsPage(
+      api: api,
+      ownerId: owner ?? () => 'owner',
+      contentClient: MockClient(
+        (_) async => http.Response('The soldering iron is on the shelf.', 200),
+      ),
+    ),
+  ),
+);
 Future<void> _action(
   WidgetTester tester,
   String filename,
@@ -202,6 +206,44 @@ Future<void> _add(WidgetTester tester, String action) async {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6]) {
+      testWidgets(
+        '${brightness.name} Documents supports $scale text at 320pt',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 568);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            _page(
+              _Api(),
+              brightness: brightness,
+              scaler: TextScaler.linear(scale),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Documents'), findsOneWidget);
+          await tester.scrollUntilVisible(
+            find.text('Workshop note'),
+            200,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ListView),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.tap(find.byTooltip('Actions for Workshop note'));
+          await tester.pumpAndSettle();
+          expect(find.text('Rename'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          expect(find.byType(ColorFiltered), findsNothing);
+        },
+      );
+    }
+  }
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       final font = FontLoader('FindEZQA')

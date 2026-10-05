@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -41,7 +42,7 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       body: Center(
         child: FadeTransition(
           opacity: fade,

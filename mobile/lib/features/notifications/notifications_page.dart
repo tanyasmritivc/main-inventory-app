@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -118,15 +119,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppTheme.adaptive(context, AppColors.surface),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppTheme.adaptive(context, AppColors.border)),
       ),
       child: Row(
         children: [
           Icon(
             _registeringPush ? CupertinoIcons.bell : CupertinoIcons.bell_slash,
-            color: _registeringPush ? AppColors.muted : AppColors.warning,
+            color: _registeringPush
+                ? AppTheme.foreground(context, AppColors.muted)
+                : AppTheme.foreground(context, AppColors.warning),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -143,8 +146,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   const SizedBox(height: 3),
                   Text(
                     _pushError ?? 'Tap Try Again to connect this iPhone.',
-                    style: const TextStyle(
-                      color: AppColors.muted,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.muted),
                       fontSize: 13,
                     ),
                   ),
@@ -182,11 +185,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
             onRefresh: _load,
             child: _items!.isEmpty
                 ? ListView(
-                    children: const [
+                    children: [
                       SizedBox(height: 190),
                       Icon(
                         CupertinoIcons.bell,
-                        color: AppColors.muted,
+                        color: AppTheme.foreground(context, AppColors.muted),
                         size: 42,
                       ),
                       SizedBox(height: 14),
@@ -202,7 +205,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       Text(
                         'Team updates will appear here.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.muted),
+                        style: TextStyle(
+                          color: AppTheme.foreground(context, AppColors.muted),
+                        ),
                       ),
                     ],
                   )
@@ -218,7 +223,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       final color = _color(action);
                       return Container(
                         color: unread
-                            ? AppColors.accent.withValues(alpha: .07)
+                            ? AppTheme.adaptive(
+                                context,
+                                AppColors.accent.withValues(alpha: .07),
+                              )
                             : Colors.transparent,
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
@@ -242,12 +250,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                               ),
                               if (unread)
-                                const Positioned(
+                                Positioned(
                                   right: -2,
                                   top: -2,
                                   child: CircleAvatar(
                                     radius: 4,
-                                    backgroundColor: AppColors.accent,
+                                    backgroundColor: AppTheme.adaptive(
+                                      context,
+                                      AppColors.accent,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -267,17 +278,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Color _color(String action) {
-    if (action == 'task_completed') return AppColors.success;
+    if (action == 'task_completed') {
+      return AppTheme.adaptive(context, AppColors.success);
+    }
     if (action == 'task_deleted' ||
         action == 'item_deleted' ||
         action == 'member_removed') {
-      return AppColors.danger;
+      return AppTheme.adaptive(context, AppColors.danger);
     }
-    if (action.startsWith('task_')) return AppColors.warning;
+    if (action.startsWith('task_')) {
+      return AppTheme.adaptive(context, AppColors.warning);
+    }
     if (action.startsWith('item_') || action.startsWith('space_')) {
-      return AppColors.info;
+      return AppTheme.adaptive(context, AppColors.info);
     }
-    return AppColors.ai;
+    return AppTheme.adaptive(context, AppColors.ai);
   }
 
   IconData _icon(String action) {

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -163,12 +164,12 @@ void _showSaveFailureSummary({
   showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       title: Text(
         '$inserted of $total item${total == 1 ? '' : 's'} saved',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: AppTheme.foreground(ctx, Colors.white),
           fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
@@ -177,9 +178,12 @@ void _showSaveFailureSummary({
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Some items could not be saved:',
-            style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 10),
           ...lines.map(
@@ -187,23 +191,29 @@ void _showSaveFailureSummary({
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
                 line,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Colors.white),
+                  fontSize: 13,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Fix the highlighted rows and tap Save All to retry.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text(
+          child: Text(
             'Dismiss',
-            style: TextStyle(color: Color(0xFF6997DD)),
+            style: TextStyle(color: AppTheme.foreground(ctx, Color(0xFF6997DD))),
           ),
         ),
       ],
@@ -238,28 +248,31 @@ Future<void> runUploadPhotoFlow({
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
+            color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.photo_camera_outlined,
-                  color: Colors.white,
+                  color: AppTheme.foreground(ctx, Colors.white),
                 ),
-                title: const Text(
+                title: Text(
                   'Take Photo',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_outlined, color: Colors.white),
-                title: const Text(
+                leading: Icon(
+                  Icons.photo_outlined,
+                  color: AppTheme.foreground(ctx, Colors.white),
+                ),
+                title: Text(
                   'Choose from Library',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
               ),
@@ -297,17 +310,22 @@ Future<void> runUploadPhotoFlow({
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
+              color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.white),
+                CircularProgressIndicator(
+                  color: AppTheme.adaptive(context, Colors.white),
+                ),
                 SizedBox(height: 16),
                 Text(
                   'Extracting items…',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
@@ -175,11 +176,11 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     return PopScope(
       canPop: _state != _ImportState.uploading,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         appBar: AppBar(
           title: const Text('Import Spreadsheet'),
           centerTitle: true,
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.adaptive(context, Colors.black),
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: _state != _ImportState.uploading,
         ),
@@ -233,9 +234,11 @@ class _ReadyView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0xFF171717),
+            color: AppTheme.adaptive(context, const Color(0xFF171717)),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x1FFFFFFF)),
+            border: Border.all(
+              color: AppTheme.adaptive(context, const Color(0x1FFFFFFF)),
+            ),
           ),
           child: Column(
             children: [
@@ -243,21 +246,21 @@ class _ReadyView extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: const Color(0x1AFFFFFF),
+                  color: AppTheme.adaptive(context, const Color(0x1AFFFFFF)),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.table_chart_outlined,
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   size: 30,
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Import a spreadsheet',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 21,
                   fontWeight: FontWeight.w600,
                 ),
@@ -266,8 +269,8 @@ class _ReadyView extends StatelessWidget {
               Text(
                 'Items will be organized and added to “$location”.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                   fontSize: 14,
                   height: 1.4,
                 ),
@@ -281,17 +284,20 @@ class _ReadyView extends StatelessWidget {
                   icon: const Icon(Icons.folder_open_outlined, size: 20),
                   label: const Text('Choose Spreadsheet'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppTheme.adaptive(context, Colors.white),
+                    foregroundColor: AppTheme.adaptive(context, Colors.black),
                     shape: const StadiumBorder(),
                   ),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Excel (.xlsx) or CSV · Maximum 10 MB',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x66FFFFFF)),
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -301,14 +307,19 @@ class _ReadyView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0x1AFF453A),
+              color: AppTheme.adaptive(context, const Color(0x1AFF453A)),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x4DFF453A)),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x4DFF453A)),
+              ),
             ),
             child: Text(
               errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFFF6961), fontSize: 13),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0xFFFF6961)),
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -354,19 +365,19 @@ class _UploadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 34,
               height: 34,
               child: CircularProgressIndicator(
-                color: Colors.white,
+                color: AppTheme.adaptive(context, Colors.white),
                 strokeWidth: 2.5,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Importing your inventory…',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -375,17 +386,20 @@ class _UploadingView extends StatelessWidget {
             Text(
               '$filename\nAdding items to “$location”',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0x73FFFFFF),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                 fontSize: 13,
                 height: 1.45,
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Keep FindEZ open while the file is processed.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -419,21 +433,21 @@ class _SuccessView extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0x1A30D158),
+              decoration: BoxDecoration(
+                color: AppTheme.adaptive(context, Color(0x1A30D158)),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_rounded,
-                color: Color(0xFF30D158),
+                color: AppTheme.foreground(context, Color(0xFF30D158)),
                 size: 38,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Import complete',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 23,
                 fontWeight: FontWeight.w600,
               ),
@@ -442,14 +456,20 @@ class _SuccessView extends StatelessWidget {
             Text(
               '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                fontSize: 15,
+              ),
             ),
             if (result.failures > 0) ...[
               const SizedBox(height: 8),
               Text(
                 '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFFFF9F0A), fontSize: 13),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xFFFF9F0A)),
+                  fontSize: 13,
+                ),
               ),
             ],
             const SizedBox(height: 28),
@@ -459,8 +479,8 @@ class _SuccessView extends StatelessWidget {
               child: FilledButton(
                 onPressed: onViewItems,
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: AppTheme.adaptive(context, Colors.white),
+                  foregroundColor: AppTheme.adaptive(context, Colors.black),
                   shape: const StadiumBorder(),
                 ),
                 child: const Text('View Items'),
@@ -500,10 +520,14 @@ class _InfoRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0x0FFFFFFF),
+              color: AppTheme.adaptive(context, const Color(0x0FFFFFFF)),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: const Color(0xB3FFFFFF), size: 20),
+            child: Icon(
+              icon,
+              color: AppTheme.foreground(context, const Color(0xB3FFFFFF)),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -512,8 +536,8 @@ class _InfoRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -521,8 +545,8 @@ class _InfoRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Color(0x73FFFFFF),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                     fontSize: 12,
                     height: 1.35,
                   ),

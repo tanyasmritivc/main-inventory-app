@@ -169,10 +169,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Shopping List',
           style: TextStyle(
-            color: Colors.white,
+            color: AppTheme.foreground(context, Colors.white),
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -180,9 +180,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         actions: [
           if (_checked.isNotEmpty)
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.clear_all_outlined,
-                color: Colors.white70,
+                color: AppTheme.foreground(context, Colors.white70),
                 size: 20,
               ),
               onPressed: () async {
@@ -193,9 +193,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
           if (_items.isNotEmpty)
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.share_outlined,
-                color: Colors.white70,
+                color: AppTheme.foreground(context, Colors.white70),
                 size: 20,
               ),
               onPressed: () {
@@ -209,9 +209,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               },
             ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.refresh_outlined,
-              color: Colors.white70,
+              color: AppTheme.foreground(context, Colors.white70),
               size: 20,
             ),
             onPressed: _load,
@@ -219,7 +219,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.adaptive(context, Colors.white),
+              ),
+            )
           : _items.isEmpty
           ? _buildEmptyState()
           : RefreshIndicator(
@@ -233,13 +237,19 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: unchecked.isEmpty
-                          ? const Color(0x0A30D158)
-                          : const Color(0x0AEF4444),
+                          ? AppTheme.adaptive(context, const Color(0x0A30D158))
+                          : AppTheme.adaptive(context, const Color(0x0AEF4444)),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: unchecked.isEmpty
-                            ? const Color(0x3330D158)
-                            : const Color(0x33EF4444),
+                            ? AppTheme.adaptive(
+                                context,
+                                const Color(0x3330D158),
+                              )
+                            : AppTheme.adaptive(
+                                context,
+                                const Color(0x33EF4444),
+                              ),
                       ),
                     ),
                     child: Row(
@@ -249,8 +259,14 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                               ? Icons.check_circle_outline
                               : Icons.shopping_cart_outlined,
                           color: unchecked.isEmpty
-                              ? const Color(0xFF30D158)
-                              : const Color(0xFFEF4444),
+                              ? AppTheme.foreground(
+                                  context,
+                                  const Color(0xFF30D158),
+                                )
+                              : AppTheme.foreground(
+                                  context,
+                                  const Color(0xFFEF4444),
+                                ),
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -264,17 +280,26 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                     : '${unchecked.length} items need restocking',
                                 style: TextStyle(
                                   color: unchecked.isEmpty
-                                      ? const Color(0xFF30D158)
-                                      : Colors.white,
+                                      ? AppTheme.foreground(
+                                          context,
+                                          const Color(0xFF30D158),
+                                        )
+                                      : AppTheme.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,
                                 ),
                               ),
                               if (unchecked.isNotEmpty)
-                                const Text(
+                                Text(
                                   'Tap items to mark as ordered',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -300,13 +325,16 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppTheme.adaptive(context, Colors.white),
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Share',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.black,
+                                  ),
                                   fontWeight: FontWeight.w700,
                                   fontSize: 12,
                                 ),
@@ -319,12 +347,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   const SizedBox(height: 20),
 
                   if (unchecked.isNotEmpty) ...[
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(bottom: 10),
                       child: Text(
                         'NEEDS RESTOCKING',
                         style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.4,
@@ -347,12 +375,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
                   if (checkedItems.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(bottom: 10),
                       child: Text(
                         'ORDERED',
                         style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.4,
@@ -384,24 +412,27 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.check_circle_outline,
-            color: Color(0xFF30D158),
+            color: AppTheme.foreground(context, Color(0xFF30D158)),
             size: 56,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'All stocked up!',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'No items are low on stock.\nSet thresholds on items to track them.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              fontSize: 14,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -410,14 +441,16 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                ),
               ),
-              child: const Text(
+              child: Text(
                 'Refresh',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -462,14 +495,16 @@ class _ShoppingItemCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isChecked ? const Color(0x06FFFFFF) : const Color(0xFF171717),
+          color: isChecked
+              ? AppTheme.adaptive(context, const Color(0x06FFFFFF))
+              : AppTheme.adaptive(context, const Color(0xFF171717)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
-                ? const Color(0xFF171717)
+                ? AppTheme.adaptive(context, const Color(0xFF171717))
                 : item.quantity <= 0
-                ? const Color(0x33EF4444)
-                : const Color(0x33FBBF24),
+                ? AppTheme.adaptive(context, const Color(0x33EF4444))
+                : AppTheme.adaptive(context, const Color(0x33FBBF24)),
           ),
         ),
         child: Row(
@@ -478,16 +513,22 @@ class _ShoppingItemCard extends StatelessWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: isChecked ? const Color(0xFF30D158) : Colors.transparent,
+                color: isChecked
+                    ? AppTheme.adaptive(context, const Color(0xFF30D158))
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isChecked
-                      ? const Color(0xFF30D158)
-                      : const Color(0x40FFFFFF),
+                      ? AppTheme.adaptive(context, const Color(0xFF30D158))
+                      : AppTheme.adaptive(context, const Color(0x40FFFFFF)),
                 ),
               ),
               child: isChecked
-                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  ? Icon(
+                      Icons.check,
+                      color: AppTheme.foreground(context, Colors.white),
+                      size: 14,
+                    )
                   : null,
             ),
             const SizedBox(width: 12),
@@ -498,7 +539,9 @@ class _ShoppingItemCard extends StatelessWidget {
                   Text(
                     item.displayName,
                     style: TextStyle(
-                      color: isChecked ? const Color(0x60FFFFFF) : Colors.white,
+                      color: isChecked
+                          ? AppTheme.foreground(context, const Color(0x60FFFFFF))
+                          : AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       decoration: isChecked ? TextDecoration.lineThrough : null,
@@ -514,8 +557,14 @@ class _ShoppingItemCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: item.quantity <= 0
-                              ? const Color(0x1AEF4444)
-                              : const Color(0x1AFBBF24),
+                              ? AppTheme.adaptive(
+                                  context,
+                                  const Color(0x1AEF4444),
+                                )
+                              : AppTheme.adaptive(
+                                  context,
+                                  const Color(0x1AFBBF24),
+                                ),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -524,8 +573,14 @@ class _ShoppingItemCard extends StatelessWidget {
                               : '${item.quantity} left',
                           style: TextStyle(
                             color: item.quantity <= 0
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFFFBBF24),
+                                ? AppTheme.foreground(
+                                    context,
+                                    const Color(0xFFEF4444),
+                                  )
+                                : AppTheme.foreground(
+                                    context,
+                                    const Color(0xFFFBBF24),
+                                  ),
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.5,
@@ -535,8 +590,8 @@ class _ShoppingItemCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         item.location,
-                        style: const TextStyle(
-                          color: Color(0x4DFFFFFF),
+                        style: TextStyle(
+                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                           fontSize: 11,
                         ),
                       ),
@@ -544,8 +599,11 @@ class _ShoppingItemCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           item.displayDescription!,
-                          style: const TextStyle(
-                            color: Color(0x4DFFFFFF),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                             fontSize: 11,
                           ),
                         ),
@@ -556,8 +614,8 @@ class _ShoppingItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       shoppingItem.reason,
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                         fontSize: 11,
                       ),
                     ),
@@ -580,12 +638,15 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.remove,
-                        color: Colors.white70,
+                        color: AppTheme.foreground(context, Colors.white70),
                         size: 14,
                       ),
                     ),
@@ -595,8 +656,8 @@ class _ShoppingItemCard extends StatelessWidget {
                     child: Text(
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -608,12 +669,15 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add,
-                        color: Colors.white70,
+                        color: AppTheme.foreground(context, Colors.white70),
                         size: 14,
                       ),
                     ),
