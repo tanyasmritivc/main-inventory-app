@@ -54,8 +54,11 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `034`, but they do not contain
-the complete origin of every live table. The committed
+related services. The rebuild source audited on 2026-10-05 contains migrations
+through `038`, with its workspace transition still undeployed on that date.
+Production has unrelated local files reusing prefixes `036` to `038`; deployment
+must identify exact migration contents, not just numbers. Numbered migrations do
+not contain the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
 
