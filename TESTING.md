@@ -105,6 +105,18 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Cold Home-to-Space navigation
+
+`home_space_loading_test.dart` runs the actual MainShell with ready Home data
+and a deliberately pending lazy Find read in Light/Dark. The original source
+opened a false empty Space before that read completed. Tests now require no
+Space route until confirmed data, exact-ID/all-category contents despite stale
+legacy location names, safe failed-read retry, real empty Spaces, no duplicate
+routes and no disposed late navigation. The full 265-test mobile suite with
+coverage and analysis pass. Before release, repeat cold Home -> Space and
+Find -> Space on the exact final binary, including slow/offline reads and
+account switching. Source/widget results are not a native physical pass.
+
 ### Mobile appearance and text size
 
 Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from

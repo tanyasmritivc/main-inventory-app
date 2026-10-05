@@ -2,6 +2,25 @@
 
 Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot-date correction.
 
+## Cold Home-to-Space correction (October 5)
+
+- `fix/mobile-home-space-cold-load` in `/private/tmp/findez-home-space-fix`,
+  based on `2758498`, reproduces the observed failure in the actual shell:
+  Home is populated, Find registers its destination before its first inventory
+  request finishes, and the Space route captures the still-empty list.
+- Space navigation now waits for the confirmed inventory read (including an
+  active refresh), deduplicates reads and route taps, and refuses a false empty
+  destination after a failed read. Retry and genuinely empty Spaces remain valid.
+  Exact Space IDs and complete Home inventories are preserved independently of
+  Find filters. Late disposed/account-changed reads cannot open a destination.
+- All 265 mobile tests with coverage and clean Flutter analysis pass. Five new
+  regressions cover actual cold-shell navigation in Light/Dark, failure/retry,
+  confirmed empty data, duplicate taps and disposed late reads. The cold-shell
+  assertion failed against the original source before the fix.
+- This is source-only, not a newly installed native binary or physical acceptance
+  pass. Apple upload/submission remains held, FIND unchanged. The unrelated
+  public item-image storage, legal publication and physical release gates remain.
+
 ## November pilot date and current launch verdict
 
 - User requested free pilot through **November 1, 2026**, inclusive. The API
@@ -40,8 +59,8 @@ Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot
   unsubmitted App Store draft selects build 46. The exact final release binary,
   accurate final screenshots and physical fresh-auth/photo/profile/Documents,
   offline draft protection, second-account revoke and real invitation acceptance
-  remain outstanding. The previously observed cold Home -> Space empty-list
-  issue is still unresolved; it was not fixed or freshly reproduced in this lane.
+  remain outstanding. The cold Home -> Space issue now has a separately tested
+  source correction above; final-binary/device acceptance remains outstanding.
 - Live storage metadata rechecked read-only: `documents` and `item-images` are
   public, `profile-photos` is private. Public file URLs remain a privacy/access
   concern even when authenticated inventory reads are revoked. No storage
