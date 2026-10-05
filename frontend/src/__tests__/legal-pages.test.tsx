@@ -75,7 +75,9 @@ test("draft distinguishes current no-training practice from unverified processor
   expect(privacy).toContain("uses HTTP, not an encrypted transport");
   expect(privacy).toContain("FindEZ does not currently use customer photos, chats or documents to train or fine-tune AI models");
   expect(privacy).toContain("Processing content to provide requested features");
-  expect(privacy).toContain("Independently verify FIND and language-model operators' permitted uses and downstream training practices");
+  expect(privacy).toContain("AI Robots Inc operates both the FIND vision pipeline and the FTCTools language-model gateway");
+  expect(privacy).toContain("retention remains unconfirmed");
+  expect(privacy).toContain("Independently verify FIND and language-model infrastructure's permitted uses and downstream training practices");
   expect(privacy).not.toContain("customer content is used for model training");
   expect(privacy).toContain("REVIEW REQUIRED BEFORE PUBLICATION");
   expect(privacy).toContain("No immediate or universal erasure guarantee");

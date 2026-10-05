@@ -31,13 +31,18 @@ prevent claims. Use qualified counsel for the operator's actual markets.
 - Public contact supplied: `info@findez.ai`. No postal address was supplied;
   do not invent one. Determine with counsel whether a mailing address or other
   representative contact is required for the intended markets/platform terms.
+- October 5: the operator confirms AI Robots Inc operates both FIND and the
+  language-model gateway, but retention is not confirmed. This is not verification
+  of underlying hosting/model infrastructure, logs, backups or downstream uses.
+  The user corrected the contact email again to `info@findez.ai`; it remains an
+  email, not a business mailing address. No postal address is fabricated.
 
 ## Facts and publication blockers
 
 | Topic | Evidence / limitation | Required before effective publication |
 |---|---|---|
 | Training | User clarified no current FindEZ training on customer photos/chats/documents; the prior answer concerned future plans. Inspected app source exposes inference routes, not a training implementation; source cannot certify processor practices. Drafts separate feature processing from training and do not grant future training permission. | Independently verify provider/downstream permitted uses before publishing a broader no-training assurance. Any future program needs identified categories/operators/purposes, separate explicit opt-in, withdrawal, retention and deletion/model-unlearning handling before launch. Declining optional training must not block ordinary app use. Do not authorize a future or undisclosed past use through this draft. |
-| Processor protection | FIND and FTCTools language gateway are application routes; no OpenAI application runtime dependency/fallback. Actual operators' contracts and downstream arrangements unknown. | Verify identities, countries, equal protection/permitted use, retention/deletion and any required third-party-AI consent. Do not claim private hosting alone means no independent provider. |
+| Processor protection | Owner confirms AI Robots Inc operates FIND and the language-model gateway; no OpenAI application runtime dependency/fallback. Retention and underlying hosting/model/downstream arrangements remain unconfirmed. | Verify processing countries, underlying services, equal protection/permitted use, retention/deletion and any required third-party-AI consent. Operating the gateway is not evidence that there is no independent underlying service. |
 | File privacy | Read-only live `storage.buckets` query: `documents` and `item-images` public; `profile-photos` private. Signed document API URLs do not make the underlying public bucket private. No actual customer files were opened for this check. | Fix in a separate storage/access lane with migration/URL compatibility and cross-account tests, or disclose the actual limitation. A policy cannot substitute for appropriate security. Do not flip bucket settings without verifying existing clients. |
 | Transport | Existing server-to-FIND hop is HTTP and was explicitly preserved at the user's instruction. Public policy/site endpoints have HTTPS/HSTS. | Do not claim all transfers encrypted. Any TLS/private-route change requires a separate authorized lane; no configuration was changed here. |
 | Deletion | `delete-user` removes many rows, documents and item-image objects but does not explicitly remove the profile-photo bucket or all nested Team-document objects. Processor deletion/backup propagation is not verified. | Verify deployed function, cascades, profile/Team files, processor records and backup restoration behavior. No immediate/all-copies deletion promise. Actual fixes require a separately scoped backend/storage lane. |
