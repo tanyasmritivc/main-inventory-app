@@ -1,6 +1,7 @@
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/ui/findez_wordmark.dart';
 
 import 'onboarding_prefs.dart';
 
@@ -225,18 +226,11 @@ class _Top extends StatelessWidget {
     child: Row(
       children: [
         SizedBox(
-          width: 76,
+          width: 100,
           child: step == 0
               ? Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: const FindEZWordmark(width: 100),
                 )
               : IconButton(
                   onPressed: back,

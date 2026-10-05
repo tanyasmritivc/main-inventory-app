@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.7+47
+version: 1.0.7+48
 
 environment:
   sdk: ^3.10.7
@@ -55,6 +55,7 @@ dependencies:
   sign_in_with_apple: ^6.1.4
   google_sign_in: 6.2.1
   google_fonts: ^6.2.1
+  flutter_svg: ^2.3.0
   speech_to_text: ^6.6.0
   share_handler: ^0.0.25
   flutter_local_notifications: ^22.3.0
@@ -78,7 +79,8 @@ dev_dependencies:
 flutter_launcher_icons:
   ios: true
   android: true
-  image_path: "assets/icon.png"
+  image_path: "assets/brand/findez-app-icon.png"
+  remove_alpha_ios: true
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -87,6 +89,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/brand/
 
   # To add assets to your application, add an assets section, like this:
   #   - images/a_dot_burr.jpeg

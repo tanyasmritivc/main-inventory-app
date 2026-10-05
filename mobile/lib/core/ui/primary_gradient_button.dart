@@ -28,9 +28,8 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
 
-    final bg = enabled ? Colors.transparent : AppTheme.surface(context);
-    final fg = enabled ? Colors.white : AppTheme.textSecondary(context);
-    final accent = AppTheme.adaptive(context, AppColors.accent);
+    final bg = enabled ? AppColors.accent : AppTheme.surface(context);
+    final fg = enabled ? AppTheme.onAction : AppTheme.textSecondary(context);
 
     return AnimatedScale(
       duration: const Duration(milliseconds: 160),
@@ -43,9 +42,6 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
           child: Ink(
             decoration: BoxDecoration(
               color: bg,
-              gradient: enabled
-                  ? LinearGradient(colors: [accent, accent])
-                  : null,
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),
             child: InkWell(

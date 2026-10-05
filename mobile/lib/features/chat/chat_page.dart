@@ -2587,6 +2587,7 @@ class _ChatPageState extends State<ChatPage>
     final owner = Supabase.instance.client.auth.currentUser?.id;
     final camera = await showModalBottomSheet<bool>(
       context: context,
+      showDragHandle: true,
       backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
       builder: (context) => SafeArea(
         child: Column(
@@ -2849,7 +2850,10 @@ class _ChatPageState extends State<ChatPage>
                             )
                           : Icon(
                               Icons.add_rounded,
-                              color: AppTheme.foreground(context, Colors.white54),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white54,
+                              ),
                               size: 22,
                             ),
                     ),

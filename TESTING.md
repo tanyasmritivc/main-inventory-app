@@ -110,8 +110,8 @@ keys and the public footer. The docs add no production API routes or migrations.
 Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from
 `mobile/`. `appearance_controller_test.dart` covers all persisted theme/size
 combinations, invalid stored values, read/write failures, duplicate pending
-writes, disposal, nonlinear OS scaling, semantic contrast and Dark palette
-preservation. `appearance_widget_test.dart` exercises the actual app root,
+writes, disposal, nonlinear OS scaling, semantic contrast and adaptive brand
+roles. `appearance_widget_test.dart` exercises the actual app root,
 live System brightness, status-bar styling, OS bold text/scaling, route/draft
 retention, pending/error UI and narrow choice wrapping.
 
@@ -132,6 +132,32 @@ Light/Dark/System and restart persistence, VoiceOver names/touch targets,
 photo/avatar/camera presentation, printed QR scanability, Documents/profile forms
 and item-info swipe/save protection. Do not infer physical passes from widgets
 or simulator screenshots. No Apple upload or submission is authorized yet.
+
+### Mobile brand assets and duplicate sheet handles
+
+Local build 48 adds `brand_theme_test.dart`: exact guide tokens, separate stock/
+error roles, Material color-pair contrast, resolved-child and inverted-control
+contrast, outlined SVG geometry and ink-only reversal, opaque 1024px native
+icon, flat primary actions and a single custom edit-sheet handle in both themes
+at normal/2.6x text. The full 203-test suite includes navigation, drafts, failed
+saves, avatar/Documents/invitation guards and protected item-info swipe tests.
+Run the same analysis/full-suite commands above. Native iOS simulator build 48
+passes; Light/Dark/System switching, live iOS brightness, restart persistence,
+Larger text, all five tabs, Documents/item-info and single edit handles were
+visually inspected. The simulator preferences were restored to Light/Default
+and the simulator OS appearance to its original Dark setting. No inventory,
+membership or document writes were made during this visual check.
+
+Original SVGs are bundled under `assets/brand/`. To regenerate native icon sizes
+from the supplied original PNG, run `dart run tool/prepare_brand_icon.dart
+/absolute/path/to/findez-icon-1024.png`, then `dart run flutter_launcher_icons`.
+The preparation step flattens alpha onto Ink and keeps the mark/padding intact.
+Existing native lifecycle files are not part of this change.
+
+Before release, repeat the physical checks above. Also investigate the observed
+cold Home Space shortcut: Home showed five items but its Space opened empty;
+the same Space opened populated through Find. No routing fix is included in
+this brand-only lane. The user continues to hold all Apple uploads/submission.
 
 ### Space and Team invitation acceptance
 

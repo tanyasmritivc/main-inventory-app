@@ -1,6 +1,6 @@
 import '../../core/app_theme.dart';
+import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -681,38 +681,6 @@ class _AuthPageState extends State<AuthPage> {
               constraints: const BoxConstraints(maxWidth: 520),
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Opacity(
-                        opacity: 0.9,
-                        child: ImageFiltered(
-                          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  AppTheme.adaptive(
-                                    context,
-                                    const Color(
-                                      0xFF6997DD,
-                                    ).withValues(alpha: 0.20),
-                                  ),
-                                  AppTheme.adaptive(
-                                    context,
-                                    const Color(
-                                      0xFFC084FC,
-                                    ).withValues(alpha: 0.12),
-                                  ),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.0, 0.55, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                   Container(
                     decoration: BoxDecoration(
                       color: AppTheme.adaptive(
@@ -732,6 +700,11 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: FindEZWordmark(),
+                        ),
+                        const SizedBox(height: 12),
                         Text(
                           _isLogin ? 'Welcome back' : 'Welcome',
                           style: Theme.of(context).textTheme.headlineSmall
@@ -1290,7 +1263,10 @@ class _AuthPageState extends State<AuthPage> {
                             label: Text(
                               'Continue with Apple',
                               style: TextStyle(
-                                color: AppTheme.foreground(context, Colors.white),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),

@@ -15,6 +15,7 @@ import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
+import 'core/ui/findez_wordmark.dart';
 import 'features/auth/auth_page.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
@@ -347,14 +348,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'FindEZ',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.3,
-                              ),
-                        ),
+                        const FindEZWordmark(),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: 22,

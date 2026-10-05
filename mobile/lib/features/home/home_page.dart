@@ -134,6 +134,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _chooseSpace() async {
     final space = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      showDragHandle: true,
       backgroundColor: AppTheme.adaptive(context, HomeColors.surface),
       builder: (context) => SafeArea(
         child: Column(

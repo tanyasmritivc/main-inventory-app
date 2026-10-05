@@ -2494,47 +2494,7 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Color _spaceIconColor(String name) {
-    final value = name.toLowerCase();
-    if (value.contains('robot') ||
-        value.contains('ftc') ||
-        value.contains('frc') ||
-        value.contains('electronics')) {
-      return AppTheme.adaptive(context, const Color(0xFFAA9BDE));
-    }
-    if (value.contains('tool') ||
-        value.contains('hardware') ||
-        value.contains('fastener') ||
-        value.contains('workshop')) {
-      return AppTheme.adaptive(context, const Color(0xFFE39A86));
-    }
-    if (value.contains('food') ||
-        value.contains('kitchen') ||
-        value.contains('grocery')) {
-      return AppTheme.adaptive(context, const Color(0xFF8FCDB2));
-    }
-    if (value.contains('home') ||
-        value.contains('house') ||
-        value.contains('personal')) {
-      return AppTheme.adaptive(context, const Color(0xFFE3C36D));
-    }
-    if (value.contains('book') ||
-        value.contains('school') ||
-        value.contains('class')) {
-      return AppTheme.adaptive(context, const Color(0xFFD99BBC));
-    }
-    if (value.contains('car') || value.contains('vehicle')) {
-      return AppTheme.adaptive(context, const Color(0xFF91BEDB));
-    }
-    final fallbackPalette = [
-      AppTheme.adaptive(context, Color(0xFFAA9BDE)),
-      AppTheme.adaptive(context, Color(0xFF8FCDB2)),
-      AppTheme.adaptive(context, Color(0xFFE3C36D)),
-      AppTheme.adaptive(context, Color(0xFFD99BBC)),
-      AppTheme.adaptive(context, Color(0xFF91BEDB)),
-      AppTheme.adaptive(context, Color(0xFFE39A86)),
-    ];
-    final seed = value.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
-    return fallbackPalette[seed % fallbackPalette.length];
+    return AppTheme.textSecondary(context);
   }
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
@@ -2729,18 +2689,7 @@ class _InventoryPageState extends State<InventoryPage>
                             right: 0,
                             child: Container(
                               height: 1,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.transparent,
-                                    AppTheme.adaptive(
-                                      context,
-                                      Colors.white.withValues(alpha: 0.12),
-                                    ),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
+                              color: AppTheme.border(context),
                             ),
                           ),
                           Padding(

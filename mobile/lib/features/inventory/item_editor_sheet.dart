@@ -82,22 +82,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.adaptive(
-              context,
-              Colors.white.withValues(alpha: 0.08),
-            ),
+            color: AppTheme.surface(context),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
             border: Border(
-              top: BorderSide(
-                color: AppTheme.adaptive(
-                  context,
-                  Colors.white.withValues(alpha: 0.20),
-                ),
-                width: 1,
-              ),
+              top: BorderSide(color: AppTheme.border(context), width: 0.5),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -110,11 +101,12 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 children: [
                   Center(
                     child: Container(
+                      key: const ValueKey('item-editor-drag-handle'),
                       width: 36,
                       height: 4,
                       margin: const EdgeInsets.only(top: 12, bottom: 8),
                       decoration: BoxDecoration(
-                        color: AppTheme.border(context),
+                        color: AppTheme.textMuted(context),
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
@@ -258,22 +250,15 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                           Colors.white.withValues(alpha: 0.12),
                                         ),
                                 ),
-                                boxShadow: isActive
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF6997DD,
-                                          ).withValues(alpha: 0.30),
-                                          blurRadius: 10,
-                                        ),
-                                      ]
-                                    : [],
                               ),
                               child: Text(
                                 cat,
                                 style: TextStyle(
                                   color: isActive
-                                      ? AppTheme.foreground(context, Colors.white)
+                                      ? AppTheme.foreground(
+                                          context,
+                                          Colors.white,
+                                        )
                                       : AppTheme.foreground(
                                           context,
                                           const Color(0x73FFFFFF),
@@ -388,16 +373,6 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                                 ),
                                               ),
                                       ),
-                                      boxShadow: _location.text == loc
-                                          ? [
-                                              BoxShadow(
-                                                color: const Color(
-                                                  0xFF6997DD,
-                                                ).withValues(alpha: 0.30),
-                                                blurRadius: 10,
-                                              ),
-                                            ]
-                                          : [],
                                     ),
                                     child: Text(
                                       loc,
@@ -474,14 +449,6 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                   DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(
-                            0xFF6997DD,
-                          ).withValues(alpha: 0.25),
-                          blurRadius: 16,
-                        ),
-                      ],
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -631,25 +598,12 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.adaptive(
-                            context,
-                            Colors.white.withValues(alpha: 0.12),
-                          ),
-                          foregroundColor: AppTheme.adaptive(
-                            context,
-                            Colors.white,
-                          ),
+                          backgroundColor: AppTheme.action,
+                          foregroundColor: AppTheme.onAction,
                           elevation: 0,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0xFF6997DD).withValues(alpha: 0.60),
-                              ),
-                              width: 1,
-                            ),
                           ),
                         ),
                         child: const Text(
@@ -670,7 +624,10 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       child: Text(
                         'Cancel',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                         ),
