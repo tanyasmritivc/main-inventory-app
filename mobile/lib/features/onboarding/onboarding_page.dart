@@ -1,1693 +1,616 @@
-import '../../core/app_theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/ui/findez_wordmark.dart';
 
+import '../../core/app_theme.dart';
+import '../../core/ui/findez_wordmark.dart';
+import 'onboarding_graphics.dart';
 import 'onboarding_prefs.dart';
 
-const white = Color(0xFFF2F2F7);
-const muted = Color(0xFFAEAEB2);
-const surface = Color(0xFF18181A);
-const inset = Color(0xFF111113);
-const border = Color(0x24FFFFFF);
-const lavender = Color(0xFFAA9BDE);
-const mint = Color(0xFF8FCDB2);
-const rose = Color(0xFFD99BBC);
-const sky = Color(0xFF91BEDB);
-const coral = Color(0xFFE39A86);
-
+/// An account-free introduction. Every example is local, not saved inventory.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
     this.onFinished,
-    this.saveFirstSpace = true,
+    this.isReplay = false,
+    this.completionWriter,
   });
 
   final VoidCallback? onFinished;
-  final bool saveFirstSpace;
+  final bool isReplay;
+
+  /// Lets isolated tests exercise failed/delayed writes without native storage.
+  @visibleForTesting
+  final Future<void> Function()? completionWriter;
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  final space = TextEditingController(text: 'Parts Room');
-  int step = 0;
-  bool creating = false;
-  bool spaceMade = false;
-  bool itemMade = false;
-  bool answered = false;
-  bool finishing = false;
+  final _pages = PageController();
+  int _step = 0;
+  int _object = 0;
+  bool _captured = false;
+  String _space = 'Garage';
+  int _question = 0;
+  bool _shared = false;
+  bool _finishing = false;
+  String? _error;
 
-  String get spaceName =>
-      space.text.trim().isEmpty ? 'Parts Room' : space.text.trim();
-  bool get canContinue => switch (step) {
-    1 => spaceMade,
-    2 => itemMade,
-    3 => answered,
-    _ => true,
-  };
-  String get buttonText => switch (step) {
-    0 => 'Start the tour',
-    1 => spaceMade ? 'Continue' : 'Create a Space above',
-    2 => itemMade ? 'Continue' : 'Add the sample item',
-    3 => answered ? 'Continue' : 'Ask the question',
-    4 => 'Finish tour',
-    _ => 'Get started',
-  };
+  bool get _reduceMotion =>
+      MediaQuery.disableAnimationsOf(context) ||
+      MediaQuery.accessibleNavigationOf(context);
 
-  @override
-  void dispose() {
-    space.dispose();
-    super.dispose();
-  }
+  Duration get _duration =>
+      _reduceMotion ? Duration.zero : const Duration(milliseconds: 300);
 
-  Future<void> finish(bool keepSpace) async {
-    if (finishing) return;
-    setState(() => finishing = true);
-    await OnboardingPrefs.setPendingFirstSpaceName(
-      keepSpace && widget.saveFirstSpace ? spaceName : null,
-    );
-    await OnboardingPrefs.setPostSignupPending(false);
-    await OnboardingPrefs.setCompleted(true);
-    if (mounted) widget.onFinished?.call();
-  }
-
-  void next() {
-    if (!canContinue || finishing) return;
+  void _go(int index) {
+    if (_finishing || index < 0 || index > 3) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.lightImpact();
-    if (step < 5) {
-      setState(() => step++);
+    if (_reduceMotion) {
+      _pages.jumpToPage(index);
     } else {
-      finish(spaceMade);
+      _pages.animateToPage(
+        index,
+        duration: _duration,
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
-  void back() {
-    if (step == 0) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.selectionClick();
-    setState(() => step--);
+  Future<void> _finish() async {
+    if (_finishing) return;
+    setState(() {
+      _finishing = true;
+      _error = null;
+    });
+    try {
+      // Replaying the tour must not clear signup flags or a pending Space.
+      if (!widget.isReplay) {
+        await (widget.completionWriter?.call() ??
+            OnboardingPrefs.setCompleted(true));
+      }
+      if (mounted) widget.onFinished?.call();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _finishing = false;
+        _error = 'Could not save your progress. Please try again.';
+      });
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: widget.isReplay || _step == 0,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop && !_finishing) _go(_step - 1);
+    },
+    child: Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 6, 18, 16),
-          child: Column(
-            children: [
-              _Top(step: step, back: back, skip: () => finish(false)),
-              if (step > 0) ...[
-                const SizedBox(height: 8),
-                _Progress(step),
-                const SizedBox(height: 15),
-              ] else
-                const SizedBox(height: 4),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(
-                      scale: Tween(begin: .985, end: 1.0).animate(animation),
-                      child: child,
-                    ),
-                  ),
-                  child: switch (step) {
-                    0 => const _Welcome(key: ValueKey('welcome')),
-                    1 => _Inventory(
-                      key: const ValueKey('inventory'),
-                      controller: space,
-                      creating: creating,
-                      made: spaceMade,
-                      open: () => setState(() => creating = true),
-                      close: () => setState(() => creating = false),
-                      changed: (_) => setState(() {}),
-                      create: () {
-                        if (space.text.trim().isEmpty) return;
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        HapticFeedback.mediumImpact();
-                        setState(() {
-                          spaceMade = true;
-                          creating = false;
-                        });
-                      },
-                    ),
-                    2 => _Scan(
-                      key: const ValueKey('scan'),
-                      name: spaceName,
-                      made: itemMade,
-                      add: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() => itemMade = true);
-                      },
-                    ),
-                    3 => _Assist(
-                      key: const ValueKey('assist'),
-                      name: spaceName,
-                      answered: answered,
-                      ask: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => answered = true);
-                      },
-                    ),
-                    4 => _Teams(key: const ValueKey('teams'), name: spaceName),
-                    _ => _Ready(key: const ValueKey('ready'), name: spaceName),
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: canContinue && !finishing ? next : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.adaptive(context, white),
-                    foregroundColor: AppTheme.adaptive(
-                      context,
-                      const Color(0xFF151517),
-                    ),
-                    disabledBackgroundColor: AppTheme.adaptive(
-                      context,
-                      const Color(0xFF242426),
-                    ),
-                    disabledForegroundColor: AppTheme.adaptive(
-                      context,
-                      const Color(0xFF6C6C70),
-                    ),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(17),
-                    ),
-                  ),
-                  child: finishing
-                      ? SizedBox(
-                          width: 19,
-                          height: 19,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.adaptive(
-                              context,
-                              Color(0xFF151517),
-                            ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 12, 4),
+                  child: Row(
+                    children: [
+                      if (_step > 0)
+                        IconButton(
+                          tooltip: 'Previous step',
+                          onPressed: _finishing ? null : () => _go(_step - 1),
+                          icon: const Icon(
+                            CupertinoIcons.chevron_left,
+                            size: 20,
+                          ),
+                        ),
+                      const Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FindEZWordmark(width: 112),
+                        ),
+                      ),
+                      if (MediaQuery.textScalerOf(context).scale(14) > 22)
+                        IconButton(
+                          key: const Key('onboarding-skip'),
+                          tooltip: widget.isReplay
+                              ? 'Close tour'
+                              : 'Skip introduction',
+                          onPressed: _finishing ? null : _finish,
+                          icon: Icon(
+                            widget.isReplay
+                                ? CupertinoIcons.xmark
+                                : CupertinoIcons.arrow_right_to_line,
+                            size: 20,
                           ),
                         )
-                      : Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      else
+                        TextButton(
+                          key: const Key('onboarding-skip'),
+                          onPressed: _finishing ? null : _finish,
+                          child: Text(widget.isReplay ? 'Close' : 'Skip'),
                         ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Top extends StatelessWidget {
-  const _Top({required this.step, required this.back, required this.skip});
-  final int step;
-  final VoidCallback back;
-  final VoidCallback skip;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 44,
-    child: Row(
-      children: [
-        SizedBox(
-          width: 100,
-          child: step == 0
-              ? Align(
-                  alignment: Alignment.centerLeft,
-                  child: const FindEZWordmark(width: 100),
-                )
-              : IconButton(
-                  onPressed: back,
-                  padding: EdgeInsets.zero,
-                  alignment: Alignment.centerLeft,
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: AppTheme.foreground(context, muted),
-                    size: 19,
+                    ],
                   ),
                 ),
-        ),
-        const Spacer(),
-        TextButton(
-          onPressed: skip,
-          child: Text(
-            'Skip',
-            style: TextStyle(
-              color: AppTheme.foreground(context, muted),
-              fontSize: 15,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Progress extends StatelessWidget {
-  const _Progress(this.step);
-  final int step;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = [
-      AppTheme.adaptive(context, mint),
-      AppTheme.adaptive(context, coral),
-      AppTheme.adaptive(context, lavender),
-      AppTheme.adaptive(context, sky),
-    ];
-    return Row(
-      children: List.generate(
-        4,
-        (i) => Expanded(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            height: 3,
-            margin: EdgeInsets.only(right: i == 3 ? 0 : 7),
-            decoration: BoxDecoration(
-              color: i < step
-                  ? colors[i]
-                  : AppTheme.adaptive(context, const Color(0xFF2C2C2E)),
-              borderRadius: BorderRadius.circular(99),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Welcome extends StatelessWidget {
-  const _Welcome({super.key});
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const _MapGraphic(),
-            const SizedBox(height: 28),
-            Text(
-              'Know what you have.\nFind it fast.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 31,
-                height: 1.06,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Take a quick tour using a sample inventory.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.foreground(context, muted),
-                fontSize: 16,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 28),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _Point(
-                  Icons.inventory_2_outlined,
-                  'Organize',
-                  AppTheme.adaptive(context, mint),
-                ),
-                SizedBox(width: 24),
-                _Point(
-                  Icons.qr_code_scanner_rounded,
-                  'Capture',
-                  AppTheme.adaptive(context, coral),
-                ),
-                SizedBox(width: 24),
-                _Point(
-                  Icons.auto_awesome_rounded,
-                  'Find',
-                  AppTheme.adaptive(context, lavender),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _MapGraphic extends StatelessWidget {
-  const _MapGraphic();
-
-  @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
-    tween: Tween(begin: .9, end: 1),
-    duration: const Duration(milliseconds: 650),
-    curve: Curves.easeOutBack,
-    builder: (_, value, child) => Transform.scale(scale: value, child: child),
-    child: SizedBox(
-      width: 220,
-      height: 150,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 92,
-            height: 92,
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(context, surface),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: AppTheme.adaptive(context, border)),
-            ),
-            child: Icon(
-              Icons.inventory_2_outlined,
-              color: AppTheme.foreground(context, Colors.white),
-              size: 38,
-            ),
-          ),
-          Positioned(
-            left: 3,
-            top: 5,
-            child: _Orbit(
-              Icons.hardware_outlined,
-              AppTheme.adaptive(context, coral),
-            ),
-          ),
-          Positioned(
-            right: 3,
-            top: 5,
-            child: _Orbit(
-              Icons.groups_outlined,
-              AppTheme.adaptive(context, mint),
-            ),
-          ),
-          Positioned(
-            left: 22,
-            bottom: 0,
-            child: _Orbit(
-              Icons.description_outlined,
-              AppTheme.adaptive(context, sky),
-            ),
-          ),
-          Positioned(
-            right: 22,
-            bottom: 0,
-            child: _Orbit(
-              Icons.auto_awesome_rounded,
-              AppTheme.adaptive(context, lavender),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Orbit extends StatelessWidget {
-  const _Orbit(this.icon, this.color);
-  final IconData icon;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 48,
-    height: 48,
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: .14),
-      shape: BoxShape.circle,
-      border: Border.all(color: color.withValues(alpha: .42)),
-    ),
-    child: Icon(icon, color: color, size: 22),
-  );
-}
-
-class _Point extends StatelessWidget {
-  const _Point(this.icon, this.label, this.color);
-  final IconData icon;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Icon(icon, color: color, size: 21),
-      const SizedBox(height: 7),
-      Text(
-        label,
-        style: TextStyle(
-          color: AppTheme.foreground(context, muted),
-          fontSize: 12,
-        ),
-      ),
-    ],
-  );
-}
-
-enum _Tab { inventory, scan, assist, teams }
-
-class _Frame extends StatelessWidget {
-  const _Frame(this.icon, this.color, this.instruction, this.tab, this.child);
-  final IconData icon;
-  final Color color;
-  final String instruction;
-  final _Tab tab;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              instruction,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 13),
-      Expanded(
-        child: Container(
-          width: double.infinity,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: AppTheme.adaptive(context, const Color(0xFF0B0B0D)),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppTheme.adaptive(context, border)),
-          ),
-          child: Column(
-            children: [
-              Expanded(child: child),
-              _Nav(tab),
-            ],
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _Nav extends StatelessWidget {
-  const _Nav(this.selected);
-  final _Tab selected;
-  @override
-  Widget build(BuildContext context) {
-    const entries = [
-      (_Tab.inventory, Icons.home_outlined, 'Inventory'),
-      (_Tab.scan, Icons.qr_code_scanner_rounded, 'Scan'),
-      (_Tab.assist, Icons.chat_bubble_outline_rounded, 'Assist'),
-      (_Tab.teams, Icons.groups_outlined, 'Teams'),
-    ];
-    return Container(
-      height: 68,
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, Color(0xF2131315)),
-        border: Border(
-          top: BorderSide(color: AppTheme.adaptive(context, border)),
-        ),
-      ),
-      child: Row(
-        children: entries
-            .map(
-              (e) => Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      e.$2,
-                      color: selected == e.$1
-                          ? AppTheme.foreground(context, Colors.white)
-                          : AppTheme.foreground(context, muted),
-                      size: 21,
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      e.$3,
-                      style: TextStyle(
-                        color: selected == e.$1
-                            ? AppTheme.foreground(context, Colors.white)
-                            : AppTheme.foreground(context, muted),
-                        fontSize: 10,
-                        fontWeight: selected == e.$1
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _Inventory extends StatelessWidget {
-  const _Inventory({
-    super.key,
-    required this.controller,
-    required this.creating,
-    required this.made,
-    required this.open,
-    required this.close,
-    required this.changed,
-    required this.create,
-  });
-  final TextEditingController controller;
-  final bool creating;
-  final bool made;
-  final VoidCallback open;
-  final VoidCallback close;
-  final ValueChanged<String> changed;
-  final VoidCallback create;
-
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_circle_outline_rounded,
-    AppTheme.adaptive(context, mint),
-    made
-        ? 'Your Space is ready.'
-        : creating
-        ? 'Name it, then create it.'
-        : 'Tap + to create a Space.',
-    _Tab.inventory,
-    Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-          child: Column(
-            children: [
-              const _Header('Inventory'),
-              const SizedBox(height: 13),
-              const _Segment('Spaces', 'Teams', true),
-              const SizedBox(height: 12),
-              const _Search(),
-              const SizedBox(height: 14),
-              Expanded(
-                child: made
-                    ? _SpaceCard(controller.text.trim())
-                    : const _Empty(),
-              ),
-            ],
-          ),
-        ),
-        if (!made && !creating)
-          Positioned(right: 16, bottom: 16, child: _Plus(open)),
-        if (creating)
-          Positioned.fill(
-            child: _SpaceSheet(controller, changed, close, create),
-          ),
-      ],
-    ),
-  );
-}
-
-class _SpaceSheet extends StatelessWidget {
-  const _SpaceSheet(this.controller, this.changed, this.close, this.create);
-  final TextEditingController controller;
-  final ValueChanged<String> changed;
-  final VoidCallback close;
-  final VoidCallback create;
-  @override
-  Widget build(BuildContext context) => Container(
-    color: AppTheme.adaptive(context, const Color(0xB3000000)),
-    alignment: Alignment.bottomCenter,
-    child: Container(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, Color(0xFF1C1C1E)),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: AppTheme.adaptive(context, border)),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Text(
-                'New Space',
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: close,
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: AppTheme.foreground(context, muted),
-                ),
-              ),
-            ],
-          ),
-          TextField(
-            controller: controller,
-            onChanged: changed,
-            onSubmitted: (_) => create(),
-            textCapitalization: TextCapitalization.words,
-            maxLength: 48,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              prefixIcon: Icon(
-                Icons.inventory_2_outlined,
-                color: AppTheme.foreground(context, mint),
-              ),
-              filled: true,
-              fillColor: AppTheme.adaptive(context, inset),
-              border: _field(context),
-              enabledBorder: _field(context),
-              focusedBorder: _field(context),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: FilledButton(
-              onPressed: controller.text.trim().isEmpty ? null : create,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.adaptive(context, white),
-                foregroundColor: AppTheme.adaptive(
-                  context,
-                  const Color(0xFF151517),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text(
-                'Create Space',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-OutlineInputBorder _field(BuildContext context) => OutlineInputBorder(
-  borderRadius: BorderRadius.all(Radius.circular(15)),
-  borderSide: BorderSide(color: AppTheme.adaptive(context, border)),
-);
-
-class _Empty extends StatelessWidget {
-  const _Empty();
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.inventory_2_outlined,
-          color: AppTheme.foreground(context, Color(0xFF555559)),
-          size: 34,
-        ),
-        SizedBox(height: 10),
-        Text(
-          'Your inventory starts here',
-          style: TextStyle(
-            color: AppTheme.foreground(context, muted),
-            fontSize: 13,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SpaceCard extends StatelessWidget {
-  const _SpaceCard(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.topCenter,
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, surface),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.adaptive(context, border)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            color: AppTheme.foreground(context, mint),
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '0 items',
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, muted),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.check_circle_rounded,
-            color: AppTheme.foreground(context, mint),
-            size: 20,
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Plus extends StatelessWidget {
-  const _Plus(this.tap);
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(24),
-    child: Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, const Color(0xE62C2C2E)),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0x45FFFFFF)),
-        ),
-      ),
-      child: Icon(
-        Icons.add_rounded,
-        color: AppTheme.foreground(context, Colors.white),
-        size: 28,
-      ),
-    ),
-  );
-}
-
-class _Scan extends StatelessWidget {
-  const _Scan({
-    super.key,
-    required this.name,
-    required this.made,
-    required this.add,
-  });
-  final String name;
-  final bool made;
-  final VoidCallback add;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_photo_alternate_outlined,
-    AppTheme.adaptive(context, coral),
-    made
-        ? 'FindEZ extracted the item details.'
-        : 'Tap the sample photo to add an item.',
-    _Tab.scan,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Scan'),
-          const SizedBox(height: 13),
-          const _Segment('Scan Barcode', 'Auto Extract', false),
-          const SizedBox(height: 15),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: made
-                  ? _Item(name, key: const ValueKey('item'))
-                  : _Photo(add, key: const ValueKey('photo')),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Photo extends StatelessWidget {
-  const _Photo(this.tap, {super.key});
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(22),
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, surface),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.adaptive(context, border)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(context, coral.withValues(alpha: .12)),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Icon(
-              Icons.hardware_outlined,
-              color: AppTheme.foreground(context, coral),
-              size: 37,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Sample: M4 bolts',
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Tap to extract',
-            style: TextStyle(
-              color: AppTheme.foreground(context, muted),
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Item extends StatelessWidget {
-  const _Item(this.name, {super.key});
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, surface),
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.check_circle_rounded,
-              color: AppTheme.foreground(context, mint),
-              size: 21,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Ready to save',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const _Data('NAME', 'M4 bolts'),
-        const SizedBox(height: 7),
-        const Row(
-          children: [
-            Expanded(child: _Data('CATEGORY', 'Hardware')),
-            SizedBox(width: 10),
-            Expanded(child: _Data('QUANTITY', '24')),
-          ],
-        ),
-        const Spacer(),
-        Row(
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              color: AppTheme.foreground(context, mint),
-              size: 17,
-            ),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                'Saving to $name',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, muted),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _Data extends StatelessWidget {
-  const _Data(this.label, this.value);
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, inset),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppTheme.foreground(context, muted),
-            fontSize: 9,
-            letterSpacing: .7,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppTheme.foreground(context, Colors.white),
-            fontSize: 13,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Assist extends StatelessWidget {
-  const _Assist({
-    super.key,
-    required this.name,
-    required this.answered,
-    required this.ask,
-  });
-  final String name;
-  final bool answered;
-  final VoidCallback ask;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.auto_awesome_rounded,
-    AppTheme.adaptive(context, lavender),
-    answered
-        ? 'Assist answers from your inventory.'
-        : 'Send the sample inventory question.',
-    _Tab.assist,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Assist'),
-          const SizedBox(height: 18),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: answered
-                  ? Column(
-                      key: const ValueKey('conversation'),
-                      children: [
-                        const Align(
-                          alignment: Alignment.centerRight,
-                          child: _Bubble('Where are the M4 bolts?', true),
-                        ),
-                        const SizedBox(height: 14),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: _Bubble('24 M4 bolts are in $name.', false),
-                        ),
-                        const SizedBox(height: 12),
-                        _Result(name),
-                      ],
-                    )
-                  : Center(
-                      key: ValueKey('empty-assist'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            color: AppTheme.foreground(context, lavender),
-                            size: 34,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Ask about your inventory',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, muted),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: ask,
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, surface),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppTheme.adaptive(context, border)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Where are the M4 bolts?',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(context, white),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.arrow_upward_rounded,
-                      color: AppTheme.foreground(context, Color(0xFF151517)),
-                      size: 19,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble(this.text, this.mine);
-  final String text;
-  final bool mine;
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(maxWidth: 245),
-    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-    decoration: BoxDecoration(
-      color: mine
-          ? AppTheme.adaptive(context, const Color(0xFF2C2C2E))
-          : AppTheme.adaptive(context, inset),
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Text(
-      text,
-      style: TextStyle(
-        color: AppTheme.foreground(context, Colors.white),
-        fontSize: 13,
-        height: 1.25,
-      ),
-    ),
-  );
-}
-
-class _Result extends StatelessWidget {
-  const _Result(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, surface),
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.hardware_outlined,
-          color: AppTheme.foreground(context, coral),
-          size: 22,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            'M4 bolts · 24',
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Flexible(
-          child: Text(
-            name,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: AppTheme.foreground(context, muted),
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Teams extends StatelessWidget {
-  const _Teams({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.groups_outlined,
-    AppTheme.adaptive(context, sky),
-    'Everything the team needs stays connected.',
-    _Tab.teams,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _Header('Build Team'),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const _Avatars(),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '$name · 3 members',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, muted),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Expanded(
-            child: Column(
-              children: [
                 Expanded(
-                  child: Row(
+                  child: PageView(
+                    key: const Key('onboarding-pages'),
+                    controller: _pages,
+                    physics: _finishing
+                        ? const NeverScrollableScrollPhysics()
+                        : const ClampingScrollPhysics(),
+                    onPageChanged: (index) => setState(() => _step = index),
                     children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.inventory_2_outlined,
-                          'Spaces',
-                          'Shared inventory',
-                          AppTheme.adaptive(context, mint),
-                        ),
+                      _slide(
+                        index: 0,
+                        eyebrow: 'AI MEMORY FOR THE PHYSICAL WORLD',
+                        title: 'Your things.\nRemembered.',
+                        description:
+                            'Capture what you own. Keep track of where it lives. '
+                            'Ask for it when you need it.',
+                        demo: _welcome(),
                       ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.task_alt_rounded,
-                          'Board',
-                          'Tasks and requests',
-                          AppTheme.adaptive(context, coral),
-                        ),
+                      _slide(
+                        index: 1,
+                        eyebrow: 'CAPTURE + REVIEW',
+                        title: 'One photo.\nLess typing.',
+                        description:
+                            'Take or choose a photo. FindEZ suggests items and '
+                            'reads visible labels. Review uncertain details and '
+                            'choose a Space.',
+                        demo: _capture(),
+                      ),
+                      _slide(
+                        index: 2,
+                        eyebrow: 'ASK + FIND',
+                        title: 'Ask naturally.\nFind what you need.',
+                        description:
+                            'Ask about your saved items, quantities and locations. '
+                            'You can also attach a photo to identify an object or '
+                            'check possible matches.',
+                        demo: _ask(),
+                      ),
+                      _slide(
+                        index: 3,
+                        eyebrow: 'YOUR WORLD, CONNECTED',
+                        title: 'A place for\neverything.',
+                        description:
+                            'Use Spaces for home, work or a team. Keep photos and '
+                            'notes with items, track loans and check project parts. '
+                            'Share access only with people you choose.',
+                        demo: _world(),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 7),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.groups_outlined,
-                          'People',
-                          'Members and roles',
-                          AppTheme.adaptive(context, lavender),
-                        ),
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.description_outlined,
-                          'Documents',
-                          'Files and photos',
-                          AppTheme.adaptive(context, sky),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 7),
-                _Activity(),
+                _footer(),
               ],
             ),
           ),
-        ],
+        ),
       ),
     ),
   );
-}
 
-class _TeamTile extends StatelessWidget {
-  const _TeamTile(this.icon, this.label, this.detail, this.color);
-  final IconData icon;
-  final String label;
-  final String detail;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(11),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, surface),
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
+  Widget _slide({
+    required int index,
+    required String eyebrow,
+    required String title,
+    required String description,
+    required Widget demo,
+  }) => SingleChildScrollView(
+    key: ValueKey('onboarding-slide-$index'),
+    padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 20),
-        const Spacer(),
         Text(
-          label,
-          style: TextStyle(
-            color: AppTheme.foreground(context, Colors.white),
-            fontSize: 12,
+          eyebrow,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppTheme.textSecondary(context),
+            letterSpacing: 1.2,
             fontWeight: FontWeight.w600,
           ),
         ),
-        Text(
-          detail,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppTheme.foreground(context, muted),
-            fontSize: 9,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Activity extends StatelessWidget {
-  const _Activity();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 46,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, surface),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.history_rounded,
-          color: AppTheme.foreground(context, rose),
-          size: 19,
-        ),
-        SizedBox(width: 9),
-        Expanded(
+        const SizedBox(height: 14),
+        Semantics(
+          header: true,
           child: Text(
-            'Maya updated M4 bolts',
+            title,
             style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 11,
+              fontSize: 34,
+              height: 1.08,
+              letterSpacing: -1.1,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary(context),
             ),
           ),
         ),
+        const SizedBox(height: 14),
         Text(
-          'now',
-          style: TextStyle(
-            color: AppTheme.foreground(context, muted),
-            fontSize: 10,
+          description,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: AppTheme.textSecondary(context),
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 26),
+        _DemoCard(child: demo),
+        const SizedBox(height: 10),
+        Text(
+          'Example only. Nothing is saved.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppTheme.textSecondary(context),
           ),
         ),
       ],
     ),
   );
-}
 
-class _Avatars extends StatelessWidget {
-  const _Avatars();
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 73,
-    height: 34,
-    child: Stack(
+  Widget _welcome() {
+    const objects = [
+      ('Tools', 'Cordless drill', 'Garage', 'Ready for your next project.'),
+      ('Everyday', 'USB-C cable', 'Office', 'Know what you already have.'),
+      ('Supplies', 'AA batteries', 'Home', 'Keep an eye on quantities.'),
+    ];
+    final object = objects[_object];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Avatar(0, 'T', AppTheme.adaptive(context, lavender)),
-        _Avatar(20, 'M', AppTheme.adaptive(context, mint)),
-        _Avatar(40, 'V', AppTheme.adaptive(context, coral)),
+        const _DemoLabel('Tap to explore'),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration: _duration,
+          child: PhysicalMemoryGraphic(key: ValueKey(_object), object: _object),
+        ),
+        const SizedBox(height: 16),
+        _choices(
+          [for (final object in objects) object.$1],
+          _object,
+          (index) => setState(() => _object = index),
+          'intro-object',
+        ),
+        const SizedBox(height: 16),
+        AnimatedSwitcher(
+          duration: _duration,
+          child: _ExampleItem(
+            key: ValueKey('item-$_object'),
+            icon: [
+              CupertinoIcons.wrench,
+              Icons.cable_outlined,
+              CupertinoIcons.battery_100,
+            ][_object],
+            title: object.$2,
+            detail: '${object.$3} / ${object.$4}',
+          ),
+        ),
       ],
-    ),
-  );
-}
+    );
+  }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar(this.left, this.label, this.color);
-  final double left;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: left,
-    child: Container(
-      width: 34,
-      height: 34,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0xFF0B0B0D)),
-          width: 2,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: AppTheme.foreground(context, Color(0xFF111113)),
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    ),
-  );
-}
-
-class _Ready extends StatelessWidget {
-  const _Ready({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: .75, end: 1),
-              duration: const Duration(milliseconds: 520),
-              curve: Curves.easeOutBack,
-              builder: (_, value, child) =>
-                  Transform.scale(scale: value, child: child),
-              child: Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(
-                    context,
-                    mint.withValues(alpha: .13),
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.adaptive(
-                      context,
-                      mint.withValues(alpha: .45),
-                    ),
-                  ),
-                ),
-                child: Icon(
-                  Icons.check_rounded,
-                  color: AppTheme.foreground(context, mint),
-                  size: 39,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'You know the flow.',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 29,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.8,
-              ),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              'Your real inventory starts next.',
-              style: TextStyle(
-                color: AppTheme.foreground(context, muted),
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 26),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, surface),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: AppTheme.adaptive(context, border)),
-              ),
-              child: Column(
+  Widget _capture() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _DemoLabel('Sample capture'),
+      const SizedBox(height: 12),
+      CaptureGraphic(captured: _captured, duration: _duration),
+      const SizedBox(height: 16),
+      AnimatedSwitcher(
+        duration: _duration,
+        child: !_captured
+            ? OutlinedButton.icon(
+                key: const Key('try-sample-capture'),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _captured = true);
+                },
+                icon: const Icon(CupertinoIcons.camera, size: 20),
+                label: const Text('Try sample photo'),
+              )
+            : Column(
+                key: const Key('sample-review'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ReadyRow(
-                    Icons.inventory_2_outlined,
-                    AppTheme.adaptive(context, mint),
-                    name,
-                    'Created after sign-in',
+                  const _ExampleItem(
+                    icon: CupertinoIcons.wrench,
+                    title: 'Cordless drill',
+                    detail: 'Suggested item / Review before saving',
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(
-                      height: 1,
-                      color: AppTheme.adaptive(context, border),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Where does it live?',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  _choices(
+                    const ['Garage', 'Workshop', 'Home'],
+                    const ['Garage', 'Workshop', 'Home'].indexOf(_space),
+                    (index) => setState(
+                      () => _space = ['Garage', 'Workshop', 'Home'][index],
                     ),
+                    'sample-space',
                   ),
-                  _ReadyRow(
-                    Icons.hardware_outlined,
-                    AppTheme.adaptive(context, coral),
-                    'M4 bolts',
-                    'Tour sample only',
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(
-                      height: 1,
-                      color: AppTheme.adaptive(context, border),
-                    ),
-                  ),
-                  _ReadyRow(
-                    Icons.groups_outlined,
-                    AppTheme.adaptive(context, lavender),
-                    'Team-ready',
-                    'Invite people when you are ready',
+                  const SizedBox(height: 10),
+                  Text(
+                    'Example location: $_space. You stay in control of the details.',
+                    key: const Key('sample-location'),
+                    style: TextStyle(color: AppTheme.textSecondary(context)),
                   ),
                 ],
               ),
-            ),
-          ],
+      ),
+    ],
+  );
+
+  Widget _ask() {
+    const questions = [
+      'Where is my drill?',
+      'How many cables?',
+      'Do I own this?',
+    ];
+    final answer = switch (_question) {
+      0 => ('Cordless drill', _space, '2 in this sample inventory'),
+      1 => ('USB-C cables', 'Office', '3 in this sample inventory'),
+      _ => (
+        'Possible match',
+        _space,
+        'This sample photo resembles a saved drill. Check the match before deciding.',
+      ),
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _DemoLabel('Try a sample question'),
+        const SizedBox(height: 12),
+        _choices(
+          questions,
+          _question,
+          (index) => setState(() => _question = index),
+          'sample-question',
+        ),
+        const SizedBox(height: 20),
+        AnimatedSwitcher(
+          duration: _duration,
+          child: Column(
+            key: ValueKey('answer-$_question-$_space'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(answer.$1, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(CupertinoIcons.location, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      answer.$2,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                answer.$3,
+                style: TextStyle(color: AppTheme.textSecondary(context)),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 90,
+                child: Center(child: LocationGraphic(isCable: _question == 1)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Answers use what you have saved, not everything around you.',
+          style: TextStyle(color: AppTheme.textSecondary(context)),
+        ),
+      ],
+    );
+  }
+
+  Widget _world() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const _DemoLabel('Make it personal. Or shared.'),
+      const SizedBox(height: 14),
+      _choices(
+        const ['Personal', 'Shared'],
+        _shared ? 1 : 0,
+        (index) => setState(() => _shared = index == 1),
+        'sample-world',
+      ),
+      const SizedBox(height: 18),
+      ConnectedWorldGraphic(shared: _shared, duration: _duration),
+      const SizedBox(height: 18),
+      AnimatedSwitcher(
+        duration: _duration,
+        child: _ExampleItem(
+          key: ValueKey(_shared),
+          icon: _shared ? CupertinoIcons.person_2 : CupertinoIcons.house,
+          title: _shared ? 'Team workshop' : 'My spaces',
+          detail: _shared
+              ? 'Invite people and choose view or edit access.'
+              : 'Home, garage or office. Start with one Space.',
         ),
       ),
+      const SizedBox(height: 16),
+      Text(
+        'After sign-in, capture your first item or join a Space you have been invited to.',
+        style: TextStyle(color: AppTheme.textSecondary(context)),
+      ),
+    ],
+  );
+
+  Widget _choices(
+    List<String> labels,
+    int selected,
+    ValueChanged<int> choose,
+    String prefix,
+  ) => LayoutBuilder(
+    builder: (context, constraints) => Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var index = 0; index < labels.length; index++)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+            child: ChoiceChip(
+              key: ValueKey('$prefix-$index'),
+              label: Text(labels[index]),
+              selected: index == selected,
+              onSelected: _finishing ? null : (_) => choose(index),
+              showCheckmark: false,
+              selectedColor: AppTheme.surface2(context),
+              backgroundColor: AppTheme.surface(context),
+              labelStyle: TextStyle(color: AppTheme.textPrimary(context)),
+              side: BorderSide(
+                color: index == selected
+                    ? AppTheme.textPrimary(context)
+                    : AppTheme.border(context),
+              ),
+              materialTapTargetSize: MaterialTapTargetSize.padded,
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Widget _footer() => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: 'Step ${_step + 1} of 4',
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                for (var index = 0; index < 4; index++)
+                  Expanded(
+                    child: AnimatedContainer(
+                      key: ValueKey('onboarding-progress-$index'),
+                      duration: _duration,
+                      margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
+                      height: 3,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2),
+                        color: index <= _step
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.border(context),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_error != null) ...[
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: 8),
+        ],
+        FilledButton(
+          key: const Key('onboarding-next'),
+          onPressed: _finishing
+              ? null
+              : () => _step < 3 ? _go(_step + 1) : _finish(),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          ),
+          child: Text(
+            _finishing
+                ? 'Saving...'
+                : _step < 3
+                ? 'Next'
+                : widget.isReplay
+                ? 'Done'
+                : 'Continue to sign in',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     ),
   );
 }
 
-class _ReadyRow extends StatelessWidget {
-  const _ReadyRow(this.icon, this.color, this.title, this.detail);
+class _DemoCard extends StatelessWidget {
+  const _DemoCard({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: AppTheme.surface(context),
+      borderRadius: BorderRadius.circular(26),
+      border: Border.all(color: AppTheme.border(context)),
+    ),
+    child: child,
+  );
+}
+
+class _DemoLabel extends StatelessWidget {
+  const _DemoLabel(this.label);
+  final String label;
+  @override
+  Widget build(BuildContext context) =>
+      Text(label, style: Theme.of(context).textTheme.titleSmall);
+}
+
+class _ExampleItem extends StatelessWidget {
+  const _ExampleItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
   final IconData icon;
-  final Color color;
   final String title;
   final String detail;
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, color: color, size: 22),
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppTheme.surface2(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 22),
+      ),
       const SizedBox(width: 12),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 3),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
             Text(
               detail,
-              style: TextStyle(
-                color: AppTheme.foreground(context, muted),
-                fontSize: 11,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary(context)),
             ),
           ],
         ),
       ),
     ],
-  );
-}
-
-class _Header extends StatelessWidget {
-  const _Header(this.title);
-  final String title;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppTheme.foreground(context, Colors.white),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      Icon(
-        Icons.notifications_none_rounded,
-        color: AppTheme.foreground(context, muted),
-        size: 20,
-      ),
-    ],
-  );
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment(this.left, this.right, this.leftActive);
-  final String left;
-  final String right;
-  final bool leftActive;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 40,
-    padding: const EdgeInsets.all(3),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, const Color(0xFF262629)),
-      borderRadius: BorderRadius.circular(13),
-    ),
-    child: Row(
-      children: [
-        _SegmentLabel(left, leftActive),
-        _SegmentLabel(right, !leftActive),
-      ],
-    ),
-  );
-}
-
-class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.label, this.active);
-  final String label;
-  final bool active;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active
-            ? AppTheme.adaptive(context, const Color(0xFF4A4A4D))
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: active
-              ? AppTheme.foreground(context, Colors.white)
-              : AppTheme.foreground(context, muted),
-          fontSize: 11,
-          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-        ),
-      ),
-    ),
-  );
-}
-
-class _Search extends StatelessWidget {
-  const _Search();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 44,
-    padding: const EdgeInsets.symmetric(horizontal: 13),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, surface),
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: AppTheme.adaptive(context, border)),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.search_rounded,
-          color: AppTheme.foreground(context, muted),
-          size: 19,
-        ),
-        SizedBox(width: 8),
-        Text(
-          'Search inventory',
-          style: TextStyle(
-            color: AppTheme.foreground(context, Color(0xFF737377)),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    ),
   );
 }

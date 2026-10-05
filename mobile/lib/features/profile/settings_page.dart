@@ -337,7 +337,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     MaterialPageRoute(
                       builder: (tourContext) => AppGradientBackground(
                         child: OnboardingPage(
-                          saveFirstSpace: false,
+                          isReplay: true,
                           onFinished: () => Navigator.of(tourContext).pop(),
                         ),
                       ),

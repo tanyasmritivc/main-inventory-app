@@ -2,6 +2,30 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-04: Physical-memory onboarding precedes authentication
+
+On a fresh, signed-out installation, show the account-free introduction before
+Auth. Complete or Skip persists only the confirmed `onboarding_completed` flag;
+a failed save stays in the tour with a safe retry. Existing completed installs
+and valid returning sessions keep their launch flow. Preserve queued Space/Team
+invitations through onboarding and sign-in; never join automatically. Replaying
+from Profile or Settings neither changes completion nor clears pending signup,
+legacy Space drafts or invitation metadata.
+
+Use four concise screens introducing physical memory, Capture/Review, Ask/Find
+and personal/shared Spaces. The local examples change object, sample location,
+question or sharing context without accounts, network calls, permissions or
+inventory/Space creation. Retain old pending-first-Space handling for users who
+already started the previous setup; the new tour creates no such draft. Both
+onboarding entry-point classes now use the same introduction.
+
+Use the original wordmark, monochrome code-native illustrations and Signal only
+for the mark/primary action. Page transitions and finite sample animations honor
+Reduce Motion, never auto-advance or loop. Scrollable pages and a pinned action
+support OS-composed large text. Do not advertise proposed AR navigation, a full
+memory graph or prediction as implemented. Build 50 remains simulator-only;
+Apple submission and physical release checks remain held/deferred.
+
 ## 2026-10-04: Space icons are optional personal device preferences
 
 Tap the leading Space icon to choose from a named, curated icon set or restore

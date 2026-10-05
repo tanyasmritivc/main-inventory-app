@@ -264,7 +264,7 @@ class _SplashGateState extends State<_SplashGate> {
   @override
   Widget build(BuildContext context) {
     if (_done) {
-      return _AuthGate(api: widget.api);
+      return LaunchAuthGate(api: widget.api);
     }
     return SplashPage(
       onFinished: () {
@@ -383,16 +383,18 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
   }
 }
 
-class _AuthGate extends StatefulWidget {
-  const _AuthGate({required this.api});
+/// Fresh, signed-out installs see onboarding before authentication. Cached
+/// sessions and completed introductions keep the existing returning-user flow.
+class LaunchAuthGate extends StatefulWidget {
+  const LaunchAuthGate({super.key, required this.api});
 
   final ApiClient api;
 
   @override
-  State<_AuthGate> createState() => _AuthGateState();
+  State<LaunchAuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends State<_AuthGate> {
+class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
   bool _previewDismissed = false;
@@ -431,7 +433,7 @@ class _AuthGateState extends State<_AuthGate> {
         if (_previewOnboarding && !_previewDismissed) {
           return AppGradientBackground(
             child: OnboardingPage(
-              saveFirstSpace: false,
+              isReplay: true,
               onFinished: () => setState(() => _previewDismissed = true),
             ),
           );

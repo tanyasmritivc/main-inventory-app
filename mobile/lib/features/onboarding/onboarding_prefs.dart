@@ -49,12 +49,16 @@ class OnboardingPrefs {
 
   static Future<bool> isCompleted() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kCompleted) ?? false;
+    // Read confirmed storage, not a cache populated by a failed platform write.
+    await prefs.reload();
+    return prefs.get(_kCompleted) == true;
   }
 
   static Future<void> setCompleted(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kCompleted, value);
+    if (!await prefs.setBool(_kCompleted, value)) {
+      throw StateError('Onboarding progress was not saved');
+    }
   }
 
   static Future<bool> isPostSignupPending() async {

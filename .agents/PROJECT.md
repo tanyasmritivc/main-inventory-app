@@ -2,14 +2,17 @@
 
 ## What FindEZ is
 
-FindEZ turns physical objects into searchable, structured inventory. A user can
-capture a bin or workspace, identify parts, organize them by Space, find them with
-natural language, and coordinate access and work with a team.
+FindEZ's user-supplied product direction is AI memory for the physical world:
+capture, understand, remember, retrieve and act on physical belongings. It serves
+personal homes/workplaces as well as teams, not only parts inventory or robotics.
+The current inventory/Space foundation lets users capture objects, review uncertain
+identifications, save their location/context, ask about saved items and coordinate
+access or work with others.
 
-The product is positioned as an inventory understanding system rather than a
-chatbot layered over a database. The current public message is: turn photos of
-physical objects into searchable inventory, organized by space and ready to answer
-questions.
+The mobile introduction teaches that implemented foundation using account-free
+examples. The broader context graph, camera-based spatial navigation, predictive
+replenishment and other proposed memory capabilities are not all implemented.
+Do not present the vision document or demo graphics as proof of deployed features.
 
 ## Product direction
 
