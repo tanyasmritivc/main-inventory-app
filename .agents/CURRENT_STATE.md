@@ -1,6 +1,35 @@
 # Current state
 
-Last reviewed on 2026-10-04 during physical-memory onboarding verification and the held build-46 preflight.
+Last reviewed on 2026-10-04 during public legal-draft verification, physical-memory onboarding and the held build-46 preflight.
+
+## Public legal review (not deployed)
+
+- Web-only `feat/public-legal-review` in `/private/tmp/findez-legal-review`,
+  based on `19da889`, contains brand-matched, accessible Privacy/Terms review
+  drafts. The user confirmed AI Robots Inc (California), 13+ with guardian
+  permission/supervision, customer-content training and `info@findez.ai`.
+  Data categories, trainers, permission records, withdrawal and retention are
+  unresolved. No postal address was supplied; do not invent one.
+- All 144 web tests (11 new legal regressions), TypeScript, production Webpack
+  build with placeholder credentials and diff checks pass. Anonymous local
+  production HTML is 200 with draft/noindex/canonical metadata. Safari verifies
+  desktop Privacy, 390pt Privacy/Terms, expandable section links and the six-page
+  Privacy print preview (canceled without saving/printing). This is not legal
+  approval, a physical-device audit or deployed revision.
+- Existing `https://www.findez.ai/privacy` and `/terms` already return anonymous
+  HTTPS 200. Deployed legal-source hashes match the branch's pre-change base.
+  Production checkout is dirty and was not pulled/reset/replaced. Revisions
+  remain non-effective and must not merge/deploy before unresolved review
+  markers, actual practices and required consent/security behavior are resolved.
+- Read-only live storage audit confirms `documents` and `item-images` are
+  public, `profile-photos` private. Direct file URLs are not made private by an
+  authenticated API or signed link. Existing FIND HTTP was preserved as directed.
+  Account/file/processor/backup deletion coverage and provider arrangements are
+  not fully verified. No customer files were opened and no settings changed.
+  Policy wording cannot secure these paths or provide immunity from lawsuits.
+- Continue using `HANDOFFS/LEGAL-001.md` and `docs/legal-publication.md`.
+  Storage hardening, consent/deletion implementation and mobile policy alignment
+  need separate scoped lanes; no Apple upload/submission is authorized.
 
 ## App Store submission preflight
 
