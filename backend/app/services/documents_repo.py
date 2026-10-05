@@ -7,6 +7,7 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.storage import document_path_in_scope
 
 
 logger = logging.getLogger(__name__)
@@ -89,9 +90,9 @@ def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None)
 
 
 def get_document(*, user_id: str, storage_path: str) -> dict | None:
-    supabase = get_supabase_admin()
-    if not storage_path or not storage_path.strip():
+    if not storage_path or not document_path_in_scope(storage_path, f"{user_id}/"):
         return None
+    supabase = get_supabase_admin()
 
     try:
         resp = _execute_with_retry(

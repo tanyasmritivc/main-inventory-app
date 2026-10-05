@@ -1,6 +1,32 @@
 # Current state
 
-Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot-date correction.
+Last reviewed on 2026-10-05 during the scoped launch-blocker fixes.
+
+## Private document access follow-up
+
+- `fix/private-document-storage` in `/private/tmp/findez-document-privacy` closes
+  the personal service-role deletion-before-ownership bug, rejects foreign or
+  encoded traversal paths in personal/Team document opening/deletion, and makes
+  document uploads use signed URLs independently of the public-image flag.
+  Authorized open responses are `private, no-store`; existing API URL shapes,
+  owned note paths and Team membership/editor checks are preserved.
+- Migration `038_private_documents.sql` preserves objects and bucket metadata,
+  sets only `documents` private, and restricts direct anonymous/JWT access even
+  with a legacy broad permissive Storage policy. Authorized service-role API
+  access remains. Live read-only checks found Storage RLS enabled, zero foreign
+  personal/Team document paths, and the bucket still public before deployment.
+  No customer file was opened or changed. Local 379 backend/API-doc tests pass;
+  actual PostgreSQL migration execution and deployment remain pending.
+- This is not item-photo privacy or a complete launch/security clearance.
+  Signed links remain bearer access until expiry (configured default one hour),
+  and downloaded copies cannot be recalled. Item-image privacy, retention,
+  deletion verification, legal publication and physical release gates remain.
+  AI Robots Inc's operation of both AI gateways is owner-confirmed; retention
+  remains unconfirmed. `info@findez.ai` is the contact email, not a postal address.
+  Apple upload/submission and FIND connection changes remain held.
+- The separate mobile cold Home-to-Space lane is PR #42 (`ab506f2`), with 265
+  Flutter tests/coverage, clean analysis and all five CI jobs passing in run
+  `37385102041`. That source fix is not an installed/released binary.
 
 ## November pilot date and current launch verdict
 

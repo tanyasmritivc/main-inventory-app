@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-05: Documents are private behind authorized open APIs
+
+**Decision:** Document privacy is independent of the legacy public-image flag.
+Keep stable owned personal/Team paths, sign downloads only after current owner or
+Team-membership checks, and check ownership before service-role object deletion.
+Reject forged foreign paths even when an attacker inserts an owned database row.
+Migration 038 makes only `documents` private and denies direct anonymous/JWT
+access; backend service-role access remains. Do not change FIND transport or
+privatize item images without their separate response-URL compatibility work.
+
+**Limit:** Existing signed URLs remain usable until expiry; no revocation promise
+for previously issued URLs or downloaded copies. This does not establish processor
+retention, complete account deletion, legal approval or broad launch readiness.
+
 Only decisions supported by current code or repository records belong here.
 
 ## 2026-10-04: Physical-memory onboarding precedes authentication

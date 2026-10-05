@@ -18,7 +18,7 @@ from app.services.documents_repo import (
     set_document_item_link,
 )
 from app.services.ai_service import summarize_activity
-from app.services.storage import create_document_signed_url, upload_document
+from app.services.storage import create_document_signed_url, document_path_in_scope, upload_document
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(tags=["inventory"])
@@ -99,6 +99,7 @@ def list_documents_route(
 
 @router.get("/documents/open")
 def open_document_route(
+    response: Response,
     storage_path: str = Query(max_length=500),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> dict:
@@ -106,8 +107,11 @@ def open_document_route(
     if not path or ".." in path:
         raise bad_request("Invalid storage path")
     try:
-        if not get_document(user_id=user.user_id, storage_path=path):
+        if not document_path_in_scope(path, f"{user.user_id}/") or not get_document(
+            user_id=user.user_id, storage_path=path
+        ):
             raise bad_request("Document not found")
+        response.headers["Cache-Control"] = "private, no-store"
         return {"url": create_document_signed_url(storage_path=path)}
     except HTTPException:
         raise
@@ -174,10 +178,18 @@ def delete_document_route(
         raise bad_request("Invalid storage path")
 
     try:
+        # Service-role storage deletion bypasses RLS. Check the owned database
+        # record before touching the object, not just before deleting its row.
+        if not document_path_in_scope(storage_path, f"{user.user_id}/") or not get_document(
+            user_id=user.user_id, storage_path=storage_path
+        ):
+            raise HTTPException(status_code=404, detail="Document not found")
         supabase = get_supabase_admin()
         supabase.storage.from_("documents").remove([storage_path])
         supabase.table("documents").delete().eq("user_id", user.user_id).eq("storage_path", storage_path).execute()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except HTTPException:
+        raise
     except httpx.HTTPError:
         logger.exception("Upstream error during document deletion")
         raise service_unavailable("Delete temporarily unavailable. Please try again.")
