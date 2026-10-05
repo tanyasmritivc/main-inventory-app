@@ -1,6 +1,6 @@
 # Current state
 
-Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot-date correction.
+Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Cold Home-to-Space correction (October 5)
 
@@ -17,6 +17,11 @@ Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot
   regressions cover actual cold-shell navigation in Light/Dark, failure/retry,
   confirmed empty data, duplicate taps and disposed late reads. The cold-shell
   assertion failed against the original source before the fix.
+- Runtime `ab506f2`, PR #42, passes all five CI jobs in `37385102041`.
+- Separate backend PR #43 runtime `4ac3c56` deployed private document storage
+  after all five CI jobs passed (`37385848403`). Disposable personal/Team
+  upload/open/denied foreign access and membership revocation checks pass; all QA
+  data removed. Item photos remain public, and processor retention unconfirmed.
 - This is source-only, not a newly installed native binary or physical acceptance
   pass. Apple upload/submission remains held, FIND unchanged. The unrelated
   public item-image storage, legal publication and physical release gates remain.
@@ -61,10 +66,11 @@ Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot
   offline draft protection, second-account revoke and real invitation acceptance
   remain outstanding. The cold Home -> Space issue now has a separately tested
   source correction above; final-binary/device acceptance remains outstanding.
-- Live storage metadata rechecked read-only: `documents` and `item-images` are
-  public, `profile-photos` is private. Public file URLs remain a privacy/access
-  concern even when authenticated inventory reads are revoked. No storage
-  policy was changed. Legal review PR #40 is draft/unpublished and still needs
+- The original storage audit found both documents and item images public. The
+  separate October 5 PR #43 deployment above made documents private; item images
+  remain public and profile photos private. Public item-photo URLs remain a
+  privacy/access concern after revocation. Legal PR #40 is still draft/unpublished
+  and needs
   provider/deletion verification and final publication/mobile alignment. The
   user's no-current-customer-training clarification is not proof of all provider
   practices. The existing unencrypted server-to-FIND hop is also a retained,
