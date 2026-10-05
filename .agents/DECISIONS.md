@@ -2,6 +2,15 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-05: A registered Space destination is not a loaded inventory
+
+Wait for Find's first or active inventory read before constructing the existing
+Space item route. A failed read is a retryable error, not an empty inventory.
+Deduplicate pending reads and route taps; ignore disposed/account-changed
+continuations. Retain stable Space IDs, normal Find filters and complete Home
+Space contents. This is a mobile loading correction, not a backend/schema fix,
+new cache architecture or native lifecycle change.
+
 ## 2026-10-04: Physical-memory onboarding precedes authentication
 
 On a fresh, signed-out installation, show the account-free introduction before

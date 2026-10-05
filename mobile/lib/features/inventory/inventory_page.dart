@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -1619,6 +1620,10 @@ class _InventoryPageState extends State<InventoryPage>
   final ValueNotifier<String> _category = ValueNotifier('All');
 
   bool _loading = true;
+  bool _hasLoadedItems = false;
+  String? _itemsOwner;
+  Future<void>? _itemsLoad;
+  bool _openingLocation = false;
   String? _error;
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _joinedShares = [];
@@ -1777,7 +1782,7 @@ class _InventoryPageState extends State<InventoryPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_items.isEmpty && !_loading) {
+    if (!_hasLoadedItems && !_loading && _itemsLoad == null) {
       unawaited(
         Future.wait([
           _loadItems(),
@@ -1799,6 +1804,44 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _openLocation({
+    required String location,
+    required Map<String, int> thresholds,
+    String? spaceId,
+  }) async {
+    if (!mounted || _openingLocation) return;
+    _openingLocation = true;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    try {
+      // Registration makes navigation available before the cold inventory read
+      // finishes. Never snapshot that uninitialized list into a Space route.
+      if (_itemsLoad != null ||
+          !_hasLoadedItems ||
+          _itemsOwner != owner ||
+          _error != null) {
+        await _loadItems();
+      }
+      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+        return;
+      }
+      if (_error != null || !_hasLoadedItems || _itemsOwner != owner) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not load this Space. Please try again.'),
+          ),
+        );
+        return;
+      }
+      await _showLocation(
+        location: location,
+        thresholds: thresholds,
+        spaceId: spaceId,
+      );
+    } finally {
+      _openingLocation = false;
+    }
+  }
+
+  Future<void> _showLocation({
     required String location,
     required Map<String, int> thresholds,
     String? spaceId,
@@ -1927,8 +1970,20 @@ class _InventoryPageState extends State<InventoryPage>
     return n;
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadItems() {
+    final running = _itemsLoad;
+    if (running != null) return running;
+    late final Future<void> request;
+    request = _fetchItems().whenComplete(() {
+      if (identical(_itemsLoad, request)) _itemsLoad = null;
+    });
+    _itemsLoad = request;
+    return request;
+  }
+
+  Future<void> _fetchItems() async {
     if (!mounted) return;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     final t0 = DateTime.now().millisecondsSinceEpoch;
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start',
@@ -1952,9 +2007,13 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)',
       );
-      if (!mounted) return;
+      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+        return;
+      }
       setState(() {
         _items = result.items;
+        _hasLoadedItems = true;
+        _itemsOwner = owner;
       });
       LowStockPrefs.loadAll().then((value) {
         if (!mounted) return;
