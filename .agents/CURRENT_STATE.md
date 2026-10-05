@@ -16,7 +16,8 @@ Last reviewed on 2026-10-04 during physical-memory onboarding verification and t
   Navigation/fade/sample transitions respect Reduce Motion and pages scroll
   independently above the pinned action at large text sizes.
   PR #39, runtime `f6782d3`, passes all 246 mobile tests with coverage, clean
-  Flutter analysis and all five CI gates (run `37265597966`). Local targeted
+  Flutter analysis and all five CI gates (runtime run `37265597966`, repeated
+  on documentation head `ff15a5d` in run `37265970841`). Local targeted
   regressions pass; the final local full-suite compiler rerun stalled on the
   disk-constrained Mac and was stopped after CI passed. A prior local 245-test
   full suite passed before the final compact-answer layout adjustment.
@@ -27,8 +28,15 @@ Last reviewed on 2026-10-04 during physical-memory onboarding verification and t
   returning to Profile. CUA mouse drags did not confirm native vertical scrolling;
   automated scroll/layout tests pass through 3.4x at 320pt. Physical touch,
   VoiceOver, fresh-install/auth and reduced-motion checks remain deferred.
-  Simulator preferences were restored to Dark/Default, leaving the new welcome
-  screen open in replay. No inventory/membership/document data, auth credentials,
+  A follow-up native signed-out cold-launch check reset only the existing
+  simulator's completion flag while it was stopped, without erasing app data.
+  Build 50 showed the welcome introduction before Auth; all four sample steps
+  worked, final Continue opened Auth, and a force-quit/relaunch stayed on Auth.
+  Completion was restored to its original confirmed `true` through the UI.
+  This is a reset-flag simulator check, not an App Store download or physical
+  fresh-install/auth pass. Dark/Default preferences are retained; the simulator
+  is now left on sign-in, with no credentials entered during this follow-up.
+  No inventory/membership/document data, auth credentials,
   backend/web/schema/FIND, native lifecycle, App Store draft or Apple release
   was changed. Submission remains held; the separate cold Home-to-Space issue
   and broader release gates still apply.
