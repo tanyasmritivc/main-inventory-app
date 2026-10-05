@@ -27,8 +27,8 @@ class _SettingsPageState extends State<SettingsPage> {
     padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
     child: Text(
       text,
-      style: const TextStyle(
-        color: Color(0x4DFFFFFF),
+      style: TextStyle(
+        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
         fontSize: 10,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.6,
@@ -40,9 +40,12 @@ class _SettingsPageState extends State<SettingsPage> {
     borderRadius: BorderRadius.circular(20),
     child: Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+        border: Border.all(
+          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+          width: 0.5,
+        ),
       ),
       child: child,
     ),
@@ -81,9 +84,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 if (showChevron)
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
-                    color: Color(0x33FFFFFF),
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
                     size: 18,
                   ),
               ],
@@ -92,10 +95,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       if (!last)
-        const Divider(
+        Divider(
           height: 0.5,
           thickness: 0.5,
-          color: Color(0x14FFFFFF),
+          color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
           indent: 0,
           endIndent: 0,
         ),
@@ -107,26 +110,28 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: const Text(
+        title: Text(
           'Delete Account',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
-          style: TextStyle(color: Color(0x73FFFFFF)),
+          style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Color(0x73FFFFFF)),
+              style: TextStyle(
+                color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+              ),
             ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppTheme.adaptive(ctx, const Color(0xFFEF4444)),
               foregroundColor: Colors.white,
             ),
             child: const Text('Delete'),
@@ -172,11 +177,17 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: Text(
               'Email us at info@findez.ai',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 14,
+              ),
             ),
-            backgroundColor: const Color(0xFF1C1C1E),
+            backgroundColor: AppTheme.adaptive(
+              context,
+              const Color(0xFF1C1C1E),
+            ),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -185,7 +196,7 @@ class _SettingsPageState extends State<SettingsPage> {
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'Copy',
-              textColor: Colors.white,
+              textColor: AppTheme.adaptive(context, Colors.white),
               onPressed: () {
                 Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
               },
@@ -211,11 +222,17 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: Text(
               'Email us at info@findez.ai',
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 14,
+              ),
             ),
-            backgroundColor: const Color(0xFF1C1C1E),
+            backgroundColor: AppTheme.adaptive(
+              context,
+              const Color(0xFF1C1C1E),
+            ),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -224,7 +241,7 @@ class _SettingsPageState extends State<SettingsPage> {
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'Copy',
-              textColor: Colors.white,
+              textColor: AppTheme.adaptive(context, Colors.white),
               onPressed: () {
                 Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
               },
@@ -240,21 +257,23 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.white,
+            color: AppTheme.foreground(context, Colors.white),
             fontSize: 17,
             fontWeight: FontWeight.w500,
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(
+          color: AppTheme.foreground(context, Colors.white),
+        ),
         leading: const BackButton(),
       ),
       body: ListView(
@@ -268,17 +287,29 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _actionRow(
                   icon: Icons.logout,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'Sign out',
-                  labelColor: const Color(0x73FFFFFF),
+                  labelColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   onTap: () =>
                       unawaited(Supabase.instance.client.auth.signOut()),
                 ),
                 _actionRow(
                   icon: Icons.delete_outline,
-                  iconColor: const Color(0xFFEF4444),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0xFFEF4444),
+                  ),
                   label: 'Delete account',
-                  labelColor: const Color(0xFFEF4444),
+                  labelColor: AppTheme.adaptive(
+                    context,
+                    const Color(0xFFEF4444),
+                  ),
                   showChevron: false,
                   onTap: () => unawaited(_deleteAccount()),
                   last: true,
@@ -295,9 +326,12 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _actionRow(
                   icon: Icons.play_circle_outline_rounded,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'App tour',
-                  labelColor: Colors.white,
+                  labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -312,16 +346,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _actionRow(
                   icon: Icons.mail_outline,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'Send feedback',
-                  labelColor: Colors.white,
+                  labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => unawaited(_sendFeedback()),
                 ),
                 _actionRow(
                   icon: Icons.bug_report_outlined,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'Report a problem',
-                  labelColor: Colors.white,
+                  labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => unawaited(_reportProblem()),
                   last: true,
                 ),
@@ -337,9 +377,12 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _actionRow(
                   icon: Icons.shield_outlined,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'Privacy Policy',
-                  labelColor: Colors.white,
+                  labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -349,9 +392,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _actionRow(
                   icon: Icons.description_outlined,
-                  iconColor: const Color(0x73FFFFFF),
+                  iconColor: AppTheme.adaptive(
+                    context,
+                    const Color(0x73FFFFFF),
+                  ),
                   label: 'Terms of Service',
-                  labelColor: Colors.white,
+                  labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(

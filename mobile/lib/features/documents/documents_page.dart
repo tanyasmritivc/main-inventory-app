@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -549,7 +550,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final res = await showModalBottomSheet<_LinkResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: HomeColors.surface,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.surface),
       builder: (context) => _LinkSheet(
         document: d,
         api: widget.api,
@@ -779,7 +780,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
-        color: const Color(0xFF35191B),
+        color: AppTheme.adaptive(context, const Color(0xFF35191B)),
         child: const Icon(Icons.delete_outline, color: Colors.redAccent),
       ),
       confirmDismiss: (_) async {
@@ -796,14 +797,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   width: 44,
                   height: 44,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(
+                  errorBuilder: (_, _, _) => SizedBox(
                     width: 44,
                     height: 44,
                     child: Center(
                       child: Icon(
                         Icons.image_not_supported_outlined,
                         size: 20,
-                        color: HomeColors.secondary,
+                        color: AppTheme.foreground(context, HomeColors.secondary),
                       ),
                     ),
                   ),
@@ -814,8 +815,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: HomeColors.text,
+          style: TextStyle(
+            color: AppTheme.foreground(context, HomeColors.text),
             fontSize: 16,
             fontWeight: FontWeight.w400,
           ),
@@ -823,8 +824,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
         subtitle: Text(
           '${_isNote(document) ? 'Note' : _typeLabel(document)} - ${_formatDate(document.createdAt)}'
           '${linkedName.isEmpty ? '' : '\nLinked to $linkedName'}',
-          style: const TextStyle(
-            color: HomeColors.secondary,
+          style: TextStyle(
+            color: AppTheme.foreground(context, HomeColors.secondary),
             fontSize: 12,
             fontWeight: FontWeight.w400,
           ),
@@ -837,7 +838,10 @@ class _DocumentsPageState extends State<DocumentsPage> {
               )
             : PopupMenuButton<String>(
                 tooltip: 'Actions for $title',
-                icon: const Icon(Icons.more_horiz, color: HomeColors.secondary),
+                icon: Icon(
+                  Icons.more_horiz,
+                  color: AppTheme.foreground(context, HomeColors.secondary),
+                ),
                 onSelected: (value) async {
                   switch (value) {
                     case 'open':
@@ -889,7 +893,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         TextButton(
           onPressed: toggle,
           style: TextButton.styleFrom(
-            foregroundColor: HomeColors.secondary,
+            foregroundColor: AppTheme.adaptive(context, HomeColors.secondary),
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
           ),
           child: Row(
@@ -914,16 +918,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
         ),
         if (open)
           Material(
-            color: HomeColors.surface,
+            color: AppTheme.adaptive(context, HomeColors.surface),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 for (var i = 0; i < documents.length; i++) ...[
                   if (i > 0)
-                    const Divider(
+                    Divider(
                       height: 1,
-                      color: Color(0xFF2A2A2E),
+                      color: AppTheme.adaptive(context, Color(0xFF2A2A2E)),
                       indent: 16,
                       endIndent: 16,
                     ),
@@ -943,8 +947,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
         Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: HomeColors.secondary,
+          style: TextStyle(
+            color: AppTheme.foreground(context, HomeColors.secondary),
             fontSize: 15,
             fontWeight: FontWeight.w400,
           ),
@@ -974,9 +978,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
         .where((d) => !_isImage(d) && !_isNote(d) && !_isPdf(d))
         .toList();
     return Scaffold(
-      backgroundColor: HomeColors.background,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: AppBar(
-        backgroundColor: HomeColors.background,
+        backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: const Text(
@@ -999,8 +1003,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Text(
                 _uploading ? 'Uploading...' : 'Add',
-                style: const TextStyle(
-                  color: HomeColors.text,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),
@@ -1020,19 +1024,19 @@ class _DocumentsPageState extends State<DocumentsPage> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(
-                color: HomeColors.text,
+              style: TextStyle(
+                color: AppTheme.foreground(context, HomeColors.text),
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
               decoration: InputDecoration(
                 hintText: 'Search documents and notes',
-                hintStyle: const TextStyle(
-                  color: HomeColors.hint,
+                hintStyle: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.hint),
                   fontWeight: FontWeight.w400,
                 ),
                 filled: true,
-                fillColor: HomeColors.surface,
+                fillColor: AppTheme.adaptive(context, HomeColors.surface),
                 contentPadding: const EdgeInsets.all(16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -1044,7 +1048,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: HomeColors.secondary),
+                  borderSide: BorderSide(
+                    color: AppTheme.adaptive(context, HomeColors.secondary),
+                  ),
                 ),
               ),
             ),
@@ -1254,7 +1260,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                 decoration: InputDecoration(
                   hintText: 'Search items',
                   filled: true,
-                  fillColor: HomeColors.background,
+                  fillColor: AppTheme.adaptive(context, HomeColors.background),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -1269,7 +1275,9 @@ class _LinkSheetState extends State<_LinkSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: HomeColors.secondary),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(context, HomeColors.secondary),
+                    ),
                   ),
                 ),
               ),
@@ -1296,7 +1304,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 320),
                   child: Material(
-                    color: HomeColors.surface,
+                    color: AppTheme.adaptive(context, HomeColors.surface),
                     borderRadius: BorderRadius.circular(16),
                     clipBehavior: Clip.antiAlias,
                     child: rows.isEmpty
@@ -1305,7 +1313,10 @@ class _LinkSheetState extends State<_LinkSheet> {
                             child: Text(
                               'No matches.',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white.withValues(alpha: 0.65),
+                                ),
                               ),
                             ),
                           )
@@ -1321,8 +1332,11 @@ class _LinkSheetState extends State<_LinkSheet> {
                                 title: Text(it.name),
                                 subtitle: Text(
                                   it.category,
-                                  style: const TextStyle(
-                                    color: HomeColors.secondary,
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      HomeColors.secondary,
+                                    ),
                                   ),
                                 ),
                                 onTap: () => Navigator.of(context).pop(

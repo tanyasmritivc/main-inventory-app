@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/profile_store.dart';
 import 'package:mobile/features/profile/profile_editor_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
@@ -89,11 +90,12 @@ Widget _editor(
   ProfileStore store, {
   Future<XFile?> Function()? picker,
   TextScaler? scaler,
+  Brightness brightness = Brightness.dark,
 }) => RepaintBoundary(
   key: const ValueKey('profile-qa'),
   child: MaterialApp(
-    theme: ThemeData.dark().copyWith(
-      textTheme: ThemeData.dark().textTheme.apply(
+    theme: AppTheme.create(brightness).copyWith(
+      textTheme: AppTheme.create(brightness).textTheme.apply(
         fontFamily: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
             ? 'FindEZQA'
             : null,
@@ -125,6 +127,7 @@ Future<void> _open(
   ProfileStore store, {
   Future<XFile?> Function()? picker,
   TextScaler? scaler,
+  Brightness brightness = Brightness.dark,
 }) async {
   if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
     tester.view.physicalSize = const Size(390, 844);
@@ -132,7 +135,9 @@ Future<void> _open(
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
   }
-  await tester.pumpWidget(_editor(api, store, picker: picker, scaler: scaler));
+  await tester.pumpWidget(
+    _editor(api, store, picker: picker, scaler: scaler, brightness: brightness),
+  );
   await tester.tap(find.text('Open editor'));
   await tester.pumpAndSettle();
   if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
@@ -165,6 +170,35 @@ Future<void> _choose(WidgetTester tester, String choice) async {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6]) {
+      testWidgets(
+        '${brightness.name} profile editor supports $scale text at 320pt',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 568);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final api = _Api()..data['avatar_url'] = '';
+          final store = ProfileStore(api: api, ownerId: () => 'owner');
+          addTearDown(store.dispose);
+          await _open(
+            tester,
+            api,
+            store,
+            brightness: brightness,
+            scaler: TextScaler.linear(scale),
+          );
+          expect(tester.takeException(), isNull);
+          await tester.ensureVisible(find.text('Save changes'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(api.saves, 0);
+          expect(find.byType(ColorFiltered), findsNothing);
+        },
+      );
+    }
+  }
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       final font = FontLoader('FindEZQA')

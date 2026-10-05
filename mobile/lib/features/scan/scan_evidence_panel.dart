@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -26,28 +27,28 @@ class ScanEvidencePanel extends StatelessWidget {
     // ExpansionTile's ListTile paints its background and ink on Material.
     // Keep that surface inside the border instead of hiding it with a container.
     return Material(
-      color: const Color(0xFF111214),
+      color: AppTheme.adaptive(context, const Color(0xFF111214)),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: evidence.needsReview
-              ? const Color(0x55F5A623)
-              : const Color(0x1430D158),
+              ? AppTheme.adaptive(context, const Color(0x55F5A623))
+              : AppTheme.adaptive(context, const Color(0x1430D158)),
         ),
       ),
       child: ExpansionTile(
         initiallyExpanded: initiallyExpanded || evidence.needsReview,
         tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        iconColor: Colors.white70,
-        collapsedIconColor: Colors.white54,
+        iconColor: AppTheme.adaptive(context, Colors.white70),
+        collapsedIconColor: AppTheme.adaptive(context, Colors.white54),
         title: Text(
           evidence.needsReview ? 'Needs your review' : 'How this was read',
           style: TextStyle(
             color: evidence.needsReview
-                ? const Color(0xFFF5A623)
-                : Colors.white,
+                ? AppTheme.foreground(context, const Color(0xFFF5A623))
+                : AppTheme.foreground(context, Colors.white),
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -56,7 +57,10 @@ class ScanEvidencePanel extends StatelessWidget {
           evidence.needsReview
               ? 'Confirm the uncertain details before this becomes inventory.'
               : 'See the visible details used for this result.',
-          style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 11),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+            fontSize: 11,
+          ),
         ),
         children: [
           if (evidence.reviewReasons.isNotEmpty) ...[
@@ -154,7 +158,11 @@ class _EvidenceRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0x99FFFFFF), size: 16),
+          Icon(
+            icon,
+            color: AppTheme.foreground(context, const Color(0x99FFFFFF)),
+            size: 16,
+          ),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
@@ -162,8 +170,8 @@ class _EvidenceRow extends StatelessWidget {
               children: [
                 Text(
                   label.toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0x66FFFFFF),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
@@ -172,8 +180,8 @@ class _EvidenceRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Color(0xCCFFFFFF),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xCCFFFFFF)),
                     fontSize: 12,
                     height: 1.4,
                   ),

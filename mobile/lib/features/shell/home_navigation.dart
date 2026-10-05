@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/ui/app_colors.dart';
@@ -21,12 +22,16 @@ class HomeNavigation extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xF2131418),
+          color: AppTheme.adaptive(context, const Color(0xF2131418)),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: AppColors.border),
-          boxShadow: const [
+          border: Border.all(
+            color: AppTheme.adaptive(context, AppColors.border),
+          ),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x66000000),
+              color: AppTheme.isDark(context)
+                  ? const Color(0x66000000)
+                  : const Color(0x14000000),
               blurRadius: 18,
               offset: Offset(0, 8),
             ),
@@ -38,7 +43,7 @@ class HomeNavigation extends StatelessWidget {
             height: 56,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
             backgroundColor: Colors.transparent,
-            indicatorColor: const Color(0x18FFFFFF),
+            indicatorColor: AppTheme.adaptive(context, const Color(0x18FFFFFF)),
             indicatorShape: const CircleBorder(),
             surfaceTintColor: Colors.transparent,
             elevation: 0,

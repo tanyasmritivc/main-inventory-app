@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -651,7 +652,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
               inBottomHalf
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
-              color: const Color(0xFF6997DD),
+              color: AppTheme.foreground(context, const Color(0xFF6997DD)),
               size: arrowSize,
             ),
           ),
@@ -691,15 +692,19 @@ class _TooltipCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: AppTheme.adaptive(
+              context,
+              Colors.white.withValues(alpha: 0.10),
+            ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
+              color: AppTheme.adaptive(
+                context,
+                Colors.white.withValues(alpha: 0.20),
+              ),
               width: 1.2,
             ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x266997DD), blurRadius: 20),
-            ],
+            boxShadow: [BoxShadow(color: Color(0x266997DD), blurRadius: 20)],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -708,12 +713,19 @@ class _TooltipCard extends StatelessWidget {
               // Icon(s)
               Row(
                 children: [
-                  Icon(config.icon, color: const Color(0xFF6997DD), size: 28),
+                  Icon(
+                    config.icon,
+                    color: AppTheme.foreground(context, const Color(0xFF6997DD)),
+                    size: 28,
+                  ),
                   if (config.secondIcon != null) ...[
                     const SizedBox(width: 8),
                     Icon(
                       config.secondIcon,
-                      color: const Color(0xFF6997DD),
+                      color: AppTheme.foreground(
+                        context,
+                        const Color(0xFF6997DD),
+                      ),
                       size: 22,
                     ),
                   ],
@@ -723,8 +735,8 @@ class _TooltipCard extends StatelessWidget {
               // Title
               Text(
                 config.title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -733,8 +745,8 @@ class _TooltipCard extends StatelessWidget {
               // Body
               Text(
                 config.body,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
                   fontSize: 13,
                   height: 1.4,
                 ),
@@ -746,8 +758,8 @@ class _TooltipCard extends StatelessWidget {
                   if (isMultiStep)
                     Text(
                       '${step + 1} of $totalSteps',
-                      style: const TextStyle(
-                        color: Color(0x61FFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x61FFFFFF)),
                         fontSize: 12,
                       ),
                     ),
@@ -764,7 +776,10 @@ class _TooltipCard extends StatelessWidget {
                         child: Text(
                           'Skip',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: AppTheme.foreground(
+                              context,
+                              Colors.white.withValues(alpha: 0.55),
+                            ),
                             fontSize: 14,
                           ),
                         ),
@@ -781,13 +796,16 @@ class _TooltipCard extends StatelessWidget {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6997DD),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF6997DD),
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Got it ✓',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.foreground(context, Colors.white),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -803,18 +821,27 @@ class _TooltipCard extends StatelessWidget {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    Colors.white.withValues(alpha: 0.08),
+                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: const Color(
-                                      0xFF6997DD,
-                                    ).withValues(alpha: 0.70),
+                                    color: AppTheme.adaptive(
+                                      context,
+                                      const Color(
+                                        0xFF6997DD,
+                                      ).withValues(alpha: 0.70),
+                                    ),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Next →',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),

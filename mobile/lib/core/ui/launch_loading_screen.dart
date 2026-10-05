@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class LaunchLoadingScreen extends StatelessWidget {
@@ -10,15 +11,15 @@ class LaunchLoadingScreen extends StatelessWidget {
     final text = message ?? 'Preparing your workspace…';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'FindEZ',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontWeight: FontWeight.bold,
                 fontSize: 28,
                 letterSpacing: 1.5,
@@ -29,7 +30,10 @@ class LaunchLoadingScreen extends StatelessWidget {
               text,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: AppTheme.foreground(
+                  context,
+                  Colors.white.withValues(alpha: 0.45),
+                ),
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
@@ -41,7 +45,10 @@ class LaunchLoadingScreen extends StatelessWidget {
               child: CircularProgressIndicator(
                 strokeWidth: 1.5,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.white.withValues(alpha: 0.25),
+                  AppTheme.adaptive(
+                    context,
+                    Colors.white.withValues(alpha: 0.25),
+                  ),
                 ),
               ),
             ),

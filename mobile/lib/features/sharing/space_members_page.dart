@@ -51,7 +51,11 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppTheme.foreground(context, Colors.white),
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -59,28 +63,35 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
           children: [
             Text(
               widget.spaceName,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
                 fontWeight: FontWeight.w700,
                 fontSize: 17,
               ),
             ),
-            const Text(
+            Text(
               'Team members',
-              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 11),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                fontSize: 11,
+              ),
             ),
           ],
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.adaptive(context, Colors.white),
+              ),
+            )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
                   '${_members.length} ${_members.length == 1 ? 'member' : 'members'}',
-                  style: const TextStyle(
-                    color: Color(0x4DFFFFFF),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.4,
@@ -97,9 +108,17 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -117,8 +136,11 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                 children: [
                                   Text(
                                     name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -131,13 +153,19 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0x1AFBBF24),
+                                        color: AppTheme.adaptive(
+                                          context,
+                                          const Color(0x1AFBBF24),
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'Owner',
                                         style: TextStyle(
-                                          color: Color(0xFFFBBF24),
+                                          color: AppTheme.foreground(
+                                            context,
+                                            Color(0xFFFBBF24),
+                                          ),
                                           fontSize: 9,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -155,15 +183,21 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                     children: [
                                       Text(
                                         email,
-                                        style: const TextStyle(
-                                          color: Color(0x73FFFFFF),
+                                        style: TextStyle(
+                                          color: AppTheme.foreground(
+                                            context,
+                                            Color(0x73FFFFFF),
+                                          ),
                                           fontSize: 12,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      const Icon(
+                                      Icon(
                                         Icons.open_in_new,
-                                        color: Color(0x4DFFFFFF),
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x4DFFFFFF),
+                                        ),
                                         size: 10,
                                       ),
                                     ],

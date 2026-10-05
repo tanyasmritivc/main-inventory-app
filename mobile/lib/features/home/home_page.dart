@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -133,7 +134,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _chooseSpace() async {
     final space = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      backgroundColor: HomeColors.surface,
+      backgroundColor: AppTheme.adaptive(context, HomeColors.surface),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -156,11 +157,16 @@ class _HomePageState extends State<HomePage> {
                       onTap: () => Navigator.pop(context, space),
                     ),
                   if (_spaces.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
                       child: Text(
                         'No Spaces yet',
-                        style: TextStyle(color: HomeColors.secondary),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            HomeColors.secondary,
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -234,13 +240,15 @@ class _AttentionItemsPageState extends State<_AttentionItemsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: HomeColors.background,
+    backgroundColor: AppTheme.adaptive(context, HomeColors.background),
     appBar: AppBar(title: Text(widget.title)),
     body: _items.isEmpty
-        ? const Center(
+        ? Center(
             child: Text(
               'No items',
-              style: TextStyle(color: HomeColors.secondary),
+              style: TextStyle(
+                color: AppTheme.foreground(context, HomeColors.secondary),
+              ),
             ),
           )
         : ListView.builder(

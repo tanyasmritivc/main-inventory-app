@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -138,11 +139,11 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
+    backgroundColor: AppTheme.adaptive(context, Colors.black),
     appBar: AppBar(
       title: const Text('Project Kits'),
       centerTitle: true,
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
     ),
     floatingActionButton: GlassFab(
       onPressed: _loading ? null : _create,
@@ -160,26 +161,28 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                 Center(
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: AppColors.danger),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.danger),
+                    ),
                   ),
                 ),
               ],
             )
           : _kits.isEmpty
           ? ListView(
-              children: const [
+              children: [
                 SizedBox(height: 160),
                 Icon(
                   Icons.inventory_2_outlined,
                   size: 64,
-                  color: Colors.white38,
+                  color: AppTheme.foreground(context, Colors.white38),
                 ),
                 SizedBox(height: 18),
                 Center(
                   child: Text(
                     'No project kits yet',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
@@ -189,7 +192,9 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                 Center(
                   child: Text(
                     'Create one from a BOM to track readiness over time.',
-                    style: TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white54),
+                    ),
                   ),
                 ),
               ],
@@ -201,29 +206,34 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
               itemBuilder: (_, index) {
                 final kit = _kits[index];
                 return Card(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFF123B63),
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.adaptive(
+                        context,
+                        Color(0xFF123B63),
+                      ),
                       child: Icon(
                         Icons.inventory_2_outlined,
-                        color: Color(0xFF6997DD),
+                        color: AppTheme.foreground(context, Color(0xFF6997DD)),
                       ),
                     ),
                     title: Text(
                       kit.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     subtitle: Text(
                       kit.location,
-                      style: const TextStyle(color: Colors.white54),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white54),
+                      ),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: Colors.white38,
+                      color: AppTheme.foreground(context, Colors.white38),
                     ),
                     onTap: () async {
                       try {
@@ -375,10 +385,10 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
+    backgroundColor: AppTheme.adaptive(context, Colors.black),
     appBar: AppBar(
       title: Text(_kit.name),
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       actions: [
         IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline)),
       ],
@@ -389,34 +399,38 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            color: const Color(0xFF171717),
+            color: AppTheme.adaptive(context, const Color(0xFF171717)),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   Text(
                     '${_kit.summary.readinessPercent}%',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 42,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
                     'ready in ${_kit.location}',
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white54),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   LinearProgressIndicator(
                     value: _kit.summary.readinessPercent / 100,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(8),
-                    backgroundColor: Colors.white12,
+                    backgroundColor: AppTheme.adaptive(context, Colors.white12),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     '${_kit.summary.readyLines} ready · ${_kit.summary.partialLines} partial · ${_kit.summary.missingLines} missing',
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white54),
+                    ),
                   ),
                 ],
               ),
@@ -471,20 +485,23 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
             ),
           ] else ...[
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'View only · An editor can change reservations',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white54),
+                fontSize: 12,
+              ),
             ),
           ],
           const SizedBox(height: 14),
           ..._kit.items.map((item) {
             final ready = item.status == 'ready';
             final color = ready
-                ? AppColors.success
+                ? AppTheme.adaptive(context, AppColors.success)
                 : item.status == 'partial'
-                ? AppColors.warning
-                : AppColors.danger;
+                ? AppTheme.adaptive(context, AppColors.warning)
+                : AppTheme.adaptive(context, AppColors.danger);
             final identity = item.partNumber != null
                 ? item.name
                 : (item.brand ?? '');
@@ -500,11 +517,15 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
               ),
               title: Text(
                 item.partNumber ?? item.name,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                ),
               ),
               subtitle: Text(
                 '$identity${identity.isEmpty ? '' : '\n'}$reservation',
-                style: const TextStyle(color: Colors.white54),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white54),
+                ),
               ),
               isThreeLine: identity.isNotEmpty,
               trailing: Text(

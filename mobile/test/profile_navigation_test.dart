@@ -9,6 +9,9 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/inventory_cache.dart';
+import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
 import 'package:mobile/features/profile/profile_page.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
@@ -72,12 +75,42 @@ class _ProfileApi extends ApiClient {
   }
 }
 
+class _InventoryAppearanceApi extends _ProfileApi {
+  @override
+  Future<SearchItemsResult> searchItems({required String query}) async =>
+      SearchItemsResult(
+        items: [
+          InventoryItem(
+            itemId: 'restock-test',
+            name: 'Sample masonry bit with a long descriptive name',
+            category: 'Tools',
+            location: 'Sample Workshop',
+            quantity: 0,
+            createdAt: DateTime(2026, 10, 4),
+          ),
+        ],
+        parsed: const {},
+      );
+
+  @override
+  Future<List<Map<String, dynamic>>> listSpaces() async => [
+    {'id': 'empty', 'name': 'Empty Test', 'item_count': 0},
+    {'id': 'sample', 'name': 'Sample Workshop', 'item_count': 1},
+  ];
+
+  @override
+  Future<List<dynamic>> getMyShares() async => [];
+  @override
+  Future<List<dynamic>> getJoinedShares() async => [];
+}
+
 Widget _hub(
   _ProfileApi api,
   List<String> opened, {
   TextScaler scaler = TextScaler.noScaling,
+  Brightness brightness = Brightness.dark,
 }) => MaterialApp(
-  theme: ThemeData.dark(),
+  theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(textScaler: scaler),
     child: child!,
@@ -98,6 +131,103 @@ Widget _hub(
 );
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6, 3.4]) {
+      testWidgets(
+        '${brightness.name} populated Spaces support $scale text at 320pt',
+        (tester) async {
+          InventoryCache.clear();
+          SharedPreferences.setMockInitialValues({
+            'low_stock_thresholds:signed-out': '{"restock-test":3}',
+          });
+          tester.view.physicalSize = const Size(320, 568);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: AppTheme.create(brightness),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+              home: InventoryPage(
+                api: _InventoryAppearanceApi(),
+                refreshToken: 0,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('1 items need restocking'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          final scrollable = find
+              .descendant(
+                of: find.byType(CustomScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first;
+          for (final label in [
+            'Empty Test',
+            'Sample Workshop',
+            '1 low',
+            'New Space',
+          ]) {
+            await tester.scrollUntilVisible(
+              find.text(label),
+              100,
+              scrollable: scrollable,
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull, reason: '$scale / $label');
+          }
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+  }
+  for (final brightness in Brightness.values) {
+    testWidgets('${brightness.name} all five tabs support large text at 320pt', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.create(brightness),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2.6)),
+            child: child!,
+          ),
+          home: MainShell(api: _ProfileApi()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final index in [0, 1, 2, 3, 4]) {
+        await tester.tap(find.byType(NavigationDestination).at(index));
+        // Capture's intentional shimmer never settles; allow route/read frames.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${brightness.name} tab $index',
+        );
+        expect(
+          tester
+              .widget<NavigationBar>(find.byType(NavigationBar))
+              .selectedIndex,
+          index,
+        );
+      }
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
@@ -283,7 +413,9 @@ void main() {
       expect(find.text('Edit'), findsNothing);
       expect(find.text('Scanning'), findsOneWidget);
       expect(find.text('Confirm before saving'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Sign out'), 300);
       expect(find.text('Sign out'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Delete account'), 200);
       expect(find.text('Delete account'), findsOneWidget);
     },
   );
@@ -369,7 +501,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Delete account'));
+      await tester.scrollUntilVisible(find.text('Delete account'), 300);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete account'));
       await tester.pumpAndSettle();

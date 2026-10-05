@@ -2,6 +2,22 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-04: Mobile appearance is a device-local presentation preference
+
+Keep the approved Dark/default-text experience until the user selects
+Light/Dark/System or Small/Default/Large/Larger in Settings. Persist confirmed
+preference writes locally; failed saves must retain the previous selection and
+show a safe error. System mode follows live platform brightness. App text sizes
+compose with the platform's scaler, including nonlinear accessibility scaling;
+do not disable OS bold text or replace the user's accessibility settings.
+
+Use adaptive presentation colors, not a global image filter. Photos, member
+identity colors, camera imagery and printable black/white QR labels keep their
+original appearance. Large text may expand cards and stack item-info values;
+do not change their field semantics, routes, writes or protected dismissal.
+The user explicitly holds Apple submission and chose simulator checks for now.
+Build 47 is local-only; physical acceptance and any release require a later step.
+
 ## 2026-10-01: Invitation links require consent and an explicit install handoff
 
 Opening a link previews a Space or Team after authentication; it never grants

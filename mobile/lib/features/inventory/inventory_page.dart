@@ -274,14 +274,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 16),
-        color: AppColors.swipe,
+        color: AppTheme.adaptive(context, AppColors.swipe),
         child: const Icon(Icons.edit_outlined),
       ),
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
-        color: const Color(0x1AFF3B30),
-        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+        color: AppTheme.adaptive(context, const Color(0x1AFF3B30)),
+        child: Icon(
+          Icons.delete_outline,
+          color: AppTheme.foreground(context, AppColors.danger),
+        ),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -319,8 +322,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   children: [
                     Text(
                       item.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -332,8 +335,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                           item.displayDescription!,
                         item.category,
                       ].join(' · '),
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                         fontSize: 13,
                       ),
                     ),
@@ -341,16 +344,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 ),
               ),
               if (isLow) ...[
-                const Icon(
+                Icon(
                   Icons.error_outline_rounded,
                   size: 16,
-                  color: AppColors.danger,
+                  color: AppTheme.foreground(context, AppColors.danger),
                 ),
                 const SizedBox(width: 8),
               ],
               Text(
                 'Qty ${item.quantity}',
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(width: 12),
               GestureDetector(
@@ -359,16 +365,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.info_outline,
-                    color: Color(0x4DFFFFFF),
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                     size: 14,
                   ),
                 ),
@@ -388,9 +397,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text(
+          title: Text(
             'Join a Space',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -403,22 +412,26 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   letterSpacing: 4,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  ),
+                  counterStyle: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  ),
                 ),
               ),
               if (error != null)
                 Text(
                   error!,
-                  style: const TextStyle(
-                    color: Color(0xFFFF453A),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
                     fontSize: 12,
                   ),
                 ),
@@ -742,10 +755,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         .toList();
 
     if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No items match your search',
-          style: TextStyle(color: Color(0x4DFFFFFF)),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+          ),
         ),
       );
     }
@@ -760,8 +775,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
             child: Text(
               cat.toUpperCase(),
-              style: const TextStyle(
-                color: Color(0x4DFFFFFF),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8,
@@ -771,9 +786,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                width: 0.5,
+              ),
             ),
             clipBehavior: Clip.hardEdge,
             child: Column(
@@ -782,12 +800,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
                   _buildItemRow(filteredGroups[cat]![i]),
                   if (i < filteredGroups[cat]!.length - 1)
-                    const Divider(
+                    Divider(
                       height: 1,
                       thickness: 0.5,
                       indent: 16,
                       endIndent: 16,
-                      color: Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
                     ),
                 ],
               ],
@@ -817,8 +835,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           ),
           actions: [
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
-              color: const Color(0xFF1C1C1E),
+              icon: Icon(
+                Icons.more_horiz,
+                color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
+              ),
+              color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -885,14 +906,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                 icon: Icons.inventory_2_outlined,
                                 label:
                                     '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
-                                color: Colors.white,
+                                color: AppTheme.adaptive(context, Colors.white),
                               ),
                               const SizedBox(width: 8),
                               if (_lowCount() > 0)
                                 _StatChip(
                                   icon: Icons.warning_amber_outlined,
                                   label: '${_lowCount()} low stock',
-                                  color: const Color(0xFFFBBF24),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    const Color(0xFFFBBF24),
+                                  ),
                                 ),
                             ],
                           ),
@@ -912,7 +936,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       delegate: _SearchPinDelegate(
                         height: 132,
                         child: Container(
-                          color: Colors.black,
+                          color: AppTheme.adaptive(context, Colors.black),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -930,31 +954,46 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                       Expanded(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF171717),
+                                            color: AppTheme.adaptive(
+                                              context,
+                                              const Color(0xFF171717),
+                                            ),
                                             borderRadius: BorderRadius.circular(
                                               14,
                                             ),
                                             border: Border.all(
-                                              color: const Color(0x14FFFFFF),
+                                              color: AppTheme.adaptive(
+                                                context,
+                                                const Color(0x14FFFFFF),
+                                              ),
                                               width: 0.5,
                                             ),
                                           ),
                                           child: TextField(
                                             controller: _spaceSearchController,
-                                            style: const TextStyle(
-                                              color: Colors.white,
+                                            style: TextStyle(
+                                              color: AppTheme.foreground(
+                                                context,
+                                                Colors.white,
+                                              ),
                                               fontSize: 14,
                                             ),
                                             decoration: InputDecoration(
                                               hintText:
                                                   'Search in this space...',
-                                              hintStyle: const TextStyle(
-                                                color: Color(0x4DFFFFFF),
+                                              hintStyle: TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Color(0x4DFFFFFF),
+                                                ),
                                                 fontSize: 14,
                                               ),
-                                              prefixIcon: const Icon(
+                                              prefixIcon: Icon(
                                                 Icons.search,
-                                                color: Color(0x4DFFFFFF),
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Color(0x4DFFFFFF),
+                                                ),
                                                 size: 20,
                                               ),
                                               border: InputBorder.none,
@@ -980,11 +1019,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                                           context,
                                                         ).unfocus();
                                                       },
-                                                      child: const Icon(
+                                                      child: Icon(
                                                         Icons.close,
-                                                        color: Color(
-                                                          0x4DFFFFFF,
-                                                        ),
+                                                        color:
+                                                            AppTheme.foreground(
+                                                              context,
+                                                              Color(0x4DFFFFFF),
+                                                            ),
                                                         size: 16,
                                                       ),
                                                     )
@@ -1018,12 +1059,18 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                           width: 44,
                                           height: 44,
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF171717),
+                                            color: AppTheme.adaptive(
+                                              context,
+                                              const Color(0xFF171717),
+                                            ),
                                             borderRadius: BorderRadius.circular(
                                               14,
                                             ),
                                             border: Border.all(
-                                              color: const Color(0x14FFFFFF),
+                                              color: AppTheme.adaptive(
+                                                context,
+                                                const Color(0x14FFFFFF),
+                                              ),
                                               width: 0.5,
                                             ),
                                           ),
@@ -1032,8 +1079,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                             color:
                                                 _sortOption !=
                                                     ItemSortOption.nameAZ
-                                                ? Colors.white
-                                                : const Color(0x4DFFFFFF),
+                                                ? AppTheme.foreground(
+                                                    context,
+                                                    Colors.white,
+                                                  )
+                                                : AppTheme.foreground(
+                                                    context,
+                                                    const Color(0x4DFFFFFF),
+                                                  ),
                                             size: 20,
                                           ),
                                         ),
@@ -1072,16 +1125,23 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                           ),
                                           decoration: BoxDecoration(
                                             color: isActive
-                                                ? Colors.white
-                                                : const Color(0xFF171717),
+                                                ? AppTheme.adaptive(
+                                                    context,
+                                                    Colors.white,
+                                                  )
+                                                : AppTheme.adaptive(
+                                                    context,
+                                                    const Color(0xFF171717),
+                                                  ),
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
                                             border: isActive
                                                 ? null
                                                 : Border.all(
-                                                    color: const Color(
-                                                      0x14FFFFFF,
+                                                    color: AppTheme.adaptive(
+                                                      context,
+                                                      const Color(0x14FFFFFF),
                                                     ),
                                                     width: 0.5,
                                                   ),
@@ -1092,8 +1152,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: isActive
-                                                    ? Colors.black
-                                                    : const Color(0x73FFFFFF),
+                                                    ? AppTheme.foreground(
+                                                        context,
+                                                        Colors.black,
+                                                      )
+                                                    : AppTheme.foreground(
+                                                        context,
+                                                        const Color(0x73FFFFFF),
+                                                      ),
                                                 fontSize: 13,
                                                 fontWeight: isActive
                                                     ? FontWeight.w500
@@ -1120,25 +1186,34 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.add_box_outlined,
-                              color: Color(0x4DFFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
                               size: 48,
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'This space is empty',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'Add your first item to save this space.',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
@@ -1153,13 +1228,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AppTheme.adaptive(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(99),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Add Item',
                                     style: TextStyle(
-                                      color: Colors.black,
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.black,
+                                      ),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
@@ -1190,7 +1271,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     setState(() => _fabOpen = false);
                     _fabController.reverse();
                   },
-                  child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                  child: Container(
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.black.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1271,7 +1357,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, right: 4),
       child: Material(
-        color: AppColors.surface2,
+        color: AppTheme.adaptive(context, AppColors.surface2),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: () => _onFabItemTap(item.label),
@@ -1280,17 +1366,23 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                color: AppTheme.adaptive(context, AppColors.border),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(item.icon, color: Colors.white, size: 16),
+                Icon(
+                  item.icon,
+                  color: AppTheme.foreground(context, Colors.white),
+                  size: 16,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   item.label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1391,18 +1483,21 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   Widget _buildProjectsCard() => Material(
     key: TutorialController.projectsCardKey,
-    color: AppColors.surface,
+    color: AppTheme.adaptive(context, AppColors.surface),
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: _showProjectsMenu,
-      child: const Padding(
+      child: Padding(
         padding: EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.surface2,
-              child: Icon(Icons.inventory_2_outlined, color: Color(0xFFF2F2F7)),
+              backgroundColor: AppTheme.adaptive(context, AppColors.surface2),
+              child: Icon(
+                Icons.inventory_2_outlined,
+                color: AppTheme.foreground(context, Color(0xFFF2F2F7)),
+              ),
             ),
             SizedBox(width: 14),
             Expanded(
@@ -1412,7 +1507,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   Text(
                     'Projects',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1420,12 +1515,18 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   SizedBox(height: 3),
                   Text(
                     'Build readiness and project kits',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.muted),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.white54),
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.foreground(context, Colors.white54),
+            ),
           ],
         ),
       ),
@@ -1435,7 +1536,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   void _showProjectsMenu() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1449,29 +1550,31 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: AppTheme.adaptive(sheetContext, Colors.white24),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(height: 12),
-              const ListTile(
+              ListTile(
                 title: Text(
                   'Projects',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.foreground(sheetContext, Colors.white),
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 subtitle: Text(
                   'Plan a build with the inventory you have',
-                  style: TextStyle(color: Colors.white54),
+                  style: TextStyle(
+                    color: AppTheme.foreground(sheetContext, Colors.white54),
+                  ),
                 ),
               ),
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.fact_check_outlined,
-                  color: Color(0xFFF2F2F7),
+                  color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
                 ),
                 title: const Text('Build Readiness'),
                 onTap: () {
@@ -1480,9 +1583,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 },
               ),
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.inventory_2_outlined,
-                  color: Color(0xFFF2F2F7),
+                  color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
                 ),
                 title: const Text('Project Kits'),
                 onTap: () {
@@ -1630,9 +1733,11 @@ class _InventoryPageState extends State<InventoryPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: Text(
               'Leave Space',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -2305,24 +2410,27 @@ class _InventoryPageState extends State<InventoryPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.wifi_off_outlined,
-            color: Color(0x4DFFFFFF),
+            color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
             size: 48,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Could not load inventory',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Pull down to retry',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 24),
           GestureDetector(
@@ -2330,13 +2438,18 @@ class _InventoryPageState extends State<InventoryPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                ),
               ),
-              child: const Text(
+              child: Text(
                 'Retry',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -2386,39 +2499,39 @@ class _InventoryPageState extends State<InventoryPage>
         value.contains('ftc') ||
         value.contains('frc') ||
         value.contains('electronics')) {
-      return const Color(0xFFAA9BDE);
+      return AppTheme.adaptive(context, const Color(0xFFAA9BDE));
     }
     if (value.contains('tool') ||
         value.contains('hardware') ||
         value.contains('fastener') ||
         value.contains('workshop')) {
-      return const Color(0xFFE39A86);
+      return AppTheme.adaptive(context, const Color(0xFFE39A86));
     }
     if (value.contains('food') ||
         value.contains('kitchen') ||
         value.contains('grocery')) {
-      return const Color(0xFF8FCDB2);
+      return AppTheme.adaptive(context, const Color(0xFF8FCDB2));
     }
     if (value.contains('home') ||
         value.contains('house') ||
         value.contains('personal')) {
-      return const Color(0xFFE3C36D);
+      return AppTheme.adaptive(context, const Color(0xFFE3C36D));
     }
     if (value.contains('book') ||
         value.contains('school') ||
         value.contains('class')) {
-      return const Color(0xFFD99BBC);
+      return AppTheme.adaptive(context, const Color(0xFFD99BBC));
     }
     if (value.contains('car') || value.contains('vehicle')) {
-      return const Color(0xFF91BEDB);
+      return AppTheme.adaptive(context, const Color(0xFF91BEDB));
     }
-    const fallbackPalette = [
-      Color(0xFFAA9BDE),
-      Color(0xFF8FCDB2),
-      Color(0xFFE3C36D),
-      Color(0xFFD99BBC),
-      Color(0xFF91BEDB),
-      Color(0xFFE39A86),
+    final fallbackPalette = [
+      AppTheme.adaptive(context, Color(0xFFAA9BDE)),
+      AppTheme.adaptive(context, Color(0xFF8FCDB2)),
+      AppTheme.adaptive(context, Color(0xFFE3C36D)),
+      AppTheme.adaptive(context, Color(0xFFD99BBC)),
+      AppTheme.adaptive(context, Color(0xFF91BEDB)),
+      AppTheme.adaptive(context, Color(0xFFE39A86)),
     ];
     final seed = value.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
     return fallbackPalette[seed % fallbackPalette.length];
@@ -2426,6 +2539,8 @@ class _InventoryPageState extends State<InventoryPage>
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
+    // Keep the approved default card height, but let accessibility text grow it.
+    final minimumCardHeight = (MediaQuery.sizeOf(context).width - 64) / 3.35;
     final allSpaces = [..._spaces]
       ..sort(
         (a, b) => (a['name'] as String).toLowerCase().compareTo(
@@ -2449,15 +2564,21 @@ class _InventoryPageState extends State<InventoryPage>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: AppTheme.adaptive(context, AppColors.surface),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border, width: 1),
+                        border: Border.all(
+                          color: AppTheme.adaptive(context, AppColors.border),
+                          width: 1,
+                        ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(
                             Icons.wifi_off_outlined,
-                            color: Color(0x73FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                             size: 20,
                           ),
                           SizedBox(width: 10),
@@ -2465,7 +2586,10 @@ class _InventoryPageState extends State<InventoryPage>
                             child: Text(
                               'Could not load spaces. Tap to retry.',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 13,
                               ),
                             ),
@@ -2484,15 +2608,21 @@ class _InventoryPageState extends State<InventoryPage>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppTheme.adaptive(context, AppColors.surface),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border, width: 1),
+                      border: Border.all(
+                        color: AppTheme.adaptive(context, AppColors.border),
+                        width: 1,
+                      ),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(
                           Icons.add_box_outlined,
-                          color: Color(0xFFF2F2F7),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFF2F2F7),
+                          ),
                           size: 20,
                         ),
                         SizedBox(width: 10),
@@ -2500,7 +2630,10 @@ class _InventoryPageState extends State<InventoryPage>
                           child: Text(
                             'Create your first space to start organizing your inventory.',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white70,
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -2511,13 +2644,10 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              mainAxisSpacing: 12,
-              childAspectRatio: 3.35,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
+          sliver: SliverList.separated(
+            itemCount: allSpaces.length + 1,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
               if (index == allSpaces.length) {
                 return GestureDetector(
                   onTap: () {
@@ -2525,24 +2655,32 @@ class _InventoryPageState extends State<InventoryPage>
                     _createSpace(context);
                   },
                   child: Container(
+                    constraints: BoxConstraints(minHeight: minimumCardHeight),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.border, width: 1),
+                      color: AppTheme.adaptive(context, AppColors.surface),
+                      border: Border.all(
+                        color: AppTheme.adaptive(context, AppColors.border),
+                        width: 1,
+                      ),
                     ),
-                    child: const Column(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.add_circle_outline_rounded,
-                          color: Color(0xFFF2F2F7),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFF2F2F7),
+                          ),
                           size: 28,
                         ),
                         SizedBox(height: 10),
                         Text(
                           'New Space',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -2577,8 +2715,11 @@ class _InventoryPageState extends State<InventoryPage>
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: AppColors.surface,
-                        border: Border.all(color: AppColors.border, width: 1),
+                        color: AppTheme.adaptive(context, AppColors.surface),
+                        border: Border.all(
+                          color: AppTheme.adaptive(context, AppColors.border),
+                          width: 1,
+                        ),
                       ),
                       child: Stack(
                         children: [
@@ -2592,7 +2733,10 @@ class _InventoryPageState extends State<InventoryPage>
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.transparent,
-                                    Colors.white.withValues(alpha: 0.12),
+                                    AppTheme.adaptive(
+                                      context,
+                                      Colors.white.withValues(alpha: 0.12),
+                                    ),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -2600,116 +2744,145 @@ class _InventoryPageState extends State<InventoryPage>
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _spaceIcon(loc),
-                                  color: _spaceIconColor(loc),
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        loc,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          height: 1.2,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: -0.2,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: minimumCardHeight - 24,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _spaceIcon(loc),
+                                    color: _spaceIconColor(loc),
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          loc,
+                                          style: TextStyle(
+                                            color: AppTheme.foreground(
+                                              context,
+                                              Colors.white,
                                             ),
+                                            fontSize: 16,
+                                            height: 1.2,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: -0.2,
                                           ),
-                                          if (lowStock > 0) ...[
-                                            const Text(
-                                              '  ·  ',
-                                              style: TextStyle(
-                                                color: Color(0x40FFFFFF),
-                                              ),
-                                            ),
-                                            Text(
-                                              '$lowStock low',
-                                              style: const TextStyle(
-                                                color: Color(0xFFFBBF24),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (_) => DraggableScrollableSheet(
-                                        initialChildSize: 0.65,
-                                        maxChildSize: 0.92,
-                                        minChildSize: 0.4,
-                                        builder: (_, _) => ShareSpaceSheet(
-                                          spaceName: loc,
-                                          api: widget.api,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
+                                        const SizedBox(height: 5),
+                                        Wrap(
+                                          children: [
+                                            Text(
+                                              '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                                              style: TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                ),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                            if (lowStock > 0) ...[
+                                              Text(
+                                                '  ·  ',
+                                                style: TextStyle(
+                                                  color: AppTheme.foreground(
+                                                    context,
+                                                    Color(0x40FFFFFF),
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                '$lowStock low',
+                                                style: TextStyle(
+                                                  color: AppTheme.foreground(
+                                                    context,
+                                                    Color(0xFFFBBF24),
+                                                  ),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () {
+                                      HapticFeedback.lightImpact();
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (_) =>
+                                            DraggableScrollableSheet(
+                                              initialChildSize: 0.65,
+                                              maxChildSize: 0.92,
+                                              minChildSize: 0.4,
+                                              builder: (_, _) =>
+                                                  ShareSpaceSheet(
+                                                    spaceName: loc,
+                                                    api: widget.api,
+                                                  ),
+                                            ),
+                                      );
+                                    },
+                                    tooltip: 'Share space',
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints.tightFor(
+                                      width: 32,
+                                      height: 32,
+                                    ),
+                                    icon: Icon(
+                                      Icons.person_add_alt_1_rounded,
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x99FFFFFF),
                                       ),
-                                    );
-                                  },
-                                  tooltip: 'Share space',
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 32,
-                                    height: 32,
+                                      size: 18,
+                                    ),
                                   ),
-                                  icon: const Icon(
-                                    Icons.person_add_alt_1_rounded,
-                                    color: Color(0x99FFFFFF),
-                                    size: 18,
+                                  IconButton(
+                                    onPressed: () {
+                                      HapticFeedback.selectionClick();
+                                      _showSpaceMenu(context, loc, spaceId);
+                                    },
+                                    tooltip: 'Space options',
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints.tightFor(
+                                      width: 32,
+                                      height: 32,
+                                    ),
+                                    icon: Icon(
+                                      Icons.more_horiz,
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x60FFFFFF),
+                                      ),
+                                      size: 19,
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    HapticFeedback.selectionClick();
-                                    _showSpaceMenu(context, loc, spaceId);
-                                  },
-                                  tooltip: 'Space options',
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints.tightFor(
-                                    width: 32,
-                                    height: 32,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.more_horiz,
-                                    color: Color(0x60FFFFFF),
-                                    size: 19,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -2718,7 +2891,7 @@ class _InventoryPageState extends State<InventoryPage>
                   ),
                 ),
               );
-            }, childCount: allSpaces.length + 1),
+            },
           ),
         ),
         if (_joinedSharesError != null && _joinedShares.isEmpty)
@@ -2732,15 +2905,17 @@ class _InventoryPageState extends State<InventoryPage>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppTheme.adaptive(context, AppColors.surface),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, AppColors.border),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.refresh,
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       size: 16,
                     ),
                     const SizedBox(width: 8),
@@ -2748,7 +2923,10 @@ class _InventoryPageState extends State<InventoryPage>
                       child: Text(
                         "Couldn't load joined spaces — tap to retry",
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.35),
+                          color: AppTheme.foreground(
+                            context,
+                            Colors.white.withValues(alpha: 0.35),
+                          ),
                           fontSize: 13,
                         ),
                       ),
@@ -2759,7 +2937,7 @@ class _InventoryPageState extends State<InventoryPage>
             ),
           ),
         if (_joinedShares.isNotEmpty) ...<Widget>[
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
               child: Text(
@@ -2767,7 +2945,7 @@ class _InventoryPageState extends State<InventoryPage>
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Color(0x4DFFFFFF),
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -2792,9 +2970,12 @@ class _InventoryPageState extends State<InventoryPage>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppTheme.adaptive(context, AppColors.surface),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppColors.border, width: 1),
+                          border: Border.all(
+                            color: AppTheme.adaptive(context, AppColors.border),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -2802,14 +2983,20 @@ class _InventoryPageState extends State<InventoryPage>
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFF2F2F7,
-                                ).withValues(alpha: 0.14),
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(
+                                    0xFFF2F2F7,
+                                  ).withValues(alpha: 0.14),
+                                ),
                                 borderRadius: BorderRadius.circular(11),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 CupertinoIcons.folder_badge_person_crop,
-                                color: Color(0xFFF2F2F7),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFFF2F2F7),
+                                ),
                                 size: 20,
                               ),
                             ),
@@ -2820,8 +3007,11 @@ class _InventoryPageState extends State<InventoryPage>
                                 children: [
                                   Text(
                                     name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: -0.2,
@@ -2834,8 +3024,11 @@ class _InventoryPageState extends State<InventoryPage>
                                     permission == 'edit'
                                         ? 'Can edit'
                                         : 'View only',
-                                    style: const TextStyle(
-                                      color: Color(0x73FFFFFF),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x73FFFFFF),
+                                      ),
                                       fontSize: 11,
                                     ),
                                   ),
@@ -2844,9 +3037,12 @@ class _InventoryPageState extends State<InventoryPage>
                             ),
                             PopupMenuButton<String>(
                               tooltip: 'Space options',
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.more_horiz_rounded,
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                               ),
                               onSelected: (value) {
                                 if (value == 'share') {
@@ -2875,7 +3071,7 @@ class _InventoryPageState extends State<InventoryPage>
                                   );
                                 }
                               },
-                              itemBuilder: (context) => const [
+                              itemBuilder: (context) => [
                                 PopupMenuItem(
                                   value: 'share',
                                   child: Text('Share invitation link'),
@@ -2884,7 +3080,12 @@ class _InventoryPageState extends State<InventoryPage>
                                   value: 'leave',
                                   child: Text(
                                     'Leave Space',
-                                    style: TextStyle(color: AppColors.danger),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        AppColors.danger,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -2901,13 +3102,19 @@ class _InventoryPageState extends State<InventoryPage>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.surface2,
+                            color: AppTheme.adaptive(
+                              context,
+                              AppColors.surface2,
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Shared',
                             style: TextStyle(
-                              color: AppColors.muted,
+                              color: AppTheme.foreground(
+                                context,
+                                AppColors.muted,
+                              ),
                               fontSize: 9,
                               fontWeight: FontWeight.w600,
                             ),
@@ -2932,16 +3139,21 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('New Space', style: TextStyle(color: Colors.white)),
+        title: Text(
+          'New Space',
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+        ),
         content: TextField(
           controller: _createSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          decoration: InputDecoration(
             hintText: 'Space name',
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+            hintStyle: TextStyle(
+              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+            ),
           ),
         ),
         actions: [
@@ -3006,18 +3218,21 @@ class _InventoryPageState extends State<InventoryPage>
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.surface2,
+                  color: AppTheme.adaptive(context, AppColors.surface2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, AppColors.border),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Join a Space',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
@@ -3028,17 +3243,30 @@ class _InventoryPageState extends State<InventoryPage>
                       autofocus: true,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 20,
                         letterSpacing: 4,
                       ),
                       decoration: InputDecoration(
                         hintText: '6-character code',
-                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                        counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        hintStyle: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
+                        ),
+                        counterStyle: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
+                        ),
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: AppTheme.adaptive(
+                          context,
+                          AppColors.surface,
+                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 14,
@@ -3047,8 +3275,8 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(context, AppColors.border),
                             width: 1,
                           ),
                         ),
@@ -3056,8 +3284,8 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: AppColors.border,
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(context, AppColors.border),
                             width: 1,
                           ),
                         ),
@@ -3065,8 +3293,11 @@ class _InventoryPageState extends State<InventoryPage>
                           borderRadius: const BorderRadius.all(
                             Radius.circular(12),
                           ),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFF2F2F7),
+                          borderSide: BorderSide(
+                            color: AppTheme.adaptive(
+                              context,
+                              Color(0xFFF2F2F7),
+                            ),
                             width: 1,
                           ),
                         ),
@@ -3076,8 +3307,11 @@ class _InventoryPageState extends State<InventoryPage>
                       const SizedBox(height: 6),
                       Text(
                         error!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF453A),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFFF453A),
+                          ),
                           fontSize: 12,
                         ),
                       ),
@@ -3091,7 +3325,10 @@ class _InventoryPageState extends State<InventoryPage>
                           child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.50),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.50),
+                              ),
                             ),
                           ),
                         ),
@@ -3150,8 +3387,8 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF1C1C1E)),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
@@ -3167,27 +3404,34 @@ class _InventoryPageState extends State<InventoryPage>
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
+                  color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Colors.white),
-              title: const Text(
+              leading: Icon(
+                Icons.edit_outlined,
+                color: AppTheme.foreground(context, Colors.white),
+              ),
+              title: Text(
                 'Rename',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                ),
               ),
               onTap: () => Navigator.pop(context, 'rename'),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline,
-                color: Color(0xFFFF453A),
+                color: AppTheme.foreground(context, Color(0xFFFF453A)),
               ),
-              title: const Text(
+              title: Text(
                 'Delete Space',
-                style: TextStyle(color: Color(0xFFFF453A)),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                ),
               ),
               onTap: () => Navigator.pop(context, 'delete'),
             ),
@@ -3213,18 +3457,20 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text(
+        title: Text(
           'Rename Space',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
         content: TextField(
           controller: _renameSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          decoration: InputDecoration(
+            hintStyle: TextStyle(
+              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+            ),
           ),
         ),
         actions: [
@@ -3290,15 +3536,17 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text(
+        title: Text(
           'Delete Space?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
         content: Text(
           itemCount > 0
               ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
               : 'The space "$loc" will be removed.',
-          style: const TextStyle(color: Color(0x73FFFFFF)),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+          ),
         ),
         actions: [
           TextButton(
@@ -3307,9 +3555,11 @@ class _InventoryPageState extends State<InventoryPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: Text(
               'Delete',
-              style: TextStyle(color: Color(0xFFFF453A)),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0xFFFF453A)),
+              ),
             ),
           ),
         ],
@@ -3345,10 +3595,10 @@ class _InventoryPageState extends State<InventoryPage>
               backgroundColor: Colors.transparent,
               elevation: 0,
               surfaceTintColor: Colors.transparent,
-              title: const Text(
+              title: Text(
                 'My Inventory',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
@@ -3359,9 +3609,9 @@ class _InventoryPageState extends State<InventoryPage>
                   icon: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.shopping_cart_outlined,
-                        color: Colors.white70,
+                        color: AppTheme.foreground(context, Colors.white70),
                         size: 22,
                       ),
                       if (_lowStockCount() > 0)
@@ -3371,15 +3621,21 @@ class _InventoryPageState extends State<InventoryPage>
                           child: Container(
                             width: 16,
                             height: 16,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                Color(0xFFEF4444),
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -3397,12 +3653,12 @@ class _InventoryPageState extends State<InventoryPage>
                   ),
                 ),
                 PopupMenuButton<String>(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_vert,
-                    color: Colors.white70,
+                    color: AppTheme.foreground(context, Colors.white70),
                     size: 22,
                   ),
-                  color: const Color(0xFF1C1C1E),
+                  color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -3421,53 +3677,62 @@ class _InventoryPageState extends State<InventoryPage>
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'checkout',
                       child: Row(
                         children: [
                           Icon(
                             Icons.swap_horiz_outlined,
-                            color: Colors.white70,
+                            color: AppTheme.foreground(context, Colors.white70),
                             size: 18,
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Check-Out Tracker',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'join',
                       child: Row(
                         children: [
                           Icon(
                             Icons.person_add_outlined,
-                            color: Colors.white70,
+                            color: AppTheme.foreground(context, Colors.white70),
                             size: 18,
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Join a Space',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'refresh',
                       child: Row(
                         children: [
                           Icon(
                             Icons.refresh_outlined,
-                            color: Colors.white70,
+                            color: AppTheme.foreground(context, Colors.white70),
                             size: 18,
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Refresh',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -3481,169 +3746,218 @@ class _InventoryPageState extends State<InventoryPage>
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                key: TutorialController.inventorySearchKey,
-                controller: _search,
-                textInputAction: TextInputAction.search,
-                onChanged: _applyLocalSearch,
-                onSubmitted: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-                decoration: const InputDecoration(
-                  hintText: 'Search inventory',
-                  prefixIcon: Icon(Icons.search_rounded),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_lowStockCount() > 0)
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListPage(api: widget.api),
-                    ),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight * 0.5,
                   ),
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AEF4444),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x33EF4444)),
-                    ),
-                    child: Row(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
-                          Icons.shopping_cart_outlined,
-                          color: Color(0xFFEF4444),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${_lowStockCount()} items need restocking',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                        TextField(
+                          key: TutorialController.inventorySearchKey,
+                          controller: _search,
+                          textInputAction: TextInputAction.search,
+                          onChanged: _applyLocalSearch,
+                          onSubmitted: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          decoration: const InputDecoration(
+                            hintText: 'Search inventory',
+                            prefixIcon: Icon(Icons.search_rounded),
                           ),
                         ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
+                        const SizedBox(height: 12),
+                        if (_lowStockCount() > 0)
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ShoppingListPage(api: widget.api),
+                              ),
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x0AEF4444),
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    const Color(0x33EF4444),
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.shopping_cart_outlined,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0xFFEF4444),
+                                    ),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '${_lowStockCount()} items need restocking',
+                                      style: TextStyle(
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0xFFEF4444),
+                                    ),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
-              Expanded(
-                child: _loading && _items.isEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(0x14FFFFFF),
-                              width: 0.5,
+                Expanded(
+                  child: _loading && _items.isEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: ListView.separated(
+                              itemCount: 8,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) =>
+                                  const SkeletonListTile(),
                             ),
                           ),
-                          child: ListView.separated(
-                            itemCount: 8,
-                            separatorBuilder: (context, index) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) =>
-                                const SkeletonListTile(),
-                          ),
-                        ),
-                      )
-                    : (_error != null && _items.isEmpty)
-                    ? _buildErrorState()
-                    : ValueListenableBuilder<Map<String, int>>(
-                        valueListenable: _thresholds,
-                        builder: (context, thresholds, _) {
-                          return ValueListenableBuilder<String>(
-                            valueListenable: _query,
-                            builder: (context, q, _) {
-                              final query = q.trim();
-                              if (query.isEmpty) {
-                                return _buildSpacesGrid(thresholds);
-                              }
+                        )
+                      : (_error != null && _items.isEmpty)
+                      ? _buildErrorState()
+                      : ValueListenableBuilder<Map<String, int>>(
+                          valueListenable: _thresholds,
+                          builder: (context, thresholds, _) {
+                            return ValueListenableBuilder<String>(
+                              valueListenable: _query,
+                              builder: (context, q, _) {
+                                final query = q.trim();
+                                if (query.isEmpty) {
+                                  return _buildSpacesGrid(thresholds);
+                                }
 
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: _aiSearching,
-                                builder: (context, searching, _) {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      if (searching)
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            10,
-                                            6,
-                                            10,
-                                            10,
-                                          ),
-                                          child: Text(
-                                            'Searching…',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.55),
-                                                ),
-                                          ),
-                                        ),
-                                      Expanded(
-                                        child:
-                                            ValueListenableBuilder<
-                                              List<InventoryItem>
-                                            >(
-                                              valueListenable: _rows,
-                                              builder: (context, rows, _) {
-                                                if (rows.isEmpty) {
-                                                  return Center(
-                                                    child: Text(
-                                                      'No results.',
-                                                      style: TextStyle(
-                                                        color: Colors.white
-                                                            .withValues(
-                                                              alpha: 0.65,
-                                                            ),
+                                return ValueListenableBuilder<bool>(
+                                  valueListenable: _aiSearching,
+                                  builder: (context, searching, _) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (searching)
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              10,
+                                              6,
+                                              10,
+                                              10,
+                                            ),
+                                            child: Text(
+                                              'Searching…',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: AppTheme.adaptive(
+                                                      context,
+                                                      Colors.white.withValues(
+                                                        alpha: 0.55,
                                                       ),
                                                     ),
-                                                  );
-                                                }
-
-                                                return _SearchResultsList(
-                                                  rows: rows,
-                                                  thresholds: thresholds,
-                                                  onEdit: _editItem,
-                                                  onDelete: _deleteItem,
-                                                );
-                                              },
+                                                  ),
                                             ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
+                                          ),
+                                        Expanded(
+                                          child:
+                                              ValueListenableBuilder<
+                                                List<InventoryItem>
+                                              >(
+                                                valueListenable: _rows,
+                                                builder: (context, rows, _) {
+                                                  if (rows.isEmpty) {
+                                                    return Center(
+                                                      child: Text(
+                                                        'No results.',
+                                                        style: TextStyle(
+                                                          color:
+                                                              AppTheme.foreground(
+                                                                context,
+                                                                Colors.white
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.65,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  return _SearchResultsList(
+                                                    rows: rows,
+                                                    thresholds: thresholds,
+                                                    onEdit: _editItem,
+                                                    onDelete: _deleteItem,
+                                                  );
+                                                },
+                                              ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -3684,7 +3998,7 @@ class _SearchResultsList extends StatelessWidget {
           background: Container(
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 16),
-            color: AppColors.swipe,
+            color: AppTheme.adaptive(context, AppColors.swipe),
             child: const Icon(Icons.edit_outlined),
           ),
           secondaryBackground: Container(
@@ -3734,7 +4048,12 @@ class _SearchResultsList extends StatelessWidget {
               ].join(' · '),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+              style: TextStyle(
+                color: AppTheme.foreground(
+                  context,
+                  Colors.white.withValues(alpha: 0.60),
+                ),
+              ),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -3743,13 +4062,21 @@ class _SearchResultsList extends StatelessWidget {
                   Icon(
                     Icons.error_outline_rounded,
                     size: 18,
-                    color: Colors.white.withValues(alpha: 0.70),
+                    color: AppTheme.foreground(
+                      context,
+                      Colors.white.withValues(alpha: 0.70),
+                    ),
                   ),
                   const SizedBox(width: 8),
                 ],
                 Text(
                   'Qty ${item.quantity}',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                  style: TextStyle(
+                    color: AppTheme.foreground(
+                      context,
+                      Colors.white.withValues(alpha: 0.75),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -3820,10 +4147,10 @@ class _InventoryBarcodeScannerPageState
   Widget build(BuildContext context) {
     final controller = _controller;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
         title: const Text('Scan Barcode'),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -3869,13 +4196,18 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -3887,7 +4219,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 12),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -3896,8 +4228,8 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Review ${_items.length} extracted item${_items.length == 1 ? '' : 's'}',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -3908,7 +4240,10 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Location: ${widget.spaceName}',
-              style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                fontSize: 13,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -3920,8 +4255,10 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
-              separatorBuilder: (_, _) =>
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
+              separatorBuilder: (_, _) => Divider(
+                color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+                height: 1,
+              ),
               itemBuilder: (_, i) {
                 final it = _items[i];
                 return Padding(
@@ -3932,8 +4269,8 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         flex: 2,
                         child: Text(
                           it.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -3944,8 +4281,11 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                       Expanded(
                         child: Text(
                           it.category,
-                          style: const TextStyle(
-                            color: Color(0x73FFFFFF),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                             fontSize: 13,
                           ),
                           maxLines: 1,
@@ -3955,17 +4295,23 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                       const SizedBox(width: 8),
                       Text(
                         '×${it.quantity}',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 13,
                         ),
                       ),
                       const SizedBox(width: 4),
                       GestureDetector(
                         onTap: () => setState(() => _items.removeAt(i)),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           size: 18,
                         ),
                       ),
@@ -3987,9 +4333,11 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
-                      style: TextStyle(color: Color(0x73FFFFFF)),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      ),
                     ),
                   ),
                 ),
@@ -4001,8 +4349,8 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         ? null
                         : () => Navigator.of(context).pop(_items),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppTheme.adaptive(context, Colors.white),
+                      foregroundColor: AppTheme.adaptive(context, Colors.black),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -4062,21 +4410,33 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
 
   InputDecoration _inputDec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+    hintStyle: TextStyle(
+      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+      fontSize: 15,
+    ),
     filled: true,
-    fillColor: const Color(0xFF171717),
+    fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        width: 0.5,
+      ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+        width: 0.5,
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+      borderSide: BorderSide(
+        color: AppTheme.adaptive(context, Color(0x40FFFFFF)),
+        width: 0.5,
+      ),
     ),
   );
 
@@ -4084,13 +4444,18 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 24),
       child: Column(
@@ -4103,16 +4468,16 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Add Scanned Item',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -4123,14 +4488,20 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             controller: _name,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white),
+              fontSize: 15,
+            ),
             decoration: _inputDec('Name'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white),
+              fontSize: 15,
+            ),
             decoration: _inputDec('Category'),
           ),
           const SizedBox(height: 10),
@@ -4139,14 +4510,20 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white),
+              fontSize: 15,
+            ),
             decoration: _inputDec('Quantity'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _location,
             readOnly: true,
-            style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 15),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+              fontSize: 15,
+            ),
             decoration: _inputDec('Location'),
           ),
           const SizedBox(height: 16),
@@ -4167,8 +4544,8 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
+                backgroundColor: AppTheme.adaptive(context, Colors.white),
+                foregroundColor: AppTheme.adaptive(context, Colors.black),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -4184,9 +4561,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             height: 48,
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                  fontSize: 15,
+                ),
               ),
             ),
           ),
@@ -4211,19 +4591,21 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: AppTheme.adaptive(context, const Color(0xFF171717)),
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0x14FFFFFF)),
+        border: Border.all(
+          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 12, color: AppTheme.foreground(context, color)),
           const SizedBox(width: 5),
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: AppTheme.foreground(context, color),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),

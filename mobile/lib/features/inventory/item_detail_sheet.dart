@@ -583,8 +583,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           backgroundColor: AppTheme.surface2(ctx),
           title: Text(
             'Check Out ${widget.item.name}',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Colors.white),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -595,15 +595,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               TextField(
                 controller: _checkoutNameCtrl,
                 textInputAction: TextInputAction.next,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                decoration: InputDecoration(
                   hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                  ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Colors.white38),
+                    ),
                   ),
                 ),
               ),
@@ -613,15 +619,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                decoration: InputDecoration(
                   hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                  ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
+                    borderSide: BorderSide(
+                      color: AppTheme.adaptive(ctx, Colors.white38),
+                    ),
                   ),
                 ),
               ),
@@ -630,9 +642,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'How many?',
-                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                      style: TextStyle(
+                        color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                        fontSize: 13,
+                      ),
                     ),
                     Row(
                       children: [
@@ -644,17 +659,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                ctx,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  ctx,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
                             child: Icon(
                               Icons.remove,
                               color: dlgQty > 1
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(ctx, Colors.white)
+                                  : AppTheme.foreground(
+                                      ctx,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               size: 16,
                             ),
                           ),
@@ -664,8 +688,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Text(
                             '$dlgQty',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTheme.foreground(ctx, Colors.white),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -679,17 +703,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                ctx,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  ctx,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
                             child: Icon(
                               Icons.add,
                               color: dlgQty < widget.item.quantity
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(ctx, Colors.white)
+                                  : AppTheme.foreground(
+                                      ctx,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               size: 16,
                             ),
                           ),
@@ -720,15 +753,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(ctx, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(
+                      color: AppTheme.adaptive(ctx, const Color(0x14FFFFFF)),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today_outlined,
-                        color: Color(0x73FFFFFF),
+                        color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
                         size: 14,
                       ),
                       const SizedBox(width: 8),
@@ -736,8 +771,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         dueBack == null
                             ? 'Set due date (optional)'
                             : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
+                        style: TextStyle(
+                          color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
                           fontSize: 13,
                         ),
                       ),
@@ -753,9 +788,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 debugPrint('[CheckOut] dialog cancelled');
                 Navigator.of(ctx).pop();
               },
-              child: const Text(
+              child: Text(
                 'Cancel',
-                style: TextStyle(color: Color(0x73FFFFFF)),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                ),
               ),
             ),
             TextButton(
@@ -798,18 +835,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       }
                     },
               child: dlgSubmitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
-                        color: Colors.white,
+                        color: AppTheme.adaptive(ctx, Colors.white),
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Check Out',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.foreground(ctx, Colors.white),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -898,34 +935,40 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Text(
                 'Where to buy "${widget.item.name}"',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Colors.white),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Text(
                 'Tap to open in browser',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+                  fontSize: 12,
+                ),
               ),
             ),
             ...links.map(
               (link) => ListTile(
                 leading: Icon(
                   link['icon'] as IconData,
-                  color: Colors.white70,
+                  color: AppTheme.foreground(ctx, Colors.white70),
                   size: 20,
                 ),
                 title: Text(
                   link['name'] as String,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                    fontSize: 15,
+                  ),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.open_in_new,
-                  color: Color(0x4DFFFFFF),
+                  color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
                   size: 16,
                 ),
                 onTap: () async {
@@ -957,24 +1000,24 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_library_outlined,
-                color: Colors.white,
+                color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: const Text(
+              title: Text(
                 'Choose Photo',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
               onTap: () => Navigator.pop(ctx, 'photo'),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.picture_as_pdf_outlined,
-                color: Colors.white,
+                color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: const Text(
+              title: Text(
                 'Choose PDF',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
               onTap: () => Navigator.pop(ctx, 'pdf'),
             ),
@@ -1051,35 +1094,41 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  Widget _infoRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-    child: Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0x73FFFFFF),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
+  Widget _infoRow(String label, String value) {
+    final largeText = MediaQuery.textScalerOf(context).scale(14) > 24;
+    final labelText = Text(
+      label,
+      style: TextStyle(
+        color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+    final valueText = Text(
+      value,
+      style: TextStyle(
+        color: AppTheme.foreground(context, Colors.white),
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+      textAlign: largeText ? TextAlign.left : TextAlign.right,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: largeText
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [labelText, const SizedBox(height: 8), valueText],
+            )
+          : Row(
+              children: [
+                Expanded(child: labelText),
+                const SizedBox(width: 16),
+                Expanded(child: valueText),
+              ],
             ),
-            textAlign: TextAlign.right,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 
   List<String> _catalogValues(Map<String, dynamic> metadata) {
     final values = <String>[];
@@ -1102,25 +1151,28 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0x1230D158),
+          color: AppTheme.adaptive(context, const Color(0x1230D158)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x4430D158), width: 0.5),
+          border: Border.all(
+            color: AppTheme.adaptive(context, const Color(0x4430D158)),
+            width: 0.5,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.verified_rounded,
-                  color: Color(0xFF30D158),
+                  color: AppTheme.foreground(context, Color(0xFF30D158)),
                   size: 17,
                 ),
                 SizedBox(width: 7),
                 Text(
                   'Manufacturer verified',
                   style: TextStyle(
-                    color: Color(0xFF30D158),
+                    color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1131,8 +1183,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 9),
               Text(
                 part.description!,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
                   fontSize: 13,
                   height: 1.35,
                 ),
@@ -1142,8 +1194,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 10),
               Text(
                 specs.join(' • '),
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                   fontSize: 12,
                   height: 1.35,
                 ),
@@ -1151,10 +1203,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ],
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'VERIFIED COMPATIBILITY',
                 style: TextStyle(
-                  color: Color(0x8030D158),
+                  color: AppTheme.foreground(context, Color(0x8030D158)),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
@@ -1163,7 +1215,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 6),
               Text(
                 compatibility.join(' • '),
-                style: const TextStyle(color: Color(0xCC30D158), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xCC30D158)),
+                  fontSize: 12,
+                ),
               ),
             ],
             if (part.productUrl?.isNotEmpty == true) ...[
@@ -1184,10 +1239,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     );
                   }
                 },
-                child: const Text(
+                child: Text(
                   'View manufacturer source ↗',
                   style: TextStyle(
-                    color: Color(0xFF30D158),
+                    color: AppTheme.foreground(context, Color(0xFF30D158)),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1208,17 +1263,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0x126997DD),
+          color: AppTheme.adaptive(context, const Color(0x126997DD)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x446997DD), width: 0.5),
+          border: Border.all(
+            color: AppTheme.adaptive(context, const Color(0x446997DD)),
+            width: 0.5,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'MATCHING INTERFACES',
               style: TextStyle(
-                color: Color(0xFF64D2FF),
+                color: AppTheme.foreground(context, Color(0xFF64D2FF)),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -1227,7 +1285,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             const SizedBox(height: 6),
             Text(
               result.interfaces.join(' • '),
-              style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0xCC64D2FF)),
+                fontSize: 13,
+              ),
             ),
             if (result.matches.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -1264,8 +1325,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 children: [
                                   Text(
                                     match.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1273,8 +1337,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   const SizedBox(height: 2),
                                   Text(
                                     '${match.brand} • ${match.partNumber}',
-                                    style: const TextStyle(
-                                      color: Color(0x80FFFFFF),
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x80FFFFFF),
+                                      ),
                                       fontSize: 11,
                                     ),
                                   ),
@@ -1282,9 +1349,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                             ),
                             if (match.productUrl != null)
-                              const Icon(
+                              Icon(
                                 Icons.open_in_new,
-                                color: Color(0x8064D2FF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x8064D2FF),
+                                ),
                                 size: 15,
                               ),
                           ],
@@ -1292,10 +1362,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                     ),
                   ),
-              const Text(
+              Text(
                 'Matches share an exact interface published in manufacturer product data. Confirm fit for your application.',
                 style: TextStyle(
-                  color: Color(0x66FFFFFF),
+                  color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                   fontSize: 10,
                   height: 1.3,
                 ),
@@ -1309,7 +1379,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Widget _divider() => Container(
     height: 0.5,
-    color: const Color(0x14FFFFFF),
+    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
     margin: const EdgeInsets.symmetric(horizontal: 18),
   );
 
@@ -1353,35 +1423,40 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             constraints: const BoxConstraints(minHeight: 150),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0x1FFFFFFF)),
+              border: Border.all(
+                color: AppTheme.adaptive(context, const Color(0x1FFFFFFF)),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.add_photo_alternate_outlined,
-                  color: Color(0x66FFFFFF),
+                  color: AppTheme.foreground(context, Color(0x66FFFFFF)),
                   size: 34,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   canEdit ? 'Add an item photo' : 'No photos yet',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x99FFFFFF)),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (canEdit) ...[
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Take a photo or choose one from your library',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0x55FFFFFF), fontSize: 12),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x55FFFFFF)),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ],
@@ -1415,7 +1490,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Container(color: const Color(0xFF171717)),
+                        Container(
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0xFF171717),
+                          ),
+                        ),
                         Image.network(
                           photo.imageUrl,
                           fit: BoxFit.cover,
@@ -1427,20 +1507,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     strokeWidth: 2,
                                   ),
                                 ),
-                          errorBuilder: (_, _, _) => const Center(
+                          errorBuilder: (_, _, _) => Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.broken_image_outlined,
-                                  color: Color(0x66FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x66FFFFFF),
+                                  ),
                                   size: 32,
                                 ),
                                 SizedBox(height: 6),
                                 Text(
                                   'Photo unavailable',
                                   style: TextStyle(
-                                    color: Color(0x66FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x66FFFFFF),
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1453,8 +1539,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             top: 8,
                             right: 8,
                             child: DecoratedBox(
-                              decoration: const BoxDecoration(
-                                color: Color(0xB3000000),
+                              decoration: BoxDecoration(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  Color(0xB3000000),
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -1462,17 +1551,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onPressed: _photoSaving
                                     ? null
                                     : () => _deletePhoto(photo),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete_outline,
-                                  color: Colors.white,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   size: 20,
                                 ),
                               ),
                             ),
                           ),
                         if (_photoSaving)
-                          const ColoredBox(
-                            color: Color(0x66000000),
+                          ColoredBox(
+                            color: AppTheme.adaptive(
+                              context,
+                              Color(0x66000000),
+                            ),
                             child: Center(
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
@@ -1489,7 +1584,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             children: [
               Text(
                 '${_selectedPhotoIndex + 1} of ${_photos.length}',
-                style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                  fontSize: 12,
+                ),
               ),
               const Spacer(),
               if (canEdit)
@@ -1564,13 +1662,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final canEdit = widget.permission == 'edit';
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
@@ -1594,7 +1697,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(top: 12, bottom: 20),
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -1605,8 +1708,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 item.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.5,
@@ -1618,7 +1721,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 item.displayDescription ?? item.category,
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  fontSize: 14,
+                ),
               ),
             ),
             const SizedBox(height: 18),
@@ -1630,10 +1736,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0x14FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                     width: 0.5,
                   ),
                 ),
@@ -1704,11 +1810,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'CHECK OUT',
                           style: TextStyle(
-                            color: Color(0x4DFFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.6,
@@ -1725,16 +1834,25 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Check Out',
                               style: TextStyle(
-                                color: Color(0x73FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
                                 fontSize: 12,
                               ),
                             ),
@@ -1752,7 +1870,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Text(
                             "Couldn't load checkout status",
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.35),
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -1765,15 +1886,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0x0A30D158),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x0A30D158),
+                            ),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0x1A30D158)),
+                            border: Border.all(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0x1A30D158),
+                              ),
+                            ),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(
                                 Icons.check_circle_outline,
-                                color: Color(0xFF30D158),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFF30D158),
+                                ),
                                 size: 14,
                               ),
                               SizedBox(width: 8),
@@ -1781,7 +1913,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 child: Text(
                                   'Available - not checked out',
                                   style: TextStyle(
-                                    color: Color(0xFF30D158),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0xFF30D158),
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1794,23 +1929,37 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0x0AFBBF24),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x0AFBBF24),
+                          ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x33FBBF24)),
+                          border: Border.all(
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0x33FBBF24),
+                            ),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.person_outline,
-                              color: Color(0xFFFBBF24),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFFBBF24),
+                              ),
                               size: 14,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Checked out by ${checkout['checked_out_by']}',
-                                style: const TextStyle(
-                                  color: Color(0xFFFBBF24),
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0xFFFBBF24),
+                                  ),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1821,10 +1970,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onTap: () => _returnCheckout(
                                   checkout['checkout_id'] as String,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Return',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1848,10 +2000,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'NOTES',
                         style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.6,
@@ -1864,10 +2019,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onTap: _notesSaving || _closing
                                     ? null
                                     : _saveNotes,
-                                child: const Text(
+                                child: Text(
                                   'Save',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1876,10 +2034,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             : GestureDetector(
                                 onTap: () =>
                                     setState(() => _isEditingNotes = true),
-                                child: const Text(
+                                child: Text(
                                   'Edit',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -1891,10 +2052,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 80),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
@@ -1906,16 +2073,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             controller: _notesCtrl,
                             maxLines: null,
                             autofocus: true,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
                               fontSize: 14,
                               height: 1.5,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Add notes about this item...',
                               hintStyle: TextStyle(
-                                color: Color(0x33FFFFFF),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x33FFFFFF),
+                                ),
                                 fontSize: 14,
                               ),
                             ),
@@ -1926,8 +2096,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 : 'Tap Edit to add notes...',
                             style: TextStyle(
                               color: _notesCtrl.text.isNotEmpty
-                                  ? const Color(0x73FFFFFF)
-                                  : const Color(0x33FFFFFF),
+                                  ? AppTheme.foreground(
+                                      context,
+                                      const Color(0x73FFFFFF),
+                                    )
+                                  : AppTheme.foreground(
+                                      context,
+                                      const Color(0x33FFFFFF),
+                                    ),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -1946,16 +2122,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'DOCUMENTS',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
+                      Expanded(
+                        child: Text(
+                          'DOCUMENTS',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       if (canEdit)
                         GestureDetector(
                           onTap: _pickAndUploadDocument,
@@ -1965,26 +2146,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
+                              ),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
+                                ),
                                 width: 0.5,
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.add,
-                                  color: Color(0x73FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
                                   size: 14,
                                 ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Add',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -2000,32 +2193,47 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14FFFFFF),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
-                      child: const Column(
+                      child: Column(
                         children: [
                           Icon(
                             Icons.description_outlined,
-                            color: Color(0x20FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x20FFFFFF),
+                            ),
                             size: 28,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'No documents yet',
                             style: TextStyle(
-                              color: Color(0x33FFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x33FFFFFF),
+                              ),
                               fontSize: 13,
                             ),
                           ),
                           Text(
                             'Add receipts, manuals, or warranties',
                             style: TextStyle(
-                              color: Color(0x20FFFFFF),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x20FFFFFF),
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -2035,10 +2243,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   else
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14FFFFFF),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
                           width: 0.5,
                         ),
                       ),
@@ -2057,19 +2271,28 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   (doc.mimeType?.contains('pdf') == true)
                                       ? Icons.picture_as_pdf_outlined
                                       : Icons.image_outlined,
-                                  color: const Color(0x73FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    const Color(0x73FFFFFF),
+                                  ),
                                   size: 20,
                                 ),
                                 title: Text(
                                   doc.displayName ?? doc.filename,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
-                                trailing: const Icon(
+                                trailing: Icon(
                                   Icons.arrow_forward_ios,
-                                  color: Color(0x33FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x33FFFFFF),
+                                  ),
                                   size: 12,
                                 ),
                                 onTap: () {
@@ -2081,7 +2304,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               if (!isLast)
                                 Container(
                                   height: 0.5,
-                                  color: const Color(0x14FFFFFF),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    const Color(0x14FFFFFF),
+                                  ),
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                   ),
@@ -2100,12 +2326,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             // if the field is absent the section simply won't render.
             if (item.tags != null && item.tags!.isNotEmpty) ...[
               const SizedBox(height: 16),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'TAGS',
                   style: TextStyle(
-                    color: Color(0x4DFFFFFF),
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -2126,17 +2352,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             vertical: 7,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
+                            color: AppTheme.adaptive(
+                              context,
+                              const Color(0xFF171717),
+                            ),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                              color: const Color(0x14FFFFFF),
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0x14FFFFFF),
+                              ),
                               width: 0.5,
                             ),
                           ),
                           child: Text(
                             tag,
-                            style: const TextStyle(
-                              color: Color(0x73FFFFFF),
+                            style: TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x73FFFFFF),
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -2156,11 +2391,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'WHERE TO BUY',
                           style: TextStyle(
-                            color: Color(0x4DFFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.6,
@@ -2168,35 +2406,53 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _showStoreLinks,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x14FFFFFF)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 11,
-                                color: Color(0x73FFFFFF),
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: _showStoreLinks,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFF171717),
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Find stores',
-                                style: TextStyle(
-                                  color: Color(0x73FFFFFF),
-                                  fontSize: 12,
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x14FFFFFF),
                                 ),
                               ),
-                            ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 11,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'Find stores',
+                                    style: TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x73FFFFFF),
+                                      ),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -2206,9 +2462,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -2223,16 +2487,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         if (canEdit) await _savePurchaseSourceNow();
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 14,
                         height: 1.5,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Where to buy this item...',
                         hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
                           fontSize: 14,
                         ),
                       ),
@@ -2242,21 +2509,27 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   if (_purchaseSourceSaveFailed)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 4),
                       child: Row(
                         children: [
                           Icon(
                             Icons.cloud_off_outlined,
                             size: 13,
-                            color: Color(0xFFFF9F0A),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFFFF9F0A),
+                            ),
                           ),
                           SizedBox(width: 5),
                           Text(
                             'Not saved',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFFFF9F0A),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFFF9F0A),
+                              ),
                             ),
                           ),
                         ],
@@ -2273,10 +2546,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'ITEM QR CODE',
                     style: TextStyle(
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
@@ -2313,7 +2586,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               children: [
                                 Text(
                                   item.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.black,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -2324,7 +2597,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 const SizedBox(height: 4),
                                 Text(
                                   item.displayDescription ?? item.location,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF666666),
                                     fontSize: 12,
                                   ),
@@ -2332,13 +2605,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Qty: ${item.quantity}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Color(0xFF888888),
                                     fontSize: 12,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const Text(
+                                Text(
                                   'FindEZ AI',
                                   style: TextStyle(
                                     color: Colors.black,
@@ -2347,7 +2620,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     letterSpacing: 0.3,
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   'findez.ai',
                                   style: TextStyle(
                                     color: Color(0xFF888888),
@@ -2362,9 +2635,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Scan this code to quickly find this item in FindEZ',
-                    style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                      fontSize: 11,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
@@ -2375,24 +2651,40 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFF171717),
+                        ),
                         borderRadius: BorderRadius.circular(99),
-                        border: Border.all(color: const Color(0x14FFFFFF)),
+                        border: Border.all(
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
+                        ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.share_outlined,
                             size: 12,
-                            color: Color(0x73FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                           ),
                           SizedBox(width: 6),
-                          Text(
-                            'Share item',
-                            style: TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 12,
+                          Flexible(
+                            child: Text(
+                              'Share item',
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x73FFFFFF),
+                                ),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -2410,10 +2702,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'ALERT ME WHEN BELOW',
                     style: TextStyle(
-                      color: Color(0x4DFFFFFF),
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.6,
@@ -2423,10 +2715,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
@@ -2442,16 +2740,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       onSubmitted: (_) =>
                           FocusManager.instance.primaryFocus?.unfocus(),
                       readOnly: !canEdit || _closing,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
                         fontSize: 14,
                         height: 1.5,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Quantity threshold',
                         hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
                           fontSize: 14,
                         ),
                       ),
@@ -2475,18 +2776,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                       width: 0.5,
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
                       'Close',
                       style: TextStyle(
-                        color: Color(0x73FFFFFF),
+                        color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),

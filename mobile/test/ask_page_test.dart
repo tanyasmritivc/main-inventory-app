@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -119,8 +120,9 @@ Widget _page(
   String? initialMessage,
   TextScaler scaler = TextScaler.noScaling,
   Future<AskPhoto?> Function(bool camera)? photoPicker,
+  Brightness brightness = Brightness.dark,
 }) => MaterialApp(
-  theme: ThemeData.dark(),
+  theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(textScaler: scaler),
     child: child!,
@@ -137,6 +139,41 @@ Widget _page(
 );
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 2.6]) {
+      testWidgets('${brightness.name} Ask supports $scale text at 320pt', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          _page(
+            _AskApi(),
+            initialMessage: 'What do I need?',
+            brightness: brightness,
+            scaler: TextScaler.linear(scale),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('What do I need?'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.textContaining('You have enough stock'),
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(find.textContaining('You have enough stock'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ColorFiltered), findsNothing);
+      });
+    }
+  }
   final png = base64Decode(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==',
   );

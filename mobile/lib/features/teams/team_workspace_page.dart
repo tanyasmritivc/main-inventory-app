@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -371,9 +372,11 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: Text(
               'Delete Team',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -407,9 +410,11 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
+            child: Text(
               'Leave Team',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.danger),
+              ),
             ),
           ),
         ],
@@ -449,19 +454,23 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     child: Text('Reset Invite Code'),
                   ),
                 if (_role == 'owner')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Text(
                       'Delete Team',
-                      style: TextStyle(color: AppColors.danger),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.danger),
+                      ),
                     ),
                   ),
                 if (_role != 'owner')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'leave',
                     child: Text(
                       'Leave Team',
-                      style: TextStyle(color: AppColors.danger),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.danger),
+                      ),
                     ),
                   ),
               ],
@@ -483,7 +492,9 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                 children: [
                   Text(
                     '${_teamTypeLabel((_team?['program'] ?? '').toString())} · ${_roleLabel(_role)}',
-                    style: const TextStyle(color: AppColors.muted),
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, AppColors.muted),
+                    ),
                   ),
                   if (_canManage &&
                       (_team?['join_code']?.toString().isNotEmpty ??
@@ -597,32 +608,32 @@ class _WorkspaceRow extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  Color get _iconColor => switch (title) {
-    'Spaces' => const Color(0xFF9DD9C7),
-    'Board' => const Color(0xFFF0B58A),
-    'People' => const Color(0xFFB8A8E8),
-    'Documents' => const Color(0xFF9FC3E8),
-    'Activity' => const Color(0xFFE5A8B7),
-    _ => const Color(0xFFB8B8C0),
+  Color _iconColor(BuildContext context) => switch (title) {
+    'Spaces' => AppTheme.adaptive(context, const Color(0xFF9DD9C7)),
+    'Board' => AppTheme.adaptive(context, const Color(0xFFF0B58A)),
+    'People' => AppTheme.adaptive(context, const Color(0xFFB8A8E8)),
+    'Documents' => AppTheme.adaptive(context, const Color(0xFF9FC3E8)),
+    'Activity' => AppTheme.adaptive(context, const Color(0xFFE5A8B7)),
+    _ => AppTheme.adaptive(context, const Color(0xFFB8B8C0)),
   };
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(18),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(icon, color: _iconColor, size: 23),
+        leading: Icon(icon, color: _iconColor(context), size: 23),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
-        trailing: const Icon(
+        trailing: Icon(
           CupertinoIcons.chevron_forward,
-          color: AppColors.muted,
+          color: AppTheme.foreground(context, AppColors.muted),
           size: 16,
         ),
         onTap: onTap,
@@ -649,22 +660,33 @@ class _InviteCodeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: .12),
+        color: AppTheme.adaptive(
+          context,
+          AppColors.accent.withValues(alpha: .12),
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withValues(alpha: .30)),
+        border: Border.all(
+          color: AppTheme.adaptive(
+            context,
+            AppColors.accent.withValues(alpha: .30),
+          ),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
+          Icon(
+            CupertinoIcons.person_badge_plus,
+            color: AppTheme.foreground(context, AppColors.accent),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'TEAM INVITE CODE',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: AppTheme.foreground(context, AppColors.muted),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: .5,
@@ -848,9 +870,9 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
               itemBuilder: (context, index) {
                 final space = _spaces[index];
                 return ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.archivebox,
-                    color: AppColors.accent,
+                    color: AppTheme.foreground(context, AppColors.accent),
                   ),
                   title: Text(space['name']?.toString() ?? 'Space'),
                   subtitle: Text(
@@ -1353,7 +1375,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -1376,8 +1398,8 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                       children: [
                         Text(
                           displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1385,8 +1407,11 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                         const SizedBox(height: 4),
                         Text(
                           role,
-                          style: const TextStyle(
-                            color: Color(0xB3FFFFFF),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xB3FFFFFF),
+                            ),
                             fontSize: 15,
                           ),
                         ),
@@ -1496,14 +1521,20 @@ class _MemberProfileDetail extends StatelessWidget {
     children: [
       Text(
         label,
-        style: const TextStyle(
-          color: Color(0x80FFFFFF),
+        style: TextStyle(
+          color: AppTheme.foreground(context, Color(0x80FFFFFF)),
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
       ),
       const SizedBox(height: 3),
-      Text(value, style: const TextStyle(color: Colors.white, fontSize: 16)),
+      Text(
+        value,
+        style: TextStyle(
+          color: AppTheme.foreground(context, Colors.white),
+          fontSize: 16,
+        ),
+      ),
     ],
   );
 }
@@ -1565,9 +1596,9 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
                     itemBuilder: (context, index) {
                       final row = _activity![index];
                       return ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           CupertinoIcons.clock,
-                          color: AppColors.accent,
+                          color: AppTheme.foreground(context, AppColors.accent),
                         ),
                         title: Text(
                           row['summary']?.toString() ?? 'Team activity',
@@ -1606,7 +1637,10 @@ class _WorkspaceMessage extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, height: 1.4),
+          style: TextStyle(
+            color: AppTheme.foreground(context, AppColors.muted),
+            height: 1.4,
+          ),
         ),
         if (action != null) ...[
           const SizedBox(height: 18),

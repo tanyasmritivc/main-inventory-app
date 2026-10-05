@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart' as dio;
@@ -77,10 +78,10 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
         title: const Text('Review'),
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         actions: [
           IconButton(
             tooltip: 'Refresh',
@@ -109,7 +110,11 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 130),
-          const Icon(Icons.cloud_off_outlined, size: 42, color: Colors.white54),
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 42,
+            color: AppTheme.foreground(context, Colors.white54),
+          ),
           const SizedBox(height: 14),
           Text(_error!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -121,12 +126,12 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
-        children: const [
+        children: [
           SizedBox(height: 130),
           Icon(
             Icons.check_circle_outline_rounded,
             size: 46,
-            color: Color(0xFF30D158),
+            color: AppTheme.foreground(context, Color(0xFF30D158)),
           ),
           SizedBox(height: 16),
           Text(
@@ -138,7 +143,10 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
           Text(
             'When a photo is uncertain, it will wait here instead of becoming incorrect inventory.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white60, height: 1.45),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white60),
+              height: 1.45,
+            ),
           ),
         ],
       );
@@ -154,14 +162,17 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
             padding: const EdgeInsets.fromLTRB(4, 2, 4, 8),
             child: Text(
               '${_items.length} ${_items.length == 1 ? 'capture needs' : 'captures need'} a quick decision. Nothing here is in inventory yet.',
-              style: const TextStyle(color: Colors.white60, height: 1.4),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white60),
+                height: 1.4,
+              ),
             ),
           );
         }
         final item = _items[index - 1];
         final image = (item.imageUrl ?? '').trim();
         return Material(
-          color: const Color(0xFF171717),
+          color: AppTheme.adaptive(context, const Color(0xFF171717)),
           borderRadius: BorderRadius.circular(16),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
@@ -202,8 +213,8 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                               'Confirm this item before saving.',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white60,
+                          style: TextStyle(
+                            color: AppTheme.foreground(context, Colors.white60),
                             fontSize: 12,
                             height: 1.35,
                           ),
@@ -212,9 +223,9 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
-                    color: Colors.white38,
+                    color: AppTheme.foreground(context, Colors.white38),
                   ),
                 ],
               ),
@@ -368,8 +379,8 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * 0.94,
       ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF090909),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF090909)),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -379,7 +390,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: AppTheme.adaptive(context, Colors.white24),
               borderRadius: BorderRadius.circular(9),
             ),
           ),
@@ -387,7 +398,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
             padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -401,7 +412,10 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                       SizedBox(height: 3),
                       Text(
                         'Correct anything uncertain, then add it to Find.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
+                        style: TextStyle(
+                          color: AppTheme.foreground(context, Colors.white60),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -452,10 +466,10 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                   ],
                 ),
                 _field('Location', _location),
-                const Text(
+                Text(
                   'QUANTITY',
                   style: TextStyle(
-                    color: Colors.white38,
+                    color: AppTheme.foreground(context, Colors.white38),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,

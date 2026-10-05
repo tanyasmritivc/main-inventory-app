@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -84,7 +85,10 @@ class _ProfileHubPageState extends State<ProfileHubPage>
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         title: Text(
           title,
-          style: const TextStyle(color: HomeColors.text, fontSize: 16),
+          style: TextStyle(
+            color: AppTheme.foreground(context, HomeColors.text),
+            fontSize: 16,
+          ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -92,16 +96,16 @@ class _ProfileHubPageState extends State<ProfileHubPage>
             if (detail != null) ...[
               Text(
                 detail,
-                style: const TextStyle(
-                  color: HomeColors.secondary,
+                style: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.secondary),
                   fontSize: 14,
                 ),
               ),
               const SizedBox(width: 10),
             ],
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: HomeColors.secondary,
+              color: AppTheme.foreground(context, HomeColors.secondary),
               size: 20,
             ),
           ],
@@ -110,16 +114,16 @@ class _ProfileHubPageState extends State<ProfileHubPage>
       );
 
   Widget _group(List<Widget> rows) => Material(
-    color: HomeColors.surface,
+    color: AppTheme.adaptive(context, HomeColors.surface),
     borderRadius: BorderRadius.circular(16),
     clipBehavior: Clip.antiAlias,
     child: Column(
       children: [
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0)
-            const Divider(
+            Divider(
               height: 1,
-              color: Color(0xFF2A2A2E),
+              color: AppTheme.adaptive(context, Color(0xFF2A2A2E)),
               indent: 16,
               endIndent: 16,
             ),
@@ -141,23 +145,23 @@ class _ProfileHubPageState extends State<ProfileHubPage>
         : text(metadata['name']);
     final name = savedName.isNotEmpty ? savedName : cachedName;
     return ColoredBox(
-      color: HomeColors.background,
+      color: AppTheme.adaptive(context, HomeColors.background),
       child: SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
           children: [
-            const Text(
+            Text(
               'Profile',
               style: TextStyle(
-                color: HomeColors.text,
+                color: AppTheme.foreground(context, HomeColors.text),
                 fontSize: 28,
                 fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 24),
             Material(
-              color: HomeColors.surface,
+              color: AppTheme.adaptive(context, HomeColors.surface),
               borderRadius: BorderRadius.circular(16),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
@@ -182,8 +186,11 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                               name.isEmpty ? 'Your profile' : name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: HomeColors.text,
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  HomeColors.text,
+                                ),
                                 fontSize: 17,
                               ),
                             ),
@@ -193,26 +200,32 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                                 user!.email!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: HomeColors.secondary,
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    HomeColors.secondary,
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
                             ],
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               'Edit profile',
                               style: TextStyle(
-                                color: HomeColors.secondary,
+                                color: AppTheme.foreground(
+                                  context,
+                                  HomeColors.secondary,
+                                ),
                                 fontSize: 13,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
-                        color: HomeColors.secondary,
+                        color: AppTheme.foreground(context, HomeColors.secondary),
                         size: 20,
                       ),
                     ],
@@ -225,10 +238,15 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Could not load profile.',
-                        style: TextStyle(color: HomeColors.secondary),
+                        style: TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            HomeColors.secondary,
+                          ),
+                        ),
                       ),
                     ),
                     TextButton(

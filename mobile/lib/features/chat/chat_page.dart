@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -92,7 +93,10 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        final color = Colors.white.withValues(alpha: 0.4);
+        final color = AppTheme.adaptive(
+          context,
+          Colors.white.withValues(alpha: 0.4),
+        );
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2268,10 +2272,13 @@ class _ChatPageState extends State<ChatPage>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0x14FFFFFF),
+          decoration: BoxDecoration(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
             border: Border(
-              right: BorderSide(color: Color(0x26FFFFFF), width: 1),
+              right: BorderSide(
+                color: AppTheme.adaptive(context, Color(0x26FFFFFF)),
+                width: 1,
+              ),
             ),
           ),
           child: SafeArea(
@@ -2281,10 +2288,10 @@ class _ChatPageState extends State<ChatPage>
                   padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
                   child: Row(
                     children: [
-                      const Text(
+                      Text(
                         'Chat History',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.foreground(context, Colors.white),
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2294,7 +2301,10 @@ class _ChatPageState extends State<ChatPage>
                         onPressed: _closeHistory,
                         icon: Icon(
                           Icons.close,
-                          color: Colors.white.withValues(alpha: 0.60),
+                          color: AppTheme.foreground(
+                            context,
+                            Colors.white.withValues(alpha: 0.60),
+                          ),
                           size: 20,
                         ),
                         padding: EdgeInsets.zero,
@@ -2317,24 +2327,38 @@ class _ChatPageState extends State<ChatPage>
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0xFFF2F2F7).withValues(alpha: 0.10),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(
-                            0xFFF2F2F7,
-                          ).withValues(alpha: 0.40),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0xFFF2F2F7).withValues(alpha: 0.40),
+                          ),
                           width: 1,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
+                          Icon(
+                            Icons.add,
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFFF2F2F7),
+                            ),
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             'New Chat',
                             style: TextStyle(
-                              color: Color(0xFFF2F2F7),
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFFF2F2F7),
+                              ),
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -2347,9 +2371,9 @@ class _ChatPageState extends State<ChatPage>
                 const SizedBox(height: 10),
                 Expanded(
                   child: _historyLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppTheme.adaptive(context, Colors.white),
                             strokeWidth: 2,
                           ),
                         )
@@ -2362,16 +2386,22 @@ class _ChatPageState extends State<ChatPage>
                               Text(
                                 "Couldn't load history.",
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Colors.white.withValues(alpha: 0.35),
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
                               TextButton(
                                 onPressed: _openHistory,
-                                child: const Text(
+                                child: Text(
                                   'Retry',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -2384,7 +2414,10 @@ class _ChatPageState extends State<ChatPage>
                           child: Text(
                             'No past conversations',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: AppTheme.foreground(
+                                context,
+                                Colors.white.withValues(alpha: 0.35),
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -2401,10 +2434,16 @@ class _ChatPageState extends State<ChatPage>
                               background: Container(
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 16),
-                                color: const Color(0x33FF3B30),
-                                child: const Icon(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x33FF3B30),
+                                ),
+                                child: Icon(
                                   Icons.delete_outline,
-                                  color: Color(0xFFFF3B30),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0xFFFF3B30),
+                                  ),
                                   size: 18,
                                 ),
                               ),
@@ -2418,10 +2457,13 @@ class _ChatPageState extends State<ChatPage>
                                     horizontal: 16,
                                     vertical: 12,
                                   ),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     border: Border(
                                       bottom: BorderSide(
-                                        color: Color(0x0FFFFFFF),
+                                        color: AppTheme.adaptive(
+                                          context,
+                                          Color(0x0FFFFFFF),
+                                        ),
                                         width: 0.5,
                                       ),
                                     ),
@@ -2438,7 +2480,10 @@ class _ChatPageState extends State<ChatPage>
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                ),
                                                 fontSize: 13,
                                                 fontWeight: isActive
                                                     ? FontWeight.w600
@@ -2448,8 +2493,11 @@ class _ChatPageState extends State<ChatPage>
                                             const SizedBox(height: 3),
                                             Text(
                                               _relativeTime(c.updatedAt),
-                                              style: const TextStyle(
-                                                color: Color(0x66FFFFFF),
+                                              style: TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Color(0x66FFFFFF),
+                                                ),
                                                 fontSize: 11,
                                               ),
                                             ),
@@ -2457,9 +2505,12 @@ class _ChatPageState extends State<ChatPage>
                                         ),
                                       ),
                                       if (isActive)
-                                        const Icon(
+                                        Icon(
                                           Icons.radio_button_checked,
-                                          color: Color(0xFFF2F2F7),
+                                          color: AppTheme.foreground(
+                                            context,
+                                            Color(0xFFF2F2F7),
+                                          ),
                                           size: 12,
                                         ),
                                     ],
@@ -2479,10 +2530,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
-    const title = Text(
+    final title = Text(
       'Ask FindEZ',
       style: TextStyle(
-        color: Color(0xFFF2F2F2),
+        color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
         fontSize: 28,
         fontWeight: FontWeight.w400,
         letterSpacing: -0.8,
@@ -2491,9 +2542,12 @@ class _ChatPageState extends State<ChatPage>
     );
     final reset = TextButton(
       onPressed: _resetChat,
-      child: const Text(
+      child: Text(
         'New chat',
-        style: TextStyle(color: Color(0xFF85858E), fontSize: 13),
+        style: TextStyle(
+          color: AppTheme.foreground(context, Color(0xFF85858E)),
+          fontSize: 13,
+        ),
       ),
     );
     return Padding(
@@ -2505,20 +2559,24 @@ class _ChatPageState extends State<ChatPage>
             )
           : Row(
               children: [
-                const Expanded(child: title),
+                Expanded(child: title),
                 if (_session.messages.isNotEmpty) reset,
               ],
             ),
     );
   }
 
-  Widget _buildEmptyState() => const Align(
+  Widget _buildEmptyState() => Align(
     alignment: Alignment.topLeft,
     child: Padding(
       padding: EdgeInsets.only(top: 8, left: 4),
       child: Text(
         'Ask about your things, places, or projects.',
-        style: TextStyle(color: Color(0xFF85858E), fontSize: 16, height: 1.5),
+        style: TextStyle(
+          color: AppTheme.foreground(context, Color(0xFF85858E)),
+          fontSize: 16,
+          height: 1.5,
+        ),
       ),
     ),
   );
@@ -2529,7 +2587,7 @@ class _ChatPageState extends State<ChatPage>
     final owner = Supabase.instance.client.auth.currentUser?.id;
     final camera = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: const Color(0xFF171719),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2641,7 +2699,7 @@ class _ChatPageState extends State<ChatPage>
         (!_sending || _canQueueFollowUp);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF09090B),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF09090B)),
 
       body: Container(
         color: Colors.transparent,
@@ -2710,7 +2768,10 @@ class _ChatPageState extends State<ChatPage>
                   child: Text(
                     _progress!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF8E8E93),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
                 ),
@@ -2741,10 +2802,15 @@ class _ChatPageState extends State<ChatPage>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Photo attached',
-                          style: TextStyle(color: Color(0xFF9999A2)),
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFF9999A2),
+                            ),
+                          ),
                         ),
                       ),
                       IconButton(
@@ -2762,7 +2828,7 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171719),
+                  color: AppTheme.adaptive(context, const Color(0xFF171719)),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -2781,9 +2847,9 @@ class _ChatPageState extends State<ChatPage>
                                 strokeWidth: 1.5,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.add_rounded,
-                              color: Colors.white54,
+                              color: AppTheme.foreground(context, Colors.white54),
                               size: 22,
                             ),
                     ),
@@ -2796,11 +2862,11 @@ class _ChatPageState extends State<ChatPage>
                         keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.newline,
                         onChanged: (_) => setState(() {}),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
                           fontSize: 16,
                         ),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Ask about your things',
                           isDense: true,
                           border: InputBorder.none,
@@ -2810,7 +2876,10 @@ class _ChatPageState extends State<ChatPage>
                           contentPadding: EdgeInsets.zero,
                           hintStyle: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF636366),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0xFF636366),
+                            ),
                           ),
                         ),
                       ),
@@ -2827,8 +2896,11 @@ class _ChatPageState extends State<ChatPage>
                             ? Icons.mic_rounded
                             : Icons.mic_none_rounded,
                         color: _isListening
-                            ? const Color(0xFFF2F2F7)
-                            : Colors.white38,
+                            ? AppTheme.foreground(
+                                context,
+                                const Color(0xFFF2F2F7),
+                              )
+                            : AppTheme.foreground(context, Colors.white38),
                         size: 21,
                       ),
                       onPressed: _toggleListening,
@@ -2843,24 +2915,42 @@ class _ChatPageState extends State<ChatPage>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _sending && !_canQueueFollowUp
-                              ? const Color(0xFF2C2C2E)
+                              ? AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                )
                               : canSend
-                              ? const Color(0xFFF2F2F7)
-                              : const Color(0xFF2C2C2E),
+                              ? AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFFF2F2F7),
+                                )
+                              : AppTheme.adaptive(
+                                  context,
+                                  const Color(0xFF2C2C2E),
+                                ),
                         ),
                         child: _sending && !_canQueueFollowUp
-                            ? const Padding(
+                            ? Padding(
                                 padding: EdgeInsets.all(9),
                                 child: CircularProgressIndicator(
                                   strokeWidth: 1.7,
-                                  color: Color(0xFF8E8E93),
+                                  color: AppTheme.adaptive(
+                                    context,
+                                    Color(0xFF8E8E93),
+                                  ),
                                 ),
                               )
                             : Icon(
                                 Icons.arrow_upward_rounded,
                                 color: canSend
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFF636366),
+                                    ? AppTheme.foreground(
+                                        context,
+                                        const Color(0xFF1C1C1E),
+                                      )
+                                    : AppTheme.foreground(
+                                        context,
+                                        const Color(0xFF636366),
+                                      ),
                                 size: 20,
                               ),
                       ),

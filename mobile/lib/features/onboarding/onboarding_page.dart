@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -165,22 +166,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 child: FilledButton(
                   onPressed: canContinue && !finishing ? next : null,
                   style: FilledButton.styleFrom(
-                    backgroundColor: white,
-                    foregroundColor: const Color(0xFF151517),
-                    disabledBackgroundColor: const Color(0xFF242426),
-                    disabledForegroundColor: const Color(0xFF6C6C70),
+                    backgroundColor: AppTheme.adaptive(context, white),
+                    foregroundColor: AppTheme.adaptive(
+                      context,
+                      const Color(0xFF151517),
+                    ),
+                    disabledBackgroundColor: AppTheme.adaptive(
+                      context,
+                      const Color(0xFF242426),
+                    ),
+                    disabledForegroundColor: AppTheme.adaptive(
+                      context,
+                      const Color(0xFF6C6C70),
+                    ),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(17),
                     ),
                   ),
                   child: finishing
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 19,
                           height: 19,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Color(0xFF151517),
+                            color: AppTheme.adaptive(
+                              context,
+                              Color(0xFF151517),
+                            ),
                           ),
                         )
                       : Text(
@@ -214,12 +227,12 @@ class _Top extends StatelessWidget {
         SizedBox(
           width: 76,
           child: step == 0
-              ? const Align(
+              ? Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'FindEZ',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.foreground(context, Colors.white),
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -229,9 +242,9 @@ class _Top extends StatelessWidget {
                   onPressed: back,
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: muted,
+                    color: AppTheme.foreground(context, muted),
                     size: 19,
                   ),
                 ),
@@ -239,9 +252,12 @@ class _Top extends StatelessWidget {
         const Spacer(),
         TextButton(
           onPressed: skip,
-          child: const Text(
+          child: Text(
             'Skip',
-            style: TextStyle(color: muted, fontSize: 15),
+            style: TextStyle(
+              color: AppTheme.foreground(context, muted),
+              fontSize: 15,
+            ),
           ),
         ),
       ],
@@ -255,7 +271,12 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const colors = [mint, coral, lavender, sky];
+    final colors = [
+      AppTheme.adaptive(context, mint),
+      AppTheme.adaptive(context, coral),
+      AppTheme.adaptive(context, lavender),
+      AppTheme.adaptive(context, sky),
+    ];
     return Row(
       children: List.generate(
         4,
@@ -265,7 +286,9 @@ class _Progress extends StatelessWidget {
             height: 3,
             margin: EdgeInsets.only(right: i == 3 ? 0 : 7),
             decoration: BoxDecoration(
-              color: i < step ? colors[i] : const Color(0xFF2C2C2E),
+              color: i < step
+                  ? colors[i]
+                  : AppTheme.adaptive(context, const Color(0xFF2C2C2E)),
               borderRadius: BorderRadius.circular(99),
             ),
           ),
@@ -288,11 +311,11 @@ class _Welcome extends StatelessWidget {
           children: [
             const _MapGraphic(),
             const SizedBox(height: 28),
-            const Text(
+            Text(
               'Know what you have.\nFind it fast.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 31,
                 height: 1.06,
                 fontWeight: FontWeight.w700,
@@ -300,20 +323,36 @@ class _Welcome extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Take a quick tour using a sample inventory.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: muted, fontSize: 16, height: 1.35),
+              style: TextStyle(
+                color: AppTheme.foreground(context, muted),
+                fontSize: 16,
+                height: 1.35,
+              ),
             ),
             const SizedBox(height: 28),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _Point(Icons.inventory_2_outlined, 'Organize', mint),
+                _Point(
+                  Icons.inventory_2_outlined,
+                  'Organize',
+                  AppTheme.adaptive(context, mint),
+                ),
                 SizedBox(width: 24),
-                _Point(Icons.qr_code_scanner_rounded, 'Capture', coral),
+                _Point(
+                  Icons.qr_code_scanner_rounded,
+                  'Capture',
+                  AppTheme.adaptive(context, coral),
+                ),
                 SizedBox(width: 24),
-                _Point(Icons.auto_awesome_rounded, 'Find', lavender),
+                _Point(
+                  Icons.auto_awesome_rounded,
+                  'Find',
+                  AppTheme.adaptive(context, lavender),
+                ),
               ],
             ),
           ],
@@ -342,35 +381,47 @@ class _MapGraphic extends StatelessWidget {
             width: 92,
             height: 92,
             decoration: BoxDecoration(
-              color: surface,
+              color: AppTheme.adaptive(context, surface),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: border),
+              border: Border.all(color: AppTheme.adaptive(context, border)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inventory_2_outlined,
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               size: 38,
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 3,
             top: 5,
-            child: _Orbit(Icons.hardware_outlined, coral),
+            child: _Orbit(
+              Icons.hardware_outlined,
+              AppTheme.adaptive(context, coral),
+            ),
           ),
-          const Positioned(
+          Positioned(
             right: 3,
             top: 5,
-            child: _Orbit(Icons.groups_outlined, mint),
+            child: _Orbit(
+              Icons.groups_outlined,
+              AppTheme.adaptive(context, mint),
+            ),
           ),
-          const Positioned(
+          Positioned(
             left: 22,
             bottom: 0,
-            child: _Orbit(Icons.description_outlined, sky),
+            child: _Orbit(
+              Icons.description_outlined,
+              AppTheme.adaptive(context, sky),
+            ),
           ),
-          const Positioned(
+          Positioned(
             right: 22,
             bottom: 0,
-            child: _Orbit(Icons.auto_awesome_rounded, lavender),
+            child: _Orbit(
+              Icons.auto_awesome_rounded,
+              AppTheme.adaptive(context, lavender),
+            ),
           ),
         ],
       ),
@@ -405,7 +456,13 @@ class _Point extends StatelessWidget {
     children: [
       Icon(icon, color: color, size: 21),
       const SizedBox(height: 7),
-      Text(label, style: const TextStyle(color: muted, fontSize: 12)),
+      Text(
+        label,
+        style: TextStyle(
+          color: AppTheme.foreground(context, muted),
+          fontSize: 12,
+        ),
+      ),
     ],
   );
 }
@@ -430,8 +487,8 @@ class _Frame extends StatelessWidget {
           Expanded(
             child: Text(
               instruction,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -445,9 +502,9 @@ class _Frame extends StatelessWidget {
           width: double.infinity,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: const Color(0xFF0B0B0D),
+            color: AppTheme.adaptive(context, const Color(0xFF0B0B0D)),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: border),
+            border: Border.all(color: AppTheme.adaptive(context, border)),
           ),
           child: Column(
             children: [
@@ -474,9 +531,11 @@ class _Nav extends StatelessWidget {
     ];
     return Container(
       height: 68,
-      decoration: const BoxDecoration(
-        color: Color(0xF2131315),
-        border: Border(top: BorderSide(color: border)),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xF2131315)),
+        border: Border(
+          top: BorderSide(color: AppTheme.adaptive(context, border)),
+        ),
       ),
       child: Row(
         children: entries
@@ -487,14 +546,18 @@ class _Nav extends StatelessWidget {
                   children: [
                     Icon(
                       e.$2,
-                      color: selected == e.$1 ? Colors.white : muted,
+                      color: selected == e.$1
+                          ? AppTheme.foreground(context, Colors.white)
+                          : AppTheme.foreground(context, muted),
                       size: 21,
                     ),
                     const SizedBox(height: 5),
                     Text(
                       e.$3,
                       style: TextStyle(
-                        color: selected == e.$1 ? Colors.white : muted,
+                        color: selected == e.$1
+                            ? AppTheme.foreground(context, Colors.white)
+                            : AppTheme.foreground(context, muted),
                         fontSize: 10,
                         fontWeight: selected == e.$1
                             ? FontWeight.w600
@@ -533,7 +596,7 @@ class _Inventory extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Frame(
     Icons.add_circle_outline_rounded,
-    mint,
+    AppTheme.adaptive(context, mint),
     made
         ? 'Your Space is ready.'
         : creating
@@ -579,24 +642,26 @@ class _SpaceSheet extends StatelessWidget {
   final VoidCallback create;
   @override
   Widget build(BuildContext context) => Container(
-    color: const Color(0xB3000000),
+    color: AppTheme.adaptive(context, const Color(0xB3000000)),
     alignment: Alignment.bottomCenter,
     child: Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF1C1C1E)),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: border)),
+        border: Border(
+          top: BorderSide(color: AppTheme.adaptive(context, border)),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'New Space',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.foreground(context, Colors.white),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -604,7 +669,10 @@ class _SpaceSheet extends StatelessWidget {
               const Spacer(),
               IconButton(
                 onPressed: close,
-                icon: const Icon(Icons.close_rounded, color: muted),
+                icon: Icon(
+                  Icons.close_rounded,
+                  color: AppTheme.foreground(context, muted),
+                ),
               ),
             ],
           ),
@@ -614,15 +682,21 @@ class _SpaceSheet extends StatelessWidget {
             onSubmitted: (_) => create(),
             textCapitalization: TextCapitalization.words,
             maxLength: 48,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white),
+              fontSize: 16,
+            ),
+            decoration: InputDecoration(
               counterText: '',
-              prefixIcon: Icon(Icons.inventory_2_outlined, color: mint),
+              prefixIcon: Icon(
+                Icons.inventory_2_outlined,
+                color: AppTheme.foreground(context, mint),
+              ),
               filled: true,
-              fillColor: inset,
-              border: _field,
-              enabledBorder: _field,
-              focusedBorder: _field,
+              fillColor: AppTheme.adaptive(context, inset),
+              border: _field(context),
+              enabledBorder: _field(context),
+              focusedBorder: _field(context),
             ),
           ),
           const SizedBox(height: 12),
@@ -632,8 +706,11 @@ class _SpaceSheet extends StatelessWidget {
             child: FilledButton(
               onPressed: controller.text.trim().isEmpty ? null : create,
               style: FilledButton.styleFrom(
-                backgroundColor: white,
-                foregroundColor: const Color(0xFF151517),
+                backgroundColor: AppTheme.adaptive(context, white),
+                foregroundColor: AppTheme.adaptive(
+                  context,
+                  const Color(0xFF151517),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -650,23 +727,30 @@ class _SpaceSheet extends StatelessWidget {
   );
 }
 
-const _field = OutlineInputBorder(
+OutlineInputBorder _field(BuildContext context) => OutlineInputBorder(
   borderRadius: BorderRadius.all(Radius.circular(15)),
-  borderSide: BorderSide(color: border),
+  borderSide: BorderSide(color: AppTheme.adaptive(context, border)),
 );
 
 class _Empty extends StatelessWidget {
   const _Empty();
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.inventory_2_outlined, color: Color(0xFF555559), size: 34),
+        Icon(
+          Icons.inventory_2_outlined,
+          color: AppTheme.foreground(context, Color(0xFF555559)),
+          size: 34,
+        ),
         SizedBox(height: 10),
         Text(
           'Your inventory starts here',
-          style: TextStyle(color: muted, fontSize: 13),
+          style: TextStyle(
+            color: AppTheme.foreground(context, muted),
+            fontSize: 13,
+          ),
         ),
       ],
     ),
@@ -682,13 +766,17 @@ class _SpaceCard extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: surface,
+        color: AppTheme.adaptive(context, surface),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border),
+        border: Border.all(color: AppTheme.adaptive(context, border)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.inventory_2_outlined, color: mint, size: 24),
+          Icon(
+            Icons.inventory_2_outlined,
+            color: AppTheme.foreground(context, mint),
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -697,21 +785,28 @@ class _SpaceCard extends StatelessWidget {
                 Text(
                   name,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '0 items',
-                  style: TextStyle(color: muted, fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, muted),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.check_circle_rounded, color: mint, size: 20),
+          Icon(
+            Icons.check_circle_rounded,
+            color: AppTheme.foreground(context, mint),
+            size: 20,
+          ),
         ],
       ),
     ),
@@ -729,11 +824,17 @@ class _Plus extends StatelessWidget {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xE62C2C2E),
+        color: AppTheme.adaptive(context, const Color(0xE62C2C2E)),
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x45FFFFFF)),
+        border: Border.all(
+          color: AppTheme.adaptive(context, const Color(0x45FFFFFF)),
+        ),
       ),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+      child: Icon(
+        Icons.add_rounded,
+        color: AppTheme.foreground(context, Colors.white),
+        size: 28,
+      ),
     ),
   );
 }
@@ -751,7 +852,7 @@ class _Scan extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Frame(
     Icons.add_photo_alternate_outlined,
-    coral,
+    AppTheme.adaptive(context, coral),
     made
         ? 'FindEZ extracted the item details.'
         : 'Tap the sample photo to add an item.',
@@ -787,9 +888,9 @@ class _Photo extends StatelessWidget {
     borderRadius: BorderRadius.circular(22),
     child: Container(
       decoration: BoxDecoration(
-        color: surface,
+        color: AppTheme.adaptive(context, surface),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: border),
+        border: Border.all(color: AppTheme.adaptive(context, border)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -798,24 +899,31 @@ class _Photo extends StatelessWidget {
             width: 78,
             height: 78,
             decoration: BoxDecoration(
-              color: coral.withValues(alpha: .12),
+              color: AppTheme.adaptive(context, coral.withValues(alpha: .12)),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Icon(Icons.hardware_outlined, color: coral, size: 37),
+            child: Icon(
+              Icons.hardware_outlined,
+              color: AppTheme.foreground(context, coral),
+              size: 37,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Sample: M4 bolts',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Tap to extract',
-            style: TextStyle(color: muted, fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.foreground(context, muted),
+              fontSize: 13,
+            ),
           ),
         ],
       ),
@@ -830,21 +938,25 @@ class _Item extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: surface,
+      color: AppTheme.adaptive(context, surface),
       borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: mint, size: 21),
+            Icon(
+              Icons.check_circle_rounded,
+              color: AppTheme.foreground(context, mint),
+              size: 21,
+            ),
             SizedBox(width: 8),
             Text(
               'Ready to save',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -863,13 +975,20 @@ class _Item extends StatelessWidget {
         const Spacer(),
         Row(
           children: [
-            const Icon(Icons.inventory_2_outlined, color: mint, size: 17),
+            Icon(
+              Icons.inventory_2_outlined,
+              color: AppTheme.foreground(context, mint),
+              size: 17,
+            ),
             const SizedBox(width: 7),
             Expanded(
               child: Text(
                 'Saving to $name',
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: muted, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, muted),
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -887,22 +1006,29 @@ class _Data extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(
-      color: inset,
+      color: AppTheme.adaptive(context, inset),
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: muted, fontSize: 9, letterSpacing: .7),
+          style: TextStyle(
+            color: AppTheme.foreground(context, muted),
+            fontSize: 9,
+            letterSpacing: .7,
+          ),
         ),
         const SizedBox(height: 5),
         Text(
           value,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Colors.white),
+            fontSize: 13,
+          ),
         ),
       ],
     ),
@@ -922,7 +1048,7 @@ class _Assist extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Frame(
     Icons.auto_awesome_rounded,
-    lavender,
+    AppTheme.adaptive(context, lavender),
     answered
         ? 'Assist answers from your inventory.'
         : 'Send the sample inventory question.',
@@ -953,20 +1079,23 @@ class _Assist extends StatelessWidget {
                         _Result(name),
                       ],
                     )
-                  : const Center(
+                  : Center(
                       key: ValueKey('empty-assist'),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.auto_awesome_rounded,
-                            color: lavender,
+                            color: AppTheme.foreground(context, lavender),
                             size: 34,
                           ),
                           SizedBox(height: 10),
                           Text(
                             'Ask about your inventory',
-                            style: TextStyle(color: muted, fontSize: 13),
+                            style: TextStyle(
+                              color: AppTheme.foreground(context, muted),
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -981,29 +1110,32 @@ class _Assist extends StatelessWidget {
               height: 54,
               padding: const EdgeInsets.symmetric(horizontal: 15),
               decoration: BoxDecoration(
-                color: surface,
+                color: AppTheme.adaptive(context, surface),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
+                border: Border.all(color: AppTheme.adaptive(context, border)),
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Where are the M4 bolts?',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   Container(
                     width: 34,
                     height: 34,
-                    decoration: const BoxDecoration(
-                      color: white,
+                    decoration: BoxDecoration(
+                      color: AppTheme.adaptive(context, white),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_upward_rounded,
-                      color: Color(0xFF151517),
+                      color: AppTheme.foreground(context, Color(0xFF151517)),
                       size: 19,
                     ),
                   ),
@@ -1026,13 +1158,19 @@ class _Bubble extends StatelessWidget {
     constraints: const BoxConstraints(maxWidth: 245),
     padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
     decoration: BoxDecoration(
-      color: mine ? const Color(0xFF2C2C2E) : inset,
+      color: mine
+          ? AppTheme.adaptive(context, const Color(0xFF2C2C2E))
+          : AppTheme.adaptive(context, inset),
       borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
     child: Text(
       text,
-      style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.25),
+      style: TextStyle(
+        color: AppTheme.foreground(context, Colors.white),
+        fontSize: 13,
+        height: 1.25,
+      ),
     ),
   );
 }
@@ -1044,19 +1182,23 @@ class _Result extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: surface,
+      color: AppTheme.adaptive(context, surface),
       borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
     child: Row(
       children: [
-        const Icon(Icons.hardware_outlined, color: coral, size: 22),
+        Icon(
+          Icons.hardware_outlined,
+          color: AppTheme.foreground(context, coral),
+          size: 22,
+        ),
         const SizedBox(width: 10),
-        const Expanded(
+        Expanded(
           child: Text(
             'M4 bolts · 24',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -1066,7 +1208,10 @@ class _Result extends StatelessWidget {
           child: Text(
             name,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: muted, fontSize: 11),
+            style: TextStyle(
+              color: AppTheme.foreground(context, muted),
+              fontSize: 11,
+            ),
           ),
         ),
       ],
@@ -1080,7 +1225,7 @@ class _Teams extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _Frame(
     Icons.groups_outlined,
-    sky,
+    AppTheme.adaptive(context, sky),
     'Everything the team needs stays connected.',
     _Tab.teams,
     Padding(
@@ -1098,13 +1243,16 @@ class _Teams extends StatelessWidget {
                 child: Text(
                   '$name · 3 members',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: muted, fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, muted),
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 15),
-          const Expanded(
+          Expanded(
             child: Column(
               children: [
                 Expanded(
@@ -1115,7 +1263,7 @@ class _Teams extends StatelessWidget {
                           Icons.inventory_2_outlined,
                           'Spaces',
                           'Shared inventory',
-                          mint,
+                          AppTheme.adaptive(context, mint),
                         ),
                       ),
                       SizedBox(width: 9),
@@ -1124,7 +1272,7 @@ class _Teams extends StatelessWidget {
                           Icons.task_alt_rounded,
                           'Board',
                           'Tasks and requests',
-                          coral,
+                          AppTheme.adaptive(context, coral),
                         ),
                       ),
                     ],
@@ -1139,7 +1287,7 @@ class _Teams extends StatelessWidget {
                           Icons.groups_outlined,
                           'People',
                           'Members and roles',
-                          lavender,
+                          AppTheme.adaptive(context, lavender),
                         ),
                       ),
                       SizedBox(width: 9),
@@ -1148,7 +1296,7 @@ class _Teams extends StatelessWidget {
                           Icons.description_outlined,
                           'Documents',
                           'Files and photos',
-                          sky,
+                          AppTheme.adaptive(context, sky),
                         ),
                       ),
                     ],
@@ -1175,9 +1323,9 @@ class _TeamTile extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(11),
     decoration: BoxDecoration(
-      color: surface,
+      color: AppTheme.adaptive(context, surface),
       borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1186,8 +1334,8 @@ class _TeamTile extends StatelessWidget {
         const Spacer(),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppTheme.foreground(context, Colors.white),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -1195,7 +1343,10 @@ class _TeamTile extends StatelessWidget {
         Text(
           detail,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: muted, fontSize: 9),
+          style: TextStyle(
+            color: AppTheme.foreground(context, muted),
+            fontSize: 9,
+          ),
         ),
       ],
     ),
@@ -1209,21 +1360,34 @@ class _Activity extends StatelessWidget {
     height: 46,
     padding: const EdgeInsets.symmetric(horizontal: 12),
     decoration: BoxDecoration(
-      color: surface,
+      color: AppTheme.adaptive(context, surface),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
-    child: const Row(
+    child: Row(
       children: [
-        Icon(Icons.history_rounded, color: rose, size: 19),
+        Icon(
+          Icons.history_rounded,
+          color: AppTheme.foreground(context, rose),
+          size: 19,
+        ),
         SizedBox(width: 9),
         Expanded(
           child: Text(
             'Maya updated M4 bolts',
-            style: TextStyle(color: Colors.white, fontSize: 11),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Colors.white),
+              fontSize: 11,
+            ),
           ),
         ),
-        Text('now', style: TextStyle(color: muted, fontSize: 10)),
+        Text(
+          'now',
+          style: TextStyle(
+            color: AppTheme.foreground(context, muted),
+            fontSize: 10,
+          ),
+        ),
       ],
     ),
   );
@@ -1236,10 +1400,10 @@ class _Avatars extends StatelessWidget {
     width: 73,
     height: 34,
     child: Stack(
-      children: const [
-        _Avatar(0, 'T', lavender),
-        _Avatar(20, 'M', mint),
-        _Avatar(40, 'V', coral),
+      children: [
+        _Avatar(0, 'T', AppTheme.adaptive(context, lavender)),
+        _Avatar(20, 'M', AppTheme.adaptive(context, mint)),
+        _Avatar(40, 'V', AppTheme.adaptive(context, coral)),
       ],
     ),
   );
@@ -1260,12 +1424,15 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF0B0B0D), width: 2),
+        border: Border.all(
+          color: AppTheme.adaptive(context, const Color(0xFF0B0B0D)),
+          width: 2,
+        ),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Color(0xFF111113),
+        style: TextStyle(
+          color: AppTheme.foreground(context, Color(0xFF111113)),
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
@@ -1295,61 +1462,82 @@ class _Ready extends StatelessWidget {
                 width: 82,
                 height: 82,
                 decoration: BoxDecoration(
-                  color: mint.withValues(alpha: .13),
+                  color: AppTheme.adaptive(
+                    context,
+                    mint.withValues(alpha: .13),
+                  ),
                   shape: BoxShape.circle,
-                  border: Border.all(color: mint.withValues(alpha: .45)),
+                  border: Border.all(
+                    color: AppTheme.adaptive(
+                      context,
+                      mint.withValues(alpha: .45),
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.check_rounded, color: mint, size: 39),
+                child: Icon(
+                  Icons.check_rounded,
+                  color: AppTheme.foreground(context, mint),
+                  size: 39,
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'You know the flow.',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 29,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -.8,
               ),
             ),
             const SizedBox(height: 9),
-            const Text(
+            Text(
               'Your real inventory starts next.',
-              style: TextStyle(color: muted, fontSize: 15),
+              style: TextStyle(
+                color: AppTheme.foreground(context, muted),
+                fontSize: 15,
+              ),
             ),
             const SizedBox(height: 26),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: surface,
+                color: AppTheme.adaptive(context, surface),
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: border),
+                border: Border.all(color: AppTheme.adaptive(context, border)),
               ),
               child: Column(
                 children: [
                   _ReadyRow(
                     Icons.inventory_2_outlined,
-                    mint,
+                    AppTheme.adaptive(context, mint),
                     name,
                     'Created after sign-in',
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
+                    child: Divider(
+                      height: 1,
+                      color: AppTheme.adaptive(context, border),
+                    ),
                   ),
-                  const _ReadyRow(
+                  _ReadyRow(
                     Icons.hardware_outlined,
-                    coral,
+                    AppTheme.adaptive(context, coral),
                     'M4 bolts',
                     'Tour sample only',
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
+                    child: Divider(
+                      height: 1,
+                      color: AppTheme.adaptive(context, border),
+                    ),
                   ),
-                  const _ReadyRow(
+                  _ReadyRow(
                     Icons.groups_outlined,
-                    lavender,
+                    AppTheme.adaptive(context, lavender),
                     'Team-ready',
                     'Invite people when you are ready',
                   ),
@@ -1381,14 +1569,20 @@ class _ReadyRow extends StatelessWidget {
             Text(
               title,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 3),
-            Text(detail, style: const TextStyle(color: muted, fontSize: 11)),
+            Text(
+              detail,
+              style: TextStyle(
+                color: AppTheme.foreground(context, muted),
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
       ),
@@ -1406,14 +1600,18 @@ class _Header extends StatelessWidget {
         child: Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppTheme.foreground(context, Colors.white),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      const Icon(Icons.notifications_none_rounded, color: muted, size: 20),
+      Icon(
+        Icons.notifications_none_rounded,
+        color: AppTheme.foreground(context, muted),
+        size: 20,
+      ),
     ],
   );
 }
@@ -1428,7 +1626,7 @@ class _Segment extends StatelessWidget {
     height: 40,
     padding: const EdgeInsets.all(3),
     decoration: BoxDecoration(
-      color: const Color(0xFF262629),
+      color: AppTheme.adaptive(context, const Color(0xFF262629)),
       borderRadius: BorderRadius.circular(13),
     ),
     child: Row(
@@ -1449,14 +1647,18 @@ class _SegmentLabel extends StatelessWidget {
     child: Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: active ? const Color(0xFF4A4A4D) : Colors.transparent,
+        color: active
+            ? AppTheme.adaptive(context, const Color(0xFF4A4A4D))
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         label,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: active ? Colors.white : muted,
+          color: active
+              ? AppTheme.foreground(context, Colors.white)
+              : AppTheme.foreground(context, muted),
           fontSize: 11,
           fontWeight: active ? FontWeight.w600 : FontWeight.w400,
         ),
@@ -1472,17 +1674,24 @@ class _Search extends StatelessWidget {
     height: 44,
     padding: const EdgeInsets.symmetric(horizontal: 13),
     decoration: BoxDecoration(
-      color: surface,
+      color: AppTheme.adaptive(context, surface),
       borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
+      border: Border.all(color: AppTheme.adaptive(context, border)),
     ),
-    child: const Row(
+    child: Row(
       children: [
-        Icon(Icons.search_rounded, color: muted, size: 19),
+        Icon(
+          Icons.search_rounded,
+          color: AppTheme.foreground(context, muted),
+          size: 19,
+        ),
         SizedBox(width: 8),
         Text(
           'Search inventory',
-          style: TextStyle(color: Color(0xFF737377), fontSize: 12),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFF737377)),
+            fontSize: 12,
+          ),
         ),
       ],
     ),

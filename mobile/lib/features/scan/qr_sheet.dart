@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -19,13 +20,18 @@ class QrOfferSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       child: Column(
@@ -37,23 +43,26 @@ class QrOfferSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
-          const Text(
+          Text(
             'Item saved.',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Want to print a QR code for it?',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
@@ -64,18 +73,24 @@ class QrOfferSheet extends StatelessWidget {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Skip',
                         style: TextStyle(
-                          color: Color(0x73FFFFFF),
+                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                           fontSize: 15,
                         ),
                       ),
@@ -98,14 +113,14 @@ class QrOfferSheet extends StatelessWidget {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppTheme.adaptive(context, Colors.white),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Generate QR',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: AppTheme.foreground(context, Colors.black),
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -169,13 +184,18 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 44),
       child: Column(
@@ -187,15 +207,15 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
-          const Text(
+          Text(
             'Item QR Code',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -229,7 +249,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Scan to find in FindEZ',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 8),
                       ),
@@ -242,7 +262,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       children: [
                         Text(
                           widget.item.displayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -253,22 +273,22 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                         if (widget.item.location.isNotEmpty)
                           Text(
                             widget.item.location,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Color(0xFF666666),
                               fontSize: 12,
                             ),
                           ),
                         Text(
                           'Qty: ${widget.item.quantity}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Color(0xFF666666),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Divider(color: Color(0xFFEEEEEE), height: 1),
+                        Divider(color: Color(0xFFEEEEEE), height: 1),
                         const SizedBox(height: 6),
-                        const Row(
+                        Row(
                           children: [
                             Text(
                               'FindEZ AI',
@@ -305,36 +325,51 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
                     child: Center(
                       child: _sharing
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                color: Colors.white70,
+                                color: AppTheme.adaptive(
+                                  context,
+                                  Colors.white70,
+                                ),
                                 strokeWidth: 1.5,
                               ),
                             )
-                          : const Row(
+                          : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.share_outlined,
-                                  color: Color(0x73FFFFFF),
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
                                   size: 16,
                                 ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Share',
                                   style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Color(0x73FFFFFF),
+                                    ),
                                     fontSize: 15,
                                   ),
                                 ),
@@ -351,18 +386,24 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0xFF171717),
+                      ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
                         width: 0.5,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Done',
                         style: TextStyle(
-                          color: Color(0x73FFFFFF),
+                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                           fontSize: 15,
                         ),
                       ),
@@ -405,13 +446,18 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
         if (_selected[i]) widget.items[i],
     ];
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+            width: 0.5,
+          ),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       child: Column(
@@ -423,23 +469,26 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
           ),
-          const Text(
+          Text(
             'Generate QR Codes?',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.foreground(context, Colors.white),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'These items have no barcode.\nAdd a QR so you can scan them later.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+              fontSize: 14,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -447,9 +496,12 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
             constraints: const BoxConstraints(maxHeight: 260),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  width: 0.5,
+                ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -458,7 +510,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                   itemCount: widget.items.length,
                   separatorBuilder: (_, _) => Container(
                     height: 0.5,
-                    color: const Color(0x14FFFFFF),
+                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                   itemBuilder: (_, i) => ListTile(
@@ -468,15 +520,30 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                     ),
                     title: Text(
                       widget.items[i].name,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 14,
+                      ),
                     ),
                     trailing: Switch(
                       value: _selected[i],
                       onChanged: (v) => setState(() => _selected[i] = v),
-                      activeThumbColor: Colors.white,
-                      activeTrackColor: const Color(0x4DFFFFFF),
-                      inactiveThumbColor: const Color(0x33FFFFFF),
-                      inactiveTrackColor: const Color(0x14FFFFFF),
+                      activeThumbColor: AppTheme.adaptive(
+                        context,
+                        Colors.white,
+                      ),
+                      activeTrackColor: AppTheme.adaptive(
+                        context,
+                        const Color(0x4DFFFFFF),
+                      ),
+                      inactiveThumbColor: AppTheme.adaptive(
+                        context,
+                        const Color(0x33FFFFFF),
+                      ),
+                      inactiveTrackColor: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
                     ),
                   ),
                 ),
@@ -501,8 +568,8 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
               height: 50,
               decoration: BoxDecoration(
                 color: selectedItems.isEmpty
-                    ? const Color(0x33FFFFFF)
-                    : Colors.white,
+                    ? AppTheme.adaptive(context, const Color(0x33FFFFFF))
+                    : AppTheme.adaptive(context, Colors.white),
                 borderRadius: BorderRadius.circular(99),
               ),
               child: Center(
@@ -510,8 +577,8 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                   'Generate QR Codes',
                   style: TextStyle(
                     color: selectedItems.isEmpty
-                        ? const Color(0x4DFFFFFF)
-                        : Colors.black,
+                        ? AppTheme.foreground(context, const Color(0x4DFFFFFF))
+                        : AppTheme.foreground(context, Colors.black),
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -526,14 +593,20 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
               width: double.infinity,
               height: 50,
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  width: 0.5,
+                ),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   'Skip',
-                  style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -557,13 +630,18 @@ class BulkQrDisplaySheet extends StatelessWidget {
         maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF0A0A0A)),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
+              width: 0.5,
+            ),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 44),
         child: Column(
@@ -575,23 +653,26 @@ class BulkQrDisplaySheet extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
+                  color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Your QR Codes',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Print or save these to identify your items.',
-              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                fontSize: 14,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -604,7 +685,10 @@ class BulkQrDisplaySheet extends StatelessWidget {
                       if (i < items.length - 1)
                         Container(
                           height: 0.5,
-                          color: const Color(0x14FFFFFF),
+                          color: AppTheme.adaptive(
+                            context,
+                            const Color(0x14FFFFFF),
+                          ),
                           margin: const EdgeInsets.symmetric(vertical: 4),
                         ),
                     ],
@@ -619,14 +703,14 @@ class BulkQrDisplaySheet extends StatelessWidget {
                 width: double.infinity,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.adaptive(context, Colors.white),
                   borderRadius: BorderRadius.circular(99),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     'Done',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: AppTheme.foreground(context, Colors.black),
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -717,7 +801,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Scan to find in FindEZ',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 8),
                       ),
@@ -730,7 +814,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                       children: [
                         Text(
                           widget.item.displayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -741,22 +825,22 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         if (widget.item.location.isNotEmpty)
                           Text(
                             widget.item.location,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Color(0xFF666666),
                               fontSize: 12,
                             ),
                           ),
                         Text(
                           'Qty: ${widget.item.quantity}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Color(0xFF666666),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Divider(color: Color(0xFFEEEEEE), height: 1),
+                        Divider(color: Color(0xFFEEEEEE), height: 1),
                         const SizedBox(height: 6),
-                        const Row(
+                        Row(
                           children: [
                             Text(
                               'FindEZ AI',
@@ -790,32 +874,38 @@ class _ItemQrCardState extends State<_ItemQrCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: AppTheme.adaptive(context, const Color(0xFF171717)),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border: Border.all(
+                  color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  width: 0.5,
+                ),
               ),
               child: _sharing
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                        color: Colors.white70,
+                        color: AppTheme.adaptive(context, Colors.white70),
                         strokeWidth: 1.5,
                       ),
                     )
-                  : const Row(
+                  : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.share_outlined,
-                          color: Color(0x73FFFFFF),
+                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                           size: 14,
                         ),
                         SizedBox(width: 6),
                         Text(
                           'Share QR',
                           style: TextStyle(
-                            color: Color(0x73FFFFFF),
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
                             fontSize: 13,
                           ),
                         ),

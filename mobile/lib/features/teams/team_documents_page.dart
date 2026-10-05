@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:dio/dio.dart' as dio;
@@ -72,7 +73,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     HapticFeedback.selectionClick();
     final source = await showModalBottomSheet<_DocumentSource>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Padding(
@@ -309,36 +310,51 @@ class _DocumentRow extends StatelessWidget {
 
   String get _filename => document['filename']?.toString() ?? 'Untitled file';
 
-  ({IconData icon, Color color}) get _appearance {
+  ({IconData icon, Color color}) _appearance(BuildContext context) {
     final name = _filename.toLowerCase();
     final mime = document['mime_type']?.toString().toLowerCase() ?? '';
     if (mime.startsWith('image/') ||
         name.endsWith('.png') ||
         name.endsWith('.jpg') ||
         name.endsWith('.jpeg')) {
-      return (icon: CupertinoIcons.photo, color: const Color(0xFFB9A4E8));
+      return (
+        icon: CupertinoIcons.photo,
+        color: AppTheme.adaptive(context, const Color(0xFFB9A4E8)),
+      );
     }
     if (mime == 'application/pdf' || name.endsWith('.pdf')) {
-      return (icon: CupertinoIcons.doc_text, color: const Color(0xFFE5A0A9));
+      return (
+        icon: CupertinoIcons.doc_text,
+        color: AppTheme.adaptive(context, const Color(0xFFE5A0A9)),
+      );
     }
     if (name.endsWith('.csv') ||
         name.endsWith('.xls') ||
         name.endsWith('.xlsx')) {
-      return (icon: CupertinoIcons.table, color: const Color(0xFF8FCBB6));
+      return (
+        icon: CupertinoIcons.table,
+        color: AppTheme.adaptive(context, const Color(0xFF8FCBB6)),
+      );
     }
     if (name.endsWith('.zip') || name.endsWith('.rar')) {
-      return (icon: CupertinoIcons.archivebox, color: const Color(0xFFE8B184));
+      return (
+        icon: CupertinoIcons.archivebox,
+        color: AppTheme.adaptive(context, const Color(0xFFE8B184)),
+      );
     }
-    return (icon: CupertinoIcons.doc, color: const Color(0xFF9FC3E8));
+    return (
+      icon: CupertinoIcons.doc,
+      color: AppTheme.adaptive(context, const Color(0xFF9FC3E8)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final appearance = _appearance;
+    final appearance = _appearance(context);
     final size = _formatBytes(document['size_bytes']);
     final date = _formatDate(document['created_at']?.toString());
     return Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(18),
       child: ListTile(
         minVerticalPadding: 16,
@@ -363,9 +379,9 @@ class _DocumentRow extends StatelessWidget {
                   PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
               )
-            : const Icon(
+            : Icon(
                 CupertinoIcons.chevron_forward,
-                color: AppColors.muted,
+                color: AppTheme.foreground(context, AppColors.muted),
                 size: 16,
               ),
         onTap: onOpen,
@@ -386,7 +402,11 @@ class _EmptyState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 36),
     children: [
       SizedBox(height: MediaQuery.sizeOf(context).height * .23),
-      const Icon(CupertinoIcons.doc_on_doc, size: 40, color: Colors.white),
+      Icon(
+        CupertinoIcons.doc_on_doc,
+        size: 40,
+        color: AppTheme.foreground(context, Colors.white),
+      ),
       const SizedBox(height: 20),
       const Text(
         'No files yet',
@@ -394,10 +414,10 @@ class _EmptyState extends StatelessWidget {
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
-      const Text(
+      Text(
         'Shared files will appear here.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: AppColors.muted),
+        style: TextStyle(color: AppTheme.foreground(context, AppColors.muted)),
       ),
       if (canUpload) ...[
         const SizedBox(height: 24),
@@ -434,7 +454,9 @@ class _ErrorState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+            ),
           ),
           const SizedBox(height: 20),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
