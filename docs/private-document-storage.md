@@ -56,3 +56,23 @@ customer files public as a rollback shortcut. Objects are retained throughout.
 This lane does not privatize `item-images`, validate processor/log/backup retention,
 finish account-deletion coverage, publish legal drafts or close physical/native
 release checks. No Apple upload/submission is authorized by this deployment.
+
+## October 5 verified deployment
+
+Runtime `4ac3c56`, PR #43: all 379 local Python/API-doc tests and five CI jobs
+pass in `37385848403`. The PostgreSQL job runs the disposable Storage fixture.
+Selective deployment applied migration 038 before starting the four changed
+backend files, with exact base/runtime hashes checked. Rollback/staging directory:
+`/home/ubuntu/findez-document-privacy.kWlpZp`. Only document privacy changed;
+environment-file hashes and other bucket flags are unchanged. Backend/web active;
+public health/DB checks pass at `https://findez.openstack.ftctools.com`.
+The old `api.findez.ai` hostname still points to retired Render: a healthy result
+there says nothing about this deployment.
+
+Two temporary accounts and one temporary Team tested actual API authentication,
+personal/Team uploads, signed download through local Storage, HTTPS URL host and
+no-store responses, denied anonymous/direct JWT/foreign opening and deletion,
+test-only membership join/revocation, denial of newly issued links after revocation,
+and owner deletion. An existing signed link remains usable until expiry as expected.
+All task-created accounts, Team, rows and objects were removed; real user data was
+untouched. Public signed-file download and physical client flows remain unverified.
