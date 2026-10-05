@@ -1,8 +1,33 @@
 # Current state
 
-Last reviewed on 2026-10-04 during mobile appearance verification and the held build-46 preflight.
+Last reviewed on 2026-10-04 during mobile brand-theme verification and the held build-46 preflight.
 
 ## App Store submission preflight
+
+- The user authorized the supplied FindEZ brand on mobile and identified two
+  duplicated grabbers in Edit item. Local `1.0.7 (48)` on
+  `feat/mobile-brand-theme`, stacked on appearance PR #36 (`def3d3c`), uses the
+  original outlined SVG wordmark and new native icon, exact light-brand tokens
+  and readable dark counterparts. Retired decorative blue/purple gradients are
+  removed; orange is reserved for the mark and promoted primary actions, with
+  separate warning/success/danger roles. The PNG's transparent outer corners
+  are flattened onto Ink for native icon generation; the original SVGs remain
+  unchanged. Existing five-icon/56pt navigation, routes, preferences and writes
+  are preserved. The system sheet grabber is now opt-in so the custom editor
+  draws one handle; simple photo/Space pickers retain their single native handle.
+  Protected item-info dismissal code is unchanged.
+  All 203 mobile tests with coverage, clean analysis and the native iOS
+  simulator build pass. Simulator verifies the single editor handle in both
+  modes, larger text, live System mode, restart persistence, readable Space
+  counts, all five tabs and Documents/item-info presentation. Physical
+  camera/QR/accessibility/swipe checks remain deferred by the user's explicit
+  simulator-only choice. Build 48 has not been installed on a phone or uploaded
+  to Apple; the submission hold and live build/draft remain unchanged.
+  A separate release check remains: after a cold launch, a Home Space shortcut
+  displayed an empty item list although Home showed five items; opening that
+  same Space through Find displayed all five. That routing code was not changed
+  in this presentation lane. Investigate before a release, not by changing
+  backend/schema/FIND as part of this task.
 
 - The user explicitly renewed the Apple submission hold while requesting mobile
   Light/Dark/System appearance and text-size settings. Work is isolated on
@@ -39,7 +64,8 @@ Last reviewed on 2026-10-04 during mobile appearance verification and the held b
   `findez-icon-1024.png` have now been supplied in their Downloads directory.
   All three SVGs are readable path-based assets; the wordmark uses outlines,
   not a font dependency. The PNG is 1024x1024 RGBA with alpha. No assets were
-  modified or installed in this preflight. Six supplied `findez-appstore-1.png`
+  modified or installed during the earlier build-46 preflight; mobile now uses
+  local build-48 brand assets as recorded above. Six supplied `findez-appstore-1.png`
   through `findez-appstore-6.png` have now arrived in Downloads. All are
   1320x2868 PNGs without alpha, accepted iPhone screenshot dimensions. They are
   not uploaded: depicted phone UI differs from build 46's icons-only navigation

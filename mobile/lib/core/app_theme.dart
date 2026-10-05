@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'ui/app_colors.dart';
+import 'ui/brand_colors.dart';
 
 class AppTheme {
   static ThemeData create(Brightness brightness) {
@@ -12,22 +13,54 @@ class AppTheme {
 
     final scheme = brightness == Brightness.dark
         ? const ColorScheme.dark(
-            primary: Color(0xFFF2F2F7),
-            onPrimary: Color(0xFF1C1C1E),
+            primary: BrandColors.signal,
+            onPrimary: BrandColors.ink,
+            primaryContainer: AppColors.surface2,
+            onPrimaryContainer: BrandColors.paper,
             secondary: AppColors.muted,
+            onSecondary: BrandColors.ink,
+            secondaryContainer: AppColors.surface2,
+            onSecondaryContainer: BrandColors.paper,
+            tertiary: AppColors.muted,
+            onTertiary: BrandColors.ink,
+            tertiaryContainer: AppColors.surface2,
+            onTertiaryContainer: BrandColors.paper,
             surface: AppColors.surface,
+            onSurface: BrandColors.paper,
+            onSurfaceVariant: AppColors.muted,
             surfaceContainer: AppColors.surface2,
-            surfaceContainerHigh: Color(0xFF242426),
+            surfaceContainerHigh: AppColors.surface2,
+            outline: AppColors.muted,
+            outlineVariant: AppColors.border,
             error: AppColors.danger,
+            onError: BrandColors.ink,
+            errorContainer: Color(0xFF2F1D21),
+            onErrorContainer: AppColors.danger,
           )
         : const ColorScheme.light(
-            primary: lightTextPrimary,
-            onPrimary: lightSurface,
+            primary: BrandColors.signal,
+            onPrimary: BrandColors.ink,
+            primaryContainer: BrandColors.surface,
+            onPrimaryContainer: BrandColors.ink,
             secondary: lightTextSecondary,
+            onSecondary: BrandColors.paper,
+            secondaryContainer: BrandColors.surface,
+            onSecondaryContainer: BrandColors.ink,
+            tertiary: lightTextSecondary,
+            onTertiary: BrandColors.paper,
+            tertiaryContainer: BrandColors.surface,
+            onTertiaryContainer: BrandColors.ink,
             surface: lightSurface,
+            onSurface: BrandColors.ink,
+            onSurfaceVariant: BrandColors.inkSoft,
             surfaceContainer: lightSurface2,
             surfaceContainerHigh: Color(0xFFE6E6E2),
-            error: Color(0xFFB92F37),
+            outline: BrandColors.inkSoft,
+            outlineVariant: BrandColors.hairline,
+            error: BrandColors.danger,
+            onError: BrandColors.paper,
+            errorContainer: Color(0xFFFBECEE),
+            onErrorContainer: BrandColors.ink,
           );
 
     return ThemeData(
@@ -167,8 +200,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: adapt(const Color(0xFFF2F2F7)),
-          foregroundColor: adapt(const Color(0xFF1C1C1E)),
+          backgroundColor: BrandColors.signal,
+          foregroundColor: BrandColors.ink,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -192,6 +225,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
+          foregroundColor: adapt(AppColors.primaryText),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
@@ -217,15 +251,17 @@ class AppTheme {
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: adapt(AppColors.surface2),
-        modalBackgroundColor: adapt(AppColors.surface2),
+        backgroundColor: surface,
+        modalBackgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         modalElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        showDragHandle: true,
+        // Sheets already draw a handle inside their scrollable content. Native
+        // handles are opt-in on simple sheets, never globally duplicated.
+        showDragHandle: false,
         dragHandleColor: adapt(AppColors.muted),
         dragHandleSize: Size(36, 4),
       ),
@@ -275,7 +311,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: adapt(AppColors.surface2),
-        selectedColor: adapt(AppColors.blue),
+        selectedColor: surface2,
         disabledColor: adapt(AppColors.surface),
         side: BorderSide(color: adapt(AppColors.border)),
         shape: RoundedRectangleBorder(
@@ -287,7 +323,7 @@ class AppTheme {
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: TextStyle(
-          color: Colors.white,
+          color: adapt(Colors.white),
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -296,32 +332,36 @@ class AppTheme {
   }
 
   // Light mode colors
-  static const Color lightBg = Color(0xFFF7F7F6);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurface2 = Color(0xFFEFEFEE);
-  static const Color lightBorder = Color(0xFFE6E6E2);
+  static const Color lightBg = BrandColors.surface;
+  static const Color lightSurface = BrandColors.paper;
+  static const Color lightSurface2 = BrandColors.surface;
+  static const Color lightBorder = BrandColors.hairline;
   static const Color lightBorderHover = Color(0x66000000);
-  static const Color lightTextPrimary = Color(0xFF111112);
-  static const Color lightTextSecondary = Color(0xFF5B5B60);
+  static const Color lightTextPrimary = BrandColors.ink;
+  static const Color lightTextSecondary = BrandColors.inkSoft;
+  // The guide's muted gray is used for non-text details. These accessible
+  // derivatives keep small labels readable on both Paper and Surface.
   static const Color lightTextMuted = Color(0xFF636368);
   static const Color lightHint = Color(0xFF69696E);
 
-  // Dark mode colors (existing)
-  static const Color darkBg = Color(0xFF000000);
-  static const Color darkSurface = Color(0xFF171717);
-  static const Color darkSurface2 = Color(0xFF1C1C1E);
-  static const Color darkBorder = Color(0x14FFFFFF);
+  // Dark neutral counterparts of the same monochrome brand.
+  static const Color darkBg = BrandColors.ink;
+  static const Color darkSurface = AppColors.surface;
+  static const Color darkSurface2 = AppColors.surface2;
+  static const Color darkBorder = AppColors.border;
   static const Color darkBorderHover = Color(0x33FFFFFF);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFAEAEB2);
   static const Color darkTextMuted = Color(0xFF8E8E93);
-  static const Color darkHint = Color(0xFF636366);
+  static const Color darkHint = BrandColors.inkMuted;
 
   // Shared accent colors (same in both modes)
   static const Color amber = AppColors.warning;
   static const Color danger = AppColors.danger;
   static const Color success = AppColors.success;
-  static const Color blue = AppColors.accent;
+  static const Color blue = AppColors.info;
+  static const Color action = BrandColors.signal;
+  static const Color onAction = BrandColors.ink;
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>
@@ -362,15 +402,9 @@ class AppTheme {
       ? darkTextMuted
       : lightTextMuted;
 
-  static Color cardBg(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF171717)
-      : const Color(0xFFFFFFFF);
+  static Color cardBg(BuildContext context) => surface(context);
 
-  static Color cardBorder(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-      ? const Color(0x14FFFFFF)
-      : const Color(0x1A000000);
+  static Color cardBorder(BuildContext context) => border(context);
 
   static Color sectionLabel(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
@@ -381,25 +415,31 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark;
 
   /// Resolve legacy UI colors without filtering images or printed QR labels.
-  /// Dark appearance stays pixel-compatible with the approved build.
+  /// Both modes share monochrome roles; original media/identity colors are not
+  /// passed through this helper.
   static Color adaptive(BuildContext context, Color color) =>
       resolve(Theme.of(context).brightness, color);
 
   static Color foreground(BuildContext context, Color color) {
-    if (isDark(context)) return color;
+    final dark = isDark(context);
     final rgb = color.toARGB32() & 0xFFFFFF;
+    // Ink is also a background token. In a foreground role it must stay
+    // readable, including when a child receives an already-resolved color.
+    if (rgb == 0x111112) return color;
     if (color.a > 0 &&
         (rgb == 0xFFFFFF ||
             rgb == 0xF2F2F7 ||
             rgb == 0xF2F2F2 ||
             rgb == 0xF1F1F3)) {
-      return color.a < 0.8 ? lightTextSecondary : lightTextPrimary;
+      return color.a < 0.8
+          ? (dark ? darkTextSecondary : lightTextSecondary)
+          : (dark ? darkTextPrimary : lightTextPrimary);
     }
-    return resolve(Brightness.light, color);
+    return resolve(dark ? Brightness.dark : Brightness.light, color);
   }
 
   static Color resolve(Brightness brightness, Color color) {
-    if (brightness == Brightness.dark) return color;
+    final dark = brightness == Brightness.dark;
     final argb = color.toARGB32();
     final rgb = argb & 0xFFFFFF;
     final alpha = (argb >> 24) & 0xFF;
@@ -409,18 +449,19 @@ class AppTheme {
         rgb == 0xF2F2F2 ||
         rgb == 0xF1F1F3 ||
         rgb == 0xEEEEEE) {
-      return withAlpha(lightTextPrimary);
+      return withAlpha(dark ? darkTextPrimary : lightTextPrimary);
     }
-    if (rgb == 0) return alpha < 255 ? color : lightBg;
+    if (rgb == 0) return alpha < 255 ? color : (dark ? darkBg : lightBg);
     switch (rgb) {
       case 0x090909:
       case 0x09090B:
       case 0x0A0A0A:
       case 0x0B0B0D:
       case 0x111111:
+      case 0x111112:
       case 0x111113:
       case 0x111214:
-        return withAlpha(lightBg);
+        return withAlpha(dark ? darkBg : lightBg);
       case 0x131315:
       case 0x131418:
       case 0x151517:
@@ -429,7 +470,7 @@ class AppTheme {
       case 0x18181A:
       case 0x19191B:
       case 0x1C1C1E:
-        return withAlpha(lightSurface);
+        return withAlpha(dark ? darkSurface : lightSurface);
       case 0x202020:
       case 0x242426:
       case 0x262629:
@@ -437,7 +478,9 @@ class AppTheme {
       case 0x2A2A2E:
       case 0x2C2C2E:
       case 0x3A3A40:
-        return withAlpha(lightSurface2);
+        return withAlpha(dark ? darkSurface2 : lightSurface2);
+      case 0x363638:
+        return withAlpha(dark ? darkBorder : lightBorder);
       case 0x4A4A4D:
       case 0x555559:
       case 0x636366:
@@ -448,50 +491,64 @@ class AppTheme {
       case 0x85858E:
       case 0x888888:
       case 0x8E8E93:
+      case 0x96969C:
       case 0x999999:
       case 0x9999A2:
       case 0xA1A1AA:
       case 0xAEAEB2:
       case 0xB8B8BD:
       case 0xB8B8C0:
-        return withAlpha(lightTextSecondary);
+        return withAlpha(dark ? darkTextSecondary : lightTextSecondary);
       case 0x30D158:
       case 0x34D399:
       case 0x59BE96:
-        return withAlpha(const Color(0xFF286F50));
+      case 0x75C7A0:
+      case 0x2F7D5A:
+        return withAlpha(dark ? AppColors.success : BrandColors.success);
       case 0xF59E0B:
       case 0xF5A623:
       case 0xFBBF24:
       case 0xFF9F0A:
       case 0xE2AE43:
       case 0xE4AF46:
-        return withAlpha(const Color(0xFF8A5A00));
+      case 0xE2BD75:
+      case 0x8A5A00:
+        return withAlpha(dark ? AppColors.warning : BrandColors.warning);
       case 0xEF4444:
       case 0xFF3B30:
       case 0xFF453A:
       case 0xFF6961:
       case 0xFF375F:
       case 0xF16B74:
-        return withAlpha(const Color(0xFFB92F37));
+      case 0xFF858D:
+      case 0xC9363E:
+        return withAlpha(dark ? AppColors.danger : BrandColors.danger);
       case 0x64D2FF:
       case 0x64B5FF:
       case 0x6997DD:
-        return withAlpha(const Color(0xFF315D98));
       case 0xA78BFA:
-        return withAlpha(const Color(0xFF7254AF));
+      case 0xC084FC:
+      case 0x417B9B:
+      case 0x343078:
+      case 0x4A2C8C:
+      case 0x0A84FF:
+      case 0x007AFF:
+      case 0x8B5CF6:
       case 0xFF7A2F:
-        return withAlpha(const Color(0xFFB8490A));
+        return withAlpha(dark ? darkTextSecondary : lightTextSecondary);
+      case 0xE8590C:
+        return withAlpha(BrandColors.signal);
       case 0x13241E:
-        return const Color(0xFFEAF3EE);
+        return dark ? const Color(0xFF15281F) : const Color(0xFFEAF3EE);
       case 0x281316:
       case 0x35191B:
-        return const Color(0xFFFBECEE);
+        return dark ? const Color(0xFF2F1D21) : const Color(0xFFFBECEE);
       case 0x282110:
-        return const Color(0xFFF7F0DF);
+        return dark ? const Color(0xFF302719) : const Color(0xFFF7F0DF);
       case 0x102A43:
       case 0x123B63:
       case 0x174A76:
-        return const Color(0xFFEAF0F7);
+        return dark ? darkSurface2 : lightSurface2;
       default:
         return color; // Brand marks, member colors and media stay unchanged.
     }

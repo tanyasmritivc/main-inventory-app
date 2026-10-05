@@ -207,6 +207,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
   Future<void> _choosePhoto() async {
     final choice = await showModalBottomSheet<String>(
       context: context,
+      showDragHandle: true,
       backgroundColor: AppTheme.adaptive(context, HomeColors.surface),
       builder: (context) => SafeArea(
         child: Column(
@@ -503,14 +504,8 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       FilledButton(
                         onPressed: _busy ? null : _save,
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.adaptive(
-                            context,
-                            HomeColors.text,
-                          ),
-                          foregroundColor: AppTheme.adaptive(
-                            context,
-                            HomeColors.background,
-                          ),
+                          backgroundColor: AppTheme.action,
+                          foregroundColor: AppTheme.onAction,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(

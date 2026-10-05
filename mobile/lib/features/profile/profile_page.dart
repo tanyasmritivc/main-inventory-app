@@ -1075,11 +1075,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 margin: const EdgeInsets.only(top: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0x0A34D399)),
+                  color: AppTheme.surface(context),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x3334D399)),
-                  ),
+                  border: Border.all(color: AppTheme.border(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1088,10 +1086,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         Icon(
                           Icons.rocket_launch_outlined,
-                          color: AppTheme.foreground(
-                            context,
-                            Color(0xFF34D399),
-                          ),
+                          color: AppTheme.textSecondary(context),
                           size: 20,
                         ),
                         SizedBox(width: 10),
@@ -1126,37 +1121,23 @@ class _ProfilePageState extends State<ProfilePage> {
                           horizontal: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.adaptive(
-                            context,
-                            const Color(0x1A34D399),
-                          ),
+                          color: AppTheme.surface2(context),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppTheme.adaptive(
-                              context,
-                              const Color(0x3334D399),
-                            ),
-                          ),
+                          border: Border.all(color: AppTheme.border(context)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.mail_outline,
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0xFF34D399),
-                              ),
+                              color: AppTheme.textSecondary(context),
                               size: 15,
                             ),
                             SizedBox(width: 6),
                             Text(
                               'Send feedback',
                               style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0xFF34D399),
-                                ),
+                                color: AppTheme.textPrimary(context),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),

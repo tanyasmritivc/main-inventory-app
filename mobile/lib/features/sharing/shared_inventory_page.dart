@@ -1199,20 +1199,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.adaptive(
-                    context,
-                    Colors.white.withValues(alpha: 0.22),
-                  ),
-                  AppTheme.adaptive(
-                    context,
-                    Colors.white.withValues(alpha: 0.08),
-                  ),
-                ],
-              ),
+              color: AppTheme.surface2(context),
               border: Border.all(
                 color: AppTheme.adaptive(
                   context,
@@ -1514,7 +1501,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       child: Text(
                         "You're viewing a shared inventory. Contact the owner to make changes.",
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 12,
                         ),
                       ),
@@ -1682,7 +1672,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       Text(
                         'Joined ${_timeAgo(joinedAt)}',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 11,
                         ),
                       ),
@@ -1725,7 +1718,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       child: Text(
                         'Remove',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFFFF453A),
+                          ),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1934,8 +1930,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         : 'Due ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
                       color: overdue
-                          ? AppTheme.foreground(context, const Color(0xFFEF4444))
-                          : AppTheme.foreground(context, const Color(0xFFFBBF24)),
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0xFFEF4444),
+                            )
+                          : AppTheme.foreground(
+                              context,
+                              const Color(0xFFFBBF24),
+                            ),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -2593,7 +2595,10 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                     displayName,
                     style: TextStyle(
                       color: isChecked
-                          ? AppTheme.foreground(context, const Color(0x60FFFFFF))
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0x60FFFFFF),
+                            )
                           : AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -3268,7 +3273,10 @@ class _SharedItemDetailContent extends StatelessWidget {
                       child: Text(
                         notes,
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 14,
                           height: 1.5,
                         ),

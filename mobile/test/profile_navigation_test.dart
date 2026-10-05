@@ -272,7 +272,7 @@ void main() {
           .ancestor(of: find.text('Settings'), matching: find.byType(Material))
           .first,
     );
-    expect(settingsSurface.color, const Color(0xFF171719));
+    expect(settingsSurface.color, AppTheme.darkSurface);
     expect(settingsSurface.clipBehavior, Clip.antiAlias);
   });
 

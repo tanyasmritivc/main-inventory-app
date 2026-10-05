@@ -2,6 +2,25 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-04: Mobile uses the supplied monochrome FindEZ brand
+
+The user explicitly authorized mobile application of the provided brand guide
+and original assets. This supersedes the earlier pixel-preservation constraint
+for the Dark palette, not the device-local appearance/scaling behavior below.
+Use exact light tokens and readable dark/status counterparts, never a global
+filter on photos, identity colors or printed QR content. Signal is `#E8590C`;
+it is not a warning, success or error color. Use Ink text on orange filled
+actions for normal-text contrast. Neutralize retired blue/purple decoration and
+brand gradients. Preserve the approved five-icon compact pill and all routes.
+
+Keep the original outlined wordmark and chevron geometry; only reverse its Ink
+to white on dark surfaces. Native icons flatten transparent corners onto Ink
+before size generation rather than scaling or redrawing the mark. Custom sheets
+own their grabber; native handles are explicit on simple pickers, never enabled
+globally alongside a custom handle. Do not alter protected item-info gesture or
+save semantics to solve the duplicate editor handle. Build 48 is simulator-only,
+with physical acceptance and Apple release still held for later authorization.
+
 ## 2026-10-04: Mobile appearance is a device-local presentation preference
 
 Keep the approved Dark/default-text experience until the user selects

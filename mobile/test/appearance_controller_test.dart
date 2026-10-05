@@ -201,7 +201,6 @@ void main() {
           AppTheme.resolve(Brightness.light, AppColors.warning),
           AppTheme.resolve(Brightness.light, AppColors.success),
           AppTheme.resolve(Brightness.light, AppColors.danger),
-          AppTheme.resolve(Brightness.light, AppColors.accent),
         ]) {
           expect(
             _contrast(foreground, background),
@@ -212,7 +211,7 @@ void main() {
       }
       expect(
         _contrast(
-          Colors.white,
+          AppTheme.onAction,
           AppTheme.resolve(Brightness.light, AppColors.accent),
         ),
         greaterThanOrEqualTo(4.5),
@@ -227,10 +226,9 @@ void main() {
     },
   );
 
-  test('adaptive palette never changes approved dark colors', () {
+  test('brand palette resolves neutral roles without recoloring media', () {
     for (final color in [
       Colors.white,
-      Colors.black,
       AppColors.surface,
       AppColors.accent,
       AppColors.danger,
@@ -240,7 +238,19 @@ void main() {
     }
     expect(
       AppTheme.create(Brightness.dark).scaffoldBackgroundColor,
-      Colors.black,
+      AppColors.background,
+    );
+    expect(
+      AppTheme.resolve(Brightness.dark, Colors.black),
+      AppColors.background,
+    );
+    expect(
+      AppTheme.resolve(Brightness.dark, const Color(0xFF6997DD)),
+      AppColors.muted,
+    );
+    expect(
+      AppTheme.resolve(Brightness.dark, const Color(0xFF8BC0DB)),
+      const Color(0xFF8BC0DB),
     );
   });
 }
