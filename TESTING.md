@@ -159,6 +159,28 @@ cold Home Space shortcut: Home showed five items but its Space opened empty;
 the same Space opened populated through Find. No routing fix is included in
 this brand-only lane. The user continues to hold all Apple uploads/submission.
 
+### Personal Space icon picker
+
+Local build 49 adds `space_icon_preferences_test.dart` and
+`space_icon_picker_test.dart`. The full 226-test mobile suite with coverage and
+clean analysis covers named-choice round trips, Automatic reset, stable IDs after
+rename, device persistence, distinct account/Space/share keys, invalid stored
+values, read retries without overwrites, confirmed/unconfirmed/throwing writes,
+duplicate saves, pending-read/write account switches and disposal. Widget checks
+exercise the real personal/joined and Team viewer lists: tapping the 44pt icon
+opens only the picker, not a Space or editor, and requires no inventory mutation.
+Search, Cancel, failed-save draft retry, selected screen-reader semantics and
+320pt Light/Dark layouts at 1x/2.6x/3.4x with keyboard transitions are included.
+
+Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from
+`mobile/`. Native simulator build 49 passes, with visual search, Cancel, immediate
+card update, restart persistence, Dark/Light and Larger text checked against the
+dedicated test account. Only personal device preferences changed during this
+check; no inventory, document or membership write was performed. Choices do not
+sync or change another member's icon. Before release, repeat physical touch,
+VoiceOver selected names, keyboard/scrolling and persistence checks. Apple
+uploads/submission remain held and broader release checks are not replaced.
+
 ### Space and Team invitation acceptance
 
 `backend/tests/test_invitation_links.py`, the invitation/auth Jest tests and

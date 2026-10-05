@@ -2,6 +2,25 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-04: Space icons are optional personal device preferences
+
+Tap the leading Space icon to choose from a named, curated icon set or restore
+Automatic. Keep the existing automatic defaults until an explicit Save icon.
+The current Space/share APIs have no custom-icon field: this mobile-only feature
+is account-scoped on this device, not an owner-wide change or cross-device sync.
+Explain that scope in the picker. Store stable option names by account and Space
+ID (legacy joined Spaces use a separate share-ID namespace), never by Space name
+or font code point. Renaming does not lose the choice; the same Space ID in a
+Team uses the same personal preference. Viewers may personalize without gaining
+write permissions or changing another member's presentation.
+
+Publish only confirmed local saves, preserve prior selection/drafts on failure,
+and guard account changes, late reads/writes and disposal. Cancel does not save.
+Use one native sheet handle, accessible named/selected choices and adaptive grid
+columns for large text. Preserve the icon-only navbar and all inventory routes,
+permissions, APIs/schema/backend/web/FIND. Build 49 is simulator-only; Apple
+uploads/submission and physical release acceptance remain held/deferred.
+
 ## 2026-10-04: Mobile uses the supplied monochrome FindEZ brand
 
 The user explicitly authorized mobile application of the provided brand guide

@@ -1,4 +1,5 @@
 import '../../core/app_theme.dart';
+import '../inventory/space_icon_picker.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -870,9 +871,11 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
               itemBuilder: (context, index) {
                 final space = _spaces[index];
                 return ListTile(
-                  leading: Icon(
-                    CupertinoIcons.archivebox,
-                    color: AppTheme.foreground(context, AppColors.accent),
+                  leading: SpaceIconButton(
+                    key: ValueKey('space-icon-button-${space['id']}'),
+                    spaceId: space['id']?.toString() ?? '',
+                    spaceName: space['name']?.toString() ?? 'Space',
+                    fallbackIcon: CupertinoIcons.archivebox,
                   ),
                   title: Text(space['name']?.toString() ?? 'Space'),
                   subtitle: Text(
