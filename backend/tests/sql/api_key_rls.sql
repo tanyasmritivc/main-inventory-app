@@ -181,3 +181,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 -- Public reference examples share this disposable schema and session helpers.
 \ir ../../../tests/api_docs/semantics.sql
 \ir ask_answer_context.sql
+\ir document_storage.sql

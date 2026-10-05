@@ -20,7 +20,7 @@ from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
-from app.services.storage import create_document_signed_url, upload_team_document
+from app.services.storage import create_document_signed_url, document_path_in_scope, upload_team_document
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
@@ -493,12 +493,16 @@ async def upload_team_document_route(
 
 @router.get("/documents/{document_id}/open")
 def open_team_document(
+    response: Response,
     team_id: str,
     document_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     _membership(team_id, user.user_id)
     document = _team_document(team_id, document_id)
+    if not document_path_in_scope(document["storage_path"], f"teams/{team_id}/"):
+        raise HTTPException(404, "Document not found")
+    response.headers["Cache-Control"] = "private, no-store"
     return {"url": create_document_signed_url(storage_path=document["storage_path"])}
 
 
@@ -512,6 +516,8 @@ def delete_team_document(
 ) -> Response:
     membership = _editor(team_id, user.user_id)
     document = _team_document(team_id, document_id)
+    if not document_path_in_scope(document["storage_path"], f"teams/{team_id}/"):
+        raise HTTPException(404, "Document not found")
     if (
         document.get("uploaded_by") != user.user_id
         and membership["role"] not in ("owner", "mentor")

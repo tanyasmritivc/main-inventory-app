@@ -72,6 +72,22 @@ must still repeat the Space rename and filtered/unfiltered inventory flows.
 
 ## Public API documentation
 
+### Private document storage
+
+`backend/tests/test_document_privacy.py` covers personal ownership before open or
+delete, forged rows with foreign/encoded-traversal paths, safe failed deletion,
+signed upload response compatibility/external host rewriting, and Team membership
+revocation/editor rules. Tests use placeholders and mocked storage, not real files.
+`backend/tests/sql/document_storage.sql` runs through the existing disposable
+PostgreSQL entry point: apply migration 038 twice, retain objects/metadata, override
+a broad legacy policy, deny anonymous/JWT reads and writes, preserve service-role
+access and leave other buckets unchanged. Never run the fixture on production.
+
+Live deployment checks and rollback instructions are in
+`docs/private-document-storage.md`. A mock/SQL pass is not a physical Documents
+save/open/rename/note-edit/account-switch pass. Previously issued signed links and
+downloaded copies cannot be immediately recalled; item images are separate work.
+
 The public `/docs/api` page and downloadable OpenAPI 3.1 reference use
 `frontend/public/docs/api/openapi.json`. Generate it from the current mounted
 integration router with:

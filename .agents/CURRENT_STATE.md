@@ -1,6 +1,51 @@
 # Current state
 
-Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot-date correction.
+Last reviewed on 2026-10-05 during the scoped launch-blocker fixes.
+
+## Private document access follow-up
+
+- `fix/private-document-storage` in `/private/tmp/findez-document-privacy` closes
+  the personal service-role deletion-before-ownership bug, rejects foreign or
+  encoded traversal paths in personal/Team document opening/deletion, and makes
+  document uploads use signed URLs independently of the public-image flag.
+  Authorized open responses are `private, no-store`; existing API URL shapes,
+  owned note paths and Team membership/editor checks are preserved.
+- Migration `038_private_documents.sql` preserves objects and bucket metadata,
+  sets only `documents` private, and restricts direct anonymous/JWT access even
+  with a legacy broad permissive Storage policy. Authorized service-role API
+  access remains. Live read-only checks found Storage RLS enabled, zero foreign
+  personal/Team document paths, and the bucket still public before deployment.
+  No customer file was opened or changed. Local 379 backend/API-doc tests and all
+  five CI jobs pass on runtime `4ac3c56` (PR #43, run `37385848403`), including
+  actual PostgreSQL migration execution/idempotency and Storage policy denial.
+- The four reviewed backend files and migration were selectively deployed after
+  every pre-change hash matched base `2758498`. Private rollback/staging directory:
+  `/home/ubuntu/findez-document-privacy.kWlpZp`. Migration 038 applied before the
+  backend restart; deployed hashes match runtime source. `documents` is now
+  private with `documents_backend_only` restrictive policy. Image/profile flags,
+  both environment-file hashes, dirty unrelated VM work and web service remain
+  unchanged. Current self-hosted public API and DB health at
+  `https://findez.openstack.ftctools.com` pass. `api.findez.ai` still resolves to
+  retired Render and must not be used as proof of this deployment's health.
+- Live disposable-account checks pass: personal/Team uploads; authorized HTTPS
+  signed-host/no-store opening and local signed downloads; anonymous and direct
+  owner-JWT Storage reads denied; unrelated opening/deletion denied; original
+  note retained after denial; real test-only Team join/member opening/revocation;
+  revoked member cannot get a new URL; unexpired bearer link still downloads;
+  owned deletion/reopen denial. All task-created accounts, Team, records and files
+  were removed. No real memberships, items or files were modified. This is API/
+  local-Storage verification, not a physical Documents or external signed-file
+  download pass. Failed-storage-delete draft/row preservation is unit-tested.
+- This is not item-photo privacy or a complete launch/security clearance.
+  Signed links remain bearer access until expiry (configured default one hour),
+  and downloaded copies cannot be recalled. Item-image privacy, retention,
+  deletion verification, legal publication and physical release gates remain.
+  AI Robots Inc's operation of both AI gateways is owner-confirmed; retention
+  remains unconfirmed. `info@findez.ai` is the contact email, not a postal address.
+  Apple upload/submission and FIND connection changes remain held.
+- The separate mobile cold Home-to-Space lane is PR #42 (`ab506f2`), with 265
+  Flutter tests/coverage, clean analysis and all five CI jobs passing in run
+  `37385102041`. That source fix is not an installed/released binary.
 
 ## November pilot date and current launch verdict
 
@@ -40,12 +85,12 @@ Last reviewed on 2026-10-04 during the launch-readiness audit and November pilot
   unsubmitted App Store draft selects build 46. The exact final release binary,
   accurate final screenshots and physical fresh-auth/photo/profile/Documents,
   offline draft protection, second-account revoke and real invitation acceptance
-  remain outstanding. The previously observed cold Home -> Space empty-list
-  issue is still unresolved; it was not fixed or freshly reproduced in this lane.
-- Live storage metadata rechecked read-only: `documents` and `item-images` are
-  public, `profile-photos` is private. Public file URLs remain a privacy/access
-  concern even when authenticated inventory reads are revoked. No storage
-  policy was changed. Legal review PR #40 is draft/unpublished and still needs
+  remain outstanding. The cold Home -> Space empty-list race is fixed in the
+  separate PR #42 source lane above, not yet in an approved release binary.
+- Live storage metadata now confirms `documents` private after the scoped fix
+  above; `item-images` remains public and `profile-photos` private. Public item-photo
+  URLs remain a privacy/access concern when authenticated reads are revoked.
+  Legal review PR #40 is draft/unpublished and still needs
   provider/deletion verification and final publication/mobile alignment. The
   user's no-current-customer-training clarification is not proof of all provider
   practices. The existing unencrypted server-to-FIND hop is also a retained,
