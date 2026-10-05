@@ -83,7 +83,8 @@ export const privacySections: LegalSection[] = [
     heading: "6. File URLs and sharing limitations",
     emphasized: true,
     body: [
-      "Current limitation: the item-photo and document storage buckets are configured for public file delivery. Someone who knows a direct file URL may be able to retrieve the file without signing in, even when an app screen or API route requires authentication. Do not upload sensitive files assuming that every file URL is access-controlled.",
+      "Current limitation: the item-photo storage bucket is configured for public file delivery. Someone who knows a direct file URL may be able to retrieve the photo without signing in, even when an app screen or API route requires authentication. Do not upload sensitive photos assuming that every file URL is access-controlled.",
+      "The document storage bucket is private. Personal document opening checks ownership, and Team document opening checks current membership before issuing a time-limited signed link. A signed link can be used by anyone who receives it until it expires; revoking app access does not immediately invalidate an already-issued link or recall a downloaded copy.",
       "A short-lived link or revoked membership does not necessarily invalidate another direct file URL, screenshot, download or export. Profile photos use a separate private bucket with signed URLs. Contact us to report an unintended disclosure or request removal; we cannot recall independent copies held by other people.",
     ],
   },

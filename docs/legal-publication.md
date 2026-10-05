@@ -43,7 +43,7 @@ prevent claims. Use qualified counsel for the operator's actual markets.
 |---|---|---|
 | Training | User clarified no current FindEZ training on customer photos/chats/documents; the prior answer concerned future plans. Inspected app source exposes inference routes, not a training implementation; source cannot certify processor practices. Drafts separate feature processing from training and do not grant future training permission. | Independently verify provider/downstream permitted uses before publishing a broader no-training assurance. Any future program needs identified categories/operators/purposes, separate explicit opt-in, withdrawal, retention and deletion/model-unlearning handling before launch. Declining optional training must not block ordinary app use. Do not authorize a future or undisclosed past use through this draft. |
 | Processor protection | Owner confirms AI Robots Inc operates FIND and the language-model gateway; no OpenAI application runtime dependency/fallback. Retention and underlying hosting/model/downstream arrangements remain unconfirmed. | Verify processing countries, underlying services, equal protection/permitted use, retention/deletion and any required third-party-AI consent. Operating the gateway is not evidence that there is no independent underlying service. |
-| File privacy | Read-only live `storage.buckets` query: `documents` and `item-images` public; `profile-photos` private. Signed document API URLs do not make the underlying public bucket private. No actual customer files were opened for this check. | Fix in a separate storage/access lane with migration/URL compatibility and cross-account tests, or disclose the actual limitation. A policy cannot substitute for appropriate security. Do not flip bucket settings without verifying existing clients. |
+| File privacy | Separate PR #43 runtime `4ac3c56` deployed migration 038 and owner/scoped-path guards after all five CI jobs passed. `documents` now private; `item-images` still public; `profile-photos` private. Test-only personal/Team uploads/opening, anonymous/direct JWT/foreign denial and second-account join/revoke pass; all disposable data removed. Existing signed URLs remain bearer access until expiry. | Item-photo access still needs its own URL-compatibility fix. Physical client and public signed-download verification remain; local API/Storage tests do not certify all clients. A policy cannot substitute for security or immediately recall an existing URL/copy. No real customer file was opened or changed. |
 | Transport | Existing server-to-FIND hop is HTTP and was explicitly preserved at the user's instruction. Public policy/site endpoints have HTTPS/HSTS. | Do not claim all transfers encrypted. Any TLS/private-route change requires a separate authorized lane; no configuration was changed here. |
 | Deletion | `delete-user` removes many rows, documents and item-image objects but does not explicitly remove the profile-photo bucket or all nested Team-document objects. Processor deletion/backup propagation is not verified. | Verify deployed function, cascades, profile/Team files, processor records and backup restoration behavior. No immediate/all-copies deletion promise. Actual fixes require a separately scoped backend/storage lane. |
 | Retention | Notification UI window 14 days; invitation account pointer expires after 30 days. Actual backup/log/provider schedules unknown. | Establish lawful schedules and operational deletion; a UI display window is not an erasure schedule. Do not invent deadlines. |
@@ -97,6 +97,16 @@ No-current-training clarification follow-up:
   presented as a new physical-device or live-policy audit.
 
 ## Publication sequence once facts and approval are available
+
+October 5 owner/contact and document-fix follow-up: the draft reflects owner-operated
+AI gateways, unconfirmed retention, correct `info@findez.ai` email and private
+documents versus still-public item photos. These are factual updates, not effective
+publication or permission to train. Runtime/backend evidence belongs to PR #43;
+this web-only lane deploys none of it.
+
+All 145 web tests, TypeScript, placeholder production Webpack build and diff checks
+pass after these factual changes. Existing layout checks are not a new physical
+or live-policy audit; draft/noindex and Apple submission holds remain.
 
 1. Resolve every `REVIEW REQUIRED` marker against actual practice and counsel's
    review. Obtain approval for any new contractual/data-use choice; implement

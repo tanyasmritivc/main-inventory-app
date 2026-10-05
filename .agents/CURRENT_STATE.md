@@ -1,6 +1,21 @@
 # Current state
 
-Last reviewed on 2026-10-04 during public legal-draft verification, physical-memory onboarding and the held build-46 preflight.
+Last reviewed on 2026-10-05 during owner/contact clarification and document-access follow-up.
+
+## Legal owner/contact and document follow-up
+
+- Owner confirms AI Robots Inc operates FIND and the language-model gateway;
+  retention remains unconfirmed. The contact is `info@findez.ai`, not the mistyped
+  address and not a supplied postal address. Draft PR #40 records these facts
+  without a provider-wide no-training or invented retention/deletion promise.
+- Separate backend PR #43 (`4ac3c56`, all five CI jobs green in `37385848403`)
+  selectively deployed migration 038 and document authorization. Documents now
+  private; item photos remain public. Test-only personal/Team upload/opening,
+  denied anonymous/JWT/foreign reads and real disposable member revocation pass;
+  all test data removed. Prior issued signed links remain usable until expiry.
+  The draft now distinguishes those facts. No policies are published by this
+  web lane; processor/deletion/contact verification and physical checks remain.
+  Apple submission and FIND connection changes stay held.
 
 ## Public legal review (not deployed)
 
@@ -31,11 +46,12 @@ Last reviewed on 2026-10-04 during public legal-draft verification, physical-mem
   Production checkout is dirty and was not pulled/reset/replaced. Revisions
   remain non-effective and must not merge/deploy before unresolved review
   markers, actual practices and required consent/security behavior are resolved.
-- Read-only live storage audit confirms `documents` and `item-images` are
-  public, `profile-photos` private. Direct file URLs are not made private by an
-  authenticated API or signed link. Existing FIND HTTP was preserved as directed.
+- The original read-only audit found public documents/item images. The separate
+  October 5 backend follow-up above made documents private; item images remain
+  public and profile photos private. Direct public photo URLs are not made private
+  by an authenticated API. Existing FIND HTTP was preserved as directed.
   Account/file/processor/backup deletion coverage and provider arrangements are
-  not fully verified. No customer files were opened and no settings changed.
+  not fully verified. No customer files were opened or changed by the legal lane.
   Policy wording cannot secure these paths or provide immunity from lawsuits.
 - Continue using `HANDOFFS/LEGAL-001.md` and `docs/legal-publication.md`.
   Storage hardening, consent/deletion implementation and mobile policy alignment

@@ -31,6 +31,15 @@ drafts or submit/upload to Apple. Other mobile/release work remains preserved.
 
 ## Remaining and blockers
 
+October 5 follow-up: owner confirms AI Robots Inc operates both AI gateways, but
+retention is unconfirmed. Correct contact remains `info@findez.ai`, not a postal
+address. Separate backend PR #43 runtime `4ac3c56` is selectively deployed with
+migration 038: documents private, owner/path checks before signing/deletion, all
+five CI jobs pass (`37385848403`) and disposable personal/Team access/revocation
+checks pass. All QA data removed; real data untouched. Signed URLs remain bearer
+access until expiry. The draft now reflects this without a publication promise.
+Item images are still public; physical/external signed-download checks remain.
+
 Current provider/downstream training uses, countries/contracts,
 tracking/business practices, full file/deletion/backup coverage, audience and
 applicable jurisdictional duties require verification and counsel review. No
@@ -39,7 +48,7 @@ Future training categories/operators, consent, withdrawal, retention and effects
 on trained models must be resolved before any future training feature is offered;
 no training control or data-use change was implemented in this web-copy lane.
 
-Current storage/public URLs and FIND HTTP are security limitations. Fixes must
+Current public item-photo URLs and FIND HTTP are security limitations. Fixes must
 be separately authorized/scoped and tested; don't silently flip bucket flags or
 change FIND. Mobile embeds older legal text and auth acceptance is not verified;
 align approved policies/links/required consent in a separate mobile/auth lane.

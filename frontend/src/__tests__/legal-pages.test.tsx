@@ -72,6 +72,9 @@ test("draft distinguishes current no-training practice from unverified processor
   const privacy = privacySections.flatMap((section) => section.body).join("\n");
   expect(privacy).toContain("direct file URL");
   expect(privacy).toContain("without signing in");
+  expect(privacy).toContain("The document storage bucket is private");
+  expect(privacy).toContain("already-issued link");
+  expect(privacy).not.toContain("item-photo and document storage buckets are configured for public");
   expect(privacy).toContain("uses HTTP, not an encrypted transport");
   expect(privacy).toContain("FindEZ does not currently use customer photos, chats or documents to train or fine-tune AI models");
   expect(privacy).toContain("Processing content to provide requested features");
