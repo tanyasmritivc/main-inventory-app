@@ -15,8 +15,12 @@ Last reviewed on 2026-10-04 during physical-memory onboarding verification and t
   queued Space/Team invitations and replay/legacy signup state are preserved.
   Navigation/fade/sample transitions respect Reduce Motion and pages scroll
   independently above the pinned action at large text sizes.
-  The targeted onboarding/launch regressions and clean Flutter analysis pass;
-  final full-suite CI verification is pending. Native iOS simulator build 50
+  PR #39, runtime `f6782d3`, passes all 246 mobile tests with coverage, clean
+  Flutter analysis and all five CI gates (run `37265597966`). Local targeted
+  regressions pass; the final local full-suite compiler rerun stalled on the
+  disk-constrained Mac and was stopped after CI passed. A prior local 245-test
+  full suite passed before the final compact-answer layout adjustment.
+  Native iOS simulator build 50
   passes and the final app is installed/launched locally. Simulator verifies
   sample object/capture/location/question/sharing changes, Dark and Light/Larger
   styling, retained sample location, visible normal-size Ask answer and replay
