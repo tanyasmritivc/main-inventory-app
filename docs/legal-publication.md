@@ -22,8 +22,12 @@ prevent claims. Use qualified counsel for the operator's actual markets.
 
 - Operator: AI Robots Inc, incorporated in California.
 - Accounts: 13+, with adult permission/supervision for minors.
-- Customer content **is used for training**, but data categories, operator,
-  permission, retention and withdrawal have not been identified.
+- The user corrected their earlier training answer: FindEZ **does not currently
+  use customer photos, chats or documents to train models**. Training is a future
+  possibility, not present practice or a feature authorized by this update.
+  This is the operator's declaration; upstream/downstream provider practices
+  remain independently unverified. Feature processing and account storage still
+  occur and are not described as "no data use."
 - Public contact supplied: `info@findez.ai`. No postal address was supplied;
   do not invent one. Determine with counsel whether a mailing address or other
   representative contact is required for the intended markets/platform terms.
@@ -32,7 +36,7 @@ prevent claims. Use qualified counsel for the operator's actual markets.
 
 | Topic | Evidence / limitation | Required before effective publication |
 |---|---|---|
-| Training | User confirmed customer-content training. Existing policies restrict provider general-model training unless notice and required consent are obtained. App source cannot verify processor practices. | Identify photos/chats/documents used, trainers, purposes, permission records, opt-out/withdrawal and deletion/model-unlearning limits. Investigate any use incompatible with existing promises. Do not authorize past undisclosed use through a new policy. |
+| Training | User clarified no current FindEZ training on customer photos/chats/documents; the prior answer concerned future plans. Inspected app source exposes inference routes, not a training implementation; source cannot certify processor practices. Drafts separate feature processing from training and do not grant future training permission. | Independently verify provider/downstream permitted uses before publishing a broader no-training assurance. Any future program needs identified categories/operators/purposes, separate explicit opt-in, withdrawal, retention and deletion/model-unlearning handling before launch. Declining optional training must not block ordinary app use. Do not authorize a future or undisclosed past use through this draft. |
 | Processor protection | FIND and FTCTools language gateway are application routes; no OpenAI application runtime dependency/fallback. Actual operators' contracts and downstream arrangements unknown. | Verify identities, countries, equal protection/permitted use, retention/deletion and any required third-party-AI consent. Do not claim private hosting alone means no independent provider. |
 | File privacy | Read-only live `storage.buckets` query: `documents` and `item-images` public; `profile-photos` private. Signed document API URLs do not make the underlying public bucket private. No actual customer files were opened for this check. | Fix in a separate storage/access lane with migration/URL compatibility and cross-account tests, or disclose the actual limitation. A policy cannot substitute for appropriate security. Do not flip bucket settings without verifying existing clients. |
 | Transport | Existing server-to-FIND hop is HTTP and was explicitly preserved at the user's instruction. Public policy/site endpoints have HTTPS/HSTS. | Do not claim all transfers encrypted. Any TLS/private-route change requires a separate authorized lane; no configuration was changed here. |
@@ -74,6 +78,18 @@ Completed October 4 validation:
   contains the draft notice and six pages of text, without navigation clutter;
   preview canceled, no file saved or print sent. This is not every-browser,
   every-print-page or physical-device certification.
+
+No-current-training clarification follow-up:
+
+- The user's later answer supersedes the original training assertion in the
+  Privacy/Terms draft and coordination records. It does not authorize a training
+  feature, a provider-wide assurance or effective publication.
+- All 20 web suites / 145 tests (12 legal regressions), TypeScript, production
+  Webpack build with placeholder values and diff checks pass. Both generated
+  legal HTML pages contain the corrected no-current-training statement and
+  separate future opt-in requirement, retain draft/noindex and omit the old
+  assertion. Layout/assets/routes are unchanged; prior visual checks are not
+  presented as a new physical-device or live-policy audit.
 
 ## Publication sequence once facts and approval are available
 

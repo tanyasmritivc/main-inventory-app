@@ -67,16 +67,32 @@ describe.each(documents)("$title review page", ({ kind, title, Page, sections, m
   });
 });
 
-test("unresolved practices cannot be mistaken for confirmed training or deletion guarantees", () => {
+test("draft distinguishes current no-training practice from unverified processor and deletion guarantees", () => {
   expect(legalPublication.status).toBe("draft");
   const privacy = privacySections.flatMap((section) => section.body).join("\n");
   expect(privacy).toContain("direct file URL");
   expect(privacy).toContain("without signing in");
   expect(privacy).toContain("uses HTTP, not an encrypted transport");
-  expect(privacy).toContain("customer content is used for model training");
+  expect(privacy).toContain("FindEZ does not currently use customer photos, chats or documents to train or fine-tune AI models");
+  expect(privacy).toContain("Processing content to provide requested features");
+  expect(privacy).toContain("Independently verify FIND and language-model operators' permitted uses and downstream training practices");
+  expect(privacy).not.toContain("customer content is used for model training");
   expect(privacy).toContain("REVIEW REQUIRED BEFORE PUBLICATION");
   expect(privacy).toContain("No immediate or universal erasure guarantee");
   expect(privacyIntro).toContain("California corporation");
+});
+
+test("future training is not authorized by today's notice or Terms and no consent control is invented", () => {
+  const privacy = privacySections.find((section) => section.id === "ai")!.body.join("\n");
+  const terms = termsSections.find((section) => section.id === "content")!.body.join("\n");
+  expect(privacy).toContain("future possibility, not a current feature or permission granted by this notice");
+  for (const content of [privacy, terms]) {
+    expect(content).toContain("separate, explicit opt-in consent");
+    expect(content).toContain("will not prevent ordinary use of FindEZ");
+    expect(content).not.toMatch(/(?:enable|disable|toggle|turn off) training in settings/i);
+  }
+  expect(terms).toContain("FindEZ does not currently use customer photos, chats or documents for model training");
+  expect(terms).toContain("accepting these Terms does not provide that consent");
 });
 
 test("terms preserve mandatory rights and do not promise immunity or impose arbitration", () => {

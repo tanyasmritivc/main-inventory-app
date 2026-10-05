@@ -7,15 +7,25 @@ Last reviewed on 2026-10-04 during public legal-draft verification, physical-mem
 - Web-only `feat/public-legal-review` in `/private/tmp/findez-legal-review`,
   based on `19da889`, contains brand-matched, accessible Privacy/Terms review
   drafts. The user confirmed AI Robots Inc (California), 13+ with guardian
-  permission/supervision, customer-content training and `info@findez.ai`.
-  Data categories, trainers, permission records, withdrawal and retention are
-  unresolved. No postal address was supplied; do not invent one.
+  permission/supervision and `info@findez.ai`. The user subsequently corrected
+  the training answer: FindEZ does not currently train on customer photos,
+  chats or documents; training is a future possibility only. The draft now
+  distinguishes feature processing from training and requires separate explicit
+  opt-in before any future program. This is an owner declaration, not independent
+  proof of downstream provider practices. Provider uses/protection, retention
+  and deletion remain unresolved. No postal address was supplied; do not invent one.
 - All 144 web tests (11 new legal regressions), TypeScript, production Webpack
   build with placeholder credentials and diff checks pass. Anonymous local
   production HTML is 200 with draft/noindex/canonical metadata. Safari verifies
   desktop Privacy, 390pt Privacy/Terms, expandable section links and the six-page
   Privacy print preview (canceled without saving/printing). This is not legal
   approval, a physical-device audit or deployed revision.
+- The no-current-training clarification follow-up passes all 145 web tests
+  (12 legal regressions), TypeScript, the production Webpack build with placeholder
+  credentials and diff checks. Both generated legal HTML pages contain the
+  corrected statement, prospective separate opt-in and retained draft/noindex;
+  neither contains the superseded current-training assertion. Original visual
+  checks above cover the unchanged layout, not a new physical or live-policy audit.
 - Existing `https://www.findez.ai/privacy` and `/terms` already return anonymous
   HTTPS 200. Deployed legal-source hashes match the branch's pre-change base.
   Production checkout is dirty and was not pulled/reset/replaced. Revisions
