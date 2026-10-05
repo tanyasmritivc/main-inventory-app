@@ -295,7 +295,7 @@ class _MainShellState extends State<MainShell> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (tourContext) => OnboardingPage(
-          saveFirstSpace: false,
+          isReplay: true,
           onFinished: () => Navigator.of(tourContext).pop(),
         ),
       ),

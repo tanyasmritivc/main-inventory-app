@@ -181,6 +181,29 @@ sync or change another member's icon. Before release, repeat physical touch,
 VoiceOver selected names, keyboard/scrolling and persistence checks. Apple
 uploads/submission remain held and broader release checks are not replaced.
 
+### Physical-memory first-launch onboarding
+
+Local build 50 replaces the old inventory simulation with the four-screen
+account-free introduction. `onboarding_page_test.dart` exercises sample objects,
+capture/review/location, grounded sample questions and personal/shared context;
+Back/swipe retain choices and no Space draft or account data is created. Skip,
+confirmed completion, failed-write retry, duplicate pending actions, disposal,
+replay/legacy-state preservation, reduced motion and selected progress semantics
+are covered. All pages are exercised at 320pt in Light/Dark through 3.4x text;
+normal-phone sample answers must be visible without scrolling.
+
+`onboarding_launch_test.dart` exercises the actual launch/auth gate with stubbed
+auth and APIs: fresh launch -> onboarding -> Auth, Skip and persisted restart,
+legacy completed installations, valid returning sessions and Space/Team links
+queued before authentication. No invitation is automatically joined and no API
+inventory read occurs during onboarding/Auth. Existing invitation/sign-in,
+profile/document saves and protected item-info swipe tests remain in the suite.
+Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage`; use
+`--concurrency=1` on a disk-constrained Mac. Native simulator acceptance is
+recorded in `CURRENT_STATE.md`. Physical fresh-install/auth, VoiceOver, horizontal
+swipe and reduced-motion acceptance remain deferred by the simulator-only choice.
+No phone install, Apple upload/submission or backend/FIND change is authorized.
+
 ### Space and Team invitation acceptance
 
 `backend/tests/test_invitation_links.py`, the invitation/auth Jest tests and

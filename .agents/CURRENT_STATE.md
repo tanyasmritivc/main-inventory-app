@@ -1,8 +1,45 @@
 # Current state
 
-Last reviewed on 2026-10-04 during mobile Space-icon verification and the held build-46 preflight.
+Last reviewed on 2026-10-04 during physical-memory onboarding verification and the held build-46 preflight.
 
 ## App Store submission preflight
+
+- The physical-memory introduction is implemented as local `1.0.7 (50)` on
+  `feat/mobile-physical-memory-onboarding`, stacked on icon-picker PR #38
+  (`bea71f5`) in `/private/tmp/findez-appearance`. Four branded screens teach
+  physical memory, Capture/Review, Ask/Find and personal/shared Spaces using
+  interactive, code-native sample graphics. Samples are explicitly local and
+  do not create a Space, save inventory, request permissions or call APIs.
+  Fresh signed-out launch shows onboarding before Auth; Complete/Skip saves
+  only the confirmed completion flag. Returning sessions, completed installs,
+  queued Space/Team invitations and replay/legacy signup state are preserved.
+  Navigation/fade/sample transitions respect Reduce Motion and pages scroll
+  independently above the pinned action at large text sizes.
+  PR #39, runtime `f6782d3`, passes all 246 mobile tests with coverage, clean
+  Flutter analysis and all five CI gates (runtime run `37265597966`, repeated
+  on documentation head `ff15a5d` in run `37265970841`). Local targeted
+  regressions pass; the final local full-suite compiler rerun stalled on the
+  disk-constrained Mac and was stopped after CI passed. A prior local 245-test
+  full suite passed before the final compact-answer layout adjustment.
+  Native iOS simulator build 50
+  passes and the final app is installed/launched locally. Simulator verifies
+  sample object/capture/location/question/sharing changes, Dark and Light/Larger
+  styling, retained sample location, visible normal-size Ask answer and replay
+  returning to Profile. CUA mouse drags did not confirm native vertical scrolling;
+  automated scroll/layout tests pass through 3.4x at 320pt. Physical touch,
+  VoiceOver, fresh-install/auth and reduced-motion checks remain deferred.
+  A follow-up native signed-out cold-launch check reset only the existing
+  simulator's completion flag while it was stopped, without erasing app data.
+  Build 50 showed the welcome introduction before Auth; all four sample steps
+  worked, final Continue opened Auth, and a force-quit/relaunch stayed on Auth.
+  Completion was restored to its original confirmed `true` through the UI.
+  This is a reset-flag simulator check, not an App Store download or physical
+  fresh-install/auth pass. Dark/Default preferences are retained; the simulator
+  is now left on sign-in, with no credentials entered during this follow-up.
+  No inventory/membership/document data, auth credentials,
+  backend/web/schema/FIND, native lifecycle, App Store draft or Apple release
+  was changed. Submission remains held; the separate cold Home-to-Space issue
+  and broader release gates still apply.
 
 - Optional personal Space icons are implemented as local `1.0.7 (49)` on
   `feat/mobile-space-icon-picker`, stacked on brand PR #37 (`1d49e27`). Tap the
