@@ -22,6 +22,9 @@ Last reviewed on 2026-10-04 during mobile appearance verification and the held b
   The user explicitly chose simulator checks for now, so physical appearance,
   camera/photo/QR and accessibility acceptance remain deferred. FIND, real
   inventory, native lifecycle and the App Store draft are unchanged.
+  Item-info presentation/navigation was checked in the simulator; CUA mouse
+  drag attempts did not dismiss it, so native swipe is not marked passed.
+  The existing protected-swipe widget regressions still pass in both themes.
   The user chose raw app screenshots; the image-edit
   trial was rejected and no generated artwork was uploaded.
 
