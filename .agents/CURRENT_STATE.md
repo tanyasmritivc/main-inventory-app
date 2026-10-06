@@ -8,7 +8,7 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   then requested consistent typography throughout the app. The same
   `fix/mobile-home-bold-text` lane in `/private/tmp/findez-home-bold-text`, based
   on release record `e123c22`, now implements the complete app-wide change for
-  `1.0.7 (53)`; PR #44 is being updated to the final scope.
+  `1.0.7 (53)`; Draft PR #44 describes the final app-wide scope.
 - Shared `AppTypography` and `AppText` retain San Francisco and existing font
   sizes, colors, layouts and semantics. With Bold Text enabled, supporting text
   and editable fields use Medium (500); headings, counts and emphasis use
@@ -22,7 +22,10 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 - All 274 mobile tests with coverage and clean analysis pass, including rendered
   weights for app/framework text and editable fields, real-root preference
   changes, retained drafts and Light/Dark Home at 320pt through 3.4x scaling.
-  Build 53 native/archive, exact-source CI, Apple and physical checks are pending.
+  Build 53 signed archive/export, strict signature, production-config and supplied-logo checks pass. All five CI jobs pass on runtime `afc39ac` (`37398740825`), and Apple validation reports no errors. The exact signed app installed before the user elected to check it through TestFlight; native process launch and app-wide visual acceptance are unverified. Apple accepted the upload with no errors at 19:00:26 PDT on October 5;
+  delivery `67e8af04-e91a-4157-aa8d-e758c3222d3b`. Processing is `PROCESSING`
+  with no reported errors/warnings; internal-group availability is pending.
+  Final IPA SHA-256: `69cf90f89bd2748016fdae6b406d84548f27e7ddac280d775e8a0f913961d6b8`.
 - Historical Home-only build 52 (`d37eb49`) passed 270 mobile tests, analysis,
   all five CI jobs (`37393604316`), signed archive/export, production-config and
   supplied-logo checks, Apple validation, and native install/process launch.
@@ -53,8 +56,8 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   native icon uses the supplied orange/white mark flattened onto opaque Ink as
   already authorized by the branding lane. No logo was redrawn or generated.
 - Apple accepted the upload at 17:01:18 PDT on 2026-10-05. Delivery ID:
-  `c005740a-d226-4fcf-a9f6-149c3968939e`. Apple reports `PROCESSING` with no upload errors or warnings;
-  processed-build/internal group availability is not yet verified. Final IPA SHA-256:
+  `c005740a-d226-4fcf-a9f6-149c3968939e`. Apple reports `COMPLETE`/`VALID`, `APP_STORE_ELIGIBLE`, and both existing
+  internal groups (Testers and Internal Pilot Findez AI) are verified. Final IPA SHA-256:
   `cacb003d9c3f84e733c8a0137b1be499cfa7a8b1ce418af59308a9b30ad601c9`.
 - The paired iPhone reports installed `1.0.7 (51)`, and native process launch
   passed after it was unlocked. This is not a TestFlight-app download, visual
