@@ -1,5 +1,23 @@
 # Decisions
 
+## 2026-10-05: Restock planning reflects purchases and confirmed physical stock
+
+**Decision:** Replace disconnected Shopping List checkmarks with persisted To
+buy and On order states. Ordering suppresses another purchase request without
+changing stock. Record arrival requires a confirmed total on hand through the
+existing inventory API; persist that absolute draft before saving so explicit
+lost-response retries cannot add the same delivery twice. Stock alerts require
+per-item opt-in, and removing a plan does not delete inventory. Preserve legacy
+orders without inventing quantities. Planning remains account/device-local,
+while inventory quantities sync; shared viewers cannot save stock.
+
+**Presentation:** At the user's request, keep counts and one main action per
+card on the planner. Put explanations in Info and secondary actions in the item
+menu. Amber means To buy and blue means On order; zero counts are neutral.
+Keep text labels, accessible actions, contrast and the shared Bold Text policy.
+These colors apply to restock status, not the global brand theme. Pending stock
+confirmation must remain visible until the save is confirmed.
+
 Only decisions supported by current code or repository records belong here.
 
 ## 2026-10-05: Purchase progress and physical stock are separate

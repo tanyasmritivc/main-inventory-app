@@ -15,6 +15,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/restock_plan.dart';
+import '../../core/ui/restock_status.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -2837,8 +2838,12 @@ class _InventoryPageState extends State<InventoryPage>
                                             if (onOrder > 0)
                                               AppText(
                                                 '  |  $onOrder on order',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 12,
+                                                  color:
+                                                      RestockStatusColors.onOrder(
+                                                        context,
+                                                      ),
                                                 ),
                                               ),
                                             if (lowStock > 0) ...[
@@ -3639,6 +3644,11 @@ class _InventoryPageState extends State<InventoryPage>
 
   @override
   Widget build(BuildContext context) {
+    final restockColor = !_restockReady
+        ? AppTheme.textSecondary(context)
+        : _lowStockCount() > 0
+        ? RestockStatusColors.toBuy(context)
+        : RestockStatusColors.onOrder(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: widget.showAppBar
@@ -3831,59 +3841,43 @@ class _InventoryPageState extends State<InventoryPage>
                                 vertical: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  _lowStockCount() > 0
-                                      ? const Color(0x0AEF4444)
-                                      : const Color(0x0AFFFFFF),
-                                ),
+                                color: restockColor.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    _lowStockCount() > 0
-                                        ? const Color(0x33EF4444)
-                                        : const Color(0x33FFFFFF),
-                                  ),
+                                  color: restockColor.withValues(alpha: 0.35),
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.shopping_cart_outlined,
-                                    color: AppTheme.foreground(
-                                      context,
-                                      _lowStockCount() > 0
-                                          ? const Color(0xFFEF4444)
-                                          : Colors.white70,
-                                    ),
+                                    _restockReady &&
+                                            _lowStockCount() == 0 &&
+                                            _onOrderCount() > 0
+                                        ? Icons.local_shipping_outlined
+                                        : Icons.shopping_cart_outlined,
+                                    color: restockColor,
                                     size: 16,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: AppText(
-                                      !_restockReady
-                                          ? 'Restock planner could not refresh. Tap to retry.'
-                                          : '${_lowStockCount()} to buy | ${_onOrderCount()} on order',
-                                      style: TextStyle(
-                                        color: AppTheme.foreground(
-                                          context,
-                                          Colors.white,
-                                        ),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    child: !_restockReady
+                                        ? const AppText(
+                                            'Restock planner could not refresh. Tap to retry.',
+                                            style: TextStyle(fontSize: 13),
+                                          )
+                                        : RestockSummary(
+                                            toBuy: _lowStockCount(),
+                                            onOrder: _onOrderCount(),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                   ),
                                   const SizedBox(width: 8),
                                   Icon(
                                     Icons.chevron_right_rounded,
-                                    color: AppTheme.foreground(
-                                      context,
-                                      _lowStockCount() > 0
-                                          ? const Color(0xFFEF4444)
-                                          : Colors.white70,
-                                    ),
+                                    color: restockColor,
                                     size: 20,
                                   ),
                                 ],

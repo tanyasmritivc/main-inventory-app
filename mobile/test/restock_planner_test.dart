@@ -16,6 +16,7 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/inventory_cache.dart';
 import 'package:mobile/core/restock_plan.dart';
 import 'package:mobile/core/ui/app_typography.dart';
+import 'package:mobile/core/ui/restock_status.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/shopping/shopping_list_page.dart';
 
@@ -462,7 +463,7 @@ void main() {
       await _count(tester, 'Record arrival', 6);
       await tester.tap(find.widgetWithText(FilledButton, 'Save stock count'));
       await tester.pumpAndSettle();
-      expect(find.text('Stock confirmation pending: 6 total'), findsOneWidget);
+      expect(find.text('Confirm stock: 6'), findsOneWidget);
       expect(
         find.textContaining('Stock could not be confirmed'),
         findsOneWidget,
@@ -494,7 +495,9 @@ void main() {
       final api = _Api();
       await tester.pumpWidget(_page(api));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Remove Cable from planner'));
+      await tester.tap(find.byTooltip('Options for Cable'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from planner'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
       await tester.pumpAndSettle();
@@ -512,7 +515,7 @@ void main() {
     await tester.pumpWidget(_page(api));
     await tester.pumpAndSettle();
     expect(find.text('Retry'), findsOneWidget);
-    expect(find.text('Nothing to buy right now.'), findsNothing);
+    expect(find.text('Nothing to buy.'), findsNothing);
     expect(find.textContaining('SECRET'), findsNothing);
     api.failRead = false;
     await tester.tap(find.text('Retry'));
@@ -564,7 +567,126 @@ void main() {
       expect(find.text('1 to buy'), findsNothing);
     },
   );
+  testWidgets('legacy orders stay compact with extra guidance only in Info', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({
+      'low_stock_thresholds:signed-out': '{"cable":1,"handbag":1}',
+      'shopping_list_checked:signed-out': ['cable', 'handbag'],
+    });
+    final api = _Api();
+    await tester.pumpWidget(
+      RepaintBoundary(key: const ValueKey('compact-qa'), child: _page(api)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('0 to buy | 2 on order'), findsOneWidget);
+    expect(find.text('Nothing to buy.'), findsNothing);
+    expect(find.textContaining('Ordered previously'), findsNothing);
+    expect(find.textContaining('Low-stock alert'), findsNothing);
+    expect(find.textContaining('Purchase plans stay'), findsNothing);
+    expect(tester.takeException(), isNull);
+    if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('compact-qa')),
+      );
+      await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 2);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await File(
+          '/private/tmp/findez-restock-compact-orders.png',
+        ).writeAsBytes(bytes!.buffer.asUint8List());
+        image.dispose();
+      });
+    }
+    await tester.tap(find.byTooltip('About restock planner'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Purchase plans stay on this device for your account. Stock counts sync.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('About restocking'), findsNothing);
+    expect(api.writes, isEmpty);
+  });
+  testWidgets('compact order menu retains editing and move-to-buy actions', (
+    tester,
+  ) async {
+    await _seed(ordered: true);
+    final api = _Api();
+    await tester.pumpWidget(_page(api));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Options for Cable'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit order'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('restock-count')), '7');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save order'));
+    await tester.pumpAndSettle();
+    expect(find.text('7 ordered'), findsOneWidget);
+    await tester.tap(find.byTooltip('Options for Cable'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Move to To buy'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 to buy | 0 on order'), findsOneWidget);
+    expect(find.text('7 to buy'), findsOneWidget);
+    expect(api.writes, isEmpty);
+  });
   for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} purchase colors retain labels, contrast and shared typography',
+      (tester) async {
+        final theme = _theme(brightness);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: MediaQuery(
+              data: const MediaQueryData(boldText: true),
+              child: const AppTypography(
+                child: Scaffold(
+                  body: RestockSummary(
+                    toBuy: 3,
+                    onOrder: 8,
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('3 to buy | 8 on order'), findsOneWidget);
+        final text = tester.widget<RichText>(find.byType(RichText));
+        final colors = <String, Color>{};
+        text.text.visitChildren((span) {
+          if (span is TextSpan &&
+              span.text != null &&
+              span.style?.color != null) {
+            colors[span.text!] = span.style!.color!;
+          }
+          return true;
+        });
+        expect(colors['3 to buy'], isNot(colors['8 on order']));
+        for (final color in [colors['3 to buy']!, colors['8 on order']!]) {
+          final background = Color.alphaBlend(
+            color.withValues(alpha: .08),
+            theme.scaffoldBackgroundColor,
+          );
+          final a = color.computeLuminance(), b = background.computeLuminance();
+          expect(
+            ((a > b ? a : b) + .05) / ((a > b ? b : a) + .05),
+            greaterThanOrEqualTo(4.5),
+          );
+        }
+        expect(text.text.style!.fontWeight, FontWeight.w500);
+      },
+    );
     testWidgets(
       '${brightness.name} planner distinguishes purchases and orders at phone size',
       (tester) async {
@@ -625,6 +747,18 @@ void main() {
         await _count(tester, 'Record arrival', 5);
         expect(tester.takeException(), isNull);
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.scrollUntilVisible(
+          find.byTooltip('About restock planner'),
+          -160,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('About restock planner'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.widgetWithText(TextButton, 'Done'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'Done'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },

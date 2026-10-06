@@ -115,12 +115,16 @@ writes, duplicate pending actions, server quantity bounds, lost-response retry
 without double addition, item opt-out without deletion, failed reads, shared
 view/edit permissions, and the actual Find banner's immediate ordering update.
 Phone-sized and 320pt/2.6x Light/Dark cases retain the shared Bold Text policy.
+Compact cards retain secondary actions in menus and the local-plan disclosure
+in a reachable Info sheet. Both themes verify distinct amber To buy/blue On
+order labels, neutral zero counts and at least 4.5:1 status contrast on the
+tinted banner background.
 The optional `FINDEZ_VISUAL_QA=true` Dart define renders phone-sized sample
 screens to `/private/tmp/findez-restock-{dark,light}.png` using the Mac system
 font; these are widget renders, not native acceptance.
 
-All 292 mobile tests with coverage and clean analysis pass locally, including
-18 restock regressions. Run mobile analysis and the full test suite with coverage. Before public
+Clean analysis and all 296 mobile tests with coverage pass locally, including
+22 restock regressions. Run both checks against the final source. Before public
 release, use the exact final TestFlight binary and a disposable inventory item:
 plan a purchase, mark ordered, verify Find/Home counts and restart persistence,
 record the counted arrival, verify server-backed quantity, test offline retry,

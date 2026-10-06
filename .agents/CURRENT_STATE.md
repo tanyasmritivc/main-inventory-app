@@ -9,11 +9,12 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   banner independently counted quantity against thresholds. Replace that mobile
   destination with a Restock planner on `feat/mobile-restock-planner` in
   `/private/tmp/findez-restock-planner`, based on build-53 record `3a08fd1`.
-  The new candidate is `1.0.7 (54)`; beta upload remains pending validation.
+  Build `1.0.7 (54)` is available internally; Draft PR #45 is stacked on
+  typography PR #44. The compact follow-up candidate is `1.0.7 (55)`.
 - To buy and On order are separate, persisted states. Find/Space summaries,
   Home's To buy action, Ask's summary and the shared Space Restock tab use the
   same purchase rules. Mark ordered immediately stops requesting that purchase;
-  it does not change physical stock. Editable quantities, Back to to-buy,
+  it does not change physical stock. Editable quantities, Move to To buy,
   per-item removal, an inventory chooser and copying only the to-buy list are
   available. New post-capture planning chooses specific items rather than
   applying threshold 1 to every item in the category.
@@ -35,12 +36,35 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   ordered/removed items; native permission/delivery acceptance is unverified.
 - All 292 mobile tests with coverage and clean analysis pass, including 18
   restock regressions. Phone-sized sample renders and Light/Dark 320pt/2.6x
-  action/dialog checks pass. Signed build, exact-source CI and Apple
-  validation/upload/availability remain pending. The user's earlier choice to check through
+  action/dialog checks pass. All five exact-runtime CI jobs pass for `98f019e`
+  (`37406983954`). Signed archive/export, strict signature, packaged production
+  configuration/public anon credential and supplied-logo checks pass. Apple
+  validation reports no errors. Apple accepted delivery
+  `99fa3764-17eb-4d95-95c9-d02a518324d9` with no upload errors at 20:09:15 PDT
+  October 5. Processing is COMPLETE/VALID with no errors/warnings;
+  APP_STORE_ELIGIBLE and both internal groups are verified. The user supplied a
+  planner screenshot showing migrated 0 to buy / 8 on order.
+  Final archive/IPA and verification manifest are preserved under
+  `/private/tmp/findez-build54-native` and
+  `/private/tmp/findez-build54-verification.json`.
+  Final IPA SHA-256: `86f0c084a38542983ed4c4226db3ece8508df6cbdd8f6067a14bfedbbb8dbddb`.
+  The user's earlier choice to check through
   TestFlight applies; no physical stock write or full device acceptance is
   claimed. Logo, shared typography, existing inventory data, billing, backend,
   web, database schema, FIND and native lifecycle are unchanged. Public App
   Store review/publication remains held.
+
+- Build 55 addresses the user's wordiness and status-color feedback. The main
+  screen contains counts, concise item/stock details and one main action per
+  card; explanations move to Info, and editing/removal/back-to-buy actions move
+  to each item's accessible menu. Legacy orders with unknown quantities omit
+  that detail without inventing a count. Pending stock confirmation stays
+  visible. Amber indicates To buy and blue indicates On order in Find and the
+  planner; zero counts remain neutral, and labels remain readable without color.
+  Purchase persistence, stock confirmation, account and permission rules are
+  unchanged. Clean analysis and all 296 mobile tests with coverage pass, including
+  22 restock regressions and Light/Dark large-text/contrast checks. Exact-source
+  CI and signed TestFlight release verification are in progress. Physical verification follows the user's TestFlight preference.
 
 ## App-wide typography consistency (October 5)
 

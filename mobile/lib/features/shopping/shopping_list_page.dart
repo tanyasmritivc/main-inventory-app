@@ -7,6 +7,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/restock_plan.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/ui/restock_status.dart';
 
 /// Retains the existing destination while replacing disconnected checkmarks.
 class ShoppingListPage extends StatefulWidget {
@@ -108,8 +109,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     final entry = _plan.entry(item.itemId);
     final quantity = await _askCount(
       title: 'Mark as ordered',
-      description:
-          'How many ${item.displayName} did you order? Stock changes only after you record arrival.',
+      description: item.displayName,
       label: 'Quantity ordered',
       initial:
           _orderDrafts[item.itemId] ??
@@ -153,8 +153,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     final total = await _askCount(
       title: 'Record arrival',
       description:
-          '${item.displayName}\nLast saved stock: ${item.quantity}. ${entry.orderQuantity == null ? '' : 'Ordered: ${entry.orderQuantity}. '}'
-          'Count what is actually on hand, including this delivery. Saving replaces the stock count; it does not add units twice.',
+          '${item.displayName}\n${item.quantity} on hand${entry.orderQuantity == null ? '' : ' | ${entry.orderQuantity} ordered'}\nInclude the delivery in your count.',
       label: 'Total now on hand',
       initial: _receiptDrafts[item.itemId] ?? entry.receiptTotal,
       minimum: 0,
@@ -231,7 +230,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       builder: (context) => AlertDialog(
         title: const AppText('Remove from restock planner?'),
         content: AppText(
-          'Stop planning purchases and low-stock alerts for ${item.displayName}. The inventory item and its stock count stay unchanged.',
+          'Stop tracking ${item.displayName}? The inventory item stays.',
         ),
         actions: [
           TextButton(
@@ -274,6 +273,47 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       if (_current) _notice('Could not copy the list. Try again.');
     }
   }
+
+  Future<void> _showInfo() => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (context) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppText(
+              'About restocking',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            const AppText(
+              'Mark ordered moves a purchase to On order. Record arrival saves the total you count on hand.',
+            ),
+            const SizedBox(height: 12),
+            const AppText(
+              'Purchase plans stay on this device for your account. Stock counts sync.',
+            ),
+            const SizedBox(height: 12),
+            const AppText(
+              'Set stock alerts in item details. Remove from planner stops tracking without deleting the item.',
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const AppText('Done'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -336,48 +376,49 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   TextButton(onPressed: _load, child: const AppText('Retry')),
                 ],
                 if (_error == null) ...[
-                  AppText(
-                    '${buying.length} to buy | ${ordered.length} on order',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  const AppText(
-                    'Order what you need. Record arrival only after checking the stock on hand.',
-                  ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    'Purchase planning is saved for your account on this device. Stock counts sync with inventory.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary(context),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RestockSummary(
+                          toBuy: buying.length,
+                          onOrder: ordered.length,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'About restock planner',
+                        onPressed: _showInfo,
+                        icon: const Icon(Icons.info_outline),
+                      ),
+                    ],
                   ),
                   if (!widget.canEditStock)
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: AppText(
-                        'View-only Space: ask an editor to update stock after delivery.',
-                      ),
+                      child: AppText('View-only Space'),
                     ),
-                  const SizedBox(height: 20),
-                  if (buying.isEmpty)
-                    const AppText('Nothing to buy right now.'),
+                  const SizedBox(height: 12),
+                  if (buying.isEmpty && ordered.isEmpty && _items.isNotEmpty)
+                    const AppText('Nothing to buy.'),
                   if (buying.isNotEmpty) ...[
-                    const AppText(
+                    AppText(
                       'To buy',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
+                        color: RestockStatusColors.toBuy(context),
                       ),
                     ),
                     for (final item in buying) _card(item, onOrder: false),
                   ],
                   if (ordered.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const AppText(
+                    if (buying.isNotEmpty) const SizedBox(height: 20),
+                    AppText(
                       'On order',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
+                        color: RestockStatusColors.onOrder(context),
                       ),
                     ),
                     for (final item in ordered) _card(item, onOrder: true),
@@ -396,19 +437,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   if (_items.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: AppText(
-                        'Save an inventory item first. Then add the items you want to buy or track.',
-                      ),
-                    ),
-                  if (_items.isNotEmpty &&
-                      buying.isEmpty &&
-                      ordered.isEmpty &&
-                      tracked.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: AppText(
-                        'A single belonging is not automatically low stock. Add an item you actually need to purchase, or set its low-stock threshold in item details.',
-                      ),
+                      child: AppText('Add inventory items to plan a purchase.'),
                     ),
                   if (_items.isNotEmpty)
                     Padding(
@@ -453,80 +482,92 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: AppText(
-                    item.displayName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText(
+                        item.displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      AppText(
+                        '${item.quantity} on hand | ${item.location}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary(context),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Remove ${item.displayName} from planner',
-                  onPressed: _busy ? null : () => _remove(item),
-                  icon: const Icon(Icons.close),
+                PopupMenuButton<String>(
+                  tooltip: 'Options for ${item.displayName}',
+                  enabled: !_busy,
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'edit':
+                        if (onOrder) {
+                          await _order(item);
+                        } else {
+                          await _editBuy(item);
+                        }
+                      case 'buy':
+                        await _save(
+                          () => RestockPrefs.cancelOrder(
+                            item.itemId,
+                            account: _account,
+                          ),
+                        );
+                      case 'receive':
+                        await _receive(item);
+                      case 'remove':
+                        await _remove(item);
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: AppText(onOrder ? 'Edit order' : 'Edit quantity'),
+                    ),
+                    if (onOrder)
+                      const PopupMenuItem(
+                        value: 'buy',
+                        child: AppText('Move to To buy'),
+                      ),
+                    if (!onOrder && widget.canEditStock)
+                      const PopupMenuItem(
+                        value: 'receive',
+                        child: AppText('Already received'),
+                      ),
+                    const PopupMenuItem(
+                      value: 'remove',
+                      child: AppText('Remove from planner'),
+                    ),
+                  ],
+                  icon: const Icon(Icons.more_horiz),
                 ),
               ],
             ),
-            AppText('${item.quantity} on hand | ${item.location}'),
-            const SizedBox(height: 6),
-            AppText(
-              onOrder
-                  ? (e.receiptTotal != null
-                        ? 'Stock confirmation pending: ${e.receiptTotal} total'
-                        : e.orderQuantity == null
-                        ? 'Ordered previously. Quantity was not recorded.'
-                        : '${e.orderQuantity} ordered')
-                  : '${e.quantityToBuy(item.quantity)} to buy',
-            ),
-            if (e.minimum != null)
+            if (!onOrder ||
+                e.orderQuantity != null ||
+                e.receiptTotal != null) ...[
+              const SizedBox(height: 6),
               AppText(
-                'Low-stock alert at ${e.minimum}. Buy enough to get above that level.',
-                style: Theme.of(context).textTheme.bodySmall,
+                onOrder
+                    ? (e.receiptTotal != null
+                          ? 'Confirm stock: ${e.receiptTotal}'
+                          : '${e.orderQuantity} ordered')
+                    : '${e.quantityToBuy(item.quantity)} to buy',
               ),
+            ],
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: onOrder
-                  ? [
-                      FilledButton(
-                        onPressed: _busy || !widget.canEditStock
-                            ? null
-                            : () => _receive(item),
-                        child: const AppText('Record arrival'),
-                      ),
-                      TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _save(
-                                () => RestockPrefs.cancelOrder(
-                                  item.itemId,
-                                  account: _account,
-                                ),
-                              ),
-                        child: const AppText('Back to to-buy'),
-                      ),
-                      TextButton(
-                        onPressed: _busy ? null : () => _order(item),
-                        child: const AppText('Edit order'),
-                      ),
-                    ]
-                  : [
-                      FilledButton(
-                        onPressed: _busy ? null : () => _order(item),
-                        child: const AppText('Mark ordered'),
-                      ),
-                      TextButton(
-                        onPressed: _busy ? null : () => _editBuy(item),
-                        child: const AppText('Edit quantity'),
-                      ),
-                      if (widget.canEditStock)
-                        TextButton(
-                          onPressed: _busy ? null : () => _receive(item),
-                          child: const AppText('Already received'),
-                        ),
-                    ],
+            FilledButton(
+              onPressed: _busy || (onOrder && !widget.canEditStock)
+                  ? null
+                  : () => onOrder ? _receive(item) : _order(item),
+              child: AppText(onOrder ? 'Record arrival' : 'Mark ordered'),
             ),
           ],
         ),
