@@ -2,6 +2,27 @@
 
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
+## Home Bold Text hierarchy (October 5)
+
+- `fix/mobile-home-bold-text` in `/private/tmp/findez-home-bold-text`, based on
+  uploaded-build record `e123c22`, addresses the user's Home screenshot and
+  confirmed iPhone Bold Text setting. Cal AI was supplied as a typography
+  hierarchy reference; its implementation/font is not claimed as verified.
+- Home retains San Francisco and existing sizes/layout. With Bold Text enabled,
+  supporting text/question field use Medium (500); title, section headings and
+  decision counts use Semibold (600). Normal 400 styling remains when off.
+  Each Home text handles the weight increase locally instead of Flutter's
+  blanket 700 override. OS text scaling and other settings remain composed,
+  and Bold Text outside Home remains available.
+- The regression first reproduced rendered 700 instead of the requested weight.
+  All 270 mobile tests with coverage and clean analysis pass, including live
+  device-setting changes and Light/Dark 320pt layouts through 3.4x with Review
+  reachable. Native/archive/Apple and physical checks are in progress for
+  `1.0.7 (52)`.
+- The supplied branding, Home destinations/data, backend/web/schema/FIND and
+  native lifecycle are preserved. Public App Store review/publication remains
+  held; the existing TestFlight request authorizes the updated beta.
+
 ## Current TestFlight beta (October 5)
 
 - The user explicitly requested the current mobile build on TestFlight and

@@ -117,6 +117,17 @@ coverage and analysis pass. Before release, repeat cold Home -> Space and
 Find -> Space on the exact final binary, including slow/offline reads and
 account switching. Source/widget results are not a native physical pass.
 
+### Home Bold Text hierarchy
+
+`home_page_test.dart` verifies the rendered RichText weights, not just supplied
+TextStyle values: live OS Bold Text changes select 500 for supporting text and
+600 for headings/counts, and switching off restores 400. The question hint/input
+follow the same mapping, while the app outside each Home text retains the OS
+setting. Light/Dark 320pt regressions through 3.4x retain scaling, scrollable
+Space rows and reachable Review actions. Run the full mobile suite with coverage
+and analysis. Check the exact native binary on a phone with Bold Text enabled;
+widget weights alone are not a physical visual-acceptance claim.
+
 ### Mobile appearance and text size
 
 Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from
@@ -143,7 +154,9 @@ on a physical phone: all five tabs, scrolling/keyboard with accessibility text,
 Light/Dark/System and restart persistence, VoiceOver names/touch targets,
 photo/avatar/camera presentation, printed QR scanability, Documents/profile forms
 and item-info swipe/save protection. Do not infer physical passes from widgets
-or simulator screenshots. No Apple upload or submission is authorized yet.
+or simulator screenshots. That historical build-47 check did not authorize Apple upload. The October 5
+request now authorizes TestFlight beta upload; public App Store review remains
+held.
 
 ### Mobile brand assets and duplicate sheet handles
 

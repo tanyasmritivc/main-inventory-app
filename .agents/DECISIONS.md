@@ -2,6 +2,17 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-05: Home retains a weight hierarchy with iPhone Bold Text
+
+The user confirmed Bold Text is enabled and supplied Cal AI as a lighter
+hierarchy reference. Keep San Francisco and the existing Home sizes/layout.
+When the OS setting is on, use Medium (500) for supporting text and the question
+field, and Semibold (600) for the title, section headings and decision counts.
+Regular (400) remains the normal Home style when the setting is off. Handle the
+weight increase locally because Flutter Text otherwise replaces every weight
+with Bold (700). Preserve OS-composed text scaling, all other accessibility
+settings and Bold Text outside Home; do not disable the user's device setting.
+
 ## 2026-10-05: A registered Space destination is not a loaded inventory
 
 Wait for Find's first or active inventory read before constructing the existing
