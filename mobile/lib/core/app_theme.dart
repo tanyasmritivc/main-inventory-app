@@ -141,7 +141,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: adapt(Color(0x99FFFFFF)), width: 1),
+          borderSide: BorderSide(
+            color: accentForegroundFor(brightness),
+            width: 1,
+          ),
         ),
       ),
       cardTheme: CardThemeData(
@@ -154,8 +157,8 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: adapt(Color(0xCC2C2C2E)),
-        foregroundColor: adapt(Colors.white),
+        backgroundColor: BrandColors.signal,
+        foregroundColor: BrandColors.ink,
         elevation: 6,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -163,14 +166,14 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
-        indicatorColor: adapt(const Color(0x18FFFFFF)),
+        indicatorColor: accentTintFor(brightness),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return TextStyle(
-              color: adapt(Colors.white),
+              color: accentForegroundFor(brightness),
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
@@ -184,7 +187,10 @@ class AppTheme {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: adapt(Colors.white), size: 22);
+            return IconThemeData(
+              color: accentForegroundFor(brightness),
+              size: 22,
+            );
           }
           return IconThemeData(color: adapt(AppColors.muted), size: 22);
         }),
@@ -301,7 +307,7 @@ class AppTheme {
       tabBarTheme: TabBarThemeData(
         labelColor: adapt(Colors.white),
         unselectedLabelColor: adapt(AppColors.muted),
-        indicatorColor: adapt(AppColors.blue),
+        indicatorColor: accentForegroundFor(brightness),
         dividerColor: adapt(AppColors.border),
         labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: TextStyle(
@@ -362,6 +368,21 @@ class AppTheme {
   static const Color blue = AppColors.info;
   static const Color action = BrandColors.signal;
   static const Color onAction = BrandColors.ink;
+
+  // Signal stays exact on filled actions. Orange foreground derivatives keep
+  // small text/icons readable on neutral surfaces and restrained selection tints.
+  static Color accentForegroundFor(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const Color(0xFFF6803D)
+      : const Color(0xFFB83E05);
+  static Color accentForeground(BuildContext context) =>
+      accentForegroundFor(Theme.of(context).brightness);
+  static Color accentTintFor(Brightness brightness) => Color.alphaBlend(
+    BrandColors.signal.withValues(alpha: 0.08),
+    brightness == Brightness.dark ? darkSurface : lightSurface,
+  );
+  static Color accentTint(BuildContext context) =>
+      accentTintFor(Theme.of(context).brightness);
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>

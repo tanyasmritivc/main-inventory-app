@@ -2859,10 +2859,10 @@ class _InventoryPageState extends State<InventoryPage>
                                               AppText(
                                                 '$lowStock to buy',
                                                 style: TextStyle(
-                                                  color: AppTheme.foreground(
-                                                    context,
-                                                    Color(0xFFFBBF24),
-                                                  ),
+                                                  color:
+                                                      RestockStatusColors.toBuy(
+                                                        context,
+                                                      ),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -3683,20 +3683,14 @@ class _InventoryPageState extends State<InventoryPage>
                             width: 16,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                Color(0xFFEF4444),
-                              ),
+                              color: AppTheme.action,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: AppText(
                                 '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
                                 style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white,
-                                  ),
+                                  color: AppTheme.onAction,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
                                 ),

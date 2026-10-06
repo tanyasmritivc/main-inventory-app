@@ -364,14 +364,30 @@ class _MainShellState extends State<MainShell> {
             width: 210,
             child: CupertinoSlidingSegmentedControl<int>(
               groupValue: _inventorySection,
+              backgroundColor: AppTheme.surface2(context),
+              thumbColor: AppTheme.accentTint(context),
               children: {
-                0: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText('Spaces'),
+                0: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: AppText(
+                    'Spaces',
+                    style: TextStyle(
+                      color: _inventorySection == 0
+                          ? AppTheme.accentForeground(context)
+                          : AppTheme.textSecondary(context),
+                    ),
+                  ),
                 ),
-                1: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText('Teams'),
+                1: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: AppText(
+                    'Teams',
+                    style: TextStyle(
+                      color: _inventorySection == 1
+                          ? AppTheme.accentForeground(context)
+                          : AppTheme.textSecondary(context),
+                    ),
+                  ),
                 ),
               },
               onValueChanged: (value) {

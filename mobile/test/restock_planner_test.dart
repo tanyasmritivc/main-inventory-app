@@ -672,7 +672,8 @@ void main() {
           }
           return true;
         });
-        expect(colors['3 to buy'], isNot(colors['8 on order']));
+        expect(colors['3 to buy'], AppTheme.accentForegroundFor(brightness));
+        expect(colors['8 on order'], AppTheme.accentForegroundFor(brightness));
         for (final color in [colors['3 to buy']!, colors['8 on order']!]) {
           final background = Color.alphaBlend(
             color.withValues(alpha: .08),

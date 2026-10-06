@@ -2843,10 +2843,9 @@ class _ChatPageState extends State<ChatPage>
                             )
                           : Icon(
                               Icons.add_rounded,
-                              color: AppTheme.foreground(
-                                context,
-                                Colors.white54,
-                              ),
+                              color: _sending
+                                  ? AppTheme.textSecondary(context)
+                                  : AppTheme.accentForeground(context),
                               size: 22,
                             ),
                     ),
@@ -2923,10 +2922,7 @@ class _ChatPageState extends State<ChatPage>
                                   const Color(0xFF2C2C2E),
                                 )
                               : canSend
-                              ? AppTheme.adaptive(
-                                  context,
-                                  const Color(0xFFF2F2F7),
-                                )
+                              ? AppTheme.action
                               : AppTheme.adaptive(
                                   context,
                                   const Color(0xFF2C2C2E),
@@ -2946,10 +2942,7 @@ class _ChatPageState extends State<ChatPage>
                             : Icon(
                                 Icons.arrow_upward_rounded,
                                 color: canSend
-                                    ? AppTheme.foreground(
-                                        context,
-                                        const Color(0xFF1C1C1E),
-                                      )
+                                    ? AppTheme.onAction
                                     : AppTheme.foreground(
                                         context,
                                         const Color(0xFF636366),

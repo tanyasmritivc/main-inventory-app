@@ -43,7 +43,7 @@ class HomeNavigation extends StatelessWidget {
             height: 56,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
             backgroundColor: Colors.transparent,
-            indicatorColor: AppTheme.adaptive(context, const Color(0x18FFFFFF)),
+            indicatorColor: AppTheme.accentTint(context),
             indicatorShape: const CircleBorder(),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
