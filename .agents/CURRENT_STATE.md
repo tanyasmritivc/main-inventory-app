@@ -2,6 +2,46 @@
 
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
+## Restock planner replacement (October 5)
+
+- The user reported that Shopping List checked items still appeared as needing
+  restocking in Find. Checkmarks only persisted an ordered selection; the old
+  banner independently counted quantity against thresholds. Replace that mobile
+  destination with a Restock planner on `feat/mobile-restock-planner` in
+  `/private/tmp/findez-restock-planner`, based on build-53 record `3a08fd1`.
+  The new candidate is `1.0.7 (54)`; beta upload remains pending validation.
+- To buy and On order are separate, persisted states. Find/Space summaries,
+  Home's To buy action, Ask's summary and the shared Space Restock tab use the
+  same purchase rules. Mark ordered immediately stops requesting that purchase;
+  it does not change physical stock. Editable quantities, Back to to-buy,
+  per-item removal, an inventory chooser and copying only the to-buy list are
+  available. New post-capture planning chooses specific items rather than
+  applying threshold 1 to every item in the category.
+- Record arrival asks for the actual total on hand and saves only quantity
+  through the existing authenticated personal/Team or membership-authorized
+  shared-item route. Persist the absolute count before submitting, retain it
+  after a failed/lost response, and finish the purchase only after confirming
+  item ID and quantity. Explicit retry saves the same count without double
+  addition. Shared viewers cannot save stock. A later drop below an explicit
+  threshold reopens To buy; untracked single belongings are not automatically
+  treated as low stock.
+- Purchase planning and thresholds remain personal, account/device-local, with
+  that scope disclosed in the planner. Inventory quantities sync through the
+  existing API. Legacy thresholds and checked selections migrate without
+  inventing historical order quantities; old account-scoped preferences remain
+  as rollback copies. Failed preference writes restore the prior cache and
+  surface a retry, malformed saved plans fail visibly, and stale account writes
+  are rejected. Local restock notifications follow To buy and cancel evaluated
+  ordered/removed items; native permission/delivery acceptance is unverified.
+- All 292 mobile tests with coverage and clean analysis pass, including 18
+  restock regressions. Phone-sized sample renders and Light/Dark 320pt/2.6x
+  action/dialog checks pass. Signed build, exact-source CI and Apple
+  validation/upload/availability remain pending. The user's earlier choice to check through
+  TestFlight applies; no physical stock write or full device acceptance is
+  claimed. Logo, shared typography, existing inventory data, billing, backend,
+  web, database schema, FIND and native lifecycle are unchanged. Public App
+  Store review/publication remains held.
+
 ## App-wide typography consistency (October 5)
 
 - The user approved build 52 Home on the physical iPhone with Bold Text enabled,

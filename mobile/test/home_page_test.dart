@@ -277,13 +277,13 @@ void main() {
   });
 
   testWidgets(
-    'decision counts use disjoint stock states and owned checkout identities',
+    'to-buy actions and actual stock counts retain owned checkout identities',
     (tester) async {
       await tester.pumpWidget(_page(_HomeApi()));
       await tester.pumpAndSettle();
       final overview = tester.widget<HomeOverview>(find.byType(HomeOverview));
       expect(overview.pendingReviews, 7);
-      expect(overview.lowStock, 1);
+      expect(overview.lowStock, 2);
       expect(overview.outOfStock, 1);
       expect(overview.lentOut, 1);
       expect(find.text('No photo captures yet'), findsOneWidget);

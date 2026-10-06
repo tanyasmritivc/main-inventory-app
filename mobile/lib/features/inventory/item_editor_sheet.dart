@@ -512,7 +512,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                             _threshold.text.trim(),
                           );
                           final threshold =
-                              (rawThreshold != null && rawThreshold > 0)
+                              (rawThreshold != null && rawThreshold >= 0)
                               ? rawThreshold
                               : null;
 

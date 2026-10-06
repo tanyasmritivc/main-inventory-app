@@ -105,6 +105,30 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Restock planner and stock confirmation
+
+`restock_planner_test.dart` covers migration of old thresholds/checks without
+inventing quantities, untracked belongings, explicit zero thresholds, concurrent
+edits, malformed data, failed disk saves/cache rollback/draft retry, account
+isolation, persisted orders, individual item selection, quantity-only arrival
+writes, duplicate pending actions, server quantity bounds, lost-response retry
+without double addition, item opt-out without deletion, failed reads, shared
+view/edit permissions, and the actual Find banner's immediate ordering update.
+Phone-sized and 320pt/2.6x Light/Dark cases retain the shared Bold Text policy.
+The optional `FINDEZ_VISUAL_QA=true` Dart define renders phone-sized sample
+screens to `/private/tmp/findez-restock-{dark,light}.png` using the Mac system
+font; these are widget renders, not native acceptance.
+
+All 292 mobile tests with coverage and clean analysis pass locally, including
+18 restock regressions. Run mobile analysis and the full test suite with coverage. Before public
+release, use the exact final TestFlight binary and a disposable inventory item:
+plan a purchase, mark ordered, verify Find/Home counts and restart persistence,
+record the counted arrival, verify server-backed quantity, test offline retry,
+item removal, and shared viewer/editor behavior. Do not mutate the user's real
+inventory as a release probe. Native notification permission, cancellation and
+delivery require a physical check. Planning metadata is intentionally local to
+the signed-in account/device; do not assert cross-device order synchronization.
+
 ### Cold Home-to-Space navigation
 
 `home_space_loading_test.dart` runs the actual MainShell with ready Home data

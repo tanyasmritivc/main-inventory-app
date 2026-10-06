@@ -14,7 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
-import '../../core/low_stock_prefs.dart';
+import '../../core/restock_plan.dart';
 import '../../core/ask_answer.dart';
 import '../../core/ui/glass_card.dart';
 import 'ask_answer_view.dart';
@@ -1872,30 +1872,22 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<String?> _lowStockSummary() async {
-    final thresholds = await LowStockPrefs.loadAll();
-    if (thresholds.isEmpty) return null;
-
+    final account = RestockPrefs.accountKey;
+    final plan = await RestockPrefs.load();
     final result = await widget.api.searchItems(query: '');
-    final low = <({String name, int qty, int thr})>[];
-    for (final item in result.items) {
-      final thr = thresholds[item.itemId];
-      if (thr == null || thr <= 0) continue;
-
-      if (item.quantity <= thr) {
-        final name = item.name.trim();
-        if (name.isNotEmpty) {
-          low.add((name: name, qty: item.quantity, thr: thr));
-        }
-      }
-    }
-
-    if (low.isEmpty) return null;
-    low.sort((a, b) => a.qty.compareTo(b.qty));
-    final top = low
-        .take(6)
-        .map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})')
-        .join(', ');
-    return 'Low stock: $top.';
+    if (!mounted || account != RestockPrefs.accountKey) return null;
+    final buying = result.items
+        .where((i) => plan.needsBuying(i.itemId, i.quantity))
+        .toList();
+    final ordered = result.items.where((i) => plan.onOrder(i.itemId)).toList();
+    if (buying.isEmpty && ordered.isEmpty) return null;
+    final lines = <String>[
+      if (buying.isNotEmpty)
+        'To buy: ${buying.take(6).map((i) => '${i.displayName} (${plan.entry(i.itemId).quantityToBuy(i.quantity)} to buy, ${i.quantity} on hand)').join(', ')}.',
+      if (ordered.isNotEmpty)
+        'On order: ${ordered.take(6).map((i) => i.displayName).join(', ')}. Stock is unchanged until arrival is confirmed.',
+    ];
+    return lines.join('\n');
   }
 
   String _friendlyRequestError(Object error) {

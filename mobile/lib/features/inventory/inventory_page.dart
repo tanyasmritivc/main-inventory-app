@@ -14,6 +14,7 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/restock_plan.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -157,7 +158,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     var n = 0;
     for (final it in _items) {
       final thr = _thresholds[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
+      if ((thr != null && thr >= 0 && it.quantity <= thr) || it.quantity <= 0) {
         n++;
       }
     }
@@ -267,7 +268,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Widget _buildItemRow(InventoryItem item) {
     final threshold = _thresholds[item.itemId];
     final isLow =
-        threshold != null && threshold > 0 && item.quantity <= threshold;
+        threshold != null && threshold >= 0 && item.quantity <= threshold;
     final imageUrl = (item.imageUrl ?? '').trim();
     return Dismissible(
       key: ValueKey(item.itemId),
@@ -1640,6 +1641,8 @@ class _InventoryPageState extends State<InventoryPage>
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
   final ValueNotifier<bool> _aiSearching = ValueNotifier(false);
   final ValueNotifier<Map<String, int>> _thresholds = ValueNotifier(const {});
+  RestockPlan _restockPlan = const RestockPlan({});
+  bool _restockReady = false;
 
   final ValueNotifier<String> _category = ValueNotifier('All');
 
@@ -1667,6 +1670,7 @@ class _InventoryPageState extends State<InventoryPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    RestockPrefs.changes.addListener(_restockChanged);
     _search = TextEditingController();
     _createSpaceCtrl = TextEditingController();
     _joinCodeCtrl = TextEditingController();
@@ -1969,6 +1973,7 @@ class _InventoryPageState extends State<InventoryPage>
     _query.dispose();
     _rows.dispose();
     _aiSearching.dispose();
+    RestockPrefs.changes.removeListener(_restockChanged);
     _thresholds.dispose();
     _category.dispose();
     super.dispose();
@@ -1983,15 +1988,57 @@ class _InventoryPageState extends State<InventoryPage>
         .toList();
   }
 
-  int _lowStockCount() {
-    var n = 0;
-    for (final it in _items) {
-      final thr = _thresholds.value[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
-        n++;
-      }
+  int _lowStockCount() => _items
+      .where((i) => _restockPlan.needsBuying(i.itemId, i.quantity))
+      .length;
+  int _onOrderCount() =>
+      _items.where((i) => _restockPlan.onOrder(i.itemId)).length;
+  void _restockChanged() => unawaited(_refreshRestock());
+  Future<void> _refreshRestock() async {
+    final account = RestockPrefs.accountKey;
+    try {
+      final plan = await RestockPrefs.load();
+      if (!mounted || account != RestockPrefs.accountKey) return;
+      setState(() {
+        _restockPlan = plan;
+        _restockReady = true;
+      });
+      _thresholds.value = plan.thresholds;
+      unawaited(
+        LowStockNotifications.evaluate(
+          _items
+              .map(
+                (item) => LowStockCandidate(
+                  itemId: item.itemId,
+                  name: item.name,
+                  quantity: item.quantity,
+                  threshold: plan.thresholds[item.itemId] ?? -1,
+                  spaceName: item.location,
+                ),
+              )
+              .toList(),
+        ).catchError((Object error) {
+          if (!mounted || account != RestockPrefs.accountKey) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: AppText(
+                'Could not refresh restock notifications. Your purchase plan is saved.',
+              ),
+            ),
+          );
+        }),
+      );
+    } catch (_) {
+      if (!mounted || account != RestockPrefs.accountKey) return;
+      setState(() => _restockReady = false);
     }
-    return n;
+  }
+
+  Future<void> _openRestock() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
+    );
+    if (mounted) await _loadItems();
   }
 
   Future<void> _loadItems() {
@@ -2039,25 +2086,10 @@ class _InventoryPageState extends State<InventoryPage>
         _hasLoadedItems = true;
         _itemsOwner = owner;
       });
-      LowStockPrefs.loadAll().then((value) {
-        if (!mounted) return;
-        _thresholds.value = value;
-        unawaited(
-          LowStockNotifications.evaluate(
-            result.items.where((item) => value[item.itemId] != null).map((
-              item,
-            ) {
-              return LowStockCandidate(
-                itemId: item.itemId,
-                name: item.name,
-                quantity: item.quantity,
-                threshold: value[item.itemId]!,
-                spaceName: item.location,
-              );
-            }).toList(),
-          ),
-        );
-      });
+      await _refreshRestock();
+      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+        return;
+      }
       _applyLocalSearch(_query.value);
     } on SessionExpiredException {
       debugPrint(
@@ -2709,12 +2741,14 @@ class _InventoryPageState extends State<InventoryPage>
               final loc = space['name'] as String;
               final spaceId = space['id'] as String;
               final items = groups[loc] ?? const <InventoryItem>[];
-              final lowStock = items.where((it) {
-                final threshold = thresholds[it.itemId];
-                return threshold != null &&
-                    threshold > 0 &&
-                    it.quantity <= threshold;
-              }).length;
+              final lowStock = items
+                  .where(
+                    (it) => _restockPlan.needsBuying(it.itemId, it.quantity),
+                  )
+                  .length;
+              final onOrder = items
+                  .where((it) => _restockPlan.onOrder(it.itemId))
+                  .length;
               return GestureDetector(
                 key: index == 0 ? TutorialController.firstSpaceCardKey : null,
                 onTap: () {
@@ -2800,6 +2834,13 @@ class _InventoryPageState extends State<InventoryPage>
                                                 fontWeight: FontWeight.w400,
                                               ),
                                             ),
+                                            if (onOrder > 0)
+                                              AppText(
+                                                '  |  $onOrder on order',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              ),
                                             if (lowStock > 0) ...[
                                               AppText(
                                                 '  ·  ',
@@ -2811,7 +2852,7 @@ class _InventoryPageState extends State<InventoryPage>
                                                 ),
                                               ),
                                               AppText(
-                                                '$lowStock low',
+                                                '$lowStock to buy',
                                                 style: TextStyle(
                                                   color: AppTheme.foreground(
                                                     context,
@@ -3655,12 +3696,8 @@ class _InventoryPageState extends State<InventoryPage>
                         ),
                     ],
                   ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListPage(api: widget.api),
-                    ),
-                  ),
+                  tooltip: 'Restock planner',
+                  onPressed: _openRestock,
                 ),
                 PopupMenuButton<String>(
                   icon: Icon(
@@ -3782,15 +3819,11 @@ class _InventoryPageState extends State<InventoryPage>
                           style: AppTypography.bodyStyleOf(context),
                         ),
                         const SizedBox(height: 12),
-                        if (_lowStockCount() > 0)
+                        if (!_restockReady ||
+                            _lowStockCount() > 0 ||
+                            _onOrderCount() > 0)
                           GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ShoppingListPage(api: widget.api),
-                              ),
-                            ),
+                            onTap: _openRestock,
                             child: Container(
                               margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
                               padding: const EdgeInsets.symmetric(
@@ -3800,13 +3833,17 @@ class _InventoryPageState extends State<InventoryPage>
                               decoration: BoxDecoration(
                                 color: AppTheme.adaptive(
                                   context,
-                                  const Color(0x0AEF4444),
+                                  _lowStockCount() > 0
+                                      ? const Color(0x0AEF4444)
+                                      : const Color(0x0AFFFFFF),
                                 ),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: AppTheme.adaptive(
                                     context,
-                                    const Color(0x33EF4444),
+                                    _lowStockCount() > 0
+                                        ? const Color(0x33EF4444)
+                                        : const Color(0x33FFFFFF),
                                   ),
                                 ),
                               ),
@@ -3816,14 +3853,18 @@ class _InventoryPageState extends State<InventoryPage>
                                     Icons.shopping_cart_outlined,
                                     color: AppTheme.foreground(
                                       context,
-                                      Color(0xFFEF4444),
+                                      _lowStockCount() > 0
+                                          ? const Color(0xFFEF4444)
+                                          : Colors.white70,
                                     ),
                                     size: 16,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: AppText(
-                                      '${_lowStockCount()} items need restocking',
+                                      !_restockReady
+                                          ? 'Restock planner could not refresh. Tap to retry.'
+                                          : '${_lowStockCount()} to buy | ${_onOrderCount()} on order',
                                       style: TextStyle(
                                         color: AppTheme.foreground(
                                           context,
@@ -3839,7 +3880,9 @@ class _InventoryPageState extends State<InventoryPage>
                                     Icons.chevron_right_rounded,
                                     color: AppTheme.foreground(
                                       context,
-                                      Color(0xFFEF4444),
+                                      _lowStockCount() > 0
+                                          ? const Color(0xFFEF4444)
+                                          : Colors.white70,
                                     ),
                                     size: 20,
                                   ),
@@ -4002,7 +4045,7 @@ class _SearchResultsList extends StatelessWidget {
         final item = rows[index];
         final threshold = thresholds[item.itemId];
         final isLow =
-            (threshold != null && threshold > 0 && item.quantity <= threshold);
+            (threshold != null && threshold >= 0 && item.quantity <= threshold);
         final imageUrl = (item.imageUrl ?? '').trim();
         return Dismissible(
           key: ValueKey(item.itemId),
