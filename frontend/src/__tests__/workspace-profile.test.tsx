@@ -104,6 +104,14 @@ test("keeps profile save disabled until confirmed profile fields arrive", async 
   );
 });
 test("shows the current profile while legacy signup completion is still pending", async () => {
+  let resolve!: (value: typeof profile) => void;
+  jest.mocked(accountRequest).mockImplementation((_id, path) =>
+    path === "/notifications"
+      ? Promise.resolve({ unread_count: 2 })
+      : new Promise((done) => {
+          resolve = done;
+        }),
+  );
   localStorage.setItem(
     "findez_pending_signup_profile",
     JSON.stringify({ displayName: "Pending tester" }),
@@ -113,6 +121,9 @@ test("shows the current profile while legacy signup completion is still pending"
       <p>Workspace</p>
     </AppShell>,
   );
+  await waitFor(() => expect(accountRequest).toHaveBeenCalled());
+  expect(client.auth.updateUser).not.toHaveBeenCalled();
+  await act(async () => resolve(profile));
   await screen.findByRole("link", {
     name: /Local tester.*Profile and settings/,
   });

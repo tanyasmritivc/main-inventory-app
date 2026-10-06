@@ -53,10 +53,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setAvatarUrl(undefined);
       const { data: sessionData } = await supabase.auth.getSession();
       if (current() && user && sessionData.session?.user.id === user.id) {
-        accountRequest<{ display_name?: string; avatar_url?: string }>(
-          user.id,
-          "/profile/me",
-        )
+        const profileRequest = accountRequest<{
+          display_name?: string;
+          avatar_url?: string;
+        }>(user.id, "/profile/me")
           .then((profile) => {
             if (current()) {
               setUserName(profile.display_name || name || "Your account");
@@ -67,12 +67,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }
           })
           .catch(() => {});
-        accountRequest<{ unread_count: number }>(user.id, "/notifications")
+        const notificationsRequest = accountRequest<{ unread_count: number }>(
+          user.id,
+          "/notifications",
+        )
           .then((result) => {
             if (current()) setUnread(result.unread_count ?? 0);
           })
           .catch(() => {});
+        await Promise.allSettled([profileRequest, notificationsRequest]);
       }
+      if (!current()) return;
       // Legacy signup completion must not delay the current account's identity.
       const pendingValue = window.localStorage.getItem(
         PENDING_SIGNUP_PROFILE_KEY,
