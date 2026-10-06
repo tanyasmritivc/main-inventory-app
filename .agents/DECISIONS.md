@@ -1,5 +1,36 @@
 # Decisions
 
+## 2026-10-06: Rebuild the web interior from actual mobile capabilities
+
+Use submitted build 58 as the presentation and behavior authority. The supplied
+desktop prototype guides hierarchy, spacing and navigation, but its future
+features are not implemented or advertised. Keep all actual routes and developer
+entry points accessible, and keep personal/shared Spaces and Teams distinct.
+The user explicitly excluded the landing page: interior styles are scoped to
+interior classes and public landing source/assets remain unchanged.
+
+Web purchase planning follows mobile's opt-in, ordered and confirmed absolute
+arrival semantics using existing stock routes. It remains account/browser-local;
+do not imply shared orders or synchronization with mobile's local purchase plans.
+Preserve a pending absolute stock count before a write so a lost-response retry
+cannot double-add stock. Account-bound requests and keyed private views prevent
+late responses from carrying another account's data into rebuilt clients.
+
+No new backend contract or schema is needed. Preserve public API documentation
+and downloadable integrations unchanged while their contract tests continue to
+pass. Review this implementation against the build-58 record branch so unrelated
+stacked mobile and landing changes do not enter the web PR diff.
+
+## 2026-10-06: Deploy the web rebuild through existing self hosting
+
+The user's hosting correction is authoritative: production remains the existing
+Ubuntu VM, systemd `findez-web`, Caddy/nginx and self-hosted API/Supabase origins.
+Do not route production work through Render or Vercel. Stage frontend changes in
+an isolated release with actual production configuration, preserve the dirty VM
+checkout and every unrelated deployed file, and switch only the web service's
+working directory with a reversible drop-in. Preserve old immutable assets for
+open tabs and verify original landing content and the public API contract.
+
 ## 2026-10-05: Make the Teams list monochrome after phone feedback
 
 **Decision:** The user rejected build 57's orange Teams list as too orange.

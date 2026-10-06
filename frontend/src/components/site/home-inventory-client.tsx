@@ -47,6 +47,13 @@ import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 // ── Style constants ──────────────────────────────────────────────────────────
+import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
+import { ItemDetails } from "@/components/site/item-details";
+import { useApiSession } from "@/lib/use-api-session";
+import { useRestock } from "@/lib/use-restock";
+import { userFacingError } from "@/lib/user-facing-error";
+import { needsBuying } from "@/lib/restock-plan";
+
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 const inputStyle: React.CSSProperties = {
@@ -194,12 +201,13 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
 function InventoryStats({
   items,
   spaces,
+  lowStock,
 }: {
   items: InventoryItem[];
   spaces: string[];
+  lowStock: number;
 }) {
   const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
-  const lowStock = items.filter((item) => (item.quantity ?? 0) <= 1).length;
 
   return (
     <section className="inventory-stats" aria-label="Inventory totals">
@@ -212,9 +220,12 @@ function InventoryStats({
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string }) {
+export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spaces'; locationFilter?: string; itemFilter?: string }) {
   const router = useRouter();
   const { confirmAction, promptValue } = useAppDialog();
+  const { accountId } = useApiSession();
+  const restock = useRestock(accountId);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -737,7 +748,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       await updateItem({ token: t, item_id: itemId, updates })
       if (viewingSharedSpace) await loadSharedSpace(viewingSharedSpace.shareId)
     } catch (err) {
-      console.error('Update failed:', err)
+      setError(userFacingError(err, 'The item could not be updated.'))
     }
   }
 
@@ -749,7 +760,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       await deleteItem({ token: t, item_id: itemId })
       setSharedSpaceItems((prev: any[]) => prev.filter((i: any) => i.item_id !== itemId))
     } catch (err) {
-      console.error('Delete failed:', err)
+      setError(userFacingError(err, 'The item could not be deleted.'))
     }
   }
 
@@ -798,7 +809,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
   const showInventoryTable = !selectedSpace && (query.trim().length > 0 || props.mode === 'inventory');
 
-  const lowStockCount = allItems.filter((item) => item.quantity <= 1).length;
+  const lowStockCount = allItems.filter((item) => needsBuying(restock.plan[item.item_id], item.quantity)).length;
   const overdueCount = activeCheckouts.filter((checkout) => {
     const due = checkout.due_back_at;
     return typeof due === 'string' && new Date(due).getTime() < Date.now();
@@ -808,8 +819,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     event.preventDefault();
     const prompt = homePrompt.trim();
     if (!prompt) return;
-    window.localStorage.setItem('findez-assist-draft', prompt);
-    router.push('/assist');
+    router.push(`/assist?q=${encodeURIComponent(prompt)}`);
   }
 
   const tableColumns = useMemo(() => {
@@ -935,11 +945,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : 'Inventory'}</h1>
+          <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find'}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
         {!selectedSpace && (
           <div className="product-actions">
+            {props.mode === "inventory" && <Link href="/scan" className="product-button primary">Add items</Link>}
             <button
               type="button"
               onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
@@ -975,7 +986,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               <div className="home-attention-row">
                 {pendingReviewCount > 0 && <Link href="/review"><strong>{pendingReviewCount}</strong><span>uncertain capture{pendingReviewCount === 1 ? '' : 's'} to review</span><ArrowRight size={15} /></Link>}
                 {overdueCount > 0 && <Link href="/checkout"><strong>{overdueCount}</strong><span>overdue check-out{overdueCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
-                {lowStockCount > 0 && <Link href="/collections"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
+                {lowStockCount > 0 && <Link href="/restock"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
               </div>
             )}
           </section>
@@ -987,7 +998,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         <div className="inventory-search-control">
           <Search size={15} />
           <input
-            placeholder="Search inventory"
+            aria-label="Search items by name, category, or description" placeholder="Search items"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="spaces-search"
@@ -999,7 +1010,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       {success ? <p role="status" style={{ fontSize: 13, color: 'var(--success-ink)', marginBottom: 12 }}>{success}</p> : null}
 
       {!selectedSpace && props.mode !== 'home' && !showInventoryTable && initSettled && !loading && (
-        <InventoryStats items={allItems} spaces={spaces} />
+        <InventoryStats items={allItems} spaces={spaces} lowStock={lowStockCount} />
       )}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
@@ -1022,12 +1033,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                 {item.image_url && <Image unoptimized width={42} height={42} src={item.image_url} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
+                  <button type="button" style={{ textAlign: "left", background: "transparent", border: 0, padding: 0, fontSize: 13, fontWeight: 590, color: "var(--text-primary)" }} onClick={() => setDetailItem(item)}>{itemDisplayName(item)}</button>
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
                 </div>
               </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
-              <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
+              <div style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{spaceNameForItem(item, spaceIndex)}</div>
             </div>
           ))}
@@ -1191,7 +1202,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
@@ -1227,6 +1238,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
+                      <ItemPhotoGallery itemId={item.item_id} context={{ kind: "shared", shareId: viewingSharedSpace.shareId }} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
@@ -1382,7 +1394,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
@@ -1425,6 +1437,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
+                      <ItemPhotoGallery itemId={item.item_id} canEdit onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
@@ -1481,11 +1494,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;
             const itemsInSpace = itemsBySpace[space] ?? [];
-            const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
+            const lowStock = itemsInSpace.filter((item) => needsBuying(restock.plan[item.item_id], item.quantity)).length;
             return (
               <div
                 key={space}
                 className="inventory-space-card"
+                role="button" tabIndex={0} aria-label={`Open Space ${space}`}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openSpace(space); } }}
                 onClick={() => openSpace(space)}
               >
                 <span className="space-card-icon"><Boxes size={17} /></span>
@@ -1644,7 +1659,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         <DialogContent className="findez-form-dialog" style={{ maxWidth: 560 }}>
           <DialogHeader>
             <DialogTitle>Create a Space</DialogTitle>
-            <DialogDescription>A Space is a real location—like a room, cabinet, shelf, or parts bin.</DialogDescription>
+            <DialogDescription>A Space is a real location, like a room, cabinet, shelf, or parts bin.</DialogDescription>
           </DialogHeader>
           <div className="findez-form-body">
             <div className="findez-form-row">
@@ -1812,6 +1827,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

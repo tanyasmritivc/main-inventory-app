@@ -1,106 +1,131 @@
 /** @jest-environment jsdom */
-
-import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { usePathname } from 'next/navigation';
-import { AppSidebar } from '@/components/site/app-sidebar';
-
-jest.mock('next/navigation', () => ({
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { usePathname } from "next/navigation";
+import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
+jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),
 }));
-jest.mock('@/lib/supabase/browser', () => ({ createSupabaseBrowserClient: jest.fn() }));
-
-const workspaceLinks = [
-  { label: 'Home', route: '/home' },
-  { label: 'Capture', route: '/scan' },
-  { label: 'Review', route: '/review' },
-  { label: 'Inventory', route: '/inventory' },
-  { label: 'Ask FindEZ', route: '/assist' },
-  { label: 'Check-outs', route: '/checkout' },
-  { label: 'Team', route: '/teams' },
-];
-const originalWidth = window.innerWidth;
-
+jest.mock("@/lib/supabase/browser", () => ({
+  createSupabaseBrowserClient: jest.fn(),
+}));
 beforeEach(() => {
-  jest.mocked(usePathname).mockReturnValue('/inventory');
+  jest.mocked(usePathname).mockReturnValue("/inventory");
   window.innerWidth = 1024;
 });
-
-afterEach(() => {
-  window.innerWidth = originalWidth;
+test("makes every current mobile capability and developer entry point directly reachable", () => {
+  render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
+  for (const { label, route } of APP_NAV_ITEMS)
+    expect(screen.getByRole("link", { name: label }).getAttribute("href")).toBe(
+      route,
+    );
+  for (const route of [
+    "/scan",
+    "/inventory",
+    "/assist",
+    "/spaces",
+    "/teams",
+    "/documents",
+    "/review",
+    "/restock",
+    "/checkout",
+    "/project-kits",
+    "/collections",
+    "/labels",
+    "/activity",
+    "/notifications",
+    "/settings/api-keys",
+    "/docs/api",
+  ])
+    expect(APP_NAV_ITEMS.some((item) => item.route === route)).toBe(true);
+  expect(
+    screen.getByRole("complementary").classList.contains("is-hover-expandable"),
+  ).toBe(false);
 });
-
-test('orders the workspace flow and keeps developer links in Settings', () => {
-  render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
-
-  const workspace = within(screen.getByText('Workspace').parentElement!);
-  for (const { label, route } of workspaceLinks) {
-    expect(workspace.getByRole('link', { name: label }).getAttribute('href')).toBe(route);
-  }
-  expect(workspace.getAllByRole('link').map((link) => link.textContent)).toEqual(workspaceLinks.map(({ label }) => label));
-  const tools = within(screen.getByText('Tools').parentElement!);
-  expect(tools.getByRole('link', { name: 'Smart collections' }).getAttribute('href')).toBe('/collections');
-  expect(tools.getByRole('link', { name: 'Project kits' }).getAttribute('href')).toBe('/project-kits');
-  expect(tools.getByRole('link', { name: 'Documents' }).getAttribute('href')).toBe('/documents');
-  expect(tools.getByRole('link', { name: 'Labels' }).getAttribute('href')).toBe('/labels');
-  expect(tools.getAllByRole('link').map((link) => link.textContent)).toEqual(['Smart collections', 'Project kits', 'Documents', 'Labels']);
-  expect(screen.queryByText('API')).toBeNull();
-  expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
-});
-
-test('marks the collapsed desktop sidebar as hover-expandable', () => {
-  const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
-  const sidebar = container.querySelector('aside');
-
-  expect(sidebar?.classList.contains('is-hover-expandable')).toBe(true);
-  expect(sidebar?.classList.contains('is-open')).toBe(false);
-});
-
-test('uses the landing page mark in the workspace sidebar', () => {
+test("uses the mobile mark without changing the public mark", () => {
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
-  const brand = screen.getByRole('link', { name: 'FindEZ home' });
-  const paths = container.querySelectorAll('.app-sidebar-logo path');
-
-  expect(brand.textContent).toBe('FindEZ');
-  expect(paths).toHaveLength(2);
-  expect(paths[0].getAttribute('d')).toBe('M28 38H58V68');
-  expect(paths[1].getAttribute('stroke')).toBe('#E8590C');
+  expect(
+    container.querySelector(".app-sidebar-logo path")?.getAttribute("d"),
+  ).toBe("M25.25 40.75H55.25V70.75");
 });
-
-test.each(workspaceLinks)('highlights only $label on its route', ({ label, route }) => {
-  jest.mocked(usePathname).mockReturnValue(route);
-  const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
-
-  expect(Array.from(container.querySelectorAll('a.is-active'))).toEqual([
-    screen.getByRole('link', { name: label }),
-  ]);
-});
-
-test('keeps Settings inactive on its developer child route', () => {
-  jest.mocked(usePathname).mockReturnValue('/settings/api-keys/new');
+test.each(APP_NAV_ITEMS.filter((i) => i.route !== "/docs/api"))(
+  "selects only $label on its route",
+  ({ label, route }) => {
+    jest.mocked(usePathname).mockReturnValue(route);
+    const { container } = render(
+      <AppSidebar onToggle={jest.fn()} sidebarOpen />,
+    );
+    expect([...container.querySelectorAll('a[aria-current="page"]')]).toEqual([
+      screen.getByRole("link", { name: label }),
+    ]);
+  },
+);
+test("API key child route selects API keys and leaves Settings inactive", () => {
+  jest.mocked(usePathname).mockReturnValue("/settings/api-keys/new");
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
-
-  expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
-  expect(screen.getByRole('link', { name: 'Settings' }).classList.contains('is-active')).toBe(false);
-  expect(screen.queryByRole('link', { name: 'API keys' })).toBeNull();
+  expect(
+    screen.getByRole("link", { name: "API keys" }).getAttribute("aria-current"),
+  ).toBe("page");
+  expect(
+    screen.getByRole("link", { name: "Settings" }).getAttribute("aria-current"),
+  ).toBeNull();
 });
-
-describe.each([
-  { viewport: 'mobile', width: 390, expectedToggles: 1 },
-  { viewport: 'desktop', width: 1024, expectedToggles: 0 },
-])('$viewport navigation', ({ width, expectedToggles }) => {
-  test.each(workspaceLinks)('$label preserves the sidebar behavior', async ({ label }) => {
+test.each([390, 1024])(
+  "navigation closes the drawer only on a narrow viewport (%i)",
+  async (width) => {
     window.innerWidth = width;
-    const user = userEvent.setup();
     const onToggle = jest.fn();
     render(<AppSidebar onToggle={onToggle} sidebarOpen />);
+    const link = screen.getByRole("link", { name: "Spaces" });
+    link.addEventListener("click", (e) => e.preventDefault());
+    await userEvent.click(link);
+    expect(onToggle).toHaveBeenCalledTimes(width < 860 ? 1 : 0);
+  },
+);
 
-    const link = screen.getByRole('link', { name: label });
-    // Exercise the click handler without asking jsdom to navigate to another page.
-    link.addEventListener('click', (event) => event.preventDefault());
-    await user.click(link);
+test("the narrow drawer isolates background controls and restores focus on close", async () => {
+  window.innerWidth = 390;
+  const outside = document.createElement("button");
+  outside.className = "app-main";
+  outside.inert = false;
+  document.body.append(outside);
+  outside.focus();
+  const initialOverflow = document.body.style.overflow;
+  const rects = jest
+    .spyOn(HTMLElement.prototype, "getClientRects")
+    .mockReturnValue([new DOMRect()] as unknown as DOMRectList);
+  const onToggle = jest.fn();
+  const view = render(<AppSidebar onToggle={onToggle} sidebarOpen />);
+  try {
+    expect(outside.inert).toBe(true);
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.activeElement).toBe(
+      screen.getByRole("link", { name: "FindEZ home" }),
+    );
+    await userEvent.tab({ shift: true });
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Sign out" }),
+    );
+    await userEvent.keyboard("{Escape}");
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    view.rerender(<AppSidebar onToggle={onToggle} sidebarOpen={false} />);
+    expect(outside.inert).toBe(false);
+    expect(document.body.style.overflow).toBe(initialOverflow);
+    expect(document.activeElement).toBe(outside);
+  } finally {
+    view.unmount();
+    rects.mockRestore();
+    outside.remove();
+  }
+});
 
-    expect(onToggle).toHaveBeenCalledTimes(expectedToggles);
-  });
+test("crossing the desktop breakpoint closes an open drawer once", () => {
+  window.innerWidth = 390;
+  const onToggle = jest.fn();
+  render(<AppSidebar onToggle={onToggle} sidebarOpen />);
+  window.innerWidth = 1024;
+  fireEvent(window, new Event("resize"));
+  fireEvent(window, new Event("resize"));
+  expect(onToggle).toHaveBeenCalledTimes(1);
 });

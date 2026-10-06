@@ -4,6 +4,7 @@ import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
 import "./globals.css";
 import "./app-theme.css";
+import "./workspace.css";
 
 // Runs before first paint, on every route, because layout.tsx wraps the
 // whole app. It must stay a no-op outside the interior: it checks the

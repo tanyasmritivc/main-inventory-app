@@ -105,6 +105,38 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Authenticated web mobile parity
+
+Run `npm run test:ci`, `npx tsc --noEmit`, ESLint on the changed TypeScript files
+and `npm run build -- --webpack` from `frontend/`. The web suite now includes
+176 tests across 24 suites. `restock-plan`, `ask-stream`, `workspace-boundaries`
+and `workspace-flows` cover opt-in planning, order/arrival confirmation, persisted
+absolute retries, failed storage, account switches, permission-aware photo paths,
+document paths/notes search, failed draft retention, confirmed Ask conversation
+IDs and incomplete SSE answers. Sidebar regressions cover all entry points,
+one active destination, narrow-screen focus/background isolation and restoration.
+`workspace-profile` covers delayed identity, loaded fields, the backend photo
+field and one-attempt legacy signup completion after USER_UPDATED. Public landing
+and API documentation tests remain in the full web suite.
+
+Browser-check desktop and narrow layouts using disposable test data: Home counts
+and query handoff, navigation search, Capture fields/import modes, item details
+and gallery dialogs, document errors, and Restock order/arrival count changes.
+Ordering must not change stock. Check failed/retried arrivals and shared viewers
+before deployment. Purchase plans are per account/browser and do not sync with
+mobile. Never use the user's real inventory as a write probe.
+
+The October 6 local browser pass used fictional API data. Self-hosted deployment
+then verified actual read views, saved profile/name/avatar, production webpack
+build and bundle origins, anonymous guards, static assets, HTTPS public pages,
+unchanged landing source/content and exact public API JSON. Both systemd services
+remain active, with the original VM checkout and prior web builds preserved.
+Full live multi-account, storage/upload and collaboration acceptance was not
+repeated and is not claimed. All five GitHub CI jobs must pass on the PR head.
+Use disposable accounts for further write acceptance; never probe real inventory.
+The ignored local fixture environment and compiled output are not deployment
+artifacts.
+
 ### Restock planner and stock confirmation
 
 `restock_planner_test.dart` covers migration of old thresholds/checks without

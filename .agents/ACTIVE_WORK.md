@@ -1,5 +1,26 @@
 # Active work
 
+## Web mobile-parity rebuild (October 6)
+
+User-authorized authenticated web rebuild on `web/mobile-parity-rebuild` in
+`/private/tmp/findez-web-rebuild`, based on submitted mobile build-58 record
+`1e36998`. Mobile defines feature semantics; supplied desktop prototype guides
+layout only. Preserve marketing, production data, public API contracts and docs.
+Scope: desktop navigation, Home/Spaces/Find, grounded/photo Ask, account-local
+Restock, item galleries, Documents/notes, existing collaboration/utilities, and
+visible loading/retry states. Implemented and deployed to the existing self-hosted
+server on runtime `afea356`; systemd `findez-web` uses isolated release
+`/home/ubuntu/findez-web-releases/web-mobile-parity-20261006-live/frontend`.
+The dirty original VM checkout and previous builds remain recoverable. All 176
+web tests with coverage, TypeScript, lint with no errors and production webpack
+build pass. Native Safari verified desktop and 390px flows with fictional local
+data, then actual live Home/Documents/Restock/profile reads. Profile signup
+recursion is covered by a regression. Public HTTPS/static/auth checks pass;
+landing content and all public API/docs/assets remain preserved. Backend,
+mobile and schema are unchanged. Draft PR #47 targets `release/appstore-build58`
+to keep the diff web-only; exact-head shared CI is recorded on the PR. Full live
+file-write, multi-account and collaboration acceptance was not repeated.
+
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not
 list ideas as active work.
 

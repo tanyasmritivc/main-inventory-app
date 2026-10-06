@@ -1,5 +1,67 @@
 # Current state
 
+## October 6 authenticated web rebuild
+
+- `web/mobile-parity-rebuild` in `/private/tmp/findez-web-rebuild`, based on
+  submitted build-58 record `1e36998`, rebuilds the web interior around the
+  current mobile behavior. Draft review targets `release/appstore-build58`;
+  targeting the old `main` would include unrelated stacked mobile changes.
+- Permanent desktop labels, grouped feature links, searchable navigation,
+  a narrow-screen focus-trapped drawer, mobile mark and a real-data Home make
+  existing capabilities easier to reach. Spaces remains the actual flat
+  personal/shared model; Teams retains its separate membership model.
+- Find details follow mobile field order and include permission-aware personal,
+  shared and Team photo galleries. Capture has full manual fields and JSON
+  spreadsheet import. Existing review, lending, kits, labels, Team utilities,
+  notifications, API keys and public documentation remain reachable.
+- Ask handles text/photo streams, public answer context, confirmed conversation
+  IDs and visible interrupted/save failures. Documents and notes use existing
+  upload/rename/link/storage routes with retained failed drafts. Account changes
+  discard stale responses and clear private views in rebuilt clients.
+- Restock requires item opt-in, separates To buy from On order and confirms an
+  absolute arrival count before clearing an order. Lost-response retries reuse
+  the saved count. Personal/shared/Team stock uses existing permission-checked
+  routes; viewers cannot write stock. Purchase plans remain account/browser-local
+  and do not sync with mobile purchase plans or another device.
+- Scoped `workspace.css` affects only interior classes. Landing source, its
+  styling/assets, public API/downloads, backend, mobile, schema, billing and FIND
+  are unchanged. Existing API documentation matches the mounted public router,
+  so no contract regeneration was required. New form copy avoids em dashes.
+- Local final checks: all 176 web tests across 24 suites with coverage,
+  TypeScript, changed-file ESLint (0 errors, 38 warnings) and production webpack
+  compilation/prerender pass. Shared exact-head CI status is recorded on the PR.
+  Native Safari checks used a fictional local API: desktop Home/navigation, Ask
+  query handoff and sources, Find/details/photos, document failure/draft retention,
+  Restock ordering/arrival, Settings, 390px Home/drawer and manual Capture fields.
+  No production inventory or membership was mutated. Light/Dark theme logic is
+  covered by tests; this browser pass observed the device's dark theme.
+- Deployed to the existing self-hosted Ubuntu server at `www.findez.ai` on
+  runtime `afea356`. `findez-web` runs from
+  `/home/ubuntu/findez-web-releases/web-mobile-parity-20261006-live/frontend`
+  through its existing Caddy/nginx proxy and production environment. Backend
+  service `findez` is unchanged and both services are active. Vercel and Render
+  are retired hosting targets and were not used for this deployment.
+- The dirty VM checkout was preserved. The isolated release overlays only this
+  lane's frontend changes plus the reviewed theme-provider dependency; it keeps
+  the VM's unrelated import success colors and all 160 other staged files,
+  including deployed public assets/styles/configuration. Production build,
+  self-hosted bundle origins, static assets, anonymous guards, HTTPS public
+  pages, original landing visible text and exact public API JSON are verified.
+- Native Safari observed actual Home data, Documents, Restock and Settings.
+  Profile fields and the saved header/sidebar photo load correctly. Legacy
+  pending signup completion is bounded to one attempt per account per mounted
+  shell to prevent USER_UPDATED recursion and profile API throttling. Save stays
+  disabled until profile loads; photo uploads use the backend's `photo` field.
+  No inventory or membership was mutated during these checks.
+- Previous builds and immutable assets are retained. Deployment, preflight and
+  activation JSON records live beside the release. To restore the original web
+  build, remove only this task's
+  `/etc/systemd/system/findez-web.service.d/web-rebuild.conf`, reload systemd
+  and restart `findez-web`; preserve the existing network drop-in.
+- Ignored local fixture/environment/build output was excluded. Full live
+  multi-account, file upload/storage and collaboration acceptance was not
+  repeated and is not claimed. Purchase plans remain browser-local.
+
 ## October 5 App Store submission
 
 - The user's final instruction authorizes checking the current mobile app and

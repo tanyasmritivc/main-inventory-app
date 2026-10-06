@@ -28,6 +28,8 @@ import {
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
 
+import { ItemDetails } from "@/components/site/item-details";
+
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 const inputStyle = {
@@ -88,6 +90,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [editItemError, setEditItemError] = useState<string | null>(null);
   const [savingItem, setSavingItem] = useState(false);
 
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
@@ -499,7 +502,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
               <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
                 <div style={{ minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>
-                    {itemDisplayName(item)}
+                    <button type="button" onClick={() => setDetailItem(item)} style={{ background: "transparent", border: 0, color: "inherit", padding: 0, textAlign: "left" }}>{itemDisplayName(item)}</button>
                   </div>
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{itemDisplayDescription(item)}</div>}
                 </div>
@@ -508,7 +511,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                     {item.category ?? '—'}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)' }}>
                   {item.quantity}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
@@ -537,6 +540,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         )}
       </div>
 
+<Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Shared item</DialogTitle>{detailItem && <ItemDetails item={detailItem} context={{ kind: "shared", shareId }} canEdit={permission === "edit"} onChanged={next => { setDetailItem(next); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
       <Dialog open={addItemOpen} onOpenChange={(open) => { setAddItemOpen(open); if (!open) setAddItemError(null); }}>
         <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader><DialogTitle style={{ color: 'var(--text-primary)' }}>Add to {spaceName}</DialogTitle></DialogHeader>

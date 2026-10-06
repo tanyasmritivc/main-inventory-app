@@ -1,91 +1,548 @@
 "use client";
-
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { History, MessageSquarePlus, Send, Sparkles, Trash2, X } from "lucide-react";
-import { ConversationMessage, ConversationSummary, deleteConversation, getConversation, getConversations, streamAiCommand } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ImagePlus, MessageSquarePlus, Send, Trash2, X } from "lucide-react";
+import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
+import { accountRequest } from "@/lib/account-request";
+import {
+  parseAskContext,
+  trustedAskPhotoUrl,
+  type AskAnswerContext,
+} from "@/lib/ask-answer";
+import { askQuestion } from "@/lib/ask-stream";
 import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
-
-export function AssistClient() {
-  const { token } = useApiSession();
-  const { confirmAction } = useAppDialog();
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  const loadConversations = useCallback(async () => {
-    if (!token) return [];
-    const list = await getConversations({ token }); setConversations(list); return list;
-  }, [token]);
-
-  useEffect(() => { if (token) void loadConversations().catch(() => setError("Could not load chat history.")); }, [loadConversations, token]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-  useEffect(() => { const draft = window.localStorage.getItem("findez-assist-draft"); if (draft) setInput(draft); }, []);
-  useEffect(() => { window.localStorage.setItem("findez-assist-draft", input); }, [input]);
-
-  async function openConversation(id: string) {
-    if (!token) return;
-    setConversationId(id); setError(null);
-    try { const result = await getConversation({ token, conversationId: id }); setMessages(result.messages ?? []); setHistoryOpen(false); }
-    catch { setError("Could not open that conversation."); }
-  }
-
-  function newChat() { setConversationId(null); setMessages([]); setError(null); setInput(""); setHistoryOpen(false); }
-
-  async function removeConversation(event: React.MouseEvent, id: string) {
-    event.stopPropagation();
-    if (!token || !await confirmAction({ title: "Delete conversation?", message: "This removes the conversation from your history.", confirmLabel: "Delete", danger: true })) return;
-    await deleteConversation({ token, conversationId: id });
-    if (conversationId === id) newChat(); await loadConversations();
-  }
-
-  async function send(event: FormEvent) {
-    event.preventDefault();
-    const text = input.trim(); if (!token || !text || sending) return;
-    setSending(true); setError(null); setInput(""); window.localStorage.removeItem("findez-assist-draft");
-    const userMessage: ConversationMessage = { id: `user-${Date.now()}`, role: "user", content: text, created_at: new Date().toISOString() };
-    const assistantId = `assistant-${Date.now()}`;
-    setMessages((current) => [...current, userMessage, { id: assistantId, role: "assistant", content: "", created_at: new Date().toISOString() }]);
-    try {
-      await streamAiCommand({ token, message: text, conversationId, onDelta: (delta) => setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: message.content + delta } : message)) });
-      const list = await loadConversations();
-      if (!conversationId && list[0]) setConversationId(list[0].id);
-    } catch (reason) {
-      setMessages((current) => current.filter((message) => message.id !== assistantId));
-      setError(userFacingError(reason, "Assist could not complete that request. Please try again."));
-    } finally { setSending(false); }
-  }
-
+type Message = ConversationMessage & {
+  context?: AskAnswerContext;
+  localPhoto?: string;
+  failed?: boolean;
+};
+export function AssistClient({ initialQuery = "" }: { initialQuery?: string }) {
+  const { accountId } = useApiSession();
   return (
-    <section className="assist-layout">
-      <div className="assist-chat">
-        <header>
-          <strong>Ask FindEZ</strong>
-          <div className="assist-header-actions">
-            <button className="app-icon-button" onClick={() => setHistoryOpen((value) => !value)} aria-label="Conversation history"><History size={16} /></button>
-            <button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New</button>
-          </div>
-        </header>
-        {historyOpen && <aside className="assist-history-popover">
-          <div className="assist-history-header"><span>History</span><button className="app-icon-button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X size={15} /></button></div>
-          <div className="assist-history-list">
-            {conversations.map((conversation) => <button className={conversation.id === conversationId ? "is-active" : ""} key={conversation.id} onClick={() => void openConversation(conversation.id)}><span>{conversation.title || "New chat"}</span><Trash2 size={13} onClick={(event) => void removeConversation(event, conversation.id)} /></button>)}
-            {conversations.length === 0 && <p>No conversations.</p>}
-          </div>
-        </aside>}
-        <div className="assist-messages">
-          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>What do you need?</h1><div className="assist-prompts"><button onClick={() => setInput("Where is ")}>Find an item</button><button onClick={() => setInput("What is low in stock?")}>Low stock</button><button onClick={() => setInput("What changed recently?")}>Recent changes</button></div></div>}
-          {messages.map((message) => <article className={`assist-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "FindEZ" : "You"}</span><div>{message.content || (sending ? "Thinking…" : "")}</div></article>)}
-          <div ref={endRef} />
+    <AssistClientWorkspace
+      key={accountId || "signed-out"}
+      initialQuery={initialQuery}
+    />
+  );
+}
+function AssistClientWorkspace({
+  initialQuery = "",
+}: {
+  initialQuery?: string;
+}) {
+  const { accountId, error: sessionError } = useApiSession(),
+    { confirmAction } = useAppDialog();
+  const owner = useRef(accountId);
+  useEffect(() => {
+    owner.current = accountId;
+    return () => {
+      owner.current = null;
+    };
+  }, [accountId]);
+  const epoch = useRef(0),
+    controller = useRef<AbortController | null>(null),
+    request = useRef(0);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]),
+    [conversationId, setConversationId] = useState<string | null>(null),
+    [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState(initialQuery),
+    [photo, setPhoto] = useState<File>(),
+    [preview, setPreview] = useState<string>(),
+    [sending, setSending] = useState(false),
+    [opening, setOpening] = useState(false),
+    [error, setError] = useState(""),
+    [status, setStatus] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
+  const loadHistory = useCallback(async () => {
+    if (!accountId) return;
+    const account = accountId,
+      generation = epoch.current;
+    const list = await accountRequest<ConversationSummary[]>(
+      account,
+      "/conversations",
+    );
+    if (owner.current === account && epoch.current === generation)
+      setConversations(list);
+  }, [accountId]);
+  useEffect(() => {
+    epoch.current++;
+    request.current++;
+    controller.current?.abort();
+    setConversations([]);
+    setMessages([]);
+    setConversationId(null);
+    setPhoto(undefined);
+    setSending(false);
+    setOpening(false);
+    setError("");
+    if (!accountId) return;
+    try {
+      setInput(
+        initialQuery ||
+          localStorage.getItem(`findez-ask-draft:${accountId}`) ||
+          "",
+      );
+    } catch {
+      setInput(initialQuery);
+    }
+    void loadHistory().catch(() => {
+      if (owner.current === accountId)
+        setError("Could not load conversation history. Try again.");
+    });
+    return () => {
+      controller.current?.abort();
+      epoch.current++;
+    };
+  }, [accountId, initialQuery, loadHistory]);
+  useEffect(() => {
+    if (!photo) {
+      setPreview(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
+  function draft(value: string) {
+    setInput(value);
+    if (accountId) {
+      try {
+        localStorage.setItem(`findez-ask-draft:${accountId}`, value);
+      } catch {
+        /* The visible draft remains available for retry. */
+      }
+    }
+  }
+  async function openConversation(id: string) {
+    if (!accountId || sending) return;
+    const account = accountId,
+      generation = epoch.current,
+      ticket = ++request.current;
+    setOpening(true);
+    setError("");
+    try {
+      const result = await accountRequest<{
+        messages: (ConversationMessage & { answer_context?: unknown })[];
+      }>(account, `/conversations/${encodeURIComponent(id)}`);
+      if (
+        owner.current === account &&
+        epoch.current === generation &&
+        ticket === request.current
+      ) {
+        setConversationId(id);
+        setMessages(
+          result.messages.map((m) => ({
+            ...m,
+            context: parseAskContext(m.answer_context),
+          })),
+        );
+      }
+    } catch (e) {
+      if (owner.current === account && ticket === request.current)
+        setError(userFacingError(e, "Could not open this conversation."));
+    } finally {
+      if (owner.current === account && ticket === request.current)
+        setOpening(false);
+    }
+  }
+  function newChat() {
+    request.current++;
+    setOpening(false);
+    setConversationId(null);
+    setMessages([]);
+    setError("");
+    setPhoto(undefined);
+    draft("");
+  }
+  async function removeConversation(id: string) {
+    if (
+      !accountId ||
+      sending ||
+      !(await confirmAction({
+        title: "Delete conversation?",
+        message: "This removes the conversation from your history.",
+        confirmLabel: "Delete",
+        danger: true,
+      }))
+    )
+      return;
+    const account = accountId;
+    try {
+      await accountRequest(
+        account,
+        `/conversations/${encodeURIComponent(id)}`,
+        { method: "DELETE" },
+      );
+      if (owner.current !== account) return;
+      if (conversationId === id) newChat();
+      await loadHistory();
+    } catch (e) {
+      if (owner.current === account)
+        setError(userFacingError(e, "Could not delete this conversation."));
+    }
+  }
+  function attach(file?: File) {
+    if (!file) return;
+    if (
+      !file.type.startsWith("image/") ||
+      !file.size ||
+      file.size > 10 * 1024 * 1024
+    ) {
+      setError("Choose a photo smaller than 10 MB.");
+      return;
+    }
+    setPhoto(file);
+    setError("");
+  }
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!accountId || sending || opening || (!input.trim() && !photo)) return;
+    const account = accountId,
+      generation = epoch.current,
+      text = input.trim() || "What is in this photo, and do I already own it?",
+      now = new Date().toISOString(),
+      userId = crypto.randomUUID(),
+      assistantId = crypto.randomUUID();
+    const control = new AbortController();
+    controller.current = control;
+    const current = () =>
+      owner.current === account && epoch.current === generation;
+    setSending(true);
+    setError("");
+    setStatus(photo ? "Reading your photo…" : "Checking your inventory…");
+    setMessages((m) => [
+      ...m,
+      { id: userId, role: "user", content: text, created_at: now },
+      { id: assistantId, role: "assistant", content: "", created_at: now },
+    ]);
+    let final:
+      | {
+          conversationId?: string;
+          content?: string;
+          context?: AskAnswerContext;
+        }
+      | undefined;
+    const timer = window.setTimeout(() => control.abort(), 180_000);
+    try {
+      await askQuestion({
+        accountId: account,
+        message: text,
+        photo,
+        conversationId,
+        signal: control.signal,
+        onDelta: (delta) => {
+          if (current())
+            setMessages((m) =>
+              m.map((msg) =>
+                msg.id === assistantId
+                  ? { ...msg, content: msg.content + delta }
+                  : msg,
+              ),
+            );
+        },
+        onStatus: (value) => {
+          if (current()) setStatus(value);
+        },
+        onDone: (value) => {
+          final = value;
+        },
+      });
+      if (!current()) return;
+      if (!final?.conversationId)
+        throw new Error(
+          "Your answer was not confirmed in history. Open history before retrying.",
+        );
+      setMessages((m) =>
+        m.map((msg) =>
+          msg.id === assistantId
+            ? {
+                ...msg,
+                content: final?.content ?? msg.content,
+                context: final?.context,
+              }
+            : msg,
+        ),
+      );
+      setConversationId(final.conversationId);
+      setPhoto(undefined);
+      draft("");
+      try {
+        await loadHistory();
+      } catch {
+        setError(
+          "Your answer was saved, but history could not refresh. Try refreshing history.",
+        );
+      }
+    } catch (reason) {
+      if (current()) {
+        setMessages((m) =>
+          m.map((msg) =>
+            msg.id === assistantId ? { ...msg, failed: true } : msg,
+          ),
+        );
+        setError(
+          control.signal.aborted
+            ? "Your question stopped before confirmation. Your draft is available to retry. Check history for any saved answer."
+            : userFacingError(
+                reason,
+                "Your question could not be completed. Your draft is available to retry.",
+              ),
+        );
+      }
+    } finally {
+      window.clearTimeout(timer);
+      if (current()) {
+        setSending(false);
+        setStatus("");
+      }
+      if (controller.current === control) controller.current = null;
+    }
+  }
+  return (
+    <section>
+      <header className="workspace-heading">
+        <div>
+          <h1>Ask FindEZ</h1>
+          <p>
+            Ask about what you own, where it lives, and what your projects need.
+          </p>
         </div>
-        {error && <div className="notice-error assist-error">{error}</div>}
-        <form className="assist-composer" onSubmit={(event) => void send(event)}><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Ask FindEZ about your inventory…" maxLength={4000} /><button disabled={!input.trim() || sending} aria-label="Send"><Send size={17} /></button></form>
+        <button
+          className="workspace-button"
+          onClick={newChat}
+          disabled={sending}
+        >
+          <MessageSquarePlus size={15} />
+          New conversation
+        </button>
+      </header>
+      <div className="workspace-split">
+        <aside className="workspace-history" aria-label="Conversation history">
+          <div className="workspace-section-heading">
+            <h2>History</h2>
+            <button
+              className="workspace-button"
+              disabled={sending}
+              onClick={() =>
+                void loadHistory().catch(() =>
+                  setError("Could not refresh history."),
+                )
+              }
+            >
+              Refresh
+            </button>
+          </div>
+          {conversations.map((c) => (
+            <div className="workspace-actions" key={c.id}>
+              <button
+                className="workspace-button"
+                style={{ flex: 1, justifyContent: "flex-start" }}
+                aria-current={c.id === conversationId ? "true" : undefined}
+                disabled={sending}
+                onClick={() => void openConversation(c.id)}
+              >
+                {c.title || "New conversation"}
+              </button>
+              <button
+                className="workspace-button"
+                style={{ width: "auto" }}
+                disabled={sending}
+                aria-label={`Delete ${c.title || "conversation"}`}
+                onClick={() => void removeConversation(c.id)}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+          {!conversations.length && (
+            <p className="workspace-muted">
+              Your saved conversations appear here.
+            </p>
+          )}
+        </aside>
+        <div>
+          {opening ? (
+            <p role="status">Opening conversation…</p>
+          ) : (
+            messages.map((m) => {
+              const photoUrl = trustedAskPhotoUrl(
+                m.context?.photoUrl,
+                accountId,
+                [process.env.NEXT_PUBLIC_SUPABASE_URL || ""],
+              );
+              return (
+                <article className="ask-message" key={m.id}>
+                  <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>
+                  {photoUrl && (
+                    <img src={photoUrl} alt="Photo used for this question" />
+                  )}
+                  <div className="ask-body">
+                    {m.content ||
+                      (sending ? status : "The answer did not finish.")}
+                  </div>
+                  {m.failed && (
+                    <p className="workspace-muted">
+                      This answer was interrupted. Check history before relying
+                      on it.
+                    </p>
+                  )}
+                  {!m.failed && !!m.context?.sources.length && (
+                    <div className="ask-sources" aria-label="Sources checked">
+                      {m.context.sources.map((s, i) => (
+                        <span className="ask-source" key={i} title={s.detail}>
+                          {s.label}
+                          {s.detail && (
+                            <small style={{ display: "block" }}>
+                              {s.detail}
+                            </small>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {!m.failed && !!m.context?.rows.length && (
+                    <div className="workspace-table-wrap">
+                      <table className="workspace-table">
+                        <thead>
+                          <tr>
+                            <th>Item</th>
+                            <th>Available</th>
+                            <th>Needed</th>
+                            <th>Where / status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {m.context.rows.map((r, i) => (
+                            <tr key={`${r.id}-${i}`}>
+                              <td>{r.name}</td>
+                              <td>{r.availableQuantity}</td>
+                              <td>{r.requiredQuantity ?? ""}</td>
+                              <td>
+                                {r.status ? (
+                                  <span
+                                    className={`workspace-badge ${r.status}`}
+                                  >
+                                    {r.status}
+                                  </span>
+                                ) : (
+                                  r.location
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {m.context.rowsTruncated && (
+                        <p className="workspace-muted">
+                          Showing the first 100 checked records.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })
+          )}
+          {!messages.length && (
+            <div className="workspace-card">
+              <h2>What would you like to find?</h2>
+              <p className="workspace-muted">
+                Use words or attach a photo. Photo questions check what you
+                already own.
+              </p>
+              <div className="workspace-chips">
+                {[
+                  "Where is my soldering iron?",
+                  "What is missing from my project kit?",
+                  "What changed recently?",
+                ].map((q) => (
+                  <button key={q} onClick={() => draft(q)}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {(error || sessionError) && (
+            <div className="workspace-error" role="alert">
+              {error || sessionError}
+            </div>
+          )}
+          <form className="ask-composer" onSubmit={(e) => void send(e)}>
+            {preview && (
+              <div className="ask-photo-preview">
+                <img src={preview} alt="Attached photo" />
+                <span className="workspace-muted">{photo?.name}</span>
+                <button
+                  className="workspace-button"
+                  type="button"
+                  disabled={sending}
+                  aria-label="Remove attached photo"
+                  onClick={() => setPhoto(undefined)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <textarea
+              className="workspace-input"
+              aria-label="Your question"
+              placeholder="Ask about your inventory…"
+              maxLength={4000}
+              value={input}
+              disabled={sending}
+              onChange={(e) => draft(e.target.value)}
+            />
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                attach(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+            <div className="workspace-actions">
+              <button
+                type="button"
+                className="workspace-button"
+                disabled={sending}
+                onClick={() => photoInput.current?.click()}
+              >
+                <ImagePlus size={16} />
+                Attach photo
+              </button>
+              {sending ? (
+                <button
+                  type="button"
+                  className="workspace-button"
+                  onClick={() => controller.current?.abort()}
+                >
+                  Stop
+                </button>
+              ) : (
+                <button
+                  className="workspace-button primary"
+                  disabled={!accountId || opening || (!input.trim() && !photo)}
+                >
+                  <Send size={15} />
+                  Ask
+                </button>
+              )}
+            </div>
+            {sending && (
+              <p role="status" className="workspace-muted">
+                {status}
+              </p>
+            )}
+            <p className="workspace-muted">
+              Answers may be inaccurate. Check the source records before making
+              changes.
+            </p>
+          </form>
+        </div>
       </div>
     </section>
   );

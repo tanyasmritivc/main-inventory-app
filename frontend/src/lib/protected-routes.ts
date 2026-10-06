@@ -6,6 +6,9 @@
  */
 export const PROTECTED_ROUTE_PREFIXES = [
   "/assist",
+  "/spaces",
+  "/restock",
+  "/activity",
   "/checkout",
   "/collections",
   "/documents",
@@ -23,5 +26,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return PROTECTED_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }

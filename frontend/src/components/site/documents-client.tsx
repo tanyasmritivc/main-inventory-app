@@ -1,398 +1,801 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
-import { FileUp, RefreshCw } from "lucide-react";
-import { getAccessToken } from "@/lib/session";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { apiRequest, importSpreadsheet } from "@/lib/api";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FileText, FileUp, Plus, RefreshCw } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { useApiSession } from "@/lib/use-api-session";
+import {
+  apiBase,
+  itemDisplayName,
+  type InventoryItem,
+  type Space,
+} from "@/lib/api";
+import { accountRequest, accountToken } from "@/lib/account-request";
+import {
+  documentKind,
+  ownedNotePath,
+  trustedDocumentUrl,
+  type DocumentEntry,
+} from "@/lib/documents";
 import { userFacingError } from "@/lib/user-facing-error";
-
-type DocumentEntry = {
-  storage_path?: string;
-  filename?: string;
-  mime_type?: string | null;
-  file_type?: string | null;
-  size_bytes?: number | null;
-  created_at?: string | null;
-};
-
-// Thin adapters over the shared authenticated request boundary (lib/api.ts).
-function apiFetch<T>(path: string, opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }) {
-  return apiRequest<T>(path, opts);
+export function DocumentsClient({
+  initialItem = "",
+}: {
+  initialItem?: string;
+}) {
+  const { accountId } = useApiSession();
+  return (
+    <DocumentsClientWorkspace
+      key={accountId || "signed-out"}
+      initialItem={initialItem}
+    />
+  );
 }
-
-async function apiDelete(path: string, opts: { token: string }) {
-  await apiRequest<void>(path, { method: "DELETE", token: opts.token });
-}
-
-function fileTypeIcon(mime: string | null | undefined, filename: string | undefined): string {
-  const m = (mime || "").toLowerCase();
-  const n = (filename || "").toLowerCase();
-  if (m.startsWith("image/")) return "IMG";
-  if (m === "application/pdf") return "PDF";
-  if (n.endsWith(".xlsx") || n.endsWith(".xls") || m.includes("spreadsheet") || m.includes("excel")) return "XLS";
-  if (n.endsWith(".csv") || m === "text/csv") return "CSV";
-  return "FILE";
-}
-
-export function DocumentsClient() {
-  const fileRef = useRef<HTMLInputElement | null>(null);
-
-  const [token, setToken] = useState<string | null>(null);
-  const [docs, setDocs] = useState<DocumentEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [openError, setOpenError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [openingKey, setOpeningKey] = useState<string | null>(null);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
-  const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
-  const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
-
-  const [pendingSpreadsheet, setPendingSpreadsheet] = useState<File | null>(null);
-  const [showSpaceSelector, setShowSpaceSelector] = useState(false);
-  const [targetSpace, setTargetSpace] = useState("");
-  const [importResult, setImportResult] = useState<{ inserted: number; failures: number } | null>(null);
-  const [importing, setImporting] = useState(false);
-
-  // Shared session source (lib/session.ts).
-  async function refreshToken(): Promise<string> {
-    return (await getAccessToken()) ?? '';
-  }
-
-  async function load(currentToken?: string) {
-    setError(null);
-    setLoading(true);
-    try {
-      const t = currentToken || token || (await refreshToken());
-      if (!t) return;
-      const res = await apiFetch<{ documents: DocumentEntry[] }>("/documents", { method: "GET", token: t });
-      setDocs(res.documents || []);
-    } catch (err: unknown) {
-      setError(userFacingError(err, "Documents could not be loaded."));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onOpenDocument(doc: DocumentEntry, key: string) {
-    setOpenError(null);
-    setDeleteError(null);
-    const storagePath = doc.storage_path;
-    if (!storagePath) {
-      setOpenError("This document can't be opened because its storage path is missing.");
-      return;
-    }
-
-    setOpeningKey(key);
-    try {
-      const params = new URLSearchParams({ storage_path: storagePath });
-      const t = token || (await refreshToken());
-      if (!t) {
-        setOpenError("Please sign in again to open this document.");
-        return;
-      }
-      const data = await apiFetch<{ url?: string }>(`/documents/open?${params.toString()}`, { method: "GET", token: t });
-      if (!data.url) {
-        setOpenError("Failed to open document");
-        return;
-      }
-      window.open(data.url, "_blank", "noopener,noreferrer");
-    } catch (err: unknown) {
-      setOpenError(userFacingError(err, "The document could not be opened."));
-    } finally {
-      setOpeningKey(null);
-    }
-  }
-
-  async function onDeleteDocument() {
-    setDeleteError(null);
-    const storagePath = confirmDeletePath;
-    const key = confirmDeleteKey;
-    if (!storagePath || !key) {
-      setDeleteError("Failed to delete document");
-      return;
-    }
-
-    setDeletingKey(key);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const q = new URLSearchParams({ storage_path: storagePath });
-      await apiDelete(`/documents?${q.toString()}`, { token: t });
-      setDocs((prev) => prev.filter((d) => d.storage_path !== storagePath));
-      setConfirmDeleteKey(null);
-      setConfirmDeletePath(null);
-    } catch (err: unknown) {
-      setDeleteError(userFacingError(err, "The document could not be deleted."));
-    } finally {
-      setDeletingKey(null);
-    }
-  }
-
+function DocumentsClientWorkspace({
+  initialItem = "",
+}: {
+  initialItem?: string;
+}) {
+  const { accountId, error: sessionError } = useApiSession(),
+    { confirmAction, promptValue } = useAppDialog();
+  const owner = useRef(accountId);
   useEffect(() => {
-    refreshToken()
-      .then((t) => load(t))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function onUpload(file: File) {
-    setError(null);
-    setSuccess(null);
-    setOpenError(null);
-    setUploading(true);
+    owner.current = accountId;
+    return () => {
+      owner.current = null;
+    };
+  }, [accountId]);
+  const generation = useRef(0);
+  const [docs, setDocs] = useState<DocumentEntry[]>([]),
+    [items, setItems] = useState<InventoryItem[]>([]),
+    [spaces, setSpaces] = useState<Space[]>([]),
+    [itemFilter, setItemFilter] = useState(initialItem),
+    [filter, setFilter] = useState("all"),
+    [search, setSearch] = useState(""),
+    [noteIndex, setNoteIndex] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true),
+    [working, setWorking] = useState(false),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState("");
+  const [note, setNote] = useState<{
+      doc?: DocumentEntry;
+      text: string;
+      title: string;
+    } | null>(null),
+    [linking, setLinking] = useState<DocumentEntry | null>(null),
+    [linkId, setLinkId] = useState(""),
+    [summary, setSummary] = useState<{ title: string; text: string } | null>(
+      null,
+    ),
+    [importFile, setImportFile] = useState<File | null>(null),
+    [importSpace, setImportSpace] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null),
+    importInput = useRef<HTMLInputElement>(null);
+  const origins = [process.env.NEXT_PUBLIC_SUPABASE_URL || "", apiBase()];
+  async function openUrl(doc: DocumentEntry, account: string) {
+    const result = await accountRequest<{ url: string }>(
+      account,
+      `/documents/open?${new URLSearchParams({ storage_path: doc.storage_path })}`,
+    );
+    const url = trustedDocumentUrl(result.url, account, origins);
+    if (!url)
+      throw new Error(
+        "This document could not be opened safely. Please refresh and try again.",
+      );
+    return url;
+  }
+  async function readNote(doc: DocumentEntry, account: string) {
+    const url = await openUrl(doc, account),
+      response = await fetch(url);
+    if (
+      !response.ok ||
+      Number(response.headers.get("content-length") ?? 0) > 256 * 1024
+    )
+      throw new Error(
+        "This note could not be loaded, or it is too large to edit here.",
+      );
+    const text = await response.text();
+    if (text.length > 256 * 1024)
+      throw new Error("This note is too large to edit here.");
+    await accountToken(account);
+    return text;
+  }
+  const load = useCallback(async () => {
+    if (!accountId) return;
+    const account = accountId,
+      ticket = ++generation.current;
+    setLoading(true);
+    setError("");
+    setDocs([]);
+    setNoteIndex({});
     try {
-      const t = token || (await refreshToken());
-      if (!t) return;
+      const result = await accountRequest<{ documents: DocumentEntry[] }>(
+        account,
+        `/documents?${new URLSearchParams({ limit: "200", ...(itemFilter ? { item_id: itemFilter } : {}) })}`,
+      );
+      if (owner.current !== account || ticket !== generation.current) return;
+      setDocs(result.documents);
+      setLoading(false);
+      // Bound concurrent signed-URL reads; note text remains account-local memory.
+      const notes = result.documents.filter((d) => documentKind(d) === "notes"),
+        index: Record<string, string> = {};
+      for (let i = 0; i < notes.length; i += 3) {
+        if (owner.current !== account || ticket !== generation.current) return;
+        await Promise.all(
+          notes.slice(i, i + 3).map(async (doc) => {
+            try {
+              index[doc.storage_path] = await readNote(doc, account);
+            } catch {
+              /* An unreadable note remains listed and raises an error when opened. */
+            }
+          }),
+        );
+        if (owner.current === account && ticket === generation.current)
+          setNoteIndex({ ...index });
+      }
+    } catch (e) {
+      if (owner.current === account && ticket === generation.current)
+        setError(userFacingError(e, "Could not load documents."));
+    } finally {
+      if (owner.current === account && ticket === generation.current)
+        setLoading(false);
+    }
+    // The configured origins and request helpers are stable for this deployment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, itemFilter]);
+  useEffect(() => {
+    setNote(null);
+    setLinking(null);
+    setSummary(null);
+    setImportFile(null);
+    void load();
+    return () => {
+      generation.current++;
+    };
+  }, [load]);
+  useEffect(() => {
+    if (!accountId) return;
+    const account = accountId;
+    setItems([]);
+    setSpaces([]);
+    void Promise.allSettled([
+      accountRequest<{ items: InventoryItem[] }>(account, "/search_items", {
+        method: "POST",
+        body: { query: "" },
+      }),
+      accountRequest<Space[] | { spaces: Space[] }>(account, "/spaces"),
+    ]).then(([inventory, locations]) => {
+      if (owner.current !== account) return;
+      if (inventory.status === "fulfilled") setItems(inventory.value.items);
+      if (locations.status === "fulfilled")
+        setSpaces(
+          Array.isArray(locations.value)
+            ? locations.value
+            : locations.value.spaces,
+        );
+    });
+  }, [accountId]);
+  async function perform(operation: (account: string) => Promise<void>) {
+    if (!accountId || working) return;
+    const account = accountId;
+    setWorking(true);
+    setError("");
+    setMessage("");
+    try {
+      await operation(account);
+    } catch (e) {
+      if (owner.current === account)
+        setError(
+          userFacingError(e, "The document action could not be completed."),
+        );
+    } finally {
+      if (owner.current === account) setWorking(false);
+    }
+  }
+  function replace(doc: DocumentEntry) {
+    setDocs((current) =>
+      current.map((d) => (d.storage_path === doc.storage_path ? doc : d)),
+    );
+  }
+  async function upload(file: File) {
+    await perform(async (account) => {
       const form = new FormData();
       form.append("file", file);
-      const res = await apiFetch<{ document: { filename?: string }; activity_summary?: string }>("/documents/upload", {
-        method: "POST",
-        token: t,
-        body: form,
-      });
-      setSuccess(res.activity_summary || (res.document?.filename ? `Uploaded ${res.document.filename}` : "Uploaded"));
-      await load(t);
-    } catch (err: unknown) {
-      setError(userFacingError(err, "The document could not be uploaded."));
-    } finally {
-      setUploading(false);
-    }
+      if (itemFilter) form.append("item_id", itemFilter);
+      const result = await accountRequest<{ document: DocumentEntry }>(
+        account,
+        "/documents/upload",
+        { method: "POST", body: form },
+      );
+      if (owner.current !== account) return;
+      setDocs((current) => [
+        result.document,
+        ...current.filter(
+          (d) => d.storage_path !== result.document.storage_path,
+        ),
+      ]);
+      setMessage("Document uploaded.");
+    });
   }
-
-  async function handleSpreadsheetImport() {
-    if (!pendingSpreadsheet || !targetSpace.trim()) return;
-    setImporting(true);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const data = await importSpreadsheet({ token: t, file: pendingSpreadsheet, location: targetSpace.trim() });
-      setImportResult({ inserted: data.inserted ?? 0, failures: data.failures ?? 0 });
-      setShowSpaceSelector(false);
-      setPendingSpreadsheet(null);
-      setTargetSpace("");
-    } catch (err) {
-      setError(userFacingError(err, "The spreadsheet could not be imported."));
-    } finally {
-      setImporting(false);
+  async function saveNote() {
+    if (!note || !note.text.trim()) {
+      setError("Write something in your note before saving.");
+      return;
     }
+    const draft = note;
+    await perform(async (account) => {
+      let document = draft.doc;
+      if (document) {
+        if (
+          !ownedNotePath(document.storage_path, account) ||
+          documentKind(document) !== "notes"
+        )
+          throw new Error("This note does not belong to this account.");
+        const token = await accountToken(account);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/documents/${document.storage_path.split("/").map(encodeURIComponent).join("/")}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+              "Content-Type": "text/plain",
+              "x-upsert": "true",
+            },
+            body: draft.text,
+          },
+        );
+        if (!response.ok)
+          throw new Error(
+            "Your note could not be saved. Your draft is available to retry.",
+          );
+        await accountToken(account);
+      } else {
+        const form = new FormData();
+        form.append(
+          "file",
+          new File([draft.text], `note-${crypto.randomUUID()}.txt`, {
+            type: "text/plain",
+          }),
+        );
+        if (itemFilter) form.append("item_id", itemFilter);
+        const result = await accountRequest<{ document: DocumentEntry }>(
+          account,
+          "/documents/upload",
+          { method: "POST", body: form },
+        );
+        document = result.document;
+        if (owner.current !== account) return;
+        setDocs((current) => [result.document, ...current]);
+        setNote({ ...draft, doc: document }); // A failed rename retries the existing note, never another upload.
+      }
+      if (draft.title.trim() && draft.title.trim() !== document.filename) {
+        const result = await accountRequest<{ document: DocumentEntry }>(
+          account,
+          "/documents/rename",
+          {
+            method: "PATCH",
+            body: {
+              storage_path: document.storage_path,
+              display_name:
+                draft.title
+                  .trim()
+                  .slice(0, 196)
+                  .replace(/\.txt$/i, "") + ".txt",
+            },
+          },
+        );
+        document = result.document;
+      }
+      if (owner.current === account) {
+        replace(document);
+        setNoteIndex((current) => ({
+          ...current,
+          [document.storage_path]: draft.text,
+        }));
+        setNote(null);
+        setMessage("Note saved.");
+      }
+    });
   }
-
-  const handleFileSelect = (file: File) => {
-    const name = file.name.toLowerCase();
-    if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
-      setPendingSpreadsheet(file);
-      setShowSpaceSelector(true);
-    } else {
-      onUpload(file);
-    }
-  };
-
+  async function open(doc: DocumentEntry) {
+    await perform(async (account) => {
+      if (documentKind(doc) === "notes") {
+        const text =
+          noteIndex[doc.storage_path] ?? (await readNote(doc, account));
+        if (owner.current === account)
+          setNote({ doc, text, title: doc.filename.replace(/\.txt$/i, "") });
+      } else {
+        const url = await openUrl(doc, account);
+        if (owner.current === account) {
+          setSummary({ title: doc.display_name || doc.filename, text: "" });
+          setOpenLink(url);
+        }
+      }
+    });
+  }
+  const [openLink, setOpenLink] = useState("");
+  async function rename(doc: DocumentEntry) {
+    const name = await promptValue({
+      title: "Rename document",
+      label: "Name",
+      initialValue: doc.display_name || doc.filename,
+      confirmLabel: "Save",
+    });
+    if (!name?.trim()) return;
+    await perform(async (account) => {
+      const result = await accountRequest<{ document: DocumentEntry }>(
+        account,
+        "/documents/rename",
+        {
+          method: "PATCH",
+          body: { storage_path: doc.storage_path, display_name: name.trim() },
+        },
+      );
+      if (owner.current === account) replace(result.document);
+    });
+  }
+  async function remove(doc: DocumentEntry) {
+    if (
+      !(await confirmAction({
+        title: "Delete document?",
+        message: `Delete ${doc.display_name || doc.filename}? This cannot be undone.`,
+        confirmLabel: "Delete",
+        danger: true,
+      }))
+    )
+      return;
+    await perform(async (account) => {
+      await accountRequest(
+        account,
+        `/documents?${new URLSearchParams({ storage_path: doc.storage_path })}`,
+        { method: "DELETE" },
+      );
+      if (owner.current === account) {
+        setDocs((current) =>
+          current.filter((d) => d.storage_path !== doc.storage_path),
+        );
+        setMessage("Document deleted.");
+      }
+    });
+  }
+  const shown = docs.filter(
+    (d) =>
+      (filter === "all" || documentKind(d) === filter) &&
+      `${d.display_name || d.filename} ${noteIndex[d.storage_path] ?? ""}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
   return (
-    <section className="product-page documents-page">
-      <header className="product-page-header">
-        <h1>Documents</h1>
-        <div className="product-actions">
-          <button className="app-icon-button" type="button" aria-label="Refresh documents" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /></button>
-          <button className="product-button primary" type="button" onClick={() => fileRef.current?.click()} disabled={uploading}><FileUp size={15} />{uploading ? "Uploading…" : "Upload"}</button>
+    <section>
+      <header className="workspace-heading">
+        <div>
+          <h1>Documents and notes</h1>
+          <p>
+            {docs.length} files and notes
+            {itemFilter ? " attached to this item" : " in your account"}.
+          </p>
+        </div>
+        <div className="workspace-actions">
+          <button
+            className="workspace-button"
+            aria-label="Refresh documents"
+            disabled={working}
+            onClick={() => void load()}
+          >
+            <RefreshCw size={15} />
+          </button>
+          <button
+            className="workspace-button"
+            disabled={working}
+            onClick={() => {
+              setError("");
+              setNote({ text: "", title: "" });
+            }}
+          >
+            <Plus size={15} />
+            New note
+          </button>
+          <button
+            className="workspace-button"
+            disabled={working}
+            onClick={() => importInput.current?.click()}
+          >
+            Import inventory
+          </button>
+          <button
+            className="workspace-button primary"
+            disabled={working}
+            onClick={() => fileInput.current?.click()}
+          >
+            <FileUp size={15} />
+            Upload
+          </button>
         </div>
       </header>
-
-      {/* Import success banner */}
-      {importResult && (
-        <div style={{ background: "rgba(50,215,75,0.08)", border: "1px solid rgba(50,215,75,0.20)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 510, color: "var(--success-ink)" }}>
-              ✓ Import complete — {importResult.inserted} items added to inventory
-            </div>
-            {importResult.failures > 0 && (
-              <div style={{ fontSize: 11, color: "var(--light-muted)", marginTop: 2 }}>
-                {importResult.failures} rows could not be parsed
-              </div>
-            )}
-          </div>
-          <button onClick={() => setImportResult(null)} style={{ background: "none", border: "none", color: "var(--light-muted)", cursor: "pointer", fontSize: 16 }}>×</button>
-        </div>
-      )}
-
-      {/* Upload section */}
-      <div className="documents-upload-label">Upload</div>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Upload file"
-        className="documents-dropzone"
-        onClick={() => fileRef.current?.click()}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
-      >
-        <FileUp size={20} />
-        <strong>Drop files here</strong>
-        <span>PDF, image, Excel or CSV</span>
-      </div>
-
       <input
-        ref={fileRef}
+        ref={fileInput}
         type="file"
-        accept="application/pdf,text/plain,image/png,image/jpg,image/jpeg,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,.xlsx,.xls,.csv"
-        style={{ display: "none" }}
-        disabled={uploading}
+        hidden
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFileSelect(f);
-          if (fileRef.current) fileRef.current.value = "";
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void upload(file);
         }}
       />
-
-      {error ? <p style={{ fontSize: 12, color: "var(--danger-ink)", marginBottom: 8, fontWeight: 500 }}>{error}</p> : null}
-      {success ? <p style={{ fontSize: 12, color: "var(--success-ink)", marginBottom: 8, fontWeight: 500 }}>{success}</p> : null}
-
-      {/* Documents list section */}
-      {loading ? <p style={{ fontSize: 13, color: "var(--light-muted)", marginBottom: 8 }}>Loading…</p> : null}
-      {openError ? <p style={{ fontSize: 13, color: "var(--danger-ink)", marginBottom: 8 }}>{openError}</p> : null}
-      {deleteError ? <p style={{ fontSize: 13, color: "var(--danger-ink)", marginBottom: 8 }}>{deleteError}</p> : null}
-
-      {docs.length === 0 && !loading ? (
-        <div className="bare-empty">
-          No documents
+      <input
+        ref={importInput}
+        type="file"
+        hidden
+        accept=".csv,.xls,.xlsx,.json"
+        onChange={(e) => {
+          setImportFile(e.target.files?.[0] ?? null);
+          e.target.value = "";
+        }}
+      />
+      {(error || sessionError) && (
+        <div className="workspace-error" role="alert">
+          {error || sessionError}
         </div>
-      ) : null}
-
-      {docs.length ? (
-        <div className="documents-list">
-          {docs.map((d, idx) => {
-            const key = (d.storage_path || d.filename || "doc") + idx;
-            const icon = fileTypeIcon(d.mime_type, d.filename);
-            return (
-              <div key={key} className="document-row">
-                <div className="document-name">
-                  <span>{icon}</span>
-                  <div>
-                    <strong>{d.filename || "Untitled"}</strong>
-                    <small>
-                      {(d.mime_type || "unknown")}{d.created_at ? ` · ${new Date(d.created_at).toLocaleDateString()}` : ""}
-                    </small>
-                  </div>
-                </div>
-                <div className="document-actions">
+      )}
+      {message && (
+        <p role="status" className="workspace-muted">
+          {message}
+        </p>
+      )}
+      <div className="workspace-actions">
+        <input
+          className="workspace-input"
+          style={{ maxWidth: 400 }}
+          aria-label="Search documents and note contents"
+          placeholder="Search documents and note contents"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="workspace-input"
+          style={{ width: 240 }}
+          aria-label="Documents attached to item"
+          value={itemFilter}
+          onChange={(e) => setItemFilter(e.target.value)}
+        >
+          <option value="">All documents</option>
+          {items.map((i) => (
+            <option key={i.item_id} value={i.item_id}>
+              {itemDisplayName(i)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="workspace-chips">
+        {["all", "notes", "pdfs", "images", "files"].map((f) => (
+          <button
+            className={filter === f ? "is-active" : ""}
+            key={f}
+            onClick={() => setFilter(f)}
+          >
+            {f === "all"
+              ? "Everything"
+              : f === "pdfs"
+                ? "PDFs"
+                : f[0].toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div className="workspace-section">
+        {loading ? (
+          <p role="status" className="workspace-muted">
+            Loading documents…
+          </p>
+        ) : (
+          shown.map((d) => (
+            <div className="workspace-list-row" key={d.storage_path}>
+              <span className="workspace-actions">
+                <FileText size={19} />
+                <span>
                   <button
                     type="button"
-                    onClick={() => onOpenDocument(d, key)}
-                    style={{ fontSize: 12, color: "var(--text-secondary)", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.09)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "inherit",
+                      padding: 0,
+                      textAlign: "left",
+                    }}
+                    onClick={() => void open(d)}
+                    disabled={working}
                   >
-                    {openingKey === key ? "Opening…" : "Open"}
+                    <strong>{d.display_name || d.filename}</strong>
                   </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label={`Open menu for ${d.filename || "document"}`}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        style={{ fontSize: 16, color: "var(--light-muted)", background: "transparent", border: "none", cursor: "pointer", padding: "4px 6px", lineHeight: 1, fontFamily: "inherit" }}
-                      >
-                        ⋯
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setConfirmDeleteKey(key);
-                          setConfirmDeletePath(d.storage_path || null);
-                        }}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                  <small>
+                    {documentKind(d) === "notes"
+                      ? "Note"
+                      : d.mime_type || "File"}
+                    {d.created_at
+                      ? ` · ${new Date(d.created_at).toLocaleDateString()}`
+                      : ""}
+                    {d.item_id ? " · Linked to item" : ""}
+                  </small>
+                </span>
+              </span>
+              <div className="workspace-actions">
+                <button
+                  className="workspace-button"
+                  disabled={working}
+                  onClick={() => void rename(d)}
+                >
+                  Rename
+                </button>
+                <button
+                  className="workspace-button"
+                  disabled={working}
+                  onClick={() => {
+                    setLinking(d);
+                    setLinkId(d.item_id || itemFilter);
+                  }}
+                >
+                  Link / unlink
+                </button>
+                <button
+                  className="workspace-button"
+                  disabled={working}
+                  onClick={() =>
+                    void perform(async (account) => {
+                      const result = await accountRequest<{
+                        assistant_message: string;
+                      }>(account, "/ai_command", {
+                        method: "POST",
+                        body: {
+                          message: `Summarize this document in a few short bullets. Document: "${d.filename}". storage_path: "${d.storage_path}".`,
+                        },
+                      });
+                      if (owner.current === account) {
+                        setOpenLink("");
+                        setSummary({
+                          title: d.filename,
+                          text: result.assistant_message,
+                        });
+                      }
+                    })
+                  }
+                >
+                  Summarize
+                </button>
+                <button
+                  className="workspace-button"
+                  disabled={working}
+                  onClick={() => void remove(d)}
+                >
+                  Delete
+                </button>
               </div>
-            );
-          })}
-        </div>
-      ) : null}
-
-      {/* Delete confirmation dialog */}
+            </div>
+          ))
+        )}
+        {!loading && !shown.length && !error && (
+          <div className="workspace-card">
+            <h2>
+              {search
+                ? "No matching documents or notes"
+                : "Keep the details with your things"}
+            </h2>
+            <p className="workspace-muted">
+              Upload a receipt or manual, or add a note. Link it to an item to
+              find it again.
+            </p>
+          </div>
+        )}
+      </div>
       <Dialog
-        open={!!confirmDeleteKey && !!confirmDeletePath}
+        open={!!note}
         onOpenChange={(open) => {
-          if (!open) {
-            setConfirmDeleteKey(null);
-            setConfirmDeletePath(null);
-          }
+          if (!open && !working) setNote(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete document</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this document? This cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <button type="button" disabled={deletingKey !== null} style={{ background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-            </DialogClose>
+        <DialogContent className="workspace-dialog">
+          <DialogTitle>{note?.doc ? "Edit note" : "New note"}</DialogTitle>
+          <DialogDescription>
+            Save a text note with your documents.
+          </DialogDescription>
+          <label htmlFor="note-title">Title</label>
+          <input
+            id="note-title"
+            className="workspace-input"
+            value={note?.title || ""}
+            maxLength={196}
+            disabled={working}
+            onChange={(e) =>
+              setNote((n) => (n ? { ...n, title: e.target.value } : n))
+            }
+          />
+          <label htmlFor="note-text">Note</label>
+          <textarea
+            id="note-text"
+            className="workspace-input"
+            value={note?.text || ""}
+            maxLength={256 * 1024}
+            disabled={working}
+            onChange={(e) =>
+              setNote((n) => (n ? { ...n, text: e.target.value } : n))
+            }
+          />
+          {error && (
+            <p className="workspace-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="workspace-actions">
             <button
-              type="button"
-              onClick={onDeleteDocument}
-              disabled={deletingKey !== null}
-              style={{ background: "var(--danger-ink)", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-primary)", fontWeight: 510, cursor: deletingKey ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: deletingKey ? 0.6 : 1 }}
+              className="workspace-button"
+              disabled={working}
+              onClick={() => setNote(null)}
             >
-              {deletingKey ? "Deleting…" : "Delete"}
+              Cancel
             </button>
-          </DialogFooter>
+            <button
+              className="workspace-button primary"
+              disabled={working}
+              onClick={() => void saveNote()}
+            >
+              {working ? "Saving…" : "Save note"}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
-
-      {/* Space selector dialog for spreadsheet import */}
       <Dialog
-        open={showSpaceSelector}
+        open={!!linking}
+        onOpenChange={(open) => {
+          if (!open && !working) setLinking(null);
+        }}
+      >
+        <DialogContent className="workspace-dialog">
+          <DialogTitle>Attach to an item</DialogTitle>
+          <DialogDescription>{linking?.filename}</DialogDescription>
+          <label htmlFor="document-link">Item</label>
+          <select
+            id="document-link"
+            className="workspace-input"
+            value={linkId}
+            onChange={(e) => setLinkId(e.target.value)}
+          >
+            <option value="">No item (unlink)</option>
+            {items.map((i) => (
+              <option key={i.item_id} value={i.item_id}>
+                {itemDisplayName(i)}
+              </option>
+            ))}
+          </select>
+          {error && <p role="alert">{error}</p>}
+          <div className="workspace-actions">
+            <button
+              className="workspace-button primary"
+              disabled={working}
+              onClick={() =>
+                void perform(async (account) => {
+                  if (!linking) return;
+                  const result = await accountRequest<{
+                    document: DocumentEntry;
+                  }>(account, "/documents/link", {
+                    method: "PATCH",
+                    body: {
+                      storage_path: linking.storage_path,
+                      item_id: linkId || null,
+                    },
+                  });
+                  if (owner.current === account) {
+                    replace(result.document);
+                    if (itemFilter && linkId !== itemFilter)
+                      setDocs((current) =>
+                        current.filter(
+                          (d) => d.storage_path !== linking.storage_path,
+                        ),
+                      );
+                    setLinking(null);
+                    setMessage(
+                      linkId ? "Document linked." : "Document unlinked.",
+                    );
+                  }
+                })
+              }
+            >
+              Save link
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!summary}
         onOpenChange={(open) => {
           if (!open) {
-            setShowSpaceSelector(false);
-            setPendingSpreadsheet(null);
-            setTargetSpace("");
+            setSummary(null);
+            setOpenLink("");
           }
         }}
       >
-        <DialogContent style={{ background: "var(--light-panel)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 14, padding: 28, backdropFilter: "blur(20px)" }}>
-          <DialogHeader>
-            <DialogTitle>Import to Inventory</DialogTitle>
-            <DialogDescription>Which space should these items go into?</DialogDescription>
-          </DialogHeader>
-          <div style={{ marginTop: 12 }}>
-            <input
-              placeholder="Space name e.g. Garage, Kitchen, Robotics"
-              value={targetSpace}
-              onChange={(e) => setTargetSpace(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && targetSpace.trim() && !importing) handleSpreadsheetImport(); }}
-              style={{ width: "100%", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 10, padding: "11px 16px", fontSize: 13, color: "var(--text-primary)", outline: "none", fontFamily: "inherit", letterSpacing: "-0.01em", backdropFilter: "blur(8px)", transition: "border-color 0.15s", boxSizing: "border-box" as any }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,0,0,0.25)"; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,0,0,0.10)"; }}
-            />
-          </div>
-          {pendingSpreadsheet && (
-            <div style={{ fontSize: 11, color: "var(--light-muted)", marginTop: 8 }}>File: {pendingSpreadsheet.name}</div>
-          )}
-          <DialogFooter style={{ marginTop: 20 }}>
-            <DialogClose asChild>
-              <button type="button" style={{ background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-            </DialogClose>
-            <button
-              type="button"
-              disabled={importing || !targetSpace.trim()}
-              onClick={handleSpreadsheetImport}
-              style={{ background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 510, cursor: importing || !targetSpace.trim() ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: importing || !targetSpace.trim() ? 0.5 : 1 }}
+        <DialogContent className="workspace-dialog">
+          <DialogTitle>{summary?.title}</DialogTitle>
+          <DialogDescription>
+            {openLink
+              ? "Open the saved file in a new tab."
+              : "Summary from FindEZ. Check the original document for accuracy."}
+          </DialogDescription>
+          {openLink ? (
+            <a
+              className="workspace-button primary"
+              href={openLink}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              {importing ? "Importing…" : "Import"}
+              Open document
+            </a>
+          ) : (
+            <p className="document-note">{summary?.text}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!importFile}
+        onOpenChange={(open) => {
+          if (!open && !working) setImportFile(null);
+        }}
+      >
+        <DialogContent className="workspace-dialog">
+          <DialogTitle>Import inventory</DialogTitle>
+          <DialogDescription>{importFile?.name}</DialogDescription>
+          <label htmlFor="import-space">Destination Space</label>
+          <select
+            id="import-space"
+            className="workspace-input"
+            value={importSpace}
+            onChange={(e) => setImportSpace(e.target.value)}
+          >
+            <option value="">Choose a Space</option>
+            {spaces.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+            <option value="Unsorted">Unsorted</option>
+          </select>
+          {error && <p role="alert">{error}</p>}
+          <div className="workspace-actions">
+            <Link className="workspace-button" href="/scan">
+              Capture and create a Space
+            </Link>
+            <button
+              className="workspace-button primary"
+              disabled={working || !importSpace}
+              onClick={() =>
+                void perform(async (account) => {
+                  if (!importFile) return;
+                  const form = new FormData();
+                  form.append("file", importFile);
+                  form.append("location", importSpace);
+                  const result = await accountRequest<{
+                    inserted: number;
+                    failures: number;
+                  }>(account, "/import/spreadsheet", {
+                    method: "POST",
+                    body: form,
+                  });
+                  if (owner.current === account) {
+                    setImportFile(null);
+                    setMessage(
+                      `Import complete: ${result.inserted} items added, ${result.failures} failed.`,
+                    );
+                  }
+                })
+              }
+            >
+              Import
             </button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </section>

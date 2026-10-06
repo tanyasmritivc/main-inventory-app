@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/site/app-shell";
-import { HomeInventoryClient } from "@/components/site/home-inventory-client";
+import { HomeOverview } from "@/components/site/home-overview";
 import { requireUser } from "@/lib/auth-guard";
 
 export default async function HomePage() {
@@ -7,7 +7,7 @@ export default async function HomePage() {
 
   return (
     <AppShell>
-      <HomeInventoryClient mode="home" />
+      <HomeOverview />
     </AppShell>
   );
 }
