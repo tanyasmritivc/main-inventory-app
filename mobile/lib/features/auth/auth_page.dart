@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
 import '../onboarding/onboarding_prefs.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key, this.onAuthChanged});
@@ -60,7 +61,10 @@ class _AuthPageState extends State<AuthPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: AppText(message),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
   }
 
@@ -666,7 +670,7 @@ class _AuthPageState extends State<AuthPage> {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: Text(_isLogin ? 'Sign in' : 'Create account'),
+        title: AppText(_isLogin ? 'Sign in' : 'Create account'),
         centerTitle: true,
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
@@ -705,7 +709,7 @@ class _AuthPageState extends State<AuthPage> {
                           child: FindEZWordmark(),
                         ),
                         const SizedBox(height: 12),
-                        Text(
+                        AppText(
                           _isLogin ? 'Welcome back' : 'Welcome',
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
@@ -714,7 +718,7 @@ class _AuthPageState extends State<AuthPage> {
                               ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        AppText(
                           'by AI Robots Inc',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -727,7 +731,7 @@ class _AuthPageState extends State<AuthPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text(
+                        AppText(
                           _isLogin
                               ? 'Sign in to upload documents and view activity.'
                               : 'Sign up to start uploading documents.',
@@ -745,9 +749,15 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _firstName,
                             textInputAction: TextInputAction.next,
                             maxLength: 50,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 15,
+                              ),
                             ),
                             decoration: InputDecoration(
                               labelText: 'First name',
@@ -802,9 +812,15 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _lastName,
                             textInputAction: TextInputAction.next,
                             maxLength: 50,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 15,
+                              ),
                             ),
                             decoration: InputDecoration(
                               labelText: 'Last name',
@@ -859,9 +875,15 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _profileRole,
                             textInputAction: TextInputAction.next,
                             maxLength: 120,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 15,
+                              ),
                             ),
                             decoration: InputDecoration(
                               labelText: 'Role (optional)',
@@ -917,9 +939,15 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _organization,
                             textInputAction: TextInputAction.next,
                             maxLength: 120,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 15,
+                              ),
                             ),
                             decoration: InputDecoration(
                               labelText: 'Organization (optional)',
@@ -978,20 +1006,26 @@ class _AuthPageState extends State<AuthPage> {
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          style: TextStyle(
-                            color: AppTheme.foreground(context, Colors.white),
-                            fontSize: 15,
+                          style: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 15,
+                            ),
                           ),
                           onChanged: (_) => setState(() => _emailError = null),
                           decoration: InputDecoration(
                             labelText: 'Email',
                             hintText: 'you@company.com',
-                            hintStyle: TextStyle(
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0x33FFFFFF),
+                            hintStyle: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0x33FFFFFF),
+                                ),
+                                fontSize: 15,
                               ),
-                              fontSize: 15,
                             ),
                             prefixIcon: Icon(Icons.alternate_email_rounded),
                             filled: true,
@@ -1041,7 +1075,7 @@ class _AuthPageState extends State<AuthPage> {
                         if (_emailError != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 6),
-                            child: Text(
+                            child: AppText(
                               _emailError!,
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1060,9 +1094,12 @@ class _AuthPageState extends State<AuthPage> {
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) =>
                               FocusManager.instance.primaryFocus?.unfocus(),
-                          style: TextStyle(
-                            color: AppTheme.foreground(context, Colors.white),
-                            fontSize: 15,
+                          style: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 15,
+                            ),
                           ),
                           decoration: InputDecoration(
                             labelText: 'Password',
@@ -1116,7 +1153,7 @@ class _AuthPageState extends State<AuthPage> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: _loading ? null : _sendPasswordReset,
-                              child: const Text('Forgot password?'),
+                              child: const AppText('Forgot password?'),
                             ),
                           )
                         else
@@ -1150,7 +1187,7 @@ class _AuthPageState extends State<AuthPage> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     _error!,
                                     style: TextStyle(
                                       color: Theme.of(
@@ -1206,10 +1243,12 @@ class _AuthPageState extends State<AuthPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    const Text('Please wait…'),
+                                    const AppText('Please wait…'),
                                   ],
                                 )
-                              : Text(_isLogin ? 'Sign in' : 'Create account'),
+                              : AppText(
+                                  _isLogin ? 'Sign in' : 'Create account',
+                                ),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -1226,7 +1265,7 @@ class _AuthPageState extends State<AuthPage> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
-                              child: Text(
+                              child: AppText(
                                 'OR',
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -1260,7 +1299,7 @@ class _AuthPageState extends State<AuthPage> {
                               color: AppTheme.foreground(context, Colors.white),
                               size: 18,
                             ),
-                            label: Text(
+                            label: AppText(
                               'Continue with Apple',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1291,7 +1330,7 @@ class _AuthPageState extends State<AuthPage> {
                                   ),
                                 )
                               : const _GoogleLogo(size: 18),
-                          label: Text(
+                          label: AppText(
                             (_loading &&
                                     _oauthProviderLoading ==
                                         OAuthProvider.google)
@@ -1336,7 +1375,7 @@ class _AuthPageState extends State<AuthPage> {
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
-                                      child: Text(
+                                      child: AppText(
                                         'Check your email to confirm your account before logging in.',
                                         style: Theme.of(context)
                                             .textTheme
@@ -1358,7 +1397,7 @@ class _AuthPageState extends State<AuthPage> {
                                   onPressed: (_resending || _loading)
                                       ? null
                                       : _resendVerificationEmail,
-                                  child: Text(
+                                  child: AppText(
                                     _resending
                                         ? 'Resending…'
                                         : 'Resend verification email',
@@ -1381,7 +1420,7 @@ class _AuthPageState extends State<AuthPage> {
                                     _emailError = null;
                                   });
                                 },
-                          child: Text(
+                          child: AppText(
                             _isLogin
                                 ? 'Need an account? Sign up'
                                 : 'Have an account? Login',

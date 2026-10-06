@@ -24,6 +24,7 @@ import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import '../showcase/tutorial_controller.dart';
 import 'share_space_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -175,7 +176,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t load this shared space.')),
+          const SnackBar(content: AppText('Couldn’t load this shared space.')),
         );
       }
     } finally {
@@ -334,22 +335,22 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text(
+        title: AppText(
           'Remove member?',
           style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
         ),
-        content: Text(
+        content: AppText(
           'Remove $name from this space?',
           style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
+            child: AppText(
               'Remove',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0xFFFF453A)),
@@ -374,7 +375,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to remove member.')),
+          const SnackBar(content: AppText('Failed to remove member.')),
         );
       }
     } finally {
@@ -390,7 +391,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: Text(
+          title: AppText(
             'Join a Space',
             style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
           ),
@@ -402,23 +403,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontSize: 20,
-                  letterSpacing: 4,
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 20,
+                    letterSpacing: 4,
+                  ),
                 ),
                 decoration: InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
                   ),
-                  counterStyle: TextStyle(
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  counterStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
                   ),
                 ),
               ),
               if (error != null)
-                Text(
+                AppText(
                   error!,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -430,7 +440,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dlgCtx),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -445,7 +455,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Joined! Check Joined Spaces to view.'),
+                        content: AppText(
+                          'Joined! Check Joined Spaces to view.',
+                        ),
                       ),
                     );
                   }
@@ -453,7 +465,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   setDlgState(() => error = 'Invalid code or already joined.');
                 }
               },
-              child: const Text('Join'),
+              child: const AppText('Join'),
             ),
           ],
         ),
@@ -466,22 +478,22 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text(
+        title: AppText(
           'Return item?',
           style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
         ),
-        content: Text(
+        content: AppText(
           'Mark "$itemName" as returned?',
           style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
+            child: const AppText(
               'Return',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
@@ -495,14 +507,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('$itemName returned')));
+        ).showSnackBar(SnackBar(content: AppText('$itemName returned')));
         _loadCheckouts();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to return item.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: AppText('Failed to return item.')),
+        );
       }
     }
   }
@@ -571,13 +583,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Item added')));
+        ).showSnackBar(const SnackBar(content: AppText('Item added')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to add item')));
+        ).showSnackBar(const SnackBar(content: AppText('Failed to add item')));
       }
     }
   }
@@ -635,9 +647,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update item.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('Failed to update item.')),
+      );
     }
   }
 
@@ -645,16 +657,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text(item.name),
+        title: const AppText('Delete item?'),
+        content: AppText(item.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -667,9 +679,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete item.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('Failed to delete item.')),
+      );
     }
   }
 
@@ -741,18 +753,24 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       ),
                       child: TextField(
                         controller: _searchCtrl,
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                          fontSize: 14,
+                        style: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
+                            fontSize: 14,
+                          ),
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search in this space...',
-                          hintStyle: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0x4DFFFFFF),
+                          hintStyle: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0x4DFFFFFF),
+                              ),
+                              fontSize: 14,
                             ),
-                            fontSize: 14,
                           ),
                           prefixIcon: Icon(
                             Icons.search,
@@ -872,7 +890,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                                 width: 0.5,
                               ),
                       ),
-                      child: Text(
+                      child: AppText(
                         label,
                         style: TextStyle(
                           color: isActive
@@ -929,7 +947,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     invItem.displayName,
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -938,7 +956,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
+                  AppText(
                     [
                       if (invItem.displayDescription != null)
                         invItem.displayDescription!,
@@ -960,7 +978,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
               const SizedBox(width: 8),
             ],
-            Text(
+            AppText(
               'Qty ${invItem.quantity}',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1031,7 +1049,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_items.isEmpty) {
       return SliverFillRemaining(
         child: Center(
-          child: Text(
+          child: AppText(
             'No items in this shared space.',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1064,7 +1082,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (filteredCats.isEmpty) {
       return SliverFillRemaining(
         child: Center(
-          child: Text(
+          child: AppText(
             'No items match your search',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1078,7 +1096,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       children.add(
         Padding(
           padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
-          child: Text(
+          child: AppText(
             cat.toUpperCase(),
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1278,7 +1296,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     size: 16,
                   ),
                   const SizedBox(width: 10),
-                  Text(
+                  AppText(
                     item.label,
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -1367,7 +1385,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Projects',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -1376,7 +1394,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     ),
                   ),
                   SizedBox(height: 3),
-                  Text(
+                  AppText(
                     'Check build readiness and track project kits',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white60),
@@ -1419,7 +1437,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
               const SizedBox(height: 12),
               ListTile(
-                title: Text(
+                title: AppText(
                   'Projects',
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Colors.white),
@@ -1427,7 +1445,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   'Plan a build with the inventory you have',
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Colors.white54),
@@ -1439,7 +1457,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Icons.fact_check_outlined,
                   color: AppTheme.foreground(sheetContext, Color(0xFF6997DD)),
                 ),
-                title: const Text('Build Readiness'),
+                title: const AppText('Build Readiness'),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _openBuildReadiness();
@@ -1450,7 +1468,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Icons.inventory_2_outlined,
                   color: AppTheme.foreground(sheetContext, Color(0xFF6997DD)),
                 ),
-                title: const Text('Project Kits'),
+                title: const AppText('Project Kits'),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _openProjectKits();
@@ -1498,7 +1516,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     ),
                     SizedBox(width: 10),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         "You're viewing a shared inventory. Contact the owner to make changes.",
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -1547,14 +1565,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            AppText(
               _membersError!,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
               ),
             ),
             const SizedBox(height: 12),
-            TextButton(onPressed: _loadMembers, child: const Text('Retry')),
+            TextButton(onPressed: _loadMembers, child: const AppText('Retry')),
           ],
         ),
       );
@@ -1570,7 +1588,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           if (i == 0) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
+              child: AppText(
                 '${_members.length} MEMBER${_members.length != 1 ? 'S' : ''}',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1622,7 +1640,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   isMe ? '$name (you)' : name,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -1650,7 +1668,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                               ),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: AppText(
                         isOwnerRow ? 'Owner' : 'Member',
                         style: TextStyle(
                           color: isOwnerRow
@@ -1669,7 +1687,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     ),
                     if (joinedAt != null) ...[
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         'Joined ${_timeAgo(joinedAt)}',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -1715,7 +1733,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                           ),
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'Remove',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -1756,7 +1774,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               size: 48,
             ),
             const SizedBox(height: 12),
-            Text(
+            AppText(
               'Nothing checked out',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -1765,7 +1783,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               'Items checked out from this space appear here.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1775,7 +1793,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ),
             if (widget.permission == 'edit') ...[
               const SizedBox(height: 20),
-              Text(
+              AppText(
                 'Tap an item in the Items tab to check it out.',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1821,7 +1839,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _checkoutSectionHeader(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
+      child: AppText(
         text,
         style: TextStyle(
           color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1877,7 +1895,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
                 style: TextStyle(
                   color: isReturned
@@ -1894,7 +1912,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   itemName,
                   style: TextStyle(
                     color: isReturned
@@ -1905,7 +1923,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   'By $checkedOutBy · ${_timeAgo(checkedOutAt)}',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1914,7 +1932,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 ),
                 if (isReturned && returnedAt != null) ...[
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     'Returned ${_timeAgo(returnedAt)}',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0xFF30D158)),
@@ -1924,7 +1942,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   ),
                 ] else if (!isReturned && dueBackAt != null) ...[
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     overdue
                         ? '⚠ Overdue — due ${_timeAgo(dueBackAt)}'
                         : 'Due ${_timeAgo(dueBackAt)}',
@@ -1963,7 +1981,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                   ),
                 ),
-                child: Text(
+                child: AppText(
                   'Return',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -1998,7 +2016,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               size: 48,
             ),
             SizedBox(height: 12),
-            Text(
+            AppText(
               'No recent activity',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -2007,7 +2025,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
             SizedBox(height: 6),
-            Text(
+            AppText(
               'Changes to items in this space appear here.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2029,7 +2047,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           if (i == 0) {
             return Padding(
               padding: EdgeInsets.only(bottom: 12),
-              child: Text(
+              child: AppText(
                 'RECENT ACTIVITY',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2079,7 +2097,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   entry.summary,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -2088,7 +2106,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   _timeAgo(entry.createdAt.toIso8601String()),
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2123,7 +2141,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               size: 48,
             ),
             SizedBox(height: 12),
-            Text(
+            AppText(
               'All stocked up!',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -2132,7 +2150,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
             SizedBox(height: 6),
-            Text(
+            AppText(
               'No items are low on stock in this space.\nSet thresholds on items to track them.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2186,7 +2204,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
+                child: AppText(
                   unchecked.isEmpty
                       ? 'All items ordered!'
                       : '${unchecked.length} items need restocking',
@@ -2206,7 +2224,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Shopping list copied to clipboard'),
+                        content: AppText('Shopping list copied to clipboard'),
                       ),
                     );
                   },
@@ -2219,7 +2237,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       color: AppTheme.adaptive(context, Colors.white),
                       borderRadius: BorderRadius.circular(99),
                     ),
-                    child: Text(
+                    child: AppText(
                       'Share',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.black),
@@ -2236,7 +2254,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         if (unchecked.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text(
+            child: AppText(
               'NEEDS RESTOCKING',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2262,7 +2280,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           const SizedBox(height: 20),
           Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text(
+            child: AppText(
               'ORDERED',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2323,7 +2341,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         iconTheme: IconThemeData(
           color: AppTheme.foreground(context, Colors.white),
         ),
-        title: Text(
+        title: AppText(
           widget.shareName,
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
@@ -2373,35 +2391,35 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   value: 'Import Spreadsheet',
                   child: ListTile(
                     leading: Icon(Icons.table_chart_outlined),
-                    title: Text('Import Spreadsheet'),
+                    title: AppText('Import Spreadsheet'),
                   ),
                 ),
               const PopupMenuItem(
                 value: 'Share Space',
                 child: ListTile(
                   leading: Icon(Icons.share_outlined),
-                  title: Text('Share Space'),
+                  title: AppText('Share Space'),
                 ),
               ),
               const PopupMenuItem(
                 value: 'Join Space',
                 child: ListTile(
                   leading: Icon(Icons.person_add_outlined),
-                  title: Text('Join Space'),
+                  title: AppText('Join Space'),
                 ),
               ),
               const PopupMenuItem(
                 value: 'Print Bin Label',
                 child: ListTile(
                   leading: Icon(Icons.qr_code_2),
-                  title: Text('Print Bin Label'),
+                  title: AppText('Print Bin Label'),
                 ),
               ),
               const PopupMenuItem(
                 value: 'Members',
                 child: ListTile(
                   leading: Icon(Icons.people_outline),
-                  title: Text('Members'),
+                  title: AppText('Members'),
                 ),
               ),
             ],
@@ -2491,7 +2509,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         color: bgColor,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(
+      child: AppText(
         text,
         style: TextStyle(
           color: textColor,
@@ -2591,7 +2609,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     displayName,
                     style: TextStyle(
                       color: isChecked
@@ -2625,7 +2643,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                                 ),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(
+                        child: AppText(
                           isOut ? 'OUT OF STOCK' : '$qty left',
                           style: TextStyle(
                             color: isOut
@@ -2645,7 +2663,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       ),
                       if (location.isNotEmpty) ...[
                         const SizedBox(width: 6),
-                        Text(
+                        AppText(
                           location,
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -2658,7 +2676,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       ],
                       if (displayDescription.isNotEmpty) ...[
                         const SizedBox(width: 6),
-                        Text(
+                        AppText(
                           displayDescription,
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -2673,7 +2691,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                   ),
                   if (!isChecked) ...[
                     const SizedBox(height: 4),
-                    Text(
+                    AppText(
                       shoppingItem.reason,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2714,7 +2732,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                   ),
                   SizedBox(
                     width: 30,
-                    child: Text(
+                    child: AppText(
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -2786,7 +2804,7 @@ class _SharedBarcodeScannerPageState extends State<_SharedBarcodeScannerPage> {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Scan Barcode'),
+        title: const AppText('Scan Barcode'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -2863,9 +2881,12 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
 
   InputDecoration _field(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(
-      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-      fontSize: 15,
+    hintStyle: AppTypography.bodyStyleOf(
+      context,
+      TextStyle(
+        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+        fontSize: 15,
+      ),
     ),
     filled: true,
     fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
@@ -2927,7 +2948,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText(
             'Add item',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -2939,18 +2960,24 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           const SizedBox(height: 20),
           TextField(
             controller: _name,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _field('Name'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _field('Category'),
           ),
@@ -2958,9 +2985,12 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           TextField(
             controller: _quantity,
             keyboardType: TextInputType.number,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _field('Quantity'),
           ),
@@ -2977,7 +3007,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.centerLeft,
-            child: Text(
+            child: AppText(
               widget.initialLocation,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -3007,7 +3037,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
+              child: const AppText(
                 'Save',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
@@ -3017,7 +3047,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             height: 48,
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
+              child: AppText(
                 'Cancel',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -3051,7 +3081,7 @@ class _SharedItemDetailContent extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Row(
           children: [
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -3061,7 +3091,7 @@ class _SharedItemDetailContent extends StatelessWidget {
             ),
             const Spacer(),
             Flexible(
-              child: Text(
+              child: AppText(
                 value,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -3163,7 +3193,7 @@ class _SharedItemDetailContent extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 displayName,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -3176,7 +3206,7 @@ class _SharedItemDetailContent extends StatelessWidget {
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 displayDescription.isNotEmpty ? displayDescription : category,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -3242,7 +3272,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       'NOTES',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -3270,7 +3300,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                         ),
                       ),
                       padding: const EdgeInsets.all(14),
-                      child: Text(
+                      child: AppText(
                         notes,
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -3306,7 +3336,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'Edit',
                       style: TextStyle(
                         fontSize: 15,
@@ -3338,7 +3368,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'Check Out',
                       style: TextStyle(
                         fontSize: 15,
@@ -3352,7 +3382,7 @@ class _SharedItemDetailContent extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop('delete'),
-                  child: Text(
+                  child: AppText(
                     'Delete item',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -3418,9 +3448,12 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
 
   InputDecoration _field(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(
-      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-      fontSize: 15,
+    hintStyle: AppTypography.bodyStyleOf(
+      context,
+      TextStyle(
+        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+        fontSize: 15,
+      ),
     ),
     filled: true,
     fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
@@ -3483,7 +3516,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               'Edit item',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -3495,27 +3528,36 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
             const SizedBox(height: 20),
             TextField(
               controller: _name,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 15,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 15,
+                ),
               ),
               decoration: _field('Name *'),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _category,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 15,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 15,
+                ),
               ),
               decoration: _field('Category *'),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _location,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 15,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 15,
+                ),
               ),
               decoration: _field('Location'),
             ),
@@ -3523,9 +3565,12 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
             TextField(
               controller: _quantity,
               keyboardType: TextInputType.number,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 15,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 15,
+                ),
               ),
               decoration: _field('Quantity'),
             ),
@@ -3533,9 +3578,12 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
             TextField(
               controller: _notes,
               maxLines: 3,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 15,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 15,
+                ),
               ),
               decoration: _field('Notes'),
             ),
@@ -3550,7 +3598,9 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                             _category.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Name and category are required'),
+                              content: AppText(
+                                'Name and category are required',
+                              ),
                             ),
                           );
                           return;
@@ -3577,7 +3627,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(content: Text(describeError(e).$1)),
+                            SnackBar(content: AppText(describeError(e).$1)),
                           );
                         } finally {
                           if (mounted) setState(() => _saving = false);
@@ -3599,7 +3649,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                           color: AppTheme.adaptive(context, Colors.black),
                         ),
                       )
-                    : const Text(
+                    : const AppText(
                         'Save',
                         style: TextStyle(
                           fontSize: 16,
@@ -3612,7 +3662,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
               height: 48,
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(
+                child: AppText(
                   'Cancel',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x73FFFFFF)),

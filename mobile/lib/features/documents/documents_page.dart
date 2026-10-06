@@ -16,6 +16,7 @@ import '../../core/config.dart';
 import '../../core/ui/skeleton.dart';
 import '../home/home_overview.dart';
 import 'notes_editor_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class DocumentsPage extends StatefulWidget {
   const DocumentsPage({
@@ -282,7 +283,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't open document. Try again.")),
+          const SnackBar(
+            content: AppText("Couldn't open document. Try again."),
+          ),
         );
       }
     }
@@ -351,9 +354,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
     if (didSave == true) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Note saved successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('Note saved successfully')),
+      );
       await _load();
     }
   }
@@ -396,7 +399,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (content == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Couldn’t open note.')));
+        ).showSnackBar(const SnackBar(content: AppText('Couldn’t open note.')));
         return;
       }
 
@@ -425,7 +428,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     if (url == null || url.isEmpty) {
       if (mounted && owner == _currentOwner) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't open document. Try again.")),
+          const SnackBar(
+            content: AppText("Couldn't open document. Try again."),
+          ),
         );
       }
       return;
@@ -446,7 +451,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text('Photo unavailable.'),
+                    child: AppText('Photo unavailable.'),
                   ),
                 ),
               ),
@@ -483,14 +488,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } on dio.DioException {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t rename. Try again.')),
+        const SnackBar(content: AppText('Couldn’t rename. Try again.')),
       );
       await _load();
       return;
     } catch (_) {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t rename. Try again.')),
+        const SnackBar(content: AppText('Couldn’t rename. Try again.')),
       );
       await _load();
       return;
@@ -523,12 +528,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Summary'),
-          content: SingleChildScrollView(child: Text(text)),
+          title: const AppText('Summary'),
+          content: SingleChildScrollView(child: AppText(text)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: const AppText('Close'),
             ),
           ],
         ),
@@ -536,7 +541,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } catch (_) {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t summarize. Try again.')),
+        const SnackBar(content: AppText('Couldn’t summarize. Try again.')),
       );
     } finally {
       if (mounted) {
@@ -564,13 +569,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } on dio.DioException {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t update link. Try again.')),
+        const SnackBar(content: AppText('Couldn’t update link. Try again.')),
       );
       return;
     } catch (_) {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t update link. Try again.')),
+        const SnackBar(content: AppText('Couldn’t update link. Try again.')),
       );
       return;
     }
@@ -586,7 +591,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (mounted && owner == _currentOwner) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               'Link saved, but could not refresh its label. Try again.',
             ),
           ),
@@ -615,7 +620,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } catch (_) {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't remove link. Try again.")),
+        const SnackBar(content: AppText("Couldn't remove link. Try again.")),
       );
       return;
     }
@@ -633,7 +638,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (mounted && owner == _currentOwner) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               'Link removed, but could not refresh its label. Try again.',
             ),
           ),
@@ -667,14 +672,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (name.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upload failed. Try again.')),
+          const SnackBar(content: AppText('Upload failed. Try again.')),
         );
         return;
       }
       if (_isVideoFile(name)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Videos aren’t supported.')),
+          const SnackBar(content: AppText('Videos aren’t supported.')),
         );
         return;
       }
@@ -683,7 +688,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (bytes == null || bytes.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upload failed. Try again.')),
+          const SnackBar(content: AppText('Upload failed. Try again.')),
         );
         return;
       }
@@ -694,7 +699,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (!_isAllowedUpload(safeName, mimeType)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File type not supported.')),
+          const SnackBar(content: AppText('File type not supported.')),
         );
         return;
       }
@@ -710,18 +715,18 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document uploaded successfully')),
+        const SnackBar(content: AppText('Document uploaded successfully')),
       );
       await _load();
     } on dio.DioException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Try again.')),
+        const SnackBar(content: AppText('Upload failed. Try again.')),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Try again.')),
+        const SnackBar(content: AppText('Upload failed. Try again.')),
       );
     } finally {
       if (mounted) setState(() => _uploading = false);
@@ -733,16 +738,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete document?'),
-        content: Text(d.filename),
+        title: const AppText('Delete document?'),
+        content: AppText(d.filename),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -756,12 +761,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Deleted')));
       await _load();
     } catch (e) {
       if (!mounted || owner != _currentOwner) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t delete. Try again.')),
+        const SnackBar(content: AppText('Couldn’t delete. Try again.')),
       );
     }
   }
@@ -804,14 +809,17 @@ class _DocumentsPageState extends State<DocumentsPage> {
                       child: Icon(
                         Icons.image_not_supported_outlined,
                         size: 20,
-                        color: AppTheme.foreground(context, HomeColors.secondary),
+                        color: AppTheme.foreground(
+                          context,
+                          HomeColors.secondary,
+                        ),
                       ),
                     ),
                   ),
                 ),
               )
             : null,
-        title: Text(
+        title: AppText(
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -821,7 +829,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             fontWeight: FontWeight.w400,
           ),
         ),
-        subtitle: Text(
+        subtitle: AppText(
           '${_isNote(document) ? 'Note' : _typeLabel(document)} - ${_formatDate(document.createdAt)}'
           '${linkedName.isEmpty ? '' : '\nLinked to $linkedName'}',
           style: TextStyle(
@@ -859,22 +867,28 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'open', child: Text('Open')),
-                  const PopupMenuItem(value: 'rename', child: Text('Rename')),
+                  const PopupMenuItem(value: 'open', child: AppText('Open')),
+                  const PopupMenuItem(
+                    value: 'rename',
+                    child: AppText('Rename'),
+                  ),
                   const PopupMenuItem(
                     value: 'summarize',
-                    child: Text('Summarize'),
+                    child: AppText('Summarize'),
                   ),
                   const PopupMenuItem(
                     value: 'link',
-                    child: Text('Link to item'),
+                    child: AppText('Link to item'),
                   ),
                   if ((linked?['item_id'] ?? '').isNotEmpty)
                     const PopupMenuItem(
                       value: 'unlink',
-                      child: Text('Remove link'),
+                      child: AppText('Remove link'),
                     ),
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: AppText('Delete'),
+                  ),
                 ],
               ),
       ),
@@ -899,7 +913,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
           child: Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   title,
                   style: const TextStyle(
                     fontSize: 14,
@@ -907,7 +921,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   ),
                 ),
               ),
-              Text(
+              AppText(
                 documents.length.toString(),
                 style: const TextStyle(fontWeight: FontWeight.w400),
               ),
@@ -944,7 +958,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 12),
     child: Column(
       children: [
-        Text(
+        AppText(
           text,
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -953,7 +967,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             fontWeight: FontWeight.w400,
           ),
         ),
-        if (retry) TextButton(onPressed: _load, child: const Text('Retry')),
+        if (retry) TextButton(onPressed: _load, child: const AppText('Retry')),
       ],
     ),
   );
@@ -983,7 +997,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: const AppText(
           'Documents',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
         ),
@@ -996,12 +1010,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
               if (value == 'upload') unawaited(_uploadDocument());
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'note', child: Text('New note')),
-              PopupMenuItem(value: 'upload', child: Text('Upload file')),
+              PopupMenuItem(value: 'note', child: AppText('New note')),
+              PopupMenuItem(value: 'upload', child: AppText('Upload file')),
             ],
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              child: Text(
+              child: AppText(
                 _uploading ? 'Uploading...' : 'Add',
                 style: TextStyle(
                   color: AppTheme.foreground(context, HomeColors.text),
@@ -1024,16 +1038,22 @@ class _DocumentsPageState extends State<DocumentsPage> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               onChanged: (_) => setState(() {}),
-              style: TextStyle(
-                color: AppTheme.foreground(context, HomeColors.text),
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               decoration: InputDecoration(
                 hintText: 'Search documents and notes',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, HomeColors.hint),
-                  fontWeight: FontWeight.w400,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, HomeColors.hint),
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
                 filled: true,
                 fillColor: AppTheme.adaptive(context, HomeColors.surface),
@@ -1129,7 +1149,7 @@ class _RenameDocumentDialogState extends State<_RenameDocumentDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Rename document'),
+    title: const AppText('Rename document'),
     content: TextField(
       controller: _name,
       autofocus: true,
@@ -1137,15 +1157,16 @@ class _RenameDocumentDialogState extends State<_RenameDocumentDialog> {
       textInputAction: TextInputAction.done,
       onSubmitted: (_) => FocusScope.of(context).unfocus(),
       decoration: const InputDecoration(hintText: 'Document name'),
+      style: AppTypography.bodyStyleOf(context),
     ),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: const AppText('Cancel'),
       ),
       TextButton(
         onPressed: () => Navigator.pop(context, _name.text.trim()),
-        child: const Text('Save'),
+        child: const AppText('Save'),
       ),
     ],
   );
@@ -1243,7 +1264,7 @@ class _LinkSheetState extends State<_LinkSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              AppText(
                 'Link to inventory item',
                 style: Theme.of(
                   context,
@@ -1280,6 +1301,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                     ),
                   ),
                 ),
+                style: AppTypography.bodyStyleOf(context),
               ),
               const SizedBox(height: 12),
               if (_loading)
@@ -1296,8 +1318,8 @@ class _LinkSheetState extends State<_LinkSheet> {
               else if (_failed)
                 Column(
                   children: [
-                    const Text("Couldn't load items. Try again."),
-                    TextButton(onPressed: _load, child: const Text('Retry')),
+                    const AppText("Couldn't load items. Try again."),
+                    TextButton(onPressed: _load, child: const AppText('Retry')),
                   ],
                 )
               else
@@ -1310,7 +1332,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                     child: rows.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Text(
+                            child: AppText(
                               'No matches.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1329,8 +1351,8 @@ class _LinkSheetState extends State<_LinkSheet> {
                               final it = rows[index];
                               return ListTile(
                                 dense: true,
-                                title: Text(it.name),
-                                subtitle: Text(
+                                title: AppText(it.name),
+                                subtitle: AppText(
                                   it.category,
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -1355,12 +1377,12 @@ class _LinkSheetState extends State<_LinkSheet> {
                 onPressed: () => Navigator.of(
                   context,
                 ).pop(const _LinkResult(itemId: null, itemName: null)),
-                child: const Text('Remove link'),
+                child: const AppText('Remove link'),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: const AppText('Cancel'),
               ),
             ],
           ),

@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamDocumentsPage extends StatefulWidget {
   const TeamDocumentsPage({super.key, required this.api, required this.teamId});
@@ -83,15 +84,15 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
             children: [
               ListTile(
                 leading: const Icon(CupertinoIcons.photo_on_rectangle),
-                title: const Text('Photo Library'),
-                subtitle: const Text('Photos and videos'),
+                title: const AppText('Photo Library'),
+                subtitle: const AppText('Photos and videos'),
                 onTap: () =>
                     Navigator.pop(sheetContext, _DocumentSource.photoLibrary),
               ),
               ListTile(
                 leading: const Icon(CupertinoIcons.folder),
-                title: const Text('Files'),
-                subtitle: const Text('Documents, spreadsheets, and more'),
+                title: const AppText('Files'),
+                subtitle: const AppText('Documents, spreadsheets, and more'),
                 onTap: () => Navigator.pop(sheetContext, _DocumentSource.files),
               ),
             ],
@@ -201,16 +202,18 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete file?'),
-        content: Text('$filename will be removed for everyone on this team.'),
+        title: const AppText('Delete file?'),
+        content: AppText(
+          '$filename will be removed for everyone on this team.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -239,14 +242,14 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(SnackBar(content: AppText(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Documents'),
+        title: const AppText('Documents'),
         actions: [
           if (_canUpload && !_loading)
             IconButton(
@@ -360,13 +363,13 @@ class _DocumentRow extends StatelessWidget {
         minVerticalPadding: 16,
         contentPadding: const EdgeInsets.fromLTRB(18, 8, 10, 8),
         leading: Icon(appearance.icon, color: appearance.color, size: 25),
-        title: Text(
+        title: AppText(
           _filename,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
+        subtitle: AppText(
           [size, date].where((value) => value.isNotEmpty).join(' · '),
         ),
         trailing: canDelete
@@ -376,7 +379,7 @@ class _DocumentRow extends StatelessWidget {
                   if (value == 'delete') onDelete();
                 },
                 itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  PopupMenuItem(value: 'delete', child: AppText('Delete')),
                 ],
               )
             : Icon(
@@ -408,13 +411,13 @@ class _EmptyState extends StatelessWidget {
         color: AppTheme.foreground(context, Colors.white),
       ),
       const SizedBox(height: 20),
-      const Text(
+      const AppText(
         'No files yet',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
-      Text(
+      AppText(
         'Shared files will appear here.',
         textAlign: TextAlign.center,
         style: TextStyle(color: AppTheme.foreground(context, AppColors.muted)),
@@ -425,7 +428,7 @@ class _EmptyState extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(CupertinoIcons.plus),
-            label: const Text('Add file'),
+            label: const AppText('Add file'),
           ),
         ),
       ],
@@ -446,12 +449,12 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          const AppText(
             'Couldn’t load files',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             message,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -459,7 +462,7 @@ class _ErrorState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          OutlinedButton(onPressed: onRetry, child: const AppText('Try again')),
         ],
       ),
     ),

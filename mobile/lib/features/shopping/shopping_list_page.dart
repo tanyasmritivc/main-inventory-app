@@ -10,6 +10,7 @@ import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ShoppingListPage extends StatefulWidget {
   final ApiClient api;
@@ -169,7 +170,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppText(
           'Shopping List',
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
@@ -203,7 +204,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                 Clipboard.setData(ClipboardData(text: text));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Shopping list copied to clipboard'),
+                    content: AppText('Shopping list copied to clipboard'),
                   ),
                 );
               },
@@ -274,7 +275,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText(
                                 unchecked.isEmpty
                                     ? 'All items ordered!'
                                     : '${unchecked.length} items need restocking',
@@ -293,7 +294,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 ),
                               ),
                               if (unchecked.isNotEmpty)
-                                Text(
+                                AppText(
                                   'Tap items to mark as ordered',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -313,7 +314,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                               Clipboard.setData(ClipboardData(text: text));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text(
+                                  content: AppText(
                                     'Shopping list copied — paste into WhatsApp, email, or notes',
                                   ),
                                 ),
@@ -328,7 +329,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 color: AppTheme.adaptive(context, Colors.white),
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: Text(
+                              child: AppText(
                                 'Share',
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -349,10 +350,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   if (unchecked.isNotEmpty) ...[
                     Padding(
                       padding: EdgeInsets.only(bottom: 10),
-                      child: Text(
+                      child: AppText(
                         'NEEDS RESTOCKING',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.4,
@@ -377,10 +381,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                     const SizedBox(height: 20),
                     Padding(
                       padding: EdgeInsets.only(bottom: 10),
-                      child: Text(
+                      child: AppText(
                         'ORDERED',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.4,
@@ -418,7 +425,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             size: 56,
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             'All stocked up!',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -427,7 +434,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             'No items are low on stock.\nSet thresholds on items to track them.',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -447,7 +454,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                   color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                 ),
               ),
-              child: Text(
+              child: AppText(
                 'Refresh',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -536,11 +543,14 @@ class _ShoppingItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     item.displayName,
                     style: TextStyle(
                       color: isChecked
-                          ? AppTheme.foreground(context, const Color(0x60FFFFFF))
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0x60FFFFFF),
+                            )
                           : AppTheme.foreground(context, Colors.white),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -567,7 +577,7 @@ class _ShoppingItemCard extends StatelessWidget {
                                 ),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(
+                        child: AppText(
                           item.quantity <= 0
                               ? 'OUT OF STOCK'
                               : '${item.quantity} left',
@@ -588,16 +598,19 @@ class _ShoppingItemCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Text(
+                      AppText(
                         item.location,
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x4DFFFFFF),
+                          ),
                           fontSize: 11,
                         ),
                       ),
                       if (item.displayDescription != null) ...[
                         const SizedBox(width: 6),
-                        Text(
+                        AppText(
                           item.displayDescription!,
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -612,7 +625,7 @@ class _ShoppingItemCard extends StatelessWidget {
                   ),
                   if (!isChecked) ...[
                     const SizedBox(height: 4),
-                    Text(
+                    AppText(
                       shoppingItem.reason,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -653,7 +666,7 @@ class _ShoppingItemCard extends StatelessWidget {
                   ),
                   SizedBox(
                     width: 30,
-                    child: Text(
+                    child: AppText(
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
                       style: TextStyle(

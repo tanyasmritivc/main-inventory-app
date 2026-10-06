@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/appearance_controller.dart';
 import '../../core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class AppearanceSettings extends StatefulWidget {
   const AppearanceSettings({super.key, this.controller});
@@ -54,7 +55,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      AppText(
         label,
         style: TextStyle(
           color: AppTheme.textPrimary(context),
@@ -69,7 +70,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
         children: choices.entries
             .map(
               (entry) => ChoiceChip(
-                label: Text(entry.value),
+                label: AppText(entry.value),
                 selected: selected == entry.key,
                 onSelected: onSelected == null
                     ? null
@@ -112,7 +113,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
-            child: Text(
+            child: AppText(
               'Appearance',
               style: TextStyle(
                 color: AppTheme.textSecondary(context),
@@ -145,7 +146,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                       : null,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   'System follows your phone\'s appearance.',
                   style: TextStyle(
                     color: AppTheme.textSecondary(context),
@@ -168,7 +169,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                       : null,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   'Default follows your phone. Other sizes adjust it without '
                   'turning off accessibility scaling.',
                   style: TextStyle(
@@ -188,7 +189,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         'Preview',
                         style: TextStyle(
                           color: AppTheme.textSecondary(context),
@@ -196,7 +197,7 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      AppText(
                         'The right item, in the right place.',
                         style: TextStyle(
                           color: AppTheme.textPrimary(context),
@@ -209,13 +210,13 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                 ),
                 if (controller.saving) ...[
                   const SizedBox(height: 12),
-                  const Text('Saving appearance settings...'),
+                  const AppText('Saving appearance settings...'),
                 ],
                 if (controller.error != null) ...[
                   const SizedBox(height: 12),
                   Semantics(
                     liveRegion: true,
-                    child: Text(
+                    child: AppText(
                       controller.error!,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,

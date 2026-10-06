@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
 import 'app_theme.dart';
 import 'pro_status.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 Future<void> showUpgradeSheet(
   BuildContext context,
@@ -72,7 +73,7 @@ class _LimitSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
+              AppText(
                 'Free limit reached',
                 style: TextStyle(
                   color: AppTheme.textPrimary(context),
@@ -94,7 +95,7 @@ class _LimitSheet extends StatelessWidget {
                   color: AppTheme.adaptive(context, const Color(0x33F59E0B)),
                 ),
               ),
-              child: Text(
+              child: AppText(
                 reason!,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xFFF59E0B)),
@@ -122,7 +123,7 @@ class _LimitSheet extends StatelessWidget {
                       size: 16,
                     ),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText(
                       'FindEZ Team',
                       style: TextStyle(
                         color: AppTheme.textPrimary(context),
@@ -133,7 +134,7 @@ class _LimitSheet extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   'FindEZ Team covers your whole robotics team — learn more at findez.ai',
                   style: TextStyle(
                     color: AppTheme.textMuted(context),
@@ -159,7 +160,7 @@ class _LimitSheet extends StatelessWidget {
                 color: AppTheme.adaptive(context, const Color(0xFFA78BFA)),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Text(
+              child: AppText(
                 'Join a team',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -174,7 +175,7 @@ class _LimitSheet extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Text(
+              child: AppText(
                 'Maybe later',
                 style: TextStyle(
                   color: AppTheme.textMuted(context),
@@ -243,7 +244,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Joined! Your team plan is now active.'),
+          content: AppText('Joined! Your team plan is now active.'),
           backgroundColor: AppTheme.adaptive(context, Color(0xFF30D158)),
         ),
       );
@@ -262,7 +263,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
     return AlertDialog(
       backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: Text(
+      title: AppText(
         'Join a team',
         style: TextStyle(
           color: AppTheme.foreground(context, Colors.white),
@@ -277,18 +278,27 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
             autofocus: true,
             maxLength: 6,
             textCapitalization: TextCapitalization.characters,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 22,
-              letterSpacing: 5,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 22,
+                letterSpacing: 5,
+              ),
             ),
             decoration: InputDecoration(
               hintText: 'ABC123',
-              hintStyle: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+              hintStyle: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                ),
               ),
-              counterStyle: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+              counterStyle: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                ),
               ),
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -304,7 +314,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
           ),
           if (_errorMsg != null) ...[
             const SizedBox(height: 6),
-            Text(
+            AppText(
               _errorMsg!,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -317,7 +327,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),
-          child: Text(
+          child: AppText(
             'Cancel',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -335,7 +345,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
                     color: AppTheme.adaptive(context, Color(0xFFA78BFA)),
                   ),
                 )
-              : Text(
+              : AppText(
                   'Join',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFFA78BFA)),

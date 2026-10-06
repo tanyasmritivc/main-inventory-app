@@ -2,16 +2,22 @@
 
 Only decisions supported by current code or repository records belong here.
 
-## 2026-10-05: Home retains a weight hierarchy with iPhone Bold Text
+## 2026-10-05: Shared mobile typography responds to iPhone Bold Text
 
-The user confirmed Bold Text is enabled and supplied Cal AI as a lighter
-hierarchy reference. Keep San Francisco and the existing Home sizes/layout.
-When the OS setting is on, use Medium (500) for supporting text and the question
-field, and Semibold (600) for the title, section headings and decision counts.
-Regular (400) remains the normal Home style when the setting is off. Handle the
-weight increase locally because Flutter Text otherwise replaces every weight
-with Bold (700). Preserve OS-composed text scaling, all other accessibility
-settings and Bold Text outside Home; do not disable the user's device setting.
+The user approved the lighter Home hierarchy on build 52, then explicitly
+requested it throughout the app. Keep San Francisco, existing sizes and layouts,
+and intentional monospace code/status text. With the OS setting enabled, use
+Medium (500) for supporting text and editable fields, and Semibold (600) for
+headings, counts and emphasis. With it off, preserve normal weights while
+capping old 700-900 emphasis at 600.
+
+Use `AppTypography` at the app root and `AppText` for app-owned labels. Retain the
+actual device preference in the inherited scope, exposed by
+`AppTypography.boldTextOf`, while suppressing Flutter's blanket 700 override
+below it. Adapt theme controls, fields/decorations, selectable and Markdown
+answers, and nested date-picker themes consistently. Preserve OS-composed text
+scaling, all other accessibility preferences, navigation and drafts; never
+change the user's device setting. This supersedes the Home-only local policy.
 
 ## 2026-10-05: A registered Space destination is not a loaded inventory
 

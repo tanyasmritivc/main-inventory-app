@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../onboarding/onboarding_prefs.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 // ─── Keyboard helper ─────────────────────────────────────────────────────────
 
@@ -715,7 +716,10 @@ class _TooltipCard extends StatelessWidget {
                 children: [
                   Icon(
                     config.icon,
-                    color: AppTheme.foreground(context, const Color(0xFF6997DD)),
+                    color: AppTheme.foreground(
+                      context,
+                      const Color(0xFF6997DD),
+                    ),
                     size: 28,
                   ),
                   if (config.secondIcon != null) ...[
@@ -733,7 +737,7 @@ class _TooltipCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               // Title
-              Text(
+              AppText(
                 config.title,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -743,7 +747,7 @@ class _TooltipCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               // Body
-              Text(
+              AppText(
                 config.body,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
@@ -756,7 +760,7 @@ class _TooltipCard extends StatelessWidget {
               Row(
                 children: [
                   if (isMultiStep)
-                    Text(
+                    AppText(
                       '${step + 1} of $totalSteps',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x61FFFFFF)),
@@ -773,7 +777,7 @@ class _TooltipCard extends StatelessWidget {
                           horizontal: 8,
                           vertical: 10,
                         ),
-                        child: Text(
+                        child: AppText(
                           'Skip',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -802,10 +806,13 @@ class _TooltipCard extends StatelessWidget {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
+                            child: AppText(
                               'Got it ✓',
                               style: TextStyle(
-                                color: AppTheme.foreground(context, Colors.white),
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -835,7 +842,7 @@ class _TooltipCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                child: Text(
+                                child: AppText(
                                   'Next →',
                                   style: TextStyle(
                                     color: AppTheme.foreground(

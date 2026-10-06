@@ -34,6 +34,7 @@ import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
 import '../teams/teams_page.dart';
 import 'home_navigation.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.api});
@@ -260,7 +261,7 @@ class _MainShellState extends State<MainShell> {
     if (open == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not open this Space. Please try again.'),
+          content: AppText('Could not open this Space. Please try again.'),
         ),
       );
       return;
@@ -272,7 +273,7 @@ class _MainShellState extends State<MainShell> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not open this Space. Please try again.'),
+            content: AppText('Could not open this Space. Please try again.'),
           ),
         );
       }
@@ -284,7 +285,7 @@ class _MainShellState extends State<MainShell> {
       MaterialPageRoute(
         builder: (_) => Scaffold(
           backgroundColor: AppTheme.adaptive(context, HomeColors.background),
-          appBar: AppBar(title: const Text('Settings')),
+          appBar: AppBar(title: const AppText('Settings')),
           body: ProfilePage(api: widget.api, settingsOnly: true),
         ),
       ),
@@ -366,11 +367,11 @@ class _MainShellState extends State<MainShell> {
               children: {
                 0: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Spaces'),
+                  child: AppText('Spaces'),
                 ),
                 1: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Teams'),
+                  child: AppText('Teams'),
                 ),
               },
               onValueChanged: (value) {
@@ -391,7 +392,7 @@ class _MainShellState extends State<MainShell> {
           ],
         );
       case 2:
-        return AppBar(title: const Text('Capture'));
+        return AppBar(title: const AppText('Capture'));
       case 1:
         return null;
       default:
@@ -551,7 +552,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
         children: [
           Flexible(
             fit: FlexFit.loose,
-            child: Text(
+            child: AppText(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.adaptive(
@@ -562,7 +563,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
             ),
           ),
           const SizedBox(width: 12),
-          Text(
+          AppText(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.adaptive(
@@ -593,7 +594,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Your Inventory', style: _sectionTitleStyle(context)),
+        AppText('Your Inventory', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
         GlassCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -635,7 +636,7 @@ class _ProfileSupportSection extends StatelessWidget {
       if (!context.mounted) return;
       if (!can) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          const SnackBar(content: AppText('Unable to open email app.')),
         );
         return;
       }
@@ -644,13 +645,13 @@ class _ProfileSupportSection extends StatelessWidget {
       if (!context.mounted) return;
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          const SnackBar(content: AppText('Unable to open email app.')),
         );
       }
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open email app.')),
+        const SnackBar(content: AppText('Unable to open email app.')),
       );
     }
   }
@@ -661,7 +662,7 @@ class _ProfileSupportSection extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Support', style: _sectionTitleStyle(context)),
+        AppText('Support', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
         GlassCard(
           padding: const EdgeInsets.all(6),
@@ -671,7 +672,7 @@ class _ProfileSupportSection extends StatelessWidget {
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.mail_outline),
-                title: const Text('Send feedback'),
+                title: const AppText('Send feedback'),
                 onTap: () =>
                     unawaited(_launchEmail(context, 'FindEZ Feedback')),
               ),
@@ -679,7 +680,7 @@ class _ProfileSupportSection extends StatelessWidget {
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.bug_report_outlined),
-                title: const Text('Report a problem'),
+                title: const AppText('Report a problem'),
                 onTap: () =>
                     unawaited(_launchEmail(context, 'FindEZ Issue Report')),
               ),
@@ -727,7 +728,7 @@ class _ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const AppText('Profile'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -737,7 +738,7 @@ class _ProfilePage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
+            AppText(
               'Account',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: AppTheme.adaptive(
@@ -777,7 +778,7 @@ class _ProfilePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
+                      AppText(
                         'Signed in as',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.adaptive(
@@ -798,7 +799,7 @@ class _ProfilePage extends StatelessWidget {
                                   (snap.data ?? '').isNotEmpty)
                               ? snap.data!
                               : emailFallbackName();
-                          return Text(
+                          return AppText(
                             name,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
@@ -816,7 +817,7 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             const _ProfileControlCenter(),
             const SizedBox(height: 16),
-            Text(
+            AppText(
               'Actions',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: AppTheme.adaptive(
@@ -859,7 +860,7 @@ class _ProfilePage extends StatelessWidget {
                         onPressed: () async {
                           await Supabase.instance.client.auth.signOut();
                         },
-                        child: const Text('Logout'),
+                        child: const AppText('Logout'),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
@@ -868,15 +869,15 @@ class _ProfilePage extends StatelessWidget {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: const Text('Delete Account'),
-                                content: const Text(
+                                title: const AppText('Delete Account'),
+                                content: const AppText(
                                   'Are you sure you want to permanently delete your account? This action cannot be undone.',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(context).pop(false),
-                                    child: Text(
+                                    child: AppText(
                                       'Cancel',
                                       style: TextStyle(
                                         color: AppTheme.foreground(
@@ -895,7 +896,7 @@ class _ProfilePage extends StatelessWidget {
                                       ).colorScheme.error,
                                       foregroundColor: Colors.white,
                                     ),
-                                    child: const Text('Delete'),
+                                    child: const AppText('Delete'),
                                   ),
                                 ],
                               );
@@ -930,7 +931,7 @@ class _ProfilePage extends StatelessWidget {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
+                                content: AppText(
                                   'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
                                 ),
                                 backgroundColor: Theme.of(
@@ -940,7 +941,7 @@ class _ProfilePage extends StatelessWidget {
                             );
                           }
                         },
-                        child: const Text('Delete Account'),
+                        child: const AppText('Delete Account'),
                       ),
                     ],
                   ),
@@ -950,7 +951,7 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             const _ProfileSupportSection(),
             const SizedBox(height: 16),
-            Text(
+            AppText(
               'Legal',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: AppTheme.adaptive(
@@ -999,7 +1000,7 @@ class _ProfilePage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Text('Privacy Policy'),
+                        child: const AppText('Privacy Policy'),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
@@ -1011,7 +1012,7 @@ class _ProfilePage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Text('Terms of Service'),
+                        child: const AppText('Terms of Service'),
                       ),
                     ],
                   ),
@@ -1019,7 +1020,7 @@ class _ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            Text(
+            AppText(
               'To delete your account and all associated data,\nemail us at info@findez.ai\nfrom your registered email address.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.adaptive(

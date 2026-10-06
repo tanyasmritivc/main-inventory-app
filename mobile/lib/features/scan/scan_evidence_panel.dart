@@ -2,6 +2,7 @@ import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ScanEvidencePanel extends StatelessWidget {
   const ScanEvidencePanel({
@@ -43,7 +44,7 @@ class ScanEvidencePanel extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
         iconColor: AppTheme.adaptive(context, Colors.white70),
         collapsedIconColor: AppTheme.adaptive(context, Colors.white54),
-        title: Text(
+        title: AppText(
           evidence.needsReview ? 'Needs your review' : 'How this was read',
           style: TextStyle(
             color: evidence.needsReview
@@ -53,7 +54,7 @@ class ScanEvidencePanel extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
+        subtitle: AppText(
           evidence.needsReview
               ? 'Confirm the uncertain details before this becomes inventory.'
               : 'See the visible details used for this result.',
@@ -168,7 +169,7 @@ class _EvidenceRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   label.toUpperCase(),
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x66FFFFFF)),
@@ -178,7 +179,7 @@ class _EvidenceRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   value,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xCCFFFFFF)),

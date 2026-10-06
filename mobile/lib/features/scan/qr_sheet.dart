@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// Non-blocking bottom sheet shown after saving from the scan screen.
 /// Offers to generate and show a QR code for the newly saved item.
@@ -48,7 +49,7 @@ class QrOfferSheet extends StatelessWidget {
               ),
             ),
           ),
-          Text(
+          AppText(
             'Item saved.',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -57,7 +58,7 @@ class QrOfferSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'Want to print a QR code for it?',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -87,10 +88,13 @@ class QrOfferSheet extends StatelessWidget {
                       ),
                     ),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         'Skip',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 15,
                         ),
                       ),
@@ -117,7 +121,7 @@ class QrOfferSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         'Generate QR',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.black),
@@ -173,7 +177,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not share QR. Try again.')),
+          const SnackBar(content: AppText('Could not share QR. Try again.')),
         );
       }
     } finally {
@@ -212,7 +216,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
               ),
             ),
           ),
-          Text(
+          AppText(
             'Item QR Code',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -249,7 +253,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         'Scan to find in FindEZ',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 8),
                       ),
@@ -260,7 +264,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           widget.item.displayName,
                           style: TextStyle(
                             color: Colors.black,
@@ -271,14 +275,14 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                         ),
                         const SizedBox(height: 4),
                         if (widget.item.location.isNotEmpty)
-                          Text(
+                          AppText(
                             widget.item.location,
                             style: TextStyle(
                               color: Color(0xFF666666),
                               fontSize: 12,
                             ),
                           ),
-                        Text(
+                        AppText(
                           'Qty: ${widget.item.quantity}',
                           style: TextStyle(
                             color: Color(0xFF666666),
@@ -290,7 +294,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Text(
+                            AppText(
                               'FindEZ AI',
                               style: TextStyle(
                                 color: Color(0xFF999999),
@@ -300,7 +304,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                               ),
                             ),
                             Spacer(),
-                            Text(
+                            AppText(
                               'findez.ai',
                               style: TextStyle(
                                 color: Color(0xFF999999),
@@ -363,7 +367,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                                   size: 16,
                                 ),
                                 SizedBox(width: 8),
-                                Text(
+                                AppText(
                                   'Share',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -400,10 +404,13 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       ),
                     ),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         'Done',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 15,
                         ),
                       ),
@@ -474,7 +481,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
               ),
             ),
           ),
-          Text(
+          AppText(
             'Generate QR Codes?',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -483,7 +490,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'These items have no barcode.\nAdd a QR so you can scan them later.',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -518,7 +525,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                       horizontal: 16,
                       vertical: 2,
                     ),
-                    title: Text(
+                    title: AppText(
                       widget.items[i].name,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
@@ -573,7 +580,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                 borderRadius: BorderRadius.circular(99),
               ),
               child: Center(
-                child: Text(
+                child: AppText(
                   'Generate QR Codes',
                   style: TextStyle(
                     color: selectedItems.isEmpty
@@ -601,7 +608,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                 ),
               ),
               child: Center(
-                child: Text(
+                child: AppText(
                   'Skip',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -658,7 +665,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
+            AppText(
               'Your QR Codes',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -667,7 +674,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               'Print or save these to identify your items.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -707,7 +714,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Center(
-                  child: Text(
+                  child: AppText(
                     'Done',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.black),
@@ -759,7 +766,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not share QR. Try again.')),
+          const SnackBar(content: AppText('Could not share QR. Try again.')),
         );
       }
     } finally {
@@ -801,7 +808,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         'Scan to find in FindEZ',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 8),
                       ),
@@ -812,7 +819,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           widget.item.displayName,
                           style: TextStyle(
                             color: Colors.black,
@@ -823,14 +830,14 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         ),
                         const SizedBox(height: 4),
                         if (widget.item.location.isNotEmpty)
-                          Text(
+                          AppText(
                             widget.item.location,
                             style: TextStyle(
                               color: Color(0xFF666666),
                               fontSize: 12,
                             ),
                           ),
-                        Text(
+                        AppText(
                           'Qty: ${widget.item.quantity}',
                           style: TextStyle(
                             color: Color(0xFF666666),
@@ -842,7 +849,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Text(
+                            AppText(
                               'FindEZ AI',
                               style: TextStyle(
                                 color: Color(0xFF999999),
@@ -852,7 +859,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                               ),
                             ),
                             Spacer(),
-                            Text(
+                            AppText(
                               'findez.ai',
                               style: TextStyle(
                                 color: Color(0xFF999999),
@@ -895,11 +902,14 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                       children: [
                         Icon(
                           Icons.share_outlined,
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           size: 14,
                         ),
                         SizedBox(width: 6),
-                        Text(
+                        AppText(
                           'Share QR',
                           style: TextStyle(
                             color: AppTheme.foreground(

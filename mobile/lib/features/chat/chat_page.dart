@@ -19,6 +19,7 @@ import '../../core/ask_answer.dart';
 import '../../core/ui/glass_card.dart';
 import 'ask_answer_view.dart';
 import '../scan/scan_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -248,7 +249,7 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -949,19 +950,19 @@ class _ChatPageState extends State<ChatPage>
           if (!mounted) return;
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
+          ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e2))));
         }
       } else if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
+            content: AppText('Rate limited. Try again in ~20 seconds.'),
           ),
         );
       } else {
         _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+        ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
       }
     } catch (e) {
       _cancelPresentation(assistantIndex);
@@ -970,7 +971,7 @@ class _ChatPageState extends State<ChatPage>
       _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
@@ -1411,18 +1412,18 @@ class _ChatPageState extends State<ChatPage>
                 children: [
                   ListTile(
                     leading: const Icon(Icons.image_outlined),
-                    title: const Text('Upload Image'),
+                    title: const AppText('Upload Image'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.image),
                   ),
                   ListTile(
                     leading: const Icon(Icons.description_outlined),
-                    title: const Text('Upload Document'),
+                    title: const AppText('Upload Document'),
                     onTap: () =>
                         Navigator.of(context).pop(_UploadKind.document),
                   ),
                   ListTile(
                     leading: const Icon(Icons.attach_file),
-                    title: const Text('Upload File'),
+                    title: const AppText('Upload File'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.file),
                   ),
                 ],
@@ -1484,7 +1485,7 @@ class _ChatPageState extends State<ChatPage>
       if (_isVideoFile(name)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Videos aren’t supported.')),
+          const SnackBar(content: AppText('Videos aren’t supported.')),
         );
         return;
       }
@@ -1669,7 +1670,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
@@ -1687,7 +1688,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       if (mounted) {
         setState(() {
@@ -2041,7 +2042,7 @@ class _ChatPageState extends State<ChatPage>
       _scrollToBottom();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
+      ).showSnackBar(SnackBar(content: AppText(dioErrMsg)));
     } catch (e) {
       if (!mounted || requestGeneration != _requestGeneration) return;
       _cancelPresentation(assistantIndex);
@@ -2240,7 +2241,7 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
   }
 
@@ -2260,7 +2261,7 @@ class _ChatPageState extends State<ChatPage>
         setState(() => _conversations.insert(idx, removed));
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
       }
     }
   }
@@ -2288,7 +2289,7 @@ class _ChatPageState extends State<ChatPage>
                   padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
                   child: Row(
                     children: [
-                      Text(
+                      AppText(
                         'Chat History',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
@@ -2352,7 +2353,7 @@ class _ChatPageState extends State<ChatPage>
                             size: 16,
                           ),
                           SizedBox(width: 6),
-                          Text(
+                          AppText(
                             'New Chat',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2383,7 +2384,7 @@ class _ChatPageState extends State<ChatPage>
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
+                              AppText(
                                 "Couldn't load history.",
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -2395,7 +2396,7 @@ class _ChatPageState extends State<ChatPage>
                               ),
                               TextButton(
                                 onPressed: _openHistory,
-                                child: Text(
+                                child: AppText(
                                   'Retry',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2411,7 +2412,7 @@ class _ChatPageState extends State<ChatPage>
                         )
                       : _conversations.isEmpty
                       ? Center(
-                          child: Text(
+                          child: AppText(
                             'No past conversations',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2475,7 +2476,7 @@ class _ChatPageState extends State<ChatPage>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
+                                            AppText(
                                               c.title,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -2491,7 +2492,7 @@ class _ChatPageState extends State<ChatPage>
                                               ),
                                             ),
                                             const SizedBox(height: 3),
-                                            Text(
+                                            AppText(
                                               _relativeTime(c.updatedAt),
                                               style: TextStyle(
                                                 color: AppTheme.foreground(
@@ -2530,7 +2531,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
-    final title = Text(
+    final title = AppText(
       'Ask FindEZ',
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
@@ -2542,7 +2543,7 @@ class _ChatPageState extends State<ChatPage>
     );
     final reset = TextButton(
       onPressed: _resetChat,
-      child: Text(
+      child: AppText(
         'New chat',
         style: TextStyle(
           color: AppTheme.foreground(context, Color(0xFF85858E)),
@@ -2570,7 +2571,7 @@ class _ChatPageState extends State<ChatPage>
     alignment: Alignment.topLeft,
     child: Padding(
       padding: EdgeInsets.only(top: 8, left: 4),
-      child: Text(
+      child: AppText(
         'Ask about your things, places, or projects.',
         style: TextStyle(
           color: AppTheme.foreground(context, Color(0xFF85858E)),
@@ -2594,11 +2595,11 @@ class _ChatPageState extends State<ChatPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Take photo'),
+              title: const AppText('Take photo'),
               onTap: () => Navigator.pop(context, true),
             ),
             ListTile(
-              title: const Text('Choose photo'),
+              title: const AppText('Choose photo'),
               onTap: () => Navigator.pop(context, false),
             ),
           ],
@@ -2644,7 +2645,7 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted || generation != _requestGeneration) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             error is AskRequestException
                 ? error.message
                 : 'Could not open the photo. Check camera or photo access in Settings.',
@@ -2766,7 +2767,7 @@ class _ChatPageState extends State<ChatPage>
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
+                  child: AppText(
                     _progress!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.adaptive(
@@ -2797,14 +2798,14 @@ class _ChatPageState extends State<ChatPage>
                             errorBuilder: (_, _, _) => const SizedBox(
                               width: 64,
                               height: 64,
-                              child: Center(child: Text('Photo')),
+                              child: Center(child: AppText('Photo')),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           'Photo attached',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -2866,9 +2867,12 @@ class _ChatPageState extends State<ChatPage>
                         keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.newline,
                         onChanged: (_) => setState(() {}),
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                          fontSize: 16,
+                        style: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(context, Colors.white),
+                            fontSize: 16,
+                          ),
                         ),
                         decoration: InputDecoration(
                           hintText: 'Ask about your things',
@@ -2878,11 +2882,14 @@ class _ChatPageState extends State<ChatPage>
                           focusedBorder: InputBorder.none,
                           filled: false,
                           contentPadding: EdgeInsets.zero,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0xFF636366),
+                          hintStyle: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.foreground(
+                                context,
+                                Color(0xFF636366),
+                              ),
                             ),
                           ),
                         ),

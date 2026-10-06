@@ -8,6 +8,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key, required this.api, this.onRead});
@@ -66,7 +67,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -93,7 +94,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: const AppText('Notifications'),
         actions: [
           if (_pushReady)
             IconButton(
@@ -136,7 +137,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   _registeringPush
                       ? 'Connecting notifications…'
                       : 'Phone notifications are off',
@@ -144,7 +145,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
                 if (!_registeringPush) ...[
                   const SizedBox(height: 3),
-                  Text(
+                  AppText(
                     _pushError ?? 'Tap Try Again to connect this iPhone.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, AppColors.muted),
@@ -164,7 +165,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           else
             TextButton(
               onPressed: _registerPush,
-              child: const Text('Try Again'),
+              child: const AppText('Try Again'),
             ),
         ],
       ),
@@ -176,7 +177,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ? Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Text(_error!, textAlign: TextAlign.center),
+              child: AppText(_error!, textAlign: TextAlign.center),
             ),
           )
         : _items == null
@@ -193,7 +194,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         size: 42,
                       ),
                       SizedBox(height: 14),
-                      Text(
+                      AppText(
                         'You’re all caught up',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -202,7 +203,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         ),
                       ),
                       SizedBox(height: 7),
-                      Text(
+                      AppText(
                         'Team updates will appear here.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -263,11 +264,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                             ],
                           ),
-                          title: Text(
+                          title: AppText(
                             _describedActivity(item),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          subtitle: Text(
+                          subtitle: AppText(
                             '${item['activity_type'] ?? 'Team'} · ${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
                           ),
                         ),

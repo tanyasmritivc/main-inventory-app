@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 import 'scan_evidence_panel.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 TextStyle _kLabelStyle(BuildContext context) => TextStyle(
   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -176,7 +177,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: _kLabelStyle(context)),
+          AppText(label, style: _kLabelStyle(context)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -191,16 +192,22 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             child: TextField(
               controller: controller,
               textInputAction: TextInputAction.next,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 13,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 13,
+                ),
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                  fontSize: 13,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
@@ -229,7 +236,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the manufacturer page.')),
+        const SnackBar(
+          content: AppText('Could not open the manufacturer page.'),
+        ),
       );
     }
   }
@@ -281,7 +290,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // Row 1: label + "Can't read?" pill
           Row(
             children: [
-              Text('ITEM NAME', style: _kLabelStyle(context)),
+              AppText('ITEM NAME', style: _kLabelStyle(context)),
               if (isVerified) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -309,10 +318,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         size: 13,
                       ),
                       SizedBox(width: 4),
-                      Text(
+                      AppText(
                         'Verified',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0xFF30D158)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0xFF30D158),
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -343,7 +355,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       width: 0.5,
                     ),
                   ),
-                  child: Text(
+                  child: AppText(
                     "Can't read?",
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -370,17 +382,23 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               controller: _nameCtrl[i],
               focusNode: _nameFocus[i],
               textInputAction: TextInputAction.next,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 14,
-                height: 1.5,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Item name',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                  fontSize: 14,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 14,
+                  ),
                 ),
               ),
               onChanged: (_) => setState(() {}),
@@ -403,7 +421,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       match != null
                           ? 'Match found: ${match.name}'
                           : 'Match to existing item?',
@@ -447,7 +465,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
           if (isVerified) ...[
             const SizedBox(height: 12),
-            Text(
+            AppText(
               specificationSummary == null || specificationSummary.isEmpty
                   ? 'Matched against the manufacturer catalog.'
                   : 'Manufacturer specifications: $specificationSummary',
@@ -459,7 +477,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ),
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text('VERIFIED COMPATIBILITY', style: _kLabelStyle(context)),
+              AppText('VERIFIED COMPATIBILITY', style: _kLabelStyle(context)),
               const SizedBox(height: 7),
               Wrap(
                 spacing: 6,
@@ -485,7 +503,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                             width: 0.5,
                           ),
                         ),
-                        child: Text(
+                        child: AppText(
                           value,
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -513,7 +531,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       size: 14,
                     ),
                     SizedBox(width: 5),
-                    Text(
+                    AppText(
                       'View manufacturer source',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0xFF30D158)),
@@ -535,7 +553,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ],
           const SizedBox(height: 16),
           // QUANTITY label
-          Text('QUANTITY', style: _kLabelStyle(context)),
+          AppText('QUANTITY', style: _kLabelStyle(context)),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -566,7 +584,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 ),
               ),
               const SizedBox(width: 24),
-              Text(
+              AppText(
                 '${_qty[i]}',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -602,7 +620,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
           const SizedBox(height: 16),
           // LOCATION label
-          Text('LOCATION', style: _kLabelStyle(context)),
+          AppText('LOCATION', style: _kLabelStyle(context)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -618,17 +636,23 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               controller: _locCtrl[i],
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 14,
-                height: 1.5,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, Colors.white),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Unsorted',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                  fontSize: 14,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),
@@ -682,7 +706,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Confirm Items',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -691,7 +715,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     widget.items.any((item) => item.isPendingReview)
                         ? 'Confirm clear items now. Uncertain items stay safely in Review until you assign them.'
                         : 'Review every visible detail before saving.',
@@ -740,7 +764,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: Center(
-                        child: Text(
+                        child: AppText(
                           () {
                             final reviewCount = widget.items
                                 .where((item) => item.isPendingReview)
@@ -767,10 +791,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(null),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         'Cancel',
                         style: TextStyle(
-                          color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x73FFFFFF),
+                          ),
                           fontSize: 15,
                         ),
                       ),
@@ -882,16 +909,22 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) =>
                       FocusManager.instance.primaryFocus?.unfocus(),
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white),
-                    fontSize: 14,
+                  style: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
+                      fontSize: 14,
+                    ),
                   ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Search existing items…',
-                    hintStyle: TextStyle(
-                      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                      fontSize: 14,
+                    hintStyle: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+                        fontSize: 14,
+                      ),
                     ),
                     prefixIcon: Icon(
                       Icons.search,
@@ -908,7 +941,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   ? Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: Text(
+                        child: AppText(
                           'No items found',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -942,7 +975,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     item.name,
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -953,7 +986,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                                     ),
                                   ),
                                 ),
-                                Text(
+                                AppText(
                                   item.category,
                                   style: TextStyle(
                                     color: AppTheme.foreground(

@@ -12,6 +12,7 @@ import '../../core/ui/app_gradient_background.dart';
 import '../onboarding/onboarding_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -25,7 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-    child: Text(
+    child: AppText(
       text,
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -74,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Icon(icon, color: iconColor, size: 18),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
+                  child: AppText(
                     label,
                     style: TextStyle(
                       color: labelColor,
@@ -110,18 +111,18 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text(
+        title: AppText(
           'Delete Account',
           style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
         ),
-        content: Text(
+        content: AppText(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
           style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
+            child: AppText(
               'Cancel',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -134,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
               backgroundColor: AppTheme.adaptive(ctx, const Color(0xFFEF4444)),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -155,7 +156,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(describeError(e).$1),
+          content: AppText(describeError(e).$1),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -177,7 +178,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               'Email us at info@findez.ai',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -222,7 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               'Email us at info@findez.ai',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -262,7 +263,7 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        title: Text(
+        title: AppText(
           'Settings',
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),

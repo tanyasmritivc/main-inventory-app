@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class _CommandItem {
   const _CommandItem({
@@ -223,7 +224,7 @@ class _ActivityPageState extends State<ActivityPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: tLabel),
+            AppText(label, style: tLabel),
             const SizedBox(height: 6),
             value,
           ],
@@ -232,7 +233,7 @@ class _ActivityPageState extends State<ActivityPage> {
     }
 
     Widget valueText(String v) =>
-        Text(v, style: tValue, maxLines: 1, overflow: TextOverflow.ellipsis);
+        AppText(v, style: tValue, maxLines: 1, overflow: TextOverflow.ellipsis);
 
     Widget skeletonValue() =>
         const SkeletonBox(height: 22, width: 90, borderRadius: 10);
@@ -243,7 +244,7 @@ class _ActivityPageState extends State<ActivityPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          AppText(
             'Command Center',
             style: Theme.of(
               context,
@@ -272,7 +273,7 @@ class _ActivityPageState extends State<ActivityPage> {
             label: 'Most used location',
             value: _loading
                 ? const SkeletonBox(height: 18, width: 160, borderRadius: 10)
-                : Text(
+                : AppText(
                     _mostUsedLocation(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
@@ -294,13 +295,13 @@ class _ActivityPageState extends State<ActivityPage> {
   }
 
   Widget _sectionTitle(String title) {
-    return Text(title, style: _sectionTitleStyle(context));
+    return AppText(title, style: _sectionTitleStyle(context));
   }
 
   Widget _emptySectionText(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      child: Text(
+      child: AppText(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: AppTheme.adaptive(
@@ -317,7 +318,7 @@ class _ActivityPageState extends State<ActivityPage> {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Activity'),
+        title: const AppText('Activity'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -353,7 +354,7 @@ class _ActivityPageState extends State<ActivityPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
+                    AppText(
                       _error ?? 'Could not load activity',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.adaptive(
@@ -382,7 +383,7 @@ class _ActivityPageState extends State<ActivityPage> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      child: const Text('Try again'),
+                      child: const AppText('Try again'),
                     ),
                   ],
                 ),
@@ -424,17 +425,17 @@ class _ActivityPageState extends State<ActivityPage> {
                                       Colors.white.withValues(alpha: 0.80),
                                     ),
                                   ),
-                                  title: Text(
+                                  title: AppText(
                                     low[i].name.trim().isEmpty
                                         ? '—'
                                         : low[i].name.trim(),
                                   ),
-                                  subtitle: Text(
+                                  subtitle: AppText(
                                     low[i].location.trim().isEmpty
                                         ? 'Unsorted'
                                         : low[i].location.trim(),
                                   ),
-                                  trailing: Text('${low[i].quantity}'),
+                                  trailing: AppText('${low[i].quantity}'),
                                 ),
                               ],
                             ],
@@ -469,8 +470,8 @@ class _ActivityPageState extends State<ActivityPage> {
                                       Colors.white.withValues(alpha: 0.80),
                                     ),
                                   ),
-                                  title: Text(dups[i].name),
-                                  trailing: Text('${dups[i].count}'),
+                                  title: AppText(dups[i].name),
+                                  trailing: AppText('${dups[i].count}'),
                                 ),
                               ],
                             ],
@@ -507,12 +508,12 @@ class _ActivityPageState extends State<ActivityPage> {
                                       Colors.white.withValues(alpha: 0.80),
                                     ),
                                   ),
-                                  title: Text(
+                                  title: AppText(
                                     unused[i].name.trim().isEmpty
                                         ? '—'
                                         : unused[i].name.trim(),
                                   ),
-                                  subtitle: Text(
+                                  subtitle: AppText(
                                     '${unused[i].location.trim().isEmpty ? 'Unsorted' : unused[i].location.trim()} · Last added ${_daysAgo(unused[i].createdAt)} days ago',
                                   ),
                                 ),
@@ -549,12 +550,12 @@ class _ActivityPageState extends State<ActivityPage> {
                                       Colors.white.withValues(alpha: 0.80),
                                     ),
                                   ),
-                                  title: Text(
+                                  title: AppText(
                                     recent[i].name.trim().isEmpty
                                         ? '—'
                                         : recent[i].name.trim(),
                                   ),
-                                  subtitle: const Text('added recently'),
+                                  subtitle: const AppText('added recently'),
                                 ),
                               ],
                             ],

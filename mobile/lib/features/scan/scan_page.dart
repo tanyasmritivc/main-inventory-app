@@ -23,6 +23,7 @@ import 'confirm_scan_sheet.dart';
 import 'review_capture.dart';
 import 'qr_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({
@@ -333,7 +334,7 @@ class _ScanPageState extends State<ScanPage> {
                         Icons.photo_camera_outlined,
                         color: AppTheme.foreground(context, Colors.white),
                       ),
-                      title: Text(
+                      title: AppText(
                         'Take Photo',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
@@ -347,7 +348,7 @@ class _ScanPageState extends State<ScanPage> {
                         Icons.photo_outlined,
                         color: AppTheme.foreground(context, Colors.white),
                       ),
-                      title: Text(
+                      title: AppText(
                         'Choose from Library',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
@@ -386,18 +387,18 @@ class _ScanPageState extends State<ScanPage> {
       barrierDismissible: true,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Some items need review'),
-          content: Text(
+          title: const AppText('Some items need review'),
+          content: AppText(
             "Added $ok items successfully. $failed items couldn't be recognized.",
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Dismiss'),
+              child: const AppText('Dismiss'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Review'),
+              child: const AppText('Review'),
             ),
           ],
         );
@@ -453,7 +454,7 @@ class _ScanPageState extends State<ScanPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   'FOUND IN YOUR INVENTORY',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
@@ -463,7 +464,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   match.name,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -472,7 +473,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   'in ${match.location}',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x80FFFFFF)),
@@ -480,7 +481,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   'Qty: ${match.quantity}',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x80FFFFFF)),
@@ -507,7 +508,7 @@ class _ScanPageState extends State<ScanPage> {
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'View Item',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
@@ -525,13 +526,13 @@ class _ScanPageState extends State<ScanPage> {
               context,
               const Color(0xFF1C1C1E),
             ),
-            title: Text(
+            title: AppText(
               'Not found',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
               ),
             ),
-            content: Text(
+            content: AppText(
               'This FindEZ QR code wasn\'t found in your inventory.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x99FFFFFF)),
@@ -540,7 +541,7 @@ class _ScanPageState extends State<ScanPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(
+                child: AppText(
                   'OK',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -664,7 +665,7 @@ class _ScanPageState extends State<ScanPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 'Unknown barcode',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
@@ -673,7 +674,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 'Photograph the product label so FindEZ can read its manufacturer and part number.',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
@@ -686,14 +687,14 @@ class _ScanPageState extends State<ScanPage> {
                 child: FilledButton.icon(
                   onPressed: () => Navigator.pop(ctx, 'label'),
                   icon: const Icon(Icons.document_scanner_outlined),
-                  label: const Text('Scan Product Label'),
+                  label: const AppText('Scan Product Label'),
                 ),
               ),
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.pop(ctx, 'manual'),
-                  child: const Text('Enter details manually'),
+                  child: const AppText('Enter details manually'),
                 ),
               ),
             ],
@@ -789,7 +790,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                Text(
+                AppText(
                   'You already have this!',
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0xFF30D158)),
@@ -799,7 +800,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   itemName,
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Colors.white),
@@ -809,7 +810,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
                 if (location.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     'In: $location',
                     style: TextStyle(
                       color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -818,7 +819,7 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                Text(
+                AppText(
                   'Quantity',
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -862,7 +863,7 @@ class _ScanPageState extends State<ScanPage> {
                     ),
                     SizedBox(
                       width: 56,
-                      child: Text(
+                      child: AppText(
                         '$qty',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -921,7 +922,7 @@ class _ScanPageState extends State<ScanPage> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
+                                    content: AppText(
                                       'Couldn\'t update quantity. Try again.',
                                     ),
                                   ),
@@ -941,7 +942,7 @@ class _ScanPageState extends State<ScanPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'Update Quantity',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -977,7 +978,7 @@ class _ScanPageState extends State<ScanPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'View Item',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -993,7 +994,7 @@ class _ScanPageState extends State<ScanPage> {
                       addAnyway = true;
                       Navigator.of(ctx).pop();
                     },
-                    child: Text(
+                    child: AppText(
                       'Add anyway',
                       style: TextStyle(
                         color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -1070,7 +1071,7 @@ class _ScanPageState extends State<ScanPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(
+        title: AppText(
           'Taking longer than expected',
           style: TextStyle(
             color: AppTheme.foreground(ctx, Colors.white),
@@ -1078,7 +1079,7 @@ class _ScanPageState extends State<ScanPage> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: Text(
+        content: AppText(
           'This photo is taking a while to process. You can retry or try a clearer photo.',
           style: TextStyle(
             color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
@@ -1088,7 +1089,7 @@ class _ScanPageState extends State<ScanPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
+            child: AppText(
               'Cancel',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
@@ -1100,7 +1101,7 @@ class _ScanPageState extends State<ScanPage> {
               Navigator.pop(ctx);
               unawaited(_pick(src));
             },
-            child: Text(
+            child: AppText(
               'Retry',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0xFF6997DD)),
@@ -1303,7 +1304,9 @@ class _ScanPageState extends State<ScanPage> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Tracking ${matching.length} $cat items in $loc')),
+      SnackBar(
+        content: AppText('Tracking ${matching.length} $cat items in $loc'),
+      ),
     );
   }
 
@@ -1357,7 +1360,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              AppText(
                 'Save to Space',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
@@ -1366,7 +1369,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
+              AppText(
                 'Choose where to save these items',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -1375,7 +1378,7 @@ class _ScanPageState extends State<ScanPage> {
               ),
               const SizedBox(height: 20),
               if (_availableSpaces.isNotEmpty) ...[
-                Text(
+                AppText(
                   'YOUR SPACES',
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
@@ -1416,7 +1419,7 @@ class _ScanPageState extends State<ScanPage> {
                                       ),
                               ),
                             ),
-                            child: Text(
+                            child: AppText(
                               space,
                               style: TextStyle(
                                 color: _defaultLocation.text == space
@@ -1435,7 +1438,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
                 const SizedBox(height: 20),
               ],
-              Text(
+              AppText(
                 'CREATE NEW SPACE',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
@@ -1451,14 +1454,20 @@ class _ScanPageState extends State<ScanPage> {
                     child: TextField(
                       controller: newSpaceCtrl,
                       textInputAction: TextInputAction.done,
-                      style: TextStyle(
-                        color: AppTheme.foreground(ctx, Colors.white),
-                        fontSize: 14,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(ctx, Colors.white),
+                          fontSize: 14,
+                        ),
                       ),
                       decoration: InputDecoration(
                         hintText: 'e.g. Robot Room, Pit, Electrical',
-                        hintStyle: TextStyle(
-                          color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                          ),
                         ),
                         filled: true,
                         fillColor: AppTheme.adaptive(
@@ -1512,7 +1521,7 @@ class _ScanPageState extends State<ScanPage> {
                         color: AppTheme.adaptive(ctx, Colors.white),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
+                      child: AppText(
                         'Create',
                         style: TextStyle(
                           color: AppTheme.foreground(ctx, Colors.black),
@@ -1559,7 +1568,7 @@ class _ScanPageState extends State<ScanPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(
+        title: AppText(
           '$inserted of $total item${total == 1 ? '' : 's'} saved',
           style: TextStyle(
             color: AppTheme.foreground(ctx, Colors.white),
@@ -1571,7 +1580,7 @@ class _ScanPageState extends State<ScanPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'Some items could not be saved:',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
@@ -1582,7 +1591,7 @@ class _ScanPageState extends State<ScanPage> {
             ...lines.map(
               (line) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
+                child: AppText(
                   line,
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Colors.white),
@@ -1592,7 +1601,7 @@ class _ScanPageState extends State<ScanPage> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               'Fix the highlighted rows and tap Save All to retry.',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -1604,7 +1613,7 @@ class _ScanPageState extends State<ScanPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
+            child: AppText(
               'Dismiss',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0xFF6997DD)),
@@ -1646,7 +1655,9 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _saveAll() async {
     if (_defaultLocation.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or create a space first')),
+        const SnackBar(
+          content: AppText('Please select or create a space first'),
+        ),
       );
       await _loadSpaces();
       await _showSpacePicker();
@@ -1733,7 +1744,7 @@ class _ScanPageState extends State<ScanPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               '${plan.reviewCount} uncertain ${plan.reviewCount == 1 ? 'item is' : 'items are'} saved in Review.',
             ),
           ),
@@ -1809,7 +1820,7 @@ class _ScanPageState extends State<ScanPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               allSucceeded
                   ? plan.reviewCount > 0
                         ? 'Saved $insertedCount and kept ${plan.reviewCount} in Review'
@@ -1915,7 +1926,7 @@ class _ScanPageState extends State<ScanPage> {
       backgroundColor: Colors.transparent,
       appBar: widget.showAppBar
           ? AppBar(
-              title: const Text('Scan'),
+              title: const AppText('Scan'),
               centerTitle: true,
               actions: [
                 TextButton(
@@ -1926,7 +1937,7 @@ class _ScanPageState extends State<ScanPage> {
                       const Color(0x73FFFFFF),
                     ),
                   ),
-                  child: const Text('Cancel'),
+                  child: const AppText('Cancel'),
                 ),
               ],
               backgroundColor: Colors.transparent,
@@ -1960,7 +1971,7 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       _saving ? 'Saving…' : 'Save All',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0xFF1C1C1E)),
@@ -1993,7 +2004,7 @@ class _ScanPageState extends State<ScanPage> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             () {
                               final cat = (_lastSavedCategory ?? '').trim();
                               final loc = (_lastSavedLocation ?? '').trim();
@@ -2013,11 +2024,11 @@ class _ScanPageState extends State<ScanPage> {
                               _showTrackCategoryPrompt = false;
                             });
                           },
-                          child: const Text('Not now'),
+                          child: const AppText('Not now'),
                         ),
                         FilledButton(
                           onPressed: () => unawaited(_onTrackTapped()),
-                          child: const Text('Track'),
+                          child: const AppText('Track'),
                         ),
                       ],
                     ),
@@ -2123,7 +2134,7 @@ class _ScanPageState extends State<ScanPage> {
                                                 ? FontWeight.w500
                                                 : FontWeight.w400,
                                           ),
-                                          child: const Text(
+                                          child: const AppText(
                                             'Scan Barcode',
                                             textAlign: TextAlign.center,
                                           ),
@@ -2189,7 +2200,7 @@ class _ScanPageState extends State<ScanPage> {
                                                 ? FontWeight.w500
                                                 : FontWeight.w400,
                                           ),
-                                          child: const Text(
+                                          child: const AppText(
                                             'Auto Extract',
                                             textAlign: TextAlign.center,
                                           ),
@@ -2236,7 +2247,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
+                            child: AppText(
                               _errorStage == _ErrorStage.extraction
                                   ? "Couldn't extract item details. Try another photo."
                                   : _errorStage == _ErrorStage.save
@@ -2249,7 +2260,7 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                       if (_errorStage == null) ...[
                         const SizedBox(height: 10),
-                        Text(
+                        AppText(
                           'Try another photo, or use the camera.',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
@@ -2261,7 +2272,7 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                       ],
                       const SizedBox(height: 10),
-                      Text(
+                      AppText(
                         _error!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.adaptive(
@@ -2315,7 +2326,7 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             _defaultLocation.text.isEmpty
                                 ? 'Select a space...'
                                 : _defaultLocation.text,
@@ -2385,7 +2396,7 @@ class _ScanPageState extends State<ScanPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  Text(
+                                  AppText(
                                     _scanStatus ?? _stageLabel(_scanStage),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
@@ -2416,7 +2427,7 @@ class _ScanPageState extends State<ScanPage> {
                                   ),
                                   if (_showLongWaitHint) ...[
                                     const SizedBox(height: 14),
-                                    Text(
+                                    AppText(
                                       'Analyzing your photo — this may take a moment...',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
@@ -2503,7 +2514,7 @@ class _ScanPageState extends State<ScanPage> {
                                                             const SizedBox(
                                                               height: 12,
                                                             ),
-                                                            Text(
+                                                            AppText(
                                                               'Camera not available on this device',
                                                               style: TextStyle(
                                                                 color: AppTheme.foreground(
@@ -2521,7 +2532,7 @@ class _ScanPageState extends State<ScanPage> {
                                                             const SizedBox(
                                                               height: 6,
                                                             ),
-                                                            Text(
+                                                            AppText(
                                                               'Use Upload photo to add items',
                                                               style: TextStyle(
                                                                 color: AppTheme.foreground(
@@ -2679,7 +2690,7 @@ class _ShimmerTextState extends State<_ShimmerText>
           child: child,
         );
       },
-      child: Text(
+      child: AppText(
         widget.text,
         style: TextStyle(
           color: AppTheme.foreground(context, Colors.white),
@@ -2789,6 +2800,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
         textInputAction: TextInputAction.next,
         onChanged: (_) => _emit(),
         decoration: const InputDecoration(labelText: 'Name'),
+        style: AppTypography.bodyStyleOf(context),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 10),
@@ -2803,6 +2815,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                     textInputAction: TextInputAction.next,
                     onChanged: (_) => _emit(),
                     decoration: const InputDecoration(labelText: 'Category'),
+                    style: AppTypography.bodyStyleOf(context),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -2812,6 +2825,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                     textInputAction: TextInputAction.next,
                     onChanged: (_) => _emit(),
                     decoration: const InputDecoration(labelText: 'Location'),
+                    style: AppTypography.bodyStyleOf(context),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -2825,13 +2839,14 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                     onChanged: (_) => _emit(),
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Qty'),
+                    style: AppTypography.bodyStyleOf(context),
                   ),
                 ),
               ],
             ),
             if (showError) ...[
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 widget.errorText!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(

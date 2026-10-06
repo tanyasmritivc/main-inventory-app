@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class MemberAvatar extends StatelessWidget {
   const MemberAvatar({
@@ -26,7 +27,7 @@ class MemberAvatar extends StatelessWidget {
   Widget get _fallback => ColoredBox(
     color: _color,
     child: Center(
-      child: Text(
+      child: AppText(
         name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?',
         style: TextStyle(
           color: Colors.white,

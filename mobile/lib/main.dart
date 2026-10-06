@@ -24,6 +24,7 @@ import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
 import 'features/sharing/invitation_host.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +44,7 @@ Future<void> main() async {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE'))),
+        home: Scaffold(body: Center(child: AppText('SAFE MODE'))),
       ),
     );
     return;
@@ -62,7 +63,7 @@ Future<void> main() async {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
+        home: Scaffold(body: Center(child: AppText('SAFE MODE (Supabase OK)'))),
       ),
     );
     return;
@@ -216,18 +217,20 @@ class _MyAppState extends State<MyApp> {
                   MediaQuery.textScalerOf(context),
                 ),
               ),
-              child: AnnotatedRegion<SystemUiOverlayStyle>(
-                value: Theme.of(context).brightness == Brightness.light
-                    ? SystemUiOverlayStyle.dark
-                    : SystemUiOverlayStyle.light,
-                child: GestureDetector(
-                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                  behavior: HitTestBehavior.translucent,
-                  child: InvitationHost(
-                    api: _api,
-                    navigatorKey: _navigatorKey,
-                    ready: _invitationReady,
-                    child: child ?? const SizedBox.shrink(),
+              child: AppTypography(
+                child: AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: Theme.of(context).brightness == Brightness.light
+                      ? SystemUiOverlayStyle.dark
+                      : SystemUiOverlayStyle.light,
+                  child: GestureDetector(
+                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                    behavior: HitTestBehavior.translucent,
+                    child: InvitationHost(
+                      api: _api,
+                      navigatorKey: _navigatorKey,
+                      ready: _invitationReady,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -364,7 +367,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Text(
+                        AppText(
                           widget.message,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium
@@ -476,7 +479,7 @@ class _AuthGateState extends State<LaunchAuthGate> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        AppText(
                           'Something went wrong.',
                           style: TextStyle(
                             color: AppTheme.foreground(context, Colors.white),
@@ -486,7 +489,7 @@ class _AuthGateState extends State<LaunchAuthGate> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: _bump,
-                          child: Text(
+                          child: AppText(
                             'Retry',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../scan/scan_evidence_panel.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ReviewQueuePage extends StatefulWidget {
   const ReviewQueuePage({
@@ -66,12 +67,12 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     if (outcome == _ReviewOutcome.resolved) {
       widget.onInventoryMutated?.call();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item confirmed and added to Find.')),
+        const SnackBar(content: AppText('Item confirmed and added to Find.')),
       );
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Capture dismissed.')));
+      ).showSnackBar(const SnackBar(content: AppText('Capture dismissed.')));
     }
   }
 
@@ -80,7 +81,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Review'),
+        title: const AppText('Review'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         actions: [
           IconButton(
@@ -116,9 +117,9 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
             color: AppTheme.foreground(context, Colors.white54),
           ),
           const SizedBox(height: 14),
-          Text(_error!, textAlign: TextAlign.center),
+          AppText(_error!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          FilledButton(onPressed: _load, child: const Text('Try again')),
+          FilledButton(onPressed: _load, child: const AppText('Try again')),
         ],
       );
     }
@@ -134,13 +135,13 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
             color: AppTheme.foreground(context, Color(0xFF30D158)),
           ),
           SizedBox(height: 16),
-          Text(
+          AppText(
             'Nothing needs review',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 8),
-          Text(
+          AppText(
             'When a photo is uncertain, it will wait here instead of becoming incorrect inventory.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -160,7 +161,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
         if (index == 0) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(4, 2, 4, 8),
-            child: Text(
+            child: AppText(
               '${_items.length} ${_items.length == 1 ? 'capture needs' : 'captures need'} a quick decision. Nothing here is in inventory yet.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white60),
@@ -198,7 +199,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           item.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -208,7 +209,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                           ),
                         ),
                         const SizedBox(height: 5),
-                        Text(
+                        AppText(
                           item.scanEvidence?.reviewReasons.firstOrNull ??
                               'Confirm this item before saving.',
                           maxLines: 2,
@@ -311,7 +312,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
         _location.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Name, category, and location are required.'),
+          content: AppText('Name, category, and location are required.'),
         ),
       );
       return;
@@ -327,12 +328,12 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -342,18 +343,18 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dismiss this capture?'),
-        content: const Text(
+        title: const AppText('Dismiss this capture?'),
+        content: const AppText(
           'It will be removed from Review and will not be added to inventory.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Dismiss'),
+            child: const AppText('Dismiss'),
           ),
         ],
       ),
@@ -367,7 +368,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       setState(() => _saving = false);
     }
   }
@@ -402,7 +403,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         'Review capture',
                         style: TextStyle(
                           fontSize: 19,
@@ -410,7 +411,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                         ),
                       ),
                       SizedBox(height: 3),
-                      Text(
+                      AppText(
                         'Correct anything uncertain, then add it to Find.',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white60),
@@ -466,7 +467,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                   ],
                 ),
                 _field('Location', _location),
-                Text(
+                AppText(
                   'QUANTITY',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white38),
@@ -486,7 +487,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: Text(
+                      child: AppText(
                         '$_quantity',
                         style: const TextStyle(
                           fontSize: 18,
@@ -512,12 +513,12 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check_rounded),
-                  label: const Text('Confirm and add to Find'),
+                  label: const AppText('Confirm and add to Find'),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: _saving ? null : _dismiss,
-                  child: const Text('Dismiss capture'),
+                  child: const AppText('Dismiss capture'),
                 ),
               ],
             ),
@@ -534,6 +535,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
         controller: controller,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(labelText: label),
+        style: AppTypography.bodyStyleOf(context),
       ),
     );
   }

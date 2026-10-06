@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class BinLabelSheet extends StatefulWidget {
   final String spaceName;
@@ -60,7 +61,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not share label. Try again.')),
+          const SnackBar(content: AppText('Could not share label. Try again.')),
         );
       }
     } finally {
@@ -115,7 +116,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Text(
+                  AppText(
                     'Bin Label',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -134,7 +135,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                       borderRadius: BorderRadius.circular(99),
                       border: Border.all(color: AppTheme.cardBorder(context)),
                     ),
-                    child: Text(
+                    child: AppText(
                       '${widget.items.length} items',
                       style: TextStyle(
                         color: AppTheme.textSecondary(context),
@@ -147,7 +148,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
               const SizedBox(height: 4),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
+                child: AppText(
                   'Print or share this label to put on your bin',
                   style: TextStyle(
                     color: AppTheme.textMuted(context),
@@ -185,7 +186,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          AppText(
                             'Scan to open in FindEZ',
                             style: TextStyle(
                               color: Color(0xFF999999),
@@ -200,7 +201,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               widget.spaceName,
                               style: TextStyle(
                                 color: Colors.black,
@@ -210,7 +211,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            AppText(
                               '${widget.items.length} ${widget.items.length == 1 ? 'item' : 'items'}',
                               style: TextStyle(
                                 color: Color(0xFF666666),
@@ -238,7 +239,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
-                                          child: Text(
+                                          child: AppText(
                                             e.key,
                                             style: TextStyle(
                                               color: Colors.black,
@@ -247,7 +248,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                             ),
                                           ),
                                         ),
-                                        Text(
+                                        AppText(
                                           '${e.value.length}',
                                           style: TextStyle(
                                             color: Color(0xFF666666),
@@ -259,7 +260,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                   ),
                                 ),
                             if (categories.length > 6)
-                              Text(
+                              AppText(
                                 '+${categories.length - 6} more categories',
                                 style: TextStyle(
                                   color: Color(0xFF999999),
@@ -271,7 +272,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                Text(
+                                AppText(
                                   'FindEZ AI',
                                   style: TextStyle(
                                     color: Color(0xFF999999),
@@ -281,7 +282,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                   ),
                                 ),
                                 const Spacer(),
-                                Text(
+                                AppText(
                                   'findez.ai',
                                   style: TextStyle(
                                     color: Color(0xFF999999),
@@ -359,7 +360,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                       size: 16,
                                     ),
                                     SizedBox(width: 8),
-                                    Text(
+                                    AppText(
                                       'Share / Print Label',
                                       style: TextStyle(
                                         color: AppTheme.foreground(
@@ -398,7 +399,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                           width: 1,
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'Done',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),

@@ -1,6 +1,7 @@
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'findez_wordmark.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class LaunchLoadingScreen extends StatelessWidget {
   const LaunchLoadingScreen({super.key, this.message});
@@ -19,7 +20,7 @@ class LaunchLoadingScreen extends StatelessWidget {
           children: [
             const FindEZWordmark(),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               text,
               textAlign: TextAlign.center,
               style: TextStyle(

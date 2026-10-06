@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class BomReadinessPage extends StatefulWidget {
   const BomReadinessPage({
@@ -87,9 +88,9 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         .join('\n');
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Missing-parts list copied.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: AppText('Missing-parts list copied.')),
+    );
   }
 
   @override
@@ -98,7 +99,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Build Readiness'),
+        title: const AppText('Build Readiness'),
         centerTitle: true,
         backgroundColor: AppTheme.adaptive(context, Colors.black),
       ),
@@ -119,7 +120,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           color: AppTheme.foreground(context, Color(0xFF6997DD)),
         ),
         const SizedBox(height: 20),
-        Text(
+        AppText(
           'Can you build it today?',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -129,7 +130,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
+        AppText(
           'Choose a BOM to compare every required part with ${widget.location}. Your inventory will not be changed.',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -140,7 +141,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         ),
         if (_error != null) ...[
           const SizedBox(height: 18),
-          Text(
+          AppText(
             _error!,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -158,10 +159,10 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.upload_file),
-          label: Text(_loading ? 'Analyzing…' : 'Choose BOM'),
+          label: AppText(_loading ? 'Analyzing…' : 'Choose BOM'),
         ),
         const SizedBox(height: 12),
-        Text(
+        AppText(
           'Supported columns: Name or Part Number, and Quantity',
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white38),
@@ -190,7 +191,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
             ),
             child: Column(
               children: [
-                Text(
+                AppText(
                   '${summary.readinessPercent}%',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -198,7 +199,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                Text(
+                AppText(
                   'ready in ${result.location}',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white60),
@@ -216,7 +217,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                       : AppTheme.adaptive(context, const Color(0xFF6997DD)),
                 ),
                 const SizedBox(height: 12),
-                Text(
+                AppText(
                   '${summary.readyLines} ready · ${summary.partialLines} partial · ${summary.missingLines} missing',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white54),
@@ -227,7 +228,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           ),
         ),
         if (_error != null)
-          Text(
+          AppText(
             _error!,
             style: TextStyle(
               color: AppTheme.foreground(context, AppColors.danger),
@@ -258,14 +259,14 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                       : (partial ? Icons.timelapse : Icons.cancel),
                   color: color,
                 ),
-                title: Text(
+                title: AppText(
                   item.partNumber ?? item.name,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   [
                     if (item.partNumber != null) item.name,
                     if (item.brand != null) item.brand!,
@@ -274,7 +275,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                     color: AppTheme.foreground(context, Colors.white54),
                   ),
                 ),
-                trailing: Text(
+                trailing: AppText(
                   '${item.availableQuantity}/${item.requiredQuantity}',
                   style: TextStyle(
                     color: color,
@@ -293,7 +294,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _loading ? null : _chooseBom,
-                  child: const Text('Check Another'),
+                  child: const AppText('Check Another'),
                 ),
               ),
               if (missingCount > 0) ...[
@@ -302,7 +303,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   child: FilledButton.icon(
                     onPressed: _copyMissing,
                     icon: const Icon(Icons.copy),
-                    label: Text('Copy Missing ($missingCount)'),
+                    label: AppText('Copy Missing ($missingCount)'),
                   ),
                 ),
               ],

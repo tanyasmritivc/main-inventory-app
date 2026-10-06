@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 const _kSortPrefKey = 'item_sort_option';
 
@@ -144,7 +145,7 @@ void showItemSortSheet(
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
+            child: AppText(
               'Sort by',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Colors.white),
@@ -172,12 +173,15 @@ void showItemSortSheet(
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         itemSortLabel(option),
                         style: TextStyle(
                           color: option == current
                               ? AppTheme.foreground(ctx, Colors.white)
-                              : AppTheme.foreground(ctx, const Color(0xCCFFFFFF)),
+                              : AppTheme.foreground(
+                                  ctx,
+                                  const Color(0xCCFFFFFF),
+                                ),
                           fontSize: 15,
                           fontWeight: option == current
                               ? FontWeight.w600

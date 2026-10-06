@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -6,12 +7,11 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Privacy Policy")),
+      appBar: AppBar(title: const AppText("Privacy Policy")),
       body: const Padding(
         padding: EdgeInsets.all(16),
         child: SingleChildScrollView(
-          child: Text(
-"""
+          child: AppText("""
 Privacy Policy
 Effective: August 30, 2026
 
@@ -84,8 +84,7 @@ We may update this Policy as FindEZ changes. We will post the revised effective 
 
 For privacy questions or requests, contact AI Robots Inc at:
 info@findez.ai
-"""
-          ),
+"""),
         ),
       ),
     );

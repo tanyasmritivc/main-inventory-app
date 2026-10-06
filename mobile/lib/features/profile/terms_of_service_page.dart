@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TermsOfServicePage extends StatelessWidget {
   const TermsOfServicePage({super.key});
@@ -6,12 +7,11 @@ class TermsOfServicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Terms of Service")),
+      appBar: AppBar(title: const AppText("Terms of Service")),
       body: const Padding(
         padding: EdgeInsets.all(16),
         child: SingleChildScrollView(
-          child: Text(
-"""
+          child: AppText("""
 Terms of Service
 Effective: August 30, 2026
 
@@ -99,8 +99,7 @@ If a provision is unenforceable, it will be limited to the minimum extent necess
 
 Questions or legal notices may be sent to AI Robots Inc at:
 info@findez.ai
-"""
-          ),
+"""),
         ),
       ),
     );
