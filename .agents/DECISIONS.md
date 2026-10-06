@@ -521,3 +521,13 @@ cutoff timezone or automatic switching was specified. Billing activation needs
 a separate authorized release/check; users are not charged automatically.
 The mobile fallback is source for the next approved binary, not a new Apple
 upload. Apple upload/submission remains explicitly held.
+
+### October 5, 2026: fresh screenshots before Apple review
+
+The user withdrew immediate App Store submission and requested a newly built
+simulator to capture current screens before recreating the supplied artwork.
+Keep the manual draft on valid build 58 with its saved description, release
+notes and review instructions. No em dashes are permitted in entered form text.
+No supplied screenshots were uploaded or replaced. Submit only after this
+screenshot task is resumed by the user; do not treat the earlier request to use
+the ZIPs unchanged as the final instruction.

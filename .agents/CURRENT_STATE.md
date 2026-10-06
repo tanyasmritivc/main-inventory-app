@@ -1,5 +1,32 @@
 # Current state
 
+## October 5 current simulator and App Store preparation
+
+- Latest user instruction pauses immediate Apple submission and asks for a newly
+  built simulator so they can capture current screens and recreate artwork.
+- App Store 1.0.7 now selects valid/eligible build 58, with MANUAL release and
+  PREPARE_FOR_SUBMISSION. Description, release notes and review instructions are
+  saved without em dashes. The dedicated review account signs in successfully.
+- Supplied iPhone and iPad ZIPs were inspected and extracted without editing.
+  Their UI differs from the release source, including Mark as taken. No new
+  screenshots have been uploaded and no review submission has been created.
+- Simulator runtime source is `9657aed`, the exact source of TestFlight 58.
+  The ARM64 Debug build succeeded after approved cleanup of regenerable caches
+  corrupted by disk exhaustion. Production API/Supabase configuration and public
+  anon role match the release environment; source remains unchanged and clean.
+- Build 1.0.7 (58) is installed and launched on iPhone 17 Pro and iPad Pro 13-inch
+  (M5), both iOS 26.2. Installed bundle metadata confirms 58 on both. Actual SDK
+  screen captures verify populated Home on iPhone and onboarding on iPad.
+  Native UI automation became unavailable, so final screen verification used
+  the iOS Simulator SDK screenshot command. This is simulator verification, not
+  a physical-device acceptance pass. The user can take fresh captures with Save
+  Screen or Command-S. No inventory or membership edits were made.
+- Simulator app is retained at
+  `/private/tmp/findez-build58-simulator-cache/Build/Products/Debug-iphonesimulator/Runner.app`.
+  Signed release archives, IPAs and manifests are preserved. Public release and
+  screenshot upload remain pending the user's replacement artwork.
+
+
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Restrained mobile accents and monochrome Teams (October 5)

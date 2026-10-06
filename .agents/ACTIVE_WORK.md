@@ -5,25 +5,23 @@ list ideas as active work.
 
 ## Verified active work
 
-On 2026-10-05 the user explicitly requested the current build on TestFlight.
-That authorizes this beta upload and existing internal-group availability.
-App Store review submission/publication remains held.
-Mobile appearance and text-size work is isolated from the held screenshot lane
-and the separate native lifecycle work. FIND remains unchanged.
+On 2026-10-05 the user authorized App Store review preparation. The draft
+now selects verified build 1.0.7 (58), with manual release preserved and updated
+description, release notes and review instructions containing no em dashes.
+The configured review login passes a fresh read-only authentication check.
+The user then withdrew immediate submission and requested a new simulator build
+so they can capture current screens and have the artwork recreated. Do not submit
+or upload the supplied artwork while this screenshot task is pending.
 
-The user asked to wait on October 4 for their release assets. Original mark,
-icon and outlined-wordmark SVGs plus a 1024px RGBA icon PNG have now arrived
-in their Downloads directory and were inspected read-only. Six iPhone PNGs have
-also arrived: all 1320x2868 without alpha. Do not upload as-is: their depicted
-text navigation/More and unimplemented drawer-location diagram do not match
-build 46. Corrected real-app artwork or a user-approved revision is needed under
-Apple's accurate-metadata rules; no automatic app redesign is authorized.
-Use the provided original logo assets rather than recreating them. Mobile brand
-application is now authorized; Apple submission is still held.
-The FIND transport change was explicitly withdrawn and remains out of scope.
+Original logo assets are retained. Both initially supplied ZIPs contain identical
+six 1320x2868 iPhone images. The subsequently identified iPad ZIP contains six
+2064x2752 images. Both sets show earlier UI and an unimplemented Mark as taken
+action. No screenshots have been uploaded or replaced during this preflight.
+The public App Store version remains 1.0.6 (17). FIND transport is unchanged.
 
 | Work | Area | State | Dependencies and handoff |
 |---|---|---|---|
+| App Store preparation and current simulator | Apple metadata and native simulator build only | `release/appstore-build58` in `/private/tmp/findez-appstore-build58`, based on `eede7bb`. Apple draft selects 58; metadata and verified review credentials are ready, manual/unsubmitted. | User requested fresh simulator screenshots before submission. Runtime `9657aed` successfully built from the cached builder in `/private/tmp/findez-testflight-current`; 1.0.7 (58) installed/launched and SDK screenshots verified on iPhone 17 Pro and iPad Pro 13-inch (M5). No app redesign, schema, backend, billing or native lifecycle change. |
 | Mobile accent consistency | `mobile/` shared brand accents, monochrome Teams list and Team file icons | Released build `1.0.7 (58)` on runtime `9657aed`, `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`, Draft PR #46 stacked on PR #45 (`64c4e47`). Clean analysis/all 296 mobile tests with coverage, actual-shell Light/Dark palette/navigation previews, all five exact-source CI jobs (`37412454402`), signed export/config/logo/signature and Apple validation pass. Upload accepted with no errors at 21:16:01 PDT October 5 (delivery `b9a53267-2cea-4d13-903f-a885f9e62351`); COMPLETE/VALID/APP_STORE_ELIGIBLE, nonexpired and both internal groups verified at 21:20:52 PDT. | User rejected build 57's orange list and requested this page black/white. Create/Join/Team/file icons, selected Teams segment and bottom-nav highlight while Teams is active are neutral. Other main screens keep restrained brand accents. Artifacts/manifest: `/private/tmp/findez-build58-native` and `/private/tmp/findez-build58-verification.json`. Builds 56/57 remain VALID in both internal groups with verified artifacts preserved; 55 was not uploaded. Physical acceptance follows the user's TestFlight choice; public App Store remains held. No backend/web/schema/billing/FIND/native lifecycle change. |
 | Restock planner replacement | `mobile/` purchase planning, inventory/Home/Space summaries and arrival stock confirmation | Implemented as candidate `1.0.7 (54)` on `feat/mobile-restock-planner` in `/private/tmp/findez-restock-planner`, based on released build-53 record `3a08fd1`; clean analysis and all 292 mobile tests/coverage pass. All five exact-source CI jobs (`37406983954`), signed archive/export/configuration/logo/signature and Apple validation pass on runtime `98f019e` (Draft PR #45). Uploaded at 20:09:15 PDT October 5; Apple processing is COMPLETE/VALID/APP_STORE_ELIGIBLE and both internal groups are verified. User supplied the build-54 planner screenshot and requested less copy; compact presentation and amber To buy/blue On order feedback are implemented for build 55 in this same lane. All 296 tests with coverage and clean analysis pass, including 22 restock regressions; all five exact-source CI jobs (`37408858103`), signed/config/logo/signature checks and Apple validation pass on `5d24797`. Build 55 is preserved but not uploaded after the user requested app-wide brand consistency; stacked brand PR #46 includes these changes in released build 56. | Explicit To buy, On order and Record arrival, editable quantities, per-item opt-out, inventory chooser and consistent counts replace disconnected checkmarks. Old thresholds/ordered selections migrate with account isolation; confirmed absolute stock saves retain safe lost-response retries. Planning remains account/device-local; real stock uses existing authenticated APIs. New logo/typography and unrelated flows are retained. No backend/web/schema/billing/FIND/native lifecycle change. User chose TestFlight verification; public App Store remains held. |
 | App-wide typography consistency | `mobile/` shared typography, all screens/forms and regressions | Uploaded as `1.0.7 (53)` at 19:00:26 PDT October 5; all 274 mobile tests/coverage and analysis pass on `fix/mobile-home-bold-text` in `/private/tmp/findez-home-bold-text`, based on release `e123c22` | User confirmed iPhone Bold Text is enabled and supplied Cal AI as a typography reference. The user approved build 52 Home on the phone, then requested the same policy across the whole app. Build 52 was validated/installed and user-approved on Home but not uploaded; The complete app-wide replacement beta 53 is uploaded and draft PR #44 reflects that scope. Exact-source `afc39ac` has all five CI jobs passing (`37398740825`); signed archive/export, production-config/logo, strict signature and Apple validation pass. Native install completed, but launch/visual checks are unverified after the user chose TestFlight verification. Apple accepted delivery `67e8af04-e91a-4157-aa8d-e758c3222d3b` with no errors; `VALID`/`APP_STORE_ELIGIBLE` and both existing internal TestFlight groups are verified. Artifacts/manifest are preserved under `/private/tmp/findez-build53-native` and `/private/tmp/findez-build53-verification.json`. Apply supporting text Medium and headings/counts to Semibold without disabling OS text scaling or changing global accessibility preferences. Preserve logo, routes, API/schema/backend/web/FIND and native lifecycle. |
