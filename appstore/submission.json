@@ -1,0 +1,169 @@
+{
+  "app": "FindEZ AI",
+  "app_id": "6760401697",
+  "version": "1.0.7",
+  "build": "58",
+  "runtime_commit": "9657aed4400d7935c0be3ffbfc34373e9d8bf488",
+  "build_id": "b9a53267-2cea-4d13-903f-a885f9e62351",
+  "submission_id": "2b777948-f7bd-46b3-bf43-9a2e60074361",
+  "state": "WAITING_FOR_REVIEW",
+  "submitted_at": "2026-10-06T06:06:37.722Z",
+  "release_type": "MANUAL",
+  "app_store_connect_url": "https://appstoreconnect.apple.com/apps/6760401697/distribution/reviewsubmissions",
+  "source_vision": "/Users/tanyasmritivictorcharles/Downloads/Pasted markdown(2).md",
+  "source_vision_sha256": "95cf5731a322a48caa0b8ee41d2d668fd9843b38542ad468ae3935e84cbfa9f3",
+  "listing_em_dashes": false,
+  "screenshot_originals_preserved": true,
+  "screenshots": [
+    {
+      "device": "iphone",
+      "name": "findez-appstore-1.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "c22c3638bd45d12e87cebf43e0ecea38",
+      "sha256": "6fd2f75795d28ee5f74c2655b9721ac318c1f968af5b29d2460e386f71649d43"
+    },
+    {
+      "device": "iphone",
+      "name": "findez-appstore-2.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "ae2102ce68bbe6ced5cc93b081aac900",
+      "sha256": "6a9a69463d85eced623f7ea07b1800875856284ee3bd2f920225fd8c861071b0"
+    },
+    {
+      "device": "iphone",
+      "name": "findez-appstore-3.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "8ecd0dffe5e75f69cd09488b399c73d2",
+      "sha256": "325cecf9a7fac274e0712e035e63ad06d5dbb5b7f6a4f38ee0ed429f26fb5890"
+    },
+    {
+      "device": "iphone",
+      "name": "findez-appstore-4.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "ac529139c59e2d4108b2da75e2f2ff05",
+      "sha256": "549fd99468e6181357780382ab17a071a51dce82c19746df5c72a9a794bf5cb7"
+    },
+    {
+      "device": "iphone",
+      "name": "findez-appstore-5.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "7335f5ff077f5c8e66f314e68fa0e54e",
+      "sha256": "4c527122bd3b39048353dea4935bf802f8f492841442df1916594f5ce4d2ad85"
+    },
+    {
+      "device": "iphone",
+      "name": "findez-appstore-6.png",
+      "width": 1320,
+      "height": 2868,
+      "md5": "266d481c7022b0772962a98eab8f28de",
+      "sha256": "bb64ecdea62238b7f2a619be340d864baa1ce94a934aa8832a07ab4cbf60df55"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-1.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "93deaa7a4e5405f092f0a3fb435fdddd",
+      "sha256": "c72cc52bb317eaa68de689b7db1bb4b69207a96a448aaf98b4278b93ffa0a3c1"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-2.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "d8ad315f7d7b0f533f7edb3f1e6e4f29",
+      "sha256": "e6de963d6c6ba668574a93fceeea273257fb937486de24fea4d46c56fcbf0ce0"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-3.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "6ff16a5d9c77b5397c3a9befc72bbc5a",
+      "sha256": "e41b8078b5d0d31f4a7f3571ca982dc2ff37a8d8cc424c672348501fd4b555ad"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-4.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "d1812a6de14ae76d19b6b49e265b4985",
+      "sha256": "b6841616db5bb6a03c8ffef618cc37e6046067f4ddd6d80a3a8b1972eb09f3f0"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-5.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "3765ed453337ab3873506c020b566d71",
+      "sha256": "8e4b9024fed092bf19c6a4ced5715625de759980fda2e44d7f74f28920732144"
+    },
+    {
+      "device": "ipad",
+      "name": "findez-ipad-6.png",
+      "width": 2064,
+      "height": 2752,
+      "md5": "4c49b082d104d31e5ded37808a492a48",
+      "sha256": "5843b2649eb196ac8e9319c66308b58b86226ee1ebf5f795a5a56d4ba3d38416"
+    }
+  ],
+  "runtime_smoke": {
+    "reviewer_login": true,
+    "read_checks": [
+      {
+        "path": "/health",
+        "status": 200
+      },
+      {
+        "path": "/health/db",
+        "status": 200
+      },
+      {
+        "path": "/me/limits",
+        "status": 200
+      },
+      {
+        "path": "/spaces",
+        "status": 200
+      },
+      {
+        "path": "/profile/me",
+        "status": 200
+      },
+      {
+        "path": "/documents",
+        "status": 200
+      },
+      {
+        "path": "/review-items",
+        "status": 200
+      },
+      {
+        "path": "/teams",
+        "status": 200
+      }
+    ],
+    "inventory_counts": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "no_inventory_writes": true,
+    "physical_device_checks": "not performed in this pass"
+  },
+  "ci": {
+    "run": 37412454402,
+    "state": "success",
+    "jobs": 5
+  },
+  "physical_acceptance": "Full physical-device acceptance was not repeated in this submission pass.",
+  "durable_artwork_directory": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.0.7-build58"
+}

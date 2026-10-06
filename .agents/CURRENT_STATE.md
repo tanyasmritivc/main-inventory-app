@@ -1,8 +1,38 @@
 # Current state
 
-## October 5 current simulator and App Store preparation
+## October 5 App Store submission
 
-- Latest user instruction pauses immediate Apple submission and asks for a newly
+- The user's final instruction authorizes checking the current mobile app and
+  submitting to Apple, superseding the earlier screenshot hold. FindEZ AI
+  1.0.7 (58), runtime `9657aed`, was submitted at 2026-10-06 06:06:37.722 UTC
+  (October 5, 11:06 PM PDT). Both the version and submission report
+  WAITING_FOR_REVIEW. Submission ID: `2b777948-f7bd-46b3-bf43-9a2e60074361`.
+- Manual release is preserved. Existing public 1.0.6 (17) remains available
+  during review; Apple approval does not automatically publish this update.
+- Six supplied 1320x2868 iPhone screenshots and six supplied 2064x2752 iPad
+  screenshots are uploaded in order, COMPLETE, with matching original MD5s.
+  Earlier draft artwork was backed up before replacement. Original supplied
+  screenshots and logo assets were not edited.
+- Description, subtitle, promotional text, keywords, release notes and review
+  instructions are saved and verified without em dashes. Copy follows the
+  supplied AI-memory-for-the-physical-world vision while advertising only the
+  current Capture, Ask, Find, sharing and personal-device purchase planning.
+- The reviewer account signs in and loads eight live read endpoints. Six
+  consecutive inventory reads consistently return five sample items. Public
+  support/marketing and privacy URLs return 200. All five exact-runtime CI jobs
+  pass in run `37412454402`, including mobile analysis and coverage tests. The
+  existing release manifest records 296 mobile tests and Apple/signature checks.
+- This pass observed populated simulator Home and Spaces. Further native UI
+  automation became unavailable. Full physical-device acceptance was not
+  repeated and is not claimed. No inventory, membership, runtime, backend,
+  schema, billing, native lifecycle or FIND transport change was made.
+- Submitted text/checks are in `appstore/metadata.json` and
+  `appstore/submission.json`. Durable original artwork and records are at
+  `/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.0.7-build58`.
+
+## Earlier October 5 simulator preparation
+
+- The earlier user instruction paused immediate Apple submission and asked for a newly
   built simulator so they can capture current screens and recreate artwork.
 - App Store 1.0.7 now selects valid/eligible build 58, with MANUAL release and
   PREPARE_FOR_SUBMISSION. Description, release notes and review instructions are
