@@ -63,8 +63,13 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   planner; zero counts remain neutral, and labels remain readable without color.
   Purchase persistence, stock confirmation, account and permission rules are
   unchanged. Clean analysis and all 296 mobile tests with coverage pass, including
-  22 restock regressions and Light/Dark large-text/contrast checks. Exact-source
-  CI and signed TestFlight release verification are in progress. Physical verification follows the user's TestFlight preference.
+  22 restock regressions and Light/Dark large-text/contrast checks. All five exact-source CI jobs pass for `5d24797` (`37408858103`), as do
+  signed archive/export, signature, configuration/logo and Apple validation.
+  Build 55 was not uploaded: the user requested app-wide orange/white/black
+  consistency during validation, and the next beta will include both changes.
+  Artifacts/manifest are preserved under `/private/tmp/findez-build55-native`
+  and `/private/tmp/findez-build55-verification.json`. Physical verification
+  follows the user's TestFlight preference.
 
 ## App-wide typography consistency (October 5)
 
