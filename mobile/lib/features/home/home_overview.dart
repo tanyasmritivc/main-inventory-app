@@ -2,6 +2,7 @@ import '../../core/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class HomeColors {
   static const background = Color(0xFF09090B);
@@ -105,8 +106,9 @@ class _HomeOverviewState extends State<HomeOverview> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
-                        child: Text(
+                        child: AppText(
                           'My home',
+                          boldWeight: FontWeight.w600,
                           style: TextStyle(
                             fontSize: 28,
                             height: 1.15,
@@ -132,43 +134,56 @@ class _HomeOverviewState extends State<HomeOverview> {
             ),
           ),
           const SizedBox(height: 18),
-          TextField(
-            controller: _question,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _ask(),
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w400,
-              color: AppTheme.foreground(context, HomeColors.text),
-            ),
-            decoration: InputDecoration(
-              hintText: 'Where is the soldering iron?',
-              hintStyle: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.foreground(context, HomeColors.hint),
+          MediaQuery(
+            data: MediaQuery.of(context).copyWith(boldText: false),
+            child: TextField(
+              controller: _question,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _ask(),
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  fontSize: 17,
+                  fontWeight: MediaQuery.boldTextOf(context)
+                      ? FontWeight.w500
+                      : FontWeight.w400,
+                  color: AppTheme.foreground(context, HomeColors.text),
+                ),
               ),
-              filled: true,
-              fillColor: AppTheme.adaptive(context, HomeColors.surface),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide.none,
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide.none,
+              decoration: InputDecoration(
+                hintText: 'Where is the soldering iron?',
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    fontSize: 17,
+                    fontWeight: MediaQuery.boldTextOf(context)
+                        ? FontWeight.w500
+                        : FontWeight.w400,
+                    color: AppTheme.foreground(context, HomeColors.hint),
+                  ),
+                ),
+                filled: true,
+                fillColor: AppTheme.adaptive(context, HomeColors.surface),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 15,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide.none,
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),
@@ -243,7 +258,7 @@ class _HomeOverviewState extends State<HomeOverview> {
           ),
           if (widget.error != null) ...[
             const SizedBox(height: 12),
-            Text(
+            AppText(
               widget.error!,
               style: TextStyle(
                 fontSize: 12,
@@ -259,7 +274,7 @@ class _HomeOverviewState extends State<HomeOverview> {
           ),
           const SizedBox(height: 12),
           if (captures.isEmpty)
-            Text(
+            AppText(
               'No photo captures yet',
               style: TextStyle(
                 fontSize: 13,
@@ -293,7 +308,7 @@ class _HomeOverviewState extends State<HomeOverview> {
           const _SectionLabel('Where things live'),
           const SizedBox(height: 12),
           if (widget.spaces.isEmpty)
-            Text(
+            AppText(
               'No Spaces yet',
               style: TextStyle(
                 fontSize: 13,
@@ -319,7 +334,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
+                              child: AppText(
                                 (space['name'] ?? '').toString(),
                                 style: TextStyle(
                                   fontSize: 16,
@@ -332,7 +347,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Text(
+                            AppText(
                               '${(space['item_count'] as num?)?.toInt() ?? 0}',
                               style: TextStyle(
                                 fontSize: 14,
@@ -369,8 +384,9 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.label);
   final String label;
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) => AppText(
     label,
+    boldWeight: FontWeight.w600,
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -396,7 +412,7 @@ class _Suggestion extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Text(
+          child: AppText(
             '$name?',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -438,8 +454,9 @@ class _DecisionTile extends StatelessWidget {
             FittedBox(
               alignment: Alignment.centerLeft,
               fit: BoxFit.scaleDown,
-              child: Text(
+              child: AppText(
                 count?.toString() ?? '-',
+                boldWeight: FontWeight.w600,
                 style: TextStyle(
                   fontSize: 32,
                   height: 1.1,
@@ -449,7 +466,7 @@ class _DecisionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 fontSize: 14,
@@ -494,7 +511,7 @@ class _CaptureCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             item.displayName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

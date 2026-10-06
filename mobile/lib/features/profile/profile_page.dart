@@ -19,6 +19,7 @@ import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 import 'profile_editor_page.dart';
 import 'appearance_settings.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -142,7 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t load your profile.')),
+        const SnackBar(content: AppText('Couldn’t load your profile.')),
       );
     }
   }
@@ -177,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _avatarUploading = false);
     }
@@ -195,7 +196,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _avatarUploading = false);
     }
@@ -217,7 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose another photo'),
+                title: const AppText('Choose another photo'),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _chooseAvatarPhoto();
@@ -228,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Icons.delete_outline,
                   color: AppTheme.foreground(sheetContext, Color(0xFFFF6961)),
                 ),
-                title: Text(
+                title: AppText(
                   'Remove photo',
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Color(0xFFFF6961)),
@@ -265,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
       await launchUrl(uri);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email us at info@findez.ai')),
+        const SnackBar(content: AppText('Email us at info@findez.ai')),
       );
     }
   }
@@ -291,7 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Email us at info@findez.ai'),
+          content: const AppText('Email us at info@findez.ai'),
           action: SnackBarAction(
             label: 'Copy',
             onPressed: () =>
@@ -307,14 +308,14 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppTheme.surface2(dialogContext),
-        title: const Text('Delete account'),
-        content: const Text(
+        title: const AppText('Delete account'),
+        content: const AppText(
           'This permanently deletes your account and data. This cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -324,7 +325,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -346,7 +347,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -357,7 +358,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -372,7 +373,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
-    child: Text(
+    child: AppText(
       text,
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0xFF8E8E93)),
@@ -425,7 +426,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppText(
                     label,
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -434,7 +435,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
+                  AppText(
                     subtitle,
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -503,7 +504,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(width: 13),
               Expanded(
-                child: Text(
+                child: AppText(
                   label,
                   style: TextStyle(
                     color: AppTheme.foreground(context, color),
@@ -604,7 +605,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         _avatarUrl,
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, _, _) => Center(
-                                          child: Text(
+                                          child: AppText(
                                             _displayName.isNotEmpty
                                                 ? _displayName[0].toUpperCase()
                                                 : '?',
@@ -620,7 +621,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                       )
                                     : Center(
-                                        child: Text(
+                                        child: AppText(
                                           _displayName.isNotEmpty
                                               ? _displayName[0].toUpperCase()
                                               : '?',
@@ -650,20 +651,26 @@ class _ProfilePageState extends State<ProfilePage> {
                                         .instance
                                         .primaryFocus
                                         ?.unfocus(),
-                                    style: TextStyle(
-                                      color: AppTheme.foreground(
-                                        context,
-                                        Colors.white,
+                                    style: AppTypography.bodyStyleOf(
+                                      context,
+                                      TextStyle(
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
                                     ),
                                     decoration: InputDecoration(
                                       hintText: 'Display name',
-                                      hintStyle: TextStyle(
-                                        color: AppTheme.foreground(
-                                          context,
-                                          Color(0x4DFFFFFF),
+                                      hintStyle: AppTypography.bodyStyleOf(
+                                        context,
+                                        TextStyle(
+                                          color: AppTheme.foreground(
+                                            context,
+                                            Color(0x4DFFFFFF),
+                                          ),
                                         ),
                                       ),
                                       border: InputBorder.none,
@@ -671,7 +678,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ),
                                   )
                                 else
-                                  Text(
+                                  AppText(
                                     _displayName.isNotEmpty
                                         ? _displayName
                                         : 'Set your name',
@@ -690,7 +697,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ),
                                   ),
                                 const SizedBox(height: 2),
-                                Text(
+                                AppText(
                                   Supabase
                                           .instance
                                           .client
@@ -712,7 +719,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     (_profileRole.isNotEmpty ||
                                         _organization.isNotEmpty)) ...[
                                   const SizedBox(height: 4),
-                                  Text(
+                                  AppText(
                                     [_profileRole, _organization]
                                         .where((value) => value.isNotEmpty)
                                         .join(' · '),
@@ -752,14 +759,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                   });
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Profile updated'),
+                                      content: AppText('Profile updated'),
                                     ),
                                   );
                                 } catch (_) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text(
+                                        content: AppText(
                                           'Couldn\'t save profile. Try again.',
                                         ),
                                       ),
@@ -771,7 +778,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 setState(() => _editingProfile = true);
                               }
                             },
-                            child: Text(
+                            child: AppText(
                               _editingProfile ? 'Save' : 'Edit',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -795,7 +802,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               Icons.add_a_photo_outlined,
                               size: 17,
                             ),
-                            label: Text(
+                            label: AppText(
                               _avatarUrl.isEmpty
                                   ? 'Add profile photo'
                                   : 'Change profile photo',
@@ -825,19 +832,25 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: TextField(
                                 controller: _organizationCtrl,
                                 textCapitalization: TextCapitalization.words,
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white,
+                                style: AppTypography.bodyStyleOf(
+                                  context,
+                                  TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
+                                    fontSize: 14,
                                   ),
-                                  fontSize: 14,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Organization or team (optional)',
-                                  hintStyle: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Color(0x4DFFFFFF),
+                                  hintStyle: AppTypography.bodyStyleOf(
+                                    context,
+                                    TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x4DFFFFFF),
+                                      ),
                                     ),
                                   ),
                                   border: InputBorder.none,
@@ -862,19 +875,25 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: TextField(
                                 controller: _profileRoleCtrl,
                                 textCapitalization: TextCapitalization.words,
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white,
+                                style: AppTypography.bodyStyleOf(
+                                  context,
+                                  TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
+                                    fontSize: 14,
                                   ),
-                                  fontSize: 14,
                                 ),
                                 decoration: InputDecoration(
                                   hintText: 'Role (optional)',
-                                  hintStyle: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Color(0x4DFFFFFF),
+                                  hintStyle: AppTypography.bodyStyleOf(
+                                    context,
+                                    TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x4DFFFFFF),
+                                      ),
                                     ),
                                   ),
                                   border: InputBorder.none,
@@ -898,12 +917,15 @@ class _ProfilePageState extends State<ProfilePage> {
                             Expanded(
                               child: TextField(
                                 controller: _contactEmailCtrl,
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white,
+                                style: AppTypography.bodyStyleOf(
+                                  context,
+                                  TextStyle(
+                                    color: AppTheme.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
+                                    fontSize: 14,
                                   ),
-                                  fontSize: 14,
                                 ),
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.done,
@@ -913,10 +935,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ?.unfocus(),
                                 decoration: InputDecoration(
                                   hintText: 'Contact email (optional)',
-                                  hintStyle: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Color(0x4DFFFFFF),
+                                  hintStyle: AppTypography.bodyStyleOf(
+                                    context,
+                                    TextStyle(
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x4DFFFFFF),
+                                      ),
                                     ),
                                   ),
                                   border: InputBorder.none,
@@ -930,7 +955,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           padding: EdgeInsets.only(left: 26, top: 5),
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: Text(
+                            child: AppText(
                               'Visible only to people you collaborate with.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -945,7 +970,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(
+                          child: AppText(
                             'Profile color',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -1017,7 +1042,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 size: 14,
                               ),
                               const SizedBox(width: 8),
-                              Text(
+                              AppText(
                                 _contactEmail,
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -1091,7 +1116,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         SizedBox(width: 10),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             'Free Pilot',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -1103,7 +1128,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
+                    AppText(
                       ProStatus.pilotNotice ?? ProStatus.defaultPilotNotice,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x99FFFFFF)),
@@ -1134,7 +1159,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             SizedBox(width: 6),
                             Flexible(
-                              child: Text(
+                              child: AppText(
                                 'Send feedback',
                                 style: TextStyle(
                                   color: AppTheme.textPrimary(context),
@@ -1173,7 +1198,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             'FindEZ Team — Active',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -1181,7 +1206,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           if (ProStatus.teamName != null)
-                            Text(
+                            AppText(
                               'Covered by ${ProStatus.teamName}',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1216,7 +1241,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       size: 20,
                     ),
                     SizedBox(width: 10),
-                    Text(
+                    AppText(
                       'FindEZ Pro — Active',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
@@ -1262,7 +1287,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Text(
+                          AppText(
                             'FindEZ Team',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -1273,7 +1298,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(
+                      AppText(
                         'Your whole robotics team shares one inventory. Ask your coach for a join code.',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -1297,7 +1322,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
+                          child: AppText(
                             'Enter join code',
                             textAlign: TextAlign.center,
                             style: TextStyle(

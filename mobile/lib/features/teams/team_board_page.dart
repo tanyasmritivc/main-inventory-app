@@ -9,6 +9,7 @@ import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/ui/glass_fab.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamBoardPage extends StatefulWidget {
   const TeamBoardPage({super.key, required this.api, this.initialTeamId});
@@ -107,19 +108,22 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
+                const AppText(
                   'New team item',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'task', label: Text('Task')),
+                    ButtonSegment(value: 'task', label: AppText('Task')),
                     ButtonSegment(
                       value: 'part_request',
-                      label: Text('Part request'),
+                      label: AppText('Part request'),
                     ),
-                    ButtonSegment(value: 'checklist', label: Text('Checklist')),
+                    ButtonSegment(
+                      value: 'checklist',
+                      label: AppText('Checklist'),
+                    ),
                   ],
                   selected: {type},
                   onSelectionChanged: (value) =>
@@ -131,6 +135,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(labelText: 'Title'),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -140,15 +145,16 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   decoration: const InputDecoration(
                     labelText: 'Details (optional)',
                   ),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: priority,
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: const [
-                    DropdownMenuItem(value: 'normal', child: Text('Normal')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
+                    DropdownMenuItem(value: 'normal', child: AppText('Normal')),
+                    DropdownMenuItem(value: 'high', child: AppText('High')),
+                    DropdownMenuItem(value: 'urgent', child: AppText('Urgent')),
                   ],
                   onChanged: (value) => priority = value ?? 'normal',
                 ),
@@ -159,7 +165,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   items: [
                     const DropdownMenuItem(
                       value: '',
-                      child: Text('Unassigned'),
+                      child: AppText('Unassigned'),
                     ),
                     for (final member in _members)
                       DropdownMenuItem(
@@ -176,7 +182,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                               size: 24,
                             ),
                             const SizedBox(width: 8),
-                            Text(
+                            AppText(
                               member['display_name']?.toString() ??
                                   'Team member',
                             ),
@@ -192,7 +198,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     if (title.text.trim().isEmpty) return;
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Add to board'),
+                  child: const AppText('Add to board'),
                 ),
               ],
             ),
@@ -215,7 +221,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -228,25 +234,25 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(task['title']?.toString() ?? 'Team item'),
-              subtitle: Text(task['description']?.toString() ?? ''),
+              title: AppText(task['title']?.toString() ?? 'Team item'),
+              subtitle: AppText(task['description']?.toString() ?? ''),
             ),
             if (_canEdit && status != 'doing')
               ListTile(
                 leading: const Icon(CupertinoIcons.hammer),
-                title: const Text('Mark in progress'),
+                title: const AppText('Mark in progress'),
                 onTap: () => Navigator.pop(context, 'doing'),
               ),
             if (_canEdit && status != 'done')
               ListTile(
                 leading: const Icon(CupertinoIcons.check_mark_circled),
-                title: const Text('Mark complete'),
+                title: const AppText('Mark complete'),
                 onTap: () => Navigator.pop(context, 'done'),
               ),
             if (_canEdit && status != 'todo')
               ListTile(
                 leading: const Icon(CupertinoIcons.arrow_counterclockwise),
-                title: const Text('Move to To do'),
+                title: const AppText('Move to To do'),
                 onTap: () => Navigator.pop(context, 'todo'),
               ),
             if (_canEdit)
@@ -255,7 +261,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   CupertinoIcons.delete,
                   color: AppTheme.foreground(context, AppColors.danger),
                 ),
-                title: Text(
+                title: AppText(
                   'Delete',
                   style: TextStyle(
                     color: AppTheme.foreground(context, AppColors.danger),
@@ -283,7 +289,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -291,7 +297,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Team Board'),
+        title: const AppText('Team Board'),
         actions: [
           IconButton(
             onPressed: _load,
@@ -343,7 +349,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       _team!['name']?.toString() ?? 'Team',
                       style: const TextStyle(
                         fontSize: 22,
@@ -351,7 +357,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       '${_tasks.where((task) => task['status'] != 'done').length} open · ${doing.length} in progress',
                       style: TextStyle(
                         color: AppTheme.foreground(context, AppColors.muted),
@@ -364,7 +370,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 FilledButton.icon(
                   onPressed: _createTask,
                   icon: const Icon(CupertinoIcons.add, size: 17),
-                  label: const Text('New'),
+                  label: const AppText('New'),
                 ),
             ],
           ),
@@ -374,11 +380,11 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
             children: const {
               'open': Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Open'),
+                child: AppText('Open'),
               ),
               'completed': Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Completed'),
+                child: AppText('Completed'),
               ),
             },
             onValueChanged: (value) {
@@ -443,7 +449,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       task['title']?.toString() ?? 'Team item',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -451,7 +457,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppText(
                       _subtitle(task),
                       style: TextStyle(
                         color: AppTheme.foreground(context, AppColors.muted),
@@ -475,7 +481,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                             .withValues(alpha: .15),
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(
+                  child: AppText(
                     priority == 'urgent' ? 'Urgent' : 'High',
                     style: TextStyle(
                       color: priority == 'urgent'
@@ -538,7 +544,7 @@ class _TaskSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             title,
             style: TextStyle(
               color: sectionColor,
@@ -583,12 +589,12 @@ class _BoardEmpty extends StatelessWidget {
             size: 40,
           ),
           const SizedBox(height: 14),
-          Text(
+          AppText(
             completed ? 'Nothing completed yet' : 'Your team is clear',
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 7),
-          Text(
+          AppText(
             completed
                 ? 'Completed work will stay here for reference.'
                 : 'Add a task, part request, or checklist item.',
@@ -602,7 +608,7 @@ class _BoardEmpty extends StatelessWidget {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: onCreate,
-              child: const Text('Add First Item'),
+              child: const AppText('Add First Item'),
             ),
           ],
         ],
@@ -632,13 +638,13 @@ class _MessageState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -650,7 +656,7 @@ class _MessageState extends StatelessWidget {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => action!(),
-                child: Text(actionLabel!),
+                child: AppText(actionLabel!),
               ),
             ],
           ],

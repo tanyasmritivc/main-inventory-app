@@ -18,6 +18,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import 'item_detail_drag_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// Opens the comprehensive item detail bottom sheet.
 ///
@@ -239,12 +240,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take Photo'),
+              title: const AppText('Take Photo'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Library'),
+              title: const AppText('Choose from Library'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -279,12 +280,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Photo added')));
+      ).showSnackBar(const SnackBar(content: AppText('Photo added')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _photoSaving = false);
     }
@@ -295,16 +296,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete photo?'),
-        content: const Text('This photo will be removed from the item.'),
+        title: const AppText('Delete photo?'),
+        content: const AppText('This photo will be removed from the item.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -330,12 +331,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Photo deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Photo deleted')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     } finally {
       if (mounted) setState(() => _photoSaving = false);
     }
@@ -363,7 +364,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     } catch (_) {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save notes. Try again.')),
+        const SnackBar(content: AppText('Could not save notes. Try again.')),
       );
       return false;
     } finally {
@@ -413,7 +414,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not save the low-stock threshold.'),
+          content: AppText('Could not save the low-stock threshold.'),
         ),
       );
       return false;
@@ -477,7 +478,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _returnSaving) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please wait for the current save to finish.'),
+          content: AppText('Please wait for the current save to finish.'),
         ),
       );
       return false;
@@ -490,20 +491,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           final choice = await showDialog<String>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Save your notes?'),
-              content: const Text('Your notes have unsaved changes.'),
+              title: const AppText('Save your notes?'),
+              content: const AppText('Your notes have unsaved changes.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Keep editing'),
+                  child: const AppText('Keep editing'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, 'discard'),
-                  child: const Text('Discard'),
+                  child: const AppText('Discard'),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(ctx, 'save'),
-                  child: const Text('Save and close'),
+                  child: const AppText('Save and close'),
                 ),
               ],
             ),
@@ -519,7 +520,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text(
+                content: AppText(
                   'Could not save the purchase source. Try again before closing.',
                 ),
               ),
@@ -581,7 +582,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(ctx),
-          title: Text(
+          title: AppText(
             'Check Out ${widget.item.name}',
             style: TextStyle(
               color: AppTheme.foreground(ctx, Colors.white),
@@ -595,11 +596,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               TextField(
                 controller: _checkoutNameCtrl,
                 textInputAction: TextInputAction.next,
-                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                ),
                 decoration: InputDecoration(
                   hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(
-                    color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                    ),
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
@@ -619,11 +626,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                ),
                 decoration: InputDecoration(
                   hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(
-                    color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(ctx, Color(0x4DFFFFFF)),
+                    ),
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
@@ -642,7 +655,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    AppText(
                       'How many?',
                       style: TextStyle(
                         color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -685,7 +698,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         ),
                         SizedBox(
                           width: 36,
-                          child: Text(
+                          child: AppText(
                             '$dlgQty',
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -740,8 +753,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     initialDate: DateTime.now().add(const Duration(days: 1)),
                     firstDate: DateTime.now(),
                     lastDate: DateTime.now().add(const Duration(days: 30)),
-                    builder: (context, child) =>
-                        Theme(data: ThemeData.dark(), child: child!),
+                    builder: (context, child) => Theme(
+                      data: ThemeData.dark(),
+                      child: AppTypography(child: child!),
+                    ),
                   );
                   if (picked != null) {
                     setDlgState(() => dueBack = picked);
@@ -767,7 +782,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         size: 14,
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         dueBack == null
                             ? 'Set due date (optional)'
                             : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
@@ -788,7 +803,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 debugPrint('[CheckOut] dialog cancelled');
                 Navigator.of(ctx).pop();
               },
-              child: Text(
+              child: AppText(
                 'Cancel',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -843,7 +858,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         color: AppTheme.adaptive(ctx, Colors.white),
                       ),
                     )
-                  : Text(
+                  : AppText(
                       'Check Out',
                       style: TextStyle(
                         color: AppTheme.foreground(ctx, Colors.white),
@@ -878,7 +893,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       });
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             '${widget.item.name} checked out to $successCheckedOutBy',
           ),
         ),
@@ -886,7 +901,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     } else {
       setState(() => _checkingOut = false);
       if (failureMessage != null) {
-        messenger.showSnackBar(SnackBar(content: Text(failureMessage!)));
+        messenger.showSnackBar(SnackBar(content: AppText(failureMessage!)));
       }
     }
   }
@@ -933,7 +948,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
+              child: AppText(
                 'Where to buy "${widget.item.name}"',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
@@ -944,7 +959,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text(
+              child: AppText(
                 'Tap to open in browser',
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -959,7 +974,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   color: AppTheme.foreground(ctx, Colors.white70),
                   size: 20,
                 ),
-                title: Text(
+                title: AppText(
                   link['name'] as String,
                   style: TextStyle(
                     color: AppTheme.foreground(ctx, Colors.white),
@@ -1004,7 +1019,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Icons.photo_library_outlined,
                 color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: Text(
+              title: AppText(
                 'Choose Photo',
                 style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
@@ -1015,7 +1030,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Icons.picture_as_pdf_outlined,
                 color: AppTheme.foreground(ctx, Colors.white),
               ),
-              title: Text(
+              title: AppText(
                 'Choose PDF',
                 style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
               ),
@@ -1061,12 +1076,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
+        ).showSnackBar(const SnackBar(content: AppText('Document uploaded')));
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Please try again.')),
+        const SnackBar(content: AppText('Upload failed. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _documentSaving = false);
@@ -1083,7 +1098,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not return the item. Try again.'),
+            content: AppText('Could not return the item. Try again.'),
           ),
         );
       }
@@ -1096,7 +1111,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Widget _infoRow(String label, String value) {
     final largeText = MediaQuery.textScalerOf(context).scale(14) > 24;
-    final labelText = Text(
+    final labelText = AppText(
       label,
       style: TextStyle(
         color: AppTheme.foreground(context, const Color(0x73FFFFFF)),
@@ -1104,7 +1119,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         fontWeight: FontWeight.w400,
       ),
     );
-    final valueText = Text(
+    final valueText = AppText(
       value,
       style: TextStyle(
         color: AppTheme.foreground(context, Colors.white),
@@ -1169,7 +1184,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   size: 17,
                 ),
                 SizedBox(width: 7),
-                Text(
+                AppText(
                   'Manufacturer verified',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
@@ -1181,7 +1196,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ),
             if (part.description?.isNotEmpty == true) ...[
               const SizedBox(height: 9),
-              Text(
+              AppText(
                 part.description!,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
@@ -1192,7 +1207,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ],
             if (specs.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 specs.join(' • '),
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x99FFFFFF)),
@@ -1203,7 +1218,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ],
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 'VERIFIED COMPATIBILITY',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x8030D158)),
@@ -1213,7 +1228,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
+              AppText(
                 compatibility.join(' • '),
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xCC30D158)),
@@ -1234,12 +1249,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Could not open the manufacturer page.'),
+                        content: AppText(
+                          'Could not open the manufacturer page.',
+                        ),
                       ),
                     );
                   }
                 },
-                child: Text(
+                child: AppText(
                   'View manufacturer source ↗',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFF30D158)),
@@ -1273,7 +1290,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'MATCHING INTERFACES',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0xFF64D2FF)),
@@ -1283,7 +1300,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               result.interfaces.join(' • '),
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0xCC64D2FF)),
@@ -1310,7 +1327,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
+                                      content: AppText(
                                         'Could not open the manufacturer page.',
                                       ),
                                     ),
@@ -1323,7 +1340,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText(
                                     match.name,
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -1335,7 +1352,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
+                                  AppText(
                                     '${match.brand} • ${match.partNumber}',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -1362,7 +1379,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       ),
                     ),
                   ),
-              Text(
+              AppText(
                 'Matches share an exact interface published in manufacturer product data. Confirm fit for your application.',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x66FFFFFF)),
@@ -1439,7 +1456,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   size: 34,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   canEdit ? 'Add an item photo' : 'No photos yet',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1450,7 +1467,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
                 if (canEdit) ...[
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     'Take a photo or choose one from your library',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -1520,7 +1537,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   size: 32,
                                 ),
                                 SizedBox(height: 6),
-                                Text(
+                                AppText(
                                   'Photo unavailable',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -1582,7 +1599,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(
+              AppText(
                 '${_selectedPhotoIndex + 1} of ${_photos.length}',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -1597,7 +1614,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     Icons.add_photo_alternate_outlined,
                     size: 18,
                   ),
-                  label: Text(
+                  label: AppText(
                     _photos.length == 1 ? 'Add another' : 'Add photo',
                   ),
                 ),
@@ -1706,7 +1723,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 item.displayName,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -1719,7 +1736,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
+              child: AppText(
                 item.displayDescription ?? item.category,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1811,7 +1828,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           'CHECK OUT',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -1846,7 +1863,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 ),
                               ),
                             ),
-                            child: Text(
+                            child: AppText(
                               'Check Out',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1867,7 +1884,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       if (snapshot.hasError) {
                         return Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Text(
+                          child: AppText(
                             "Couldn't load checkout status",
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -1910,7 +1927,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                               SizedBox(width: 8),
                               Expanded(
-                                child: Text(
+                                child: AppText(
                                   'Available - not checked out',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -1953,7 +1970,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
+                              child: AppText(
                                 'Checked out by ${checkout['checked_out_by']}',
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -1970,7 +1987,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onTap: () => _returnCheckout(
                                   checkout['checkout_id'] as String,
                                 ),
-                                child: Text(
+                                child: AppText(
                                   'Return',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2000,7 +2017,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Text(
+                      AppText(
                         'NOTES',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -2019,7 +2036,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onTap: _notesSaving || _closing
                                     ? null
                                     : _saveNotes,
-                                child: Text(
+                                child: AppText(
                                   'Save',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2034,7 +2051,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             : GestureDetector(
                                 onTap: () =>
                                     setState(() => _isEditingNotes = true),
-                                child: Text(
+                                child: AppText(
                                   'Edit',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2073,24 +2090,33 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             controller: _notesCtrl,
                             maxLines: null,
                             autofocus: true,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 14,
-                              height: 1.5,
+                            style: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
                             ),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Add notes about this item...',
-                              hintStyle: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0x33FFFFFF),
+                              hintStyle: AppTypography.bodyStyleOf(
+                                context,
+                                TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x33FFFFFF),
+                                  ),
+                                  fontSize: 14,
                                 ),
-                                fontSize: 14,
                               ),
                             ),
                           )
-                        : Text(
+                        : AppText(
                             _notesCtrl.text.isNotEmpty
                                 ? _notesCtrl.text
                                 : 'Tap Edit to add notes...',
@@ -2123,7 +2149,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           'DOCUMENTS',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -2171,7 +2197,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   size: 14,
                                 ),
                                 SizedBox(width: 4),
-                                Text(
+                                AppText(
                                   'Add',
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2217,7 +2243,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             size: 28,
                           ),
                           SizedBox(height: 8),
-                          Text(
+                          AppText(
                             'No documents yet',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2227,7 +2253,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               fontSize: 13,
                             ),
                           ),
-                          Text(
+                          AppText(
                             'Add receipts, manuals, or warranties',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2277,7 +2303,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   ),
                                   size: 20,
                                 ),
-                                title: Text(
+                                title: AppText(
                                   doc.displayName ?? doc.filename,
                                   style: TextStyle(
                                     color: AppTheme.foreground(
@@ -2328,7 +2354,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 16),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
+                child: AppText(
                   'TAGS',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2365,7 +2391,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               width: 0.5,
                             ),
                           ),
-                          child: Text(
+                          child: AppText(
                             tag,
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2392,7 +2418,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           'WHERE TO BUY',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -2440,7 +2466,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 ),
                                 SizedBox(width: 4),
                                 Flexible(
-                                  child: Text(
+                                  child: AppText(
                                     'Find stores',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -2487,20 +2513,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         if (canEdit) await _savePurchaseSourceNow();
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 14,
-                        height: 1.5,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Where to buy this item...',
-                        hintStyle: TextStyle(
-                          color: AppTheme.foreground(
-                            context,
-                            Color(0x33FFFFFF),
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x33FFFFFF),
+                            ),
+                            fontSize: 14,
                           ),
-                          fontSize: 14,
                         ),
                       ),
                       onChanged: canEdit
@@ -2522,7 +2554,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             ),
                           ),
                           SizedBox(width: 5),
-                          Text(
+                          AppText(
                             'Not saved',
                             style: TextStyle(
                               fontSize: 12,
@@ -2546,7 +2578,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  Text(
+                  AppText(
                     'ITEM QR CODE',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2584,7 +2616,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   item.displayName,
                                   style: TextStyle(
                                     color: Colors.black,
@@ -2595,7 +2627,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
+                                AppText(
                                   item.displayDescription ?? item.location,
                                   style: TextStyle(
                                     color: Color(0xFF666666),
@@ -2603,7 +2635,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
+                                AppText(
                                   'Qty: ${item.quantity}',
                                   style: TextStyle(
                                     color: Color(0xFF888888),
@@ -2611,7 +2643,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   'FindEZ AI',
                                   style: TextStyle(
                                     color: Colors.black,
@@ -2620,7 +2652,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     letterSpacing: 0.3,
                                   ),
                                 ),
-                                Text(
+                                AppText(
                                   'findez.ai',
                                   style: TextStyle(
                                     color: Color(0xFF888888),
@@ -2635,7 +2667,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  AppText(
                     'Scan this code to quickly find this item in FindEZ',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2676,7 +2708,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           ),
                           SizedBox(width: 6),
                           Flexible(
-                            child: Text(
+                            child: AppText(
                               'Share item',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -2702,7 +2734,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  Text(
+                  AppText(
                     'ALERT ME WHEN BELOW',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -2740,20 +2772,26 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       onSubmitted: (_) =>
                           FocusManager.instance.primaryFocus?.unfocus(),
                       readOnly: !canEdit || _closing,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 14,
-                        height: 1.5,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Quantity threshold',
-                        hintStyle: TextStyle(
-                          color: AppTheme.foreground(
-                            context,
-                            Color(0x33FFFFFF),
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x33FFFFFF),
+                            ),
+                            fontSize: 14,
                           ),
-                          fontSize: 14,
                         ),
                       ),
                       onChanged: canEdit
@@ -2787,7 +2825,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ),
                   ),
                   child: Center(
-                    child: Text(
+                    child: AppText(
                       'Close',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x73FFFFFF)),

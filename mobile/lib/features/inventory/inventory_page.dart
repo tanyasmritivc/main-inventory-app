@@ -36,6 +36,7 @@ import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/space_members_page.dart';
 import '../showcase/tutorial_controller.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -202,17 +203,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Inventory updated')));
+      ).showSnackBar(const SnackBar(content: AppText('Inventory updated')));
     } on dio.DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
   }
 
@@ -220,16 +221,16 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text(item.name),
+        title: const AppText('Delete item?'),
+        content: AppText(item.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -249,17 +250,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Item deleted')));
     } on dio.DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
   }
 
@@ -322,7 +323,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       item.displayName,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
@@ -331,7 +332,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       [
                         if (item.displayDescription != null)
                           item.displayDescription!,
@@ -353,7 +354,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 ),
                 const SizedBox(width: 8),
               ],
-              Text(
+              AppText(
                 'Qty ${item.quantity}',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -399,7 +400,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: Text(
+          title: AppText(
             'Join a Space',
             style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
           ),
@@ -414,23 +415,32 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontSize: 20,
-                  letterSpacing: 4,
+                style: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 20,
+                    letterSpacing: 4,
+                  ),
                 ),
                 decoration: InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  hintStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
                   ),
-                  counterStyle: TextStyle(
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  counterStyle: AppTypography.bodyStyleOf(
+                    context,
+                    TextStyle(
+                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    ),
                   ),
                 ),
               ),
               if (error != null)
-                Text(
+                AppText(
                   error!,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -442,7 +452,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dlgCtx),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -457,7 +467,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Joined! Check Joined Spaces to view.'),
+                        content: AppText(
+                          'Joined! Check Joined Spaces to view.',
+                        ),
                       ),
                     );
                   }
@@ -465,7 +477,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   setDlgState(() => error = 'Invalid code or already joined.');
                 }
               },
-              child: const Text('Join'),
+              child: const AppText('Join'),
             ),
           ],
         ),
@@ -529,11 +541,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
+      ).showSnackBar(const SnackBar(content: AppText('Item added')));
     } on SessionExpiredException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please sign in again.')),
+        const SnackBar(
+          content: AppText('Session expired. Please sign in again.'),
+        ),
       );
     } on dio.DioException catch (e) {
       if (!mounted) return;
@@ -553,7 +567,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
@@ -572,14 +586,16 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message ?? 'Connection issue. Please try again.'),
+            content: AppText(
+              e.message ?? 'Connection issue. Please try again.',
+            ),
           ),
         );
       }
@@ -587,7 +603,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
+          content: AppText('Something went wrong. Please try again.'),
         ),
       );
     }
@@ -651,7 +667,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Items saved, but the list could not refresh.'),
+              content: AppText('Items saved, but the list could not refresh.'),
             ),
           );
         }
@@ -686,7 +702,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Import finished, but the list could not refresh.'),
+          content: AppText('Import finished, but the list could not refresh.'),
         ),
       );
     }
@@ -758,7 +774,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
     if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
       return Center(
-        child: Text(
+        child: AppText(
           'No items match your search',
           style: TextStyle(
             color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -775,7 +791,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           Padding(
             key: _categoryKeys[cat],
             padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
-            child: Text(
+            child: AppText(
               cat.toUpperCase(),
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -830,7 +846,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       child: Scaffold(
         backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
-          title: Text(widget.location),
+          title: AppText(widget.location),
           centerTitle: true,
           leading: BackButton(
             onPressed: () => Navigator.of(context).pop(_changed),
@@ -851,35 +867,35 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   value: 'Import Spreadsheet',
                   child: ListTile(
                     leading: Icon(Icons.table_chart_outlined),
-                    title: Text('Import Spreadsheet'),
+                    title: AppText('Import Spreadsheet'),
                   ),
                 ),
                 PopupMenuItem(
                   value: 'Share Space',
                   child: ListTile(
                     leading: Icon(Icons.share_outlined),
-                    title: Text('Share Space'),
+                    title: AppText('Share Space'),
                   ),
                 ),
                 PopupMenuItem(
                   value: 'Join Space',
                   child: ListTile(
                     leading: Icon(Icons.person_add_outlined),
-                    title: Text('Join Space'),
+                    title: AppText('Join Space'),
                   ),
                 ),
                 PopupMenuItem(
                   value: 'Print Bin Label',
                   child: ListTile(
                     leading: Icon(Icons.qr_code_2),
-                    title: Text('Print Bin Label'),
+                    title: AppText('Print Bin Label'),
                   ),
                 ),
                 PopupMenuItem(
                   value: 'Members',
                   child: ListTile(
                     leading: Icon(Icons.people_outline),
-                    title: Text('Members'),
+                    title: AppText('Members'),
                   ),
                 ),
               ],
@@ -973,23 +989,31 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                           ),
                                           child: TextField(
                                             controller: _spaceSearchController,
-                                            style: TextStyle(
-                                              color: AppTheme.foreground(
-                                                context,
-                                                Colors.white,
+                                            style: AppTypography.bodyStyleOf(
+                                              context,
+                                              TextStyle(
+                                                color: AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                ),
+                                                fontSize: 14,
                                               ),
-                                              fontSize: 14,
                                             ),
                                             decoration: InputDecoration(
                                               hintText:
                                                   'Search in this space...',
-                                              hintStyle: TextStyle(
-                                                color: AppTheme.foreground(
-                                                  context,
-                                                  Color(0x4DFFFFFF),
-                                                ),
-                                                fontSize: 14,
-                                              ),
+                                              hintStyle:
+                                                  AppTypography.bodyStyleOf(
+                                                    context,
+                                                    TextStyle(
+                                                      color:
+                                                          AppTheme.foreground(
+                                                            context,
+                                                            Color(0x4DFFFFFF),
+                                                          ),
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
                                               prefixIcon: Icon(
                                                 Icons.search,
                                                 color: AppTheme.foreground(
@@ -1149,7 +1173,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                                   ),
                                           ),
                                           child: Center(
-                                            child: Text(
+                                            child: AppText(
                                               label,
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
@@ -1197,7 +1221,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                               size: 48,
                             ),
                             const SizedBox(height: 16),
-                            Text(
+                            AppText(
                               'This space is empty',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1209,7 +1233,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            AppText(
                               'Add your first item to save this space.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -1236,7 +1260,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                     ),
                                     borderRadius: BorderRadius.circular(99),
                                   ),
-                                  child: Text(
+                                  child: AppText(
                                     'Add Item',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -1381,7 +1405,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   size: 16,
                 ),
                 const SizedBox(width: 10),
-                Text(
+                AppText(
                   item.label,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -1468,7 +1492,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Couldn’t load space members. Try again.'),
+                  content: AppText('Couldn’t load space members. Try again.'),
                 ),
               );
             }
@@ -1476,7 +1500,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("This space isn't shared yet")),
+              const SnackBar(content: AppText("This space isn't shared yet")),
             );
           }
         }());
@@ -1506,7 +1530,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Projects',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -1515,7 +1539,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     ),
                   ),
                   SizedBox(height: 3),
-                  Text(
+                  AppText(
                     'Build readiness and project kits',
                     style: TextStyle(
                       color: AppTheme.foreground(context, AppColors.muted),
@@ -1558,7 +1582,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               ),
               const SizedBox(height: 12),
               ListTile(
-                title: Text(
+                title: AppText(
                   'Projects',
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Colors.white),
@@ -1566,7 +1590,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   'Plan a build with the inventory you have',
                   style: TextStyle(
                     color: AppTheme.foreground(sheetContext, Colors.white54),
@@ -1578,7 +1602,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   Icons.fact_check_outlined,
                   color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
                 ),
-                title: const Text('Build Readiness'),
+                title: const AppText('Build Readiness'),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _openBuildReadiness();
@@ -1589,7 +1613,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   Icons.inventory_2_outlined,
                   color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
                 ),
-                title: const Text('Project Kits'),
+                title: const AppText('Project Kits'),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _openProjectKits();
@@ -1728,18 +1752,18 @@ class _InventoryPageState extends State<InventoryPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave Space?'),
-        content: Text(
+        title: const AppText('Leave Space?'),
+        content: AppText(
           'You will lose access to “$name”. The owner’s Space and items will not be changed.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: AppText(
               'Leave Space',
               style: TextStyle(
                 color: AppTheme.foreground(context, AppColors.danger),
@@ -1756,12 +1780,12 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Left “$name”')));
+      ).showSnackBar(SnackBar(content: AppText('Left “$name”')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -1826,7 +1850,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (_error != null || !_hasLoadedItems || _itemsOwner != owner) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not load this Space. Please try again.'),
+            content: AppText('Could not load this Space. Please try again.'),
           ),
         );
         return;
@@ -2323,7 +2347,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
+      ).showSnackBar(const SnackBar(content: AppText('Item added')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
@@ -2346,7 +2370,7 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
@@ -2365,13 +2389,15 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       }
     }
@@ -2406,18 +2432,22 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Saved')));
+      ).showSnackBar(const SnackBar(content: AppText('Saved')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       }
     }
@@ -2427,16 +2457,16 @@ class _InventoryPageState extends State<InventoryPage>
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete item?'),
-        content: Text(item.name),
+        title: const AppText('Delete item?'),
+        content: AppText(item.name),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -2448,18 +2478,22 @@ class _InventoryPageState extends State<InventoryPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Deleted')));
+      ).showSnackBar(const SnackBar(content: AppText('Deleted')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
+          const SnackBar(
+            content: AppText('Connection issue. Please try again.'),
+          ),
         );
       }
     }
@@ -2476,7 +2510,7 @@ class _InventoryPageState extends State<InventoryPage>
             size: 48,
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             'Could not load inventory',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -2485,7 +2519,7 @@ class _InventoryPageState extends State<InventoryPage>
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             'Pull down to retry',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -2504,7 +2538,7 @@ class _InventoryPageState extends State<InventoryPage>
                   color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
                 ),
               ),
-              child: Text(
+              child: AppText(
                 'Retry',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -2564,7 +2598,7 @@ class _InventoryPageState extends State<InventoryPage>
                           ),
                           SizedBox(width: 10),
                           Expanded(
-                            child: Text(
+                            child: AppText(
                               'Could not load spaces. Tap to retry.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -2608,7 +2642,7 @@ class _InventoryPageState extends State<InventoryPage>
                         ),
                         SizedBox(width: 10),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             'Create your first space to start organizing your inventory.',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -2658,7 +2692,7 @@ class _InventoryPageState extends State<InventoryPage>
                           size: 28,
                         ),
                         SizedBox(height: 10),
-                        Text(
+                        AppText(
                           'New Space',
                           style: TextStyle(
                             color: AppTheme.foreground(context, Colors.white),
@@ -2737,7 +2771,7 @@ class _InventoryPageState extends State<InventoryPage>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        AppText(
                                           loc,
                                           style: TextStyle(
                                             color: AppTheme.foreground(
@@ -2755,7 +2789,7 @@ class _InventoryPageState extends State<InventoryPage>
                                         const SizedBox(height: 5),
                                         Wrap(
                                           children: [
-                                            Text(
+                                            AppText(
                                               '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                                               style: TextStyle(
                                                 color: AppTheme.foreground(
@@ -2767,7 +2801,7 @@ class _InventoryPageState extends State<InventoryPage>
                                               ),
                                             ),
                                             if (lowStock > 0) ...[
-                                              Text(
+                                              AppText(
                                                 '  ·  ',
                                                 style: TextStyle(
                                                   color: AppTheme.foreground(
@@ -2776,7 +2810,7 @@ class _InventoryPageState extends State<InventoryPage>
                                                   ),
                                                 ),
                                               ),
-                                              Text(
+                                              AppText(
                                                 '$lowStock low',
                                                 style: TextStyle(
                                                   color: AppTheme.foreground(
@@ -2890,7 +2924,7 @@ class _InventoryPageState extends State<InventoryPage>
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         "Couldn't load joined spaces — tap to retry",
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -2910,7 +2944,7 @@ class _InventoryPageState extends State<InventoryPage>
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Text(
+              child: AppText(
                 'JOINED SPACES',
                 style: TextStyle(
                   fontSize: 10,
@@ -2962,7 +2996,7 @@ class _InventoryPageState extends State<InventoryPage>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText(
                                     name,
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -2977,7 +3011,7 @@ class _InventoryPageState extends State<InventoryPage>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
+                                  AppText(
                                     permission == 'edit'
                                         ? 'Can edit'
                                         : 'View only',
@@ -3031,11 +3065,11 @@ class _InventoryPageState extends State<InventoryPage>
                               itemBuilder: (context) => [
                                 PopupMenuItem(
                                   value: 'share',
-                                  child: Text('Share invitation link'),
+                                  child: AppText('Share invitation link'),
                                 ),
                                 PopupMenuItem(
                                   value: 'leave',
-                                  child: Text(
+                                  child: AppText(
                                     'Leave Space',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -3065,7 +3099,7 @@ class _InventoryPageState extends State<InventoryPage>
                             ),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
+                          child: AppText(
                             'Shared',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -3096,7 +3130,7 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: Text(
+        title: AppText(
           'New Space',
           style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
@@ -3105,23 +3139,27 @@ class _InventoryPageState extends State<InventoryPage>
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          style: AppTypography.bodyStyleOf(
+            context,
+            TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          ),
           decoration: InputDecoration(
             hintText: 'Space name',
-            hintStyle: TextStyle(
-              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+            hintStyle: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _createSpaceCtrl.text.trim()),
-            child: const Text('Create'),
+            child: const AppText('Create'),
           ),
         ],
       ),
@@ -3144,14 +3182,16 @@ class _InventoryPageState extends State<InventoryPage>
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
+              content: AppText('Something went wrong. Please try again.'),
             ),
           );
         }
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t create the space. Try again.')),
+        const SnackBar(
+          content: AppText('Couldn’t create the space. Try again.'),
+        ),
       );
       return;
     }
@@ -3186,7 +3226,7 @@ class _InventoryPageState extends State<InventoryPage>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       'Join a Space',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
@@ -3200,23 +3240,32 @@ class _InventoryPageState extends State<InventoryPage>
                       autofocus: true,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 20,
-                        letterSpacing: 4,
+                      style: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontSize: 20,
+                          letterSpacing: 4,
+                        ),
                       ),
                       decoration: InputDecoration(
                         hintText: '6-character code',
-                        hintStyle: TextStyle(
-                          color: AppTheme.foreground(
-                            context,
-                            Color(0x4DFFFFFF),
+                        hintStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                           ),
                         ),
-                        counterStyle: TextStyle(
-                          color: AppTheme.foreground(
-                            context,
-                            Color(0x4DFFFFFF),
+                        counterStyle: AppTypography.bodyStyleOf(
+                          context,
+                          TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x4DFFFFFF),
+                            ),
                           ),
                         ),
                         filled: true,
@@ -3262,7 +3311,7 @@ class _InventoryPageState extends State<InventoryPage>
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 6),
-                      Text(
+                      AppText(
                         error!,
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -3279,7 +3328,7 @@ class _InventoryPageState extends State<InventoryPage>
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(dlgCtx),
-                          child: Text(
+                          child: AppText(
                             'Cancel',
                             style: TextStyle(
                               color: AppTheme.foreground(
@@ -3309,7 +3358,7 @@ class _InventoryPageState extends State<InventoryPage>
                                 if (!mounted || !context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
+                                    content: AppText(
                                       'Joined! Check Joined Spaces to view.',
                                     ),
                                   ),
@@ -3321,7 +3370,7 @@ class _InventoryPageState extends State<InventoryPage>
                               );
                             }
                           },
-                          child: const Text('Join'),
+                          child: const AppText('Join'),
                         ),
                       ],
                     ),
@@ -3371,7 +3420,7 @@ class _InventoryPageState extends State<InventoryPage>
                 Icons.edit_outlined,
                 color: AppTheme.foreground(context, Colors.white),
               ),
-              title: Text(
+              title: AppText(
                 'Rename',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -3384,7 +3433,7 @@ class _InventoryPageState extends State<InventoryPage>
                 Icons.delete_outline,
                 color: AppTheme.foreground(context, Color(0xFFFF453A)),
               ),
-              title: Text(
+              title: AppText(
                 'Delete Space',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -3414,7 +3463,7 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: Text(
+        title: AppText(
           'Rename Space',
           style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
@@ -3423,22 +3472,26 @@ class _InventoryPageState extends State<InventoryPage>
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          style: AppTypography.bodyStyleOf(
+            context,
+            TextStyle(color: AppTheme.foreground(context, Colors.white)),
+          ),
           decoration: InputDecoration(
-            hintStyle: TextStyle(
-              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+            hintStyle: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(color: AppTheme.foreground(context, Color(0x4DFFFFFF))),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _renameSpaceCtrl.text.trim()),
-            child: const Text('Save'),
+            child: const AppText('Save'),
           ),
         ],
       ),
@@ -3451,7 +3504,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Couldn’t rename the space. Try again.'),
+            content: AppText('Couldn’t rename the space. Try again.'),
           ),
         );
       }
@@ -3463,7 +3516,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (!spacesOk && mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: const AppText(
               'Space renamed, but the view couldn’t refresh.',
             ),
             action: SnackBarAction(
@@ -3493,11 +3546,11 @@ class _InventoryPageState extends State<InventoryPage>
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: Text(
+        title: AppText(
           'Delete Space?',
           style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
         ),
-        content: Text(
+        content: AppText(
           itemCount > 0
               ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
               : 'The space "$loc" will be removed.',
@@ -3508,11 +3561,11 @@ class _InventoryPageState extends State<InventoryPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: AppText(
               'Delete',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0xFFFF453A)),
@@ -3531,7 +3584,7 @@ class _InventoryPageState extends State<InventoryPage>
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Couldn’t delete the space. Try again.'),
+            content: AppText('Couldn’t delete the space. Try again.'),
           ),
         );
       }
@@ -3552,7 +3605,7 @@ class _InventoryPageState extends State<InventoryPage>
               backgroundColor: Colors.transparent,
               elevation: 0,
               surfaceTintColor: Colors.transparent,
-              title: Text(
+              title: AppText(
                 'My Inventory',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -3586,7 +3639,7 @@ class _InventoryPageState extends State<InventoryPage>
                               shape: BoxShape.circle,
                             ),
                             child: Center(
-                              child: Text(
+                              child: AppText(
                                 '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
                                 style: TextStyle(
                                   color: AppTheme.foreground(
@@ -3644,7 +3697,7 @@ class _InventoryPageState extends State<InventoryPage>
                             size: 18,
                           ),
                           SizedBox(width: 12),
-                          Text(
+                          AppText(
                             'Check-Out Tracker',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -3664,7 +3717,7 @@ class _InventoryPageState extends State<InventoryPage>
                             size: 18,
                           ),
                           SizedBox(width: 12),
-                          Text(
+                          AppText(
                             'Join a Space',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -3684,7 +3737,7 @@ class _InventoryPageState extends State<InventoryPage>
                             size: 18,
                           ),
                           SizedBox(width: 12),
-                          Text(
+                          AppText(
                             'Refresh',
                             style: TextStyle(
                               color: AppTheme.foreground(context, Colors.white),
@@ -3726,6 +3779,7 @@ class _InventoryPageState extends State<InventoryPage>
                             hintText: 'Search inventory',
                             prefixIcon: Icon(Icons.search_rounded),
                           ),
+                          style: AppTypography.bodyStyleOf(context),
                         ),
                         const SizedBox(height: 12),
                         if (_lowStockCount() > 0)
@@ -3768,7 +3822,7 @@ class _InventoryPageState extends State<InventoryPage>
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: Text(
+                                    child: AppText(
                                       '${_lowStockCount()} items need restocking',
                                       style: TextStyle(
                                         color: AppTheme.foreground(
@@ -3854,7 +3908,7 @@ class _InventoryPageState extends State<InventoryPage>
                                               10,
                                               10,
                                             ),
-                                            child: Text(
+                                            child: AppText(
                                               'Searching…',
                                               style: Theme.of(context)
                                                   .textTheme
@@ -3878,7 +3932,7 @@ class _InventoryPageState extends State<InventoryPage>
                                                 builder: (context, rows, _) {
                                                   if (rows.isEmpty) {
                                                     return Center(
-                                                      child: Text(
+                                                      child: AppText(
                                                         'No results.',
                                                         style: TextStyle(
                                                           color:
@@ -3996,8 +4050,8 @@ class _SearchResultsList extends StatelessWidget {
                       errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
-            title: Text(item.displayName),
-            subtitle: Text(
+            title: AppText(item.displayName),
+            subtitle: AppText(
               [
                 if (item.displayDescription != null) item.displayDescription!,
                 item.category,
@@ -4026,7 +4080,7 @@ class _SearchResultsList extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                 ],
-                Text(
+                AppText(
                   'Qty ${item.quantity}',
                   style: TextStyle(
                     color: AppTheme.foreground(
@@ -4106,7 +4160,7 @@ class _InventoryBarcodeScannerPageState
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Scan Barcode'),
+        title: const AppText('Scan Barcode'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -4183,7 +4237,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
+            child: AppText(
               'Review ${_items.length} extracted item${_items.length == 1 ? '' : 's'}',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -4195,7 +4249,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
+            child: AppText(
               'Location: ${widget.spaceName}',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -4224,7 +4278,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: Text(
+                        child: AppText(
                           it.name,
                           style: TextStyle(
                             color: AppTheme.foreground(context, Colors.white),
@@ -4236,7 +4290,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           it.category,
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -4250,7 +4304,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         '×${it.quantity}',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -4290,7 +4344,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
+                    child: AppText(
                       'Cancel',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -4312,7 +4366,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: Text('Save All (${_items.length})'),
+                    child: AppText('Save All (${_items.length})'),
                   ),
                 ),
               ],
@@ -4367,9 +4421,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
 
   InputDecoration _inputDec(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(
-      color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-      fontSize: 15,
+    hintStyle: AppTypography.bodyStyleOf(
+      context,
+      TextStyle(
+        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
+        fontSize: 15,
+      ),
     ),
     filled: true,
     fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
@@ -4431,7 +4488,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText(
             'Add Scanned Item',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -4445,9 +4502,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             controller: _name,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _inputDec('Name'),
           ),
@@ -4455,9 +4515,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           TextField(
             controller: _category,
             textInputAction: TextInputAction.next,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _inputDec('Category'),
           ),
@@ -4467,9 +4530,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            style: TextStyle(
-              color: AppTheme.foreground(context, Colors.white),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Colors.white),
+                fontSize: 15,
+              ),
             ),
             decoration: _inputDec('Quantity'),
           ),
@@ -4477,9 +4543,12 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           TextField(
             controller: _location,
             readOnly: true,
-            style: TextStyle(
-              color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-              fontSize: 15,
+            style: AppTypography.bodyStyleOf(
+              context,
+              TextStyle(
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                fontSize: 15,
+              ),
             ),
             decoration: _inputDec('Location'),
           ),
@@ -4507,7 +4576,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
+              child: const AppText(
                 'Save',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
@@ -4518,7 +4587,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             height: 48,
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
+              child: AppText(
                 'Cancel',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -4559,7 +4628,7 @@ class _StatChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: AppTheme.foreground(context, color)),
           const SizedBox(width: 5),
-          Text(
+          AppText(
             label,
             style: TextStyle(
               color: AppTheme.foreground(context, color),

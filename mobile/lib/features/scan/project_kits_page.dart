@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ProjectKitsPage extends StatefulWidget {
   const ProjectKitsPage({
@@ -59,7 +60,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('New Project Kit'),
+          title: const AppText('New Project Kit'),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -68,18 +69,19 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
               labelText: 'Project name',
               hintText: 'Competition Robot',
             ),
+            style: AppTypography.bodyStyleOf(context),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
             FilledButton(
               onPressed: () {
                 final value = controller.text.trim();
                 if (value.isNotEmpty) Navigator.pop(context, value);
               },
-              child: const Text('Choose BOM'),
+              child: const AppText('Choose BOM'),
             ),
           ],
         );
@@ -99,7 +101,9 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
     if (!['xlsx', 'csv'].contains(extension)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Choose an Excel (.xlsx) or CSV file.')),
+          const SnackBar(
+            content: AppText('Choose an Excel (.xlsx) or CSV file.'),
+          ),
         );
       }
       return;
@@ -131,7 +135,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
       if (mounted) setState(() => _loading = false);
     }
@@ -141,7 +145,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.adaptive(context, Colors.black),
     appBar: AppBar(
-      title: const Text('Project Kits'),
+      title: const AppText('Project Kits'),
       centerTitle: true,
       backgroundColor: AppTheme.adaptive(context, Colors.black),
     ),
@@ -159,7 +163,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
               children: [
                 const SizedBox(height: 180),
                 Center(
-                  child: Text(
+                  child: AppText(
                     _error!,
                     style: TextStyle(
                       color: AppTheme.foreground(context, AppColors.danger),
@@ -179,7 +183,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                 ),
                 SizedBox(height: 18),
                 Center(
-                  child: Text(
+                  child: AppText(
                     'No project kits yet',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -190,7 +194,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                 ),
                 SizedBox(height: 8),
                 Center(
-                  child: Text(
+                  child: AppText(
                     'Create one from a BOM to track readiness over time.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white54),
@@ -218,14 +222,14 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                         color: AppTheme.foreground(context, Color(0xFF6997DD)),
                       ),
                     ),
-                    title: Text(
+                    title: AppText(
                       kit.name,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    subtitle: Text(
+                    subtitle: AppText(
                       kit.location,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white54),
@@ -252,7 +256,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                       } catch (error) {
                         if (mounted) {
                           ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(content: Text(describeError(error).$1)),
+                            SnackBar(content: AppText(describeError(error).$1)),
                           );
                         }
                       }
@@ -303,7 +307,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing-parts list copied.')),
+        const SnackBar(content: AppText('Missing-parts list copied.')),
       );
     }
   }
@@ -312,16 +316,16 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete project kit?'),
-        content: Text('Delete ${_kit.name}? Inventory will not be changed.'),
+        title: const AppText('Delete project kit?'),
+        content: AppText('Delete ${_kit.name}? Inventory will not be changed.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -340,7 +344,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       if (mounted) setState(() => _changingReservation = false);
@@ -351,18 +355,18 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Release reservations?'),
-        content: const Text(
+        title: const AppText('Release reservations?'),
+        content: const AppText(
           'These parts will become available to other projects. Inventory quantities will not change.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Release'),
+            child: const AppText('Release'),
           ),
         ],
       ),
@@ -376,7 +380,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     } finally {
       if (mounted) setState(() => _changingReservation = false);
@@ -387,7 +391,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.adaptive(context, Colors.black),
     appBar: AppBar(
-      title: Text(_kit.name),
+      title: AppText(_kit.name),
       backgroundColor: AppTheme.adaptive(context, Colors.black),
       actions: [
         IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline)),
@@ -404,7 +408,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Text(
+                  AppText(
                     '${_kit.summary.readinessPercent}%',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white),
@@ -412,7 +416,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
+                  AppText(
                     'ready in ${_kit.location}',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white54),
@@ -426,7 +430,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                     backgroundColor: AppTheme.adaptive(context, Colors.white12),
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  AppText(
                     '${_kit.summary.readyLines} ready · ${_kit.summary.partialLines} partial · ${_kit.summary.missingLines} missing',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white54),
@@ -443,7 +447,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                 child: OutlinedButton.icon(
                   onPressed: _refreshing ? null : _refresh,
                   icon: const Icon(Icons.refresh),
-                  label: Text(_refreshing ? 'Refreshing…' : 'Refresh'),
+                  label: AppText(_refreshing ? 'Refreshing…' : 'Refresh'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -453,7 +457,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                       ? _copyMissing
                       : null,
                   icon: const Icon(Icons.copy),
-                  label: const Text('Copy Missing'),
+                  label: const AppText('Copy Missing'),
                 ),
               ),
             ],
@@ -466,7 +470,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                   child: FilledButton.icon(
                     onPressed: _changingReservation ? null : _reserve,
                     icon: const Icon(Icons.lock_outline),
-                    label: Text(
+                    label: AppText(
                       _changingReservation ? 'Updating…' : 'Reserve Available',
                     ),
                   ),
@@ -477,7 +481,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                     child: OutlinedButton.icon(
                       onPressed: _changingReservation ? null : _release,
                       icon: const Icon(Icons.lock_open_outlined),
-                      label: const Text('Release'),
+                      label: const AppText('Release'),
                     ),
                   ),
                 ],
@@ -485,7 +489,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
             ),
           ] else ...[
             const SizedBox(height: 10),
-            Text(
+            AppText(
               'View only · An editor can change reservations',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -515,20 +519,20 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
                     : (ready ? Icons.check_circle : Icons.cancel),
                 color: color,
               ),
-              title: Text(
+              title: AppText(
                 item.partNumber ?? item.name,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
                 ),
               ),
-              subtitle: Text(
+              subtitle: AppText(
                 '$identity${identity.isEmpty ? '' : '\n'}$reservation',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white54),
                 ),
               ),
               isThreeLine: identity.isNotEmpty,
-              trailing: Text(
+              trailing: AppText(
                 '${item.availableQuantity}/${item.requiredQuantity}',
                 style: TextStyle(color: color, fontWeight: FontWeight.w700),
               ),

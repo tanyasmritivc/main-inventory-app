@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../core/ask_answer.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class AskQuestionCard extends StatelessWidget {
   const AskQuestionCard({
@@ -40,14 +41,14 @@ class AskQuestionCard extends StatelessWidget {
                       fit: BoxFit.contain,
                       semanticLabel: 'Attached photo',
                       errorBuilder: (_, _, _) =>
-                          const Text('Photo unavailable'),
+                          const AppText('Photo unavailable'),
                     )
                   : Image.network(
                       photoUrl!,
                       fit: BoxFit.contain,
                       semanticLabel: 'Attached photo',
                       errorBuilder: (_, _, _) =>
-                          const Text('Photo unavailable'),
+                          const AppText('Photo unavailable'),
                     ),
             ),
           ),
@@ -55,11 +56,14 @@ class AskQuestionCard extends StatelessWidget {
         ],
         SelectableText(
           question,
-          style: TextStyle(
-            color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
-            fontSize: 17,
-            height: 1.5,
-            fontWeight: FontWeight.w400,
+          style: AppTypography.styleOf(
+            context,
+            TextStyle(
+              color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+              fontSize: 17,
+              height: 1.5,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ),
       ],
@@ -106,7 +110,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               onTap: () => setState(() => _expanded = !_expanded),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-                child: Text(
+                child: AppText(
                   'What it read',
                   style: TextStyle(
                     color: primary,
@@ -148,7 +152,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 6,
                                 ),
-                                child: Text(
+                                child: AppText(
                                   source.label,
                                   style: TextStyle(
                                     color: primary,
@@ -159,13 +163,13 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                               ),
                             )
                           else
-                            Text(
+                            AppText(
                               source.label,
                               style: TextStyle(color: primary, fontSize: 15),
                             ),
                           if (source.detail.isNotEmpty) ...[
                             const SizedBox(height: 4),
-                            Text(
+                            AppText(
                               source.detail,
                               style: TextStyle(
                                 color: secondary,
@@ -187,7 +191,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
             child: Semantics(
               liveRegion: true,
-              child: Text(
+              child: AppText(
                 widget.pendingMessage,
                 style: TextStyle(color: secondary, fontSize: 16),
               ),
@@ -203,21 +207,27 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               // Generated images must not trigger arbitrary third-party requests.
               sizedImageBuilder: (_) => const SizedBox.shrink(),
               styleSheet: MarkdownStyleSheet(
-                p: TextStyle(
-                  color: primary,
-                  fontSize: 17,
-                  height: 1.5,
-                  fontWeight: FontWeight.w400,
+                p: AppTypography.styleOf(
+                  context,
+                  TextStyle(
+                    color: primary,
+                    fontSize: 17,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-                strong: TextStyle(
-                  color: primary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
+                strong: AppTypography.styleOf(
+                  context,
+                  TextStyle(
+                    color: primary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  boldWeight: FontWeight.w600,
                 ),
-                listBullet: TextStyle(
-                  color: primary,
-                  fontSize: 17,
-                  height: 1.5,
+                listBullet: AppTypography.styleOf(
+                  context,
+                  TextStyle(color: primary, fontSize: 17, height: 1.5),
                 ),
                 blockSpacing: 10,
                 listIndent: 20,
@@ -248,7 +258,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
           if (data.rowsTruncated)
             Padding(
               padding: EdgeInsets.only(top: 10, left: 4),
-              child: Text(
+              child: AppText(
                 'Additional results are not shown here.',
                 style: TextStyle(color: secondary, fontSize: 13),
               ),
@@ -271,7 +281,7 @@ class _ResultRow extends StatelessWidget {
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           row.name,
           style: TextStyle(
             color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
@@ -280,7 +290,7 @@ class _ResultRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
+        AppText(
           subtitle,
           style: TextStyle(
             color: AppTheme.foreground(context, Color(0xFF85858E)),
@@ -314,7 +324,7 @@ class _ResultRow extends StatelessWidget {
                 color: colors.$2,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(
+              child: AppText(
                 row.status!,
                 style: TextStyle(
                   color: colors.$1,

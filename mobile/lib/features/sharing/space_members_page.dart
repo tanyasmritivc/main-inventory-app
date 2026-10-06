@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/ui/member_avatar.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SpaceMembersPage extends StatefulWidget {
   final String shareId;
@@ -61,7 +62,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               widget.spaceName,
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -69,7 +70,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                 fontSize: 17,
               ),
             ),
-            Text(
+            AppText(
               'Team members',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -88,7 +89,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(
+                AppText(
                   '${_members.length} ${_members.length == 1 ? 'member' : 'members'}',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -134,7 +135,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                             children: [
                               Row(
                                 children: [
-                                  Text(
+                                  AppText(
                                     name,
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -159,7 +160,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                         ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: Text(
+                                      child: AppText(
                                         'Owner',
                                         style: TextStyle(
                                           color: AppTheme.foreground(
@@ -181,7 +182,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                   },
                                   child: Row(
                                     children: [
-                                      Text(
+                                      AppText(
                                         email,
                                         style: TextStyle(
                                           color: AppTheme.foreground(

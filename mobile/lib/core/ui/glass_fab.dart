@@ -1,5 +1,6 @@
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class GlassFab extends StatelessWidget {
   const GlassFab({
@@ -38,7 +39,7 @@ class GlassFab extends StatelessWidget {
           color: AppTheme.foreground(context, Colors.white),
           size: 22,
         ),
-        label: Text(label!),
+        label: AppText(label!),
       );
     }
     return FloatingActionButton(

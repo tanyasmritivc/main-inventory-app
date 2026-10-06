@@ -9,6 +9,7 @@ import '../../core/api_error.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
 import '../home/home_overview.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// The shell's utility destination; inventory browsing stays in Find.
 class ProfileHubPage extends StatefulWidget {
@@ -75,7 +76,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
       }
     }
   }
@@ -83,7 +84,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
   Widget _row(String title, Future<void> Function() onTap, {String? detail}) =>
       ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        title: Text(
+        title: AppText(
           title,
           style: TextStyle(
             color: AppTheme.foreground(context, HomeColors.text),
@@ -94,7 +95,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             if (detail != null) ...[
-              Text(
+              AppText(
                 detail,
                 style: TextStyle(
                   color: AppTheme.foreground(context, HomeColors.secondary),
@@ -151,7 +152,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
           children: [
-            Text(
+            AppText(
               'Profile',
               style: TextStyle(
                 color: AppTheme.foreground(context, HomeColors.text),
@@ -182,7 +183,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               name.isEmpty ? 'Your profile' : name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -196,7 +197,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                             ),
                             if (user?.email?.isNotEmpty ?? false) ...[
                               const SizedBox(height: 4),
-                              Text(
+                              AppText(
                                 user!.email!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -210,7 +211,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                               ),
                             ],
                             const SizedBox(height: 6),
-                            Text(
+                            AppText(
                               'Edit profile',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -225,7 +226,10 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                       ),
                       Icon(
                         Icons.chevron_right_rounded,
-                        color: AppTheme.foreground(context, HomeColors.secondary),
+                        color: AppTheme.foreground(
+                          context,
+                          HomeColors.secondary,
+                        ),
                         size: 20,
                       ),
                     ],
@@ -239,7 +243,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         'Could not load profile.',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -251,7 +255,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                     ),
                     TextButton(
                       onPressed: () => _store.load(force: true),
-                      child: const Text('Retry'),
+                      child: const AppText('Retry'),
                     ),
                   ],
                 ),

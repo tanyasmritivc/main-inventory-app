@@ -14,6 +14,7 @@ import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
 import 'review_capture.dart';
 import 'qr_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 List<int> _compressImageBytes(Uint8List bytes) {
   try {
@@ -166,7 +167,7 @@ void _showSaveFailureSummary({
     builder: (ctx) => AlertDialog(
       backgroundColor: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      title: Text(
+      title: AppText(
         '$inserted of $total item${total == 1 ? '' : 's'} saved',
         style: TextStyle(
           color: AppTheme.foreground(ctx, Colors.white),
@@ -178,7 +179,7 @@ void _showSaveFailureSummary({
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             'Some items could not be saved:',
             style: TextStyle(
               color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
@@ -189,7 +190,7 @@ void _showSaveFailureSummary({
           ...lines.map(
             (line) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
+              child: AppText(
                 line,
                 style: TextStyle(
                   color: AppTheme.foreground(ctx, Colors.white),
@@ -199,7 +200,7 @@ void _showSaveFailureSummary({
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             'Fix the highlighted rows and tap Save All to retry.',
             style: TextStyle(
               color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -211,9 +212,11 @@ void _showSaveFailureSummary({
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: Text(
+          child: AppText(
             'Dismiss',
-            style: TextStyle(color: AppTheme.foreground(ctx, Color(0xFF6997DD))),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0xFF6997DD)),
+            ),
           ),
         ),
       ],
@@ -259,9 +262,11 @@ Future<void> runUploadPhotoFlow({
                   Icons.photo_camera_outlined,
                   color: AppTheme.foreground(ctx, Colors.white),
                 ),
-                title: Text(
+                title: AppText(
                   'Take Photo',
-                  style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                  ),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
@@ -270,9 +275,11 @@ Future<void> runUploadPhotoFlow({
                   Icons.photo_outlined,
                   color: AppTheme.foreground(ctx, Colors.white),
                 ),
-                title: Text(
+                title: AppText(
                   'Choose from Library',
-                  style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                  ),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
               ),
@@ -320,7 +327,7 @@ Future<void> runUploadPhotoFlow({
                   color: AppTheme.adaptive(context, Colors.white),
                 ),
                 SizedBox(height: 16),
-                Text(
+                AppText(
                   'Extracting items…',
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -365,13 +372,13 @@ Future<void> runUploadPhotoFlow({
         unawaited(ProStatus.refresh(api));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: AppText('Something went wrong. Please try again.'),
           ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to extract items. Try again.')),
+        const SnackBar(content: AppText('Failed to extract items. Try again.')),
       );
     }
     return;
@@ -379,7 +386,7 @@ Future<void> runUploadPhotoFlow({
     if (context.mounted) Navigator.of(context).pop();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to extract items. Try again.')),
+      const SnackBar(content: AppText('Failed to extract items. Try again.')),
     );
     return;
   }
@@ -388,9 +395,9 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
 
   if (extracted.items.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('No items found in image.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: AppText('No items found in image.')),
+    );
     return;
   }
 
@@ -469,7 +476,7 @@ Future<void> runUploadPhotoFlow({
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Fix the highlighted rows and try again.'),
+          content: AppText('Fix the highlighted rows and try again.'),
         ),
       );
     }
@@ -483,7 +490,7 @@ Future<void> runUploadPhotoFlow({
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     return;
   }
   final inventoryItems = plan.inventoryItems;
@@ -491,7 +498,7 @@ Future<void> runUploadPhotoFlow({
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           '${plan.reviewCount} uncertain ${plan.reviewCount == 1 ? 'item is' : 'items are'} saved in Review.',
         ),
       ),
@@ -511,13 +518,13 @@ Future<void> runUploadPhotoFlow({
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   }
   if (!context.mounted) return;
@@ -566,7 +573,7 @@ Future<void> runUploadPhotoFlow({
   if (insertedCount > 0) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           allSucceeded
               ? plan.reviewCount > 0
                     ? 'Saved $insertedCount and kept ${plan.reviewCount} in Review'
@@ -617,7 +624,7 @@ Future<void> runUploadPhotoFlow({
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
+        content: AppText(
           'Couldn\'t save those items. Fix the highlighted rows and try again.',
         ),
       ),

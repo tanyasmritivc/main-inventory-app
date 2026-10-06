@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class CheckoutPage extends StatefulWidget {
   final ApiClient api;
@@ -43,25 +44,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text(
+        title: AppText(
           'Return Item',
           style: TextStyle(color: AppTheme.textPrimary(ctx)),
         ),
-        content: Text(
+        content: AppText(
           'Mark "$itemName" as returned?',
           style: TextStyle(color: AppTheme.textSecondary(ctx)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
+            child: AppText(
               'Cancel',
               style: TextStyle(color: AppTheme.textSecondary(ctx)),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
+            child: AppText(
               'Return',
               style: TextStyle(
                 color: AppTheme.textPrimary(ctx),
@@ -79,12 +80,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('$itemName returned')));
+        ).showSnackBar(SnackBar(content: AppText('$itemName returned')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to return item. Try again.')),
+          const SnackBar(content: AppText('Failed to return item. Try again.')),
         );
       }
     }
@@ -133,7 +134,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppText(
           'Check-Out Tracker',
           style: TextStyle(
             color: AppTheme.textPrimary(context),
@@ -169,7 +170,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     size: 56,
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  AppText(
                     'Nothing checked out',
                     style: TextStyle(
                       color: AppTheme.textPrimary(context),
@@ -178,7 +179,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     'Check out items from any item\'s detail view.',
                     style: TextStyle(
                       color: AppTheme.textSecondary(context),
@@ -187,7 +188,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     'Items checked out from shared spaces\nwill appear here for all team members.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -220,7 +221,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           size: 20,
                         ),
                         const SizedBox(width: 12),
-                        Text(
+                        AppText(
                           '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
                           style: TextStyle(
                             color: AppTheme.textPrimary(context),
@@ -258,7 +259,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _buildSectionHeader(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 10, top: 4),
-    child: Text(
+    child: AppText(
       title,
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -306,7 +307,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Colors.white),
@@ -321,7 +322,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   itemName,
                   style: TextStyle(
                     color: AppTheme.textPrimary(context),
@@ -330,7 +331,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   'Checked out by $checkedOutBy · ${_timeAgo(checkedOutAt)}',
                   style: TextStyle(
                     color: AppTheme.textSecondary(context),
@@ -357,7 +358,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       location,
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -370,7 +371,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 if (isTeammate)
                   Padding(
                     padding: EdgeInsets.only(top: 2),
-                    child: Text(
+                    child: AppText(
                       '👥 From shared space',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -379,14 +380,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ),
                 if (dueBackAt != null)
-                  Text(
+                  AppText(
                     overdue
                         ? '⚠ Overdue — was due ${_timeAgo(dueBackAt)}'
                         : 'Due back ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
                       color: overdue
-                          ? AppTheme.foreground(context, const Color(0xFFEF4444))
-                          : AppTheme.foreground(context, const Color(0xFFFBBF24)),
+                          ? AppTheme.foreground(
+                              context,
+                              const Color(0xFFEF4444),
+                            )
+                          : AppTheme.foreground(
+                              context,
+                              const Color(0xFFFBBF24),
+                            ),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -403,7 +410,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppTheme.cardBorder(context)),
               ),
-              child: Text(
+              child: AppText(
                 'Return',
                 style: TextStyle(
                   color: AppTheme.textPrimary(context),

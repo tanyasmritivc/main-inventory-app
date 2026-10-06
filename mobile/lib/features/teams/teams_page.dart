@@ -9,6 +9,7 @@ import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/upgrade_sheet.dart';
 import 'team_workspace_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key, required this.api});
@@ -71,12 +72,12 @@ class _TeamsPageState extends State<TeamsPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
+                const AppText(
                   'Create Team',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                AppText(
                   'A team brings people, spaces, and work together.',
                   style: TextStyle(
                     color: AppTheme.foreground(context, AppColors.muted),
@@ -91,6 +92,7 @@ class _TeamsPageState extends State<TeamsPage> {
                   decoration: const InputDecoration(
                     labelText: 'Team name or number',
                   ),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -99,38 +101,41 @@ class _TeamsPageState extends State<TeamsPage> {
                   items: const [
                     DropdownMenuItem(
                       value: 'robotics',
-                      child: Text('Robotics Team'),
+                      child: AppText('Robotics Team'),
                     ),
                     DropdownMenuItem(
                       value: 'ftc',
-                      child: Text('FIRST Tech Challenge'),
+                      child: AppText('FIRST Tech Challenge'),
                     ),
                     DropdownMenuItem(
                       value: 'frc',
-                      child: Text('FIRST Robotics Competition'),
+                      child: AppText('FIRST Robotics Competition'),
                     ),
                     DropdownMenuItem(
                       value: 'fll',
-                      child: Text('FIRST LEGO League'),
+                      child: AppText('FIRST LEGO League'),
                     ),
-                    DropdownMenuItem(value: 'vex', child: Text('VEX Robotics')),
+                    DropdownMenuItem(
+                      value: 'vex',
+                      child: AppText('VEX Robotics'),
+                    ),
                     DropdownMenuItem(
                       value: 'education',
-                      child: Text('School or Classroom'),
+                      child: AppText('School or Classroom'),
                     ),
                     DropdownMenuItem(
                       value: 'makerspace',
-                      child: Text('Makerspace or Workshop'),
+                      child: AppText('Makerspace or Workshop'),
                     ),
                     DropdownMenuItem(
                       value: 'club',
-                      child: Text('Club or Community Group'),
+                      child: AppText('Club or Community Group'),
                     ),
                     DropdownMenuItem(
                       value: 'business',
-                      child: Text('Business or Operations'),
+                      child: AppText('Business or Operations'),
                     ),
-                    DropdownMenuItem(value: 'other', child: Text('Other')),
+                    DropdownMenuItem(value: 'other', child: AppText('Other')),
                   ],
                   onChanged: (value) =>
                       setSheetState(() => program = value ?? 'robotics'),
@@ -141,7 +146,7 @@ class _TeamsPageState extends State<TeamsPage> {
                     if (name.text.trim().isEmpty) return;
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Create Team'),
+                  child: const AppText('Create Team'),
                 ),
               ],
             ),
@@ -171,7 +176,7 @@ class _TeamsPageState extends State<TeamsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -239,7 +244,7 @@ class _TeamsPageState extends State<TeamsPage> {
                   'Create a team for your group, or join one with a team code. Shared Spaces remain separate.',
             )
           else ...[
-            Text(
+            AppText(
               'Your Teams',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -314,7 +319,7 @@ class _TeamAction extends StatelessWidget {
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
+                child: AppText(
                   title,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
@@ -358,11 +363,11 @@ class _TeamRow extends StatelessWidget {
         color: _teamColor(context),
         size: 22,
       ),
-      title: Text(
+      title: AppText(
         team['name']?.toString() ?? 'Team',
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
-      subtitle: Text(
+      subtitle: AppText(
         [
           if (program.isNotEmpty) program,
           role == 'owner' ? 'Owner' : role,
@@ -397,13 +402,13 @@ class _TeamsMessage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
       child: Column(
         children: [
-          Text(
+          AppText(
             title,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             message,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -413,7 +418,7 @@ class _TeamsMessage extends StatelessWidget {
           ),
           if (action != null && actionLabel != null) ...[
             const SizedBox(height: 18),
-            FilledButton(onPressed: action, child: Text(actionLabel!)),
+            FilledButton(onPressed: action, child: AppText(actionLabel!)),
           ],
         ],
       ),

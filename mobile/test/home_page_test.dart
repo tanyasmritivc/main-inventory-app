@@ -68,10 +68,13 @@ Widget _overview({
   VoidCallback? onReview,
   TextScaler textScaler = TextScaler.noScaling,
   Brightness brightness = Brightness.dark,
+  bool? boldText,
 }) => MaterialApp(
   theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+    data: MediaQuery.of(
+      context,
+    ).copyWith(textScaler: textScaler, boldText: boldText),
     child: child!,
   ),
   home: Scaffold(
@@ -111,6 +114,103 @@ Widget _page(_HomeApi api, {ValueChanged<Map<String, dynamic>>? onSpace}) =>
     );
 
 void main() {
+  FontWeight? renderedWeight(WidgetTester tester, String label) => tester
+      .widget<RichText>(
+        find.descendant(of: find.text(label), matching: find.byType(RichText)),
+      )
+      .text
+      .style
+      ?.fontWeight;
+
+  testWidgets('Home preserves hierarchy when device Bold Text changes', (
+    tester,
+  ) async {
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(_overview(items: [_item('Soldering iron')]));
+    expect(renderedWeight(tester, 'My home'), FontWeight.w400);
+    expect(renderedWeight(tester, 'need identifying'), FontWeight.w400);
+
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        FakeAccessibilityFeatures(boldText: true);
+    await tester.pumpAndSettle();
+    expect(renderedWeight(tester, 'My home'), FontWeight.w600);
+    expect(renderedWeight(tester, '123456'), FontWeight.w600);
+    expect(renderedWeight(tester, 'Needs a decision'), FontWeight.w600);
+    expect(renderedWeight(tester, 'need identifying'), FontWeight.w500);
+    expect(renderedWeight(tester, 'Soldering iron?'), FontWeight.w500);
+    expect(
+      renderedWeight(tester, 'Where is the soldering iron?'),
+      FontWeight.w500,
+    );
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).style?.fontWeight,
+      FontWeight.w500,
+    );
+    // Home adapts its own text; the rest of the app still sees the OS setting.
+    expect(
+      MediaQuery.boldTextOf(tester.element(find.byType(HomeOverview))),
+      isTrue,
+    );
+
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        FakeAccessibilityFeatures(boldText: false);
+    await tester.pumpAndSettle();
+    expect(renderedWeight(tester, 'My home'), FontWeight.w400);
+    expect(renderedWeight(tester, 'need identifying'), FontWeight.w400);
+  });
+
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 3.4]) {
+      testWidgets('${brightness.name} Bold Home supports $scale at 320pt', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        var reviewed = false;
+        await tester.pumpWidget(
+          _overview(
+            brightness: brightness,
+            textScaler: TextScaler.linear(scale),
+            boldText: true,
+            onReview: () => reviewed = true,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final scrollable = find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        final title = tester.widget<RichText>(
+          find.descendant(
+            of: find.text('My home'),
+            matching: find.byType(RichText),
+          ),
+        );
+        expect(title.textScaler.scale(14), 14 * scale);
+        await tester.scrollUntilVisible(
+          find.text('need identifying'),
+          250,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('need identifying'));
+        expect(reviewed, isTrue);
+        await tester.scrollUntilVisible(
+          find.text('Shelf'),
+          250,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+        expect(renderedWeight(tester, 'Shelf'), FontWeight.w500);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
   for (final brightness in Brightness.values) {
     for (final scale in [1.0, 2.6]) {
       testWidgets('${brightness.name} Home supports $scale text at 320pt', (

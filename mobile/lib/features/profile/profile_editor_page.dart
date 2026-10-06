@@ -9,6 +9,7 @@ import '../../core/api_error.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
 import '../home/home_overview.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ProfileEditorPage extends StatefulWidget {
   const ProfileEditorPage({
@@ -99,7 +100,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ).showSnackBar(SnackBar(content: AppText(message)));
     }
   }
 
@@ -137,18 +138,18 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
         await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Discard changes?'),
-                content: const Text(
+                title: const AppText('Discard changes?'),
+                content: const AppText(
                   'Your unsaved profile changes will be lost.',
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Keep editing'),
+                    child: const AppText('Keep editing'),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Discard'),
+                    child: const AppText('Discard'),
                   ),
                 ],
               ),
@@ -214,17 +215,17 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Choose photo'),
+              title: const AppText('Choose photo'),
               onTap: () => Navigator.pop(context, 'choose'),
             ),
             if (_store.photoUrl.isNotEmpty)
               ListTile(
-                title: const Text('Remove photo'),
+                title: const AppText('Remove photo'),
                 textColor: Colors.redAccent,
                 onTap: () => Navigator.pop(context, 'remove'),
               ),
             ListTile(
-              title: const Text('Cancel'),
+              title: const AppText('Cancel'),
               onTap: () => Navigator.pop(context),
             ),
           ],
@@ -253,17 +254,23 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
           : TextCapitalization.words,
       textInputAction: TextInputAction.next,
       onChanged: (_) => setState(() {}),
-      style: TextStyle(
-        color: AppTheme.foreground(context, HomeColors.text),
-        fontSize: 17,
-        fontWeight: FontWeight.w400,
+      style: AppTypography.bodyStyleOf(
+        context,
+        TextStyle(
+          color: AppTheme.foreground(context, HomeColors.text),
+          fontSize: 17,
+          fontWeight: FontWeight.w400,
+        ),
       ),
       decoration: InputDecoration(
         labelText: label,
         counterText: '',
-        labelStyle: TextStyle(
-          color: AppTheme.foreground(context, HomeColors.secondary),
-          fontWeight: FontWeight.w400,
+        labelStyle: AppTypography.bodyStyleOf(
+          context,
+          TextStyle(
+            color: AppTheme.foreground(context, HomeColors.secondary),
+            fontWeight: FontWeight.w400,
+          ),
         ),
         filled: false,
         contentPadding: EdgeInsets.zero,
@@ -330,7 +337,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
         backgroundColor: AppTheme.adaptive(context, HomeColors.background),
         surfaceTintColor: Colors.transparent,
         leading: BackButton(onPressed: _close),
-        title: const Text(
+        title: const AppText(
           'Edit profile',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
         ),
@@ -341,10 +348,10 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('Could not load profile.'),
+                        const AppText('Could not load profile.'),
                         TextButton(
                           onPressed: () => _load(force: true),
-                          child: const Text('Retry'),
+                          child: const AppText('Retry'),
                         ),
                       ],
                     )
@@ -372,14 +379,14 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                             const SizedBox(height: 8),
                             TextButton(
                               onPressed: _busy ? null : _choosePhoto,
-                              child: Text(
+                              child: AppText(
                                 _photoBusy
                                     ? 'Updating photo...'
                                     : 'Change photo',
                               ),
                             ),
                             if (_store.email.isNotEmpty)
-                              Text(
+                              AppText(
                                 _store.email,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -400,7 +407,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                         _field('Name', _name, limit: 100, required: true),
                       ]),
                       const SizedBox(height: 24),
-                      Text(
+                      AppText(
                         'Collaboration details',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -427,7 +434,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       ]),
                       Padding(
                         padding: EdgeInsets.only(top: 8),
-                        child: Text(
+                        child: AppText(
                           'Visible only to people you collaborate with.',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -441,7 +448,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       ),
                       if (_store.photoUrl.isEmpty) ...[
                         const SizedBox(height: 24),
-                        Text(
+                        AppText(
                           'Avatar color',
                           style: TextStyle(
                             color: AppTheme.foreground(
@@ -508,7 +515,7 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                           foregroundColor: AppTheme.onAction,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: Text(
+                        child: AppText(
                           _saving ? 'Saving...' : 'Save changes',
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),

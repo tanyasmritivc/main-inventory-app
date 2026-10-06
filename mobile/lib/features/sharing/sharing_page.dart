@@ -12,6 +12,7 @@ import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import 'shared_inventory_page.dart';
 import 'space_members_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SharingPage extends StatefulWidget {
   const SharingPage({super.key});
@@ -70,7 +71,7 @@ class _SharingPageState extends State<SharingPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t load shared spaces.')),
+          const SnackBar(content: AppText('Couldn’t load shared spaces.')),
         );
       }
     }
@@ -82,18 +83,18 @@ class _SharingPageState extends State<SharingPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: Text(
+        title: AppText(
           'Revoke share?',
           style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
         ),
-        content: Text(
+        content: AppText(
           'Members will lose access immediately.',
           style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
+            child: AppText(
               'Cancel',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -102,7 +103,7 @@ class _SharingPageState extends State<SharingPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
+            child: AppText(
               'Revoke',
               style: TextStyle(
                 color: AppTheme.foreground(ctx, Color(0xFFFF3B30)),
@@ -119,7 +120,7 @@ class _SharingPageState extends State<SharingPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not revoke share.')),
+          const SnackBar(content: AppText('Could not revoke share.')),
         );
       }
     }
@@ -185,7 +186,7 @@ class _SharingPageState extends State<SharingPage> {
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        title: Text(
+        title: AppText(
           'Team Sharing',
           style: TextStyle(
             color: AppTheme.foreground(context, Colors.white),
@@ -234,7 +235,7 @@ class _SharingPageState extends State<SharingPage> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Text(
+                            AppText(
                               'No active shares',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -246,7 +247,7 @@ class _SharingPageState extends State<SharingPage> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Text(
+                            AppText(
                               'Create a share so teammates can view your inventory.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -276,7 +277,7 @@ class _SharingPageState extends State<SharingPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      AppText(
                                         (share['share_name'] ?? '').toString(),
                                         style: TextStyle(
                                           color: AppTheme.foreground(
@@ -313,7 +314,7 @@ class _SharingPageState extends State<SharingPage> {
                                                 ),
                                               ),
                                             ),
-                                            child: Text(
+                                            child: AppText(
                                               (share['share_code'] ?? '')
                                                   .toString(),
                                               style: TextStyle(
@@ -329,7 +330,7 @@ class _SharingPageState extends State<SharingPage> {
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          Text(
+                                          AppText(
                                             share['permission'] == 'edit'
                                                 ? '✏️ Can edit'
                                                 : '👁 View only',
@@ -344,7 +345,7 @@ class _SharingPageState extends State<SharingPage> {
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      Text(
+                                      AppText(
                                         '${share['member_count'] ?? 0} members',
                                         style: TextStyle(
                                           color: AppTheme.foreground(
@@ -369,7 +370,9 @@ class _SharingPageState extends State<SharingPage> {
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
-                                          content: Text('Code copied: $code'),
+                                          content: AppText(
+                                            'Code copied: $code',
+                                          ),
                                         ),
                                       );
                                     }),
@@ -435,7 +438,7 @@ class _SharingPageState extends State<SharingPage> {
                             ),
                           ),
                         ),
-                        child: const Text(
+                        child: const AppText(
                           '+ Create Share',
                           style: TextStyle(
                             fontSize: 15,
@@ -454,7 +457,7 @@ class _SharingPageState extends State<SharingPage> {
                         padding: EdgeInsets.all(24),
                         child: Column(
                           children: [
-                            Text(
+                            AppText(
                               'Not in any team yet',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -467,7 +470,7 @@ class _SharingPageState extends State<SharingPage> {
                               textAlign: TextAlign.center,
                             ),
                             SizedBox(height: 6),
-                            Text(
+                            AppText(
                               "Enter a share code to view a teammate's inventory.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -509,7 +512,7 @@ class _SharingPageState extends State<SharingPage> {
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
+                      child: AppText(
                         'Join a Share',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
@@ -538,7 +541,7 @@ class _SharingPageState extends State<SharingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               shareName,
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -547,7 +550,7 @@ class _SharingPageState extends State<SharingPage> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               permission == 'edit' ? '✏️ Can edit' : '👁 View only',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -585,7 +588,7 @@ class _SharingPageState extends State<SharingPage> {
                         ),
                         padding: EdgeInsets.zero,
                       ),
-                      child: const Text(
+                      child: const AppText(
                         'View Inventory',
                         style: TextStyle(fontSize: 13),
                       ),
@@ -607,7 +610,7 @@ class _SharingPageState extends State<SharingPage> {
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.adaptive(context, Colors.white70),
                   ),
-                  child: Text(
+                  child: AppText(
                     'Members',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Colors.white70),
@@ -622,13 +625,13 @@ class _SharingPageState extends State<SharingPage> {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         backgroundColor: AppTheme.surface2(ctx),
-                        title: Text(
+                        title: AppText(
                           'Leave Space',
                           style: TextStyle(
                             color: AppTheme.foreground(ctx, Colors.white),
                           ),
                         ),
-                        content: Text(
+                        content: AppText(
                           'Leave "$shareName"? You will lose access to this shared inventory.',
                           style: TextStyle(
                             color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
@@ -637,7 +640,7 @@ class _SharingPageState extends State<SharingPage> {
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: Text(
+                            child: AppText(
                               'Cancel',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -649,7 +652,7 @@ class _SharingPageState extends State<SharingPage> {
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: Text(
+                            child: AppText(
                               'Leave',
                               style: TextStyle(
                                 color: AppTheme.foreground(
@@ -671,14 +674,14 @@ class _SharingPageState extends State<SharingPage> {
                       _load();
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Left "$shareName"')),
+                          SnackBar(content: AppText('Left "$shareName"')),
                         );
                       }
                     } catch (_) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Failed to leave. Try again.'),
+                            content: AppText('Failed to leave. Try again.'),
                           ),
                         );
                       }
@@ -690,7 +693,7 @@ class _SharingPageState extends State<SharingPage> {
                       const Color(0xFFEF4444),
                     ),
                   ),
-                  child: Text(
+                  child: AppText(
                     'Leave',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0xFFEF4444)),
@@ -709,7 +712,7 @@ class _SharingPageState extends State<SharingPage> {
 
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-    child: Text(
+    child: AppText(
       text,
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -807,7 +810,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a share name.')),
+        const SnackBar(content: AppText('Please enter a share name.')),
       );
       return;
     }
@@ -823,7 +826,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -846,7 +849,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'Create a Share',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -861,13 +864,17 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               controller: _nameCtrl,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(color: AppTheme.foreground(context, Colors.white)),
               ),
               decoration: InputDecoration(
                 hintText: 'e.g. Robotics Team 2024',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                  ),
                 ),
                 filled: true,
                 fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
@@ -937,7 +944,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                         color: AppTheme.adaptive(context, Colors.black),
                         strokeWidth: 2,
                       )
-                    : const Text(
+                    : const AppText(
                         'Create Share',
                         style: TextStyle(
                           fontSize: 15,
@@ -979,7 +986,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               size: 20,
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 color: isSelected
@@ -990,7 +997,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               ),
             ),
             const SizedBox(height: 3),
-            Text(
+            AppText(
               subtitle,
               style: TextStyle(
                 color: isSelected
@@ -1005,7 +1012,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
     );
   }
 
-  Widget _label(String text) => Text(
+  Widget _label(String text) => AppText(
     text,
     style: TextStyle(
       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
@@ -1039,7 +1046,7 @@ class _ShareCodeSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          AppText(
             'Share created!',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -1048,7 +1055,7 @@ class _ShareCodeSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'Share this code with your teammates',
             style: TextStyle(
               color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -1068,7 +1075,7 @@ class _ShareCodeSheet extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 code,
                 style: TextStyle(
                   fontFamily: 'monospace',
@@ -1087,9 +1094,9 @@ class _ShareCodeSheet extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: code));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Code copied: $code')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: AppText('Code copied: $code')),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.adaptive(context, Colors.white),
@@ -1099,7 +1106,7 @@ class _ShareCodeSheet extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
+              child: const AppText(
                 'Copy Code',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
@@ -1120,7 +1127,7 @@ class _ShareCodeSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
-              child: const Text(
+              child: const AppText(
                 'Done',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
@@ -1180,7 +1187,9 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
       final name = (res.data?['share_name'] ?? '').toString();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Joined ${name.isNotEmpty ? name : code}!')),
+          SnackBar(
+            content: AppText('Joined ${name.isNotEmpty ? name : code}!'),
+          ),
         );
         widget.onJoined();
       }
@@ -1218,7 +1227,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText(
               'Join a Share',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -1227,7 +1236,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               'Enter the 6-character code from your team owner.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1243,21 +1252,27 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               maxLength: 6,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.foreground(context, Colors.white),
-                letterSpacing: 8,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.foreground(context, Colors.white),
+                  letterSpacing: 8,
+                ),
               ),
               decoration: InputDecoration(
                 counterText: '',
                 hintText: 'AB3X9K',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                  fontFamily: 'monospace',
-                  fontSize: 28,
-                  letterSpacing: 8,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                    fontFamily: 'monospace',
+                    fontSize: 28,
+                    letterSpacing: 8,
+                  ),
                 ),
                 filled: true,
                 fillColor: AppTheme.adaptive(context, const Color(0xFF171717)),
@@ -1286,7 +1301,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
             ),
             if (_joinError != null) ...[
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 _joinError!,
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xFFFF3B30)),
@@ -1313,7 +1328,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                         color: AppTheme.adaptive(context, Colors.black),
                         strokeWidth: 2,
                       )
-                    : const Text(
+                    : const AppText(
                         'Join',
                         style: TextStyle(
                           fontSize: 15,
@@ -1399,7 +1414,7 @@ class _MembersSheetState extends State<_MembersSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             'Members',
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white),
@@ -1421,7 +1436,7 @@ class _MembersSheetState extends State<_MembersSheet> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppText(
                     _loadError!,
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -1431,7 +1446,7 @@ class _MembersSheetState extends State<_MembersSheet> {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _load,
-                    child: Text(
+                    child: AppText(
                       'Retry',
                       style: TextStyle(
                         color: AppTheme.foreground(context, Colors.white),
@@ -1442,7 +1457,7 @@ class _MembersSheetState extends State<_MembersSheet> {
               ),
             )
           else if (_members.isEmpty)
-            Text(
+            AppText(
               'No members yet.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -1462,7 +1477,7 @@ class _MembersSheetState extends State<_MembersSheet> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         (m['member_user_id'] ?? '').toString(),
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white),
@@ -1484,7 +1499,7 @@ class _MembersSheetState extends State<_MembersSheet> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
+                                content: AppText(
                                   'Couldn\'t remove member. Try again.',
                                 ),
                               ),

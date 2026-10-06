@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ItemEditorResult {
   const ItemEditorResult({
@@ -112,7 +113,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     widget.item == null ? 'Add item' : 'Edit item',
                     style: TextStyle(
                       color: AppTheme.textPrimary(context),
@@ -125,15 +126,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                   TextField(
                     controller: _name,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 15,
+                    style: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 15,
+                      ),
                     ),
                     decoration: InputDecoration(
                       hintText: 'Name',
-                      hintStyle: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                        fontSize: 15,
+                      hintStyle: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
+                          fontSize: 15,
+                        ),
                       ),
                       filled: true,
                       fillColor: AppTheme.adaptive(context, Color(0xFF171717)),
@@ -168,15 +178,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                   TextField(
                     controller: _category,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 15,
+                    style: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 15,
+                      ),
                     ),
                     decoration: InputDecoration(
                       hintText: 'Category',
-                      hintStyle: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                        fontSize: 15,
+                      hintStyle: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
+                          fontSize: 15,
+                        ),
                       ),
                       filled: true,
                       fillColor: AppTheme.adaptive(context, Color(0xFF171717)),
@@ -251,7 +270,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                         ),
                                 ),
                               ),
-                              child: Text(
+                              child: AppText(
                                 cat,
                                 style: TextStyle(
                                   color: isActive
@@ -277,9 +296,12 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                   TextField(
                     controller: _location,
                     textInputAction: TextInputAction.next,
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 15,
+                    style: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 15,
+                      ),
                     ),
                     onChanged: (_) {
                       if (_locationError != null) {
@@ -288,9 +310,15 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Location',
-                      hintStyle: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                        fontSize: 15,
+                      hintStyle: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
+                          fontSize: 15,
+                        ),
                       ),
                       errorText: _locationError,
                       filled: true,
@@ -374,7 +402,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                               ),
                                       ),
                                     ),
-                                    child: Text(
+                                    child: AppText(
                                       loc,
                                       style: TextStyle(
                                         color: _location.text == loc
@@ -406,15 +434,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) =>
                         FocusManager.instance.primaryFocus?.unfocus(),
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 15,
+                    style: AppTypography.bodyStyleOf(
+                      context,
+                      TextStyle(
+                        color: AppTheme.foreground(context, Colors.white),
+                        fontSize: 15,
+                      ),
                     ),
                     decoration: InputDecoration(
                       hintText: 'Quantity',
-                      hintStyle: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x33FFFFFF)),
-                        fontSize: 15,
+                      hintStyle: AppTypography.bodyStyleOf(
+                        context,
+                        TextStyle(
+                          color: AppTheme.foreground(
+                            context,
+                            Color(0x33FFFFFF),
+                          ),
+                          fontSize: 15,
+                        ),
                       ),
                       filled: true,
                       fillColor: AppTheme.adaptive(context, Color(0xFF171717)),
@@ -505,7 +542,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  title: Text(
+                                  title: AppText(
                                     'Create new space?',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -514,7 +551,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                       ),
                                     ),
                                   ),
-                                  content: Text(
+                                  content: AppText(
                                     '"$location" doesn\'t exist yet. Create it and add this item?',
                                     style: TextStyle(
                                       color: AppTheme.foreground(
@@ -527,7 +564,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.of(ctx).pop(false),
-                                      child: Text(
+                                      child: AppText(
                                         'Cancel',
                                         style: TextStyle(
                                           color: AppTheme.foreground(
@@ -540,7 +577,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.of(ctx).pop(true),
-                                      child: Text(
+                                      child: AppText(
                                         'Create Space',
                                         style: TextStyle(
                                           color: AppTheme.foreground(
@@ -606,7 +643,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
+                        child: const AppText(
                           'Save',
                           style: TextStyle(
                             fontSize: 16,
@@ -621,7 +658,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     height: 48,
                     child: TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
+                      child: AppText(
                         'Cancel',
                         style: TextStyle(
                           color: AppTheme.foreground(

@@ -6,6 +6,7 @@ import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../inventory/item_detail_sheet.dart';
 import 'home_overview.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -143,7 +144,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: Text(
+              child: AppText(
                 'Spaces',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
@@ -154,13 +155,13 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   for (final space in _spaces)
                     ListTile(
-                      title: Text((space['name'] ?? '').toString()),
+                      title: AppText((space['name'] ?? '').toString()),
                       onTap: () => Navigator.pop(context, space),
                     ),
                   if (_spaces.isEmpty)
                     Padding(
                       padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      child: Text(
+                      child: AppText(
                         'No Spaces yet',
                         style: TextStyle(
                           color: AppTheme.foreground(
@@ -242,10 +243,10 @@ class _AttentionItemsPageState extends State<_AttentionItemsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppTheme.adaptive(context, HomeColors.background),
-    appBar: AppBar(title: Text(widget.title)),
+    appBar: AppBar(title: AppText(widget.title)),
     body: _items.isEmpty
         ? Center(
-            child: Text(
+            child: AppText(
               'No items',
               style: TextStyle(
                 color: AppTheme.foreground(context, HomeColors.secondary),
@@ -270,9 +271,9 @@ class _AttentionItemsPageState extends State<_AttentionItemsPage> {
                           errorBuilder: (_, _, _) => const SizedBox.shrink(),
                         ),
                       ),
-                title: Text(item.displayName),
-                subtitle: Text(item.location),
-                trailing: Text('${item.quantity}'),
+                title: AppText(item.displayName),
+                subtitle: AppText(item.location),
+                trailing: AppText('${item.quantity}'),
                 onTap: () => showItemDetailSheet(
                   context,
                   item: item,

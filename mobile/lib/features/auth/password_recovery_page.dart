@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class PasswordRecoveryPage extends StatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -45,7 +46,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Your password has been updated.'),
+          content: AppText('Your password has been updated.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -61,7 +62,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset password')),
+      appBar: AppBar(title: const AppText('Reset password')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -72,13 +73,13 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
               children: [
                 const Icon(Icons.lock_reset_rounded, size: 42),
                 const SizedBox(height: 18),
-                Text(
+                AppText(
                   'Choose a new password',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   'Use a password you don’t use anywhere else.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -95,6 +96,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                     labelText: 'New password',
                     prefixIcon: Icon(Icons.lock_outline_rounded),
                   ),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 14),
                 TextField(
@@ -107,10 +109,11 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                     labelText: 'Confirm password',
                     prefixIcon: Icon(Icons.lock_outline_rounded),
                   ),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(
+                  AppText(
                     _error!,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -120,7 +123,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 const SizedBox(height: 22),
                 FilledButton(
                   onPressed: _loading ? null : _save,
-                  child: Text(_loading ? 'Updating…' : 'Update password'),
+                  child: AppText(_loading ? 'Updating…' : 'Update password'),
                 ),
               ],
             ),

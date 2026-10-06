@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/features/profile/appearance_settings.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
 
@@ -170,12 +171,54 @@ void main() {
       await _open(tester, controller, form);
       MediaQueryData media() =>
           MediaQuery.of(tester.element(find.byType(_Probe)));
+      Future<FontWeight?> renderedDraftWeight() async {
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('appearance-draft')),
+          250,
+          scrollable: find
+              .descendant(
+                of: find.byType(_Probe),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        return tester
+            .widget<EditableText>(find.byType(EditableText))
+            .style
+            .fontWeight;
+      }
+
+      final navigator = tester.state<NavigatorState>(
+        find.byType(Navigator).first,
+      );
+      form.text = 'Unsaved typography draft';
       expect(media().textScaler.scale(15), closeTo(25.5, .001));
-      expect(media().boldText, isTrue);
+      expect(
+        AppTypography.boldTextOf(tester.element(find.byType(_Probe))),
+        isTrue,
+      );
+      expect(await renderedDraftWeight(), FontWeight.w500);
       await controller.setTextSize(AppTextSize.larger);
       await tester.pumpAndSettle();
       expect(media().textScaler.scale(15), closeTo(33.15, .001));
-      expect(media().boldText, isTrue);
+      expect(
+        AppTypography.boldTextOf(tester.element(find.byType(_Probe))),
+        isTrue,
+      );
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(boldText: false);
+      await tester.pumpAndSettle();
+      expect(await renderedDraftWeight(), FontWeight.w400);
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures(boldText: true);
+      await tester.pumpAndSettle();
+      expect(await renderedDraftWeight(), FontWeight.w500);
+      expect(
+        tester.state<NavigatorState>(find.byType(Navigator).first),
+        same(navigator),
+      );
+      expect(form.text, 'Unsaved typography draft');
       await tester.pumpWidget(const SizedBox());
     },
   );

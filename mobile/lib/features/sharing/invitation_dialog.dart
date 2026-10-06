@@ -6,6 +6,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/invitation.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class InvitationDialog extends StatefulWidget {
   const InvitationDialog({
@@ -107,7 +108,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              AppText(
                 team ? 'TEAM INVITATION' : 'SPACE INVITATION',
                 style: TextStyle(
                   color: AppTheme.foreground(context, AppColors.muted),
@@ -116,7 +117,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              AppText(
                 name ?? 'Your invitation',
                 style: const TextStyle(
                   fontSize: 26,
@@ -126,7 +127,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
               ),
               const SizedBox(height: 14),
               if (_preview != null) ...[
-                Text(
+                AppText(
                   joined
                       ? 'You already have access. Open it to continue.'
                       : team
@@ -138,7 +139,10 @@ class _InvitationDialogState extends State<InvitationDialog> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('Access: $access', style: const TextStyle(fontSize: 14)),
+                AppText(
+                  'Access: $access',
+                  style: const TextStyle(fontSize: 14),
+                ),
               ],
               if (_busy)
                 const Padding(
@@ -151,14 +155,14 @@ class _InvitationDialogState extends State<InvitationDialog> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       SizedBox(width: 12),
-                      Text('Checking invitation...'),
+                      AppText('Checking invitation...'),
                     ],
                   ),
                 ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 18),
-                  child: Text(
+                  child: AppText(
                     _error!,
                     style: TextStyle(
                       color: AppTheme.foreground(context, AppColors.danger),
@@ -178,7 +182,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                     ),
                   ),
                   onPressed: _busy ? null : _accept,
-                  child: Text(
+                  child: AppText(
                     _busy
                         ? 'Please wait...'
                         : joined
@@ -189,7 +193,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
               if (_preview == null && !_busy)
                 OutlinedButton(
                   onPressed: _load,
-                  child: const Text('Try again'),
+                  child: const AppText('Try again'),
                 ),
               TextButton(
                 style: TextButton.styleFrom(
@@ -200,7 +204,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                     : () => Navigator.of(
                         context,
                       ).pop(<String, dynamic>{'accepted': false}),
-                child: const Text('Not now'),
+                child: const AppText('Not now'),
               ),
             ],
           ),

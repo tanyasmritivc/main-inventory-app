@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../home/home_overview.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class Note {
   const Note({
@@ -84,7 +85,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
     if (_owner != _currentOwner) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Your account changed. Reopen this note.'),
+          content: AppText('Your account changed. Reopen this note.'),
         ),
       );
       return false;
@@ -94,7 +95,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
       if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Note is empty.')));
+      ).showSnackBar(const SnackBar(content: AppText('Note is empty.')));
       return false;
     }
 
@@ -155,13 +156,13 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
       if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to save note')));
+      ).showSnackBar(const SnackBar(content: AppText('Failed to save note')));
       return false;
     } catch (_) {
       if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to save note')));
+      ).showSnackBar(const SnackBar(content: AppText('Failed to save note')));
       return false;
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -199,18 +200,18 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
           final discard = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Note was not saved'),
-              content: const Text(
+              title: const AppText('Note was not saved'),
+              content: const AppText(
                 'Keep editing to try again, or discard this draft.',
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Keep editing'),
+                  child: const AppText('Keep editing'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Discard'),
+                  child: const AppText('Discard'),
                 ),
               ],
             ),
@@ -223,7 +224,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
         appBar: AppBar(
           backgroundColor: AppTheme.adaptive(context, HomeColors.background),
           surfaceTintColor: Colors.transparent,
-          title: Text(
+          title: AppText(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -232,7 +233,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
           actions: [
             TextButton(
               onPressed: _saving ? null : () => _save(popOnSuccess: true),
-              child: Text(
+              child: AppText(
                 _saving ? 'Saving...' : 'Save',
                 style: TextStyle(
                   color: AppTheme.foreground(context, HomeColors.text),
@@ -249,11 +250,14 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
             child: TextField(
               controller: _controller,
               onChanged: (_) => setState(() {}),
-              style: TextStyle(
-                color: AppTheme.foreground(context, HomeColors.text),
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-                height: 1.5,
+              style: AppTypography.bodyStyleOf(
+                context,
+                TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                ),
               ),
               autofocus: true,
               keyboardType: TextInputType.multiline,
@@ -261,9 +265,12 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
               expands: true,
               decoration: InputDecoration(
                 hintText: 'Start typing...',
-                hintStyle: TextStyle(
-                  color: AppTheme.foreground(context, HomeColors.hint),
-                  fontWeight: FontWeight.w400,
+                hintStyle: AppTypography.bodyStyleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, HomeColors.hint),
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
                 filled: false,
                 border: InputBorder.none,

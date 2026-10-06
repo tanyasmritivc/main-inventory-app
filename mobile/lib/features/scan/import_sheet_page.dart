@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 enum _ImportState { ready, uploading, success }
 
@@ -178,7 +179,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       child: Scaffold(
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         appBar: AppBar(
-          title: const Text('Import Spreadsheet'),
+          title: const AppText('Import Spreadsheet'),
           centerTitle: true,
           backgroundColor: AppTheme.adaptive(context, Colors.black),
           surfaceTintColor: Colors.transparent,
@@ -256,7 +257,7 @@ class _ReadyView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
+              AppText(
                 'Import a spreadsheet',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -266,7 +267,7 @@ class _ReadyView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 'Items will be organized and added to “$location”.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -282,7 +283,7 @@ class _ReadyView extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onChooseFile,
                   icon: const Icon(Icons.folder_open_outlined, size: 20),
-                  label: const Text('Choose Spreadsheet'),
+                  label: const AppText('Choose Spreadsheet'),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.adaptive(context, Colors.white),
                     foregroundColor: AppTheme.adaptive(context, Colors.black),
@@ -291,7 +292,7 @@ class _ReadyView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
+              AppText(
                 'Excel (.xlsx) or CSV · Maximum 10 MB',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -313,7 +314,7 @@ class _ReadyView extends StatelessWidget {
                 color: AppTheme.adaptive(context, const Color(0x4DFF453A)),
               ),
             ),
-            child: Text(
+            child: AppText(
               errorMessage!,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -374,7 +375,7 @@ class _UploadingView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
+            AppText(
               'Importing your inventory…',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -383,7 +384,7 @@ class _UploadingView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               '$filename\nAdding items to “$location”',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -393,7 +394,7 @@ class _UploadingView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppText(
               'Keep FindEZ open while the file is processed.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -444,7 +445,7 @@ class _SuccessView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Text(
+            AppText(
               'Import complete',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
@@ -453,7 +454,7 @@ class _SuccessView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -463,7 +464,7 @@ class _SuccessView extends StatelessWidget {
             ),
             if (result.failures > 0) ...[
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -483,13 +484,13 @@ class _SuccessView extends StatelessWidget {
                   foregroundColor: AppTheme.adaptive(context, Colors.black),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('View Items'),
+                child: const AppText('View Items'),
               ),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: onImportAnother,
-              child: const Text('Import Another'),
+              child: const AppText('Import Another'),
             ),
           ],
         ),
@@ -534,7 +535,7 @@ class _InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   title,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Colors.white),
@@ -543,7 +544,7 @@ class _InfoRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
+                AppText(
                   subtitle,
                   style: TextStyle(
                     color: AppTheme.foreground(context, Color(0x73FFFFFF)),

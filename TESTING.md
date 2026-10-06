@@ -117,6 +117,27 @@ coverage and analysis pass. Before release, repeat cold Home -> Space and
 Find -> Space on the exact final binary, including slow/offline reads and
 account switching. Source/widget results are not a native physical pass.
 
+### App-wide Bold Text hierarchy
+
+`app_typography_test.dart` verifies rendered RichText and EditableText weights:
+app and framework supporting text/inputs use 500 and headings/buttons use 600
+with Bold Text enabled, in both themes. Switching off restores normal body
+weights and caps previous heavy emphasis at 600. Text semantics, layout options,
+monospace styling, OS scaling and other accessibility flags are retained.
+`appearance_widget_test.dart` changes the actual app root's OS preference and
+app text size while retaining its Navigator and an unsaved form draft.
+
+Read the actual Bold Text preference with `AppTypography.boldTextOf`; the
+MediaQuery value below the policy is deliberately false to prevent Flutter from
+replacing every requested weight with 700. Theme controls, editable fields,
+input decorations and Markdown/selectable answers must use the shared policy.
+`home_page_test.dart` retains Light/Dark 320pt regressions through 3.4x with
+scrollable Space rows and reachable Review actions. Run the full mobile suite
+with coverage and analysis (274 tests pass for the app-wide implementation).
+Check the exact native binary across Home, Capture, Ask, Find, Profile, forms
+and dialogs with Bold Text enabled; widget weights alone are not physical
+visual acceptance. The user's build-52 approval covers Home only.
+
 ### Mobile appearance and text size
 
 Run `flutter analyze --no-pub` and `flutter test --no-pub --coverage` from
@@ -143,7 +164,9 @@ on a physical phone: all five tabs, scrolling/keyboard with accessibility text,
 Light/Dark/System and restart persistence, VoiceOver names/touch targets,
 photo/avatar/camera presentation, printed QR scanability, Documents/profile forms
 and item-info swipe/save protection. Do not infer physical passes from widgets
-or simulator screenshots. No Apple upload or submission is authorized yet.
+or simulator screenshots. That historical build-47 check did not authorize Apple upload. The October 5
+request now authorizes TestFlight beta upload; public App Store review remains
+held.
 
 ### Mobile brand assets and duplicate sheet handles
 

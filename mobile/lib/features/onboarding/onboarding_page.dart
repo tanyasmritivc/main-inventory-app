@@ -6,6 +6,7 @@ import '../../core/app_theme.dart';
 import '../../core/ui/findez_wordmark.dart';
 import 'onboarding_graphics.dart';
 import 'onboarding_prefs.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// An account-free introduction. Every example is local, not saved inventory.
 class OnboardingPage extends StatefulWidget {
@@ -138,7 +139,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         TextButton(
                           key: const Key('onboarding-skip'),
                           onPressed: _finishing ? null : _finish,
-                          child: Text(widget.isReplay ? 'Close' : 'Skip'),
+                          child: AppText(widget.isReplay ? 'Close' : 'Skip'),
                         ),
                     ],
                   ),
@@ -215,7 +216,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           eyebrow,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppTheme.textSecondary(context),
@@ -226,7 +227,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         const SizedBox(height: 14),
         Semantics(
           header: true,
-          child: Text(
+          child: AppText(
             title,
             style: TextStyle(
               fontSize: 34,
@@ -238,7 +239,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
         ),
         const SizedBox(height: 14),
-        Text(
+        AppText(
           description,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.textSecondary(context),
@@ -248,7 +249,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         const SizedBox(height: 26),
         _DemoCard(child: demo),
         const SizedBox(height: 10),
-        Text(
+        AppText(
           'Example only. Nothing is saved.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppTheme.textSecondary(context),
@@ -316,7 +317,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   setState(() => _captured = true);
                 },
                 icon: const Icon(CupertinoIcons.camera, size: 20),
-                label: const Text('Try sample photo'),
+                label: const AppText('Try sample photo'),
               )
             : Column(
                 key: const Key('sample-review'),
@@ -328,7 +329,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     detail: 'Suggested item / Review before saving',
                   ),
                   const SizedBox(height: 14),
-                  Text(
+                  AppText(
                     'Where does it live?',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
@@ -342,7 +343,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     'sample-space',
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  AppText(
                     'Example location: $_space. You stay in control of the details.',
                     key: const Key('sample-location'),
                     style: TextStyle(color: AppTheme.textSecondary(context)),
@@ -386,14 +387,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
             key: ValueKey('answer-$_question-$_space'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(answer.$1, style: Theme.of(context).textTheme.titleLarge),
+              AppText(answer.$1, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(CupertinoIcons.location, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       answer.$2,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
@@ -401,7 +402,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 answer.$3,
                 style: TextStyle(color: AppTheme.textSecondary(context)),
               ),
@@ -414,7 +415,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
         ),
         const SizedBox(height: 16),
-        Text(
+        AppText(
           'Answers use what you have saved, not everything around you.',
           style: TextStyle(color: AppTheme.textSecondary(context)),
         ),
@@ -448,7 +449,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         ),
       ),
       const SizedBox(height: 16),
-      Text(
+      AppText(
         'After sign-in, capture your first item or join a Space you have been invited to.',
         style: TextStyle(color: AppTheme.textSecondary(context)),
       ),
@@ -470,7 +471,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             constraints: BoxConstraints(maxWidth: constraints.maxWidth),
             child: ChoiceChip(
               key: ValueKey('$prefix-$index'),
-              label: Text(labels[index]),
+              label: AppText(labels[index]),
               selected: index == selected,
               onSelected: _finishing ? null : (_) => choose(index),
               showCheckmark: false,
@@ -521,7 +522,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         ),
         const SizedBox(height: 16),
         if (_error != null) ...[
-          Text(
+          AppText(
             _error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
@@ -535,7 +536,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           ),
-          child: Text(
+          child: AppText(
             _finishing
                 ? 'Saving...'
                 : _step < 3
@@ -571,7 +572,7 @@ class _DemoLabel extends StatelessWidget {
   final String label;
   @override
   Widget build(BuildContext context) =>
-      Text(label, style: Theme.of(context).textTheme.titleSmall);
+      AppText(label, style: Theme.of(context).textTheme.titleSmall);
 }
 
 class _ExampleItem extends StatelessWidget {
@@ -602,9 +603,9 @@ class _ExampleItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            AppText(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               detail,
               style: TextStyle(color: AppTheme.textSecondary(context)),
             ),

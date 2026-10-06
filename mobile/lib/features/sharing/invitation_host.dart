@@ -9,6 +9,7 @@ import '../../core/invitation.dart';
 import '../teams/team_workspace_page.dart';
 import 'invitation_dialog.dart';
 import 'shared_inventory_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 /// One inbox across cold starts, sign-in, account creation and warm app links.
 class InvitationHost extends StatefulWidget {
@@ -233,7 +234,7 @@ class _InvitationHostState extends State<InvitationHost>
     if (mounted && context != null) {
       ScaffoldMessenger.maybeOf(
         context,
-      )?.showSnackBar(SnackBar(content: Text(text)));
+      )?.showSnackBar(SnackBar(content: AppText(text)));
     }
   }
 

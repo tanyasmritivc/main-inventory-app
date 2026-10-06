@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/space_icon_preferences.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class SpaceIconOption {
   const SpaceIconOption(this.id, this.label, this.icon);
@@ -253,17 +254,17 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           'Space icon',
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           widget.spaceName,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           'Your icon choice is saved for this account on this device only.',
                           style: TextStyle(
                             color: AppTheme.textSecondary(context),
@@ -277,6 +278,7 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
                           ),
                           onChanged: (value) =>
                               setState(() => _query = value.trim()),
+                          style: AppTypography.bodyStyleOf(context),
                         ),
                         const SizedBox(height: 12),
                         _choice(
@@ -319,17 +321,19 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
                         if (options.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Text('No matching icons. Try another name.'),
+                            child: AppText(
+                              'No matching icons. Try another name.',
+                            ),
                           ),
                         if (!_sameAccount)
-                          Text(
+                          AppText(
                             _actor == null
                                 ? 'Sign in to choose a personal Space icon.'
                                 : 'Account changed. Close this picker and reopen it.',
                           ),
                         if (controller.error != null) ...[
                           const SizedBox(height: 16),
-                          Text(
+                          AppText(
                             controller.error!,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
@@ -338,7 +342,7 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
                           if (!controller.loaded)
                             TextButton(
                               onPressed: () => controller.load(force: true),
-                              child: const Text('Retry'),
+                              child: const AppText('Retry'),
                             ),
                         ],
                       ],
@@ -354,11 +358,11 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                        child: const AppText('Cancel'),
                       ),
                       FilledButton(
                         onPressed: enabled ? _save : null,
-                        child: Text(
+                        child: AppText(
                           controller.saving ? 'Saving...' : 'Save icon',
                         ),
                       ),
@@ -411,7 +415,7 @@ class _SpaceIconPickerState extends State<SpaceIconPicker> {
             children: [
               Icon(icon, size: 24),
               const SizedBox(height: 8),
-              Text(label, textAlign: TextAlign.center),
+              AppText(label, textAlign: TextAlign.center),
             ],
           ),
         ),

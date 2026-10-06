@@ -2,6 +2,23 @@
 
 Only decisions supported by current code or repository records belong here.
 
+## 2026-10-05: Shared mobile typography responds to iPhone Bold Text
+
+The user approved the lighter Home hierarchy on build 52, then explicitly
+requested it throughout the app. Keep San Francisco, existing sizes and layouts,
+and intentional monospace code/status text. With the OS setting enabled, use
+Medium (500) for supporting text and editable fields, and Semibold (600) for
+headings, counts and emphasis. With it off, preserve normal weights while
+capping old 700-900 emphasis at 600.
+
+Use `AppTypography` at the app root and `AppText` for app-owned labels. Retain the
+actual device preference in the inherited scope, exposed by
+`AppTypography.boldTextOf`, while suppressing Flutter's blanket 700 override
+below it. Adapt theme controls, fields/decorations, selectable and Markdown
+answers, and nested date-picker themes consistently. Preserve OS-composed text
+scaling, all other accessibility preferences, navigation and drafts; never
+change the user's device setting. This supersedes the Home-only local policy.
+
 ## 2026-10-05: A registered Space destination is not a loaded inventory
 
 Wait for Find's first or active inventory read before constructing the existing
