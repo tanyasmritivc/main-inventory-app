@@ -4,30 +4,41 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Restrained mobile accent consistency (October 5)
 
-- User screenshots showed pastel Team navigation icons beside monochrome main
-  screens. On `fix/mobile-accent-consistency` in
-  `/private/tmp/findez-accent-consistency`, stacked on restock PR #45 (`64c4e47`),
-  candidate `1.0.7 (56)` carries the compact restock work and consistent shared
-  orange accents. Build 55 passed all release checks but was not uploaded after
-  this additional request; build 54 remains the available beta.
-- Use the original Signal orange for filled primary actions and accessible
-  orange foreground derivatives for small labels/icons in Light/Dark. Selected
-  navigation, Capture mode, Find segments, focused inputs and tab indicators
-  share a subtle 8% tint. Home review/purchase actions, Ask attachment/send,
-  Find's create action, Profile's edit link and Team destination icons use the
-  same roles. Surfaces and most text remain neutral. Genuine warning/error/
+- User screenshots showed pastel Team icons beside monochrome main screens.
+  `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
+  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers the compact planner
+  and shared orange accents as internal TestFlight build `1.0.7 (56)`. Build 55
+  passed release checks but was not uploaded after this additional request.
+- Use original Signal orange for filled primary actions and readable orange
+  foreground derivatives for small labels/icons in Light/Dark. Selected
+  navigation, Capture mode and Find segments share an 8% tint; focused inputs
+  and tab indicators use orange foreground. Home review/purchase actions, Ask
+  attachment/send, Find create, Profile editing and Team destination icons use
+  these roles. Surfaces and most text stay neutral. Genuine warning/error/
   success meanings, supplied logos, photos and personal avatar colors remain.
-- Active purchase counts now use this shared orange; text and cart/delivery
-  icons distinguish To buy and On order. This supersedes build 55's unshipped
-  amber/blue purchase palette. Zero counts stay neutral. All stock writes,
-  purchase persistence, permissions, routes, layouts and shared typography are
-  retained; no backend/web/schema/billing/FIND/native lifecycle change.
-- Clean analysis and all 296 mobile tests with coverage pass, including
-  at least 4.5:1 orange text contrast on both themes' neutral/tinted surfaces
-  and existing large-text, navigation, save/error and stock regressions. Phone-sized widget palette previews of all five tabs and Team navigation
-  were inspected in both themes using stubbed data; native acceptance remains
-  deferred. Exact-source CI and signed beta checks are in progress. The user will check the final build through TestFlight; public
-  App Store review/publication remains held.
+- Active purchase counts use orange with To buy/On order labels and cart/delivery
+  icons; zero counts stay neutral. This supersedes build 55's unshipped amber/
+  blue purchase palette. Stock writes, purchase persistence, permissions, routes,
+  layouts and shared typography are retained. No backend/web/schema/billing/
+  FIND/native lifecycle change.
+- Clean analysis and all 296 mobile tests with coverage pass, including at least
+  4.5:1 orange text contrast on neutral/tinted surfaces and existing large-text,
+  navigation, save/error and stock regressions. Both themes' phone-sized widget
+  palette previews of all five tabs, Team and compact restock were inspected
+  with stubbed data. All five exact-source CI jobs pass on `76f4c69`
+  (`37409769032`). Signed archive/export, strict signature, production
+  configuration/public anon credential, supplied-logo checks and Apple
+  validation pass. Apple accepted delivery `bc4a4907-e16a-48c9-b9e8-5ad8aa737993`
+  with no upload errors at 20:41:55 PDT October 5. Processing is COMPLETE/VALID
+  with no errors/warnings; APP_STORE_ELIGIBLE, nonexpired and both internal
+  groups (Testers and Internal Pilot Findez AI) are verified.
+- Final archive/IPA and manifest are preserved under
+  `/private/tmp/findez-build56-native` and
+  `/private/tmp/findez-build56-verification.json`. IPA SHA-256:
+  `25382992f201b12f15927572db86234c0323c2b735decd0366bd71de42e220cc`.
+  The user chose final verification through TestFlight; physical visual/stock/
+  notification acceptance remains unverified. Public App Store review and
+  publication remain held.
 
 ## Restock planner replacement (October 5)
 
@@ -93,7 +104,7 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   22 restock regressions and Light/Dark large-text/contrast checks. All five exact-source CI jobs pass for `5d24797` (`37408858103`), as do
   signed archive/export, signature, configuration/logo and Apple validation.
   Build 55 was not uploaded: the user requested app-wide orange/white/black
-  consistency during validation, and the next beta will include both changes.
+  consistency during validation, and released build 56 now includes both changes.
   Artifacts/manifest are preserved under `/private/tmp/findez-build55-native`
   and `/private/tmp/findez-build55-verification.json`. Physical verification
   follows the user's TestFlight preference.
