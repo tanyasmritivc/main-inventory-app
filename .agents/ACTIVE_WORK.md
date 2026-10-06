@@ -8,12 +8,18 @@ User-authorized authenticated web rebuild on `web/mobile-parity-rebuild` in
 layout only. Preserve marketing, production data, public API contracts and docs.
 Scope: desktop navigation, Home/Spaces/Find, grounded/photo Ask, account-local
 Restock, item galleries, Documents/notes, existing collaboration/utilities, and
-visible loading/retry states. Implementation and local verification are complete;
-172 web tests with coverage, TypeScript, lint with no errors and the production
-webpack build pass. Native Safari verified desktop and 390px flows with fictional
-local data. Draft PR targets `release/appstore-build58` to keep this lane's diff
-web-only; all five PR CI jobs remain the final shared gate. Not deployed. Landing
-page, public API/docs/artifacts, backend, mobile and schema are unchanged.
+visible loading/retry states. Implemented and deployed to the existing self-hosted
+server on runtime `afea356`; systemd `findez-web` uses isolated release
+`/home/ubuntu/findez-web-releases/web-mobile-parity-20261006-live/frontend`.
+The dirty original VM checkout and previous builds remain recoverable. All 176
+web tests with coverage, TypeScript, lint with no errors and production webpack
+build pass. Native Safari verified desktop and 390px flows with fictional local
+data, then actual live Home/Documents/Restock/profile reads. Profile signup
+recursion is covered by a regression. Public HTTPS/static/auth checks pass;
+landing content and all public API/docs/assets remain preserved. Backend,
+mobile and schema are unchanged. Draft PR #47 targets `release/appstore-build58`
+to keep the diff web-only; exact-head shared CI is recorded on the PR. Full live
+file-write, multi-account and collaboration acceptance was not repeated.
 
 Update this file when work starts, changes owner, becomes blocked, or lands. Do not
 list ideas as active work.

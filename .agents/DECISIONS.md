@@ -21,6 +21,16 @@ and downloadable integrations unchanged while their contract tests continue to
 pass. Review this implementation against the build-58 record branch so unrelated
 stacked mobile and landing changes do not enter the web PR diff.
 
+## 2026-10-06: Deploy the web rebuild through existing self hosting
+
+The user's hosting correction is authoritative: production remains the existing
+Ubuntu VM, systemd `findez-web`, Caddy/nginx and self-hosted API/Supabase origins.
+Do not route production work through Render or Vercel. Stage frontend changes in
+an isolated release with actual production configuration, preserve the dirty VM
+checkout and every unrelated deployed file, and switch only the web service's
+working directory with a reversible drop-in. Preserve old immutable assets for
+open tabs and verify original landing content and the public API contract.
+
 ## 2026-10-05: Make the Teams list monochrome after phone feedback
 
 **Decision:** The user rejected build 57's orange Teams list as too orange.

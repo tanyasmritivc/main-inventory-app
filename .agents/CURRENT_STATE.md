@@ -27,7 +27,7 @@
   styling/assets, public API/downloads, backend, mobile, schema, billing and FIND
   are unchanged. Existing API documentation matches the mounted public router,
   so no contract regeneration was required. New form copy avoids em dashes.
-- Local final checks: all 172 web tests across 23 suites with coverage,
+- Local final checks: all 176 web tests across 24 suites with coverage,
   TypeScript, changed-file ESLint (0 errors, 38 warnings) and production webpack
   compilation/prerender pass. Shared exact-head CI status is recorded on the PR.
   Native Safari checks used a fictional local API: desktop Home/navigation, Ask
@@ -35,10 +35,32 @@
   Restock ordering/arrival, Settings, 390px Home/drawer and manual Capture fields.
   No production inventory or membership was mutated. Light/Dark theme logic is
   covered by tests; this browser pass observed the device's dark theme.
-- Source-only and not deployed. Ignored local test environment, generated build
-  output and fictional fixture are not included in the commit. Live multi-account,
-  real file upload/storage permissions and collaboration acceptance remain
-  deployment checks; local stubs are not evidence of production acceptance.
+- Deployed to the existing self-hosted Ubuntu server at `www.findez.ai` on
+  runtime `afea356`. `findez-web` runs from
+  `/home/ubuntu/findez-web-releases/web-mobile-parity-20261006-live/frontend`
+  through its existing Caddy/nginx proxy and production environment. Backend
+  service `findez` is unchanged and both services are active. Vercel and Render
+  are retired hosting targets and were not used for this deployment.
+- The dirty VM checkout was preserved. The isolated release overlays only this
+  lane's frontend changes plus the reviewed theme-provider dependency; it keeps
+  the VM's unrelated import success colors and all 160 other staged files,
+  including deployed public assets/styles/configuration. Production build,
+  self-hosted bundle origins, static assets, anonymous guards, HTTPS public
+  pages, original landing visible text and exact public API JSON are verified.
+- Native Safari observed actual Home data, Documents, Restock and Settings.
+  Profile fields and the saved header/sidebar photo load correctly. Legacy
+  pending signup completion is bounded to one attempt per account per mounted
+  shell to prevent USER_UPDATED recursion and profile API throttling. Save stays
+  disabled until profile loads; photo uploads use the backend's `photo` field.
+  No inventory or membership was mutated during these checks.
+- Previous builds and immutable assets are retained. Deployment, preflight and
+  activation JSON records live beside the release. To restore the original web
+  build, remove only this task's
+  `/etc/systemd/system/findez-web.service.d/web-rebuild.conf`, reload systemd
+  and restart `findez-web`; preserve the existing network drop-in.
+- Ignored local fixture/environment/build output was excluded. Full live
+  multi-account, file upload/storage and collaboration acceptance was not
+  repeated and is not claimed. Purchase plans remain browser-local.
 
 ## October 5 App Store submission
 
