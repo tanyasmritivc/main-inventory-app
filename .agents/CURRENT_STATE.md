@@ -23,8 +23,11 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   weights for app/framework text and editable fields, real-root preference
   changes, retained drafts and Light/Dark Home at 320pt through 3.4x scaling.
   Build 53 signed archive/export, strict signature, production-config and supplied-logo checks pass. All five CI jobs pass on runtime `afc39ac` (`37398740825`), and Apple validation reports no errors. The exact signed app installed before the user elected to check it through TestFlight; native process launch and app-wide visual acceptance are unverified. Apple accepted the upload with no errors at 19:00:26 PDT on October 5;
-  delivery `67e8af04-e91a-4157-aa8d-e758c3222d3b`. Processing is `PROCESSING`
-  with no reported errors/warnings; internal-group availability is pending.
+  delivery `67e8af04-e91a-4157-aa8d-e758c3222d3b`. Apple processing is `COMPLETE`/`VALID` with no errors/warnings;
+  `APP_STORE_ELIGIBLE` and assignment to Testers and Internal Pilot Findez AI
+  are verified. The final signed archive/IPA and verification manifest are
+  preserved under `/private/tmp/findez-build53-native` and
+  `/private/tmp/findez-build53-verification.json`.
   Final IPA SHA-256: `69cf90f89bd2748016fdae6b406d84548f27e7ddac280d775e8a0f913961d6b8`.
 - Historical Home-only build 52 (`d37eb49`) passed 270 mobile tests, analysis,
   all five CI jobs (`37393604316`), signed archive/export, production-config and
