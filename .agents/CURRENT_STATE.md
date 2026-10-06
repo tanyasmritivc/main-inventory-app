@@ -2,6 +2,36 @@
 
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
+## Current TestFlight beta (October 5)
+
+- The user explicitly requested the current mobile build on TestFlight and
+  reaffirmed using the previously supplied logo. That instruction authorizes
+  this beta upload; the public App Store review/submission hold remains.
+- `release/testflight-current` in `/private/tmp/findez-testflight-current` is
+  based on latest mobile head `671e304`, not the older build-29 Interior v2
+  checkout. Runtime source is unchanged; release commit `15b6374` advances the
+  version to `1.0.7 (51)`. It includes appearance/branding, Space icons,
+  physical-memory onboarding, November pilot copy, and the cold Home-to-Space fix.
+- Clean Flutter analysis and all 265 mobile tests pass locally. The underlying
+  runtime `ab506f2` has all five CI jobs passing in `37385102041`. The signed
+  archive/export passes, the final IPA contains the production compile-time
+  configuration, and the Supabase credential is public anon rather than service
+  role. Signature verification and Apple server-side validation pass.
+- The exported package's brand assets match the committed originals. Its three
+  SVGs match the supplied Downloads files except newline formatting, and the
+  native icon uses the supplied orange/white mark flattened onto opaque Ink as
+  already authorized by the branding lane. No logo was redrawn or generated.
+- Apple accepted the upload at 17:01:18 PDT on 2026-10-05. Delivery ID:
+  `c005740a-d226-4fcf-a9f6-149c3968939e`. Apple reports `PROCESSING` with no upload errors or warnings;
+  processed-build/internal group availability is not yet verified. Final IPA SHA-256:
+  `cacb003d9c3f84e733c8a0137b1be499cfa7a8b1ce418af59308a9b30ad601c9`.
+- The paired iPhone reports installed `1.0.7 (51)`, and native process launch
+  passed after it was unlocked. This is not a TestFlight-app download, visual
+  first-frame confirmation, fresh-install/auth check, or full physical acceptance.
+  The existing default-launch-image warning and broader release gates remain.
+- No backend/schema/FIND, Stripe/billing, public website, Apple screenshots,
+  App Store draft selection, review submission, or public release was changed.
+
 ## Cold Home-to-Space correction (October 5)
 
 - `fix/mobile-home-space-cold-load` in `/private/tmp/findez-home-space-fix`,
