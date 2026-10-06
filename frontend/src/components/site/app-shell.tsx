@@ -45,6 +45,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const { data } = await supabase.auth.getSession();
       if (!current()) return;
       const user = data.session?.user;
+      const name = String(
+        user?.user_metadata?.display_name ?? user?.email ?? "",
+      );
+      setUserInitial(name.slice(0, 1).toUpperCase());
+      setUserName(name || "Your account");
+      setAvatarUrl(undefined);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (current() && user && sessionData.session?.user.id === user.id) {
+        accountRequest<{ display_name?: string; avatar_url?: string }>(
+          user.id,
+          "/profile/me",
+        )
+          .then((profile) => {
+            if (current()) {
+              setUserName(profile.display_name || name || "Your account");
+              setUserInitial(
+                (profile.display_name || name).slice(0, 1).toUpperCase(),
+              );
+              setAvatarUrl(profile.avatar_url || undefined);
+            }
+          })
+          .catch(() => {});
+        accountRequest<{ unread_count: number }>(user.id, "/notifications")
+          .then((result) => {
+            if (current()) setUnread(result.unread_count ?? 0);
+          })
+          .catch(() => {});
+      }
+      // Legacy signup completion must not delay the current account's identity.
       const pendingValue = window.localStorage.getItem(
         PENDING_SIGNUP_PROFILE_KEY,
       );
@@ -83,35 +112,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         } catch {
           window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
         }
-      }
-      if (!current()) return;
-      const name = String(
-        user?.user_metadata?.display_name ?? user?.email ?? "",
-      );
-      setUserInitial(name.slice(0, 1).toUpperCase());
-      setUserName(name || "Your account");
-      setAvatarUrl(undefined);
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (current() && user && sessionData.session?.user.id === user.id) {
-        accountRequest<{ display_name?: string; avatar_url?: string }>(
-          user.id,
-          "/profile/me",
-        )
-          .then((profile) => {
-            if (current()) {
-              setUserName(profile.display_name || name || "Your account");
-              setUserInitial(
-                (profile.display_name || name).slice(0, 1).toUpperCase(),
-              );
-              setAvatarUrl(profile.avatar_url || undefined);
-            }
-          })
-          .catch(() => {});
-        accountRequest<{ unread_count: number }>(user.id, "/notifications")
-          .then((result) => {
-            if (current()) setUnread(result.unread_count ?? 0);
-          })
-          .catch(() => {});
       }
     }
     void loadIdentity();

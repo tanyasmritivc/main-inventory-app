@@ -13,6 +13,7 @@ const client = {
   auth: {
     getSession: jest.fn(async () => ({ data: { session } })),
     getUser: jest.fn(() => new Promise(() => {})),
+    updateUser: jest.fn(() => new Promise(() => {})),
     onAuthStateChange: jest.fn(() => ({
       data: { subscription: { unsubscribe: jest.fn() } },
     })),
@@ -101,6 +102,24 @@ test("keeps profile save disabled until confirmed profile fields arrive", async 
     "disabled",
     false,
   );
+});
+test("shows the current profile while legacy signup completion is still pending", async () => {
+  localStorage.setItem(
+    "findez_pending_signup_profile",
+    JSON.stringify({ displayName: "Pending tester" }),
+  );
+  render(
+    <AppShell>
+      <p>Workspace</p>
+    </AppShell>,
+  );
+  await screen.findByRole("link", {
+    name: /Local tester.*Profile and settings/,
+  });
+  expect(client.auth.updateUser).toHaveBeenCalled();
+  expect(
+    screen.getByRole("button", { name: "2 unread notifications" }),
+  ).toBeTruthy();
 });
 test("uploads the photo under the field required by the current backend", async () => {
   render(<SettingsClient email="tester@example.test" />);
