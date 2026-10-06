@@ -365,7 +365,11 @@ class _MainShellState extends State<MainShell> {
             child: CupertinoSlidingSegmentedControl<int>(
               groupValue: _inventorySection,
               backgroundColor: AppTheme.surface2(context),
-              thumbColor: AppTheme.accentTint(context),
+              thumbColor: _inventorySection == 1
+                  ? (AppTheme.isDark(context)
+                        ? const Color(0xFF636366)
+                        : Colors.white)
+                  : AppTheme.accentTint(context),
               children: {
                 0: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -384,7 +388,7 @@ class _MainShellState extends State<MainShell> {
                     'Teams',
                     style: TextStyle(
                       color: _inventorySection == 1
-                          ? AppTheme.accentForeground(context)
+                          ? AppTheme.textPrimary(context)
                           : AppTheme.textSecondary(context),
                     ),
                   ),
@@ -522,6 +526,7 @@ class _MainShellState extends State<MainShell> {
           : ListenableBuilder(
               listenable: _profileStore,
               builder: (context, _) => HomeNavigation(
+                monochrome: _currentPage == 3 && _inventorySection == 1,
                 profileAvatar: _profileStore.photoUrl.isEmpty
                     ? null
                     : MemberAvatar(

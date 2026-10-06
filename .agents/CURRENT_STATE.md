@@ -4,20 +4,20 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Restrained mobile accent consistency (October 5)
 
-- The user's build-56 Teams-list screenshot revealed an omitted name-seeded
-  pastel palette and mint Join icon. Build `1.0.7 (57)` is being prepared in
-  this same PR #46 lane: shared orange for Create/Join/list icons and Team
-  Documents file icons, neutral cards/text and unchanged file-type glyphs.
-  The earlier Team palette preview covered the workspace, not the Teams list.
-  Clean analysis and all 296 mobile tests with coverage pass. Both themes'
-  actual-shell Teams list -> workspace -> Documents previews pass with stubbed
-  data; each file-type glyph and the populated list were visually inspected.
-  Exact-source CI, signed export and Apple release checks for 57 are pending.
-- User screenshots showed pastel Team icons beside monochrome main screens.
-  `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
-  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers the compact planner
-  and shared orange accents as internal TestFlight build `1.0.7 (56)`. Build 55
-  passed release checks but was not uploaded after this additional request.
+- The user then rejected build 57's orange Teams list as too orange and asked
+  for this page to be black and white. Build `1.0.7 (58)` is in progress in the
+  same PR #46 lane: monochrome Create/Join/Team icons, selected Teams segment
+  and bottom-navigation highlight while the Teams list is active. Team
+  Documents file icons also use neutral foreground. Other screens retain the
+  earlier restrained brand roles. Clean analysis/all 296 mobile tests with
+  coverage and actual-shell Light/Dark palette/navigation previews pass.
+  Exact-source CI, signed export and Apple release checks are pending.
+- `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
+  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers corrected internal
+  TestFlight build `1.0.7 (57)` on runtime `6037389`. The user's build-56 screenshot
+  revealed an omitted name-seeded Teams-list palette and mint Join icon.
+  Replace those Create/Join/list icons and Team Documents file-type pastels
+  with shared orange, preserving distinct file glyphs and neutral cards/text.
 - Use original Signal orange for filled primary actions and readable orange
   foreground derivatives for small labels/icons in Light/Dark. Selected
   navigation, Capture mode and Find segments share an 8% tint; focused inputs
@@ -32,22 +32,31 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   FIND/native lifecycle change.
 - Clean analysis and all 296 mobile tests with coverage pass, including at least
   4.5:1 orange text contrast on neutral/tinted surfaces and existing large-text,
-  navigation, save/error and stock regressions. Both themes' phone-sized widget
-  palette previews of all five tabs, Team workspace and compact restock were
-  inspected with stubbed data. All five exact-source CI jobs pass on `76f4c69`
-  (`37409769032`). Signed archive/export, strict signature, production
-  configuration/public anon credential, supplied-logo checks and Apple
-  validation pass. Apple accepted delivery `bc4a4907-e16a-48c9-b9e8-5ad8aa737993`
-  with no upload errors at 20:41:55 PDT October 5. Processing is COMPLETE/VALID
-  with no errors/warnings; APP_STORE_ELIGIBLE, nonexpired and both internal
-  groups (Testers and Internal Pilot Findez AI) are verified.
+  navigation, save/error and stock regressions. Actual-shell Teams list ->
+  workspace -> Documents previews pass in both themes with stubbed data; the
+  populated list and each file-type glyph were visually inspected. Build 56's
+  earlier Team preview covered only its workspace. Main tabs and compact
+  restock previews were also inspected in this lane.
+- All five exact-source CI jobs pass on `6037389` (`37411186717`). Signed archive/
+  export, deep strict signature, packaged production configuration/public anon
+  credential, original SVG/native icon checks and Apple validation pass. A first
+  export missing Dart defines was rejected by the configuration gate before
+  upload; the final export includes verified production configuration.
+  Apple accepted delivery `0b04ed0a-6d71-4202-89f1-b20b5330abf0` with no upload
+  errors at 21:01:06 PDT October 5. Processing is COMPLETE/VALID with no errors/
+  warnings; APP_STORE_ELIGIBLE, nonexpired and both internal groups (Testers
+  and Internal Pilot Findez AI) are verified at 21:05:55 PDT.
 - Final archive/IPA and manifest are preserved under
-  `/private/tmp/findez-build56-native` and
-  `/private/tmp/findez-build56-verification.json`. IPA SHA-256:
-  `25382992f201b12f15927572db86234c0323c2b735decd0366bd71de42e220cc`.
-  The user chose final verification through TestFlight; physical visual/stock/
-  notification acceptance remains unverified. Public App Store review and
-  publication remain held.
+  `/private/tmp/findez-build57-native` and
+  `/private/tmp/findez-build57-verification.json`. IPA SHA-256:
+  `0b18e40fbd4d1f429304748d44f5f0554e5e8300d9c896c09bc545ef3c41f782`.
+  Build 56 remains VALID in both internal groups; its verified artifacts and
+  manifest remain under `/private/tmp/findez-build56-native` and
+  `/private/tmp/findez-build56-verification.json`. Build 55 passed checks but
+  was not uploaded after the additional palette request.
+- The user chose final verification through TestFlight; physical build-57
+  visual/stock/notification acceptance remains unverified. Public App Store
+  review and publication remain held.
 
 ## Restock planner replacement (October 5)
 

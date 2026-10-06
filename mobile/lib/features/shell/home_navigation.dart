@@ -10,11 +10,13 @@ class HomeNavigation extends StatelessWidget {
     required this.onSelected,
     this.destinationKeys = const {},
     this.profileAvatar,
+    this.monochrome = false,
   });
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Map<int, Key> destinationKeys;
   final Widget? profileAvatar;
+  final bool monochrome;
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
@@ -43,7 +45,9 @@ class HomeNavigation extends StatelessWidget {
             height: 56,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
             backgroundColor: Colors.transparent,
-            indicatorColor: AppTheme.accentTint(context),
+            indicatorColor: monochrome
+                ? AppTheme.adaptive(context, const Color(0x18FFFFFF))
+                : AppTheme.accentTint(context),
             indicatorShape: const CircleBorder(),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
@@ -52,7 +56,10 @@ class HomeNavigation extends StatelessWidget {
             destinations: [
               NavigationDestination(
                 icon: Icon(CupertinoIcons.house, key: destinationKeys[0]),
-                selectedIcon: const Icon(CupertinoIcons.house_fill),
+                selectedIcon: Icon(
+                  CupertinoIcons.house_fill,
+                  color: monochrome ? AppTheme.textPrimary(context) : null,
+                ),
                 label: 'Home',
               ),
               NavigationDestination(
@@ -60,17 +67,26 @@ class HomeNavigation extends StatelessWidget {
                   CupertinoIcons.barcode_viewfinder,
                   key: destinationKeys[1],
                 ),
-                selectedIcon: const Icon(CupertinoIcons.barcode_viewfinder),
+                selectedIcon: Icon(
+                  CupertinoIcons.barcode_viewfinder,
+                  color: monochrome ? AppTheme.textPrimary(context) : null,
+                ),
                 label: 'Capture',
               ),
               NavigationDestination(
                 icon: Icon(CupertinoIcons.chat_bubble, key: destinationKeys[2]),
-                selectedIcon: const Icon(CupertinoIcons.chat_bubble_fill),
+                selectedIcon: Icon(
+                  CupertinoIcons.chat_bubble_fill,
+                  color: monochrome ? AppTheme.textPrimary(context) : null,
+                ),
                 label: 'Ask',
               ),
-              const NavigationDestination(
-                icon: Icon(CupertinoIcons.search),
-                selectedIcon: Icon(CupertinoIcons.search_circle_fill),
+              NavigationDestination(
+                icon: const Icon(CupertinoIcons.search),
+                selectedIcon: Icon(
+                  CupertinoIcons.search_circle_fill,
+                  color: monochrome ? AppTheme.textPrimary(context) : null,
+                ),
                 label: 'Find',
               ),
               NavigationDestination(
@@ -82,7 +98,10 @@ class HomeNavigation extends StatelessWidget {
                     ),
                 selectedIcon:
                     profileAvatar ??
-                    const Icon(CupertinoIcons.person_crop_circle_fill),
+                    Icon(
+                      CupertinoIcons.person_crop_circle_fill,
+                      color: monochrome ? AppTheme.textPrimary(context) : null,
+                    ),
                 label: 'Profile',
               ),
             ],

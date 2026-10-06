@@ -346,11 +346,7 @@ class _DocumentRow extends StatelessWidget {
       child: ListTile(
         minVerticalPadding: 16,
         contentPadding: const EdgeInsets.fromLTRB(18, 8, 10, 8),
-        leading: Icon(
-          _icon,
-          color: AppTheme.accentForeground(context),
-          size: 25,
-        ),
+        leading: Icon(_icon, color: AppTheme.textPrimary(context), size: 25),
         title: AppText(
           _filename,
           maxLines: 2,

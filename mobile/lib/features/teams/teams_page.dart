@@ -312,7 +312,7 @@ class _TeamAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, color: AppTheme.accentForeground(context), size: 20),
+              Icon(icon, color: AppTheme.textPrimary(context), size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: AppText(
@@ -342,7 +342,7 @@ class _TeamRow extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       leading: Icon(
         CupertinoIcons.person_2,
-        color: AppTheme.accentForeground(context),
+        color: AppTheme.textPrimary(context),
         size: 22,
       ),
       title: AppText(

@@ -198,8 +198,11 @@ held.
 
 ### Mobile brand assets and duplicate sheet handles
 
-Build 56 uses shared orange action/selection/foreground roles across the main
-screens and Team destinations. Existing brand tests additionally verify at
+Build 57 uses shared orange action/selection/foreground roles across the main
+screens and Team workspace. The build-58 follow-up makes the Teams list and
+Team Documents icons monochrome at the user's request. Check the selected Teams
+segment and bottom-nav highlight while that page is active, then verify other
+tabs keep their shared brand roles. Existing brand tests additionally verify at
 least 4.5:1 small-text contrast on Light/Dark neutral and 8% tinted surfaces.
 Retain semantic stock/error/success colors, original supplied assets, profile
 photos and member colors. Run analysis and the full mobile coverage suite;
