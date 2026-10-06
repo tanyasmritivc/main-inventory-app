@@ -146,7 +146,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
     try {
       if (!accountId) throw new Error("Please sign in again.");
       const form = new FormData();
-      form.append("file", file);
+      form.append("photo", file);
       const result = await accountRequest<{ avatar_url: string }>(
         accountId,
         "/profile/photo",
@@ -276,6 +276,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
           </button>
           <input
             ref={photoRef}
+            aria-label="Profile photo file"
             hidden
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -364,12 +365,14 @@ function SettingsWorkspace({ email }: { email: string | null }) {
           </div>
         </div>
         <footer>
-          <span role="status">{profileMessage}</span>
+          <span role="status">
+            {profileMessage || (!profile ? "Loading profile…" : "")}
+          </span>
           <button
             className="product-button primary"
             type="button"
             onClick={() => void saveProfile()}
-            disabled={savingProfile}
+            disabled={savingProfile || !profile}
           >
             {savingProfile ? "Saving…" : "Save changes"}
           </button>

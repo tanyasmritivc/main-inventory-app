@@ -42,9 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     async function loadIdentity() {
       const ticket = ++generation;
       const current = () => active && ticket === generation;
-      const { data } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getSession();
       if (!current()) return;
-      const user = data.user;
+      const user = data.session?.user;
       const pendingValue = window.localStorage.getItem(
         PENDING_SIGNUP_PROFILE_KEY,
       );
@@ -218,8 +218,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="app-avatar"
             onClick={() => router.push("/settings")}
             aria-label="Open profile"
+            style={
+              avatarUrl
+                ? {
+                    backgroundImage: `url(${avatarUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
           >
-            {userInitial || <UserRound size={16} />}
+            {!avatarUrl && (userInitial || <UserRound size={16} />)}
           </button>
         </header>
         <main id="app-main" className="app-main" tabIndex={-1}>
