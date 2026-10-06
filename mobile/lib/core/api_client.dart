@@ -689,6 +689,22 @@ class ApiClient {
     return resp.data as List<dynamic>;
   }
 
+  /// Uses the existing membership-authorized shared-item update contract.
+  Future<InventoryItem> updateSharedItem({
+    required String shareId,
+    required UpdateItemRequest request,
+  }) async {
+    final data = request.toJson()..remove('item_id');
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/sharing/${Uri.encodeComponent(shareId)}/items/${Uri.encodeComponent(request.itemId)}',
+      data: data,
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      response.data?['item'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
   Future<Map<String, dynamic>> joinShare(String code) async {
     final resp = await _dio.post<Map<String, dynamic>>(
       '/sharing/join',

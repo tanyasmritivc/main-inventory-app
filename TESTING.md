@@ -105,6 +105,34 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Restock planner and stock confirmation
+
+`restock_planner_test.dart` covers migration of old thresholds/checks without
+inventing quantities, untracked belongings, explicit zero thresholds, concurrent
+edits, malformed data, failed disk saves/cache rollback/draft retry, account
+isolation, persisted orders, individual item selection, quantity-only arrival
+writes, duplicate pending actions, server quantity bounds, lost-response retry
+without double addition, item opt-out without deletion, failed reads, shared
+view/edit permissions, and the actual Find banner's immediate ordering update.
+Phone-sized and 320pt/2.6x Light/Dark cases retain the shared Bold Text policy.
+Compact cards retain secondary actions in menus and the local-plan disclosure
+in a reachable Info sheet. Both themes verify distinct amber To buy/blue On
+order labels, neutral zero counts and at least 4.5:1 status contrast on the
+tinted banner background.
+The optional `FINDEZ_VISUAL_QA=true` Dart define renders phone-sized sample
+screens to `/private/tmp/findez-restock-{dark,light}.png` using the Mac system
+font; these are widget renders, not native acceptance.
+
+Clean analysis and all 296 mobile tests with coverage pass locally, including
+22 restock regressions. Run both checks against the final source. Before public
+release, use the exact final TestFlight binary and a disposable inventory item:
+plan a purchase, mark ordered, verify Find/Home counts and restart persistence,
+record the counted arrival, verify server-backed quantity, test offline retry,
+item removal, and shared viewer/editor behavior. Do not mutate the user's real
+inventory as a release probe. Native notification permission, cancellation and
+delivery require a physical check. Planning metadata is intentionally local to
+the signed-in account/device; do not assert cross-device order synchronization.
+
 ### Cold Home-to-Space navigation
 
 `home_space_loading_test.dart` runs the actual MainShell with ready Home data

@@ -223,7 +223,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                     Expanded(
                       child: _DecisionTile(
                         count: widget.lowStock,
-                        label: 'running low',
+                        label: 'to buy',
                         color: AppTheme.adaptive(context, HomeColors.amber),
                         onTap: widget.onOpenLowStock,
                       ),

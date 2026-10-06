@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/restock_plan.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class _CommandItem {
   const _CommandItem({
+    required this.itemId,
     required this.name,
     required this.category,
     required this.quantity,
@@ -19,6 +21,7 @@ class _CommandItem {
     required this.tags,
   });
 
+  final String itemId;
   final String name;
   final String category;
   final int quantity;
@@ -42,6 +45,7 @@ class _CommandItem {
     final created = DateTime.tryParse((json['created_at'] ?? '').toString());
 
     return _CommandItem(
+      itemId: (json['item_id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
       quantity: qty,
@@ -65,6 +69,7 @@ class _ActivityPageState extends State<ActivityPage> {
   bool _loading = true;
   String? _error;
   List<_CommandItem> _items = const [];
+  RestockPlan _restockPlan = const RestockPlan({});
   bool _fadeIn = false;
 
   @override
@@ -96,7 +101,7 @@ class _ActivityPageState extends State<ActivityPage> {
 
       final resp = await supabase
           .from('items')
-          .select('name,category,quantity,location,created_at,tags')
+          .select('item_id,name,category,quantity,location,created_at,tags')
           .eq('user_id', uid)
           .order('created_at', ascending: false);
 
@@ -106,9 +111,11 @@ class _ActivityPageState extends State<ActivityPage> {
           .toList();
 
       final items = rows.map(_CommandItem.fromJson).toList();
-      if (!mounted) return;
+      final plan = await RestockPrefs.load();
+      if (!mounted || supabase.auth.currentUser?.id != uid) return;
       setState(() {
         _items = items;
+        _restockPlan = plan;
         _loading = false;
         _fadeIn = false;
       });
@@ -154,7 +161,9 @@ class _ActivityPageState extends State<ActivityPage> {
   }
 
   List<_CommandItem> _lowStock() {
-    final items = _items.where((e) => e.quantity <= 2).toList();
+    final items = _items
+        .where((e) => _restockPlan.needsBuying(e.itemId, e.quantity))
+        .toList();
     items.sort((a, b) {
       final byQty = a.quantity.compareTo(b.quantity);
       if (byQty != 0) return byQty;
@@ -397,7 +406,7 @@ class _ActivityPageState extends State<ActivityPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _sectionTitle('Low stock'),
+                    _sectionTitle('To buy'),
                     const SizedBox(height: 8),
                     Builder(
                       builder: (context) {

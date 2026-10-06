@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/low_stock_prefs.dart';
+import '../../core/restock_plan.dart';
+import '../shopping/shopping_list_page.dart';
 import '../inventory/item_detail_sheet.dart';
 import 'home_overview.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -30,7 +31,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _spaces = const [];
-  Map<String, int>? _thresholds;
+  RestockPlan? _restockPlan;
   List<Map<String, dynamic>>? _checkouts;
   int? _pendingReviews;
   bool _inventoryAvailable = false;
@@ -69,7 +70,7 @@ class _HomePageState extends State<HomePage> {
       read(widget.api.listSpaces()),
       read(widget.api.getReviewItems(limit: 1)),
       read(widget.api.getActiveCheckouts()),
-      read(LowStockPrefs.loadAll()),
+      read(RestockPrefs.load()),
     ]);
     if (!mounted || generation != _loadGeneration) return;
     final inventory = results[0] as SearchItemsResult?;
@@ -81,20 +82,26 @@ class _HomePageState extends State<HomePage> {
       _pendingReviews =
           (results[2] as ReviewQueueResult?)?.pendingCount ?? _pendingReviews;
       _checkouts = results[3] as List<Map<String, dynamic>>? ?? _checkouts;
-      _thresholds = results[4] as Map<String, int>? ?? _thresholds;
+      _restockPlan = results[4] as RestockPlan? ?? _restockPlan;
       _error = failed
           ? 'Some details could not refresh. Pull down to try again.'
           : null;
     });
   }
 
-  List<InventoryItem> get _lowStock => _items.where((item) {
-    final threshold = _thresholds?[item.itemId];
-    return threshold != null &&
-        threshold > 0 &&
-        item.quantity > 0 &&
-        item.quantity <= threshold;
-  }).toList();
+  List<InventoryItem> get _lowStock => _items
+      .where(
+        (item) =>
+            _restockPlan?.needsBuying(item.itemId, item.quantity) ?? false,
+      )
+      .toList();
+  Future<void> _openRestock() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
+    );
+    if (mounted) await _load();
+  }
+
   List<InventoryItem> get _outOfStock =>
       _items.where((item) => item.quantity <= 0).toList();
   int? get _lentOutCount {
@@ -113,7 +120,7 @@ class _HomePageState extends State<HomePage> {
       api: widget.api,
       item: item,
       spaceName: item.location,
-      initialThreshold: _thresholds?[item.itemId],
+      initialThreshold: _restockPlan?.thresholds[item.itemId],
     );
     if (mounted) unawaited(_load());
   }
@@ -125,7 +132,7 @@ class _HomePageState extends State<HomePage> {
           title: title,
           api: widget.api,
           items: items,
-          thresholds: _thresholds ?? const {},
+          thresholds: _restockPlan?.thresholds ?? const {},
         ),
       ),
     );
@@ -188,7 +195,7 @@ class _HomePageState extends State<HomePage> {
       items: _items,
       spaces: _spaces,
       pendingReviews: _pendingReviews,
-      lowStock: _thresholds == null || !_inventoryAvailable
+      lowStock: _restockPlan == null || !_inventoryAvailable
           ? null
           : _lowStock.length,
       outOfStock: !_inventoryAvailable ? null : _outOfStock.length,
@@ -197,7 +204,7 @@ class _HomePageState extends State<HomePage> {
       onAsk: widget.onOpenAsk,
       onChooseSpace: _chooseSpace,
       onOpenReview: widget.onOpenReview,
-      onOpenLowStock: () => _openAttention('Running low', _lowStock),
+      onOpenLowStock: _openRestock,
       onOpenOutOfStock: () => _openAttention('Out of stock', _outOfStock),
       onOpenCheckouts: widget.onOpenCheckouts,
       onOpenItem: _openItem,

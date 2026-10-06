@@ -381,7 +381,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   int? _parsedThreshold() {
     final raw = int.tryParse(_thresholdCtrl.text.trim());
-    return (raw != null && raw > 0) ? raw : null;
+    return (raw != null && raw >= 0) ? raw : null;
   }
 
   Future<bool> _saveThresholdNow() {
@@ -2735,7 +2735,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 children: [
                   const SizedBox(height: 20),
                   AppText(
-                    'ALERT ME WHEN BELOW',
+                    'ALERT ME AT OR BELOW',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                       fontSize: 11,

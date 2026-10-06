@@ -17,7 +17,7 @@ import '../showcase/tutorial_controller.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/low_stock_prefs.dart';
+import '../shopping/shopping_list_page.dart';
 import '../../core/ui/glass_card.dart';
 import 'confirm_scan_sheet.dart';
 import 'review_capture.dart';
@@ -1291,22 +1291,10 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  Future<void> _onTrackTapped() async {
-    final cat = (_lastSavedCategory ?? '').trim();
-    final loc = (_lastSavedLocation ?? '').trim();
+  Future<void> _openRestockPlanner() async {
     setState(() => _showTrackCategoryPrompt = false);
-    final matching = InventoryCache.items.where((it) {
-      return it.category.trim().toLowerCase() == cat.toLowerCase() &&
-          it.location.trim().toLowerCase() == loc.toLowerCase();
-    }).toList();
-    for (final item in matching) {
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: 1);
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: AppText('Tracking ${matching.length} $cat items in $loc'),
-      ),
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
     );
   }
 
@@ -2010,9 +1998,9 @@ class _ScanPageState extends State<ScanPage> {
                               final loc = (_lastSavedLocation ?? '').trim();
                               final locPart = loc.isEmpty ? '' : ' for $loc';
                               if (cat.isEmpty) {
-                                return 'Track this category?$locPart';
+                                return 'Plan a purchase?$locPart';
                               }
-                              return 'Track "$cat"?$locPart';
+                              return 'Plan a purchase for "$cat"?$locPart';
                             }(),
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.w600),
@@ -2027,8 +2015,8 @@ class _ScanPageState extends State<ScanPage> {
                           child: const AppText('Not now'),
                         ),
                         FilledButton(
-                          onPressed: () => unawaited(_onTrackTapped()),
-                          child: const AppText('Track'),
+                          onPressed: () => unawaited(_openRestockPlanner()),
+                          child: const AppText('Choose items'),
                         ),
                       ],
                     ),

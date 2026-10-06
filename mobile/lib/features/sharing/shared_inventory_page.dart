@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,6 +9,8 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/restock_plan.dart';
+import '../shopping/shopping_list_page.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
@@ -84,8 +85,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   bool _activityLoading = false;
 
   // ── Shopping ─────────────────────────────────────────────────────────────
-  List<_SpaceShoppingItem> _shoppingItems = [];
-  final Set<String> _shoppingChecked = {};
 
   // ── Checkout dialog ──────────────────────────────────────────────────────
   final TextEditingController _joinCodeCtrl = TextEditingController();
@@ -137,6 +136,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   Future<void> _load() async {
     if (!mounted) return;
+    final account = RestockPrefs.accountKey;
     setState(() => _loading = true);
     try {
       final results = await Future.wait([
@@ -145,33 +145,36 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       ]);
       final raw = results[0] as List<dynamic>;
       final thresholds = results[1] as Map<String, int>;
-      if (!mounted) return;
+      if (!mounted || account != RestockPrefs.accountKey) return;
       setState(() {
         _items = raw.cast<Map<String, dynamic>>();
         _thresholds = thresholds;
-        _shoppingItems = _computeShoppingItems(_items, thresholds);
       });
       unawaited(
         LowStockNotifications.evaluate(
-          _items
-              .where((item) {
-                return thresholds[(item['item_id'] ?? '').toString()] != null;
-              })
-              .map((item) {
-                final itemId = (item['item_id'] ?? '').toString();
-                final quantity = (item['quantity'] is num)
-                    ? (item['quantity'] as num).toInt()
-                    : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
-                return LowStockCandidate(
-                  itemId: itemId,
-                  name: (item['name'] ?? 'Item').toString(),
-                  quantity: quantity,
-                  threshold: thresholds[itemId]!,
-                  spaceName: widget.shareName,
-                );
-              })
-              .toList(),
-        ),
+          _items.map((item) {
+            final itemId = (item['item_id'] ?? '').toString();
+            final quantity = (item['quantity'] is num)
+                ? (item['quantity'] as num).toInt()
+                : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
+            return LowStockCandidate(
+              itemId: itemId,
+              name: (item['name'] ?? 'Item').toString(),
+              quantity: quantity,
+              threshold: thresholds[itemId] ?? -1,
+              spaceName: widget.shareName,
+            );
+          }).toList(),
+        ).catchError((Object error) {
+          if (!mounted || account != RestockPrefs.accountKey) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: AppText(
+                'Could not refresh restock notifications. Your purchase plan is saved.',
+              ),
+            ),
+          );
+        }),
       );
     } catch (_) {
       if (mounted) {
@@ -182,48 +185,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  List<_SpaceShoppingItem> _computeShoppingItems(
-    List<Map<String, dynamic>> items,
-    Map<String, int> thresholds,
-  ) {
-    final result = <_SpaceShoppingItem>[];
-    for (final item in items) {
-      final itemId = (item['item_id'] ?? '').toString();
-      final qty = (item['quantity'] is num)
-          ? (item['quantity'] as num).toInt()
-          : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
-      final threshold = thresholds[itemId];
-      final isLow = threshold != null && threshold > 0 && qty <= threshold;
-      final isZero = qty <= 0;
-      if (isLow || isZero) {
-        final needed = threshold != null && threshold > 0
-            ? (threshold * 2) - qty
-            : 5;
-        result.add(
-          _SpaceShoppingItem(
-            item: item,
-            suggestedQty: needed.clamp(1, 999),
-            reason: isZero
-                ? 'Out of stock'
-                : 'Low stock ($qty left, need $threshold+)',
-          ),
-        );
-      }
-    }
-    result.sort((a, b) {
-      final aq = (a.item['quantity'] is num)
-          ? (a.item['quantity'] as num).toInt()
-          : 0;
-      final bq = (b.item['quantity'] is num)
-          ? (b.item['quantity'] as num).toInt()
-          : 0;
-      if (aq <= 0 && bq > 0) return -1;
-      if (bq <= 0 && aq > 0) return 1;
-      return 0;
-    });
-    return result;
   }
 
   Future<void> _loadMembers() async {
@@ -618,7 +579,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           } else {
             _thresholds[invItem.itemId] = nextThreshold;
           }
-          _shoppingItems = _computeShoppingItems(_items, _thresholds);
         });
       },
     );
@@ -920,7 +880,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final invItem = InventoryItem.fromJson(item);
     final threshold = _thresholds[invItem.itemId];
     final isLow =
-        threshold != null && threshold > 0 && invItem.quantity <= threshold;
+        threshold != null && threshold >= 0 && invItem.quantity <= threshold;
     final canEdit = widget.permission == 'edit';
     final imageUrl = (invItem.imageUrl ?? '').trim();
 
@@ -2121,209 +2081,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     );
   }
 
-  Widget _buildShoppingTab() {
-    if (_loading) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: AppTheme.adaptive(context, Colors.white),
-          strokeWidth: 2,
-        ),
-      );
-    }
-    if (_shoppingItems.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              color: AppTheme.foreground(context, Color(0xFF30D158)),
-              size: 48,
-            ),
-            SizedBox(height: 12),
-            AppText(
-              'All stocked up!',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 6),
-            AppText(
-              'No items are low on stock in this space.\nSet thresholds on items to track them.',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                fontSize: 13,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-    final unchecked = _shoppingItems
-        .where(
-          (i) =>
-              !_shoppingChecked.contains((i.item['item_id'] ?? '').toString()),
-        )
-        .toList();
-    final checked = _shoppingItems
-        .where(
-          (i) =>
-              _shoppingChecked.contains((i.item['item_id'] ?? '').toString()),
-        )
-        .toList();
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: unchecked.isEmpty
-                ? AppTheme.adaptive(context, const Color(0x0A30D158))
-                : AppTheme.adaptive(context, const Color(0x0AEF4444)),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: unchecked.isEmpty
-                  ? AppTheme.adaptive(context, const Color(0x3330D158))
-                  : AppTheme.adaptive(context, const Color(0x33EF4444)),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                unchecked.isEmpty
-                    ? Icons.check_circle_outline
-                    : Icons.shopping_cart_outlined,
-                color: unchecked.isEmpty
-                    ? AppTheme.foreground(context, const Color(0xFF30D158))
-                    : AppTheme.foreground(context, const Color(0xFFEF4444)),
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppText(
-                  unchecked.isEmpty
-                      ? 'All items ordered!'
-                      : '${unchecked.length} items need restocking',
-                  style: TextStyle(
-                    color: unchecked.isEmpty
-                        ? AppTheme.foreground(context, const Color(0xFF30D158))
-                        : AppTheme.foreground(context, Colors.white),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (unchecked.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    final text = _buildShoppingShareText(unchecked);
-                    Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: AppText('Shopping list copied to clipboard'),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(context, Colors.white),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: AppText(
-                      'Share',
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.black),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        if (unchecked.isNotEmpty) ...[
-          Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: AppText(
-              'NEEDS RESTOCKING',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.4,
-              ),
-            ),
-          ),
-          ...unchecked.map(
-            (si) => _SpaceShoppingItemCard(
-              shoppingItem: si,
-              isChecked: false,
-              onTap: () => setState(
-                () =>
-                    _shoppingChecked.add((si.item['item_id'] ?? '').toString()),
-              ),
-              onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
-            ),
-          ),
-        ],
-        if (checked.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: AppText(
-              'ORDERED',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.4,
-              ),
-            ),
-          ),
-          ...checked.map(
-            (si) => _SpaceShoppingItemCard(
-              shoppingItem: si,
-              isChecked: true,
-              onTap: () => setState(
-                () => _shoppingChecked.remove(
-                  (si.item['item_id'] ?? '').toString(),
-                ),
-              ),
-              onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
-            ),
-          ),
-        ],
-        const SizedBox(height: 80),
-      ],
-    );
-  }
-
-  String _buildShoppingShareText(List<_SpaceShoppingItem> items) {
-    final buf = StringBuffer();
-    buf.writeln('🛒 ${widget.shareName} — Shopping List');
-    for (final si in items) {
-      final name = (si.item['name'] ?? '').toString();
-      final part = si.item['part_number']?.toString().trim() ?? '';
-      final brand = si.item['brand']?.toString();
-      final primary = part.isNotEmpty ? part : name;
-      final description = part.isNotEmpty ? ' — $name' : '';
-      buf.writeln(
-        '  • $primary$description${brand != null ? ' — $brand' : ''}',
-      );
-      buf.writeln('    Qty: ${si.suggestedQty}  |  ${si.reason}');
-    }
-    return buf.toString();
-  }
+  Widget _buildShoppingTab() => ShoppingListPage(
+    api: widget.api,
+    shareId: widget.shareId,
+    spaceName: widget.shareName,
+    canEditStock: widget.permission == 'edit',
+    embedded: true,
+    onChanged: () => unawaited(_load()),
+  );
 
   // ── Build ────────────────────────────────────────────────────────────────
 
@@ -2454,11 +2219,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ),
             const Tab(text: 'Checked Out'),
             const Tab(text: 'Activity'),
-            Tab(
-              text: _shoppingItems.isNotEmpty
-                  ? 'Shopping (${_shoppingItems.length})'
-                  : 'Shopping',
-            ),
+            const Tab(text: 'Restock'),
           ],
         ),
       ),
@@ -2515,255 +2276,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           color: textColor,
           fontSize: 11,
           fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Shopping item model (space-scoped, Map-backed) ───────────────────────────
-
-class _SpaceShoppingItem {
-  final Map<String, dynamic> item;
-  int suggestedQty;
-  final String reason;
-  _SpaceShoppingItem({
-    required this.item,
-    required this.suggestedQty,
-    required this.reason,
-  });
-}
-
-// ── Shopping item card ────────────────────────────────────────────────────────
-
-class _SpaceShoppingItemCard extends StatelessWidget {
-  const _SpaceShoppingItemCard({
-    required this.shoppingItem,
-    required this.isChecked,
-    required this.onTap,
-    required this.onQtyChanged,
-  });
-
-  final _SpaceShoppingItem shoppingItem;
-  final bool isChecked;
-  final VoidCallback onTap;
-  final ValueChanged<int> onQtyChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final item = shoppingItem.item;
-    final qty = (item['quantity'] is num)
-        ? (item['quantity'] as num).toInt()
-        : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
-    final name = (item['name'] ?? '').toString();
-    final location = (item['location'] ?? '').toString();
-    final partNumber = item['part_number']?.toString().trim() ?? '';
-    final displayName = partNumber.isNotEmpty ? partNumber : name;
-    final displayDescription = partNumber.isNotEmpty ? name : '';
-    final isOut = qty <= 0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isChecked
-              ? AppTheme.adaptive(context, const Color(0x06FFFFFF))
-              : AppTheme.adaptive(context, const Color(0xFF171717)),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isChecked
-                ? AppTheme.adaptive(context, const Color(0xFF171717))
-                : isOut
-                ? AppTheme.adaptive(context, const Color(0x33EF4444))
-                : AppTheme.adaptive(context, const Color(0x33FBBF24)),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: isChecked
-                    ? AppTheme.adaptive(context, const Color(0xFF30D158))
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: isChecked
-                      ? AppTheme.adaptive(context, const Color(0xFF30D158))
-                      : AppTheme.adaptive(context, const Color(0x40FFFFFF)),
-                ),
-              ),
-              child: isChecked
-                  ? Icon(
-                      Icons.check,
-                      color: AppTheme.foreground(context, Colors.white),
-                      size: 14,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    displayName,
-                    style: TextStyle(
-                      color: isChecked
-                          ? AppTheme.foreground(
-                              context,
-                              const Color(0x60FFFFFF),
-                            )
-                          : AppTheme.foreground(context, Colors.white),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      decoration: isChecked ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isOut
-                              ? AppTheme.adaptive(
-                                  context,
-                                  const Color(0x1AEF4444),
-                                )
-                              : AppTheme.adaptive(
-                                  context,
-                                  const Color(0x1AFBBF24),
-                                ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: AppText(
-                          isOut ? 'OUT OF STOCK' : '$qty left',
-                          style: TextStyle(
-                            color: isOut
-                                ? AppTheme.foreground(
-                                    context,
-                                    const Color(0xFFEF4444),
-                                  )
-                                : AppTheme.foreground(
-                                    context,
-                                    const Color(0xFFFBBF24),
-                                  ),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      if (location.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        AppText(
-                          location,
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0x4DFFFFFF),
-                            ),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                      if (displayDescription.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        AppText(
-                          displayDescription,
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0x4DFFFFFF),
-                            ),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (!isChecked) ...[
-                    const SizedBox(height: 4),
-                    AppText(
-                      shoppingItem.reason,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (!isChecked)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (shoppingItem.suggestedQty > 1) {
-                        onQtyChanged(shoppingItem.suggestedQty - 1);
-                      }
-                    },
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0xFF171717),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.remove,
-                        color: AppTheme.foreground(context, Colors.white70),
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 30,
-                    child: AppText(
-                      '${shoppingItem.suggestedQty}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => onQtyChanged(shoppingItem.suggestedQty + 1),
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0xFF171717),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.add,
-                        color: AppTheme.foreground(context, Colors.white70),
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
         ),
       ),
     );

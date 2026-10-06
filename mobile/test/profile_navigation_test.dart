@@ -173,7 +173,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('1 items need restocking'), findsOneWidget);
+          expect(find.text('1 to buy | 0 on order'), findsOneWidget);
           expect(tester.takeException(), isNull);
           final scrollable = find
               .descendant(
@@ -184,7 +184,7 @@ void main() {
           for (final label in [
             'Empty Test',
             'Sample Workshop',
-            '1 low',
+            '1 to buy',
             'New Space',
           ]) {
             await tester.scrollUntilVisible(
