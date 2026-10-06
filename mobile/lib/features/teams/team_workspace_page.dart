@@ -614,15 +614,6 @@ class _WorkspaceRow extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  Color _iconColor(BuildContext context) => switch (title) {
-    'Spaces' => AppTheme.adaptive(context, const Color(0xFF9DD9C7)),
-    'Board' => AppTheme.adaptive(context, const Color(0xFFF0B58A)),
-    'People' => AppTheme.adaptive(context, const Color(0xFFB8A8E8)),
-    'Documents' => AppTheme.adaptive(context, const Color(0xFF9FC3E8)),
-    'Activity' => AppTheme.adaptive(context, const Color(0xFFE5A8B7)),
-    _ => AppTheme.adaptive(context, const Color(0xFFB8B8C0)),
-  };
-
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
@@ -634,7 +625,11 @@ class _WorkspaceRow extends StatelessWidget {
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(icon, color: _iconColor(context), size: 23),
+        leading: Icon(
+          icon,
+          color: AppTheme.accentForeground(context),
+          size: 23,
+        ),
         title: AppText(
           title,
           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -669,10 +664,7 @@ class _InviteCodeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
       decoration: BoxDecoration(
-        color: AppTheme.adaptive(
-          context,
-          AppColors.accent.withValues(alpha: .12),
-        ),
+        color: AppTheme.accentTint(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.adaptive(
@@ -685,7 +677,7 @@ class _InviteCodeCard extends StatelessWidget {
         children: [
           Icon(
             CupertinoIcons.person_badge_plus,
-            color: AppTheme.foreground(context, AppColors.accent),
+            color: AppTheme.accentForeground(context),
           ),
           const SizedBox(width: 12),
           Expanded(

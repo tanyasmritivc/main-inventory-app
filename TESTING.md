@@ -116,8 +116,8 @@ without double addition, item opt-out without deletion, failed reads, shared
 view/edit permissions, and the actual Find banner's immediate ordering update.
 Phone-sized and 320pt/2.6x Light/Dark cases retain the shared Bold Text policy.
 Compact cards retain secondary actions in menus and the local-plan disclosure
-in a reachable Info sheet. Both themes verify distinct amber To buy/blue On
-order labels, neutral zero counts and at least 4.5:1 status contrast on the
+in a reachable Info sheet. Both themes verify orange purchase-state labels,
+neutral zero counts and at least 4.5:1 status contrast on the
 tinted banner background.
 The optional `FINDEZ_VISUAL_QA=true` Dart define renders phone-sized sample
 screens to `/private/tmp/findez-restock-{dark,light}.png` using the Mac system
@@ -197,6 +197,19 @@ request now authorizes TestFlight beta upload; public App Store review remains
 held.
 
 ### Mobile brand assets and duplicate sheet handles
+
+Build 57 uses shared orange action/selection/foreground roles across the main
+screens and Team workspace. The build-58 follow-up makes the Teams list and
+Team Documents icons monochrome at the user's request. Check the selected Teams
+segment and bottom-nav highlight while that page is active, then verify other
+tabs keep their shared brand roles. Existing brand tests additionally verify at
+least 4.5:1 small-text contrast on Light/Dark neutral and 8% tinted surfaces.
+Retain semantic stock/error/success colors, original supplied assets, profile
+photos and member colors. Run analysis and the full mobile coverage suite;
+verify all five tabs, the populated Teams list, Team workspace, each Team
+Documents file-type glyph and compact restock cards visually in
+both themes, then check the final native binary through TestFlight. Widget
+renders do not prove physical visual acceptance or stock/notification behavior.
 
 Local build 48 adds `brand_theme_test.dart`: exact guide tokens, separate stock/
 error roles, Material color-pair contrast, resolved-child and inverted-control

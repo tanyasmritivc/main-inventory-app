@@ -2,6 +2,53 @@
 
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
+## Restrained mobile accents and monochrome Teams (October 5)
+
+- `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
+  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers internal TestFlight
+  build `1.0.7 (58)` on runtime `9657aed`. The user rejected build 57's orange
+  Teams list as too orange and requested this page black and white. Create,
+  Join and Team-row icons now use neutral foreground; the selected Teams
+  segment and bottom-nav highlight are neutral while this page is active.
+  Team Documents icons are also neutral, retaining distinct file-type glyphs.
+- Other main screens and the Team workspace retain restrained orange action/
+  selection roles from build 56: original Signal for filled primary actions,
+  readable orange foreground derivatives and 8% selected-control tints in
+  Light/Dark. Surfaces and most text remain neutral. Genuine warning/error/
+  success meanings, supplied logos, photos and personal avatar colors remain.
+  Active purchase counts retain orange with To buy/On order labels and cart/
+  delivery icons; zero counts stay neutral. Stock writes, purchase persistence,
+  permissions, routes, layouts and shared typography are retained. No backend/
+  web/schema/billing/FIND/native lifecycle change.
+- Clean analysis and all 296 mobile tests with coverage pass, including existing
+  large-text, navigation, save/error, stock and brand-contrast regressions.
+  Both themes' actual-shell previews of the five tabs and populated Teams list
+  -> workspace -> Documents pass with stubbed data. The complete monochrome
+  list/segment/nav and all document glyphs were visually inspected; switching
+  to another tab restores its standard shared brand styling. Build 56's earlier
+  Team preview covered only its workspace and missed the separate list palette.
+- All five exact-source CI jobs pass on `9657aed` (`37412454402`). Signed archive/
+  export, deep strict signature, packaged production configuration/public anon
+  credential, original SVG/native icon checks and Apple validation pass.
+  Apple validation reports no errors at 21:14:19 PDT October 5. Apple accepted
+  delivery `b9a53267-2cea-4d13-903f-a885f9e62351` with no upload errors at
+  21:16:01 PDT October 5. Processing is COMPLETE/VALID with no errors/warnings;
+  APP_STORE_ELIGIBLE, nonexpired and both internal groups (Testers and Internal
+  Pilot Findez AI) are verified at 21:20:52 PDT.
+- Final archive/IPA and manifest are preserved under
+  `/private/tmp/findez-build58-native` and
+  `/private/tmp/findez-build58-verification.json`. IPA SHA-256:
+  `7673f09a77e21194ac41984b8f89f11f3f58bc7b9c581c3c6cd94da410053d4d`.
+  Builds 56 and 57 remain VALID in both internal groups with native artifacts
+  and manifests preserved under `/private/tmp/findez-build56-native`,
+  `/private/tmp/findez-build57-native` and their matching verification JSON files. Build 57's initial missing-defines export was rejected before upload;
+  the verified final IPA and source `6037389` passed all release gates. The
+  user's TestFlight screenshot showed its orange list and rejected that density.
+  Build 55 passed checks but was not uploaded after the palette request.
+- The user chose final verification through TestFlight; physical build-58
+  visual/stock/notification acceptance remains unverified. Public App Store
+  review and publication remain held.
+
 ## Restock planner replacement (October 5)
 
 - The user reported that Shopping List checked items still appeared as needing
@@ -66,7 +113,7 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
   22 restock regressions and Light/Dark large-text/contrast checks. All five exact-source CI jobs pass for `5d24797` (`37408858103`), as do
   signed archive/export, signature, configuration/logo and Apple validation.
   Build 55 was not uploaded: the user requested app-wide orange/white/black
-  consistency during validation, and the next beta will include both changes.
+  consistency during validation, and released build 56 now includes both changes.
   Artifacts/manifest are preserved under `/private/tmp/findez-build55-native`
   and `/private/tmp/findez-build55-verification.json`. Physical verification
   follows the user's TestFlight preference.

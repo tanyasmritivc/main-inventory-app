@@ -36,6 +36,20 @@ void main() {
       expect(theme.colorScheme.onPrimary, BrandColors.ink);
       expect(theme.bottomSheetTheme.showDragHandle, isFalse);
       final scheme = theme.colorScheme;
+      final accent = AppTheme.accentForegroundFor(brightness);
+      for (final background in [
+        theme.scaffoldBackgroundColor,
+        theme.colorScheme.surface,
+        theme.colorScheme.surfaceContainer,
+        AppTheme.accentTintFor(brightness),
+      ]) {
+        expect(_contrast(accent, background), greaterThanOrEqualTo(4.5));
+      }
+      expect(
+        theme.floatingActionButtonTheme.backgroundColor,
+        BrandColors.signal,
+      );
+      expect(theme.floatingActionButtonTheme.foregroundColor, BrandColors.ink);
       for (final pair in [
         (scheme.primary, scheme.onPrimary),
         (scheme.primaryContainer, scheme.onPrimaryContainer),

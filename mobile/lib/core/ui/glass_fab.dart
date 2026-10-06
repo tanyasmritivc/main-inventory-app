@@ -20,46 +20,30 @@ class GlassFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(label == null ? 28 : 18),
-      side: BorderSide(
-        color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
-        width: 1,
-      ),
+      side: BorderSide(color: AppTheme.action, width: 1),
     );
     if (label != null) {
       return FloatingActionButton.extended(
         heroTag: heroTag,
         onPressed: onPressed,
-        foregroundColor: AppTheme.adaptive(context, Colors.white),
-        backgroundColor: AppTheme.adaptive(context, const Color(0xCC2C2C2E)),
+        foregroundColor: AppTheme.onAction,
+        backgroundColor: AppTheme.action,
         elevation: 6,
         highlightElevation: 8,
         shape: shape,
-        icon: Icon(
-          icon,
-          color: AppTheme.foreground(context, Colors.white),
-          size: 22,
-        ),
+        icon: Icon(icon, color: AppTheme.onAction, size: 22),
         label: AppText(label!),
       );
     }
     return FloatingActionButton(
       heroTag: heroTag,
       onPressed: onPressed,
-      foregroundColor: AppTheme.adaptive(context, Colors.white),
-      backgroundColor: AppTheme.adaptive(context, const Color(0xCC2C2C2E)),
+      foregroundColor: AppTheme.onAction,
+      backgroundColor: AppTheme.action,
       elevation: 6,
       highlightElevation: 8,
-      shape: CircleBorder(
-        side: BorderSide(
-          color: AppTheme.adaptive(context, Color(0x33FFFFFF)),
-          width: 1,
-        ),
-      ),
-      child: Icon(
-        icon,
-        color: AppTheme.foreground(context, Colors.white),
-        size: 25,
-      ),
+      shape: CircleBorder(side: BorderSide(color: AppTheme.action, width: 1)),
+      child: Icon(icon, color: AppTheme.onAction, size: 25),
     );
   }
 }

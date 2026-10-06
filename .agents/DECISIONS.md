@@ -1,5 +1,31 @@
 # Decisions
 
+## 2026-10-05: Make the Teams list monochrome after phone feedback
+
+**Decision:** The user rejected build 57's orange Teams list as too orange.
+Use black/white foreground for Create/Join/list icons and the selected Teams
+segment; use a neutral bottom-navigation selection while this page is active.
+Team Documents file icons are also neutral, with distinct file-type glyphs.
+This is a scoped exception to the earlier brand-accent decision. Other main
+screens retain the requested restrained orange roles; preserve photos, shapes,
+routes, typography and all Team/file permissions and behavior.
+
+## 2026-10-05: Use orange consistently and sparingly across mobile
+
+**Decision:** Keep neutral black/white surfaces and text, with the supplied
+Signal orange on primary actions and small destination/selection details across
+Home, Capture, Ask, Find, Profile and Teams. Use an 8% tint for selected controls
+and accessible orange foreground derivatives for small text in each theme.
+Replace Team navigation's pastel category colors with this shared role,
+including the Teams list, Create/Join icons and Team Documents file icons.
+Use distinct file glyphs rather than a separate pastel for each file type.
+
+**Restocking:** Active purchase counts use orange with explicit To buy/On order
+labels and cart/delivery icons; zero counts stay neutral. This supersedes the
+unshipped build-55 amber/blue purchase palette. Preserve semantic warning,
+error and success colors where they describe actual outcomes, along with the
+original logo assets, photos, avatar colors, typography and app behavior.
+
 ## 2026-10-05: Restock planning reflects purchases and confirmed physical stock
 
 **Decision:** Replace disconnected Shopping List checkmarks with persisted To

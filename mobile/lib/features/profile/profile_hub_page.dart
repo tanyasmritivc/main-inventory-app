@@ -214,10 +214,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                             AppText(
                               'Edit profile',
                               style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  HomeColors.secondary,
-                                ),
+                                color: AppTheme.accentForeground(context),
                                 fontSize: 13,
                               ),
                             ),

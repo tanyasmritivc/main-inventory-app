@@ -2049,10 +2049,7 @@ class _ScanPageState extends State<ScanPage> {
                           width: halfW,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                Colors.white.withValues(alpha: 0.12),
-                              ),
+                              color: AppTheme.accentTint(context),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
                                 color: AppTheme.adaptive(
@@ -2089,9 +2086,8 @@ class _ScanPageState extends State<ScanPage> {
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
                                           color: _cameraMode
-                                              ? AppTheme.foreground(
+                                              ? AppTheme.accentForeground(
                                                   context,
-                                                  Colors.white,
                                                 )
                                               : AppTheme.foreground(
                                                   context,
@@ -2155,9 +2151,8 @@ class _ScanPageState extends State<ScanPage> {
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
                                           color: !_cameraMode
-                                              ? AppTheme.foreground(
+                                              ? AppTheme.accentForeground(
                                                   context,
-                                                  Colors.white,
                                                 )
                                               : AppTheme.foreground(
                                                   context,

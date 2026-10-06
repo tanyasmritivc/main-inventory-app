@@ -215,7 +215,9 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.pendingReviews,
                         label: 'need identifying',
-                        color: AppTheme.adaptive(context, HomeColors.orange),
+                        color: widget.pendingReviews == 0
+                            ? AppTheme.textSecondary(context)
+                            : AppTheme.accentForeground(context),
                         onTap: widget.onOpenReview,
                       ),
                     ),
@@ -224,7 +226,9 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.lowStock,
                         label: 'to buy',
-                        color: AppTheme.adaptive(context, HomeColors.amber),
+                        color: widget.lowStock == 0
+                            ? AppTheme.textSecondary(context)
+                            : AppTheme.accentForeground(context),
                         onTap: widget.onOpenLowStock,
                       ),
                     ),

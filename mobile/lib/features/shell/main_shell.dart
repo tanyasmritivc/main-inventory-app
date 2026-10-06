@@ -364,14 +364,34 @@ class _MainShellState extends State<MainShell> {
             width: 210,
             child: CupertinoSlidingSegmentedControl<int>(
               groupValue: _inventorySection,
+              backgroundColor: AppTheme.surface2(context),
+              thumbColor: _inventorySection == 1
+                  ? (AppTheme.isDark(context)
+                        ? const Color(0xFF636366)
+                        : Colors.white)
+                  : AppTheme.accentTint(context),
               children: {
-                0: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText('Spaces'),
+                0: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: AppText(
+                    'Spaces',
+                    style: TextStyle(
+                      color: _inventorySection == 0
+                          ? AppTheme.accentForeground(context)
+                          : AppTheme.textSecondary(context),
+                    ),
+                  ),
                 ),
-                1: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText('Teams'),
+                1: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: AppText(
+                    'Teams',
+                    style: TextStyle(
+                      color: _inventorySection == 1
+                          ? AppTheme.textPrimary(context)
+                          : AppTheme.textSecondary(context),
+                    ),
+                  ),
                 ),
               },
               onValueChanged: (value) {
@@ -506,6 +526,7 @@ class _MainShellState extends State<MainShell> {
           : ListenableBuilder(
               listenable: _profileStore,
               builder: (context, _) => HomeNavigation(
+                monochrome: _currentPage == 3 && _inventorySection == 1,
                 profileAvatar: _profileStore.photoUrl.isEmpty
                     ? null
                     : MemberAvatar(
