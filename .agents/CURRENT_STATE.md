@@ -2,59 +2,50 @@
 
 Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
-## Restrained mobile accent consistency (October 5)
+## Restrained mobile accents and monochrome Teams (October 5)
 
-- The user then rejected build 57's orange Teams list as too orange and asked
-  for this page to be black and white. Build `1.0.7 (58)` is in progress in the
-  same PR #46 lane: monochrome Create/Join/Team icons, selected Teams segment
-  and bottom-navigation highlight while the Teams list is active. Team
-  Documents file icons also use neutral foreground. Other screens retain the
-  earlier restrained brand roles. Clean analysis/all 296 mobile tests with
-  coverage and actual-shell Light/Dark palette/navigation previews pass.
-  Exact-source CI, signed export and Apple release checks are pending.
 - `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
-  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers corrected internal
-  TestFlight build `1.0.7 (57)` on runtime `6037389`. The user's build-56 screenshot
-  revealed an omitted name-seeded Teams-list palette and mint Join icon.
-  Replace those Create/Join/list icons and Team Documents file-type pastels
-  with shared orange, preserving distinct file glyphs and neutral cards/text.
-- Use original Signal orange for filled primary actions and readable orange
-  foreground derivatives for small labels/icons in Light/Dark. Selected
-  navigation, Capture mode and Find segments share an 8% tint; focused inputs
-  and tab indicators use orange foreground. Home review/purchase actions, Ask
-  attachment/send, Find create, Profile editing and Team destination icons use
-  these roles. Surfaces and most text stay neutral. Genuine warning/error/
+  Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers internal TestFlight
+  build `1.0.7 (58)` on runtime `9657aed`. The user rejected build 57's orange
+  Teams list as too orange and requested this page black and white. Create,
+  Join and Team-row icons now use neutral foreground; the selected Teams
+  segment and bottom-nav highlight are neutral while this page is active.
+  Team Documents icons are also neutral, retaining distinct file-type glyphs.
+- Other main screens and the Team workspace retain restrained orange action/
+  selection roles from build 56: original Signal for filled primary actions,
+  readable orange foreground derivatives and 8% selected-control tints in
+  Light/Dark. Surfaces and most text remain neutral. Genuine warning/error/
   success meanings, supplied logos, photos and personal avatar colors remain.
-- Active purchase counts use orange with To buy/On order labels and cart/delivery
-  icons; zero counts stay neutral. This supersedes build 55's unshipped amber/
-  blue purchase palette. Stock writes, purchase persistence, permissions, routes,
-  layouts and shared typography are retained. No backend/web/schema/billing/
-  FIND/native lifecycle change.
-- Clean analysis and all 296 mobile tests with coverage pass, including at least
-  4.5:1 orange text contrast on neutral/tinted surfaces and existing large-text,
-  navigation, save/error and stock regressions. Actual-shell Teams list ->
-  workspace -> Documents previews pass in both themes with stubbed data; the
-  populated list and each file-type glyph were visually inspected. Build 56's
-  earlier Team preview covered only its workspace. Main tabs and compact
-  restock previews were also inspected in this lane.
-- All five exact-source CI jobs pass on `6037389` (`37411186717`). Signed archive/
+  Active purchase counts retain orange with To buy/On order labels and cart/
+  delivery icons; zero counts stay neutral. Stock writes, purchase persistence,
+  permissions, routes, layouts and shared typography are retained. No backend/
+  web/schema/billing/FIND/native lifecycle change.
+- Clean analysis and all 296 mobile tests with coverage pass, including existing
+  large-text, navigation, save/error, stock and brand-contrast regressions.
+  Both themes' actual-shell previews of the five tabs and populated Teams list
+  -> workspace -> Documents pass with stubbed data. The complete monochrome
+  list/segment/nav and all document glyphs were visually inspected; switching
+  to another tab restores its standard shared brand styling. Build 56's earlier
+  Team preview covered only its workspace and missed the separate list palette.
+- All five exact-source CI jobs pass on `9657aed` (`37412454402`). Signed archive/
   export, deep strict signature, packaged production configuration/public anon
-  credential, original SVG/native icon checks and Apple validation pass. A first
-  export missing Dart defines was rejected by the configuration gate before
-  upload; the final export includes verified production configuration.
-  Apple accepted delivery `0b04ed0a-6d71-4202-89f1-b20b5330abf0` with no upload
-  errors at 21:01:06 PDT October 5. Processing is COMPLETE/VALID with no errors/
-  warnings; APP_STORE_ELIGIBLE, nonexpired and both internal groups (Testers
-  and Internal Pilot Findez AI) are verified at 21:05:55 PDT.
+  credential, original SVG/native icon checks and Apple validation pass.
+  Apple validation reports no errors at 21:14:19 PDT October 5. Apple accepted
+  delivery `b9a53267-2cea-4d13-903f-a885f9e62351` with no upload errors at
+  21:16:01 PDT October 5. Processing is COMPLETE/VALID with no errors/warnings;
+  APP_STORE_ELIGIBLE, nonexpired and both internal groups (Testers and Internal
+  Pilot Findez AI) are verified at 21:20:52 PDT.
 - Final archive/IPA and manifest are preserved under
-  `/private/tmp/findez-build57-native` and
-  `/private/tmp/findez-build57-verification.json`. IPA SHA-256:
-  `0b18e40fbd4d1f429304748d44f5f0554e5e8300d9c896c09bc545ef3c41f782`.
-  Build 56 remains VALID in both internal groups; its verified artifacts and
-  manifest remain under `/private/tmp/findez-build56-native` and
-  `/private/tmp/findez-build56-verification.json`. Build 55 passed checks but
-  was not uploaded after the additional palette request.
-- The user chose final verification through TestFlight; physical build-57
+  `/private/tmp/findez-build58-native` and
+  `/private/tmp/findez-build58-verification.json`. IPA SHA-256:
+  `7673f09a77e21194ac41984b8f89f11f3f58bc7b9c581c3c6cd94da410053d4d`.
+  Builds 56 and 57 remain VALID in both internal groups with native artifacts
+  and manifests preserved under `/private/tmp/findez-build56-native`,
+  `/private/tmp/findez-build57-native` and their matching verification JSON files. Build 57's initial missing-defines export was rejected before upload;
+  the verified final IPA and source `6037389` passed all release gates. The
+  user's TestFlight screenshot showed its orange list and rejected that density.
+  Build 55 passed checks but was not uploaded after the palette request.
+- The user chose final verification through TestFlight; physical build-58
   visual/stock/notification acceptance remains unverified. Public App Store
   review and publication remain held.
 
