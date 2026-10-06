@@ -6,6 +6,9 @@ export const APP_THEME_STORAGE_KEY = "findez-app-theme";
 // layout.tsx runs before React and cannot import route metadata.
 export const INTERIOR_PATH_PREFIXES = [
   "/home",
+  "/spaces",
+  "/restock",
+  "/activity",
   "/inventory",
   "/documents",
   "/settings",

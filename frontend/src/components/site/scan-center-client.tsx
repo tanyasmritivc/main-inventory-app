@@ -10,9 +10,10 @@ import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
 
-type ScanMode = "barcode" | "photo" | "spreadsheet" | "bom";
+type ScanMode = "barcode" | "photo" | "manual" | "spreadsheet" | "bom";
 
 function formatFieldName(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
@@ -51,7 +52,9 @@ function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
 }
 
 export function ScanCenterClient() {
-  const { token } = useApiSession();
+  const { token, accountId } = useApiSession();
+  const [manual, setManual] = useState<Record<string, string>>({ category: "Other", quantity: "1" });
+  const owner = useRef(accountId); useEffect(() => { owner.current = accountId; return () => { owner.current = null; }; }, [accountId]);
   const { promptValue } = useAppDialog();
   const [mode, setMode] = useState<ScanMode>("photo");
   const [space, setSpace] = useState("");
@@ -129,10 +132,20 @@ export function ScanCenterClient() {
     finally { setWorking(false); }
   }
 
+  async function saveManual(event: React.FormEvent) {
+    event.preventDefault(); if (!accountId || working) return;
+    const account = accountId, quantity = Number(manual.quantity);
+    if (!space || !manual.name?.trim() || !manual.category?.trim() || !Number.isSafeInteger(quantity) || quantity < 0) { setError("Choose a Space, enter a name and category, and use a whole stock count."); return; }
+    setWorking(true); setError(null); setSaved(null);
+    try { await accountRequest(account, "/add_item", { method: "POST", body: { ...manual, name: manual.name.trim(), category: manual.category.trim(), quantity, location: space, tags: manual.tags?.split(",").map(t => t.trim()).filter(Boolean) || [] } }); if (owner.current === account) { setSaved("Item saved to " + space + "."); setManual({ category: "Other", quantity: "1" }); } }
+    catch (e) { if (owner.current === account) setError(userFacingError(e, "Your item could not be saved. The form is available to retry.")); }
+    finally { if (owner.current === account) setWorking(false); }
+  }
   const modes: Array<{ id: ScanMode; label: string; icon: typeof Barcode }> = [
     { id: "barcode", label: "Barcode", icon: Barcode },
     { id: "photo", label: "Photo", icon: Camera },
-    { id: "spreadsheet", label: "Spreadsheet", icon: FileSpreadsheet },
+    { id: "manual", label: "Manual", icon: Plus },
+    { id: "spreadsheet", label: "Excel, CSV, JSON", icon: FileSpreadsheet },
     { id: "bom", label: "BOM", icon: FolderKanban },
   ];
 
@@ -158,13 +171,15 @@ export function ScanCenterClient() {
       </nav>
 
       <div className="scan-stage">
+        {mode === "manual" && <form onSubmit={event => void saveManual(event)} className="workspace-card" style={{ maxWidth: 760 }}><h2>Add an item</h2><p className="workspace-muted">Save an item directly into the selected Space.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16, marginTop: 20 }}>{[["name", "Name"], ["category", "Category"], ["quantity", "Quantity"], ["brand", "Brand"], ["barcode", "Barcode"], ["part_number", "Part number"], ["subcategory", "Subcategory"], ["tags", "Tags (comma separated)"], ["purchase_source", "Where to buy"]].map(([field, label]) => <label key={field}><span className="workspace-muted">{label}</span><input className="workspace-input" type={field === "quantity" ? "number" : "text"} min={field === "quantity" ? 0 : undefined} step={field === "quantity" ? 1 : undefined} required={["name", "category", "quantity"].includes(field)} value={manual[field] || ""} disabled={working} onChange={event => setManual(current => ({ ...current, [field]: event.target.value }))}/></label>)}</div><label style={{ display: "block", marginTop: 16 }}><span className="workspace-muted">Notes</span><textarea className="workspace-input" value={manual.notes || ""} disabled={working} onChange={event => setManual(current => ({ ...current, notes: event.target.value }))}/></label><button className="workspace-button primary" style={{ marginTop: 20 }} disabled={working || !space}>{working ? "Saving…" : "Save item"}</button></form>}
+
         {mode === "barcode" && (
           <div className="barcode-layout">
             <div className="barcode-camera"><BarcodeScanner onDetected={(value) => { setBarcode(value); void lookup(value); }} /></div>
             <div className="barcode-entry">
               <h2>Barcode</h2>
               <div className="scan-input-action"><input id="barcode-value" className="product-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="UPC, EAN, or manufacturer code" /><button className="product-button primary" disabled={!barcode.trim() || working} onClick={() => void lookup()}>{working ? "Looking up…" : "Look up"}</button></div>
-              {barcodeResult && <div className="scan-result"><strong>Found</strong>{barcodeFields.map(([key, value]) => <div key={key}><span>{formatFieldName(key)}</span><b>{value == null || value === "" ? "—" : String(value)}</b></div>)}</div>}
+              {barcodeResult && <div className="scan-result"><strong>Found</strong>{barcodeFields.map(([key, value]) => <div key={key}><span>{formatFieldName(key)}</span><b>{value == null || value === "" ? "" : String(value)}</b></div>)}<button className="workspace-button" onClick={() => { setManual({ quantity: "1", category: String(barcodeResult.category || "Other"), name: String(barcodeResult.name || barcodeResult.title || ""), brand: String(barcodeResult.brand || ""), barcode, part_number: String(barcodeResult.part_number || "") }); setMode("manual"); }}>Review and add item</button></div>}
             </div>
           </div>
         )}

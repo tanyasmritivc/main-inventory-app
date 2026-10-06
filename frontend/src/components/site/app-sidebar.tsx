@@ -2,70 +2,350 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
-  Boxes, ClipboardCheck, FileStack, FolderKanban, Home, Layers3,
-  ListChecks, LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
+  BookOpen,
+  Boxes,
+  ClipboardCheck,
+  FileStack,
+  FolderKanban,
+  Home,
+  KeyRound,
+  Layers3,
+  ListChecks,
+  LogOut,
+  MapPin,
+  Printer,
+  ScanLine,
+  Settings,
+  ShoppingCart,
+  Sparkles,
+  Users,
+  X,
+  History,
+  Bell,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { FindEZMark } from "@/components/site/findez-brand";
 
 export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "Workspace" | "Tools";
+  section: "FindEZ" | "Your world" | "Organize" | "You";
   keywords?: string[];
 };
-
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { label: "Home", route: "/home", icon: Home, section: "Workspace", keywords: ["spaces", "attention", "recent"] },
-  { label: "Capture", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["photo", "barcode", "spreadsheet", "BOM"] },
-  { label: "Review", route: "/review", icon: ListChecks, section: "Workspace", keywords: ["unresolved", "confirm", "correct"] },
-  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items", "all items"] },
-  { label: "Ask FindEZ", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
-  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Workspace" },
-  { label: "Team", route: "/teams", icon: Users, section: "Workspace", keywords: ["board", "members", "team spaces"] },
-  { label: "Smart collections", route: "/collections", icon: Layers3, section: "Tools", keywords: ["before I buy", "restock", "low stock"] },
-  { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Tools", keywords: ["BOM", "readiness", "reservations"] },
-  { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
-  { label: "Labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
+  {
+    label: "Home",
+    route: "/home",
+    icon: Home,
+    section: "FindEZ",
+    keywords: ["recent", "overview"],
+  },
+  {
+    label: "Capture",
+    route: "/scan",
+    icon: ScanLine,
+    section: "FindEZ",
+    keywords: ["photo", "barcode", "manual", "spreadsheet", "BOM", "import"],
+  },
+  {
+    label: "Ask FindEZ",
+    route: "/assist",
+    icon: Sparkles,
+    section: "FindEZ",
+    keywords: ["chat", "question", "photo"],
+  },
+  {
+    label: "Find",
+    route: "/inventory",
+    icon: Boxes,
+    section: "FindEZ",
+    keywords: ["inventory", "all items", "search"],
+  },
+  {
+    label: "Spaces",
+    route: "/spaces",
+    icon: MapPin,
+    section: "Your world",
+    keywords: ["places", "locations", "shared"],
+  },
+  {
+    label: "Teams",
+    route: "/teams",
+    icon: Users,
+    section: "Your world",
+    keywords: ["workspace", "board", "members"],
+  },
+  {
+    label: "Documents and notes",
+    route: "/documents",
+    icon: FileStack,
+    section: "Your world",
+  },
+  {
+    label: "Review",
+    route: "/review",
+    icon: ListChecks,
+    section: "Organize",
+    keywords: ["uncertain", "confirm", "correct"],
+  },
+  {
+    label: "Restock",
+    route: "/restock",
+    icon: ShoppingCart,
+    section: "Organize",
+    keywords: ["to buy", "on order", "shopping", "low stock", "arrival"],
+  },
+  {
+    label: "Lent items",
+    route: "/checkout",
+    icon: ClipboardCheck,
+    section: "Organize",
+    keywords: ["check-outs", "borrow", "return"],
+  },
+  {
+    label: "Project kits",
+    route: "/project-kits",
+    icon: FolderKanban,
+    section: "Organize",
+    keywords: ["BOM", "readiness", "reservations"],
+  },
+  {
+    label: "Smart collections",
+    route: "/collections",
+    icon: Layers3,
+    section: "Organize",
+    keywords: ["before I buy"],
+  },
+  {
+    label: "Labels",
+    route: "/labels",
+    icon: Printer,
+    section: "Organize",
+    keywords: ["QR", "print", "bins"],
+  },
+  { label: "Activity", route: "/activity", icon: History, section: "You" },
+  {
+    label: "Notifications",
+    route: "/notifications",
+    icon: Bell,
+    section: "You",
+  },
+  {
+    label: "Settings",
+    route: "/settings",
+    icon: Settings,
+    section: "You",
+    keywords: ["profile", "appearance", "account"],
+  },
+  {
+    label: "API keys",
+    route: "/settings/api-keys",
+    icon: KeyRound,
+    section: "You",
+    keywords: ["integration", "developer"],
+  },
+  {
+    label: "API documentation",
+    route: "/docs/api",
+    icon: BookOpen,
+    section: "You",
+    keywords: ["developers", "MCP", "ChatGPT", "OpenAPI"],
+  },
 ];
 
-export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
-  const pathname = usePathname();
-  const router = useRouter();
+export function activeNavItem(pathname: string) {
+  return APP_NAV_ITEMS.filter(
+    (item) => pathname === item.route || pathname.startsWith(`${item.route}/`),
+  ).sort((a, b) => b.route.length - a.route.length)[0];
+}
 
+export function AppSidebar({
+  onToggle,
+  sidebarOpen,
+  userName = "Your account",
+  userInitial = "",
+  avatarUrl,
+}: {
+  onToggle: () => void;
+  sidebarOpen: boolean;
+  userName?: string;
+  userInitial?: string;
+  avatarUrl?: string;
+}) {
+  const pathname = usePathname(),
+    router = useRouter();
+  const container = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth >= 860) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const background = [
+      ...document.querySelectorAll<HTMLElement>(".app-main,.app-topbar"),
+    ];
+    const previousInert = background.map((el) => el.inert);
+    background.forEach((el) => {
+      el.inert = true;
+    });
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const resize = () => {
+      if (window.innerWidth >= 860) {
+        window.removeEventListener("resize", resize);
+        onToggle();
+      }
+    };
+    window.addEventListener("resize", resize);
+    const links = () =>
+      [
+        ...(container.current?.querySelectorAll<HTMLElement>(
+          "a[href],button:not(:disabled)",
+        ) || []),
+      ].filter((el) => el.getClientRects().length);
+    links()[0]?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onToggle();
+      }
+      if (event.key === "Tab") {
+        const elements = links(),
+          first = elements[0],
+          last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.removeEventListener("keydown", keydown);
+      window.removeEventListener("resize", resize);
+      background.forEach((el, i) => {
+        el.inert = previousInert[i];
+      });
+      document.body.style.overflow = previousOverflow;
+      previous?.focus();
+    };
+  }, [sidebarOpen, onToggle]);
+  const [error, setError] = useState("");
+  const active = activeNavItem(pathname);
   async function signOut() {
-    await createSupabaseBrowserClient().auth.signOut();
+    const { error } = await createSupabaseBrowserClient().auth.signOut();
+    if (error) {
+      setError("Could not sign out. Please try again.");
+      return;
+    }
     router.replace("/");
     router.refresh();
   }
-
   return (
     <>
-      {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
-      <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
+      {sidebarOpen && (
+        <button
+          className="app-sidebar-scrim"
+          onClick={onToggle}
+          aria-label="Close navigation"
+        />
+      )}
+      <aside
+        ref={container}
+        id="app-navigation"
+        className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`}
+        aria-label="Primary navigation"
+      >
         <div className="app-sidebar-brand">
-          <Link href="/home" aria-label="FindEZ home"><FindEZMark className="app-sidebar-logo" width={27} height={27} /><span>FindEZ</span></Link>
-          <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
-            <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
+          <Link href="/home" aria-label="FindEZ home">
+            <svg
+              className="app-sidebar-logo"
+              viewBox="0 0 96 96"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M25.25 40.75H55.25V70.75"
+                stroke="currentColor"
+                strokeWidth="11"
+              />
+              <path
+                d="M50.25 30.75H65.25V45.75"
+                stroke="#E8590C"
+                strokeWidth="11"
+              />
+            </svg>
+            <span>
+              Find<span className="app-brand-ez">EZ</span>
+            </span>
+          </Link>
+          <button
+            onClick={onToggle}
+            className="app-icon-button app-mobile-nav-button"
+            aria-label="Close navigation"
+          >
+            <X size={18} />
           </button>
         </div>
         <nav className="app-sidebar-nav">
-          {(["Workspace", "Tools"] as const).map((section) => (
-            <div className="app-nav-section" key={section}>
-              <p>{section}</p>
-              {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {
-                const active = pathname === item.route || pathname.startsWith(`${item.route}/`);
-                const Icon = item.icon;
-                return <Link className={active ? "is-active" : ""} key={item.route} href={item.route} title={!sidebarOpen ? item.label : undefined} aria-label={item.label} onClick={() => { if (window.innerWidth < 860) onToggle(); }}><Icon size={17} strokeWidth={1.8} /><span>{item.label}</span></Link>;
-              })}
-            </div>
-          ))}
+          {(["FindEZ", "Your world", "Organize", "You"] as const).map(
+            (section) => (
+              <div className="app-nav-section" key={section}>
+                <p>{section}</p>
+                {APP_NAV_ITEMS.filter((item) => item.section === section).map(
+                  (item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.route}
+                        href={item.route}
+                        className={
+                          active?.route === item.route ? "is-active" : ""
+                        }
+                        aria-current={
+                          active?.route === item.route ? "page" : undefined
+                        }
+                        onClick={() => {
+                          if (window.innerWidth < 860 && sidebarOpen)
+                            onToggle();
+                        }}
+                      >
+                        <Icon size={17} strokeWidth={1.7} />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  },
+                )}
+              </div>
+            ),
+          )}
         </nav>
         <div className="app-sidebar-footer">
-          <Link className={pathname === "/settings" ? "is-active" : ""} href="/settings" title={!sidebarOpen ? "Settings" : undefined} aria-label="Settings"><Settings size={17} strokeWidth={1.8} /><span>Settings</span></Link>
-          <button type="button" onClick={() => void signOut()} title={!sidebarOpen ? "Sign out" : undefined} aria-label="Sign out"><LogOut size={17} strokeWidth={1.8} /><span>Sign out</span></button>
+          <Link href="/settings" className="app-account-link">
+            <span
+              className="app-avatar"
+              style={
+                avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined
+              }
+            >
+              {!avatarUrl && (userInitial || "?")}
+            </span>
+            <span>
+              <strong>{userName}</strong>
+              <small>Profile and settings</small>
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            aria-label="Sign out"
+          >
+            <LogOut size={16} />
+            <span>Sign out</span>
+          </button>
+          {error && <p role="alert">{error}</p>}
         </div>
       </aside>
     </>

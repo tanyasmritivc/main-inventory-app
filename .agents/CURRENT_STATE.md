@@ -1,5 +1,45 @@
 # Current state
 
+## October 6 authenticated web rebuild
+
+- `web/mobile-parity-rebuild` in `/private/tmp/findez-web-rebuild`, based on
+  submitted build-58 record `1e36998`, rebuilds the web interior around the
+  current mobile behavior. Draft review targets `release/appstore-build58`;
+  targeting the old `main` would include unrelated stacked mobile changes.
+- Permanent desktop labels, grouped feature links, searchable navigation,
+  a narrow-screen focus-trapped drawer, mobile mark and a real-data Home make
+  existing capabilities easier to reach. Spaces remains the actual flat
+  personal/shared model; Teams retains its separate membership model.
+- Find details follow mobile field order and include permission-aware personal,
+  shared and Team photo galleries. Capture has full manual fields and JSON
+  spreadsheet import. Existing review, lending, kits, labels, Team utilities,
+  notifications, API keys and public documentation remain reachable.
+- Ask handles text/photo streams, public answer context, confirmed conversation
+  IDs and visible interrupted/save failures. Documents and notes use existing
+  upload/rename/link/storage routes with retained failed drafts. Account changes
+  discard stale responses and clear private views in rebuilt clients.
+- Restock requires item opt-in, separates To buy from On order and confirms an
+  absolute arrival count before clearing an order. Lost-response retries reuse
+  the saved count. Personal/shared/Team stock uses existing permission-checked
+  routes; viewers cannot write stock. Purchase plans remain account/browser-local
+  and do not sync with mobile purchase plans or another device.
+- Scoped `workspace.css` affects only interior classes. Landing source, its
+  styling/assets, public API/downloads, backend, mobile, schema, billing and FIND
+  are unchanged. Existing API documentation matches the mounted public router,
+  so no contract regeneration was required. New form copy avoids em dashes.
+- Local final checks: all 172 web tests across 23 suites with coverage,
+  TypeScript, changed-file ESLint (0 errors, 38 warnings) and production webpack
+  compilation/prerender pass. Shared exact-head CI status is recorded on the PR.
+  Native Safari checks used a fictional local API: desktop Home/navigation, Ask
+  query handoff and sources, Find/details/photos, document failure/draft retention,
+  Restock ordering/arrival, Settings, 390px Home/drawer and manual Capture fields.
+  No production inventory or membership was mutated. Light/Dark theme logic is
+  covered by tests; this browser pass observed the device's dark theme.
+- Source-only and not deployed. Ignored local test environment, generated build
+  output and fictional fixture are not included in the commit. Live multi-account,
+  real file upload/storage permissions and collaboration acceptance remain
+  deployment checks; local stubs are not evidence of production acceptance.
+
 ## October 5 App Store submission
 
 - The user's final instruction authorizes checking the current mobile app and
