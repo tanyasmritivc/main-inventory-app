@@ -313,47 +313,31 @@ class _DocumentRow extends StatelessWidget {
 
   String get _filename => document['filename']?.toString() ?? 'Untitled file';
 
-  ({IconData icon, Color color}) _appearance(BuildContext context) {
+  IconData get _icon {
     final name = _filename.toLowerCase();
     final mime = document['mime_type']?.toString().toLowerCase() ?? '';
     if (mime.startsWith('image/') ||
         name.endsWith('.png') ||
         name.endsWith('.jpg') ||
         name.endsWith('.jpeg')) {
-      return (
-        icon: CupertinoIcons.photo,
-        color: AppTheme.adaptive(context, const Color(0xFFB9A4E8)),
-      );
+      return CupertinoIcons.photo;
     }
     if (mime == 'application/pdf' || name.endsWith('.pdf')) {
-      return (
-        icon: CupertinoIcons.doc_text,
-        color: AppTheme.adaptive(context, const Color(0xFFE5A0A9)),
-      );
+      return CupertinoIcons.doc_text;
     }
     if (name.endsWith('.csv') ||
         name.endsWith('.xls') ||
         name.endsWith('.xlsx')) {
-      return (
-        icon: CupertinoIcons.table,
-        color: AppTheme.adaptive(context, const Color(0xFF8FCBB6)),
-      );
+      return CupertinoIcons.table;
     }
     if (name.endsWith('.zip') || name.endsWith('.rar')) {
-      return (
-        icon: CupertinoIcons.archivebox,
-        color: AppTheme.adaptive(context, const Color(0xFFE8B184)),
-      );
+      return CupertinoIcons.archivebox;
     }
-    return (
-      icon: CupertinoIcons.doc,
-      color: AppTheme.adaptive(context, const Color(0xFF9FC3E8)),
-    );
+    return CupertinoIcons.doc;
   }
 
   @override
   Widget build(BuildContext context) {
-    final appearance = _appearance(context);
     final size = _formatBytes(document['size_bytes']);
     final date = _formatDate(document['created_at']?.toString());
     return Material(
@@ -362,7 +346,11 @@ class _DocumentRow extends StatelessWidget {
       child: ListTile(
         minVerticalPadding: 16,
         contentPadding: const EdgeInsets.fromLTRB(18, 8, 10, 8),
-        leading: Icon(appearance.icon, color: appearance.color, size: 25),
+        leading: Icon(
+          _icon,
+          color: AppTheme.accentForeground(context),
+          size: 25,
+        ),
         title: AppText(
           _filename,
           maxLines: 2,

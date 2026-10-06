@@ -4,6 +4,15 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Restrained mobile accent consistency (October 5)
 
+- The user's build-56 Teams-list screenshot revealed an omitted name-seeded
+  pastel palette and mint Join icon. Build `1.0.7 (57)` is being prepared in
+  this same PR #46 lane: shared orange for Create/Join/list icons and Team
+  Documents file icons, neutral cards/text and unchanged file-type glyphs.
+  The earlier Team palette preview covered the workspace, not the Teams list.
+  Clean analysis and all 296 mobile tests with coverage pass. Both themes'
+  actual-shell Teams list -> workspace -> Documents previews pass with stubbed
+  data; each file-type glyph and the populated list were visually inspected.
+  Exact-source CI, signed export and Apple release checks for 57 are pending.
 - User screenshots showed pastel Team icons beside monochrome main screens.
   `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`,
   Draft PR #46 stacked on restock PR #45 (`64c4e47`), delivers the compact planner
@@ -24,8 +33,8 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 - Clean analysis and all 296 mobile tests with coverage pass, including at least
   4.5:1 orange text contrast on neutral/tinted surfaces and existing large-text,
   navigation, save/error and stock regressions. Both themes' phone-sized widget
-  palette previews of all five tabs, Team and compact restock were inspected
-  with stubbed data. All five exact-source CI jobs pass on `76f4c69`
+  palette previews of all five tabs, Team workspace and compact restock were
+  inspected with stubbed data. All five exact-source CI jobs pass on `76f4c69`
   (`37409769032`). Signed archive/export, strict signature, production
   configuration/public anon credential, supplied-logo checks and Apple
   validation pass. Apple accepted delivery `bc4a4907-e16a-48c9-b9e8-5ad8aa737993`

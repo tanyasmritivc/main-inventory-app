@@ -221,7 +221,6 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.add,
                   title: 'Create Team',
-                  color: AppTheme.adaptive(context, const Color(0xFFF2F2F7)),
                   onTap: _createTeam,
                 ),
               ),
@@ -230,7 +229,6 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.person_badge_plus,
                   title: 'Join Team',
-                  color: AppTheme.adaptive(context, const Color(0xFF8FCDB2)),
                   onTap: _joinTeam,
                 ),
               ),
@@ -295,13 +293,11 @@ class _TeamAction extends StatelessWidget {
   const _TeamAction({
     required this.icon,
     required this.title,
-    required this.color,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
-  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -316,7 +312,7 @@ class _TeamAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(icon, color: AppTheme.accentForeground(context), size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: AppText(
@@ -338,20 +334,6 @@ class _TeamRow extends StatelessWidget {
   final Map<String, dynamic> team;
   final VoidCallback onTap;
 
-  Color _teamColor(BuildContext context) {
-    final palette = [
-      AppTheme.adaptive(context, Color(0xFFAA9BDE)),
-      AppTheme.adaptive(context, Color(0xFF8FCDB2)),
-      AppTheme.adaptive(context, Color(0xFFE3C36D)),
-      AppTheme.adaptive(context, Color(0xFFD99BBC)),
-      AppTheme.adaptive(context, Color(0xFF91BEDB)),
-      AppTheme.adaptive(context, Color(0xFFE39A86)),
-    ];
-    final identity = '${team['team_id'] ?? ''}:${team['name'] ?? ''}';
-    final seed = identity.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
-    return palette[seed % palette.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     final role = team['role']?.toString() ?? 'member';
@@ -360,7 +342,7 @@ class _TeamRow extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       leading: Icon(
         CupertinoIcons.person_2,
-        color: _teamColor(context),
+        color: AppTheme.accentForeground(context),
         size: 22,
       ),
       title: AppText(

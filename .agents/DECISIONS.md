@@ -6,7 +6,9 @@
 Signal orange on primary actions and small destination/selection details across
 Home, Capture, Ask, Find, Profile and Teams. Use an 8% tint for selected controls
 and accessible orange foreground derivatives for small text in each theme.
-Replace Team navigation's pastel category colors with this shared role.
+Replace Team navigation's pastel category colors with this shared role,
+including the Teams list, Create/Join icons and Team Documents file icons.
+Use distinct file glyphs rather than a separate pastel for each file type.
 
 **Restocking:** Active purchase counts use orange with explicit To buy/On order
 labels and cart/delivery icons; zero counts stay neutral. This supersedes the

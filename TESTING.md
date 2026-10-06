@@ -203,7 +203,8 @@ screens and Team destinations. Existing brand tests additionally verify at
 least 4.5:1 small-text contrast on Light/Dark neutral and 8% tinted surfaces.
 Retain semantic stock/error/success colors, original supplied assets, profile
 photos and member colors. Run analysis and the full mobile coverage suite;
-verify all five tabs, Team navigation and compact restock cards visually in
+verify all five tabs, the populated Teams list, Team workspace, each Team
+Documents file-type glyph and compact restock cards visually in
 both themes, then check the final native binary through TestFlight. Widget
 renders do not prove physical visual acceptance or stock/notification behavior.
 
