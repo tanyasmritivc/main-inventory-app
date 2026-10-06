@@ -39,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true,
       generation = 0;
+    const signupAttempts = new Set<string>();
     async function loadIdentity() {
       const ticket = ++generation;
       const current = () => active && ticket === generation;
@@ -82,7 +83,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const pendingValue = window.localStorage.getItem(
         PENDING_SIGNUP_PROFILE_KEY,
       );
-      if (user && pendingValue) {
+      if (user && pendingValue && !signupAttempts.has(user.id)) {
+        // updateUser emits USER_UPDATED. Do not reenter an unfinished attempt.
+        signupAttempts.add(user.id);
         try {
           const pending = JSON.parse(pendingValue) as Record<string, unknown>;
           const displayName = String(pending.displayName ?? "").trim();

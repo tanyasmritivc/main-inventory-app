@@ -14,9 +14,10 @@ const client = {
     getSession: jest.fn(async () => ({ data: { session } })),
     getUser: jest.fn(() => new Promise(() => {})),
     updateUser: jest.fn(() => new Promise(() => {})),
-    onAuthStateChange: jest.fn(() => ({
-      data: { subscription: { unsubscribe: jest.fn() } },
-    })),
+    onAuthStateChange: jest.fn((listener: (event: string) => void) => {
+      void listener;
+      return { data: { subscription: { unsubscribe: jest.fn() } } };
+    }),
   },
 };
 jest.mock("@/lib/supabase/browser", () => ({
@@ -128,6 +129,16 @@ test("shows the current profile while legacy signup completion is still pending"
     name: /Local tester.*Profile and settings/,
   });
   expect(client.auth.updateUser).toHaveBeenCalled();
+  jest.mocked(accountRequest).mockImplementation(async (_id, path) =>
+    path === "/notifications" ? { unread_count: 2 } : profile,
+  );
+  await act(async () => {
+    client.auth.onAuthStateChange.mock.calls[0][0]("USER_UPDATED");
+  });
+  await screen.findByRole("link", {
+    name: /Local tester.*Profile and settings/,
+  });
+  expect(client.auth.updateUser).toHaveBeenCalledTimes(1);
   expect(
     screen.getByRole("button", { name: "2 unread notifications" }),
   ).toBeTruthy();
