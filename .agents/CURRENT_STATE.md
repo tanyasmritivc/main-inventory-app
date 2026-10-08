@@ -1,5 +1,22 @@
 # Current state
 
+## October 8 web navigation follow-up
+
+- Implemented on `fix/web-navigation-hover` in
+  `/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on `5473694`.
+  The earlier uncommitted temporary checkout was gone and was restored from the
+  committed web rebuild. Workspace routes now share one persistent shell; each
+  page still verifies authentication and keeps its existing URL and parameters.
+- Content skeletons replace the full-page Opening message. Desktop navigation
+  expands from 72px to 232px on mouse entry, collapses on exit, and overlays the
+  page without changing its position. Keyboard labels, tooltips, reduced motion
+  and the narrow focus-trapped drawer remain. Home/profile links close the drawer.
+- Local checks: all 181 web tests with coverage, TypeScript, changed-file ESLint
+  and production webpack build pass. Safari used a fictional localhost account
+  for desktop navigation, labels and mouse/focus behavior. Production deployment
+  and final browser acceptance are pending. Landing, public API/docs, backend,
+  mobile, database and existing deployment configuration are outside this diff.
+
 ## October 6 authenticated web rebuild
 
 - `web/mobile-parity-rebuild` in `/private/tmp/findez-web-rebuild`, based on

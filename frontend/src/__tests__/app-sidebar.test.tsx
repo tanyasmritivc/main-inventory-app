@@ -13,6 +13,7 @@ jest.mock("@/lib/supabase/browser", () => ({
 beforeEach(() => {
   jest.mocked(usePathname).mockReturnValue("/inventory");
   window.innerWidth = 1024;
+  window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
 });
 test("makes every current mobile capability and developer entry point directly reachable", () => {
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
@@ -128,4 +129,48 @@ test("crossing the desktop breakpoint closes an open drawer once", () => {
   fireEvent(window, new Event("resize"));
   fireEvent(window, new Event("resize"));
   expect(onToggle).toHaveBeenCalledTimes(1);
+});
+
+
+test.each(["FindEZ home", "Your account Profile and settings"])(
+  "the narrow drawer closes when following %s",
+  async (name) => {
+    window.innerWidth = 390;
+    const onToggle = jest.fn();
+    render(<AppSidebar onToggle={onToggle} sidebarOpen />);
+    const link = screen.getByRole("link", { name });
+    link.addEventListener("click", (event) => event.preventDefault());
+    await userEvent.click(link);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  },
+);
+
+
+test("a mouse reveals labels on entry and collapses them on exit", () => {
+  const original = window.matchMedia;
+  window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
+  try {
+    render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
+    const sidebar = screen.getByRole("complementary");
+    fireEvent.mouseEnter(sidebar);
+    expect(sidebar.classList.contains("is-hovered")).toBe(true);
+    fireEvent.mouseLeave(sidebar);
+    expect(sidebar.classList.contains("is-hovered")).toBe(false);
+  } finally {
+    window.matchMedia = original;
+  }
+});
+
+test.each([390, 1024])("touch navigation stays controlled by the drawer at %i pixels", (width) => {
+  window.innerWidth = width;
+  const original = window.matchMedia;
+  window.matchMedia = jest.fn(() => ({ matches: false } as MediaQueryList));
+  try {
+    render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
+    const sidebar = screen.getByRole("complementary");
+    fireEvent.mouseEnter(sidebar);
+    expect(sidebar.classList.contains("is-hovered")).toBe(false);
+  } finally {
+    window.matchMedia = original;
+  }
 });

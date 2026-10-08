@@ -1,5 +1,14 @@
 # Active work
 
+## Web navigation and hover sidebar (October 8)
+
+Active on `fix/web-navigation-hover` in
+`/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on web rebuild
+`5473694`. Restore the persistent app layout, keep per-page authentication,
+replace full-page opening messages with content skeletons, and smoothly expand
+the desktop sidebar on hover and collapse on pointer exit. Preserve landing,
+API/docs, backend/mobile and unrelated self-hosted deployment files.
+
 ## Web mobile-parity rebuild (October 6)
 
 User-authorized authenticated web rebuild on `web/mobile-parity-rebuild` in

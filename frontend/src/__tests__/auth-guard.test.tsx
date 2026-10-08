@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser, signInPath } from "@/lib/auth-guard";
 import { ProtectedAppPage } from "@/components/site/protected-app-page";
-import CheckoutPage from "@/app/checkout/page";
+import CheckoutPage from "@/app/(workspace)/checkout/page";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { isProtectedPath, PROTECTED_ROUTE_PREFIXES } from "@/lib/protected-routes";
@@ -125,7 +125,7 @@ describe("protected route inventory", () => {
   }
   const guarded = pages(appDir)
     .filter((file) => /requireUser\(|ProtectedAppPage/.test(readFileSync(file, "utf8")))
-    .map((file) => `/${path.relative(appDir, path.dirname(file))}`.replace(/\[[^\]]+\]/g, "x"));
+    .map((file) => `/${path.relative(appDir, path.dirname(file))}`.replace(/\([^/]+\)\//g, "").replace(/\[[^\]]+\]/g, "x"));
 
   test("every server-guarded page is covered by the middleware list", () => {
     expect(guarded.length).toBeGreaterThan(10);
