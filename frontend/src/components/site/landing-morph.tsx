@@ -10,6 +10,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useMarketingSession } from "@/lib/use-marketing-session";
 
 import { initLanding } from "./landing-morph-engine";
 import "./landing-morph.css";
@@ -27,8 +28,9 @@ const box = (left: string, top: string, width: string, height: string) =>
 
 const arrow = <em className="arw" style={{ fontStyle: "normal" }}>&#8599;</em>;
 
-export function LandingMorph() {
+export function LandingMorph({ initialSignedIn = false }: { initialSignedIn?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const signedIn = useMarketingSession(initialSignedIn);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -54,7 +56,9 @@ export function LandingMorph() {
           <Link href="/docs/api">Developers</Link>
           <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
         </nav>
-        <Link className="cta sm" href="/signup"><span>Get started</span>{arrow}</Link>
+        <Link className="cta sm" href={signedIn ? "/home" : "/signup"}>
+          <span>{signedIn ? "Dashboard" : "Get started"}</span>{arrow}
+        </Link>
       </header>
 
       <main id="top">
@@ -69,11 +73,6 @@ export function LandingMorph() {
                 <span className="ln heroline"><i style={d(80)}>Turn physical objects into</i></span>
                 <span className="ln heroline"><i className="g" style={d(240)}>searchable inventory.</i></span>
               </h1>
-              <div className="hero-foot">
-                <p className="kicker ln heroline">
-                  <i style={d(560)}>Not a chatbot on top of a database. A pipeline that understands what is actually in the room.</i>
-                </p>
-              </div>
             </div>
 
             <div className="a1-layer" id="a1Statements">

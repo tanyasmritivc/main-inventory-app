@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-10-08: Simplify landing copy and return signed-in visitors to Dashboard
+
+The user's later landing-page request supersedes the earlier exclusion for these
+two edits: remove the entire chatbot/database hero paragraph without replacement,
+and show Dashboard linking to `/home` instead of top signup/sign-in actions for
+signed-in visitors. Initialize the landing link from server-verified identity so
+returning visitors see the correct first render; keep marketing links current
+through Supabase browser session events. This is presentation, not an auth guard.
+Existing per-page workspace verification remains authoritative. Preserve the
+landing animation, remaining content, deployed interior and self-hosted release.
+
 ## 2026-10-08: Persist the workspace frame and reveal desktop navigation on hover
 
 Put AppShell and its theme/profile state in `src/app/(workspace)/layout.tsx`.

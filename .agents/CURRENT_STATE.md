@@ -1,5 +1,19 @@
 # Current state
 
+## October 8 landing copy and returning-user navigation
+
+- Implemented on `fix/landing-dashboard-link` in
+  `/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on `f36ca25`.
+  The user explicitly authorizes these landing edits after the interior release.
+  The chatbot/database hero paragraph is removed without replacement. Signed-in
+  landing visitors receive Dashboard linking to `/home` from server-verified
+  identity, then browser session events keep the link current. Shared marketing
+  desktop/mobile actions also replace signup/sign-in with Dashboard.
+- All 184 web tests with coverage, TypeScript, changed-file ESLint and production
+  webpack build pass. Browser/deployment acceptance and final-head CI are pending.
+  Landing animation/assets, authenticated interior, public API, backend, mobile
+  and schema are unchanged. Existing workspace server guards still authorize data.
+
 ## October 8 web navigation follow-up
 
 - Implemented on `fix/web-navigation-hover` in

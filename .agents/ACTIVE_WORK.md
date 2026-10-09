@@ -1,5 +1,16 @@
 # Active work
 
+## Landing copy and returning-user navigation (October 8)
+
+In progress on `fix/landing-dashboard-link` in
+`/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on `f36ca25`.
+The user now explicitly authorizes removing the hero's chatbot/database paragraph
+and replacing top signup/sign-in actions with Dashboard for signed-in visitors.
+The landing uses server-verified initial identity and marketing navigation follows
+browser sign-in/out events. Preserve the deployed interior, animation, public API,
+backend, mobile and production data. Validate and deploy through existing self
+hosting in an isolated release; preserve the original dirty VM checkout.
+
 ## Web navigation and hover sidebar (October 8)
 
 Completed and deployed on `fix/web-navigation-hover` in

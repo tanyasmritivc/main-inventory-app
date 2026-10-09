@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { LandingMorph } from "@/components/site/landing-morph";
 import { MarketingFooter } from "@/components/site/product-marketing";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: { absolute: "FindEZ — Understands your environment" },
@@ -21,10 +22,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <>
-      <LandingMorph />
+      <LandingMorph initialSignedIn={Boolean(user)} />
       <MarketingFooter theme="light" />
     </>
   );

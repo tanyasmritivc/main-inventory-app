@@ -11,6 +11,10 @@ jest.mock("next/navigation", () => ({
   usePathname: () => "/product",
 }));
 
+jest.mock("@/lib/use-marketing-session", () => ({
+  useMarketingSession: () => false,
+}));
+
 test("explains the FindEZ workflow with concrete product information", () => {
   render(<ProductPage />);
 
