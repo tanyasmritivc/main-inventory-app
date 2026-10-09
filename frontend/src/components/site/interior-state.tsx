@@ -1,20 +1,24 @@
 "use client";
 import Link from "next/link";
-export function InteriorLoading({ page }: { page: string }) {
+
+export function InteriorLoading({ page }: { page?: string }) {
   return (
-    <div className="interior-loading" role="status">
-      <h1>Opening {page}…</h1>
-      <p>Loading your account and workspace.</p>
-    </div>
+    <section className="workspace-page-loading" role="status" aria-busy="true">
+      <span className="sr-only">Loading {page || "page"}.</span>
+      <div className="workspace-loading-title" aria-hidden="true" />
+      <div className="workspace-loading-line" aria-hidden="true" />
+      <div className="workspace-loading-body" aria-hidden="true" />
+    </section>
   );
 }
+
 export function InteriorError({ reset }: { reset: () => void }) {
   return (
-    <div className="interior-loading" role="alert">
+    <section className="workspace-page-error" role="alert">
       <h1>This page could not be loaded</h1>
       <p>Try again to reload your workspace.</p>
-      <button onClick={reset}>Try again</button> ·{" "}
+      <button className="workspace-button" onClick={reset}>Try again</button>{" "}
       <Link href="/home">Go to Home</Link>
-    </div>
+    </section>
   );
 }

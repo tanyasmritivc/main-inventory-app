@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-08: Persist the workspace frame and reveal desktop navigation on hover
+
+Put AppShell and its theme/profile state in `src/app/(workspace)/layout.tsx`.
+Keep server authentication in every page, with the existing protected URL list.
+Loading and retry boundaries replace only page content. The route group does not
+change URLs and excludes marketing, authentication and public API documentation.
+
+The user requested a compact desktop icon rail with smooth expansion on mouse
+entry and collapse on exit. Reserve 72px for content and overlay the expanded
+232px sidebar to avoid shifting the page. Keep labels available to keyboard
+focus, retain link names/tooltips, respect reduced motion and preserve the
+narrow-screen focus-trapped drawer. Avoid the old `is-hover-expandable` class,
+which activates conflicting legacy global rules.
+
 ## 2026-10-06: Rebuild the web interior from actual mobile capabilities
 
 Use submitted build 58 as the presentation and behavior authority. The supplied

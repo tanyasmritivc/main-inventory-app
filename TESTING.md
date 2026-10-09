@@ -105,6 +105,20 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Persistent web navigation and hover sidebar
+
+Run the web release checks below. The full suite has 181 tests in 24 suites.
+Sidebar regressions cover desktop mouse entry/exit, touch-only behavior, all
+existing destinations, narrow drawer isolation/focus and Home/profile closure.
+Authentication inventory tests remove route-group folders when checking URLs;
+all protected pages retain server guards and the middleware URL coverage.
+
+Browser-check repeated tab changes, a slow route read and a failed page inside
+the shared frame. Verify desktop expansion/collapse, icon tooltips, keyboard
+labels, stable content position, reduced motion and the narrow drawer. Public
+API documentation must remain public and leaving the workspace must remove its
+theme. Use fictional local data or read-only production views.
+
 ### Authenticated web mobile parity
 
 Run `npm run test:ci`, `npx tsc --noEmit`, ESLint on the changed TypeScript files

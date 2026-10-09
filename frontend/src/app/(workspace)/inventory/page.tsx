@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/site/app-shell";
 import { HomeInventoryClient } from "@/components/site/home-inventory-client";
 import { requireUser } from "@/lib/auth-guard";
 
@@ -16,8 +15,6 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
   await requireUser(destination.pathname + destination.search);
 
   return (
-    <AppShell>
       <HomeInventoryClient mode="inventory" locationFilter={initialSpace} itemFilter={initialItem} />
-    </AppShell>
   );
 }

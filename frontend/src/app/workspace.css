@@ -56,7 +56,7 @@ html.dark .app-frame {
   flex-direction: column;
   padding: 0;
   z-index: 40;
-  transition: none;
+  transition: width 240ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
 }
 .app-frame .app-sidebar-brand {
@@ -774,19 +774,29 @@ html.dark .app-frame {
   font-size: 11px;
   opacity: 0.55;
 }
-.interior-loading {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  margin: 100px auto;
-  padding: 30px;
-  width: min(600px, 90vw);
-  color: #747474;
+.app-frame .workspace-page-loading {
+  min-height: 320px;
 }
-.interior-loading h1 {
-  font-size: 20px;
-  color: #161616;
+.app-frame .workspace-page-loading > div {
+  border-radius: 8px;
+  background: var(--app-surface-2);
 }
-.dark .interior-loading h1 {
-  color: #f3f3f2;
+.app-frame .workspace-loading-title {
+  width: min(240px, 55%);
+  height: 32px;
+  margin-bottom: 14px;
+}
+.app-frame .workspace-loading-line {
+  width: min(420px, 80%);
+  height: 14px;
+  margin-bottom: 32px;
+}
+.app-frame .workspace-loading-body {
+  height: 240px;
+  border: 1px solid var(--app-border);
+}
+.app-frame .workspace-page-error p {
+  color: var(--app-muted);
 }
 @media (max-width: 1100px) {
   .app-frame .app-content {
@@ -1262,4 +1272,91 @@ html .app-frame.is-team-workspace {
   --app-accent-soft: var(--app-surface-2);
   --app-accent-text: var(--app-text);
   --app-primary: var(--app-text);
+}
+
+/* A stable icon rail lets hover reveal labels without moving page content. */
+@media (min-width: 860px) and (hover: hover) and (pointer: fine) {
+  .app-frame .app-sidebar,
+  .app-frame .app-sidebar:hover,
+  .app-frame.sidebar-open .app-sidebar {
+    width: 72px;
+  }
+  .app-frame .app-sidebar.is-hovered,
+  .app-frame .app-sidebar:has(:focus-visible) {
+    width: 232px;
+    box-shadow: 8px 0 24px #0000000d;
+  }
+  .app-frame .app-topbar,
+  .app-frame.sidebar-open .app-topbar {
+    left: 72px;
+  }
+  .app-frame .app-main,
+  .app-frame.sidebar-open .app-main {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+  .app-frame .app-skip-link {
+    left: 86px;
+  }
+  .app-frame .app-sidebar-brand,
+  .app-frame .app-sidebar:not(.is-open) .app-sidebar-brand {
+    padding-left: 21px;
+    padding-right: 21px;
+  }
+  .app-frame .app-sidebar-brand a,
+  .app-frame .app-sidebar-nav a,
+  .app-frame .app-account-link,
+  .app-frame .app-sidebar-footer > button {
+    width: 208px;
+  }
+  .app-frame .app-sidebar-nav,
+  .app-frame .app-sidebar-footer {
+    width: 232px;
+    overflow-x: hidden;
+  }
+  .app-frame .app-sidebar-logo,
+  .app-frame .app-sidebar svg {
+    flex-shrink: 0;
+  }
+  .app-frame .app-sidebar-nav a,
+  .app-frame .app-sidebar:not(.is-open) .app-nav-section > a {
+    padding-left: 15px;
+  }
+  .app-frame .app-nav-section > p,
+  .app-frame .app-sidebar-brand > a > span,
+  .app-frame .app-sidebar-nav a > span,
+  .app-frame .app-account-link > span:last-child,
+  .app-frame .app-sidebar-footer > button > span {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 160ms ease;
+    white-space: nowrap;
+  }
+  .app-frame .app-sidebar.is-hovered .app-nav-section > p,
+  .app-frame .app-sidebar.is-hovered .app-sidebar-brand > a > span,
+  .app-frame .app-sidebar.is-hovered .app-sidebar-nav a > span,
+  .app-frame .app-sidebar.is-hovered .app-account-link > span:last-child,
+  .app-frame .app-sidebar.is-hovered .app-sidebar-footer > button > span,
+  .app-frame .app-sidebar:has(:focus-visible) .app-nav-section > p,
+  .app-frame .app-sidebar:has(:focus-visible) .app-sidebar-brand > a > span,
+  .app-frame .app-sidebar:has(:focus-visible) .app-sidebar-nav a > span,
+  .app-frame .app-sidebar:has(:focus-visible) .app-account-link > span:last-child,
+  .app-frame .app-sidebar:has(:focus-visible) .app-sidebar-footer > button > span {
+    opacity: 1;
+    visibility: visible;
+  }
+  .app-frame .app-sidebar-footer > button,
+  .app-frame .app-sidebar:not(.is-open) .app-sidebar-footer > button {
+    padding-left: 15px;
+  }
+  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-brand > a > span,
+  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-nav a > span,
+  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-account-link > span:last-child,
+  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-footer > button > span {
+    display: none;
+  }
+  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-nav-section > p {
+    color: transparent;
+  }
+
 }

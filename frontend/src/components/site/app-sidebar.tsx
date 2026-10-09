@@ -177,6 +177,7 @@ export function AppSidebar({
   const pathname = usePathname(),
     router = useRouter();
   const container = useRef<HTMLElement>(null);
+  const [hovered, setHovered] = useState(false);
   useEffect(() => {
     if (!sidebarOpen || window.innerWidth >= 860) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -234,6 +235,9 @@ export function AppSidebar({
   }, [sidebarOpen, onToggle]);
   const [error, setError] = useState("");
   const active = activeNavItem(pathname);
+  function closeDrawer() {
+    if (window.innerWidth < 860 && sidebarOpen) onToggle();
+  }
   async function signOut() {
     const { error } = await createSupabaseBrowserClient().auth.signOut();
     if (error) {
@@ -255,11 +259,18 @@ export function AppSidebar({
       <aside
         ref={container}
         id="app-navigation"
-        className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`}
+        className={`app-sidebar ${sidebarOpen ? "is-open" : ""} ${hovered ? "is-hovered" : ""}`}
+        onMouseEnter={() => {
+          if (
+            window.innerWidth >= 860 &&
+            window.matchMedia("(hover: hover) and (pointer: fine)").matches
+          ) setHovered(true);
+        }}
+        onMouseLeave={() => setHovered(false)}
         aria-label="Primary navigation"
       >
         <div className="app-sidebar-brand">
-          <Link href="/home" aria-label="FindEZ home">
+          <Link href="/home" aria-label="FindEZ home" onClick={closeDrawer}>
             <svg
               className="app-sidebar-logo"
               viewBox="0 0 96 96"
@@ -307,10 +318,9 @@ export function AppSidebar({
                         aria-current={
                           active?.route === item.route ? "page" : undefined
                         }
-                        onClick={() => {
-                          if (window.innerWidth < 860 && sidebarOpen)
-                            onToggle();
-                        }}
+                        aria-label={item.label}
+                        title={item.label}
+                        onClick={closeDrawer}
                       >
                         <Icon size={17} strokeWidth={1.7} />
                         <span>{item.label}</span>
@@ -323,7 +333,7 @@ export function AppSidebar({
           )}
         </nav>
         <div className="app-sidebar-footer">
-          <Link href="/settings" className="app-account-link">
+          <Link href="/settings" className="app-account-link" aria-label={`${userName} Profile and settings`} title="Profile and settings" onClick={closeDrawer}>
             <span
               className="app-avatar"
               style={
@@ -341,6 +351,7 @@ export function AppSidebar({
             type="button"
             onClick={() => void signOut()}
             aria-label="Sign out"
+            title="Sign out"
           >
             <LogOut size={16} />
             <span>Sign out</span>

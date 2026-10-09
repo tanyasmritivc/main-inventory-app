@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/site/app-shell";
 import { CollectionsClient } from "@/components/site/collections-client";
 import { requireUser } from "@/lib/auth-guard";
 
@@ -6,7 +5,6 @@ export default async function CollectionsPage() {
   await requireUser("/collections");
 
   return (
-    <AppShell>
       <div className="space-y-6">
         <div>
           <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-[var(--ink)]">Smart Collections</h1>
@@ -14,6 +12,5 @@ export default async function CollectionsPage() {
         </div>
         <CollectionsClient />
       </div>
-    </AppShell>
   );
 }
