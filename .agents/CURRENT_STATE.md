@@ -1,5 +1,53 @@
 # Current state
 
+## October 8 App Review corrections
+
+- Apple rejected 1.0.7 (58), submission
+  `2b777948-f7bd-46b3-bf43-9a2e60074361`, on October 7 with 2.1 AI information
+  questions and 2.3.10 non-iOS screenshot status bars. Confirmed in the signed-in
+  App Store Connect submission page. Public manual-release status is preserved.
+- `fix/app-review-build58`, based on `669dde0`, prepares a policy-only candidate
+  59. The developer confirms model inference runs on their servers. Current
+  backend source and non-secret process settings route to their FIND and agent
+  gateway, without OpenAI runtime/fallback. Submitted 58's mobile policy and Terms
+  still contained obsolete OpenAI text. The replacement describes self-hosted
+  photo/language processing, optional Apple Speech audio transcription, and
+  separately configured external API assistants. Runtime AI behavior is unchanged.
+- Native build-58 iPhone 17 Pro Max and iPad Pro 13-inch (M5) captures use the
+  existing review account's five sample records. No inventory data is modified.
+  One typed sample Ask returns the correct Space and quantity through the live
+  service. Screenshots and review reply are preserved under
+  `Documents/FindEZ/AppStore/1.0.7-review-fix`; originals remain preserved. All six
+  iPhone captures are 1320x2868 and all six iPad captures are 2064x2752. Media
+  Manager confirms every smaller family inherits the primary sets with zero
+  separate uploads. Both native Ask tests return the correct Space and quantity.
+- Runtime `68fbe55` passes Flutter analysis, all 296 tests with coverage,
+  formatting and all five shared CI jobs (`37866116183`). Candidate 59 compiles
+  for the simulator, opens the corrected policy date, and its compiled debug and
+  release text contains the new disclosures without the obsolete OpenAI copy.
+  Signed archive and App Store IPA export pass strict signature, App Store
+  profile, non-debug, production API/auth and push checks. IPA SHA-256 is
+  `f955090596197783cf3818b396c5ee040928f4f9f002630611cea08123e78296`.
+- Draft PR #50 is stacked on #49. The durable folder contains the IPA, response
+  draft, all 12 PNGs, screenshot ZIP, native policy first-page capture and
+  verification records. Initial disk-space failures were recovered by approved
+  rebuildable cache/dependency cleanup; all task-booted simulators were stopped.
+  The user's continuation authorizes delivery of the prepared correction package.
+  Apple validation passes without errors; upload accepted at 18:08:32 PDT,
+  delivery `4c3ff9ff-6310-48cb-91ff-79c89af796d3`. All twelve native screenshots
+  replace the original primary sets, pass Apple's COMPLETE processing and match
+  their source checksums/order. App Store Connect verifies iPad's six direct
+  screenshots and the inherited native iPhone set; no other direct sets exist.
+  The four-answer AI clarification is sent and visible in Messages (2) at
+  18:09 PDT. Apple processing is VALID/APP_STORE_ELIGIBLE, nonexpired, with
+  encryption declaration false and internal state IN_BETA_TESTING. Build 59 is
+  selected for 1.0.7 and the existing submission was resubmitted at 18:19:39 PDT
+  October 8; both submission/version are WAITING_FOR_REVIEW. Release type is
+  MANUAL. Physical-device acceptance has not been repeated; public release
+  remains held. All five CI jobs also pass on docs head `28f8ffe` in run
+  `37867707683`. Durable selected-build, upload-processing and resubmission JSON
+  plus the guarded delivery script record the completed actions.
+
 ## October 8 landing copy and returning-user navigation
 
 - Implemented on `fix/landing-dashboard-link` in

@@ -105,6 +105,20 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### App Review AI clarification and native screenshots
+
+For the policy-only build 59, run Flutter analysis and the existing full mobile
+coverage suite; all five shared CI jobs must pass on the PR head. Inspect the
+corrected policy and Terms in a native simulator build. Preserve AI routing,
+speech permissions, API contracts, lifecycle, appearance and production data.
+Verify the signed archive/export and production configuration before upload.
+Screenshots must come from the actual native iOS UI at Apple-supported sizes,
+using the dedicated sample review account. Visually inspect each original PNG,
+record dimensions/checksums, and inspect all device-size families in Media
+Manager. Distinguish prepared assets from uploaded assets and a local reply
+draft from a sent message. Simulator results do not constitute physical-device
+acceptance.
+
 ### Landing copy and signed-in navigation
 
 Run the full web coverage suite, TypeScript, changed-file ESLint and production
