@@ -6,7 +6,13 @@
   "runtime_commit": "9657aed4400d7935c0be3ffbfc34373e9d8bf488",
   "build_id": "b9a53267-2cea-4d13-903f-a885f9e62351",
   "submission_id": "2b777948-f7bd-46b3-bf43-9a2e60074361",
-  "state": "WAITING_FOR_REVIEW",
+  "state": "REJECTED",
+  "review_date": "2026-10-07",
+  "review_device": "iPad Air 11-inch (M3)",
+  "review_issues": [
+    "2.1 Information Needed: AI operators, integrations and processing disclosures",
+    "2.3.10 Accurate Metadata: non-iOS status bars in screenshots"
+  ],
   "submitted_at": "2026-10-06T06:06:37.722Z",
   "release_type": "MANUAL",
   "app_store_connect_url": "https://appstoreconnect.apple.com/apps/6760401697/distribution/reviewsubmissions",

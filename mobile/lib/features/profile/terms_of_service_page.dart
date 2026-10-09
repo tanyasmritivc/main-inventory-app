@@ -13,7 +13,7 @@ class TermsOfServicePage extends StatelessWidget {
         child: SingleChildScrollView(
           child: AppText("""
 Terms of Service
-Effective: August 30, 2026
+Effective: October 8, 2026
 
 These Terms are an agreement between you and AI Robots Inc (“AI Robots,” “FindEZ,” “we,” “us,” or “our”). By creating an account, accessing, or using the FindEZ mobile app, website, APIs, or related services (the “Service”), you agree to these Terms and our Privacy Policy. If you do not agree, do not use the Service.
 
@@ -53,7 +53,7 @@ AI, barcode, OCR, search, compatibility, quantity, and document outputs may be i
 
 7. Third-Party Services
 
-The Service relies on providers such as Apple, Google, OpenAI, hosting, authentication, storage, email, push-notification, and payment providers. Their services may be governed by separate terms. We are not responsible for third-party services outside our control, but this does not limit obligations we cannot disclaim by law.
+The Service relies on providers such as Apple, Google, hosting, authentication, storage, email, push-notification, and payment providers. Inventory photo and language AI processing runs on FindEZ's own servers. Optional voice input uses Apple's speech recognition service with your device permissions. If you choose to connect an external service through a FindEZ API integration, that service's separate terms apply. We are not responsible for third-party services outside our control, but this does not limit obligations we cannot disclaim by law.
 
 8. Plans, Trials, and Payments
 

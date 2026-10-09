@@ -13,7 +13,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: AppText("""
 Privacy Policy
-Effective: August 30, 2026
+Effective: October 8, 2026
 
 AI Robots Inc (“AI Robots,” “FindEZ,” “we,” “us,” or “our”) provides FindEZ. This Policy explains what information FindEZ collects, why we use it, when it is disclosed, and the choices available to you.
 
@@ -44,7 +44,8 @@ Confirmed, non-personal product facts—such as a manufacturer, part number, or 
 4. When Information Is Disclosed
 
 • Other users: content and activity are visible according to the Team or shared-Space permissions you choose. Owners and managers may manage membership and access. Leaving or losing access does not delete content owned by another user.
-• Service providers: we use providers for hosting, database, authentication, storage, AI processing (including OpenAI), email delivery, push notifications, sign-in, security, and support. They may process information only to perform services for us and must protect it consistently with their agreements and applicable law.
+• Service providers: we use providers for hosting, database, authentication, storage, email delivery, push notifications, sign-in, security, and support. They may process information only to perform services for us and must protect it consistently with their agreements and applicable law.
+• Optional integrations: if you choose to connect an external service using a FindEZ API key, that service can access the inventory permitted by the key. The external service's own terms and privacy policy apply to information it receives. These integrations are not required to use the mobile app.
 • Legal and safety reasons: we may disclose information when reasonably necessary to comply with law, protect rights or safety, investigate abuse, or secure the Service.
 • Business transfers: information may be transferred as part of a merger, financing, acquisition, reorganization, bankruptcy, or sale of assets, subject to this Policy or notice of materially different practices.
 
@@ -52,7 +53,11 @@ We do not sell personal information. We do not share personal information for cr
 
 5. AI Processing
 
-When you use an AI feature, the content needed to answer the request may be sent to an AI provider. Do not submit information you are not authorized to disclose. FindEZ uses business/API services; provider handling and limited security or abuse-monitoring retention may apply under the provider’s terms. We do not permit AI providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
+FindEZ's inventory photo and language AI features run on servers operated by AI Robots Inc. Inventory photos are processed by our self-hosted FIND vision pipeline. Language features send your question and the relevant inventory context to our dedicated agent gateway and self-hosted models. This processing takes place on our servers; we do not send this content to external AI providers for inference. Some models are developed by third parties, but we host and run them ourselves. Do not submit information you are not authorized to disclose.
+
+Optional voice input uses Apple's speech recognition service. If you grant speech-recognition and microphone permission and use voice input, audio may be sent to Apple for transcription under Apple's terms and privacy practices. The resulting text is placed in the question field. You can type your question instead and revoke these permissions in iOS Settings.
+
+If you separately choose to connect an external AI assistant through a FindEZ API integration, the assistant can receive the inventory allowed by your API key to answer your requests. That optional connection is separate from the mobile app's built-in AI processing and can be revoked in API key settings.
 
 6. Retention and Deletion
 

@@ -1,5 +1,21 @@
 # Active work
 
+## App Review clarification and native screenshots (October 8)
+
+Active on `fix/app-review-build58` in
+`/Users/tanyasmritivictorcharles/dev/findez-app-review`, based on `669dde0`.
+Apple rejected submission `2b777948-f7bd-46b3-bf43-9a2e60074361` for AI information
+and non-iOS screenshot status bars. The developer confirms that FIND and agent
+model inference run on their own servers. Source and running non-secret backend
+configuration match that architecture. Optional Apple Speech transcription and
+user-configured external API assistants are separate exceptions and must be
+disclosed. Mobile Privacy Policy and Terms still named OpenAI in submitted 58;
+the correction is prepared as candidate 59. Runtime AI, permissions and API
+behavior remain unchanged. Genuine build-58 iPhone/iPad captures are in progress
+using the existing review sample account, with no inventory writes. The App
+Review response is a local draft; no reply, screenshot replacement, binary
+upload or resubmission has been performed in this correction pass.
+
 ## Landing copy and returning-user navigation (October 8)
 
 Implemented and deployed on `fix/landing-dashboard-link` in

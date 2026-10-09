@@ -1,5 +1,27 @@
 # Current state
 
+## October 8 App Review corrections
+
+- Apple rejected 1.0.7 (58), submission
+  `2b777948-f7bd-46b3-bf43-9a2e60074361`, on October 7 with 2.1 AI information
+  questions and 2.3.10 non-iOS screenshot status bars. Confirmed in the signed-in
+  App Store Connect submission page. Public manual-release status is preserved.
+- `fix/app-review-build58`, based on `669dde0`, prepares a policy-only candidate
+  59. The developer confirms model inference runs on their servers. Current
+  backend source and non-secret process settings route to their FIND and agent
+  gateway, without OpenAI runtime/fallback. Submitted 58's mobile policy and Terms
+  still contained obsolete OpenAI text. The replacement describes self-hosted
+  photo/language processing, optional Apple Speech audio transcription, and
+  separately configured external API assistants. Runtime AI behavior is unchanged.
+- Native build-58 iPhone 17 Pro Max and iPad Pro 13-inch (M5) captures use the
+  existing review account's five sample records. No inventory data is modified.
+  One typed sample Ask returns the correct Space and quantity through the live
+  service. Screenshots and review draft are being prepared under
+  `Documents/FindEZ/AppStore/1.0.7-review-fix`; originals remain preserved.
+- Flutter analysis and all 296 mobile tests with coverage pass. Corrected native
+  artifact and final CI are pending. No App Review reply, screenshot upload,
+  binary upload or resubmission has been performed in this correction pass.
+
 ## October 8 landing copy and returning-user navigation
 
 - Implemented on `fix/landing-dashboard-link` in

@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-08: Disclose AI processing by operator and feature
+
+The developer confirms FIND and the FTCTools language gateway perform inference
+on their own servers. Third-party model authorship does not imply third-party
+hosted processing. Do not name OpenAI as a current mobile processor based on
+obsolete legal copy, or imply every AI-related feature is private server-only:
+optional Apple Speech can send microphone audio to Apple, and separately
+configured external assistants can read user-authorized inventory via API keys.
+Correct the in-app policy and Terms in a replacement binary rather than claiming
+submitted build 58 already contains the correction. Replace reconstructed
+marketing screenshots with genuine native iPhone/iPad captures and preserve the
+original artwork. An App Review reply and uploads remain separate external
+actions; do not claim them complete until verified in App Store Connect.
+
 ## 2026-10-08: Simplify landing copy and return signed-in visitors to Dashboard
 
 The user's later landing-page request supersedes the earlier exclusion for these
