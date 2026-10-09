@@ -18,6 +18,7 @@ import { useState } from "react";
 
 import styles from "./nav.module.css";
 import { FindEZMark } from "@/components/site/findez-brand";
+import { useMarketingSession } from "@/lib/use-marketing-session";
 
 type MenuItem = {
   label: string;
@@ -70,6 +71,7 @@ const NAV_GROUPS: MenuGroup[] = [
 export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" | "dark" }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const signedIn = useMarketingSession();
 
   if (props.variant === "app") return null;
   const closeMenu = () => setMobileOpen(false);
@@ -113,8 +115,14 @@ export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" |
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/signin" className={styles.signin} onClick={closeMenu}>Sign in</Link>
-          <Link href="/signup" className={styles.cta} onClick={closeMenu}>Start free</Link>
+          {signedIn ? (
+            <Link href="/home" className={styles.cta} onClick={closeMenu}>Dashboard</Link>
+          ) : (
+            <>
+              <Link href="/signin" className={styles.signin} onClick={closeMenu}>Sign in</Link>
+              <Link href="/signup" className={styles.cta} onClick={closeMenu}>Start free</Link>
+            </>
+          )}
           <button
             type="button"
             className={`${styles.mobileToggle} ${mobileOpen ? styles.mobileToggleOpen : ""}`}
@@ -143,8 +151,14 @@ export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" |
             </details>
           ))}
           <div className={styles.mobileActions}>
-            <Link href="/signin" onClick={closeMenu}>Sign in</Link>
-            <Link href="/signup" onClick={closeMenu}>Start free</Link>
+            {signedIn ? (
+              <Link href="/home" onClick={closeMenu}>Dashboard</Link>
+            ) : (
+              <>
+                <Link href="/signin" onClick={closeMenu}>Sign in</Link>
+                <Link href="/signup" onClick={closeMenu}>Start free</Link>
+              </>
+            )}
           </div>
         </nav>
       ) : null}

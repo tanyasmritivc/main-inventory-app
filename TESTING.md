@@ -105,6 +105,17 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Landing copy and signed-in navigation
+
+Run the full web coverage suite, TypeScript, changed-file ESLint and production
+webpack build. `landing-page` verifies server-initialized Dashboard, anonymous
+signup, public rendering when user verification fails, browser sign-in/out events,
+desktop/mobile marketing actions and listener cleanup. Browser-check the hero
+without the removed paragraph and Dashboard opening `/home` in an existing
+signed-in session. Check anonymous initial HTML separately and keep public API
+files, interior source and production data unchanged. All five CI jobs must pass
+on the PR head before finishing.
+
 ### Persistent web navigation and hover sidebar
 
 Run the web release checks below. The full suite has 181 tests in 24 suites.

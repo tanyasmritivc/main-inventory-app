@@ -1,5 +1,20 @@
 # Active work
 
+## Landing copy and returning-user navigation (October 8)
+
+Implemented and deployed on `fix/landing-dashboard-link` in
+`/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on `f36ca25`.
+Runtime `a4d1fc1` removes the hero's chatbot/database paragraph and replaces top
+signup/sign-in actions with Dashboard for signed-in visitors. The landing uses
+server-verified initial identity; marketing navigation follows browser session
+events. All 184 web tests, TypeScript, lint and local/server builds pass. Safari
+verified the live anonymous hero, fictional signed-in landing/desktop marketing
+headers and mobile Dashboard opening Home. Final CI evidence is recorded on
+draft PR #49, stacked on #48. Self-hosted release:
+`/home/ubuntu/findez-web-releases/web-landing-dashboard-20261008/frontend`.
+Interior source, animation/assets, API, backend, mobile, production environment,
+original dirty checkout, existing collection colors and prior assets are retained.
+
 ## Web navigation and hover sidebar (October 8)
 
 Completed and deployed on `fix/web-navigation-hover` in
