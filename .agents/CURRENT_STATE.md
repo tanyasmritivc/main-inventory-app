@@ -17,10 +17,24 @@
   existing review account's five sample records. No inventory data is modified.
   One typed sample Ask returns the correct Space and quantity through the live
   service. Screenshots and review draft are being prepared under
-  `Documents/FindEZ/AppStore/1.0.7-review-fix`; originals remain preserved.
-- Flutter analysis and all 296 mobile tests with coverage pass. Corrected native
-  artifact and final CI are pending. No App Review reply, screenshot upload,
-  binary upload or resubmission has been performed in this correction pass.
+  `Documents/FindEZ/AppStore/1.0.7-review-fix`; originals remain preserved. All six
+  iPhone captures are 1320x2868 and all six iPad captures are 2064x2752. Media
+  Manager confirms every smaller family inherits the primary sets with zero
+  separate uploads. Both native Ask tests return the correct Space and quantity.
+- Runtime `68fbe55` passes Flutter analysis, all 296 tests with coverage,
+  formatting and all five shared CI jobs (`37866116183`). Candidate 59 compiles
+  for the simulator, opens the corrected policy date, and its compiled debug and
+  release text contains the new disclosures without the obsolete OpenAI copy.
+  Signed archive and App Store IPA export pass strict signature, App Store
+  profile, non-debug, production API/auth and push checks. IPA SHA-256 is
+  `f955090596197783cf3818b396c5ee040928f4f9f002630611cea08123e78296`.
+- Draft PR #50 is stacked on #49. The durable folder contains the IPA, response
+  draft, all 12 PNGs, screenshot ZIP, native policy first-page capture and
+  verification records. Initial disk-space failures were recovered by approved
+  rebuildable cache/dependency cleanup; all task-booted simulators were stopped.
+  No App Review reply, screenshot upload, binary upload or resubmission has been
+  performed in this correction pass. Apple server validation and physical-device
+  acceptance have not been repeated; manual public release remains held.
 
 ## October 8 landing copy and returning-user navigation
 

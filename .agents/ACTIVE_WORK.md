@@ -2,7 +2,7 @@
 
 ## App Review clarification and native screenshots (October 8)
 
-Active on `fix/app-review-build58` in
+Prepared on `fix/app-review-build58` in
 `/Users/tanyasmritivictorcharles/dev/findez-app-review`, based on `669dde0`.
 Apple rejected submission `2b777948-f7bd-46b3-bf43-9a2e60074361` for AI information
 and non-iOS screenshot status bars. The developer confirms that FIND and agent
@@ -11,10 +11,20 @@ configuration match that architecture. Optional Apple Speech transcription and
 user-configured external API assistants are separate exceptions and must be
 disclosed. Mobile Privacy Policy and Terms still named OpenAI in submitted 58;
 the correction is prepared as candidate 59. Runtime AI, permissions and API
-behavior remain unchanged. Genuine build-58 iPhone/iPad captures are in progress
-using the existing review sample account, with no inventory writes. The App
-Review response is a local draft; no reply, screenshot replacement, binary
-upload or resubmission has been performed in this correction pass.
+behavior remain unchanged. All twelve genuine build-58 iPhone/iPad captures are
+verified using the existing review sample account, with no inventory writes.
+Runtime `68fbe55` passes analysis, all 296 mobile tests with coverage, formatting,
+native simulator compilation and all five shared CI jobs (`37866116183`). Native
+59 opens with the corrected effective date; compiled debug and release text
+checks verify all disclosures and absence of the obsolete OpenAI wording.
+Signed archive/export, strict exported signature, App Store provisioning,
+production API/auth and push configuration all pass. Durable IPA, draft response,
+screenshots/ZIP and verification JSON are in
+`Documents/FindEZ/AppStore/1.0.7-review-fix`; Draft PR #50 is stacked on #49.
+Local storage interrupted the first builds; user-approved build/dependency/cache
+cleanup recovered them. Original artwork, source, production and public release
+are preserved. The App Review response remains a local draft; no reply,
+screenshot replacement, binary upload or resubmission has been performed.
 
 ## Landing copy and returning-user navigation (October 8)
 
@@ -70,11 +80,11 @@ list ideas as active work.
 
 ## Verified active work
 
-The user's latest October 5 instruction explicitly authorizes checking the current
-mobile app and submitting it to Apple. This supersedes the earlier screenshot
-preparation hold. FindEZ AI 1.0.7 (58) was submitted at 2026-10-06 06:06:37 UTC
-(October 5, 11:06 PM PDT). Apple reports WAITING_FOR_REVIEW for both the version
-and submission `2b777948-f7bd-46b3-bf43-9a2e60074361`. Manual release is preserved.
+The October 5 instruction authorized the original submission. FindEZ AI 1.0.7
+(58) was submitted at 2026-10-06 06:06:37 UTC (October 5, 11:06 PM PDT), then
+rejected on October 7 for AI information and non-iOS screenshot status bars.
+Submission `2b777948-f7bd-46b3-bf43-9a2e60074361` remains rejected. The October 8
+correction package above is prepared locally; manual release is preserved.
 
 All six supplied iPhone PNGs and six supplied iPad PNGs are uploaded in order,
 COMPLETE, and checksum-identical to the ZIP originals. Listing description,
@@ -84,12 +94,12 @@ roadmap features are not advertised as implemented. Reviewer login, eight live
 read endpoints, six consistent sample-inventory reads, website/privacy URLs and
 all five exact-runtime CI jobs pass. Simulator Home/Spaces were observed; a full
 physical-device acceptance pass was not repeated. Public version 1.0.6 (17)
-remains available while Apple reviews the update. Runtime, backend, database,
+remains available while the review correction is prepared. Runtime, backend, database,
 billing, original logo assets, native lifecycle and FIND transport are unchanged.
 
 | Work | Area | State | Dependencies and handoff |
 |---|---|---|---|
-| App Store submission build 58 | Apple listing, screenshots and release records | Submitted; WAITING_FOR_REVIEW on `release/appstore-build58`. Version 1.0.7 selects eligible build 58, runtime `9657aed`. Submission `2b777948-f7bd-46b3-bf43-9a2e60074361`, manual release. | Twelve original screenshots and vision-grounded copy are verified. `appstore/submission.json` records checks and durable artwork location. Apple approval and a later manual publication remain pending. Full physical acceptance was not repeated in this submission pass. No runtime or production implementation change. |
+| App Store submission build 58 | Apple listing, screenshots and release records | REJECTED on October 7 for AI information and screenshot status bars. Version 1.0.7 still selects 58, runtime `9657aed`. Submission `2b777948-f7bd-46b3-bf43-9a2e60074361`, manual release. | Original artwork/submission records are preserved. The October 8 review package prepares policy-only 59, native replacement screenshots and a reply in Draft PR #50. No replacement upload, reply or resubmission has occurred. Physical acceptance was not repeated. |
 | Mobile accent consistency | `mobile/` shared brand accents, monochrome Teams list and Team file icons | Released build `1.0.7 (58)` on runtime `9657aed`, `fix/mobile-accent-consistency` in `/private/tmp/findez-accent-consistency`, Draft PR #46 stacked on PR #45 (`64c4e47`). Clean analysis/all 296 mobile tests with coverage, actual-shell Light/Dark palette/navigation previews, all five exact-source CI jobs (`37412454402`), signed export/config/logo/signature and Apple validation pass. Upload accepted with no errors at 21:16:01 PDT October 5 (delivery `b9a53267-2cea-4d13-903f-a885f9e62351`); COMPLETE/VALID/APP_STORE_ELIGIBLE, nonexpired and both internal groups verified at 21:20:52 PDT. | User rejected build 57's orange list and requested this page black/white. Create/Join/Team/file icons, selected Teams segment and bottom-nav highlight while Teams is active are neutral. Other main screens keep restrained brand accents. Artifacts/manifest: `/private/tmp/findez-build58-native` and `/private/tmp/findez-build58-verification.json`. Builds 56/57 remain VALID in both internal groups with verified artifacts preserved; 55 was not uploaded. Physical acceptance follows the user's TestFlight choice; public App Store remains held. No backend/web/schema/billing/FIND/native lifecycle change. |
 | Restock planner replacement | `mobile/` purchase planning, inventory/Home/Space summaries and arrival stock confirmation | Implemented as candidate `1.0.7 (54)` on `feat/mobile-restock-planner` in `/private/tmp/findez-restock-planner`, based on released build-53 record `3a08fd1`; clean analysis and all 292 mobile tests/coverage pass. All five exact-source CI jobs (`37406983954`), signed archive/export/configuration/logo/signature and Apple validation pass on runtime `98f019e` (Draft PR #45). Uploaded at 20:09:15 PDT October 5; Apple processing is COMPLETE/VALID/APP_STORE_ELIGIBLE and both internal groups are verified. User supplied the build-54 planner screenshot and requested less copy; compact presentation and amber To buy/blue On order feedback are implemented for build 55 in this same lane. All 296 tests with coverage and clean analysis pass, including 22 restock regressions; all five exact-source CI jobs (`37408858103`), signed/config/logo/signature checks and Apple validation pass on `5d24797`. Build 55 is preserved but not uploaded after the user requested app-wide brand consistency; stacked brand PR #46 includes these changes in released build 56. | Explicit To buy, On order and Record arrival, editable quantities, per-item opt-out, inventory chooser and consistent counts replace disconnected checkmarks. Old thresholds/ordered selections migrate with account isolation; confirmed absolute stock saves retain safe lost-response retries. Planning remains account/device-local; real stock uses existing authenticated APIs. New logo/typography and unrelated flows are retained. No backend/web/schema/billing/FIND/native lifecycle change. User chose TestFlight verification; public App Store remains held. |
 | App-wide typography consistency | `mobile/` shared typography, all screens/forms and regressions | Uploaded as `1.0.7 (53)` at 19:00:26 PDT October 5; all 274 mobile tests/coverage and analysis pass on `fix/mobile-home-bold-text` in `/private/tmp/findez-home-bold-text`, based on release `e123c22` | User confirmed iPhone Bold Text is enabled and supplied Cal AI as a typography reference. The user approved build 52 Home on the phone, then requested the same policy across the whole app. Build 52 was validated/installed and user-approved on Home but not uploaded; The complete app-wide replacement beta 53 is uploaded and draft PR #44 reflects that scope. Exact-source `afc39ac` has all five CI jobs passing (`37398740825`); signed archive/export, production-config/logo, strict signature and Apple validation pass. Native install completed, but launch/visual checks are unverified after the user chose TestFlight verification. Apple accepted delivery `67e8af04-e91a-4157-aa8d-e758c3222d3b` with no errors; `VALID`/`APP_STORE_ELIGIBLE` and both existing internal TestFlight groups are verified. Artifacts/manifest are preserved under `/private/tmp/findez-build53-native` and `/private/tmp/findez-build53-verification.json`. Apply supporting text Medium and headings/counts to Semibold without disabling OS text scaling or changing global accessibility preferences. Preserve logo, routes, API/schema/backend/web/FIND and native lifecycle. |
