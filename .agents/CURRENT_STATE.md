@@ -11,11 +11,23 @@
   expands from 72px to 232px on mouse entry, collapses on exit, and overlays the
   page without changing its position. Keyboard labels, tooltips, reduced motion
   and the narrow focus-trapped drawer remain. Home/profile links close the drawer.
-- Local checks: all 181 web tests with coverage, TypeScript, changed-file ESLint
-  and production webpack build pass. Safari used a fictional localhost account
-  for desktop navigation, labels and mouse/focus behavior. Production deployment
-  and final browser acceptance are pending. Landing, public API/docs, backend,
-  mobile, database and existing deployment configuration are outside this diff.
+- All 181 web tests with coverage, TypeScript, changed-file ESLint and local and
+  production webpack builds pass. All five runtime CI jobs pass in run
+  `37861622831` on `0cc9f44`. Safari verified fictional local navigation and slow
+  reads, then all 18 actual sidebar destinations, live Home data, hover/exit,
+  stationary content and public API docs with theme cleanup. This was read-only;
+  inventory, membership, key creation and profile saves were not tested by writes.
+- Deployed runtime `0cc9f44` runs from
+  `/home/ubuntu/findez-web-releases/web-navigation-hover-20261008/frontend`.
+  Preflight verified all 18 anonymous workspace guards, public pages, preserved
+  landing visible text and exact API JSON. Live HTTPS checks pass. The existing
+  Smart Collections heading colors are retained as a recorded runtime override.
+  Production environment, dirty original checkout and backend process remain
+  unchanged. Prior static assets are retained. To roll back, install this release's
+  `previous-web-rebuild.conf` over the existing `web-rebuild.conf` drop-in, reload
+  systemd and restart only `findez-web`. Release manifests, build/preflight and
+  activation records are beside the deployed frontend. Draft PR #48 is stacked
+  on #47's web branch to keep the follow-up diff scoped.
 
 ## October 6 authenticated web rebuild
 

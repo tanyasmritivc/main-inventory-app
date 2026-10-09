@@ -2,12 +2,16 @@
 
 ## Web navigation and hover sidebar (October 8)
 
-Active on `fix/web-navigation-hover` in
-`/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on web rebuild
-`5473694`. Restore the persistent app layout, keep per-page authentication,
-replace full-page opening messages with content skeletons, and smoothly expand
-the desktop sidebar on hover and collapse on pointer exit. Preserve landing,
-API/docs, backend/mobile and unrelated self-hosted deployment files.
+Completed and deployed on `fix/web-navigation-hover` in
+`/Users/tanyasmritivictorcharles/dev/findez-web-navigation`, based on `5473694`.
+Runtime `0cc9f44` uses a persistent workspace layout, per-page authentication,
+content skeletons and smooth hover expansion/collapse over a stationary page.
+181 web tests, TypeScript, lint, local/server builds and all five runtime CI jobs
+pass. Safari read-only checks cover all 18 sidebar destinations, live data,
+mouse/focus behavior and public docs theme cleanup. Self-hosted release:
+`/home/ubuntu/findez-web-releases/web-navigation-hover-20261008/frontend`.
+Original dirty checkout, backend, landing, API/docs and existing collection
+heading colors are preserved. Draft PR #48 is stacked on the web rebuild.
 
 ## Web mobile-parity rebuild (October 6)
 
