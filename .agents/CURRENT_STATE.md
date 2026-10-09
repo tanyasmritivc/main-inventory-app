@@ -10,9 +10,21 @@
   identity, then browser session events keep the link current. Shared marketing
   desktop/mobile actions also replace signup/sign-in with Dashboard.
 - All 184 web tests with coverage, TypeScript, changed-file ESLint and production
-  webpack build pass. Browser/deployment acceptance and final-head CI are pending.
-  Landing animation/assets, authenticated interior, public API, backend, mobile
-  and schema are unchanged. Existing workspace server guards still authorize data.
+  webpack builds pass. Safari verified the live anonymous hero without the removed
+  copy and signup action, then fictional local signed-in landing and desktop/mobile
+  marketing Dashboard actions opening Home. The previous live browser session had
+  ended; no new production login or data write was made. Final CI evidence is
+  recorded on draft PR #49, stacked on the navigation branch.
+- Deployed runtime `a4d1fc1` runs from
+  `/home/ubuntu/findez-web-releases/web-landing-dashboard-20261008/frontend`.
+  Candidate/live HTTPS checks verify the requested paragraph is the only landing
+  visible-text removal, anonymous signup, all 18 workspace guards and exact API
+  JSON. The production environment, 220 other source/config files, original dirty
+  checkout, backend process, existing collection colors and prior static assets
+  are preserved. Restore this release's `previous-web-rebuild.conf` to the existing
+  systemd drop-in, reload systemd and restart only `findez-web` to roll back.
+  Landing animation/assets, interior source, backend, mobile and schema are
+  unchanged. Existing workspace server guards still authorize data.
 
 ## October 8 web navigation follow-up
 
