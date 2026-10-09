@@ -16,7 +16,7 @@
 - Native build-58 iPhone 17 Pro Max and iPad Pro 13-inch (M5) captures use the
   existing review account's five sample records. No inventory data is modified.
   One typed sample Ask returns the correct Space and quantity through the live
-  service. Screenshots and review draft are being prepared under
+  service. Screenshots and review reply are preserved under
   `Documents/FindEZ/AppStore/1.0.7-review-fix`; originals remain preserved. All six
   iPhone captures are 1320x2868 and all six iPad captures are 2064x2752. Media
   Manager confirms every smaller family inherits the primary sets with zero
@@ -32,9 +32,21 @@
   draft, all 12 PNGs, screenshot ZIP, native policy first-page capture and
   verification records. Initial disk-space failures were recovered by approved
   rebuildable cache/dependency cleanup; all task-booted simulators were stopped.
-  No App Review reply, screenshot upload, binary upload or resubmission has been
-  performed in this correction pass. Apple server validation and physical-device
-  acceptance have not been repeated; manual public release remains held.
+  The user's continuation authorizes delivery of the prepared correction package.
+  Apple validation passes without errors; upload accepted at 18:08:32 PDT,
+  delivery `4c3ff9ff-6310-48cb-91ff-79c89af796d3`. All twelve native screenshots
+  replace the original primary sets, pass Apple's COMPLETE processing and match
+  their source checksums/order. App Store Connect verifies iPad's six direct
+  screenshots and the inherited native iPhone set; no other direct sets exist.
+  The four-answer AI clarification is sent and visible in Messages (2) at
+  18:09 PDT. Apple processing is VALID/APP_STORE_ELIGIBLE, nonexpired, with
+  encryption declaration false and internal state IN_BETA_TESTING. Build 59 is
+  selected for 1.0.7 and the existing submission was resubmitted at 18:19:39 PDT
+  October 8; both submission/version are WAITING_FOR_REVIEW. Release type is
+  MANUAL. Physical-device acceptance has not been repeated; public release
+  remains held. All five CI jobs also pass on docs head `28f8ffe` in run
+  `37867707683`. Durable selected-build, upload-processing and resubmission JSON
+  plus the guarded delivery script record the completed actions.
 
 ## October 8 landing copy and returning-user navigation
 
