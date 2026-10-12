@@ -1,5 +1,20 @@
 # Decisions
 
+## October 11 legal consistency and actual storage
+
+Use `/privacy` and `/terms` on `https://findez.ai` as the canonical documents for
+web and mobile. Native settings/auth links open them in the external browser,
+with visible retry/copy fallback; do not maintain another embedded policy.
+Keep a restrained public header and redirect redundant feature pages to the
+actual tools, preserving their sign-in guards. The current cookie notice is
+informational because optional tracking is absent; do not manufacture consent
+switches or add providers before the user selects them. Record explicit new
+signup eligibility and Terms acknowledgments without claiming verified age or
+retroactive acceptance by existing users. Permission purpose strings must name
+actual features; remove unused location/photo-saving declarations. Legal text
+must disclose current access/transport and deletion limits instead of making
+unsupported security, training, retention or worldwide compliance promises.
+
 ## October 11 notification read state
 
 Treat the server inbox as authoritative. After a read write, invalidate older

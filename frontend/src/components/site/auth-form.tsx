@@ -13,6 +13,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { FindEZMark } from "@/components/site/findez-brand";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
 import { normalizeAuthNext } from "@/lib/auth-callback";
+import { LEGAL_VERSION } from "@/lib/legal-content";
 
 type Mode = "signin" | "signup";
 
@@ -64,12 +65,17 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [continueHref, setContinueHref] = useState<string | null>(null);
 
   function signupProfileValues() {
+    if (!legalAccepted) {
+      setError("Confirm your eligibility and accept the Terms of Service to create an account.");
+      return null;
+    }
     const cleanFirstName = firstName.trim();
     const cleanLastName = lastName.trim();
     const displayName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ");
@@ -87,7 +93,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       setError("Role and organization must each be under 120 characters.");
       return null;
     }
-    return { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization };
+    return { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date().toISOString(), eligibilityAttested: true };
   }
 
   function rememberOAuthSignupProfile() {
@@ -189,6 +195,9 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               family_name: cleanLastName,
               profile_role: cleanProfileRole,
               organization: cleanOrganization,
+              terms_version: profile.termsVersion,
+              terms_accepted_at: profile.termsAcceptedAt,
+              eligibility_attested: profile.eligibilityAttested,
             },
           },
         });
@@ -449,9 +458,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       </div>
 
       {mode === "signup" ? (
-        <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "-0.008em" }}>
-          Strong passwords help keep your inventory secure. We never share your data.
-        </p>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+          <input type="checkbox" checked={legalAccepted} onChange={(event) => setLegalAccepted(event.target.checked)} />
+          <span>I&apos;m at least 13, have any required guardian permission, and accept the <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</Link>. Read our <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
+        </label>
       ) : null}
 
       {error ? (
@@ -487,6 +497,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         {loading ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create account" : "Sign in")}
       </Button>
         </form>
+        {mode === "signin" && <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>By continuing, you accept the <Link href="/terms">Terms of Service</Link> and confirm you meet the account eligibility requirements, including age 13 or older. See the <Link href="/privacy">Privacy Policy</Link> for data handling.</p>}
 
         <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "var(--text-secondary)", letterSpacing: "-0.008em" }}>
           {mode === "signup" ? (

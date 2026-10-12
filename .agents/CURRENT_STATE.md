@@ -1,5 +1,59 @@
 # Current state
 
+## October 11 canonical legal pages and mobile links
+
+- Web source `1e6a8b3` is live from
+  `/home/ubuntu/findez-web-releases/web-canonical-legal-20261011/frontend`;
+  draft PR #54 is stacked on notification PR #53. All five CI jobs pass on
+  `d459df3` (`38209066849`), which adds the native signup Material correction
+  needed by the newer Flutter CI version; its web source is identical.
+  Privacy and Terms now share readable public layouts, current factual content,
+  working section links and canonical URLs. Mobile opens those HTTPS documents
+  in the browser with retry/copy fallback. Redundant public feature pages redirect
+  to their actual authenticated tools; the old mega menus are removed.
+- Only essential authentication and requested feature storage are in use. The
+  informational cookie notice can be dismissed without accepting Terms or
+  enabling tracking. No analytics or advertising provider is installed. Signup
+  requires an eligibility/Terms acknowledgment and stores a timestamped receipt
+  in user metadata. This is an attestation, not verified age or immutable legal
+  evidence; sign-in OAuth can still create an account after the continuing notice.
+- Official California registry lookup on October 11, with the user's CAPTCHA
+  authorization, confirms AI ROBOTS INC (4578465), Active, filed March 16, 2020,
+  principal and mailing address 887 Poppy Ct, Sunnyvale, CA 94086. No private
+  agent information is published. The legal contact is info@findez.ai.
+- Read-only deployed Edge function inspection confirms document/image cleanup
+  and ordered owned-row deletion with failure propagation. Its SHA-256 is
+  `e55c0a6df8bdaf0102fc6fdf7db048ee0739630117cc6fe81e41c21b067896c1`.
+  No real account was deleted. Failed deletion can partially complete; UI and
+  notice no longer imply that failure leaves all data untouched.
+- Known limits are disclosed: inventory photos have link-accessible public URLs,
+  a legacy photo-processing connection is unencrypted, and logs/backups do not
+  have a verified comprehensive retention schedule. The user's October 4
+  withdrawal of FIND transport changes is preserved. Text changes do not fix
+  these engineering issues. Private image access, TLS, retention/processor audits
+  and a documented privacy-request/breach procedure remain follow-up work.
+- Counsel should review minor/guardian and school agreements, country-specific
+  eligibility and data-transfer requirements, legal bases and processor terms,
+  consumer remedies, liability limits and effective assent. Worldwide Apple
+  availability and a 13+ checkbox do not establish worldwide compliance. Relevant
+  primary guidance: [FTC schools and COPPA](https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions),
+  [FERPA vendors](https://studentprivacy.ed.gov/resources/responsibilities-third-party-service-providers-under-ferpa),
+  [EU children's safeguards](https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/legal-grounds-processing-data/are-there-any-specific-safeguards-data-about-children_en),
+  [ICO storage exceptions](https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guidance-on-the-use-of-storage-and-access-technologies/what-are-the-exceptions/).
+- Web: all 210 tests, TypeScript, changed-file ESLint and production webpack
+  build pass. Safari verifies readable Privacy/Terms, section navigation,
+  notice dismissal and absence of the old menus. All 301 mobile tests with
+  coverage and clean analysis pass, including legal-link and signup gates;
+  native camera/library/voice and
+  push acceptance are required for a future binary. Build 59 App Review is held
+  unchanged; this lane does not upload or resubmit it.
+- Server build and 210 tests pass. Candidate/public checks verify both legal
+  documents, canonical URLs, five redirects, 18 sign-in guards, static assets,
+  exact API docs, production origins, headers and zero production dependency
+  vulnerabilities. Both services are healthy; 702 previous static files are
+  retained. Source manifest and rollback drop-in are beside the release. Safari
+  confirms the deployed Privacy layout and absence of the old menus.
+
 ## October 11 notification inbox refresh
 
 - Web runtime `0189a17` is live from
