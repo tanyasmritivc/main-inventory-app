@@ -240,7 +240,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
     if (error) {
       await showNotice({
         title: "Account not deleted",
-        message: "Your account could not be deleted. No data was removed.",
+        message: "Deletion did not finish. Some data may already have been removed. Try again or contact info@findez.ai.",
       });
       return;
     }

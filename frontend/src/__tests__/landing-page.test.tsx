@@ -99,18 +99,14 @@ test("a failed server user verification leaves the public landing page available
   expect(screen.getByRole("link", { name: /Get started/ }).getAttribute("href")).toBe("/signup");
 });
 
-test("marketing desktop and mobile actions follow session changes and unsubscribe", () => {
+test("simple public navigation follows session changes and unsubscribes", () => {
   const { unmount } = render(<SiteNav variant="marketing" />);
   expect(screen.getByRole("link", { name: "Sign in" })).toBeTruthy();
   act(() => authChanged("INITIAL_SESSION", { user: { id: "returning-user" } }));
   expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Start free" })).toBeNull();
   expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  act(() => screen.getByRole("button", { name: "Toggle navigation" }).click());
-  const mobile = within(screen.getByRole("navigation", { name: "Mobile marketing navigation" }));
-  expect(mobile.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  act(() => mobile.getByRole("link", { name: "Dashboard" }).click());
-  expect(screen.queryByRole("navigation", { name: "Mobile marketing navigation" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Toggle navigation" })).toBeNull();
   act(() => authChanged("SIGNED_OUT", null));
   expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin");
   unmount();

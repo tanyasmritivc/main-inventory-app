@@ -1,5 +1,21 @@
 # Active work
 
+## Canonical legal and permissions (October 11)
+
+Sequential lane `fix/canonical-legal-pages` in
+`/Users/tanyasmritivictorcharles/dev/findez-canonical-legal`, based on `a67260e`.
+Prepared web Privacy/Terms, informational cookie notice, simple public navigation,
+legacy page redirects, signup acknowledgment and honest deletion-failure copy.
+Mobile links open the same public documents; purpose strings describe actual
+camera/library/voice uses and unused location/save-photo declarations are removed.
+Official registry verifies AI ROBOTS INC (4578465), Active, filed March 16, 2020,
+887 Poppy Ct, Sunnyvale, CA 94086. Current facts, legal-review priorities and
+engineering limitations are recorded in CURRENT_STATE. Web 210 tests, TypeScript,
+changed-file ESLint, webpack build and Safari public-page checks pass. All 301
+mobile tests with coverage and clean Flutter analysis pass. No legal deployment,
+new native binary, push-delivery acceptance or Apple submission is claimed yet.
+Mobile notifications remain the next scoped lane. Preserve pending build 59.
+
 ## Notification refresh and read state (October 11)
 
 Sequential second lane: `fix/notification-refresh` in
@@ -75,9 +91,8 @@ reference and production origins with no fixture URL. Both services are healthy;
 and the 800px drawer's background isolation/open/close behavior. Notification
 behavior and legal/mobile content remain the next lanes.
 
-User confirmations: AI Robots Inc, registered in 2020 in Sunnyvale on Poppy Ct;
-verify current official business details before using an address. Secondary
-directories suggest 887 Poppy Ct, but this is not official registry verification.
+User confirmations: AI Robots Inc, registered in 2020 in Sunnyvale on Poppy Ct.
+Official California registry details have now been verified as recorded above.
 Serve countries where Apple permits availability; student accounts are 13+.
 Analytics/advertising are not in use and no providers are selected. Cookie
 disclosures must reflect actual essential storage; do not add trackers or fake

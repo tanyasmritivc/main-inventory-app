@@ -123,6 +123,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 family_name: lastName,
                 profile_role: profileRole,
                 organization,
+                ...(typeof pending.termsVersion === "string" && typeof pending.termsAcceptedAt === "string" && pending.eligibilityAttested === true ? {
+                  terms_version: pending.termsVersion,
+                  terms_accepted_at: pending.termsAcceptedAt,
+                  eligibility_attested: true,
+                } : {}),
               },
             });
             const { error: profileError } = await supabase

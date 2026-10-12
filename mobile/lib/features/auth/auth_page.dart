@@ -8,6 +8,9 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import '../../core/legal_links.dart';
+import '../profile/privacy_policy_page.dart';
+import '../profile/terms_of_service_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -29,6 +32,12 @@ class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _password;
 
   bool _isLogin = true;
+  bool _legalAccepted = false;
+  Map<String, dynamic> get _legalAcceptance => {
+    'terms_url': legalDocumentUrl(LegalDocumentKind.terms).toString(),
+    'terms_accepted_at': DateTime.now().toUtc().toIso8601String(),
+    'eligibility_attested': true,
+  };
   bool _loading = false;
   bool _resending = false;
   String? _error;
@@ -70,6 +79,13 @@ class _AuthPageState extends State<AuthPage> {
 
   bool _validateSignupIdentity() {
     if (_isLogin) return true;
+    if (!_legalAccepted) {
+      setState(
+        () => _error =
+            'Confirm your eligibility and accept the Terms of Service to create an account.',
+      );
+      return false;
+    }
     final firstName = _firstName.text.trim();
     final lastName = _lastName.text.trim();
     final displayName = [firstName, lastName].join(' ').trim();
@@ -228,6 +244,11 @@ class _AuthPageState extends State<AuthPage> {
 
       if (displayName.isEmpty && metadataDisplayName.isEmpty) return;
 
+      if (!_isLogin && _legalAccepted) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: _legalAcceptance),
+        );
+      }
       await Supabase.instance.client.from('profiles').upsert({
         'id': userId,
         'display_name': displayName.isNotEmpty
@@ -549,6 +570,7 @@ class _AuthPageState extends State<AuthPage> {
           password: password,
           emailRedirectTo: _oauthRedirectTo,
           data: {
+            ..._legalAcceptance,
             if (firstName.isNotEmpty) 'given_name': firstName,
             if (lastName.isNotEmpty) 'family_name': lastName,
             if (fullName.isNotEmpty) 'full_name': fullName,
@@ -1158,6 +1180,52 @@ class _AuthPageState extends State<AuthPage> {
                           )
                         else
                           const SizedBox(height: 12),
+                        if (!_isLogin)
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            value: _legalAccepted,
+                            onChanged: _loading
+                                ? null
+                                : (value) => setState(
+                                    () => _legalAccepted = value ?? false,
+                                  ),
+                            title: const AppText(
+                              "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        if (_isLogin)
+                          const AppText(
+                            'By continuing, you accept the Terms of Service and confirm you meet the account eligibility requirements, including age 13 or older.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        Wrap(
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const TermsOfServicePage(),
+                                ),
+                              ),
+                              child: const AppText(
+                                'Terms of Service',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const PrivacyPolicyPage(),
+                                ),
+                              ),
+                              child: const AppText(
+                                'Privacy Policy',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
                         if (_error != null)
                           Container(
                             padding: const EdgeInsets.symmetric(

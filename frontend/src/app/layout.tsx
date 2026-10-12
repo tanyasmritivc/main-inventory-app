@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, Syne } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
+import { CookieNotice } from "@/components/site/cookie-notice";
 import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
 import "./globals.css";
 import "./app-theme.css";
@@ -73,7 +74,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>
+        <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div><CookieNotice /></AppDialogProvider>
       </body>
     </html>
   );
