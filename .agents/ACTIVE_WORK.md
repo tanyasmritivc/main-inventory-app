@@ -27,14 +27,21 @@ Robot Room and provides their account privately for a targeted existing-entry
 repair; do not write that email or private row snapshots to repository context.
 Their Robot Room still exists with six pending records, so do not purge them as
 orphans. Binding them to the current Space lets its next deletion remove them.
-Current lane `feat/inventory-team-categories`, based on `e34b37b`, adds 29
+Completed lane `feat/inventory-team-categories`, based on `e34b37b`, adds 29
 alphabetical general inventory group categories with a bounded persisted custom
 label, neutral create forms and shared display labels. Migration 040 precedes
 backend/client deployment. Existing program keys, licensing and access stay
 compatible. README, current product context, learning guide and the legacy EEZY
 prompt describe homes, businesses, labs, teams and industry. Focused backend,
 mobile Light/Dark failed-draft and PostgreSQL checks pass; full checks/deployment
-are underway. Onboarding follows in a separate lane.
+pass. All five CI jobs pass on `2384bbd` (`38312460669`, draft PR #57).
+Migration 040, selected backend files and isolated web release are deployed;
+private backups/verified manifests and web rollback remain available. Public
+checks pass without creating real data. Current lane `fix/onboarding-light-dark`
+from `2384bbd` simplifies the four local examples in both themes while preserving
+Skip/Back/replay/invitation/launch state. All 319 tests, clean analysis and rendered
+Light/Dark/narrow/large-text checks pass; native walkthrough QA and packaging
+of 1.0.8+61 are underway. Public App Store submission remains held.
 
 ## October 12 build-60 TestFlight delivery
 

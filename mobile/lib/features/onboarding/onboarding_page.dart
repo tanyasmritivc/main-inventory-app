@@ -33,7 +33,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int _step = 0;
   int _object = 0;
   bool _captured = false;
-  String _space = 'Garage';
+  String _space = 'Home';
   int _question = 0;
   bool _shared = false;
   bool _finishing = false;
@@ -139,7 +139,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         TextButton(
                           key: const Key('onboarding-skip'),
                           onPressed: _finishing ? null : _finish,
-                          child: AppText(widget.isReplay ? 'Close' : 'Skip'),
+                          child: AppText(
+                            widget.isReplay ? 'Close' : 'Skip',
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: AppTheme.accentForeground(context),
+                                ),
+                          ),
                         ),
                     ],
                   ),
@@ -155,41 +161,34 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     children: [
                       _slide(
                         index: 0,
-                        eyebrow: 'AI MEMORY FOR THE PHYSICAL WORLD',
-                        title: 'Your things.\nRemembered.',
+                        eyebrow: 'AI ITEM RECOGNITION & SEARCH',
+                        title: 'Inventory for\nyour everyday.',
                         description:
-                            'Capture what you own. Keep track of where it lives. '
-                            'Ask for it when you need it.',
+                            'For your home, business, lab, or team. Know what you have and where it belongs.',
                         demo: _welcome(),
                       ),
                       _slide(
                         index: 1,
-                        eyebrow: 'CAPTURE + REVIEW',
-                        title: 'One photo.\nLess typing.',
+                        eyebrow: 'CAPTURE',
+                        title: 'Capture it.\nMake it yours.',
                         description:
-                            'Take or choose a photo. FindEZ suggests items and '
-                            'reads visible labels. Review uncertain details and '
-                            'choose a Space.',
+                            'Take a photo. Review AI suggestions, then choose where each item belongs.',
                         demo: _capture(),
                       ),
                       _slide(
                         index: 2,
-                        eyebrow: 'ASK + FIND',
-                        title: 'Ask naturally.\nFind what you need.',
+                        eyebrow: 'FIND',
+                        title: 'Ask a question.\nFind your things.',
                         description:
-                            'Ask about your saved items, quantities and locations. '
-                            'You can also attach a photo to identify an object or '
-                            'check possible matches.',
+                            'Search your saved inventory by name, quantity, or location. A photo can help you check a possible match.',
                         demo: _ask(),
                       ),
                       _slide(
                         index: 3,
-                        eyebrow: 'YOUR WORLD, CONNECTED',
-                        title: 'A place for\neverything.',
+                        eyebrow: 'ORGANIZE & SHARE',
+                        title: 'For you.\nFor your people.',
                         description:
-                            'Use Spaces for home, work or a team. Keep photos and '
-                            'notes with items, track loans and check project parts. '
-                            'Share access only with people you choose.',
+                            'Keep Spaces personal or share them with the people you choose. Start small and organize as you grow.',
                         demo: _world(),
                       ),
                     ],
@@ -212,7 +211,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     required Widget demo,
   }) => SingleChildScrollView(
     key: ValueKey('onboarding-slide-$index'),
-    padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+    padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,7 +219,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           eyebrow,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppTheme.textSecondary(context),
-            letterSpacing: 1.2,
+            letterSpacing: .8,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -230,9 +229,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: AppText(
             title,
             style: TextStyle(
-              fontSize: 34,
+              fontSize: 32,
               height: 1.08,
-              letterSpacing: -1.1,
+              letterSpacing: -.7,
               fontWeight: FontWeight.w700,
               color: AppTheme.textPrimary(context),
             ),
@@ -243,14 +242,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
           description,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppTheme.textSecondary(context),
-            height: 1.45,
+            height: 1.4,
           ),
         ),
         const SizedBox(height: 26),
         _DemoCard(child: demo),
         const SizedBox(height: 10),
         AppText(
-          'Example only. Nothing is saved.',
+          'Interactive example. Nothing is saved.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppTheme.textSecondary(context),
           ),
@@ -261,15 +260,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   Widget _welcome() {
     const objects = [
-      ('Tools', 'Cordless drill', 'Garage', 'Ready for your next project.'),
-      ('Everyday', 'USB-C cable', 'Office', 'Know what you already have.'),
-      ('Supplies', 'AA batteries', 'Home', 'Keep an eye on quantities.'),
+      ('Home', 'Cordless drill', 'Home', 'Tools for everyday projects.'),
+      ('Business', 'USB-C cable', 'Office', 'Equipment your people can find.'),
+      ('Lab', 'Sample containers', 'Lab', 'Supplies ready when you need them.'),
     ];
     final object = objects[_object];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _DemoLabel('Tap to explore'),
+        const _DemoLabel('One inventory. Many possibilities.'),
         const SizedBox(height: 12),
         AnimatedSwitcher(
           duration: _duration,
@@ -290,7 +289,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             icon: [
               CupertinoIcons.wrench,
               Icons.cable_outlined,
-              CupertinoIcons.battery_100,
+              CupertinoIcons.cube_box,
             ][_object],
             title: object.$2,
             detail: '${object.$3} / ${object.$4}',
@@ -326,7 +325,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   const _ExampleItem(
                     icon: CupertinoIcons.wrench,
                     title: 'Cordless drill',
-                    detail: 'Suggested item / Review before saving',
+                    detail: 'AI suggestion / Review before saving',
                   ),
                   const SizedBox(height: 14),
                   AppText(
@@ -335,16 +334,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                   const SizedBox(height: 8),
                   _choices(
-                    const ['Garage', 'Workshop', 'Home'],
-                    const ['Garage', 'Workshop', 'Home'].indexOf(_space),
-                    (index) => setState(
-                      () => _space = ['Garage', 'Workshop', 'Home'][index],
-                    ),
+                    const ['Home', 'Work', 'Lab'],
+                    const ['Home', 'Work', 'Lab'].indexOf(_space),
+                    (index) =>
+                        setState(() => _space = ['Home', 'Work', 'Lab'][index]),
                     'sample-space',
                   ),
                   const SizedBox(height: 10),
                   AppText(
-                    'Example location: $_space. You stay in control of the details.',
+                    'Example location: $_space.',
                     key: const Key('sample-location'),
                     style: TextStyle(color: AppTheme.textSecondary(context)),
                   ),
@@ -366,7 +364,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       _ => (
         'Possible match',
         _space,
-        'This sample photo resembles a saved drill. Check the match before deciding.',
+        'This photo resembles a saved drill. Review the match.',
       ),
     };
     return Column(
@@ -406,18 +404,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 answer.$3,
                 style: TextStyle(color: AppTheme.textSecondary(context)),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 90,
-                child: Center(child: LocationGraphic(isCable: _question == 1)),
-              ),
             ],
           ),
-        ),
-        const SizedBox(height: 16),
-        AppText(
-          'Answers use what you have saved, not everything around you.',
-          style: TextStyle(color: AppTheme.textSecondary(context)),
         ),
       ],
     );
@@ -426,10 +414,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget _world() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const _DemoLabel('Make it personal. Or shared.'),
+      const _DemoLabel('Choose who has access'),
       const SizedBox(height: 14),
       _choices(
-        const ['Personal', 'Shared'],
+        const ['Just me', 'Shared'],
         _shared ? 1 : 0,
         (index) => setState(() => _shared = index == 1),
         'sample-world',
@@ -442,15 +430,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
         child: _ExampleItem(
           key: ValueKey(_shared),
           icon: _shared ? CupertinoIcons.person_2 : CupertinoIcons.house,
-          title: _shared ? 'Team workshop' : 'My spaces',
+          title: _shared ? 'Shared inventory' : 'My spaces',
           detail: _shared
               ? 'Invite people and choose view or edit access.'
-              : 'Home, garage or office. Start with one Space.',
+              : 'Home, office, or lab. Start with one Space.',
         ),
       ),
       const SizedBox(height: 16),
       AppText(
-        'After sign-in, capture your first item or join a Space you have been invited to.',
+        'Sign in to capture your first item or accept a Space invitation.',
         style: TextStyle(color: AppTheme.textSecondary(context)),
       ),
     ],
@@ -471,16 +459,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
             constraints: BoxConstraints(maxWidth: constraints.maxWidth),
             child: ChoiceChip(
               key: ValueKey('$prefix-$index'),
-              label: AppText(labels[index]),
+              label: AppText(
+                labels[index],
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textPrimary(context),
+                ),
+              ),
               selected: index == selected,
               onSelected: _finishing ? null : (_) => choose(index),
               showCheckmark: false,
-              selectedColor: AppTheme.surface2(context),
+              selectedColor: AppTheme.action.withValues(alpha: .12),
               backgroundColor: AppTheme.surface(context),
               labelStyle: TextStyle(color: AppTheme.textPrimary(context)),
               side: BorderSide(
                 color: index == selected
-                    ? AppTheme.textPrimary(context)
+                    ? AppTheme.action
                     : AppTheme.border(context),
               ),
               materialTapTargetSize: MaterialTapTargetSize.padded,
@@ -545,6 +538,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ? 'Done'
                 : 'Continue to sign in',
             textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: AppTheme.onAction),
           ),
         ),
       ],
@@ -557,10 +553,10 @@ class _DemoCard extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
+    padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
       color: AppTheme.surface(context),
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(20),
       border: Border.all(color: AppTheme.border(context)),
     ),
     child: child,
