@@ -6,6 +6,7 @@ import { ActivityEntry } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
+import { publishNotificationSnapshot, subscribeNotifications } from "@/lib/notification-state";
 
 function relativeTime(value: string) {
   const seconds = Math.max(
@@ -40,9 +41,11 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
     };
   }, [accountId]);
   const generation = useRef(0);
+  const markingRef = useRef(false);
   const [marking, setMarking] = useState(false);
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
 
@@ -50,8 +53,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
     if (!accountId) return;
     const account = accountId,
       ticket = ++generation.current;
-    setLoading(true);
-    setEntries([]);
+    setRefreshing(true);
     setError(null);
     try {
       if (mode === "notifications") {
@@ -60,41 +62,69 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
           unread_count: number;
         }>(account, "/notifications");
         if (owner.current !== account || ticket !== generation.current) return;
-        setEntries(result.notifications ?? []);
-        setUnread(result.unread_count ?? 0);
+        if (!Array.isArray(result.notifications) || !Number.isSafeInteger(result.unread_count) || result.unread_count < 0)
+          throw new Error("Could not load notifications. Try refreshing.");
+        setEntries(result.notifications);
+        setUnread(result.unread_count);
+        publishNotificationSnapshot(account, result.unread_count);
       } else {
         const result = await accountRequest<{ activities: ActivityEntry[] }>(
           account,
           "/activity/recent?limit=100",
         );
         if (owner.current !== account || ticket !== generation.current) return;
-        setEntries(result.activities ?? []);
+        if (!Array.isArray(result.activities)) throw new Error("Could not load activity. Try refreshing.");
+        setEntries(result.activities);
       }
     } catch (reason) {
       if (owner.current === account && ticket === generation.current)
         setError(userFacingError(reason, "Could not load this feed."));
     } finally {
-      if (owner.current === account && ticket === generation.current)
+      if (owner.current === account && ticket === generation.current) {
         setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [mode, accountId]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    if (mode !== "notifications") return;
+    const refresh = () => {
+      if (!markingRef.current && document.visibilityState === "visible") void load();
+    };
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const unsubscribe = subscribeNotifications((value) => {
+      if (value.accountId === accountId && value.unread === null) {
+        generation.current++;
+        refresh();
+      }
+    });
+    return () => {
+      generation.current++;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      unsubscribe();
+    };
+  }, [load, mode, accountId]);
 
   async function markRead() {
     if (!accountId || unread === 0 || marking) return;
     const account = accountId;
+    generation.current++;
+    markingRef.current = true;
+    setRefreshing(false);
     setMarking(true);
     setError(null);
     try {
       await accountRequest(account, "/notifications/read", { method: "POST" });
       if (owner.current === account) {
-        setEntries((current) =>
-          current.map((entry) => ({ ...entry, is_read: true })),
-        );
-        setUnread(0);
+        // Re-read the server so an update arriving during the write stays unread.
+        publishNotificationSnapshot(account, null);
+        await load();
       }
     } catch (reason) {
       if (owner.current === account)
@@ -102,7 +132,8 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
           userFacingError(reason, "Could not mark notifications as read."),
         );
     } finally {
-      setMarking(false);
+      markingRef.current = false;
+      if (owner.current === account) setMarking(false);
     }
   }
 
@@ -125,6 +156,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
           <button
             className="app-icon-button"
             aria-label="Refresh"
+            disabled={marking || refreshing}
             onClick={() => void load()}
           >
             <RefreshCw size={16} />
@@ -147,7 +179,8 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
           !sessionError && (
             <div className="bare-empty">
               <Icon size={23} />
-              <strong>Nothing here</strong>
+              <strong>{mode === "notifications" ? "No team updates yet" : "No activity yet"}</strong>
+              {mode === "notifications" && <p>Team changes appear here.</p>}
             </div>
           )}
         {!loading &&
