@@ -1,5 +1,22 @@
 # Current state
 
+## October 11 Ask photo reply clarity
+
+- Shared backend runtime `fefcfe9` is deployed for web/mobile photo chat. Replies
+  group duplicates, summarize stock and uncertainty once, skip generic unknown
+  name matches and omit noisy categories. Scenes with several labels and no
+  product identifiers use validated selection of up to three existing subject
+  labels, with a bounded optional request and deterministic fallback. The
+  original FIND evidence and Review records remain authoritative; this is not a
+  guarantee of recognition accuracy or a rewrite of saved conversations.
+- All 376 backend/API documentation tests and all five exact-runtime CI jobs pass
+  (`38195426179`). Live synthetic-label consolidation took 4.66 seconds. Deployed
+  hashes match; the configured `https://findez.openstack.ftctools.com` API passes
+  health/database checks and rejects unauthenticated photo requests with 401.
+  Backups and verification are in `/home/ubuntu/findez-ask-photo-20261011`.
+  Draft PR #51 is stacked on #50. No client binary, web rebuild or migration is
+  needed. New-photo user acceptance remains unverified.
+
 ## October 8 App Review corrections
 
 - Apple rejected 1.0.7 (58), submission

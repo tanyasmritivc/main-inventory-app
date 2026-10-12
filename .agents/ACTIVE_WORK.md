@@ -14,9 +14,19 @@ stock fact. The 12-second timeout and invalid/unavailable-response fallback keep
 deterministic output available. Preserve the SSE/snapshot contract, access scope, Review
 persistence and explicit inventory confirmation. Existing clients consume the
 same text; no mobile binary or web rebuild is required. Focused photo tests pass
-(60). Full backend suite passes (376); CI and selective production deployment are pending. The
-production source file matches the pre-change baseline; retain the dirty VM
-checkout and back up only the formatter and gateway client before replacement.
+(60). Full backend suite passes (376), and all five exact-runtime CI jobs pass
+on `fefcfe9` (`38195426179`). Draft PR #51 is stacked on #50. Both reviewed backend
+files are deployed with original hash guards and backups in
+`/home/ubuntu/findez-ask-photo-20261011`. Live consolidation with synthetic labels
+returned a validated subject in 4.66 seconds; no source image or inventory data
+was sent to selection. Both deployed hashes match, `findez` is active, and
+public `/health` and `/health/db` return 200 on the configured API origin
+`https://findez.openstack.ftctools.com`; unauthenticated `/ai_photo_question`
+returns 401. The initial public check used the obsolete `api.findez.ai` hostname;
+current-origin verification is recorded in `deployment.json`. Original dirty VM
+work, both clients and the pending App Review binary are preserved. Genuine new
+image recognition still needs user acceptance; saved conversations are not
+rewritten, and consolidation does not guarantee every underlying identification.
 
 ## App Review clarification and native screenshots (October 8)
 
