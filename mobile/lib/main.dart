@@ -462,7 +462,9 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: SafeArea(child: MainShell(api: widget.api)),
+            child: SafeArea(
+              child: MainShell(key: ValueKey(session.user.id), api: widget.api),
+            ),
           );
         }
 

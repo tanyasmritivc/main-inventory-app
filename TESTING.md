@@ -105,6 +105,22 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Canonical legal and native notifications
+
+Run the full web and mobile coverage suites, TypeScript, changed-file web lint,
+production webpack build and all five CI jobs. Mobile regressions cover explicit
+signup acknowledgment, canonical link launch/retry/disposal, no inbox permission
+prompt or automatic read, a new event during read, retained rows on failure,
+account switches, serialized registration and a late shell badge response. Build
+the native simulator and signed production candidate without changing review 59.
+The user chose to test build 60 physically later. Before a public submission,
+check external Privacy/Terms links; camera/library/voice choices and denial;
+inbox Enable versus Settings after denial; real foreground/background APNs
+delivery and tap; badge/read synchronization; and logout/relogin on the phone.
+Use only the controlled review account/own device. Server APNs acceptance or
+simulator results are not a physical delivery pass. No real inventory mutations
+or account deletion are required for this lane's acceptance.
+
 ### App Review AI clarification and native screenshots
 
 For the policy-only build 59, run Flutter analysis and the existing full mobile

@@ -1,5 +1,26 @@
 # Decisions
 
+## October 12 build-60 delivery scope
+
+The user authorizes uploading the prepared notification/legal-link candidate to
+TestFlight and enabling the two existing internal groups. After 1.0.7 approval
+closed its build train, advance only version metadata to 1.0.8+60; preserve the
+rejected original artifact and verified runtime behavior. Do not create a new
+public submission or replace the released 1.0.7 (59) selection. Physical phone
+acceptance remains deferred and is separate from Apple processing/group access.
+
+## October 11 native notifications
+
+OS notification authorization belongs to the phone app; ask for new permission
+from the explicit inbox Enable action and reconnect an already granted permission
+without prompting at launch. Inventory refreshes must not ask. Keep server inbox
+counts authoritative, never infer zero after a write, and invalidate stale reads.
+Clear OS alerts and registration when leaving an account; reassign the backend
+token on the next authenticated registration, without blocking offline logout
+on an ancillary server cleanup. Use account keys to recreate the shell on an
+identity switch. Automated/native compilation checks do not prove APNs delivery.
+The user chose candidate preparation with physical acceptance deferred.
+
 ## October 11 legal consistency and actual storage
 
 Use `/privacy` and `/terms` on `https://findez.ai` as the canonical documents for

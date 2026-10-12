@@ -1,5 +1,68 @@
 # Current state
 
+## October 12 TestFlight delivery and public release status
+
+- The user authorized upload and internal TestFlight delivery. Apple reports
+  App Store 1.0.7 selected build 59 as `READY_FOR_SALE`, release type `MANUAL`.
+  The US storefront confirms 1.0.7, released `2026-10-12T01:59:13Z`. No public
+  release or review-selection action is performed by this delivery lane.
+- Apple validation rejected the original 1.0.7 (60) package with closed-train
+  `90186` and version `90062` errors after approval of 1.0.7. Only
+  `mobile/pubspec.yaml` changes to 1.0.8+60 in runtime `a6ea4c5`. Signed archive
+  and export pass; strict app/ShareExtension signatures, unexpired App Store
+  profiles, disabled debugging, production API/auth/APNs, anon-role client key
+  and compiled feature markers are verified. All five runtime CI jobs pass
+  in `38302159412`; original candidate simulator checks apply to identical code.
+- Apple validation and upload pass without errors. Delivery
+  `87711752-2586-445c-a2a5-ebc12e7b4b94` was accepted at 13:17:03 PDT October 12.
+  Apple processing is `COMPLETE` without errors/warnings; the build is `VALID`,
+  `APP_STORE_ELIGIBLE`, nonexpired and `IN_BETA_TESTING`. Both existing internal
+  groups (`Testers` and `Internal Pilot Findez AI`) include 60, and its test notes
+  are saved. Released build-59 selection/release type are verified unchanged.
+  The durable package, receipt, script, checksums, phone checklist and report are
+  in `Documents/FindEZ/AppStore/1.0.8-build60`. IPA SHA-256 is
+  `ab3a606d28932f5d581b2ba3497733c5db9b711a1d5869b5dcc473b3b80401b1`.
+  The rejected 1.0.7 artifact remains preserved in its original prepared folder.
+  Physical acceptance is deferred by the user; TestFlight availability does not
+  prove physical delivery,
+  browser legal links, camera/library/voice or account-change behavior.
+
+## October 11 mobile notification candidate
+
+- Prepared on `fix/mobile-notification-permissions` based on legal deployment
+  `5b21899`. Existing OS permission can reconnect on launch/resume; a new prompt
+  only follows the inbox's Enable action. Denied permission points to Settings.
+  Native registration has a 30-second bound and cannot overwrite an outstanding
+  result; Dart serializes it and rejects account changes before device writes.
+  Device requests capture auth headers. Logout stops OS delivery and clears
+  delivered/pending alerts; the next registration reassigns the device token.
+- Inbox opening no longer marks everything read. Explicit reads re-fetch,
+  preserve newly arriving unread events, retain rows with visible failure copy,
+  validate server counts and refresh on visible/resumed timers. Shell counts
+  consume fresh snapshots and invalidate late responses. Shells are keyed by
+  user and old routes close on account changes. Local stock refreshes no longer
+  request permission without a chosen threshold/reminder action. Feed rows are
+  plain, with meaningful unread state and no decorative dividers/test button.
+- All 312 mobile tests with coverage, clean analysis, Swift parse and native
+  simulator compilation pass. Candidate version is 1.0.7 (60), with verified
+  production API/auth inputs and no onboarding preview. The user asked to prepare
+  it and will test physically later; `devicectl` currently reports the iPhone
+  unavailable. Actual camera/library/voice, browser legal links, APNs delivery
+  and account-change/foreground/background acceptance are not claimed as passed.
+  Signed archive and App Store export completed before interruption. October 12
+  verification confirms strict app/ShareExtension signatures, unexpired App Store
+  profiles, disabled debugging, production APNs/auth/API, public anon-role client
+  key, canonical legal/inbox markers and new native registration handlers in the
+  compiled app. All five runtime CI jobs pass on `37c5055` (`38210945770`), draft
+  PR #55 stacked on #54. Durable IPA/checksums, verification script/JSON, phone
+  checklist and legal/privacy follow-up report are saved in
+  `Documents/FindEZ/AppStore/1.0.7-build60-prepared`. IPA SHA-256 is
+  `4f07de9e189809ef219a9cf9aa5558cd8a16a1231184b6be188882f7e5c208bc`.
+  Existing default launch-image asset warning remains; the native storyboard
+  uses the FindEZ text wordmark. No Apple validation/upload/submission occurred
+  for 60. Physical checks remain deferred by the user; do not present this local
+  package as a TestFlight delivery or change build 59's review selection.
+
 ## October 11 canonical legal pages and mobile links
 
 - Web source `1e6a8b3` is live from
@@ -1016,7 +1079,9 @@ Last reviewed on 2026-10-05 during scoped launch-blocker fixes.
 
 ## Release status requiring verification
 
-- The public App Store release is FindEZ AI `1.0.6 (17)`. The recovery branch
+- The current US App Store release is FindEZ AI `1.0.7 (59)`, verified October 12
+  as recorded above. The recovery history below concerns former public
+  `1.0.6 (17)`. The recovery branch
   restores the complete `mobile/` tree from its matching release commit,
   `0bb4f01066ca8326e0bc807e8a790bf54bba935f`, with only the version metadata
   advanced to `1.0.7+30`.

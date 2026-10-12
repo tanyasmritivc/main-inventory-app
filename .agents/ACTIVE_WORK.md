@@ -1,5 +1,55 @@
 # Active work
 
+## October 12 build-60 TestFlight delivery
+
+The user authorizes TestFlight upload/internal-group delivery with phone testing
+still deferred. Apple has approved/released 1.0.7 (59); the US storefront confirms
+1.0.7 and ASC reports `READY_FOR_SALE` with selected 59 and manual release type.
+The original 1.0.7 (60) validation fails because that train is closed. Runtime
+`a6ea4c5` changes only version metadata to 1.0.8+60. All five CI jobs in
+`38302159412`, signed archive/export, strict app/extension signatures, App Store
+profiles and production configuration checks pass. Apple validates and accepts
+upload `87711752-2586-445c-a2a5-ebc12e7b4b94` at 13:17:03 PDT.
+Apple processing is COMPLETE without errors/warnings. Build 60 is VALID,
+APP_STORE_ELIGIBLE, nonexpired and IN_BETA_TESTING. Both existing internal groups
+include it and the test notes are saved; public build-59 selection/manual release
+type are verified unchanged. Phone acceptance remains deferred. No
+App Store selection, review submission or public release change is authorized.
+Durable artifacts are in `Documents/FindEZ/AppStore/1.0.8-build60`.
+
+## Native notification permission and read state (October 11)
+
+Sequential lane `fix/mobile-notification-permissions` in
+`/Users/tanyasmritivictorcharles/dev/findez-mobile-notifications`, based on
+`5b21899`. Existing OS authorization reconnects without a launch prompt; the
+inbox has an explicit Enable action and denied permission links to Settings.
+Registration is serialized, bounded natively and guarded against an account
+change. Device writes capture authentication. Logout stops OS delivery and clears
+alerts; next registration reassigns the server token to the authenticated user.
+The app does not issue a server token-delete request during offline logout.
+Inbox reads are explicit, re-fetch after a successful write, keep rows on failure,
+refresh while visible/resumed and publish validated account-scoped counts. Shell
+generations prevent late badge reads from undoing inbox writes. The auth gate
+keys the shell by account; old routes close on account changes. Local stock
+refreshes no longer trigger the first permission request; setting a threshold
+remains the explicit reminder action. Decorative feed cards/dividers and the
+test-push toolbar action are removed.
+
+All 312 mobile tests with coverage and clean analysis pass, including a delayed
+shell-count regression; Swift parses and native simulator compilation succeeds
+with production defines. Candidate is 1.0.7 (60). Signed archive/export and
+October 12 package verification are complete: strict main/extension signatures,
+App Store profiles, production configuration/APNs and compiled feature markers
+pass. All five runtime CI jobs pass on `37c5055` in `38210945770`, draft PR #55.
+IPA SHA-256 is `4f07de9e189809ef219a9cf9aa5558cd8a16a1231184b6be188882f7e5c208bc`.
+The durable package in `Documents/FindEZ/AppStore/1.0.7-build60-prepared` includes
+verification JSON/script, checksums, phone acceptance checklist and the requested
+legal/privacy follow-up report. Apple server validation/upload/submission are not
+performed. The user explicitly chose preparation now and physical testing later
+because the connected iPhone is unavailable. Keep camera/library/voice, public
+legal links, actual APNs delivery/tap/badge and logout/relogin acceptance pending.
+Do not upload or replace pending App Review build 59 without release authorization.
+
 ## Canonical legal and permissions (October 11)
 
 Sequential lane `fix/canonical-legal-pages` in
