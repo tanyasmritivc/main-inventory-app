@@ -1,5 +1,14 @@
 # Decisions
 
+## October 12 build-60 delivery scope
+
+The user authorizes uploading the prepared notification/legal-link candidate to
+TestFlight and enabling the two existing internal groups. After 1.0.7 approval
+closed its build train, advance only version metadata to 1.0.8+60; preserve the
+rejected original artifact and verified runtime behavior. Do not create a new
+public submission or replace the released 1.0.7 (59) selection. Physical phone
+acceptance remains deferred and is separate from Apple processing/group access.
+
 ## October 11 native notifications
 
 OS notification authorization belongs to the phone app; ask for new permission

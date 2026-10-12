@@ -1,5 +1,22 @@
 # Active work
 
+## October 12 build-60 TestFlight delivery
+
+The user authorizes TestFlight upload/internal-group delivery with phone testing
+still deferred. Apple has approved/released 1.0.7 (59); the US storefront confirms
+1.0.7 and ASC reports `READY_FOR_SALE` with selected 59 and manual release type.
+The original 1.0.7 (60) validation fails because that train is closed. Runtime
+`a6ea4c5` changes only version metadata to 1.0.8+60. All five CI jobs in
+`38302159412`, signed archive/export, strict app/extension signatures, App Store
+profiles and production configuration checks pass. Apple validates and accepts
+upload `87711752-2586-445c-a2a5-ebc12e7b4b94` at 13:17:03 PDT.
+Apple processing is COMPLETE without errors/warnings. Build 60 is VALID,
+APP_STORE_ELIGIBLE, nonexpired and IN_BETA_TESTING. Both existing internal groups
+include it and the test notes are saved; public build-59 selection/manual release
+type are verified unchanged. Phone acceptance remains deferred. No
+App Store selection, review submission or public release change is authorized.
+Durable artifacts are in `Documents/FindEZ/AppStore/1.0.8-build60`.
+
 ## Native notification permission and read state (October 11)
 
 Sequential lane `fix/mobile-notification-permissions` in
