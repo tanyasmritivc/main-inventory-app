@@ -858,10 +858,16 @@ class ApiClient {
   Future<Map<String, dynamic>> createTeam({
     required String name,
     required String program,
+    String? customCategory,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/teams',
-      data: {'name': name, 'program': program, 'rookie': false},
+      data: {
+        'name': name,
+        'program': program,
+        'rookie': false,
+        if (program == 'custom') 'custom_category': customCategory,
+      },
       options: _authOptions(),
     );
     return Map<String, dynamic>.from(res.data?['team'] ?? const {});

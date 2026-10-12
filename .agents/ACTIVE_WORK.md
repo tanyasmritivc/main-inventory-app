@@ -9,7 +9,7 @@ and a cleaner first-launch walkthrough in Light/Dark. Name/subtitle are saved
 in the editable 1.0.8 App Store draft (metadata requires a new approved version).
 Build 60 is already delivered to both existing internal TestFlight groups.
 
-Current lane `fix/deleted-space-review-refresh`, based on `6a406e8`, in the
+Completed lane `fix/deleted-space-review-refresh`, based on `6a406e8`, in the
 existing mobile-notifications checkout. Production review rows have only a
 location string, so pending identifications survive Space deletion. Home/cache
 also need immediate mutation invalidation. Migration 039 binds owned matching
@@ -27,7 +27,14 @@ Robot Room and provides their account privately for a targeted existing-entry
 repair; do not write that email or private row snapshots to repository context.
 Their Robot Room still exists with six pending records, so do not purge them as
 orphans. Binding them to the current Space lets its next deletion remove them.
-Broader categories/positioning and onboarding follow in separate lanes.
+Current lane `feat/inventory-team-categories`, based on `e34b37b`, adds 29
+alphabetical general inventory group categories with a bounded persisted custom
+label, neutral create forms and shared display labels. Migration 040 precedes
+backend/client deployment. Existing program keys, licensing and access stay
+compatible. README, current product context, learning guide and the legacy EEZY
+prompt describe homes, businesses, labs, teams and industry. Focused backend,
+mobile Light/Dark failed-draft and PostgreSQL checks pass; full checks/deployment
+are underway. Onboarding follows in a separate lane.
 
 ## October 12 build-60 TestFlight delivery
 

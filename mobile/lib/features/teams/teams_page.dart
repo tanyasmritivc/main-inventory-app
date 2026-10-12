@@ -9,6 +9,8 @@ import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/upgrade_sheet.dart';
 import 'team_workspace_page.dart';
+import 'create_team_sheet.dart';
+import 'team_categories.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class TeamsPage extends StatefulWidget {
@@ -53,113 +55,13 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   Future<void> _createTeam() async {
-    final name = TextEditingController();
-    var program = 'robotics';
-    final submitted = await showModalBottomSheet<bool>(
+    final team = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            10,
-            20,
-            20 + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const AppText(
-                  'Create Team',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                AppText(
-                  'A team brings people, spaces, and work together.',
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, AppColors.muted),
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: name,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Team name or number',
-                  ),
-                  style: AppTypography.bodyStyleOf(context),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: program,
-                  decoration: const InputDecoration(labelText: 'Team type'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'robotics',
-                      child: AppText('Robotics Team'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'ftc',
-                      child: AppText('FIRST Tech Challenge'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'frc',
-                      child: AppText('FIRST Robotics Competition'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'fll',
-                      child: AppText('FIRST LEGO League'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'vex',
-                      child: AppText('VEX Robotics'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'education',
-                      child: AppText('School or Classroom'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'makerspace',
-                      child: AppText('Makerspace or Workshop'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'club',
-                      child: AppText('Club or Community Group'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'business',
-                      child: AppText('Business or Operations'),
-                    ),
-                    DropdownMenuItem(value: 'other', child: AppText('Other')),
-                  ],
-                  onChanged: (value) =>
-                      setSheetState(() => program = value ?? 'robotics'),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () {
-                    if (name.text.trim().isEmpty) return;
-                    Navigator.pop(context, true);
-                  },
-                  child: const AppText('Create Team'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      builder: (_) => CreateTeamSheet(api: widget.api),
     );
-    if (submitted != true) return;
+    if (team == null || !mounted) return;
     try {
-      final team = await widget.api.createTeam(
-        name: name.text.trim(),
-        program: program,
-      );
       await _load();
       if (!mounted) return;
       await Navigator.push(
@@ -337,7 +239,10 @@ class _TeamRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = team['role']?.toString() ?? 'member';
-    final program = team['program']?.toString().toUpperCase() ?? '';
+    final program = teamCategoryLabel(
+      team['program']?.toString(),
+      team['custom_category']?.toString(),
+    );
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       leading: Icon(
