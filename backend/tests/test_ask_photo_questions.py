@@ -36,7 +36,7 @@ def test_strong_identifiers_match_product_not_physical_ownership():
     result = photos.format_photo_answer(identified=[item()], inventory=[item(), item(item_id='b', quantity=3, location='Loft')], photo_url=URL)
     assert '5 units available' in result['assistant_message']
     assert 'Garage, Loft' in result['assistant_message']
-    assert 'already lists this product' in result['assistant_message']
+    assert 'Your inventory lists these products' in result['assistant_message']
     assert len(result['answer_context']['rows']) == 2
     assert all('required_quantity' not in row and 'status' not in row for row in result['answer_context']['rows'])
 
@@ -55,7 +55,7 @@ def test_weak_names_short_codes_and_uncertainty_cannot_confirm_product(photo, ex
 def test_uncertain_item_and_no_match_are_honest_and_visible_in_review():
     result = photos.format_photo_answer(identified=[item(scan_evidence={'needs_review': True}, review_id='r', review_status='pending')], inventory=[], photo_url=URL)
     text = result['assistant_message']
-    assert 'Possible identification' in text and 'cannot prove' in text
+    assert 'I am not certain' in text and 'does not mean you do not own' in text
     assert 'Review on Home' in text and 'No inventory item has been added' in text
 
 
@@ -67,9 +67,81 @@ def test_zero_stock_and_output_has_no_private_fields():
 
 def test_empty_and_large_photo_results_are_explicitly_bounded():
     assert 'could not identify' in photos.format_photo_answer(identified=[], inventory=[], photo_url=URL)['assistant_message']
-    result = photos.format_photo_answer(identified=[item() for _ in range(21)], inventory=[item()], photo_url=URL)
-    assert '1 additional objects' in result['assistant_message']
+    result = photos.format_photo_answer(identified=[item(name=f'Servo type {i}') for i in range(21)], inventory=[item()], photo_url=URL)
+    assert 'Showing 6 of 21 distinct item types' in result['assistant_message']
+    assert 'Servo type 6' not in result['assistant_message']
     assert len(result['answer_context']['rows']) == 1
+
+
+def test_repeated_fragments_do_not_become_repeated_objects_or_stock_totals():
+    result = photos.format_photo_answer(identified=[item() for _ in range(30)], inventory=[item()], photo_url=URL)
+    text = result['assistant_message']
+    assert text.count('- Servo (') == 1
+    assert text.count('2 units available') == 1
+    assert '30' not in text and 'additional' not in text
+    assert len(result['answer_context']['rows']) == 1
+
+
+@pytest.mark.parametrize('name', ['Unknown', 'unknown object', 'Unidentified item', 'Object', 'Item', ''])
+def test_generic_unknown_labels_never_match_inventory_by_name(name):
+    photo = item(name=name, barcode='', brand='', part_number='', scan_evidence={'needs_review': True})
+    assert photos._match(photo, item(name=name)) is None
+    result = photos.format_photo_answer(identified=[photo], inventory=[item(name=name)], photo_url=URL)
+    assert 'could not identify the contents' in result['assistant_message']
+    assert 'Possible name matches' not in result['assistant_message']
+    assert result['answer_context']['rows'] == []
+
+
+def test_noisy_scene_has_one_inventory_check_and_one_uncertainty_explanation():
+    names = ['blueberry toast', 'banana dessert', 'banana slice', 'sliced banana',
+             'plastic bag', 'aluminum foil', 'bubble wrap', 'unknown object', 'unknown']
+    identified = [item(name=name, barcode='', brand='', part_number='', category='Supplies',
+                       scan_evidence={'needs_review': True}) for name in names] * 3
+    inventory = [item(item_id=str(i), name='Other saved part') for i in range(637)]
+    result = photos.format_photo_answer(identified=identified, inventory=inventory, photo_url=URL)
+    text = result['assistant_message']
+    assert text.count('Inventory check') == 1
+    assert text.count('No matching saved items found') == 1
+    assert text.count('The uncertain labels are guesses') == 1
+    assert 'Category:' not in text and '637' not in text and 'unknown object' not in text
+    assert 'Showing 6 of 7 distinct item types' in text
+    assert len(text) < 900
+    assert '637 accessible item records' in result['answer_context']['sources'][1]['detail']
+
+
+def test_clear_identifications_precede_uncertain_fragments_without_confirming_them():
+    weak = [item(name=f'Guess {i}', scan_evidence={'needs_review': True}) for i in range(10)]
+    clear = item(name='Known motor', confidence=0.95)
+    result = photos.format_photo_answer(identified=[*weak, clear], inventory=[item()], photo_url=URL)
+    text = result['assistant_message']
+    assert text.index('Known motor') < text.index('Guess 0')
+    assert 'Guess 0 (uncertain' in text
+
+
+def test_same_named_products_with_different_identifiers_remain_distinct():
+    first = item(name='Motor', barcode='', part_number='M-1')
+    second = item(name='Motor', barcode='', part_number='M-2')
+    inventory = [first, {**second, 'item_id': 'b', 'quantity': 4}]
+    result = photos.format_photo_answer(identified=[first, second], inventory=inventory, photo_url=URL)
+    assert len(result['answer_context']['rows']) == 2
+    assert 'Part: M-1' in result['assistant_message'] and 'Part: M-2' in result['assistant_message']
+    assert '2 units available' in result['assistant_message'] and '4 units available' in result['assistant_message']
+
+
+def test_low_confidence_cannot_confirm_stock_even_without_review_flag():
+    photo = item(confidence=0.3)
+    result = photos.format_photo_answer(identified=[photo], inventory=[item()], photo_url=URL)
+    assert 'Possible name matches' in result['assistant_message']
+    assert 'units available' not in result['assistant_message']
+
+
+def test_measurements_are_shown_only_when_requested_and_keep_estimate_caveat():
+    photo = item(scan_evidence={'length_mm': 123, 'width_mm': 45})
+    normal = photos.format_photo_answer(identified=[photo], inventory=[], photo_url=URL)
+    measured = photos.format_photo_answer(identified=[photo], inventory=[], photo_url=URL, message='How wide is this?')
+    assert '123 x 45' not in normal['assistant_message']
+    assert 'estimated 123 x 45 mm' in measured['assistant_message']
+    assert 'check with a ruler' in measured['assistant_message']
 
 
 def test_barcode_padding_brand_aliases_and_specific_name_matches():
@@ -134,6 +206,18 @@ def test_photo_requests_use_no_mutation_tools_and_keep_grounded_check(question, 
         gateway.assert_not_called()
         assert 'confirm the change' in result['assistant_message']
     assert 'No inventory item' in result['assistant_message']
+
+
+def test_unknown_only_photo_does_not_generate_an_explanation_from_missing_identity():
+    unknown = item(name='Unknown object', scan_evidence={'needs_review': True})
+    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
+         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [unknown]})), \
+         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
+         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']), \
+         patch.object(photos, 'accessible_inventory', return_value=[]), patch.object(photos, 'gateway_completion') as gateway:
+        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='How does this work?', image_bytes=image()))
+    gateway.assert_not_called()
+    assert 'could not identify the contents' in result['assistant_message']
 
 
 @pytest.mark.parametrize('path', ['other-user/ask-' + 'a'*32 + '.jpg', 'user-1/../photo.jpg', 'user-1/photo.jpg', None])

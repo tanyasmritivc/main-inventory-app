@@ -461,6 +461,12 @@ analysis/snapshot failures. External services remain stubbed. The existing
 conversation snapshot migration and PostgreSQL ownership checks also cover photo
 metadata; no new schema is required.
 
+Photo clarity regressions also cover a noisy food/packaging scene with 637 saved
+records, duplicate fragments without inflated stock/object counts, one inventory
+summary and uncertainty explanation, generic unknown labels with no name matches,
+clear results preceding uncertain ones, a six-type output limit, same-name
+products with different identifiers, and measurements only when requested.
+
 `mobile/test/ask_page_test.dart` includes camera/library selection, preview,
 replace/remove, picker cancellation/permission errors, image-only default
 questions, correct photo endpoint selection, safe failures, reset isolation,

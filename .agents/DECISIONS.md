@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-10-11: Summarize Ask photo detections instead of repeating scan fragments
+
+Photo detections can be overlapping fragments rather than distinct physical
+objects. Group duplicate names with the same product identifiers into a short
+list of item types, never infer physical quantity from repeated detections, and
+do not name-match generic unknown labels. Present uncertainty and the inventory
+check once; missing saved matches do not prove lack of ownership. Keep exact
+barcode/brand-and-part matching separate from possible name matches. Omit generic
+categories from chat and include estimated dimensions only when asked. This is
+shared backend presentation, preserving the existing client and saved-context
+contracts and the underlying FIND/Review results. It does not claim to correct
+every model identification or rewrite previously saved conversations.
+
 ## 2026-10-08: Disclose AI processing by operator and feature
 
 The developer confirms FIND and the FTCTools language gateway perform inference
