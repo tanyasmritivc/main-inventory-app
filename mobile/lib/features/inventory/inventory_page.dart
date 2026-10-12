@@ -49,12 +49,14 @@ class InventoryPage extends StatefulWidget {
     this.showAppBar = true,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
+    this.onSpaceDeleted,
   });
 
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
   final bool showAppBar;
+  final ValueChanged<String>? onSpaceDeleted;
   final void Function(VoidCallback)? onRegisterJoinSpace;
   final void Function(Future<void> Function(Map<String, dynamic>))?
   onRegisterOpenAssistDestination;
@@ -1651,6 +1653,7 @@ class _InventoryPageState extends State<InventoryPage>
   bool _hasLoadedItems = false;
   String? _itemsOwner;
   Future<void>? _itemsLoad;
+  int _itemsReadGeneration = 0;
   bool _openingLocation = false;
   String? _error;
   List<InventoryItem> _items = const [];
@@ -2055,7 +2058,12 @@ class _InventoryPageState extends State<InventoryPage>
 
   Future<void> _fetchItems() async {
     if (!mounted) return;
+    final generation = ++_itemsReadGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
+    bool current() =>
+        mounted &&
+        generation == _itemsReadGeneration &&
+        Supabase.instance.client.auth.currentUser?.id == owner;
     final t0 = DateTime.now().millisecondsSinceEpoch;
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start',
@@ -2079,7 +2087,7 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)',
       );
-      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+      if (!current()) {
         return;
       }
       setState(() {
@@ -2088,7 +2096,7 @@ class _InventoryPageState extends State<InventoryPage>
         _itemsOwner = owner;
       });
       await _refreshRestock();
-      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+      if (!current()) {
         return;
       }
       _applyLocalSearch(_query.value);
@@ -2096,19 +2104,19 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'Session expired. Please sign in again.');
     } on TimeoutException catch (e) {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: TimeoutException: $e',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'connection');
     } on dio.DioException catch (e) {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}',
       );
-      if (!mounted) return;
+      if (!current()) return;
       if (e.response?.statusCode == 429) {
         setState(
           () =>
@@ -2121,13 +2129,13 @@ class _InventoryPageState extends State<InventoryPage>
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: catch: $e',
       );
-      if (!mounted) return;
+      if (!current()) return;
       setState(() => _error = 'connection');
     } finally {
       debugPrint(
         '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems finally (total ${DateTime.now().millisecondsSinceEpoch - t0}ms)',
       );
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -3583,6 +3591,7 @@ class _InventoryPageState extends State<InventoryPage>
     String loc,
     String spaceId,
   ) async {
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     final spaceData = _spaces.firstWhere(
       (s) => s['id'] == spaceId,
       orElse: () => const {},
@@ -3598,8 +3607,8 @@ class _InventoryPageState extends State<InventoryPage>
         ),
         content: AppText(
           itemCount > 0
-              ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
-              : 'The space "$loc" will be removed.',
+              ? 'The Space "$loc", its $itemCount saved item(s), and any pending identifications will be permanently deleted.'
+              : 'The Space "$loc" and any pending identifications will be permanently deleted.',
           style: TextStyle(
             color: AppTheme.foreground(context, Color(0x73FFFFFF)),
           ),
@@ -3623,9 +3632,17 @@ class _InventoryPageState extends State<InventoryPage>
     );
     if (confirm != true) return;
     if (!mounted || !context.mounted) return;
+    if (Supabase.instance.client.auth.currentUser?.id != owner) return;
     try {
-      await widget.api.deleteSpace(spaceId: spaceId);
+      final deleted = await widget.api.deleteSpace(spaceId: spaceId);
+      if (!deleted) throw StateError('Space deletion was not confirmed');
+      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
+        return;
+      }
+      _itemsReadGeneration++;
+      _itemsLoad = null;
       InventoryCache.removeSpace(spaceId);
+      widget.onSpaceDeleted?.call(spaceId);
     } catch (e) {
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

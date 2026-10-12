@@ -18,12 +18,14 @@ class HomePage extends StatefulWidget {
     required this.onOpenCheckouts,
     required this.onOpenSpace,
     this.refreshToken = 0,
+    this.deletedSpaceId,
   });
   final ApiClient api;
   final ValueChanged<String> onOpenAsk;
   final VoidCallback onOpenReview, onOpenCheckouts;
   final Future<void> Function(Map<String, dynamic>) onOpenSpace;
   final int refreshToken;
+  final String? deletedSpaceId;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -48,6 +50,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final deleted = widget.deletedSpaceId;
+    if (deleted != null && deleted != oldWidget.deletedSpaceId) {
+      _items = _items.where((item) => item.spaceId != deleted).toList();
+      _spaces = _spaces.where((space) => space['id'] != deleted).toList();
+      // A failed refresh must not keep displaying a known-obsolete review count.
+      _pendingReviews = null;
+    }
     if (oldWidget.refreshToken != widget.refreshToken) unawaited(_load());
   }
 

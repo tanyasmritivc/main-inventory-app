@@ -692,7 +692,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   async function onDeleteSpace(space: Space) {
-    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "Items will remain in Inventory but will no longer be linked to this Space.", confirmLabel: 'Delete Space', danger: true })) return;
+    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "This Space, its saved items, and any pending identifications will be permanently deleted.", confirmLabel: 'Delete Space', danger: true })) return;
     setLoading(true);
     setError(null);
     try {

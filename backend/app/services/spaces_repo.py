@@ -181,7 +181,7 @@ def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
 
 
 def delete_space(*, user_id: str, space_id: str) -> bool:
-    """Delete the space row and its items through the items FK cascade."""
+    """Delete the Space, saved items and bound review records through FK cascades."""
     supabase = get_supabase_admin()
     from app.services.items_repo import invalidate_inventory_cache
 

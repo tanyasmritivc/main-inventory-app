@@ -1,5 +1,31 @@
 # Active work
 
+## October 12 requested sequential updates
+
+The user requests: exact App Store name `FindEZ: AI Inventory` and subtitle
+`AI item recognition & search`; deletion of Space-owned Home attention/review
+entries; broader inventory positioning and alphabetized/custom team categories;
+and a cleaner first-launch walkthrough in Light/Dark. Name/subtitle are saved
+in the editable 1.0.8 App Store draft (metadata requires a new approved version).
+Build 60 is already delivered to both existing internal TestFlight groups.
+
+Current lane `fix/deleted-space-review-refresh`, based on `6a406e8`, in the
+existing mobile-notifications checkout. Production review rows have only a
+location string, so pending identifications survive Space deletion. Home/cache
+also need immediate mutation invalidation. Migration 039 binds owned matching
+reviews to a stable Space ID with cascade deletion and rename synchronization;
+unassigned reviews and other owners remain separate. Mobile invalidates old
+reads and refreshes Home after confirmed deletion without fabricating a count.
+All 317 mobile tests/coverage, clean analysis and full disposable PostgreSQL 17
+permissions/lifecycle checks pass. Shared CI and migration deployment are next.
+The web delete confirmation also describes item/review deletion accurately.
+The user identifies deleted
+Robot Room and provides their account privately for a targeted existing-entry
+repair; do not write that email or private row snapshots to repository context.
+Their Robot Room still exists with six pending records, so do not purge them as
+orphans. Binding them to the current Space lets its next deletion remove them.
+Broader categories/positioning and onboarding follow in separate lanes.
+
 ## October 12 build-60 TestFlight delivery
 
 The user authorizes TestFlight upload/internal-group delivery with phone testing

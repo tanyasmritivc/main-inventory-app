@@ -52,6 +52,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSub;
   int _currentPage = 0;
   int _inventoryRefreshToken = 0;
+  int _inventoryCacheGeneration = 0;
+  String? _deletedSpaceId;
   DateTime? _lastTabSwitchRefreshAt;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
   int _inventorySection = 0;
@@ -67,8 +69,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   String? _chatInitialMessage;
 
   Future<void> _prefetchInventoryCache() async {
+    final generation = ++_inventoryCacheGeneration;
+    final account = widget.api.accountId;
     try {
       final result = await widget.api.searchItems(query: '');
+      if (!mounted ||
+          generation != _inventoryCacheGeneration ||
+          account != widget.api.accountId) {
+        return;
+      }
       InventoryCache.setItems(result.items);
     } catch (_) {
       // acceptable: read-only background cache warmup; silently skip if
@@ -491,6 +500,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             HomePage(
               api: widget.api,
               refreshToken: _inventoryRefreshToken,
+              deletedSpaceId: _deletedSpaceId,
               onOpenAsk: _openAsk,
               onOpenReview: _openReview,
               onOpenCheckouts: _openCheckouts,
@@ -532,6 +542,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 InventoryPage(
                   api: widget.api,
                   refreshToken: _inventoryRefreshToken,
+                  onSpaceDeleted: (spaceId) {
+                    _inventoryCacheGeneration++;
+                    InventoryCache.removeSpace(spaceId);
+                    setState(() {
+                      _deletedSpaceId = spaceId;
+                      _inventoryRefreshToken++;
+                    });
+                  },
                   showAppBar: false,
                   onRegisterJoinSpace: (fn) {
                     if (_joinSpaceCallback == fn) return;
