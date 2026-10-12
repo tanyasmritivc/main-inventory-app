@@ -1,5 +1,15 @@
 # Decisions
 
+## October 11 notification read state
+
+Treat the server inbox as authoritative. After a read write, invalidate older
+requests and re-read; do not assume the count is zero when another event may have
+arrived. Same-tab snapshots update the bell immediately; other tabs receive an
+invalidation and fetch their own data. Ignore foreign-account events, preserve
+visible rows during background reads, and show failures instead of inventing an
+empty feed. The bell feed contains Team updates within the current 14-day window;
+local stock reminders are a separate capability. No web push provider is added.
+
 ## October 11 professional web presentation
 
 The user wants the existing app font retained, with Source Sans 3 for AI replies

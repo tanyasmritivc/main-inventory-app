@@ -1,5 +1,6 @@
 "use client";
 import { accountRequest } from "@/lib/account-request";
+import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -43,11 +44,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [userInitial, setUserInitial] = useState("");
   const [userName, setUserName] = useState("Your account");
   const [avatarUrl, setAvatarUrl] = useState<string>();
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true,
-      generation = 0;
+      generation = 0,
+      notificationGeneration = 0;
+    let notificationAccount: string | undefined;
     const signupAttempts = new Set<string>();
     async function loadIdentity() {
       const ticket = ++generation;
@@ -55,6 +58,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const { data } = await supabase.auth.getSession();
       if (!current()) return;
       const user = data.session?.user;
+      if (notificationAccount !== user?.id) {
+        notificationAccount = user?.id;
+        notificationGeneration++;
+        setUnread(null);
+      }
       const name = String(
         user?.user_metadata?.display_name ?? user?.email ?? "",
       );
@@ -77,14 +85,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }
           })
           .catch(() => {});
+        const notificationTicket = ++notificationGeneration;
         const notificationsRequest = accountRequest<{ unread_count: number }>(
           user.id,
           "/notifications",
         )
           .then((result) => {
-            if (current()) setUnread(result.unread_count ?? 0);
+            if (current() && notificationTicket === notificationGeneration)
+              setUnread(Number.isSafeInteger(result.unread_count) && result.unread_count >= 0 ? result.unread_count : null);
           })
-          .catch(() => {});
+          .catch(() => {
+            if (current() && notificationTicket === notificationGeneration) setUnread(null);
+          });
         await Promise.allSettled([profileRequest, notificationsRequest]);
       }
       if (!current()) return;
@@ -138,20 +150,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setUserName("Your account");
       setUserInitial("");
       setAvatarUrl(undefined);
-      setUnread(0);
+      notificationAccount = undefined;
+      notificationGeneration++;
+      setUnread(null);
       if (event !== "SIGNED_OUT") void Promise.resolve().then(loadIdentity);
     });
     const onProfileChange = () => {
       void loadIdentity();
     };
     window.addEventListener("findez-profile-changed", onProfileChange);
-    const timer = window.setInterval(loadIdentity, 60_000);
+    const stopNotifications = subscribeNotifications((value) => {
+      if (!active || value.accountId !== notificationAccount) return;
+      notificationGeneration++;
+      setUnread(value.unread);
+      if (value.unread === null) void loadIdentity();
+    });
+    const onFocus = () => { if (document.visibilityState === "visible") void loadIdentity(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const timer = window.setInterval(onFocus, 60_000);
     return () => {
       active = false;
       generation++;
       authListener.subscription.unsubscribe();
       window.clearInterval(timer);
       window.removeEventListener("findez-profile-changed", onProfileChange);
+      stopNotifications();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, [supabase]);
 
@@ -228,10 +254,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="app-icon-button app-notification-button"
             onClick={() => router.push("/notifications")}
-            aria-label={`${unread} unread notifications`}
+            aria-label={unread === null ? "Notifications" : `${unread} unread notifications`}
+            title={unread === null ? "Open notifications to check for updates" : undefined}
           >
             <Bell size={18} />
-            {unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
+            {unread !== null && unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
           </button>
           <button
             className="app-avatar"

@@ -1,5 +1,34 @@
 # Active work
 
+## Notification refresh and read state (October 11)
+
+Sequential second lane: `fix/notification-refresh` in
+`/Users/tanyasmritivictorcharles/dev/findez-notification-refresh`, stacked on #52.
+Web bell counts consume account-scoped inbox snapshots and invalidate pending
+reads after writes; cross-tab invalidations trigger a fresh server read. Inbox
+refreshes on focus/visibility and every 30 seconds while visible, preserves rows
+during refresh/failure, validates payloads, and re-reads after marking read so a
+new event stays unread. Empty copy explains the Team feed. Tests cover failed
+reads/writes, account switches, stale badge responses and new events during reads.
+All 203 web tests and 380 backend/API-doc tests pass; TypeScript and ESLint have
+no errors (one intentional generation-ref warning). Web webpack compilation
+passes with the fictional local environment. Safari confirms a successful read
+clears both the unread dot and bell immediately. Broadcasts carry a source ID
+to avoid invalidating the sender document twice. Runtime `0189a17` is live from
+`web-notification-refresh-20261011`, draft PR #53 stacked on #52. All five CI jobs
+pass (`38204481906`); server build/tests and public guards/assets/origins/headers
+pass, with zero production dependency vulnerabilities and 622 old static files
+retained. A rollback drop-in and source manifest are beside the release.
+No backend runtime, schema or native files are
+changed. Seven focused notification backend/APNs tests pass.
+
+Read-only production checks confirm recipient/read/activity/push tables and
+APNs configuration/key file availability. No push message was sent; neither
+configuration nor mocked APNs payload tests prove physical delivery. Native
+auto-permission prompts, inbox badge/read races and physical push acceptance must
+be addressed with the later mobile permissions/link lane and a new binary.
+Keep pending build-59 App Review unchanged until explicit release authorization.
+
 ## Professional interface, notifications and canonical legal pages (October 11)
 
 User requests sequential completion: (1) Markdown and cleaner chat, (2) less

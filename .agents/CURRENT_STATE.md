@@ -1,5 +1,25 @@
 # Current state
 
+## October 11 notification inbox refresh
+
+- Web runtime `0189a17` is live from
+  `/home/ubuntu/findez-web-releases/web-notification-refresh-20261011/frontend`,
+  draft PR #53 stacked on #52. Read state and bell snapshots stay in sync;
+  stale requests and sender-document broadcast echoes are invalidated, visible
+  inboxes refresh on focus/poll, and failed refreshes retain rows with an error.
+  Read writes re-fetch instead of assuming no new events arrived.
+- All 203 web and 380 backend/API-doc tests, TypeScript, webpack builds and five
+  CI jobs pass (`38204481906`). ESLint has no errors and one generation-ref
+  warning. Safari verifies a fictional update's unread marker and bell clear
+  together. Production schema/APNs configuration checks are read-only; no actual
+  push was sent. Physical APNs delivery and native permission/read races remain
+  for the later mobile lane; existing App Review submission is preserved.
+- Candidate and public title/headers, 18 page guards, static assets, exact API
+  reference and production origins pass. 622 previous static files are retained;
+  dependencies and all other live source stay unchanged. Restore the release's
+  `previous-web-rebuild.conf` to the existing drop-in and restart only the web
+  service for rollback. No backend runtime or schema is changed.
+
 ## October 11 professional web polish
 
 - Runtime `6960b2d`, draft PR #52 stacked on #51, is live from

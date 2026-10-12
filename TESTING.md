@@ -132,6 +132,13 @@ on the PR head before finishing.
 
 ### Persistent web navigation and hover sidebar
 
+Notification follow-up adds failed-write and failed-refresh visibility, account
+switch clearing, event-arrival-during-read and stale bell-response tests. All 203
+web and 380 backend/API-doc tests pass. Recipient/read tests bind both queries and
+writes to the authenticated user; team fanout persists deduplicated recipients
+before enqueuing push. Production checks are read-only and confirm schema/APNs
+configuration only. Physical APNs delivery remains a separate native release gate.
+
 October 11 professional polish adds real Markdown safety/formatting coverage,
 pin/unpin and stored frame preference, inert narrow navigation, message-scoped
 pending status after a failed answer, and Home attention counts without zero

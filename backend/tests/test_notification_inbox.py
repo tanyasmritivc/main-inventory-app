@@ -1,0 +1,71 @@
+import os
+import sys
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+os.environ.setdefault("SUPABASE_URL", "https://placeholder.supabase.co")
+os.environ.setdefault("SUPABASE_ANON_KEY", "placeholder-anon")
+os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "placeholder-service")
+os.environ.setdefault("SUPABASE_JWKS_URL", "https://placeholder.supabase.co/.well-known/jwks.json")
+os.environ.setdefault("FINDEZ_AGENT_KEY", "placeholder-agent-key")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from app.api.routes import notifications, teams
+
+
+def database(results):
+    client = MagicMock()
+    query = MagicMock()
+    client.table.return_value = query
+    for name in ("select", "eq", "neq", "gte", "in_", "order", "limit", "upsert", "insert"):
+        getattr(query, name).return_value = query
+    query.execute.side_effect = [SimpleNamespace(data=value) for value in results]
+    return client, query
+
+
+def test_inbox_scopes_recipients_and_reads_to_authenticated_user_and_excludes_own_actions_from_unread():
+    client, query = database([
+        [{"activity_id": "one"}, {"activity_id": "own"}, {"activity_id": "read"}],
+        [{"activity_id": value, "actor_id": actor, "team_id": "team", "action": "item_added", "summary": "Added bolts", "metadata": {}} for value, actor in [("one", "alex"), ("own", "user"), ("read", "alex")]],
+        [{"team_id": "team", "name": "Workshop"}],
+        [{"id": "alex", "display_name": "Alex"}, {"id": "user", "display_name": "QA"}],
+        [{"activity_id": "read"}],
+    ])
+    with patch.object(notifications, "get_supabase_admin", return_value=client):
+        result = notifications.list_notifications(SimpleNamespace(user_id="user"))
+    assert result["unread_count"] == 1
+    assert [entry["is_read"] for entry in result["notifications"]] == [False, True, True]
+    assert query.eq.call_args_list.count((("user_id", "user"),)) == 2
+    query.in_.assert_any_call("activity_id", ["one", "own", "read"])
+    assert result["notifications"][0]["display_text"] == "Alex added bolts"
+
+
+def test_empty_recipient_list_never_loads_other_teams_activity():
+    client, query = database([[]])
+    with patch.object(notifications, "get_supabase_admin", return_value=client):
+        result = notifications.list_notifications(SimpleNamespace(user_id="user"))
+    assert result == {"notifications": [], "unread_count": 0}
+    client.table.assert_called_once_with("team_notification_recipients")
+    query.eq.assert_called_once_with("user_id", "user")
+
+
+def test_mark_read_writes_only_authenticated_recipient_pairs_within_history_window():
+    client, query = database([[{"activity_id": "one"}], [{"activity_id": "one", "actor_id": "alex"}], [{"activity_id": "one"}]])
+    with patch.object(notifications, "get_supabase_admin", return_value=client):
+        result = notifications.mark_notifications_read(SimpleNamespace(user_id="user"))
+    assert result == {"marked_read": 1}
+    query.eq.assert_any_call("user_id", "user")
+    query.neq.assert_called_once_with("actor_id", "user")
+    rows = query.upsert.call_args.args[0]
+    assert rows[0]["user_id"] == "user" and rows[0]["activity_id"] == "one"
+    assert query.upsert.call_args.kwargs == {"on_conflict": "user_id,activity_id"}
+    assert query.gte.call_count == 2
+
+
+def test_team_event_persists_deduplicated_recipients_before_enqueuing_push():
+    client, query = database([[{"activity_id": "one"}], [{"user_id": "owner"}, {"user_id": "member"}], [{}]])
+    with patch.object(teams, "get_supabase_admin", return_value=client), patch.object(teams, "enqueue_notifications") as enqueue:
+        teams._record_team_activity(team_id="team", actor_id="owner", action="member_joined", summary="Joined team", metadata={}, recipient_ids=["member"])
+    assert {row["user_id"] for row in query.insert.call_args_list[1].args[0]} == {"owner", "member"}
+    assert len(query.insert.call_args_list[1].args[0]) == 2
+    enqueue.assert_called_once()
+    assert set(enqueue.call_args.args[-1]) == {"owner", "member"}

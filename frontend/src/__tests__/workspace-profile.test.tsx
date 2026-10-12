@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { AppShell } from "@/components/site/app-shell";
 import { SettingsClient } from "@/components/site/settings-client";
 import { accountRequest } from "@/lib/account-request";
+import { publishNotificationSnapshot } from "@/lib/notification-state";
 
 const session = {
   user: { id: "a", email: "tester@example.test", user_metadata: {} },
@@ -88,6 +89,18 @@ test("navigation pin preference persists and moves the frame into its pinned lay
   expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(false);
   await userEvent.click(screen.getByRole("button", { name: "Pin navigation" }));
   expect(localStorage.getItem("findez-navigation-pinned")).toBe("true");
+});
+test("a confirmed inbox snapshot updates the bell immediately and an older read cannot restore its badge", async () => {
+  let resolve!: (value: { unread_count: number }) => void;
+  jest.mocked(accountRequest).mockImplementation(async (_account, path) => path === "/notifications" ? new Promise((done) => { resolve = done; }) : profile);
+  render(<AppShell><p>Workspace</p></AppShell>);
+  await waitFor(() => expect(resolve).toBeDefined());
+  await act(async () => publishNotificationSnapshot("a", 0));
+  expect(screen.getByRole("button", { name: "0 unread notifications" })).toBeTruthy();
+  await act(async () => resolve({ unread_count: 3 }));
+  expect(screen.getByRole("button", { name: "0 unread notifications" })).toBeTruthy();
+  await act(async () => publishNotificationSnapshot("b", 8));
+  expect(screen.queryByRole("button", { name: "8 unread notifications" })).toBeNull();
 });
 test("keeps profile save disabled until confirmed profile fields arrive", async () => {
   let resolve!: (value: typeof profile) => void;
