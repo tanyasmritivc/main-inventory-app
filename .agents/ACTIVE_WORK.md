@@ -17,7 +17,10 @@ reviews to a stable Space ID with cascade deletion and rename synchronization;
 unassigned reviews and other owners remain separate. Mobile invalidates old
 reads and refreshes Home after confirmed deletion without fabricating a count.
 All 317 mobile tests/coverage, clean analysis and full disposable PostgreSQL 17
-permissions/lifecycle checks pass. Shared CI and migration deployment are next.
+permissions/lifecycle checks pass. All five exact-runtime CI jobs pass on
+`e3bb2f6` in `38310437658`, draft PR #56. Migration 039 is deployed with verified
+cascade FK/triggers, unchanged pending count and healthy database. The mobile
+fix awaits the combined next binary; web copy deploys with the next lane.
 The web delete confirmation also describes item/review deletion accurately.
 The user identifies deleted
 Robot Room and provides their account privately for a targeted existing-entry

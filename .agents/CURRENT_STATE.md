@@ -13,8 +13,13 @@
   unknown count instead of retaining a known-obsolete value. All 317 mobile
   tests with coverage and clean analysis pass, including actual-shell Light/Dark,
   failed deletion/refresh and delayed warmup cases. Web confirmation copy now
-  describes the existing destructive behavior accurately. Shared CI/deployment
-  remain in progress; no new native binary is yet delivered for this lane.
+  describes the existing destructive behavior accurately. All five exact-runtime
+  CI jobs pass on `e3bb2f6` in `38310437658` (draft PR #56). Migration 039 is live;
+  its cascade FK and both triggers are verified, all 83 pending records remain,
+  and six owned matching records are bound. Database health passes. The private
+  pre-migration backup and exact applied SQL are in
+  `/home/ubuntu/findez-space-review-20261012`. No new native binary is yet delivered;
+  web confirmation copy will deploy with the broader category lane.
 - Read-only production schema confirms missing review-Space linkage and zero
   ambiguous names. The user's privately identified account still has Robot Room
   and six pending records, so these are not automatically purged as orphans.
