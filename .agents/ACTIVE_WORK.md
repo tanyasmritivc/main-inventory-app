@@ -20,8 +20,15 @@ test-push toolbar action are removed.
 
 All 312 mobile tests with coverage and clean analysis pass, including a delayed
 shell-count regression; Swift parses and native simulator compilation succeeds
-with production defines. Candidate is 1.0.7 (60). Signed archive/export and CI are
-next. The user explicitly chose preparation now and physical testing later
+with production defines. Candidate is 1.0.7 (60). Signed archive/export and
+October 12 package verification are complete: strict main/extension signatures,
+App Store profiles, production configuration/APNs and compiled feature markers
+pass. All five runtime CI jobs pass on `37c5055` in `38210945770`, draft PR #55.
+IPA SHA-256 is `4f07de9e189809ef219a9cf9aa5558cd8a16a1231184b6be188882f7e5c208bc`.
+The durable package in `Documents/FindEZ/AppStore/1.0.7-build60-prepared` includes
+verification JSON/script, checksums, phone acceptance checklist and the requested
+legal/privacy follow-up report. Apple server validation/upload/submission are not
+performed. The user explicitly chose preparation now and physical testing later
 because the connected iPhone is unavailable. Keep camera/library/voice, public
 legal links, actual APNs delivery/tap/badge and logout/relogin acceptance pending.
 Do not upload or replace pending App Review build 59 without release authorization.

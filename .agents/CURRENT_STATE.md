@@ -22,7 +22,19 @@
   it and will test physically later; `devicectl` currently reports the iPhone
   unavailable. Actual camera/library/voice, browser legal links, APNs delivery
   and account-change/foreground/background acceptance are not claimed as passed.
-  Signed packaging/CI remain in progress; no new Apple upload/submission occurs.
+  Signed archive and App Store export completed before interruption. October 12
+  verification confirms strict app/ShareExtension signatures, unexpired App Store
+  profiles, disabled debugging, production APNs/auth/API, public anon-role client
+  key, canonical legal/inbox markers and new native registration handlers in the
+  compiled app. All five runtime CI jobs pass on `37c5055` (`38210945770`), draft
+  PR #55 stacked on #54. Durable IPA/checksums, verification script/JSON, phone
+  checklist and legal/privacy follow-up report are saved in
+  `Documents/FindEZ/AppStore/1.0.7-build60-prepared`. IPA SHA-256 is
+  `4f07de9e189809ef219a9cf9aa5558cd8a16a1231184b6be188882f7e5c208bc`.
+  Existing default launch-image asset warning remains; the native storyboard
+  uses the FindEZ text wordmark. No Apple validation/upload/submission occurred
+  for 60. Physical checks remain deferred by the user; do not present this local
+  package as a TestFlight delivery or change build 59's review selection.
 
 ## October 11 canonical legal pages and mobile links
 
