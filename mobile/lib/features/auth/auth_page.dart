@@ -1181,18 +1181,21 @@ class _AuthPageState extends State<AuthPage> {
                         else
                           const SizedBox(height: 12),
                         if (!_isLogin)
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            value: _legalAccepted,
-                            onChanged: _loading
-                                ? null
-                                : (value) => setState(
-                                    () => _legalAccepted = value ?? false,
-                                  ),
-                            title: const AppText(
-                              "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
-                              style: TextStyle(fontSize: 13),
+                          Material(
+                            color: Colors.transparent,
+                            child: CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              value: _legalAccepted,
+                              onChanged: _loading
+                                  ? null
+                                  : (value) => setState(
+                                      () => _legalAccepted = value ?? false,
+                                    ),
+                              title: const AppText(
+                                "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
+                                style: TextStyle(fontSize: 13),
+                              ),
                             ),
                           ),
                         if (_isLogin)
