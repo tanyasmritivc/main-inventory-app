@@ -13,6 +13,15 @@ shared backend presentation, preserving the existing client and saved-context
 contracts and the underlying FIND/Review results. It does not claim to correct
 every model identification or rewrite previously saved conversations.
 
+For a noisy scene with four or more labels and no product identifiers, use the
+existing language gateway to select up to three coherent main subjects, allowing
+only validated indices into supplied labels. No generated names, quantities,
+URLs, inventory data or mutation tools enter this selection. Preserve certainty
+from the original evidence. Bound this optional request to 12 seconds and retain
+the deterministic six-type fallback on unavailable or invalid selection. A valid
+empty selection reports that the scene could not be identified reliably. Clear
+single-item and identifier-backed product replies do not need this extra step.
+
 ## 2026-10-08: Disclose AI processing by operator and feature
 
 The developer confirms FIND and the FTCTools language gateway perform inference

@@ -109,6 +109,75 @@ def test_noisy_scene_has_one_inventory_check_and_one_uncertainty_explanation():
     assert '637 accessible item records' in result['answer_context']['sources'][1]['detail']
 
 
+def noisy_scene():
+    return [item(name=name, barcode='', brand='', part_number='',
+                 scan_evidence={'needs_review': True}, notes='PRIVATE NOTES', image_url='https://private.test')
+            for name in ['blueberry toast', 'banana dessert', 'banana slice', 'sliced banana', 'plastic bag', 'aluminum foil']]
+
+
+def test_scene_consolidation_only_selects_existing_labels_and_omits_overlapping_guesses():
+    identified = noisy_scene()
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"indices": [0, 2]}'))])
+    with patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
+        subjects = photos.select_photo_subjects(identified)
+    assert subjects == [identified[0], identified[2]]
+    request = gateway.call_args.kwargs
+    assert request['request_timeout_seconds'] == 12
+    assert 'tools' not in request
+    assert 'PRIVATE' not in json.dumps(request) and 'https://' not in json.dumps(request)
+    result = photos.format_photo_answer(identified=identified, subjects=subjects, inventory=[], photo_url=URL)
+    text = result['assistant_message']
+    assert 'blueberry toast' in text and 'banana slice' in text
+    assert 'banana dessert' not in text and 'sliced banana' not in text
+    assert 'plastic bag' not in text and 'aluminum foil' not in text
+    assert text.count('No matching saved items found') == 1
+    assert 'conflicting detections were left out' in text
+
+
+@pytest.mark.parametrize('content', ['not json', '{"indices": [999]}', '{"indices": [-1]}',
+                                     '{"indices": [true]}', '{"indices": [0, 0]}',
+                                     '{"indices": [0, 1, 2, 3]}', '{"summary": "Invented object"}'])
+def test_invalid_scene_selection_falls_back_without_generated_identities(content):
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+    with patch.object(photos, 'gateway_completion', return_value=reply):
+        assert photos.select_photo_subjects(noisy_scene()) is None
+
+
+def test_unavailable_consolidation_keeps_deterministic_photo_results():
+    with patch.object(photos, 'gateway_completion', side_effect=TimeoutError):
+        assert photos.select_photo_subjects(noisy_scene()) is None
+
+
+def test_incoherent_scene_does_not_turn_any_guess_into_a_product_match():
+    result = photos.format_photo_answer(identified=noisy_scene(), subjects=[], inventory=[item(name='banana slice')], photo_url=URL)
+    assert 'could not identify the contents' in result['assistant_message']
+    assert result['answer_context']['rows'] == []
+
+
+def test_scene_selection_skips_single_items_and_product_identifiers():
+    with patch.object(photos, 'gateway_completion') as gateway:
+        assert photos.select_photo_subjects([item()]) is None
+        assert photos.select_photo_subjects([*noisy_scene(), item()]) is None
+    gateway.assert_not_called()
+
+
+def test_noisy_photo_service_returns_consolidated_reply_through_existing_contract():
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"indices": [0, 2]}'))])
+    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
+         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': noisy_scene()})), \
+         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
+         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']), \
+         patch.object(photos, 'accessible_inventory', return_value=[]), \
+         patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
+        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='What is in this photo, and do I own it?', image_bytes=image()))
+    assert 'banana dessert' not in result['assistant_message'] and 'plastic bag' not in result['assistant_message']
+    assert 'banana slice' in result['assistant_message']
+    assert result['answer_context']['photo_path'] == PATH
+    assert result['answer_context']['photo_url'] == URL
+    assert result['answer_context']['rows'] == []
+    gateway.assert_called_once()
+
+
 def test_clear_identifications_precede_uncertain_fragments_without_confirming_them():
     weak = [item(name=f'Guess {i}', scan_evidence={'needs_review': True}) for i in range(10)]
     clear = item(name='Known motor', confidence=0.95)

@@ -5,15 +5,18 @@
 User-requested fix for repetitive, confusing image replies in web and mobile.
 Backend-only lane `fix/ask-photo-summary` in
 `/Users/tanyasmritivictorcharles/dev/findez-ask-photo-summary`, based on `7de3913`.
-The shared photo formatter groups duplicate detections into at most six distinct
-item types, puts clear identifications first, summarizes uncertainty and stock
-once, omits noisy categories and generic unknown matches, and shows measurements
-only when requested. Preserve the SSE/snapshot contract, access scope, Review
+The shared photo formatter groups duplicates, puts clear identifications first,
+summarizes uncertainty and stock once, omits noisy categories and generic unknown
+matches, and shows measurements only when requested. For noisy scenes without
+product identifiers, the existing language gateway selects at most three coherent
+main subject labels using validated indices; it cannot introduce an identity or
+stock fact. The 12-second timeout and invalid/unavailable-response fallback keep
+deterministic output available. Preserve the SSE/snapshot contract, access scope, Review
 persistence and explicit inventory confirmation. Existing clients consume the
 same text; no mobile binary or web rebuild is required. Focused photo tests pass
-(48). Full backend suite passes (363); CI and selective production deployment are pending. The
+(60). Full backend suite passes (376); CI and selective production deployment are pending. The
 production source file matches the pre-change baseline; retain the dirty VM
-checkout and back up only this file before replacement.
+checkout and back up only the formatter and gateway client before replacement.
 
 ## App Review clarification and native screenshots (October 8)
 
