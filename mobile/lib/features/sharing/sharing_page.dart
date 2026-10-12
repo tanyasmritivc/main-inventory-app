@@ -869,7 +869,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                 TextStyle(color: AppTheme.foreground(context, Colors.white)),
               ),
               decoration: InputDecoration(
-                hintText: 'e.g. Robotics Team 2024',
+                hintText: 'e.g. Repair shop',
                 hintStyle: AppTypography.bodyStyleOf(
                   context,
                   TextStyle(

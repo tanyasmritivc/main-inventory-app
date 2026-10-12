@@ -59,7 +59,7 @@ npm run dev
 ```
 
 Frontend: http://localhost:3000. Backend reference: http://localhost:8000/docs.
-Mobile setup and production configuration are documented in
+Mobile setup and client configuration are documented in
 [mobile/README.md](mobile/README.md).
 
 Both clients use Supabase Auth and send the user token to FastAPI. The backend

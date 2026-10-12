@@ -1757,7 +1757,7 @@ class InventoryItem {
   final String? catalogId;
   final DateTime createdAt;
 
-  /// The identifier users scan first in inventory lists. Robotics parts are
+  /// The identifier users scan first in inventory lists. Catalogued parts are
   /// commonly organized by part number, so prefer it whenever one is present.
   String get displayName {
     final part = partNumber?.trim() ?? '';
