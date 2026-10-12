@@ -1,5 +1,31 @@
 # Current state
 
+## October 12 Space deletion and review lifecycle candidate
+
+- `fix/deleted-space-review-refresh`, based on delivered build 60, adds migration
+  039: pending identifications gain an owned stable Space link, cascade when the
+  Space is deleted, and retain that link across rename/location edits. Existing
+  matching owned records are bound; unassigned records and other users remain
+  separate. Full PostgreSQL 17 permissions/documentation suite plus lifecycle,
+  foreign-owner and failed-transaction regressions pass in a disposable container.
+- Mobile confirms the delete response, invalidates old Find/cache reads, removes
+  the deleted Space locally and refreshes Home. A failed review refresh shows an
+  unknown count instead of retaining a known-obsolete value. All 317 mobile
+  tests with coverage and clean analysis pass, including actual-shell Light/Dark,
+  failed deletion/refresh and delayed warmup cases. Web confirmation copy now
+  describes the existing destructive behavior accurately. All five exact-runtime
+  CI jobs pass on `e3bb2f6` in `38310437658` (draft PR #56). Migration 039 is live;
+  its cascade FK and both triggers are verified, all 83 pending records remain,
+  and six owned matching records are bound. Database health passes. The private
+  pre-migration backup and exact applied SQL are in
+  `/home/ubuntu/findez-space-review-20261012`. No new native binary is yet delivered;
+  web confirmation copy will deploy with the broader category lane.
+- Read-only production schema confirms missing review-Space linkage and zero
+  ambiguous names. The user's privately identified account still has Robot Room
+  and six pending records, so these are not automatically purged as orphans.
+  Migration backfill will associate them with that Space; the next confirmed
+  deletion removes them. No real user Space or inventory is deleted for QA.
+
 ## October 12 TestFlight delivery and public release status
 
 - The user authorized upload and internal TestFlight delivery. Apple reports
