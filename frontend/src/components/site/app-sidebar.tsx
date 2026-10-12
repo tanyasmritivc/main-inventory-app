@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   BookOpen,
   Boxes,
@@ -24,6 +24,8 @@ import {
   X,
   History,
   Bell,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -161,22 +163,32 @@ export function activeNavItem(pathname: string) {
   ).sort((a, b) => b.route.length - a.route.length)[0];
 }
 
+function subscribeViewport(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
 export function AppSidebar({
   onToggle,
   sidebarOpen,
   userName = "Your account",
   userInitial = "",
   avatarUrl,
+  pinned = false,
+  onPin,
 }: {
   onToggle: () => void;
   sidebarOpen: boolean;
   userName?: string;
   userInitial?: string;
   avatarUrl?: string;
+  pinned?: boolean;
+  onPin?: () => void;
 }) {
   const pathname = usePathname(),
     router = useRouter();
   const container = useRef<HTMLElement>(null);
+  const desktop = useSyncExternalStore(subscribeViewport, () => window.innerWidth >= 860, () => true);
   const [hovered, setHovered] = useState(false);
   useEffect(() => {
     if (!sidebarOpen || window.innerWidth >= 860) return;
@@ -259,7 +271,7 @@ export function AppSidebar({
       <aside
         ref={container}
         id="app-navigation"
-        className={`app-sidebar ${sidebarOpen ? "is-open" : ""} ${hovered ? "is-hovered" : ""}`}
+        className={`app-sidebar ${sidebarOpen ? "is-open" : ""} ${hovered ? "is-hovered" : ""} ${pinned ? "is-pinned" : ""}`}
         onMouseEnter={() => {
           if (
             window.innerWidth >= 860 &&
@@ -267,7 +279,12 @@ export function AppSidebar({
           ) setHovered(true);
         }}
         onMouseLeave={() => setHovered(false)}
+        onDoubleClick={(event) => {
+          if (window.innerWidth >= 860 && !(event.target as Element).closest("a,button,input")) onPin?.();
+        }}
         aria-label="Primary navigation"
+        aria-hidden={!desktop && !sidebarOpen}
+        inert={!desktop && !sidebarOpen}
       >
         <div className="app-sidebar-brand">
           <Link href="/home" aria-label="FindEZ home" onClick={closeDrawer}>
@@ -299,6 +316,16 @@ export function AppSidebar({
           >
             <X size={18} />
           </button>
+          {onPin && <button
+            type="button"
+            className="app-icon-button app-sidebar-pin"
+            onClick={onPin}
+            aria-label={pinned ? "Unpin navigation" : "Pin navigation"}
+            aria-pressed={pinned}
+            title={pinned ? "Unpin navigation" : "Pin navigation (or double-click an empty area)"}
+          >
+            {pinned ? <PinOff size={16} /> : <Pin size={16} />}
+          </button>}
         </div>
         <nav className="app-sidebar-nav">
           {(["FindEZ", "Your world", "Organize", "You"] as const).map(

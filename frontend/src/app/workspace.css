@@ -16,6 +16,7 @@
   line-height: 1.5;
   min-height: 100dvh;
 }
+
 html.dark .app-frame {
   --app-bg: #101011;
   --app-surface: #171718;
@@ -430,7 +431,7 @@ html.dark .app-frame {
 .app-frame .home-attention > a {
   padding: 0 30px;
   min-width: 150px;
-  border-right: 1px solid var(--app-border);
+  border-right: 0;
   color: var(--app-text);
   text-decoration: none;
 }
@@ -1349,14 +1350,156 @@ html .app-frame.is-team-workspace {
   .app-frame .app-sidebar:not(.is-open) .app-sidebar-footer > button {
     padding-left: 15px;
   }
-  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-brand > a > span,
-  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-nav a > span,
-  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-account-link > span:last-child,
-  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-sidebar-footer > button > span {
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-sidebar-brand > a > span,
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-sidebar-nav a > span,
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-account-link > span:last-child,
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-sidebar-footer > button > span {
     display: none;
   }
-  .app-frame .app-sidebar:not(.is-hovered):not(:has(:focus-visible)) .app-nav-section > p {
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-nav-section > p {
     color: transparent;
   }
 
+}
+
+/* Reading and controls carry the hierarchy without decorative containers. */
+.app-frame .workspace-card,
+.app-frame .product-card,
+.app-frame .settings-panel {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.app-frame .workspace-card { padding: 0; }
+.app-frame .bare-empty,
+.app-frame .workspace-list-row,
+.app-frame .workspace-history,
+.app-frame .ask-message {
+  border: 0;
+}
+.app-frame .bare-empty { min-height: 220px; }
+.app-frame .activity-feed,
+.app-frame .activity-row,
+.app-frame .documents-list,
+.app-frame .document-row,
+.app-frame .team-space-grid,
+.app-frame .team-space-grid > article,
+.app-frame .kit-list,
+.app-frame .inventory-space-list,
+.app-frame .label-picker,
+.app-frame .checkout-ledger,
+.app-frame .settings-panel > header,
+.app-frame .settings-panel > footer,
+.app-frame .settings-profile-row,
+.app-frame .settings-static-row,
+.app-frame .settings-link-row,
+.app-frame .settings-form-row { border: 0; }
+.app-frame .activity-row,
+.app-frame .document-row { padding-top: 16px; padding-bottom: 16px; }
+.app-frame .ask-message { padding: 18px 0 28px; }
+.app-frame .ask-message > strong { color: var(--app-text); font-weight: 500; }
+.app-frame .workspace-history { padding-right: 14px; }
+.app-frame .workspace-history .workspace-section-heading .workspace-button {
+  width: auto;
+  padding: 6px;
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+}
+.app-frame .ask-history-row { display: flex; align-items: center; gap: 2px; margin: 3px 0; border-radius: 7px; }
+.app-frame .ask-history-row:hover,
+.app-frame .ask-history-row:focus-within { background: var(--app-surface-2); }
+.app-frame .workspace-history .ask-history-title {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 8px;
+  margin: 0;
+  border: 0;
+  border-radius: 7px;
+  color: var(--app-muted);
+  background: transparent;
+  line-height: 1.5;
+  font-size: 13px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.app-frame .ask-history-title[aria-current="true"] { color: var(--app-text); background: var(--app-surface-2); }
+.app-frame .workspace-history .ask-history-delete {
+  width: 28px;
+  height: 30px;
+  margin: 0;
+  padding: 6px;
+  border: 0;
+  color: var(--app-muted);
+  background: transparent;
+  opacity: 0;
+}
+.app-frame .ask-history-row:hover .ask-history-delete,
+.app-frame .ask-history-row:focus-within .ask-history-delete { opacity: 1; }
+.app-frame .ask-empty { padding: 36px 0 56px; }
+.app-frame .ask-empty h2 { margin: 0 0 8px; }
+.app-frame .ask-composer textarea { min-height: 76px; }
+.app-frame .ask-disclaimer { font-size: 12px; margin-top: 12px; }
+.app-frame .ask-evidence { margin-top: 16px; font-size: 12px; color: var(--app-muted); }
+.app-frame .ask-evidence summary { cursor: pointer; width: fit-content; }
+.app-frame .ask-evidence summary:focus-visible { outline: 2px solid var(--app-accent-text); outline-offset: 4px; }
+.app-frame .ask-sources { display: block; margin: 12px 0; padding: 0; list-style: none; }
+.app-frame .ask-sources li { margin: 8px 0; }
+.app-frame .ask-sources strong { font-weight: 500; color: var(--app-text); margin-right: 8px; }
+.app-frame .ask-sources span { display: block; margin-top: 2px; }
+.app-frame .ask-message .ask-markdown {
+  font-family: "Source Sans 3 Variable", sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-frame .ask-markdown p { margin: 0 0 14px; }
+.app-frame .ask-markdown > :last-child { margin-bottom: 0; }
+.app-frame .ask-markdown strong { font-weight: 650; color: inherit; }
+.app-frame .ask-markdown :is(h1,h2,h3,h4,h5,h6) { font-family: inherit; font-size: 19px; font-weight: 600; letter-spacing: 0; margin: 22px 0 10px; }
+.app-frame .ask-markdown :is(ul,ol) { padding-left: 22px; margin: 10px 0 16px; }
+.app-frame .ask-markdown ul { list-style: disc; }
+.app-frame .ask-markdown ol { list-style: decimal; }
+.app-frame .ask-markdown li { margin: 5px 0; }
+.app-frame .ask-markdown li p { margin: 0; }
+.app-frame .ask-markdown a { color: var(--app-accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.app-frame .ask-markdown pre { padding: 14px; border-radius: 8px; background: var(--app-surface-2); overflow-x: auto; font-size: 13px; }
+.app-frame .ask-markdown code { font-family: ui-monospace, monospace; font-size: .88em; }
+.app-frame .ask-markdown :not(pre) > code { background: var(--app-surface-2); border-radius: 4px; padding: 2px 4px; }
+.app-frame .ask-markdown blockquote { margin: 12px 0; padding: 0 16px; color: var(--app-muted); }
+.app-frame .ask-markdown-table { max-width: 100%; overflow-x: auto; margin: 14px 0; }
+.app-frame .ask-markdown table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.app-frame .ask-markdown :is(th,td) { padding: 9px 14px 9px 0; text-align: left; border: 0; }
+.app-frame .ask-markdown th { font-weight: 600; }
+.app-frame .ask-pending { font-family: "Source Sans 3 Variable", sans-serif; font-size: 17px; color: var(--app-muted); }
+.app-frame .app-sidebar-pin { display: none; }
+@media (max-width: 859px), (hover: none) {
+  .app-frame .workspace-history .ask-history-delete { opacity: 1; }
+}
+@media (min-width: 860px) and (hover: hover) and (pointer: fine) {
+  .app-frame .app-main { transition: margin-left 240ms ease, width 240ms ease; }
+  .app-frame .app-topbar { transition: left 240ms ease; }
+  .app-frame .app-sidebar .app-sidebar-brand > .app-sidebar-pin { display: grid; position: absolute; top: 22px; right: 14px; }
+  .app-frame .app-sidebar:not(.is-hovered):not(.is-pinned):not(:has(:focus-visible)) .app-sidebar-pin { visibility: hidden; }
+  .app-frame.sidebar-pinned .app-sidebar,
+  .app-frame.sidebar-pinned .app-sidebar:hover { width: 232px; box-shadow: none; }
+  .app-frame.sidebar-pinned .app-main { margin-left: 232px; width: calc(100% - 232px); }
+  .app-frame.sidebar-pinned .app-topbar { left: 232px; }
+  .app-frame.sidebar-pinned .app-skip-link { left: 246px; }
+  .app-frame.sidebar-pinned .app-sidebar .app-sidebar-pin { visibility: visible; }
+  .app-frame.sidebar-pinned .app-sidebar .app-nav-section > p,
+  .app-frame.sidebar-pinned .app-sidebar .app-sidebar-brand > a > span,
+  .app-frame.sidebar-pinned .app-sidebar .app-sidebar-nav a > span,
+  .app-frame.sidebar-pinned .app-sidebar .app-account-link > span:last-child,
+  .app-frame.sidebar-pinned .app-sidebar .app-sidebar-footer > button > span {
+    opacity: 1;
+    visibility: visible;
+    display: block;
+    color: inherit;
+  }
 }

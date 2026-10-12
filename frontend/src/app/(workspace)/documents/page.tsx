@@ -1,6 +1,8 @@
 import { DocumentsClient } from "@/components/site/documents-client";
 import { requireUser } from "@/lib/auth-guard";
 
+export const metadata = { title: "Documents" };
+
 export default async function DocumentsPage({
   searchParams,
 }: {

@@ -125,6 +125,12 @@ function HomeOverviewWorkspace() {
   const ordered = data.items?.filter((i) =>
     onOrder(restock.plan[i.item_id]),
   ).length;
+  const attention = [
+    { href: "/review", count: data.review, label: "captures to review" },
+    { href: "/restock", count: restock.ready ? toBuy : undefined, label: "to buy" },
+    { href: "/restock", count: restock.ready ? ordered : undefined, label: "on order" },
+    { href: "/checkout", count: overdue, label: "overdue lent items" },
+  ].filter((entry) => entry.count !== undefined && entry.count > 0);
   function ask(e: React.FormEvent) {
     e.preventDefault();
     if (query.trim())
@@ -140,8 +146,8 @@ function HomeOverviewWorkspace() {
               : "Your physical memory"}
           </h1>
           <p>
-            {data.items ? `${data.items.length} items` : "Your items"}
-            {data.spaces ? ` across ${data.spaces.length} Spaces.` : "."}
+            {data.items ? `${data.items.length} ${data.items.length === 1 ? "item" : "items"}` : "Your items"}
+            {data.spaces ? ` across ${data.spaces.length} ${data.spaces.length === 1 ? "Space" : "Spaces"}.` : "."}
           </p>
         </div>
         <div className="workspace-actions">
@@ -179,17 +185,6 @@ function HomeOverviewWorkspace() {
           <ArrowUpRight size={16} />
         </button>
       </form>
-      <div className="workspace-chips">
-        {[
-          "Where is my soldering iron?",
-          "Do I already own a USB-C hub?",
-          "What is missing from my project kit?",
-        ].map((q) => (
-          <button key={q} onClick={() => setQuery(q)}>
-            {q}
-          </button>
-        ))}
-      </div>
       {(sessionError || failures.length > 0) && (
         <div role="alert" className="workspace-error">
           {sessionError || `Could not load ${failures.join(", ")}.`}{" "}
@@ -210,34 +205,22 @@ function HomeOverviewWorkspace() {
           Loading your overview…
         </p>
       )}
-      <section className="workspace-section">
+      {attention.length > 0 && <section className="workspace-section">
         <div className="workspace-section-heading">
           <h2>Needs your attention</h2>
         </div>
         <div className="home-attention">
-          <Link href="/review">
-            <strong>{data.review ?? "…"}</strong>
-            <span>captures to review</span>
-          </Link>
-          <Link href="/restock">
-            <strong>{restock.ready && data.items ? toBuy : "…"}</strong>
-            <span>to buy</span>
-          </Link>
-          <Link href="/restock">
-            <strong>{restock.ready && data.items ? ordered : "…"}</strong>
-            <span>on order</span>
-          </Link>
-          <Link href="/checkout">
-            <strong>{overdue ?? "…"}</strong>
-            <span>overdue lent items</span>
-          </Link>
+          {attention.map((entry) => <Link key={entry.label} href={entry.href}>
+            <strong>{entry.count}</strong>
+            <span>{entry.label}</span>
+          </Link>)}
         </div>
-        {restock.error && (
+      </section>}
+      {restock.error && (
           <p className="workspace-error" role="alert">
             {restock.error}
           </p>
-        )}
-      </section>
+      )}
       <section className="workspace-section">
         <div className="workspace-section-heading">
           <h2>Recently added</h2>

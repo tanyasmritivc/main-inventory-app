@@ -1,5 +1,17 @@
 # Decisions
 
+## October 11 professional web presentation
+
+The user wants the existing app font retained, with Source Sans 3 for AI replies
+only. Render replies as safe Markdown with GFM; raw HTML and generated remote
+images are disabled. User input remains plain text. Sources stay available in a
+closed disclosure, without permanent evidence cards. Desktop navigation can be
+pinned with an accessible button or blank-area double click; pinning resizes the
+page and persists locally. Narrow drawers retain focus isolation. Empty Home
+attention counts and example prompt chips are removed. Browser titles use `|`.
+Do not introduce optional analytics/ads or pretend cookie switches: no providers
+are selected. Separate notification and canonical legal/mobile-link work remains.
+
 ## 2026-10-11: Summarize Ask photo detections instead of repeating scan fragments
 
 Photo detections can be overlapping fragments rather than distinct physical

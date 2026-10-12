@@ -1,6 +1,8 @@
 import { HomeInventoryClient } from "@/components/site/home-inventory-client";
 import { requireUser } from "@/lib/auth-guard";
 
+export const metadata = { title: "Inventory" };
+
 export default async function InventoryPage(props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const searchParams = (await props.searchParams) ?? {};
   const collectionParam = searchParams.collection;

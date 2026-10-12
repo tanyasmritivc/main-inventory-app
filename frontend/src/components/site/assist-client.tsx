@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, MessageSquarePlus, Send, Trash2, X } from "lucide-react";
+import { ImagePlus, MessageSquarePlus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { AskMarkdown } from "@/components/site/ask-markdown";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
 import { accountRequest } from "@/lib/account-request";
 import {
@@ -50,6 +51,7 @@ function AssistClientWorkspace({
     [photo, setPhoto] = useState<File>(),
     [preview, setPreview] = useState<string>(),
     [sending, setSending] = useState(false),
+    [pendingMessageId, setPendingMessageId] = useState<string | null>(null),
     [opening, setOpening] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
@@ -74,6 +76,7 @@ function AssistClientWorkspace({
     setConversationId(null);
     setPhoto(undefined);
     setSending(false);
+    setPendingMessageId(null);
     setOpening(false);
     setError("");
     if (!accountId) return;
@@ -209,6 +212,7 @@ function AssistClientWorkspace({
     const current = () =>
       owner.current === account && epoch.current === generation;
     setSending(true);
+    setPendingMessageId(assistantId);
     setError("");
     setStatus(photo ? "Reading your photo…" : "Checking your inventory…");
     setMessages((m) => [
@@ -294,6 +298,7 @@ function AssistClientWorkspace({
       window.clearTimeout(timer);
       if (current()) {
         setSending(false);
+        setPendingMessageId(null);
         setStatus("");
       }
       if (controller.current === control) controller.current = null;
@@ -304,9 +309,6 @@ function AssistClientWorkspace({
       <header className="workspace-heading">
         <div>
           <h1>Ask FindEZ</h1>
-          <p>
-            Ask about what you own, where it lives, and what your projects need.
-          </p>
         </div>
         <button
           className="workspace-button"
@@ -323,6 +325,8 @@ function AssistClientWorkspace({
             <h2>History</h2>
             <button
               className="workspace-button"
+              aria-label="Refresh history"
+              title="Refresh history"
               disabled={sending}
               onClick={() =>
                 void loadHistory().catch(() =>
@@ -330,14 +334,14 @@ function AssistClientWorkspace({
                 )
               }
             >
-              Refresh
+              <RefreshCw size={14} />
             </button>
           </div>
           {conversations.map((c) => (
-            <div className="workspace-actions" key={c.id}>
+            <div className="ask-history-row" key={c.id}>
               <button
-                className="workspace-button"
-                style={{ flex: 1, justifyContent: "flex-start" }}
+                className="ask-history-title"
+                title={c.title || "New conversation"}
                 aria-current={c.id === conversationId ? "true" : undefined}
                 disabled={sending}
                 onClick={() => void openConversation(c.id)}
@@ -345,8 +349,7 @@ function AssistClientWorkspace({
                 {c.title || "New conversation"}
               </button>
               <button
-                className="workspace-button"
-                style={{ width: "auto" }}
+                className="ask-history-delete"
                 disabled={sending}
                 aria-label={`Delete ${c.title || "conversation"}`}
                 onClick={() => void removeConversation(c.id)}
@@ -377,39 +380,43 @@ function AssistClientWorkspace({
                   {photoUrl && (
                     <img src={photoUrl} alt="Photo used for this question" />
                   )}
-                  <div className="ask-body">
-                    {m.content ||
-                      (sending ? status : "The answer did not finish.")}
-                  </div>
+                  {m.content ? (
+                    m.role === "assistant" ? <AskMarkdown>{m.content}</AskMarkdown> : <div className="ask-body">{m.content}</div>
+                  ) : (
+                    <p className="ask-pending" role={m.id === pendingMessageId ? "status" : undefined}>
+                      {m.id === pendingMessageId ? status : "The answer did not finish."}
+                    </p>
+                  )}
                   {m.failed && (
                     <p className="workspace-muted">
                       This answer was interrupted. Check history before relying
                       on it.
                     </p>
                   )}
-                  {!m.failed && !!m.context?.sources.length && (
-                    <div className="ask-sources" aria-label="Sources checked">
+                  {!m.failed && m.context && (!!m.context.sources.length || !!m.context.rows.length) && (
+                    <details className="ask-evidence">
+                      <summary>Sources</summary>
+                    <ul className="ask-sources" aria-label="Sources checked">
                       {m.context.sources.map((s, i) => (
-                        <span className="ask-source" key={i} title={s.detail}>
-                          {s.label}
+                        <li key={i}>
+                          <strong>{s.label}</strong>
                           {s.detail && (
-                            <small style={{ display: "block" }}>
+                            <span>
                               {s.detail}
-                            </small>
+                            </span>
                           )}
-                        </span>
+                        </li>
                       ))}
-                    </div>
-                  )}
-                  {!m.failed && !!m.context?.rows.length && (
+                    </ul>
+                  {!!m.context.rows.length && (
                     <div className="workspace-table-wrap">
                       <table className="workspace-table">
                         <thead>
                           <tr>
                             <th>Item</th>
                             <th>Available</th>
-                            <th>Needed</th>
-                            <th>Where / status</th>
+                            {m.context.rows.some(r => r.requiredQuantity !== undefined) && <th>Needed</th>}
+                            <th>Location</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -417,17 +424,16 @@ function AssistClientWorkspace({
                             <tr key={`${r.id}-${i}`}>
                               <td>{r.name}</td>
                               <td>{r.availableQuantity}</td>
-                              <td>{r.requiredQuantity ?? ""}</td>
+                              {m.context?.rows.some(row => row.requiredQuantity !== undefined) && <td>{r.requiredQuantity ?? ""}</td>}
                               <td>
+                                {r.location}
                                 {r.status ? (
                                   <span
                                     className={`workspace-badge ${r.status}`}
                                   >
                                     {r.status}
                                   </span>
-                                ) : (
-                                  r.location
-                                )}
+                                ) : null}
                               </td>
                             </tr>
                           ))}
@@ -440,28 +446,18 @@ function AssistClientWorkspace({
                       )}
                     </div>
                   )}
+                    </details>
+                  )}
                 </article>
               );
             })
           )}
           {!messages.length && (
-            <div className="workspace-card">
-              <h2>What would you like to find?</h2>
+            <div className="ask-empty">
+              <h2>How can I help?</h2>
               <p className="workspace-muted">
-                Use words or attach a photo. Photo questions check what you
-                already own.
+                Find an item, check stock, or attach a photo.
               </p>
-              <div className="workspace-chips">
-                {[
-                  "Where is my soldering iron?",
-                  "What is missing from my project kit?",
-                  "What changed recently?",
-                ].map((q) => (
-                  <button key={q} onClick={() => draft(q)}>
-                    {q}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
           {(error || sessionError) && (
@@ -532,14 +528,8 @@ function AssistClientWorkspace({
                 </button>
               )}
             </div>
-            {sending && (
-              <p role="status" className="workspace-muted">
-                {status}
-              </p>
-            )}
-            <p className="workspace-muted">
-              Answers may be inaccurate. Check the source records before making
-              changes.
+            <p className="workspace-muted ask-disclaimer">
+              Check AI answers before making changes.
             </p>
           </form>
         </div>

@@ -1,5 +1,58 @@
 # Active work
 
+## Professional interface, notifications and canonical legal pages (October 11)
+
+User requests sequential completion: (1) Markdown and cleaner chat, (2) less
+unnecessary web chrome/copy and lines, (3) tab titles with a vertical bar,
+(4) a pinned sidebar that resizes the page, (5) working notifications,
+(6) consistent, readable Privacy/Terms opened on the website from mobile,
+(7) appropriate cookies/permissions and a concrete lawyer-review report,
+(8) removal of redundant marketing dropdowns/pages from legal browsing.
+
+Current lane: web-only `fix/web-professional-polish` in
+`/Users/tanyasmritivictorcharles/dev/findez-web-professional-polish`, based on
+`9073143`. Markdown is safely rendered with generated images/raw HTML disabled;
+Sources collapse, history is unboxed, redundant copy/status is reduced, empty
+states/list wrappers lose decorative borders. Tab titles are contextual and use
+`|`. Sidebar has a keyboard-accessible pin, blank-area double click, remembered
+preference and responsive frame sizing; the closed narrow drawer is inert.
+The user explicitly corrected the font scope: keep the current app font, change
+AI responses only. Source Sans 3 is self hosted for those responses. Next.js and
+compatible dependency patches are applied; production npm audit reports zero
+known vulnerabilities. Full web run passes 195 tests; TypeScript, changed-file
+ESLint (no errors, existing warnings) and production webpack compilation pass.
+Safari checks confirm Markdown, Sources, desktop pin resizing, clean Home and
+notification/settings layouts. Home hides zero-work attention sections and
+suggestion chips; pending reply status is scoped to its message during retries. No web
+deployment or new native binary has been delivered for this lane yet.
+
+Fictional browser fixture: `/private/tmp/findez-web-polish-fixture.cjs` on
+localhost:4109 (session 13259), production Next on 127.0.0.1:3017 (session 80626).
+`frontend/.env.local` contains fictional local URLs only and MUST NOT be deployed.
+Safari has an isolated `Ask | FindEZ` tab, verified bold/list rendering, source
+disclosure, double-click pinning and page resizing. Do not alter real inventory.
+The isolated server candidate is `web-professional-polish-20261011`. Preflight
+hashes preserve 217 baseline files; its source archive excludes the local fixture
+environment. Three unrelated live presentation files (globals.css, shared dialog,
+spreadsheet import modal) are carried unchanged from the previous running release.
+Collections uses the existing theme tokens to correct hardcoded dark-mode text.
+Older live tests are replaced with the current repository tests, including the
+previously missing review queue suite. Source manifest and rollback drop-in are
+beside the candidate. Live activation and five PR-head CI jobs remain pending.
+
+User confirmations: AI Robots Inc, registered in 2020 in Sunnyvale on Poppy Ct;
+verify current official business details before using an address. Secondary
+directories suggest 887 Poppy Ct, but this is not official registry verification.
+Serve countries where Apple permits availability; student accounts are 13+.
+Analytics/advertising are not in use and no providers are selected. Cookie
+disclosures must reflect actual essential storage; do not add trackers or fake
+optional consent controls. Canonical mobile legal links/permission changes will
+need a new iOS binary. Do not replace the pending build-59 App Review submission
+without explicit release authorization. Remaining lanes: notifications, then
+shared legal/content/permission controls and public navigation cleanup. Legal
+accuracy needs primary-source research, factual data-flow audit, and specific
+lawyer-review gaps; do not promise protection from all legal risk.
+
 ## Ask photo clarity (October 11)
 
 User-requested fix for repetitive, confusing image replies in web and mobile.
