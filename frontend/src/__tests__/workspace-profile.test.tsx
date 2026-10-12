@@ -52,6 +52,7 @@ const profile = {
 };
 beforeEach(() => {
   localStorage.clear();
+  window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
   jest.clearAllMocks();
   jest
     .mocked(accountRequest)
@@ -75,6 +76,18 @@ test("loads identity and the saved avatar without waiting on a network getUser r
   expect(
     screen.getByRole("button", { name: "2 unread notifications" }),
   ).toBeTruthy();
+});
+
+test("navigation pin preference persists and moves the frame into its pinned layout", async () => {
+  localStorage.setItem("findez-navigation-pinned", "true");
+  const view = render(<AppShell><p>Workspace</p></AppShell>);
+  const unpin = await screen.findByRole("button", { name: "Unpin navigation" });
+  expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(true);
+  await userEvent.click(unpin);
+  expect(localStorage.getItem("findez-navigation-pinned")).toBe("false");
+  expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(false);
+  await userEvent.click(screen.getByRole("button", { name: "Pin navigation" }));
+  expect(localStorage.getItem("findez-navigation-pinned")).toBe("true");
 });
 test("keeps profile save disabled until confirmed profile fields arrive", async () => {
   let resolve!: (value: typeof profile) => void;

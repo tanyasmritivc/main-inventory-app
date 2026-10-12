@@ -1,5 +1,25 @@
 # Current state
 
+## October 11 professional web polish
+
+- Runtime `6960b2d`, draft PR #52 stacked on #51, is live from
+  `/home/ubuntu/findez-web-releases/web-professional-polish-20261011/frontend`.
+  AI-only Source Sans 3, safe Markdown, collapsed Sources, plain history,
+  message-scoped pending status, reduced decorative chrome, actionable Home
+  attention counts, contextual pipe titles and remembered desktop pinning are
+  delivered. Existing app fonts and routes are retained.
+- All 195 web tests, TypeScript, webpack builds and five CI jobs pass
+  (`38203294862`). Changed-file ESLint has no errors; existing warnings remain.
+  Production dependency audit reports zero known vulnerabilities. Safari verifies
+  dark/light replies, Sources, pin resizing, Home/settings/feed appearance and
+  narrow navigation isolation. Local content was fictional, not recognition QA.
+- Candidate and public HTTPS checks verify title/headers, 18 guarded pages,
+  static assets, exact API docs and production origins. Unrelated live global
+  CSS/dialog/import styling is preserved and 527 previous static files retained.
+  Both services are healthy. Restore the release's `previous-web-rebuild.conf`
+  to the existing systemd drop-in and restart only `findez-web` for rollback.
+  Notification behavior and canonical legal/mobile content remain separate lanes.
+
 ## October 11 Ask photo reply clarity
 
 - Shared backend runtime `fefcfe9` is deployed for web/mobile photo chat. Replies

@@ -132,6 +132,17 @@ on the PR head before finishing.
 
 ### Persistent web navigation and hover sidebar
 
+October 11 professional polish adds real Markdown safety/formatting coverage,
+pin/unpin and stored frame preference, inert narrow navigation, message-scoped
+pending status after a failed answer, and Home attention counts without zero
+placeholders. All 195 web tests pass. TypeScript, changed-file ESLint (no errors)
+and production webpack compilation pass. Safari fictional-data acceptance covers
+bold/list rendering, closed Sources, pin resizing and cleaner Home/settings/feed
+views. Source Sans 3 is limited to AI replies; current app fonts are preserved.
+Optional trackers are not introduced. Server candidate checks must use production
+origins and preserve unrelated live CSS/dialog/import styling and prior static
+assets. Notification functionality and shared legal/mobile links are later lanes.
+
 Run the web release checks below. The full suite has 181 tests in 24 suites.
 Sidebar regressions cover desktop mouse entry/exit, touch-only behavior, all
 existing destinations, narrow drawer isolation/focus and Home/profile closure.

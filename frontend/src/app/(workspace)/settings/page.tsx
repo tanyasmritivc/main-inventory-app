@@ -1,6 +1,8 @@
 import { requireUser } from "@/lib/auth-guard";
 import { SettingsClient } from "@/components/site/settings-client";
 
+export const metadata = { title: "Settings" };
+
 export default async function SettingsPage() {
   const user = await requireUser("/settings");
 

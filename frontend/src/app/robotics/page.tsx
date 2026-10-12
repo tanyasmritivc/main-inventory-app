@@ -6,8 +6,8 @@ import { RoboticsClient } from "@/components/site/robotics-client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "FindEZ for Robotics Teams — Inventory Management for FTC, FRC, VEX & FLL",
-  description: "Stop losing parts. FindEZ gives your robotics team one organized inventory — AI-scanned, barcode-tracked, and accessible from the pit or the shop.",
+  title: "Robotics inventory",
+  description: "Organize robotics parts with photos, barcodes, Spaces, and shared team inventory.",
 };
 
 export default async function RoboticsPage() {

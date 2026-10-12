@@ -161,13 +161,37 @@ test("a mouse reveals labels on entry and collapses them on exit", () => {
   }
 });
 
+test("pinning is keyboard accessible and a double click on blank desktop space toggles it", async () => {
+  const onPin = jest.fn();
+  const view = render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} onPin={onPin} />);
+  await userEvent.click(screen.getByRole("button", { name: "Pin navigation" }));
+  expect(onPin).toHaveBeenCalledTimes(1);
+  view.rerender(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} pinned onPin={onPin} />);
+  const sidebar = screen.getByRole("complementary");
+  fireEvent.mouseLeave(sidebar);
+  expect(sidebar.classList.contains("is-pinned")).toBe(true);
+  expect(screen.getByRole("button", { name: "Unpin navigation" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.doubleClick(sidebar);
+  expect(onPin).toHaveBeenCalledTimes(2);
+});
+
+test("double clicking a link or narrow navigation does not accidentally pin it", () => {
+  const onPin = jest.fn();
+  render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} onPin={onPin} />);
+  fireEvent.doubleClick(screen.getByRole("link", { name: "Spaces" }));
+  window.innerWidth = 390;
+  fireEvent.doubleClick(screen.getByRole("complementary"));
+  expect(onPin).not.toHaveBeenCalled();
+});
+
 test.each([390, 1024])("touch navigation stays controlled by the drawer at %i pixels", (width) => {
   window.innerWidth = width;
   const original = window.matchMedia;
   window.matchMedia = jest.fn(() => ({ matches: false } as MediaQueryList));
   try {
     render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
-    const sidebar = screen.getByRole("complementary");
+    const sidebar = screen.getByRole("complementary", { hidden: width < 860 });
+    if (width < 860) expect(screen.queryByRole("complementary")).toBeNull();
     fireEvent.mouseEnter(sidebar);
     expect(sidebar.classList.contains("is-hovered")).toBe(false);
   } finally {

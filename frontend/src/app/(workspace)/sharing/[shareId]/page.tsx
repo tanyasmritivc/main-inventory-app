@@ -1,6 +1,8 @@
 import { SharedSpaceClient } from "@/components/site/shared-space-client";
 import { requireUser } from "@/lib/auth-guard";
 
+export const metadata = { title: "Shared Space" };
+
 export default async function SharedSpacePage({
   params,
 }: {

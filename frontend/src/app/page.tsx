@@ -5,11 +5,11 @@ import { MarketingFooter } from "@/components/site/product-marketing";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: { absolute: "FindEZ — Understands your environment" },
+  title: { absolute: "FindEZ | Know what you have. Find what you need." },
   description:
-    "FindEZ understands your environment. Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
+    "Capture physical items, organize them by Space, and find what you need through search or Ask FindEZ. Share inventory with your team.",
   openGraph: {
-    title: "FindEZ — Understands your environment",
+    title: "FindEZ | Know what you have. Find what you need.",
     description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
     url: "https://findez.ai/",
     siteName: "FindEZ",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "FindEZ — Understands your environment",
+    title: "FindEZ | Know what you have. Find what you need.",
     description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
   },
 };

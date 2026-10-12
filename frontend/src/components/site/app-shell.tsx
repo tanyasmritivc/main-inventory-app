@@ -25,6 +25,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  useEffect(() => {
+    try { setSidebarPinned(localStorage.getItem("findez-navigation-pinned") === "true"); } catch { /* Session preference still works. */ }
+  }, []);
+  const togglePin = useCallback(() => {
+    const next = !sidebarPinned;
+    setSidebarPinned(next);
+    try { localStorage.setItem("findez-navigation-pinned", String(next)); } catch { /* Session preference still works. */ }
+  }, [sidebarPinned]);
   const toggleSidebar = useCallback(
     () => setSidebarOpen((value) => !value),
     [],
@@ -179,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AppThemeProvider>
       <div
-        className={`app-frame ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""}`}
+        className={`app-frame ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">
           Skip to content
@@ -190,6 +199,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           userName={userName}
           userInitial={userInitial}
           avatarUrl={avatarUrl}
+          pinned={sidebarPinned}
+          onPin={togglePin}
         />
         <header className="app-topbar">
           <button

@@ -1,5 +1,7 @@
 import { ProtectedAppPage } from "@/components/site/protected-app-page";
 import { ActivityFeedClient } from "@/components/site/activity-feed-client";
+export const metadata = { title: "Activity" };
+
 export default function Page() {
   return (
     <ProtectedAppPage returnTo="/activity">

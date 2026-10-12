@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { CollectionsClient } from "@/components/site/collections-client";
 import { RestockClient } from "@/components/site/restock-client";
 import { AssistClient } from "@/components/site/assist-client";
+import { HomeOverview } from "@/components/site/home-overview";
 import { DocumentsClient } from "@/components/site/documents-client";
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
 import { accountRequest } from "@/lib/account-request";
@@ -23,6 +24,7 @@ jest.mock("@/lib/account-request", () => ({
 }));
 jest.mock("@/lib/ask-stream", () => ({ askQuestion: jest.fn() }));
 jest.mock("@/lib/use-api-session", () => ({ useApiSession: jest.fn() }));
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("@/components/site/app-dialog-provider", () => ({
   useAppDialog: () => ({
     confirmAction: async () => true,
@@ -193,6 +195,36 @@ test("an interrupted answer preserves the question draft and marks partial outpu
     (screen.getByLabelText("Your question") as HTMLTextAreaElement).value,
   ).toBe("Where is the bolt?");
   expect(screen.queryByLabelText("Sources checked")).toBeNull();
+});
+test("retrying a question leaves an older empty failed reply separate from the pending status", async () => {
+  const user = userEvent.setup();
+  jest.mocked(askQuestion)
+    .mockRejectedValueOnce(new Error("network failed"))
+    .mockImplementationOnce(() => new Promise(() => {}));
+  render(<AssistClient initialQuery="Where is the bolt?" />);
+  await user.click(screen.getByRole("button", { name: "Ask" }));
+  await screen.findByText("The answer did not finish.");
+  await user.click(screen.getByRole("button", { name: "Ask" }));
+  expect(screen.getByText("The answer did not finish.")).toBeTruthy();
+  expect(screen.getAllByText("Checking your inventory…")).toHaveLength(1);
+  expect(screen.getByText("Checking your inventory…").getAttribute("role")).toBe("status");
+});
+test.each([0, 3])("Home shows attention only for actual pending work (%i captures)", async (pending) => {
+  const original = jest.mocked(accountRequest).getMockImplementation()!;
+  jest.mocked(accountRequest).mockImplementation(async (account, path, options) => {
+    if (path === "/review-items?limit=1") return { pending_count: pending };
+    if (path === "/checkouts/active") return { checkouts: [] };
+    if (path === "/profile/me") return { display_name: "QA" };
+    return original(account, path, options);
+  });
+  render(<HomeOverview />);
+  await screen.findByText("Hello, QA.");
+  expect(screen.queryByRole("heading", { name: "Needs your attention" }) !== null).toBe(pending > 0);
+  expect(screen.queryByText("to buy")).toBeNull();
+  expect(screen.queryByText("on order")).toBeNull();
+  expect(screen.queryByText("overdue lent items")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Where is my soldering iron?" })).toBeNull();
+  expect(screen.getByText("1 item across 1 Space.")).toBeTruthy();
 });
 test("a failed note upload keeps the unsaved text available", async () => {
   const user = userEvent.setup();

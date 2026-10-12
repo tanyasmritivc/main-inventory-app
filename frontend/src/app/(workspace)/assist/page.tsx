@@ -1,5 +1,7 @@
 import { AssistClient } from "@/components/site/assist-client";
 import { ProtectedAppPage } from "@/components/site/protected-app-page";
+export const metadata = { title: "Ask" };
+
 export default async function AssistPage({
   searchParams,
 }: {
