@@ -3455,47 +3455,50 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
-                  borderRadius: BorderRadius.circular(99),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x33FFFFFF)),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.edit_outlined,
-                color: AppTheme.foreground(context, Colors.white),
-              ),
-              title: AppText(
-                'Rename',
-                style: TextStyle(
+              ListTile(
+                leading: Icon(
+                  Icons.edit_outlined,
                   color: AppTheme.foreground(context, Colors.white),
                 ),
+                title: AppText(
+                  'Rename',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, 'rename'),
               ),
-              onTap: () => Navigator.pop(context, 'rename'),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: AppTheme.foreground(context, Color(0xFFFF453A)),
-              ),
-              title: AppText(
-                'Delete Space',
-                style: TextStyle(
+              ListTile(
+                leading: Icon(
+                  Icons.delete_outline,
                   color: AppTheme.foreground(context, Color(0xFFFF453A)),
                 ),
+                title: AppText(
+                  'Delete Space',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, 'delete'),
               ),
-              onTap: () => Navigator.pop(context, 'delete'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
