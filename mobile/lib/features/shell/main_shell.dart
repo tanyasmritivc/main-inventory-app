@@ -15,6 +15,7 @@ import '../../core/pro_status.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/push_notifications.dart';
+import '../../core/notification_snapshot.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../checkout/checkout_page.dart';
@@ -45,7 +46,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   late final PageController _pageController;
   late final ProfileStore _profileStore;
   StreamSubscription<AuthState>? _authSub;
@@ -58,6 +59,8 @@ class _MainShellState extends State<MainShell> {
   int _notificationCount = 0;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
+  int _notificationGeneration = 0;
+  late final String? _notificationAccount;
   double _pageOpacity = 1;
   int _pageTransitionGeneration = 0;
   int _chatGeneration = 0;
@@ -95,16 +98,20 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    _notificationAccount = widget.api.accountId;
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: 0);
     _profileStore = ProfileStore(api: widget.api);
     unawaited(_profileStore.load());
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
     unawaited(_initializePushNotifications());
-    _notificationTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => unawaited(_loadNotificationCount()),
-    );
+    _notificationTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle == null || lifecycle == AppLifecycleState.resumed) {
+        unawaited(_loadNotificationCount());
+      }
+    });
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -114,8 +121,11 @@ class _MainShellState extends State<MainShell> {
       if (state.event == AuthChangeEvent.signedOut) {
         InventoryCache.clear();
         ProStatus.reset();
+        unawaited(PushNotifications.stop());
       }
-      if (state.event == AuthChangeEvent.signedOut && mounted) {
+      if (widget.api.accountId != _notificationAccount && mounted) {
+        _notificationGeneration++;
+        setState(() => _notificationCount = 0);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.of(
@@ -173,11 +183,21 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
+    _notificationGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
     _authSub?.cancel();
     _notificationTimer?.cancel();
     _pageController.dispose();
     _profileStore.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_loadNotificationCount());
+      unawaited(_initializePushNotifications());
+    }
   }
 
   int get _navigationIndex => switch (_currentPage) {
@@ -304,14 +324,20 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _loadNotificationCount() async {
+    if (_openingNotifications || widget.api.accountId != _notificationAccount) {
+      return;
+    }
+    final generation = ++_notificationGeneration;
     try {
       final result = await widget.api.getNotifications();
-      if (!mounted) return;
-      setState(
-        () =>
-            _notificationCount = (result['unread_count'] as num?)?.toInt() ?? 0,
-      );
-      await PushNotifications.setBadgeCount(_notificationCount);
+      if (!mounted ||
+          generation != _notificationGeneration ||
+          widget.api.accountId != _notificationAccount) {
+        return;
+      }
+      final count = notificationUnreadCount(result);
+      setState(() => _notificationCount = count);
+      await PushNotifications.setBadgeCount(count);
     } catch (_) {
       // Read-only badge refresh; the inbox shows a visible error if opened.
     }
@@ -326,15 +352,21 @@ class _MainShellState extends State<MainShell> {
           });
         },
       );
-      await PushNotifications.register(widget.api);
+      if (!mounted || widget.api.accountId != _notificationAccount) return;
+      await PushNotifications.registerIfAuthorized(widget.api);
     } catch (error) {
-      debugPrint('Push notifications are unavailable: $error');
+      // Optional phone alerts can be enabled/retried in the inbox.
     }
   }
 
   Future<void> _openNotifications() async {
-    if (!mounted || _openingNotifications) return;
+    if (!mounted ||
+        _openingNotifications ||
+        widget.api.accountId != _notificationAccount) {
+      return;
+    }
     _openingNotifications = true;
+    _notificationGeneration++;
     HapticFeedback.lightImpact();
     try {
       await Navigator.push(
@@ -342,16 +374,20 @@ class _MainShellState extends State<MainShell> {
         MaterialPageRoute(
           builder: (_) => NotificationsPage(
             api: widget.api,
-            onRead: () {
-              if (mounted) setState(() => _notificationCount = 0);
-              unawaited(PushNotifications.setBadgeCount(0));
+            onReadStarting: () => _notificationGeneration++,
+            onUnreadChanged: (count) {
+              if (!mounted || widget.api.accountId != _notificationAccount) {
+                return;
+              }
+              _notificationGeneration++;
+              setState(() => _notificationCount = count);
             },
           ),
         ),
       );
-      await _loadNotificationCount();
     } finally {
       _openingNotifications = false;
+      if (mounted) unawaited(_loadNotificationCount());
     }
   }
 
@@ -879,6 +915,7 @@ class _ProfilePage extends StatelessWidget {
                     children: [
                       OutlinedButton(
                         onPressed: () async {
+                          await PushNotifications.stop();
                           await Supabase.instance.client.auth.signOut();
                         },
                         child: const AppText('Logout'),
@@ -947,6 +984,7 @@ class _ProfilePage extends StatelessWidget {
                             }
 
                             InventoryCache.clear();
+                            await PushNotifications.stop();
                             await Supabase.instance.client.auth.signOut();
                           } catch (e) {
                             if (!context.mounted) return;

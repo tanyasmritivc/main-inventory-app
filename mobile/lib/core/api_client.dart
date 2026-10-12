@@ -118,10 +118,14 @@ class ApiClient {
     await _dio.post<void>(
       '/push/devices',
       data: {'device_token': token, 'environment': environment},
+      options: _authOptions(),
     );
   }
 
-  Future<void> sendTestPush() async => _dio.post<void>('/push/test');
+  String? get accountId => Supabase.instance.client.auth.currentUser?.id;
+
+  Future<void> sendTestPush() async =>
+      _dio.post<void>('/push/test', options: _authOptions());
 
   Future<List<ActivityEntry>> getRecentActivity({int limit = 10}) async {
     final res = await _dio.get<Map<String, dynamic>>(

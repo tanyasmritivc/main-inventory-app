@@ -117,6 +117,27 @@ class _PilotProfileApi extends _ProfileApi {
   };
 }
 
+class _NotificationRaceApi extends _ProfileApi {
+  final firstCount = Completer<Map<String, dynamic>>();
+  int reads = 0;
+  int writes = 0;
+  @override
+  Future<Map<String, dynamic>> getNotifications() async {
+    if (++reads == 1) return firstCount.future;
+    return {
+      'unread_count': writes == 0 ? 1 : 0,
+      'notifications': [
+        {'display_text': 'A teammate joined.', 'is_read': writes > 0},
+      ],
+    };
+  }
+
+  @override
+  Future<void> markNotificationsRead() async {
+    writes++;
+  }
+}
+
 Widget _hub(
   _ProfileApi api,
   List<String> opened, {
@@ -417,6 +438,47 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox()); // Dispose shell polling timer.
+    },
+  );
+
+  testWidgets(
+    'an old shell count cannot restore an unread badge after an inbox write',
+    (tester) async {
+      final api = _NotificationRaceApi();
+      await tester.pumpWidget(MaterialApp(home: MainShell(api: api)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(NavigationDestination).at(4));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Notifications'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ProfileHubPage>(
+              find.byType(ProfileHubPage, skipOffstage: false),
+            )
+            .unreadCount,
+        1,
+      );
+      await tester.tap(find.byTooltip('Mark all as read'));
+      await tester.pumpAndSettle();
+      expect(api.writes, 1);
+      api.firstCount.complete({'unread_count': 7});
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ProfileHubPage>(
+              find.byType(ProfileHubPage, skipOffstage: false),
+            )
+            .unreadCount,
+        0,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<ProfileHubPage>(find.byType(ProfileHubPage)).unreadCount,
+        0,
+      );
+      await tester.pumpWidget(const SizedBox());
     },
   );
 

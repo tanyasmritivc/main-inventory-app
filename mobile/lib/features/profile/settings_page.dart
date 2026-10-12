@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
+import '../../core/push_notifications.dart';
 import '../../core/ui/app_gradient_background.dart';
 import '../onboarding/onboarding_page.dart';
 import 'privacy_policy_page.dart';
@@ -151,6 +152,7 @@ class _SettingsPageState extends State<SettingsPage> {
         throw Exception(data['error'] ?? 'Failed to delete account');
       }
       InventoryCache.clear();
+      await PushNotifications.stop();
       await Supabase.instance.client.auth.signOut();
     } catch (e) {
       if (!mounted) return;
@@ -297,8 +299,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     context,
                     const Color(0x73FFFFFF),
                   ),
-                  onTap: () =>
-                      unawaited(Supabase.instance.client.auth.signOut()),
+                  onTap: () => unawaited(() async {
+                    await PushNotifications.stop();
+                    await Supabase.instance.client.auth.signOut();
+                  }()),
                 ),
                 _actionRow(
                   icon: Icons.delete_outline,

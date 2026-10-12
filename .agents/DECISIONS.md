@@ -1,5 +1,17 @@
 # Decisions
 
+## October 11 native notifications
+
+OS notification authorization belongs to the phone app; ask for new permission
+from the explicit inbox Enable action and reconnect an already granted permission
+without prompting at launch. Inventory refreshes must not ask. Keep server inbox
+counts authoritative, never infer zero after a write, and invalidate stale reads.
+Clear OS alerts and registration when leaving an account; reassign the backend
+token on the next authenticated registration, without blocking offline logout
+on an ancillary server cleanup. Use account keys to recreate the shell on an
+identity switch. Automated/native compilation checks do not prove APNs delivery.
+The user chose candidate preparation with physical acceptance deferred.
+
 ## October 11 legal consistency and actual storage
 
 Use `/privacy` and `/terms` on `https://findez.ai` as the canonical documents for

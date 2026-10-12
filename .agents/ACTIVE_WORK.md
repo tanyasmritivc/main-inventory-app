@@ -1,5 +1,31 @@
 # Active work
 
+## Native notification permission and read state (October 11)
+
+Sequential lane `fix/mobile-notification-permissions` in
+`/Users/tanyasmritivictorcharles/dev/findez-mobile-notifications`, based on
+`5b21899`. Existing OS authorization reconnects without a launch prompt; the
+inbox has an explicit Enable action and denied permission links to Settings.
+Registration is serialized, bounded natively and guarded against an account
+change. Device writes capture authentication. Logout stops OS delivery and clears
+alerts; next registration reassigns the server token to the authenticated user.
+The app does not issue a server token-delete request during offline logout.
+Inbox reads are explicit, re-fetch after a successful write, keep rows on failure,
+refresh while visible/resumed and publish validated account-scoped counts. Shell
+generations prevent late badge reads from undoing inbox writes. The auth gate
+keys the shell by account; old routes close on account changes. Local stock
+refreshes no longer trigger the first permission request; setting a threshold
+remains the explicit reminder action. Decorative feed cards/dividers and the
+test-push toolbar action are removed.
+
+All 312 mobile tests with coverage and clean analysis pass, including a delayed
+shell-count regression; Swift parses and native simulator compilation succeeds
+with production defines. Candidate is 1.0.7 (60). Signed archive/export and CI are
+next. The user explicitly chose preparation now and physical testing later
+because the connected iPhone is unavailable. Keep camera/library/voice, public
+legal links, actual APNs delivery/tap/badge and logout/relogin acceptance pending.
+Do not upload or replace pending App Review build 59 without release authorization.
+
 ## Canonical legal and permissions (October 11)
 
 Sequential lane `fix/canonical-legal-pages` in

@@ -72,8 +72,9 @@ class LowStockNotifications {
     if (account != RestockPrefs.accountKey) return;
     final enabledKey = accountPreferenceKey(_enabledKey);
     final enabled = prefs.getBool(enabledKey);
-    if (enabled == false) return;
-    if (enabled == null && !await _enableFor(account)) return;
+    // Inventory refreshes must never trigger a new OS permission prompt.
+    // The user can enable reminders while setting a stock threshold.
+    if (enabled != true) return;
     await initialize();
     if (account != RestockPrefs.accountKey) return;
 

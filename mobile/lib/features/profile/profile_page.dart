@@ -14,6 +14,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/profile_store.dart';
+import '../../core/push_notifications.dart';
 import '../../core/upgrade_sheet.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
@@ -342,6 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
       InventoryCache.clear();
+      await PushNotifications.stop();
       await Supabase.instance.client.auth.signOut();
     } catch (error) {
       if (!mounted) return;
@@ -353,6 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _signOut() async {
     try {
+      await PushNotifications.stop();
       await Supabase.instance.client.auth.signOut();
     } catch (error) {
       if (!mounted) return;

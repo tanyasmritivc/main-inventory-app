@@ -1,5 +1,29 @@
 # Current state
 
+## October 11 mobile notification candidate
+
+- Prepared on `fix/mobile-notification-permissions` based on legal deployment
+  `5b21899`. Existing OS permission can reconnect on launch/resume; a new prompt
+  only follows the inbox's Enable action. Denied permission points to Settings.
+  Native registration has a 30-second bound and cannot overwrite an outstanding
+  result; Dart serializes it and rejects account changes before device writes.
+  Device requests capture auth headers. Logout stops OS delivery and clears
+  delivered/pending alerts; the next registration reassigns the device token.
+- Inbox opening no longer marks everything read. Explicit reads re-fetch,
+  preserve newly arriving unread events, retain rows with visible failure copy,
+  validate server counts and refresh on visible/resumed timers. Shell counts
+  consume fresh snapshots and invalidate late responses. Shells are keyed by
+  user and old routes close on account changes. Local stock refreshes no longer
+  request permission without a chosen threshold/reminder action. Feed rows are
+  plain, with meaningful unread state and no decorative dividers/test button.
+- All 312 mobile tests with coverage, clean analysis, Swift parse and native
+  simulator compilation pass. Candidate version is 1.0.7 (60), with verified
+  production API/auth inputs and no onboarding preview. The user asked to prepare
+  it and will test physically later; `devicectl` currently reports the iPhone
+  unavailable. Actual camera/library/voice, browser legal links, APNs delivery
+  and account-change/foreground/background acceptance are not claimed as passed.
+  Signed packaging/CI remain in progress; no new Apple upload/submission occurs.
+
 ## October 11 canonical legal pages and mobile links
 
 - Web source `1e6a8b3` is live from
