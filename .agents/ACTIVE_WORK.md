@@ -23,8 +23,8 @@ known vulnerabilities. Full web run passes 195 tests; TypeScript, changed-file
 ESLint (no errors, existing warnings) and production webpack compilation pass.
 Safari checks confirm Markdown, Sources, desktop pin resizing, clean Home and
 notification/settings layouts. Home hides zero-work attention sections and
-suggestion chips; pending reply status is scoped to its message during retries. No web
-deployment or new native binary has been delivered for this lane yet.
+suggestion chips; pending reply status is scoped to its message during retries.
+The web lane is deployed; no new native binary is delivered for this lane.
 
 Fictional browser fixture: `/private/tmp/findez-web-polish-fixture.cjs` on
 localhost:4109 (session 13259), production Next on 127.0.0.1:3017 (session 80626).
@@ -38,7 +38,13 @@ spreadsheet import modal) are carried unchanged from the previous running releas
 Collections uses the existing theme tokens to correct hardcoded dark-mode text.
 Older live tests are replaced with the current repository tests, including the
 previously missing review queue suite. Source manifest and rollback drop-in are
-beside the candidate. Live activation and five PR-head CI jobs remain pending.
+beside the candidate. Runtime `6960b2d` is live; all five PR-head CI jobs pass
+(`38203294862`, draft PR #52, stacked on #51). Candidate and public HTTPS checks
+verify title/headers, all 18 protected page guards, 16 static assets, exact API
+reference and production origins with no fixture URL. Both services are healthy;
+527 previous static assets are retained. Safari also verifies light-mode replies
+and the 800px drawer's background isolation/open/close behavior. Notification
+behavior and legal/mobile content remain the next lanes.
 
 User confirmations: AI Robots Inc, registered in 2020 in Sunnyvale on Poppy Ct;
 verify current official business details before using an address. Secondary
