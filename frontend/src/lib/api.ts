@@ -1,3 +1,4 @@
+import type { TeamCategory } from "./team-categories";
 import { getAccessToken } from "@/lib/session";
 
 export type InventoryItem = {
@@ -628,6 +629,7 @@ export type TeamData = {
   join_code?: string;
   plan?: string | null;
   program?: string;
+  custom_category?: string | null;
   plan_expires_at?: string | null;
 };
 
@@ -639,17 +641,19 @@ export async function createTeam({
   token,
   name,
   program,
+  custom_category,
   rookie = false,
 }: {
   token: string;
   name: string;
-  program: 'robotics' | 'ftc' | 'frc' | 'fll' | 'vex' | 'education' | 'makerspace' | 'club' | 'business' | 'other';
+  program: TeamCategory;
+  custom_category?: string;
   rookie?: boolean;
 }) {
   return apiFetch<{ team: { team_id: string; name: string; join_code?: string; plan?: string | null; plan_expires_at?: string | null } }>('/teams', {
     method: 'POST',
     token,
-    body: { name, program, rookie },
+    body: { name, program, rookie, ...(program === "custom" ? { custom_category } : {}) },
   });
 }
 

@@ -11,16 +11,13 @@ from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 from app.services.storage import create_profile_photo_signed_url
+from app.services.team_categories import VALID_PROGRAMS, normalize_custom_category
 
 logger = logging.getLogger(__name__)
 
 # join_code charset: A-Z minus I/O; 0-9 minus 0/1 → 32 unambiguous chars
 _CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-VALID_PROGRAMS = frozenset((
-    "robotics", "ftc", "frc", "vex", "fll",
-    "education", "makerspace", "club", "business", "other",
-))
 VALID_PLANS = frozenset(("free_rookie", "ftc_season", "frc_season", "district"))
 VALID_ROLES = frozenset(("owner", "mentor", "member", "viewer"))
 
@@ -46,15 +43,16 @@ def _unique_join_code() -> str:
 
 # ── CRUD ───────────────────────────────────────────────────────────────────────
 
-def create_team(*, user_id: str, name: str, program: str) -> dict:
+def create_team(*, user_id: str, name: str, program: str, custom_category: str | None = None) -> dict:
     """Create a team and insert the caller as owner. Returns the team row."""
     name = (name or "").strip()
     program = (program or "").lower().strip()
-    if not name:
-        raise ValueError("Team name is required")
+    if not name or len(name) > 100:
+        raise ValueError("Enter a team name of 1 to 100 characters")
     if program not in VALID_PROGRAMS:
         raise ValueError(f"Invalid program '{program}'; must be one of {sorted(VALID_PROGRAMS)}")
 
+    custom_category = normalize_custom_category(program, custom_category)
     supabase = get_supabase_admin()
     join_code = _unique_join_code()
 
@@ -63,6 +61,7 @@ def create_team(*, user_id: str, name: str, program: str) -> dict:
             "name": name,
             "owner_user_id": user_id,
             "program": program,
+            "custom_category": custom_category,
             "join_code": join_code,
         }).execute()
     )
@@ -89,7 +88,7 @@ def join_team(*, user_id: str, code: str) -> dict:
 
     team_resp = supabase_execute_with_retry(
         lambda: supabase.table("teams")
-        .select("team_id, name, program, plan, plan_expires_at, owner_user_id")
+        .select("team_id, name, program, custom_category, plan, plan_expires_at, owner_user_id")
         .eq("join_code", code)
         .execute()
     )
@@ -144,7 +143,7 @@ def list_user_teams(*, user_id: str) -> list[dict]:
     team_ids = [m["team_id"] for m in members_resp.data]
     teams_resp = supabase_execute_with_retry(
         lambda: supabase.table("teams")
-        .select("team_id, name, program, plan, plan_expires_at, join_code, owner_user_id, created_at")
+        .select("team_id, name, program, custom_category, plan, plan_expires_at, join_code, owner_user_id, created_at")
         .in_("team_id", team_ids)
         .execute()
     )
@@ -384,7 +383,7 @@ def get_team_invitation(*, requesting_user_id: str, team_id: str) -> dict:
     supabase = get_supabase_admin()
     team = supabase_execute_with_retry(
         lambda: supabase.table("teams").select(
-            "team_id,name,program,join_code"
+            "team_id,name,program,custom_category,join_code"
         ).eq("team_id", team_id).limit(1).execute()
     ).data or []
     if not team:

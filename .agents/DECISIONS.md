@@ -1,5 +1,15 @@
 # Decisions
 
+## October 12 inventory audiences and Team categories
+
+FindEZ is an inventory product for homes, businesses, labs, schools, teams and
+industry. Team category describes a group, independently of licensing, roles or
+catalog coverage. Retain legacy robotics program keys; add general categories
+and `custom` with a trimmed, single-line 1-60 character `custom_category` label.
+Persist and return that label instead of accepting arbitrary program codes.
+Migration 040 must deploy before the expanded forms/backend. Category lists
+start unselected and sort alphabetically; failed saves retain the draft.
+
 ## October 12 build-60 delivery scope
 
 The user authorizes uploading the prepared notification/legal-link candidate to

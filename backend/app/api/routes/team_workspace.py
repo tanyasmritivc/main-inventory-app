@@ -61,7 +61,7 @@ def _manager(team_id: str, user_id: str) -> dict:
 
 def _team(team_id: str) -> dict:
     rows = get_supabase_admin().table("teams").select(
-        "team_id,name,owner_user_id,program,join_code"
+        "team_id,name,owner_user_id,program,custom_category,join_code"
     ).eq("team_id", team_id).limit(1).execute().data or []
     if not rows:
         raise HTTPException(404, "This team no longer exists.")

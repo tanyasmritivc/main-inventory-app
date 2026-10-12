@@ -20,14 +20,16 @@ Do not present the vision document or demo graphics as proof of deployed feature
 - Preserve trustworthy context about an item, including where it is, what evidence
   identified it, and its history.
 - Serve individual workshops and teams without making robotics the only use case.
-- Keep the product useful under real workshop and competition conditions.
+- Keep the product useful in everyday homes, workplaces, labs, and team operations.
 
 ## Users and markets
 
-Robotics teams are the first and most developed market. The product and data model
-also support schools, makerspaces, clubs, businesses, and other teams with physical
-parts or equipment. The current team context choices include FTC, FRC, FLL, VEX,
-School, Makerspace, Club, Business, and Other.
+FindEZ serves households, small businesses, laboratories, schools, makerspaces,
+clubs, nonprofits, robotics teams, retail, warehouses, factories, and other
+organizations managing physical belongings, supplies, parts, or equipment. Team
+category is descriptive and does not change a plan or access permissions. The
+category expansion supports 29 alphabetically displayed choices, including a
+bounded saved custom label; deploy migration 040 before its dependent clients.
 
 ## Current capabilities
 

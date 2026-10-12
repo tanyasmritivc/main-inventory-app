@@ -1302,7 +1302,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const SizedBox(height: 12),
                       AppText(
-                        'Your whole robotics team shares one inventory. Ask your coach for a join code.',
+                        'Share inventory with your household, business, lab, or team. Ask a team manager for a join code.',
                         style: TextStyle(
                           color: AppTheme.foreground(
                             context,

@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
 from app.services import teams_repo
+from app.services.team_categories import TeamCategory
 from app.services.email_delivery import send_transactional_email
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
@@ -31,10 +32,8 @@ logger = logging.getLogger(__name__)
 
 class CreateTeamRequest(BaseModel):
     name: str = Field(max_length=100)
-    program: Literal[
-        "robotics", "ftc", "frc", "vex", "fll",
-        "education", "makerspace", "club", "business", "other",
-    ]
+    program: TeamCategory
+    custom_category: str | None = Field(default=None, max_length=60)
     rookie: bool = False  # if True, set plan='free_rookie', allowed once per owner
 
 
@@ -115,6 +114,7 @@ def create_team_route(
             user_id=user.user_id,
             name=payload.name,
             program=payload.program,
+            custom_category=payload.custom_category,
         )
         if payload.rookie:
             expires_at = _season_expires_at()

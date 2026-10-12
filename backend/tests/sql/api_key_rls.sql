@@ -182,3 +182,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir ../../../tests/api_docs/semantics.sql
 \ir ask_answer_context.sql
 \ir space_review_lifecycle.sql
+
+\ir team_categories.sql

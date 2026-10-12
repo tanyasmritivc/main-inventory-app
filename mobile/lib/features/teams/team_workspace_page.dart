@@ -1,3 +1,4 @@
+import 'team_categories.dart';
 import '../../core/app_theme.dart';
 import '../inventory/space_icon_picker.dart';
 import 'dart:async';
@@ -497,7 +498,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 36),
                 children: [
                   AppText(
-                    '${_teamTypeLabel((_team?['program'] ?? '').toString())} · ${_roleLabel(_role)}',
+                    '${teamCategoryLabel(_team?['program']?.toString(), _team?['custom_category']?.toString())} · ${_roleLabel(_role)}',
                     style: TextStyle(
                       color: AppTheme.foreground(context, AppColors.muted),
                     ),
@@ -1670,19 +1671,6 @@ String _roleLabel(String role) => switch (role) {
   'mentor' => 'Manager',
   'viewer' => 'Viewer',
   _ => 'Member',
-};
-
-String _teamTypeLabel(String type) => switch (type) {
-  'ftc' => 'FIRST Tech Challenge',
-  'frc' => 'FIRST Robotics Competition',
-  'fll' => 'FIRST LEGO League',
-  'vex' => 'VEX Robotics',
-  'robotics' => 'Robotics Team',
-  'education' => 'School or Classroom',
-  'makerspace' => 'Makerspace or Workshop',
-  'club' => 'Club or Community Group',
-  'business' => 'Business or Operations',
-  _ => 'Team',
 };
 
 String _dateLabel(String? value) {
