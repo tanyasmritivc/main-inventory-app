@@ -12,8 +12,13 @@ Official registry verifies AI ROBOTS INC (4578465), Active, filed March 16, 2020
 887 Poppy Ct, Sunnyvale, CA 94086. Current facts, legal-review priorities and
 engineering limitations are recorded in CURRENT_STATE. Web 210 tests, TypeScript,
 changed-file ESLint, webpack build and Safari public-page checks pass. All 301
-mobile tests with coverage and clean Flutter analysis pass. No legal deployment,
-new native binary, push-delivery acceptance or Apple submission is claimed yet.
+mobile tests with coverage and clean Flutter analysis pass. Web `1e6a8b3` is live
+from `web-canonical-legal-20261011`, draft PR #54; all five CI jobs pass on
+`d459df3` (`38209066849`), whose web source is identical and whose signup checkbox
+has its own Material layer for the newer Flutter CI version. Server build/tests,
+public guards/redirects/assets/docs/origins and Safari pass. 702 old static files
+are retained with a rollback drop-in. No new native binary, push-delivery
+acceptance or Apple submission is claimed yet.
 Mobile notifications remain the next scoped lane. Preserve pending build 59.
 
 ## Notification refresh and read state (October 11)

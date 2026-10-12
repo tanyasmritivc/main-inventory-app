@@ -2,7 +2,11 @@
 
 ## October 11 canonical legal pages and mobile links
 
-- Prepared in `fix/canonical-legal-pages`, stacked on notification PR #53.
+- Web source `1e6a8b3` is live from
+  `/home/ubuntu/findez-web-releases/web-canonical-legal-20261011/frontend`;
+  draft PR #54 is stacked on notification PR #53. All five CI jobs pass on
+  `d459df3` (`38209066849`), which adds the native signup Material correction
+  needed by the newer Flutter CI version; its web source is identical.
   Privacy and Terms now share readable public layouts, current factual content,
   working section links and canonical URLs. Mobile opens those HTTPS documents
   in the browser with retry/copy fallback. Redundant public feature pages redirect
@@ -43,6 +47,12 @@
   native camera/library/voice and
   push acceptance are required for a future binary. Build 59 App Review is held
   unchanged; this lane does not upload or resubmit it.
+- Server build and 210 tests pass. Candidate/public checks verify both legal
+  documents, canonical URLs, five redirects, 18 sign-in guards, static assets,
+  exact API docs, production origins, headers and zero production dependency
+  vulnerabilities. Both services are healthy; 702 previous static files are
+  retained. Source manifest and rollback drop-in are beside the release. Safari
+  confirms the deployed Privacy layout and absence of the old menus.
 
 ## October 11 notification inbox refresh
 
