@@ -1,5 +1,33 @@
 # Active work
 
+## Ask photo clarity (October 11)
+
+User-requested fix for repetitive, confusing image replies in web and mobile.
+Backend-only lane `fix/ask-photo-summary` in
+`/Users/tanyasmritivictorcharles/dev/findez-ask-photo-summary`, based on `7de3913`.
+The shared photo formatter groups duplicates, puts clear identifications first,
+summarizes uncertainty and stock once, omits noisy categories and generic unknown
+matches, and shows measurements only when requested. For noisy scenes without
+product identifiers, the existing language gateway selects at most three coherent
+main subject labels using validated indices; it cannot introduce an identity or
+stock fact. The 12-second timeout and invalid/unavailable-response fallback keep
+deterministic output available. Preserve the SSE/snapshot contract, access scope, Review
+persistence and explicit inventory confirmation. Existing clients consume the
+same text; no mobile binary or web rebuild is required. Focused photo tests pass
+(60). Full backend suite passes (376), and all five exact-runtime CI jobs pass
+on `fefcfe9` (`38195426179`). Draft PR #51 is stacked on #50. Both reviewed backend
+files are deployed with original hash guards and backups in
+`/home/ubuntu/findez-ask-photo-20261011`. Live consolidation with synthetic labels
+returned a validated subject in 4.66 seconds; no source image or inventory data
+was sent to selection. Both deployed hashes match, `findez` is active, and
+public `/health` and `/health/db` return 200 on the configured API origin
+`https://findez.openstack.ftctools.com`; unauthenticated `/ai_photo_question`
+returns 401. The initial public check used the obsolete `api.findez.ai` hostname;
+current-origin verification is recorded in `deployment.json`. Original dirty VM
+work, both clients and the pending App Review binary are preserved. Genuine new
+image recognition still needs user acceptance; saved conversations are not
+rewritten, and consolidation does not guarantee every underlying identification.
+
 ## App Review clarification and native screenshots (October 8)
 
 Continued on `fix/app-review-build58` in

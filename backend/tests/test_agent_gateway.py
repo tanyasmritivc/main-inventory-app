@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from app.services import ai_agent
-from app.services.agent_gateway_client import AgentGatewayClient
+from app.services.agent_gateway_client import AgentGatewayClient, gateway_completion
 from app.services.ai_memory import extract_and_save_memory
 
 
@@ -47,6 +47,22 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     assert request.kwargs["json"]["stream"] is False
     assert result.choices[0].message.content == "Ready"
     http.__exit__.assert_called_once()
+
+
+def test_bounded_photo_timeout_is_local_and_does_not_change_normal_gateway_timeout():
+    response = Mock()
+    response.json.return_value = {"choices": [{"message": {"content": '{"indices": [0]}'}}]}
+    http = MagicMock()
+    http.__enter__.return_value = http
+    http.post.return_value = response
+    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), \
+         patch('app.services.agent_gateway_client.httpx.Client', return_value=http) as client:
+        gateway_completion(messages=[{'role': 'user', 'content': 'labels'}],
+                           conversation_id='photo', request_timeout_seconds=12)
+        assert AgentGatewayClient().timeout.read == 180
+    timeout = client.call_args.kwargs['timeout']
+    assert timeout.read == timeout.connect == timeout.write == timeout.pool == 12
+    assert 'request_timeout_seconds' not in http.post.call_args.kwargs['json']
 
 
 def test_gateway_provider_uses_dedicated_key_endpoint_and_conversation_headers():
