@@ -12,8 +12,14 @@ new event stays unread. Empty copy explains the Team feed. Tests cover failed
 reads/writes, account switches, stale badge responses and new events during reads.
 All 203 web tests and 380 backend/API-doc tests pass; TypeScript and ESLint have
 no errors (one intentional generation-ref warning). Web webpack compilation
-passes with the fictional local environment. Final browser/CI and
-web-only deployment are underway. No backend runtime, schema or native files are
+passes with the fictional local environment. Safari confirms a successful read
+clears both the unread dot and bell immediately. Broadcasts carry a source ID
+to avoid invalidating the sender document twice. Runtime `0189a17` is live from
+`web-notification-refresh-20261011`, draft PR #53 stacked on #52. All five CI jobs
+pass (`38204481906`); server build/tests and public guards/assets/origins/headers
+pass, with zero production dependency vulnerabilities and 622 old static files
+retained. A rollback drop-in and source manifest are beside the release.
+No backend runtime, schema or native files are
 changed. Seven focused notification backend/APNs tests pass.
 
 Read-only production checks confirm recipient/read/activity/push tables and
