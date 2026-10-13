@@ -22,6 +22,7 @@ import { userFacingError } from "@/lib/user-facing-error";
 
 import { ItemDetails } from "@/components/site/item-details";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ShopifyPanel } from "@/components/site/shopify-panel";
 
 type Tab = "spaces" | "board" | "people" | "files" | "activity";
 type CreateMode = "team" | "join" | "space" | "attach" | "task" | "item";
@@ -68,7 +69,15 @@ export function TeamsClient() {
     try {
       const result = await getMyTeams({ token });
       setTeams(result.teams ?? []);
-      setSelectedId((current) => current && result.teams.some((entry) => entry.team_id === current) ? current : result.teams[0]?.team_id ?? null);
+      const requestedTeam = new URLSearchParams(window.location.search).get("team");
+      const returnUrl = new URL(window.location.href);
+      if (returnUrl.searchParams.has("shopify")) {
+        setTab("people");
+        if (returnUrl.searchParams.get("shopify") === "failed") setError("Shopify authorization did not complete. Try connecting again.");
+        returnUrl.searchParams.delete("shopify"); returnUrl.searchParams.delete("team");
+        window.history.replaceState(window.history.state, "", returnUrl.pathname + returnUrl.search + returnUrl.hash);
+      }
+      setSelectedId((current) => current && result.teams.some((entry) => entry.team_id === current) ? current : result.teams.find(entry => entry.team_id === requestedTeam)?.team_id ?? result.teams[0]?.team_id ?? null);
     } catch (reason) { setError(userFacingError(reason, "Could not load teams.")); }
     finally { setLoading(false); }
   }, [token]);
@@ -210,6 +219,7 @@ export function TeamsClient() {
       {tab === "files" && <div className="team-panel"><div className="team-panel-heading"><h2>Files</h2>{canEdit && <><button className="product-button primary" onClick={() => teamFileRef.current?.click()}><Plus size={14} />Upload</button><input ref={teamFileRef} hidden type="file" onChange={(event) => void uploadDocument(event)} /></>}</div><div className="team-files">{documents.map((document) => <article key={document.team_document_id}><FileText size={18} /><button onClick={() => void openDocument(document)}><strong>{document.filename}</strong><span>{relativeTime(document.created_at)} · {document.size_bytes ? `${Math.ceil(document.size_bytes / 1024)} KB` : "File"}</span></button>{canEdit && <button className="app-icon-button" onClick={() => void removeDocument(document)}><Trash2 size={14} /></button>}</article>)}{documents.length === 0 && <div className="bare-empty"><FileText size={22} /><strong>No files</strong></div>}</div></div>}
 
       {tab === "activity" && <div className="team-panel"><div className="team-panel-heading"><h2>Activity</h2></div><div className="activity-feed">{activity.map((entry) => <article className="activity-row" key={entry.activity_id}><span className="activity-icon"><History size={15} /></span><div><div className="activity-copy">{entry.summary}</div><div className="activity-meta">{relativeTime(entry.created_at)}</div></div></article>)}{activity.length === 0 && <div className="bare-empty"><History size={22} /><strong>No activity</strong></div>}</div></div>}
+      {tab === "people" && selectedId && token && <ShopifyPanel key={`${token}:${selectedId}`} teamId={selectedId} token={token}/>}
       <Dialog open={!!detailItem && !!openSpace} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Team item</DialogTitle>{detailItem && openSpace && selectedId && <ItemDetails item={detailItem} context={{ kind: "team", teamId: selectedId, spaceId: openSpace.id }} canEdit={canEdit} onChanged={next => { setDetailItem(next); setSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
     </section>
   );

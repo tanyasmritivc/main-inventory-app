@@ -1,5 +1,20 @@
 # Decisions
 
+## October 12 first Shopify increment uses an isolated development pilot
+
+The user says implement, then confirms no app/store exists and chooses preparing
+development testing. Implement only milestone 1A: one server-configured store,
+standalone development/custom OAuth bound to an existing Team owner and browser,
+encrypted expiring tokens, separate catalog/quantity-state caches and a Postgres
+page worker. Do not invent public-install support or production authorization.
+The Team owner explicitly delegates cache reads to Team members; Shopify staff
+permissions are not inferred. Global manufacturer catalog and physical inventory
+remain untouched. Disconnect purges derived cache immediately; native memories
+are independent. Service-only RPCs fence jobs/OAuth by install generation, and
+the client hides the panel until configuration is explicitly ready. Public
+distribution/billing/backup-retention review and real development-store acceptance
+precede merchant rollout. See `docs/shopify-development.md`.
+
 ## October 12 Shopify is an optional connector, not a product replacement
 
 The user confirms Shopify is an additional FindEZ feature, with reusable catalog

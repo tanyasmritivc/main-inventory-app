@@ -44,13 +44,15 @@ Reprioritize it when production state changes.
 
 ## P2 later
 
-- Optional Shopify business connector: use `docs/shopify-discovery.md` for the
-  completed first-pass audit. Next implementation task is secure read-only catalog
-  onboarding in an isolated non-production environment, followed by explicit
-  physical-location confirmation and Team-aware Ask. Preserve ordinary inventory,
-  pricing and the current app; no production migrations/deployment without explicit
-  authorization. Other platforms reuse import/identity rules only after Shopify
-  proves value; do not build all connectors or external writes immediately.
+- Optional Shopify connector milestone 1A is implemented in source on
+  `feat/shopify-catalog-connection`, disabled and not deployed. User has no Shopify
+  app/store yet; `docs/shopify-development.md` and the configuration template
+  prepare isolated development testing. Next: create/configure a development app
+  and record real OAuth/query/refresh/webhook/retention acceptance, then implement
+  explicit physical-location confirmation and Team-aware Ask (1B). Preserve native
+  inventory/pricing; no production migration/deployment without authorization.
+  Public distribution/billing and backup deletion require review before rollout.
+  Other adapters and external commerce writes remain later.
 
 - Add real offline inventory persistence and conflict behavior for poor network
   conditions.

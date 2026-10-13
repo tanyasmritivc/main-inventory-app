@@ -101,6 +101,17 @@ class Settings(BaseSettings):
     api_key_bulk_requests_per_minute: int = 10
     api_key_bulk_max_items: int = 500
 
+    # Optional standalone development/custom-store pilot. Public App Store
+    # distribution is a separate installation/billing review, not enabled here.
+    shopify_enabled: bool = False
+    shopify_client_id: str | None = None
+    shopify_client_secret: str | None = None
+    shopify_pilot_shop: str | None = None
+    shopify_redirect_uri: str | None = None
+    # JSON {key_id: base64url-encoded 32-byte AES key}; old keys allow rotation.
+    shopify_token_keys: str | None = None
+    shopify_active_key_id: str = "v1"
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def _parse_cors_origins(cls, v):

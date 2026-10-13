@@ -1,5 +1,25 @@
 # Current state
 
+## October 12 read-only Shopify development connector
+
+Source lane `feat/shopify-catalog-connection` in `dev/findez-shopify-connector`,
+based on discovery `08f06ca`. User says implement and confirms no Shopify app or
+development store exists yet; prepare development testing. Milestone 1A now adds
+owner/Team/browser-bound standalone OAuth for a server-configured pilot store,
+AES-GCM expiring-token storage/rotation, fixed GraphQL 2026-10 catalog/stock reads,
+durable leased page jobs, signed/deduplicated webhooks, periodic reconciliation,
+disconnect/redaction fencing and Team > People status/catalog preview. Migration
+042 is source-only; RLS denies credentials, client writes and API-key reads.
+No imports write native items/quantities/Spaces. Feature is disabled by default.
+457 backend/API-doc and 221 web tests pass; TypeScript/lint/build and disposable
+PostgreSQL lifecycle/isolation pass. Real Shopify OAuth/query/refresh/webhooks are
+not verified without an app/store. No production migration/deployment, public
+distribution, pricing/billing or mobile changes. Setup/remaining gates are in
+`docs/shopify-development.md`; location confirmations and connected Team Ask are
+the next separate increment. Existing FIND transport deferral remains preserved.
+Safari sample-only layout checks cover Light/Dark, wide and 320px panels; the
+temporary preview route and its generated types are removed before the final build.
+
 ## October 12 optional Shopify connector discovery
 
 Discovery only on `docs/shopify-discovery`, based on delivered build-62 context

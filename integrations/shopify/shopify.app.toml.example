@@ -1,0 +1,27 @@
+# Configuration template only. No app registration or distribution is selected.
+# Use a development store and standalone app first. Replace all example origins.
+name = "FindEZ development connector"
+client_id = "REPLACE_WITH_DEVELOPMENT_APP_CLIENT_ID"
+application_url = "https://www.dev.example.com/teams"
+embedded = false
+
+[access_scopes]
+scopes = "read_inventory,read_products"
+
+[auth]
+redirect_urls = ["https://api.dev.example.com/integrations/shopify/callback"]
+
+[webhooks]
+api_version = "2026-10"
+
+[[webhooks.subscriptions]]
+topics = ["products/create", "products/update", "products/delete",
+  "inventory_items/create", "inventory_items/update", "inventory_items/delete",
+  "inventory_levels/update", "inventory_levels/connect", "inventory_levels/disconnect",
+  "app/uninstalled", "app/scopes_update"]
+uri = "https://api.dev.example.com/integrations/shopify/webhooks"
+
+# Required for public distribution; receiver also handles them in development.
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "https://api.dev.example.com/integrations/shopify/webhooks"

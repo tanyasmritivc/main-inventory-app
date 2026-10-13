@@ -89,6 +89,8 @@ export type ApiRequestOptions = {
   body?: BodyInit | Record<string, unknown>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  /** Only browser-bound connector OAuth needs cross-origin API cookies. */
+  credentials?: RequestCredentials;
 };
 
 function isAbortError(error: unknown): boolean {
@@ -136,6 +138,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
       },
       body: bodyToSend,
       signal: opts.signal,
+      ...(opts.credentials ? { credentials: opts.credentials } : {}),
     });
   } catch (error) {
     if (isAbortError(error)) throw error;

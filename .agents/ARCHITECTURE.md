@@ -115,13 +115,17 @@ language gateway.
 
 ## Integration and MCP
 
-Shopify discovery is documented in `docs/shopify-discovery.md`; no commerce
-connector exists in the audited source/deployed backend. The proposed optional
-adapter uses the shared backend, an isolated external catalog/stock cache and
-typed links to existing Spaces/items/physical observations. Existing API external
-IDs do not make catalog variants interchangeable with physical item rows. Newer
-Team-aware Ask and durable confirmation provenance are prerequisites. Production
-implementation/deployment is not authorized by the discovery task.
+The optional Shopify development connector now exists in source, disabled by
+default and not deployed. `docs/shopify-development.md` describes owner/browser-
+bound standalone OAuth, backend-only AES-GCM expiring credentials, fixed GraphQL
+2026-10 reads, migration-042 tenant-scoped catalog/quantity-state caches and leased
+PostgreSQL page jobs. A separate supervised worker handles pagination, retries,
+refresh and periodic reconciliation; signed webhooks persist receipts/dirty flags.
+Web Team > People has connection/status and catalog preview. Native inventory,
+manufacturer catalog, mobile and current Ask remain unchanged. Physical-location
+observations and newer-Team grounded Ask are still planned (1B). No real Shopify
+app/store acceptance or production migration/deployment is complete; the user
+requires separate production authorization. Discovery is in `docs/shopify-discovery.md`.
 
 `integrations/findez-mcp` is a local stdio process for Claude Desktop. Its eight
 tools wrap the public `/api/v1` integration API and use a user-issued scoped key.
