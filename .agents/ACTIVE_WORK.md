@@ -10,17 +10,23 @@ adaptive tutorial (`92d5f9a`), a four-question optional setup replacing demo
 slides, account-bound pending answers, confirmed-save retry and Profile editing.
 Migration 041 adds owned `onboarding_responses` with account-deletion cascade,
 owner-only reads and backend-only writes; no Team/inventory data is generated.
-419 backend, 211 web and 330 mobile tests pass; disposable PostgreSQL isolation
-and validation checks pass. Production migration/API and privacy disclosure are selectively deployed with
-private backups. Dedicated review-account save/read/idempotency QA passes and
-its newly created QA row is removed. The user then supplies an outlined-choice
-reference and requests simpler Auth. Current mobile styling uses centered
-questions, icon choices without radio circles, restrained glass and reduced-motion
-transitions; Auth has concise inventory copy and optional work-detail expansion.
-Native previews and clean 1.0.8+62 packaging/delivery are underway. Preserve
-public 1.0.7 (59), manual/unselected 1.0.8, other live VM changes and deferred
-physical acceptance. The earlier build-61 introduction is superseded by this
-clarification, not evidence that the spotlight tutorial was already corrected.
+419 backend, 211 web and 338 mobile tests pass; PostgreSQL isolation/validation,
+clean analysis, native questionnaire completion and Light/Dark/Auth screenshots
+pass. Production migration/API and privacy disclosure are selectively deployed
+with private backups; authenticated save/read/idempotency/owner checks pass and
+the new review-account QA row is removed. The user’s final outlined-choice
+reference is implemented without radio circles or a decorative badge. Auth is
+concise, with optional work-detail expansion and preserved signup eligibility.
+All five exact-runtime CI jobs pass on `346d9ae` in `38346877463`. Clean signed
+1.0.8+62 passes signatures/configuration, all 31 native device executables and
+Apple validation/upload. Upload `3ab7200b-5045-499f-accb-2d5f4f7b6f2c` is COMPLETE
+without errors/warnings; build 62 is VALID/APP_STORE_ELIGIBLE/IN_BETA_TESTING and
+both existing internal groups/test notes are verified at 21:49 PDT October 12.
+This lane is complete. Durable release records and the deferred phone checklist
+are in `Documents/FindEZ/AppStore/1.0.8-build62`. Public 1.0.7 (59), manual/unselected
+1.0.8 and requested metadata are unchanged. Physical acceptance remains deferred,
+public submission held, and unrelated live VM work preserved. The older build-61
+introduction is superseded and did not correct the spotlight tutorial.
 
 ## October 12 requested sequential updates
 

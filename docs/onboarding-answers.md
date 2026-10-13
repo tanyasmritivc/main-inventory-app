@@ -12,12 +12,29 @@ integration keys cannot read it. Writes go through the backend and account
 deletion cascades to answers. Optional custom labels are bounded to 80 characters.
 No email or inventory content is copied into the answer row.
 
+| Question | Stored columns |
+| --- | --- |
+| Intended use | `use_case`, optional `use_case_other` |
+| What they manage | `inventory_types`, optional `inventory_other` |
+| Main goal | `primary_goal` |
+| Alone or with others | `collaboration` (`solo` or `others`) |
+
 The operator can review aggregate answers through authorized database access:
 
 ```sql
 SELECT use_case, primary_goal, collaboration, count(*) AS accounts
 FROM public.onboarding_responses
 GROUP BY use_case, primary_goal, collaboration
+ORDER BY accounts DESC;
+```
+
+Inventory types allow multiple selections. Count accounts choosing each type:
+
+```sql
+SELECT selected.inventory_type, count(*) AS accounts
+FROM public.onboarding_responses
+CROSS JOIN LATERAL unnest(inventory_types) AS selected(inventory_type)
+GROUP BY selected.inventory_type
 ORDER BY accounts DESC;
 ```
 

@@ -112,6 +112,12 @@ web lint. `onboarding_page_test.dart` covers four optional answers, multi-select
 and custom labels, Back, Skip, retry, duplicate pending saves, replay editing,
 account changes and 320pt Light/Dark through 3.4x text. The launch tests preserve
 fresh setup/Auth ordering, completed installations and invitation handoff.
+Normal-motion transitions resist repeated taps, reduced-motion changes settle
+immediately, and assistive actions activate the icon choices. `auth_layout_test.dart`
+checks sign-in providers, recovery, signup and optional work inputs in both themes
+through 3.4x; `auth_eligibility_test.dart` retains the explicit email/Apple/Google
+signup consent gate. Native previews use the actual `PREVIEW_ONBOARDING` define;
+the production archive must omit it or set it to false.
 `tutorial_overlay_test.dart` exercises actual controller targets, Next/Back/Skip,
 missing Spaces, persisted completion and large text. PostgreSQL includes
 `onboarding_answers.sql` for owned reads, backend-only writes, integration-key
@@ -392,9 +398,10 @@ sync or change another member's icon. Before release, repeat physical touch,
 VoiceOver selected names, keyboard/scrolling and persistence checks. Apple
 uploads/submission remain held and broader release checks are not replaced.
 
-### Physical-memory first-launch onboarding
+### Historical build-50 physical-memory first-launch onboarding
 
-Local build 50 replaces the old inventory simulation with the four-screen
+This historical workflow is superseded by the setup questionnaire above and
+the current user-authorized internal TestFlight release. Local build 50 replaces the old inventory simulation with the four-screen
 account-free introduction. `onboarding_page_test.dart` exercises sample objects,
 capture/review/location, grounded sample questions and personal/shared context;
 Back/swipe retain choices and no Space draft or account data is created. Skip,
