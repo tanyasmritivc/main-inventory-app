@@ -1,6 +1,6 @@
 # Current architecture
 
-This describes the 2026-10-01 release candidate. Planned systems are labeled.
+This describes the current release foundation. Planned systems are labeled.
 
 ## Repository
 
@@ -55,7 +55,7 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `037`, but they do not contain
+related services. Numbered migrations exist through `041`, but they do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -114,6 +114,14 @@ mapping, and memory extraction. Image uploads for inventory use FIND, not the
 language gateway.
 
 ## Integration and MCP
+
+Shopify discovery is documented in `docs/shopify-discovery.md`; no commerce
+connector exists in the audited source/deployed backend. The proposed optional
+adapter uses the shared backend, an isolated external catalog/stock cache and
+typed links to existing Spaces/items/physical observations. Existing API external
+IDs do not make catalog variants interchangeable with physical item rows. Newer
+Team-aware Ask and durable confirmation provenance are prerequisites. Production
+implementation/deployment is not authorized by the discovery task.
 
 `integrations/findez-mcp` is a local stdio process for Claude Desktop. Its eight
 tools wrap the public `/api/v1` integration API and use a user-issued scoped key.

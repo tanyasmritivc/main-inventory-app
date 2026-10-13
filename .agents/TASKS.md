@@ -44,6 +44,14 @@ Reprioritize it when production state changes.
 
 ## P2 later
 
+- Optional Shopify business connector: use `docs/shopify-discovery.md` for the
+  completed first-pass audit. Next implementation task is secure read-only catalog
+  onboarding in an isolated non-production environment, followed by explicit
+  physical-location confirmation and Team-aware Ask. Preserve ordinary inventory,
+  pricing and the current app; no production migrations/deployment without explicit
+  authorization. Other platforms reuse import/identity rules only after Shopify
+  proves value; do not build all connectors or external writes immediately.
+
 - Add real offline inventory persistence and conflict behavior for poor network
   conditions.
 - Move low-stock thresholds from device-local preferences to an account or shared

@@ -9,18 +9,37 @@ The current inventory/Space foundation lets users capture objects, review uncert
 identifications, save their location/context, ask about saved items and coordinate
 access or work with others.
 
-The mobile introduction teaches that implemented foundation using account-free
-examples. The broader context graph, camera-based spatial navigation, predictive
+The optional mobile setup asks four questions and the guided tutorial teaches the
+implemented foundation. The broader context graph, camera-based spatial navigation, predictive
 replenishment and other proposed memory capabilities are not all implemented.
 Do not present the vision document or demo graphics as proof of deployed features.
 
 ## Product direction
+
+Identity: **THE AI MEMORY FOR THE PHYSICAL WORLD.** Promise: **Know what you have.
+Find what you need. Instantly.**
 
 - Make physical inventory easy to capture, understand, retrieve, and act on.
 - Preserve trustworthy context about an item, including where it is, what evidence
   identified it, and its history.
 - Serve individual workshops and teams without making robotics the only use case.
 - Keep the product useful in everyday homes, workplaces, labs, and team operations.
+
+## Planned optional business connectors
+
+The user wants Shopify as an additional FindEZ feature, with reusable onboarding
+and import/mapping rules for businesses already using commerce platforms. Bring
+their existing catalog into context without repeated entry or replacing their
+commerce system. Shopify owns commerce records; FindEZ records physical context.
+Keep catalog variants, Shopify quantity snapshots and confirmed physical
+observations distinct. Start read-only toward Shopify, preserve general pricing
+direction, and avoid Shopify-only product/navigation/business logic.
+
+Discovery is complete in `docs/shopify-discovery.md`; no Shopify connector is
+implemented. Recommended first release connects/imports, confirms locations and
+provides Team-authorized grounded lookup. Photos, discrepancies, shipments and
+external writes are later increments. This is not authorization for production
+migrations or deployment.
 
 ## Users and markets
 

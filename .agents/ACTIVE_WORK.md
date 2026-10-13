@@ -1,5 +1,18 @@
 # Active work
 
+## October 12 optional Shopify discovery complete
+
+Documentation-only lane `docs/shopify-discovery`, based on `fdec959`, worktree
+`dev/findez-shopify-discovery`. User scope is an additional connector and easy
+adoption/import for businesses using existing commerce platforms. Source and
+read-only live metadata/fingerprints are inspected; official Shopify version,
+auth, scopes, distribution, webhook, rate and billing/retention requirements are
+checked. Eight requested deliverables and the next narrow implementation task
+are in `docs/shopify-discovery.md`. No integration, migration, merchant installation,
+pricing change or deployment is started. Existing FIND transport deferral and
+dirty production work remain preserved. The discovery report is the continuation
+reference; no task-specific unfinished implementation handoff is required.
+
 ## October 12 clarified tutorial and onboarding questions
 
 The user identifies the six-step in-app spotlight tutorial, then requests useful
