@@ -35,8 +35,20 @@
   rejects its first 1.0.8+61 export because `objective_c.framework` contains
   simulator slices (90087/91169). The failed signed package and receipts are
   preserved in `Documents/FindEZ/AppStore/1.0.8-build61-validation-rejected`.
-  A clean production rebuild and complete Mach-O platform check are underway;
-  no build-61 upload has occurred. Physical acceptance remains deferred.
+  The clean replacement on runtime `5acd4c7` passes all five CI jobs in
+  `38336413029`, strict app/extension signatures, production configuration and
+  device-platform checks for all 31 Mach-O executables. Apple validation/upload
+  pass without errors; delivery `f6a6c33f-7c34-4091-8df7-1c4ebf35e274` is accepted
+  at 19:27 PDT October 12. Apple processing is COMPLETE without errors/warnings;
+  build 61 is VALID, APP_STORE_ELIGIBLE, nonexpired and IN_BETA_TESTING. Both
+  existing internal groups are verified at 19:31 PDT and test notes are saved.
+  The clean archive, IPA, checksums, receipts, verifier
+  and phone checklist are preserved in `Documents/FindEZ/AppStore/1.0.8-build61`.
+  IPA SHA-256 is `527205291de7a52f6c1fff593a7f15acaffa7abc11e9eb830916e6b33c2c22c3`.
+  Physical acceptance remains deferred. Released 1.0.7 (59) and manual/unselected
+  1.0.8 draft states are verified unchanged after delivery; requested name/subtitle
+  remain saved. The historical gateway proposal now explicitly defers to the
+  deployed architecture and covers homes, businesses, labs, teams and industry.
 
 ## October 12 Space deletion and review lifecycle candidate
 
