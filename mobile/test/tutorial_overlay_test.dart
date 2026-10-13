@@ -14,7 +14,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 ThemeData qaTheme(Brightness brightness) {
   final theme = AppTheme.create(brightness);
-  if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) return theme;
+  if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+    return theme;
+  }
   TextStyle font(TextStyle? s) =>
       (s ?? const TextStyle()).copyWith(fontFamily: 'FindEZQA');
   return theme.copyWith(
