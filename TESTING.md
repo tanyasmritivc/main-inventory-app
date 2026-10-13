@@ -105,6 +105,24 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Setup questionnaire and in-app guided tour
+
+Run the full backend/web/mobile suites, analysis, TypeScript and changed-file
+web lint. `onboarding_page_test.dart` covers four optional answers, multi-select
+and custom labels, Back, Skip, retry, duplicate pending saves, replay editing,
+account changes and 320pt Light/Dark through 3.4x text. The launch tests preserve
+fresh setup/Auth ordering, completed installations and invitation handoff.
+`tutorial_overlay_test.dart` exercises actual controller targets, Next/Back/Skip,
+missing Spaces, persisted completion and large text. PostgreSQL includes
+`onboarding_answers.sql` for owned reads, backend-only writes, integration-key
+exclusion, constraints and auth-account deletion cascade.
+
+Migration 041 must precede dependent clients. Inspect native previews and build
+the production IPA from clean generated files; verify every native executable's
+device platform. Repeat physical setup/save/retry, VoiceOver, tutorial targets
+and account-switch checks through the exact final TestFlight delivery. Simulator,
+widget and API results do not constitute physical acceptance.
+
 ### iOS archive platform verification
 
 Before validating an IPA with Apple, inspect every Mach-O executable in the

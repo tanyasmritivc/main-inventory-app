@@ -30,6 +30,7 @@ import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/profile_hub_page.dart';
 import '../onboarding/onboarding_page.dart';
+import '../onboarding/onboarding_answers.dart';
 import '../profile/terms_of_service_page.dart';
 import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
@@ -121,6 +122,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         unawaited(_loadNotificationCount());
       }
     });
+    unawaited(_syncSetupAnswers());
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -144,6 +146,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         });
       }
     });
+  }
+
+  Future<void> _syncSetupAnswers() async {
+    final account = widget.api.accountId;
+    if (account == null) return;
+    try {
+      await OnboardingAnswerStore.sync(widget.api);
+    } catch (_) {
+      if (!mounted || widget.api.accountId != account) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const AppText('Your setup answers could not be saved yet.'),
+          action: SnackBarAction(label: 'Retry', onPressed: _syncSetupAnswers),
+        ),
+      );
+    }
   }
 
   Future<void> _maybeLaunchTutorial() async {
@@ -325,6 +343,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (tourContext) => OnboardingPage(
+          api: widget.api,
           isReplay: true,
           onFinished: () => Navigator.of(tourContext).pop(),
         ),

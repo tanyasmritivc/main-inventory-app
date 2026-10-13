@@ -384,8 +384,9 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     if (box is! RenderBox ||
         overlay is! RenderBox ||
         !box.hasSize ||
-        !box.attached)
+        !box.attached) {
       return null;
+    }
     final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
     return (config.targetRectTransform?.call(rect) ?? rect).inflate(6);
   }

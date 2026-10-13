@@ -1,5 +1,20 @@
 # Decisions
 
+## October 12 onboarding answers and actual guided tour
+
+The screenshot identifies the six-step app spotlight tutorial separately from
+first-launch onboarding. Use opaque theme surfaces, short instructions, real
+buttons, target highlights and layout from actual card size. No blur, glow or
+perpetual bouncing arrow. Keep route targets, completion and Space discovery.
+First-launch setup asks four optional questions: intended use, inventory types,
+main goal and collaboration. Save after sign-in, bind local pending answers to
+one account, serialize edits and confirm writes before reporting success.
+Store the latest answers in `onboarding_responses`, independently of inventory
+and Teams; operator reporting starts in the database, without an admin UI or
+third-party tracking. Own-account reads and auth-user deletion cascade apply.
+Profile supports changing answers. Preserve existing completion/signup/invite
+flags and do not create a Space or Team from descriptive answers.
+
 ## October 12 walkthrough clarity
 
 Keep the four account-free interactive examples and existing completion/replay,

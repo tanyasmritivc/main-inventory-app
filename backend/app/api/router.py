@@ -28,6 +28,8 @@ from app.api.routes.api_v1 import router as api_v1_router
 from app.api.routes.review import router as review_router
 from app.api.routes.invitations import router as invitations_router
 
+from app.api.routes.onboarding import router as onboarding_router
+
 api_router = APIRouter()
 api_router.include_router(me_router)
 api_router.include_router(items_router)
@@ -55,3 +57,5 @@ api_router.include_router(push_router)
 api_router.include_router(api_v1_router)
 api_router.include_router(review_router)
 api_router.include_router(invitations_router)
+
+api_router.include_router(onboarding_router)

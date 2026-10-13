@@ -12,6 +12,33 @@ import 'package:mobile/features/showcase/tutorial_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+ThemeData qaTheme(Brightness brightness) {
+  final theme = AppTheme.create(brightness);
+  if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) return theme;
+  TextStyle font(TextStyle? s) =>
+      (s ?? const TextStyle()).copyWith(fontFamily: 'FindEZQA');
+  return theme.copyWith(
+    textTheme: theme.textTheme.apply(fontFamily: 'FindEZQA'),
+    listTileTheme: theme.listTileTheme.copyWith(
+      titleTextStyle: font(theme.listTileTheme.titleTextStyle),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: theme.filledButtonTheme.style?.copyWith(
+        textStyle: WidgetStatePropertyAll(
+          font(theme.filledButtonTheme.style?.textStyle?.resolve({})),
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: theme.textButtonTheme.style?.copyWith(
+        textStyle: WidgetStatePropertyAll(
+          font(theme.textButtonTheme.style?.textStyle?.resolve({})),
+        ),
+      ),
+    ),
+  );
+}
+
 class TourHarness extends StatefulWidget {
   const TourHarness({super.key, this.withSpace = true});
   final bool withSpace;
@@ -112,6 +139,13 @@ void main() {
       httpClient: MockClient((_) async => http.Response('{}', 200)),
     );
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+      await (FontLoader('FindEZQA')..addFont(
+            File(
+              '/System/Library/Fonts/SFNS.ttf',
+            ).readAsBytes().then(ByteData.sublistView),
+          ))
+          .load();
+
       await (FontLoader('Ahem')..addFont(
             File(
               '/System/Library/Fonts/SFNS.ttf',
@@ -142,7 +176,7 @@ void main() {
         key: const Key('tour-qa'),
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.create(brightness),
+          theme: qaTheme(brightness),
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(
               padding: const EdgeInsets.only(top: 47, bottom: 34),

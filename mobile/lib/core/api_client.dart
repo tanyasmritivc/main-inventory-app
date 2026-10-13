@@ -617,6 +617,30 @@ class ApiClient {
     );
   }
 
+  Future<Map<String, dynamic>?> getOnboardingAnswers() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/profile/onboarding',
+      options: _authOptions(),
+    );
+    final answers = res.data?['answers'];
+    if (answers == null) return null;
+    if (answers is! Map<String, dynamic>) {
+      throw const FormatException('Invalid setup answers');
+    }
+    return answers;
+  }
+
+  Future<void> saveOnboardingAnswers(Map<String, dynamic> answers) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      '/profile/onboarding',
+      data: answers,
+      options: _authOptions(),
+    );
+    if (res.data?['saved'] != true) {
+      throw const FormatException('Setup answers were not confirmed');
+    }
+  }
+
   Future<Map<String, dynamic>> getMyProfile() async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/profile/me',

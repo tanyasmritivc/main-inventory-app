@@ -376,7 +376,7 @@ void main() {
       'Documents and notes',
       'Notifications',
       'Lent items',
-      'App tour',
+      'Setup questions',
     ]) {
       await tester.ensureVisible(find.text(title));
       await tester.tap(find.text(title));
@@ -653,7 +653,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('App tour'),
+        find.text('Setup questions'),
         150,
         scrollable: find
             .descendant(
@@ -665,7 +665,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(
-        tester.getBottomLeft(find.text('App tour')).dy,
+        tester.getBottomLeft(find.text('Setup questions')).dy,
         lessThan(tester.getTopLeft(find.byType(HomeNavigation)).dy),
       );
     },

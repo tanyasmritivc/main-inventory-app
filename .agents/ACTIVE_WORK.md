@@ -1,5 +1,22 @@
 # Active work
 
+## October 12 clarified tutorial and onboarding questions
+
+The user identifies the six-step in-app spotlight tutorial, then requests useful
+onboarding questions recorded for the operator. They choose intended use,
+inventory types, primary goal, and working alone/with others, with production
+database storage first. Current lane `feat/onboarding-questions` includes the
+adaptive tutorial (`92d5f9a`), a four-question optional setup replacing demo
+slides, account-bound pending answers, confirmed-save retry and Profile editing.
+Migration 041 adds owned `onboarding_responses` with account-deletion cascade,
+owner-only reads and backend-only writes; no Team/inventory data is generated.
+419 backend, 211 web and 330 mobile tests pass; disposable PostgreSQL isolation
+and validation checks pass. Native previews, exact-source CI, scoped backend/
+privacy deployment and clean 1.0.8+62 packaging/delivery are underway. Preserve
+public 1.0.7 (59), manual/unselected 1.0.8, other live VM changes and deferred
+physical acceptance. The earlier build-61 introduction is superseded by this
+clarification, not evidence that the spotlight tutorial was already corrected.
+
 ## October 12 requested sequential updates
 
 The user requests: exact App Store name `FindEZ: AI Inventory` and subtitle

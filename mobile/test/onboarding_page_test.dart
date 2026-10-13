@@ -1,73 +1,137 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
+import 'package:mobile/features/onboarding/onboarding_answers.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 
-Widget tour({
-  VoidCallback? finish,
-  bool replay = false,
-  bool reduceMotion = false,
-  Brightness brightness = Brightness.light,
-  double textScale = 1,
-  Future<void> Function()? writer,
-}) => RepaintBoundary(
-  key: const Key('onboarding-qa'),
-  child: MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: AppTheme.create(brightness).copyWith(
-      textTheme: AppTheme.create(brightness).textTheme.apply(
-        fontFamily: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
-            ? 'FindEZQA'
-            : null,
+ThemeData qaTheme(Brightness brightness) {
+  final theme = AppTheme.create(brightness);
+  if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) return theme;
+  TextStyle font(TextStyle? s) =>
+      (s ?? const TextStyle()).copyWith(fontFamily: 'FindEZQA');
+  return theme.copyWith(
+    textTheme: theme.textTheme.apply(fontFamily: 'FindEZQA'),
+    listTileTheme: theme.listTileTheme.copyWith(
+      titleTextStyle: font(theme.listTileTheme.titleTextStyle),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: theme.filledButtonTheme.style?.copyWith(
+        textStyle: WidgetStatePropertyAll(
+          font(theme.filledButtonTheme.style?.textStyle?.resolve({})),
+        ),
       ),
     ),
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        textScaler: TextScaler.linear(textScale),
-        disableAnimations: reduceMotion,
+    textButtonTheme: TextButtonThemeData(
+      style: theme.textButtonTheme.style?.copyWith(
+        textStyle: WidgetStatePropertyAll(
+          font(theme.textButtonTheme.style?.textStyle?.resolve({})),
+        ),
       ),
+    ),
+  );
+}
+
+class SetupApi extends ApiClient {
+  SetupApi({this.actor = 'account-a', this.fail = false, this.pending})
+    : super(baseUrl: 'https://api.test');
+  String? actor;
+  bool fail;
+  Completer<void>? pending;
+  Map<String, dynamic>? record;
+  final writes = <({String? owner, Map<String, dynamic> answers})>[];
+  @override
+  String? get accountId => actor;
+  @override
+  Future<Map<String, dynamic>?> getOnboardingAnswers() async => record;
+  @override
+  Future<void> saveOnboardingAnswers(Map<String, dynamic> answers) async {
+    final owner = actor;
+    if (pending != null) await pending!.future;
+    if (fail) throw StateError('offline');
+    writes.add((owner: owner, answers: answers));
+    record = answers;
+  }
+}
+
+const answers = OnboardingAnswers(
+  useCase: 'business',
+  inventoryTypes: ['tools', 'equipment'],
+  primaryGoal: 'find_items',
+  collaboration: 'others',
+);
+Widget setup({
+  ApiClient? api,
+  Brightness brightness = Brightness.light,
+  double scale = 1,
+  bool replay = false,
+  VoidCallback? done,
+  Future<void> Function()? writer,
+}) => RepaintBoundary(
+  key: const Key('setup-qa'),
+  child: MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: qaTheme(brightness),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: TextScaler.linear(scale), disableAnimations: true),
       child: child!,
     ),
     home: OnboardingPage(
-      onFinished: finish,
+      api: api,
       isReplay: replay,
+      onFinished: done,
       completionWriter: writer,
     ),
   ),
 );
+Future<void> choose(WidgetTester tester, String key) async {
+  final finder = find.descendant(
+    of: find.byKey(Key(key)),
+    matching: find.byType(Icon),
+  );
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
 
 Future<void> next(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('onboarding-next')));
   await tester.pumpAndSettle();
 }
 
-Future<void> choose(WidgetTester tester, String key) async {
-  final target = find.byKey(Key(key));
-  await tester.ensureVisible(target);
-  await tester.pumpAndSettle();
-  await tester.tap(target);
-  await tester.pumpAndSettle();
+Future<void> answerAll(WidgetTester tester, {bool submit = true}) async {
+  for (final key in [
+    'setup-use-household',
+    'setup-inventory-tools',
+    'setup-goal-find_items',
+    'setup-collaboration-solo',
+  ]) {
+    await choose(tester, key);
+    if (key != 'setup-collaboration-solo' || submit) await next(tester);
+  }
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
-      final font = FontLoader('FindEZQA')
-        ..addFont(
-          File(
-            '/System/Library/Fonts/SFNS.ttf',
-          ).readAsBytes().then(ByteData.sublistView),
-        );
-      await font.load();
+      await (FontLoader('FindEZQA')..addFont(
+            File(
+              '/System/Library/Fonts/SFNS.ttf',
+            ).readAsBytes().then(ByteData.sublistView),
+          ))
+          .load();
+
       await (FontLoader('Ahem')..addFont(
             File(
               '/System/Library/Fonts/SFNS.ttf',
@@ -77,280 +141,249 @@ void main() {
       await (FontLoader(
         'MaterialIcons',
       )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
-      await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
-            rootBundle.load(
-              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
-            ),
-          ))
-          .load();
     }
   });
-  if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
-    for (final brightness in Brightness.values) {
-      testWidgets('visual walkthrough in ${brightness.name}', (tester) async {
+  testWidgets(
+    'four answers are queued without inventory or unauthenticated API writes',
+    (tester) async {
+      var done = 0;
+      await tester.pumpWidget(setup(done: () => done++));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('onboarding-next')))
+            .onPressed,
+        isNull,
+      );
+      await answerAll(tester);
+      expect(done, 1);
+      expect(await OnboardingPrefs.isCompleted(), isTrue);
+      expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
+      final saved = await OnboardingAnswerStore.pendingFor('account-a');
+      expect(saved?.useCase, 'household');
+      expect(saved?.inventoryTypes, ['tools']);
+      expect(saved?.primaryGoal, 'find_items');
+      expect(saved?.collaboration, 'solo');
+      expect(await OnboardingAnswerStore.pendingFor('account-b'), isNull);
+    },
+  );
+  testWidgets('multi-select, Back and custom input retain the real draft', (
+    tester,
+  ) async {
+    await tester.pumpWidget(setup());
+    await choose(tester, 'setup-use-other');
+    await tester.enterText(find.byType(TextField), 'Costume department');
+    await tester.pumpAndSettle();
+    await next(tester);
+    await choose(tester, 'setup-inventory-tools');
+    await choose(tester, 'setup-inventory-other');
+    await tester.enterText(find.byType(TextField), 'Fabric and props');
+    await tester.pumpAndSettle();
+    await next(tester);
+    await tester.tap(find.byTooltip('Previous step'));
+    await tester.pumpAndSettle();
+    expect(find.text('Fabric and props'), findsOneWidget);
+    await next(tester);
+    await choose(tester, 'setup-goal-organize_spaces');
+    await next(tester);
+    await choose(tester, 'setup-collaboration-others');
+    await next(tester);
+    final a = await OnboardingAnswerStore.pendingFor('account-a');
+    expect(a?.useCaseOther, 'Costume department');
+    expect(a?.inventoryTypes, containsAll(['tools', 'other']));
+    expect(a?.inventoryOther, 'Fabric and props');
+  });
+  testWidgets(
+    'Skip does not fabricate answers or clear pending signup choices',
+    (tester) async {
+      await OnboardingPrefs.setPendingFirstSpaceName('Existing draft');
+      var done = 0;
+      await tester.pumpWidget(setup(done: () => done++));
+      await tester.tap(find.byKey(const Key('onboarding-skip')));
+      await tester.pumpAndSettle();
+      expect(done, 1);
+      expect(await OnboardingAnswerStore.pendingFor('account-a'), isNull);
+      expect(
+        await OnboardingPrefs.getPendingFirstSpaceName(),
+        'Existing draft',
+      );
+    },
+  );
+  testWidgets('signed-in save retries without losing answers', (tester) async {
+    final api = SetupApi(fail: true);
+    var done = 0;
+    await tester.pumpWidget(setup(api: api, replay: true, done: () => done++));
+    await tester.pumpAndSettle();
+    await answerAll(tester);
+    expect(done, 0);
+    expect(find.textContaining('Could not save your setup'), findsOneWidget);
+    expect(
+      (await OnboardingAnswerStore.pendingFor('account-a'))?.inventoryTypes,
+      ['tools'],
+    );
+    api.fail = false;
+    await next(tester);
+    expect(done, 1);
+    expect(api.writes.length, 1);
+    expect(await OnboardingAnswerStore.pendingFor('account-a'), isNull);
+    expect(await OnboardingPrefs.isCompleted(), isFalse);
+  });
+  testWidgets('saved answers prefill replay and can be edited', (tester) async {
+    final api = SetupApi()..record = answers.toJson();
+    await tester.pumpWidget(setup(api: api, replay: true));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ListTile>(find.byKey(const Key('setup-use-business')))
+          .selected,
+      isTrue,
+    );
+    await choose(tester, 'setup-use-laboratory');
+    await next(tester);
+    await next(tester);
+    await next(tester);
+    await next(tester);
+    expect(api.record?['use_case'], 'laboratory');
+    expect(api.record?['inventory_types'], ['equipment', 'tools']);
+  });
+  testWidgets('pending save disables duplicate actions and completion', (
+    tester,
+  ) async {
+    final wait = Completer<void>();
+    final api = SetupApi(pending: wait);
+    var done = 0;
+    await tester.pumpWidget(setup(api: api, replay: true, done: () => done++));
+    await tester.pumpAndSettle();
+    await answerAll(tester, submit: false);
+    await tester.tap(find.byKey(const Key('onboarding-next')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('onboarding-next')))
+          .onPressed,
+      isNull,
+    );
+    expect(done, 0);
+    wait.complete();
+    await tester.pumpAndSettle();
+    expect(done, 1);
+    expect(api.writes.length, 1);
+  });
+  testWidgets('account switch during save cannot finish or copy the draft', (
+    tester,
+  ) async {
+    final wait = Completer<void>();
+    final api = SetupApi(pending: wait);
+    var done = 0;
+    await tester.pumpWidget(setup(api: api, replay: true, done: () => done++));
+    await tester.pumpAndSettle();
+    await answerAll(tester, submit: false);
+    await tester.tap(find.byKey(const Key('onboarding-next')));
+    await tester.pump();
+    api.actor = 'account-b';
+    wait.complete();
+    await tester.pumpAndSettle();
+    expect(done, 0);
+    expect(api.writes.single.owner, 'account-a');
+    expect(await OnboardingAnswerStore.pendingFor('account-b'), isNull);
+    expect(await OnboardingAnswerStore.pendingFor('account-a'), isNotNull);
+  });
+  testWidgets('failed progress write shows retry and does not finish', (
+    tester,
+  ) async {
+    var fail = true, done = 0;
+    await tester.pumpWidget(
+      setup(
+        done: () => done++,
+        writer: () async {
+          if (fail) throw StateError('disk');
+        },
+      ),
+    );
+    await answerAll(tester);
+    expect(done, 0);
+    expect(find.textContaining('Could not save your setup'), findsOneWidget);
+    fail = false;
+    await next(tester);
+    expect(done, 1);
+  });
+  for (final brightness in Brightness.values) {
+    for (final scale in [1.0, 1.6, 2.2, 3.4]) {
+      testWidgets('setup questions fit 320pt ${brightness.name} at ${scale}x', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(setup(brightness: brightness, scale: scale));
+        await tester.pumpAndSettle();
+        for (final key in [
+          'setup-use-business',
+          'setup-inventory-equipment',
+          'setup-goal-track_stock',
+          'setup-collaboration-others',
+        ]) {
+          await choose(tester, key);
+          expect(tester.takeException(), isNull);
+          expect(
+            find.byKey(const Key('onboarding-next')).hitTestable(),
+            findsOneWidget,
+          );
+          await next(tester);
+        }
+      });
+    }
+    if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+      testWidgets('visual setup in ${brightness.name}', (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(tour(brightness: brightness));
+        await tester.pumpWidget(setup(brightness: brightness));
         await tester.pumpAndSettle();
-        for (var step = 0; step < 4; step++) {
-          if (step == 1) await choose(tester, 'try-sample-capture');
-          if (step == 3) await choose(tester, 'sample-world-1');
-          expect(tester.takeException(), isNull);
-          expect(
-            find.text('Interactive example. Nothing is saved.').hitTestable(),
-            findsOneWidget,
-          );
+        final keys = [
+          'setup-use-business',
+          'setup-inventory-equipment',
+          'setup-goal-find_items',
+          'setup-collaboration-others',
+        ];
+        for (var i = 0; i < 4; i++) {
+          await choose(tester, keys[i]);
           await tester.runAsync(() async {
-            final boundary = tester.renderObject<RenderRepaintBoundary>(
-              find.byKey(const Key('onboarding-qa')),
-            );
-            final image = await boundary.toImage(pixelRatio: 1);
-            final bytes = await image.toByteData(
-              format: ui.ImageByteFormat.png,
-            );
+            final image = await tester
+                .renderObject<RenderRepaintBoundary>(
+                  find.byKey(const Key('setup-qa')),
+                )
+                .toImage();
+            final data = await image.toByteData(format: ui.ImageByteFormat.png);
             await File(
-              '/private/tmp/findez-tour-${brightness.name}-$step.png',
-            ).writeAsBytes(bytes!.buffer.asUint8List());
+              '/private/tmp/findez-setup-${brightness.name}-$i.png',
+            ).writeAsBytes(data!.buffer.asUint8List());
             image.dispose();
           });
-          if (step < 3) await next(tester);
+          if (i < 3) await next(tester);
         }
       });
     }
   }
-  setUp(() => SharedPreferences.setMockInitialValues({}));
-
-  testWidgets('four local examples complete without creating account data', (
-    tester,
-  ) async {
-    var finished = 0;
-    await tester.pumpWidget(tour(finish: () => finished++));
-    await tester.pumpAndSettle();
-    expect(find.text('Inventory for\nyour everyday.'), findsOneWidget);
-    await choose(tester, 'intro-object-1');
-    expect(find.text('USB-C cable'), findsOneWidget);
-    await next(tester);
-    await choose(tester, 'try-sample-capture');
-    expect(find.byKey(const Key('sample-review')), findsOneWidget);
-    await choose(tester, 'sample-space-1');
-    expect(find.textContaining('Example location: Work.'), findsOneWidget);
-    await next(tester);
-    expect(find.text('Work'), findsOneWidget);
-    await choose(tester, 'sample-question-1');
-    expect(find.text('3 in this sample inventory'), findsOneWidget);
-    await choose(tester, 'sample-question-2');
-    expect(find.text('Possible match'), findsOneWidget);
-    await next(tester);
-    await choose(tester, 'sample-world-1');
-    expect(find.text('Shared inventory'), findsOneWidget);
-    expect(find.text('Continue to sign in'), findsOneWidget);
-    await next(tester);
-    expect(finished, 1);
-    expect(await OnboardingPrefs.isCompleted(), isTrue);
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getKeys(), {'onboarding_completed'});
-    expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
-  });
-
-  testWidgets('Skip persists completion and exits immediately', (tester) async {
-    var finished = 0;
-    await tester.pumpWidget(tour(finish: () => finished++));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('onboarding-skip')));
-    await tester.pumpAndSettle();
-    expect(finished, 1);
-    expect(await OnboardingPrefs.isCompleted(), isTrue);
-  });
-
-  testWidgets('sample Ask answer is visible at normal phone size', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(402, 874);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(tour());
-    await tester.pumpAndSettle();
-    await next(tester);
-    await next(tester);
-    expect(find.text('Home').hitTestable(), findsOneWidget);
-    expect(
-      find.text('2 in this sample inventory').hitTestable(),
-      findsOneWidget,
+  test('answer queues serialize edits and preserve newer drafts', () async {
+    final wait = Completer<void>();
+    final api = SetupApi(pending: wait);
+    await OnboardingAnswerStore.saveDraft(answers, accountId: 'account-a');
+    final first = OnboardingAnswerStore.sync(api);
+    await Future<void>.delayed(Duration.zero);
+    const edited = OnboardingAnswers(
+      useCase: 'laboratory',
+      inventoryTypes: ['parts'],
+      primaryGoal: 'track_stock',
+      collaboration: 'solo',
     );
+    await OnboardingAnswerStore.saveDraft(edited, accountId: 'account-a');
+    final second = OnboardingAnswerStore.sync(api);
+    wait.complete();
+    await Future.wait([first, second]);
+    expect(api.record?['use_case'], 'laboratory');
+    expect(await OnboardingAnswerStore.pendingFor('account-a'), isNull);
   });
-
-  testWidgets('back and horizontal swipe retain sample choices', (
-    tester,
-  ) async {
-    await tester.pumpWidget(tour());
-    await tester.pumpAndSettle();
-    await next(tester);
-    await choose(tester, 'try-sample-capture');
-    await choose(tester, 'sample-space-2');
-    await next(tester);
-    await tester.tap(find.byTooltip('Previous step'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Example location: Lab.'), findsOneWidget);
-    await tester.drag(
-      find.byKey(const Key('onboarding-pages')),
-      const Offset(-650, 0),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Ask a question.\nFind your things.'), findsOneWidget);
-    expect(find.text('Lab'), findsOneWidget);
-  });
-
-  testWidgets('replay preserves completion, invitations and legacy signup', (
-    tester,
-  ) async {
-    final original = <String, Object>{
-      'onboarding_completed': false,
-      'onboarding_post_signup_pending': true,
-      'onboarding_first_space_name': 'Existing draft',
-      'onboarding_persona': 'team',
-      'findez.invitation.v1': 'unchanged invitation',
-    };
-    SharedPreferences.setMockInitialValues(original);
-    var finished = 0;
-    await tester.pumpWidget(tour(replay: true, finish: () => finished++));
-    await tester.pumpAndSettle();
-    for (var i = 0; i < 3; i++) {
-      await next(tester);
-    }
-    expect(find.text('Done'), findsOneWidget);
-    await next(tester);
-    expect(finished, 1);
-    final prefs = await SharedPreferences.getInstance();
-    expect({for (final key in prefs.getKeys()) key: prefs.get(key)}, original);
-  });
-
-  testWidgets('failed completion stays in the tour and retries safely', (
-    tester,
-  ) async {
-    var writes = 0, finished = 0;
-    await tester.pumpWidget(
-      tour(
-        finish: () => finished++,
-        writer: () async {
-          writes++;
-          if (writes == 1) throw StateError('SECRET native error');
-          await OnboardingPrefs.setCompleted(true);
-        },
-      ),
-    );
-    await tester.pumpAndSettle();
-    await choose(tester, 'intro-object-2');
-    await tester.tap(find.byKey(const Key('onboarding-skip')));
-    await tester.pumpAndSettle();
-    expect(finished, 0);
-    expect(await OnboardingPrefs.isCompleted(), isFalse);
-    expect(
-      find.text('Could not save your progress. Please try again.'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('SECRET'), findsNothing);
-    expect(find.text('Sample containers'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('onboarding-skip')));
-    await tester.pumpAndSettle();
-    expect(writes, 2);
-    expect(finished, 1);
-  });
-
-  testWidgets('completion is single-flight and disposal never navigates', (
-    tester,
-  ) async {
-    final write = Completer<void>();
-    var writes = 0, finished = 0;
-    await tester.pumpWidget(
-      tour(
-        finish: () => finished++,
-        writer: () {
-          writes++;
-          return write.future;
-        },
-      ),
-    );
-    await tester.pumpAndSettle();
-    final action = tester
-        .widget<TextButton>(find.byKey(const Key('onboarding-skip')))
-        .onPressed!;
-    action();
-    action();
-    await tester.pump();
-    expect(writes, 1);
-    expect(find.text('Saving...'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-    write.complete();
-    await tester.pumpAndSettle();
-    expect(finished, 0);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('reduced motion advances without waiting for animation', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(tour(reduceMotion: true));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Step 1 of 4'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('onboarding-next')));
-    await tester.pump();
-    expect(find.text('Capture it.\nMake it yours.'), findsOneWidget);
-    expect(find.bySemanticsLabel('Step 2 of 4'), findsOneWidget);
-    for (final animation in tester.widgetList<AnimatedSwitcher>(
-      find.byType(AnimatedSwitcher),
-    )) {
-      expect(animation.duration, Duration.zero);
-    }
-    for (final animation in tester.widgetList<AnimatedContainer>(
-      find.byType(AnimatedContainer),
-    )) {
-      expect(animation.duration, Duration.zero);
-    }
-    semantics.dispose();
-  });
-
-  for (final brightness in Brightness.values) {
-    for (final scale in [1.0, 2.0, 3.4]) {
-      testWidgets('all slides fit 320px / $brightness / text $scale', (
-        tester,
-      ) async {
-        tester.view.physicalSize = const Size(320, 568);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(
-          tour(brightness: brightness, textScale: scale, replay: true),
-        );
-        await tester.pumpAndSettle();
-        await choose(tester, 'intro-object-2');
-        expect(tester.takeException(), isNull);
-        await next(tester);
-        await choose(tester, 'try-sample-capture');
-        await choose(tester, 'sample-space-1');
-        expect(tester.takeException(), isNull);
-        await next(tester);
-        await choose(tester, 'sample-question-2');
-        expect(tester.takeException(), isNull);
-        await next(tester);
-        await choose(tester, 'sample-world-1');
-        expect(tester.takeException(), isNull);
-        expect(find.text('Done').hitTestable(), findsOneWidget);
-      });
-    }
-  }
-
-  test(
-    'missing and malformed completion flags are treated as fresh installs',
-    () async {
-      expect(await OnboardingPrefs.isCompleted(), isFalse);
-      SharedPreferences.setMockInitialValues({'onboarding_completed': 'true'});
-      expect(await OnboardingPrefs.isCompleted(), isFalse);
-      SharedPreferences.setMockInitialValues({'onboarding_completed': true});
-      expect(await OnboardingPrefs.isCompleted(), isTrue);
-    },
-  );
 }
