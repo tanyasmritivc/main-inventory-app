@@ -30,8 +30,13 @@
   Light/Dark contrast and general inventory examples. All 319 mobile tests and
   clean analysis pass; rendered pages in both themes and 320pt layouts through
   3.4x text are checked. Native iPhone 16e iOS 26.2 compilation and walkthrough
-  interactions pass; final packaging/CI for 1.0.8+61 are underway. Physical-device
-  acceptance remains deferred, distinct from simulator/widget checks.
+  interactions pass in Light/Dark, including completion and persisted restart.
+  All five CI jobs pass on runtime `86669ee` in `38314482069`. Apple validation
+  rejects its first 1.0.8+61 export because `objective_c.framework` contains
+  simulator slices (90087/91169). The failed signed package and receipts are
+  preserved in `Documents/FindEZ/AppStore/1.0.8-build61-validation-rejected`.
+  A clean production rebuild and complete Mach-O platform check are underway;
+  no build-61 upload has occurred. Physical acceptance remains deferred.
 
 ## October 12 Space deletion and review lifecycle candidate
 

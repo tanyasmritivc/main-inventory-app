@@ -40,8 +40,12 @@ private backups/verified manifests and web rollback remain available. Public
 checks pass without creating real data. Current lane `fix/onboarding-light-dark`
 from `2384bbd` simplifies the four local examples in both themes while preserving
 Skip/Back/replay/invitation/launch state. All 319 tests, clean analysis and rendered
-Light/Dark/narrow/large-text checks pass; native walkthrough QA and packaging
-of 1.0.8+61 are underway. Public App Store submission remains held.
+Light/Dark/narrow/large-text checks and native walkthrough completion/restart
+pass. All five CI jobs pass on `86669ee` (`38314482069`). Apple validation catches
+a cached simulator `objective_c.framework` in the first signed 1.0.8+61 export;
+the rejected package/receipts are preserved and a clean production rebuild with
+complete native-platform verification is underway. No build-61 upload has
+occurred. Public App Store submission remains held.
 
 ## October 12 build-60 TestFlight delivery
 
