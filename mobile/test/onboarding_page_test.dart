@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,19 +19,29 @@ Widget tour({
   Brightness brightness = Brightness.light,
   double textScale = 1,
   Future<void> Function()? writer,
-}) => MaterialApp(
-  theme: AppTheme.create(brightness),
-  builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(
-      textScaler: TextScaler.linear(textScale),
-      disableAnimations: reduceMotion,
+}) => RepaintBoundary(
+  key: const Key('onboarding-qa'),
+  child: MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: AppTheme.create(brightness).copyWith(
+      textTheme: AppTheme.create(brightness).textTheme.apply(
+        fontFamily: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
+            ? 'FindEZQA'
+            : null,
+      ),
     ),
-    child: child!,
-  ),
-  home: OnboardingPage(
-    onFinished: finish,
-    isReplay: replay,
-    completionWriter: writer,
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(textScale),
+        disableAnimations: reduceMotion,
+      ),
+      child: child!,
+    ),
+    home: OnboardingPage(
+      onFinished: finish,
+      isReplay: replay,
+      completionWriter: writer,
+    ),
   ),
 );
 
@@ -45,6 +59,67 @@ Future<void> choose(WidgetTester tester, String key) async {
 }
 
 void main() {
+  setUpAll(() async {
+    if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+      final font = FontLoader('FindEZQA')
+        ..addFont(
+          File(
+            '/System/Library/Fonts/SFNS.ttf',
+          ).readAsBytes().then(ByteData.sublistView),
+        );
+      await font.load();
+      await (FontLoader('Ahem')..addFont(
+            File(
+              '/System/Library/Fonts/SFNS.ttf',
+            ).readAsBytes().then(ByteData.sublistView),
+          ))
+          .load();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+      await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+            ),
+          ))
+          .load();
+    }
+  });
+  if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+    for (final brightness in Brightness.values) {
+      testWidgets('visual walkthrough in ${brightness.name}', (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(tour(brightness: brightness));
+        await tester.pumpAndSettle();
+        for (var step = 0; step < 4; step++) {
+          if (step == 1) await choose(tester, 'try-sample-capture');
+          if (step == 3) await choose(tester, 'sample-world-1');
+          expect(tester.takeException(), isNull);
+          expect(
+            find.text('Interactive example. Nothing is saved.').hitTestable(),
+            findsOneWidget,
+          );
+          await tester.runAsync(() async {
+            final boundary = tester.renderObject<RenderRepaintBoundary>(
+              find.byKey(const Key('onboarding-qa')),
+            );
+            final image = await boundary.toImage(pixelRatio: 1);
+            final bytes = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            await File(
+              '/private/tmp/findez-tour-${brightness.name}-$step.png',
+            ).writeAsBytes(bytes!.buffer.asUint8List());
+            image.dispose();
+          });
+          if (step < 3) await next(tester);
+        }
+      });
+    }
+  }
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('four local examples complete without creating account data', (
@@ -53,23 +128,23 @@ void main() {
     var finished = 0;
     await tester.pumpWidget(tour(finish: () => finished++));
     await tester.pumpAndSettle();
-    expect(find.text('Your things.\nRemembered.'), findsOneWidget);
+    expect(find.text('Inventory for\nyour everyday.'), findsOneWidget);
     await choose(tester, 'intro-object-1');
     expect(find.text('USB-C cable'), findsOneWidget);
     await next(tester);
     await choose(tester, 'try-sample-capture');
     expect(find.byKey(const Key('sample-review')), findsOneWidget);
     await choose(tester, 'sample-space-1');
-    expect(find.textContaining('Example location: Workshop.'), findsOneWidget);
+    expect(find.textContaining('Example location: Work.'), findsOneWidget);
     await next(tester);
-    expect(find.text('Workshop'), findsOneWidget);
+    expect(find.text('Work'), findsOneWidget);
     await choose(tester, 'sample-question-1');
     expect(find.text('3 in this sample inventory'), findsOneWidget);
     await choose(tester, 'sample-question-2');
     expect(find.text('Possible match'), findsOneWidget);
     await next(tester);
     await choose(tester, 'sample-world-1');
-    expect(find.text('Team workshop'), findsOneWidget);
+    expect(find.text('Shared inventory'), findsOneWidget);
     expect(find.text('Continue to sign in'), findsOneWidget);
     await next(tester);
     expect(finished, 1);
@@ -100,7 +175,7 @@ void main() {
     await tester.pumpAndSettle();
     await next(tester);
     await next(tester);
-    expect(find.text('Garage').hitTestable(), findsOneWidget);
+    expect(find.text('Home').hitTestable(), findsOneWidget);
     expect(
       find.text('2 in this sample inventory').hitTestable(),
       findsOneWidget,
@@ -118,14 +193,14 @@ void main() {
     await next(tester);
     await tester.tap(find.byTooltip('Previous step'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Example location: Home.'), findsOneWidget);
+    expect(find.textContaining('Example location: Lab.'), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('onboarding-pages')),
       const Offset(-650, 0),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Ask naturally.\nFind what you need.'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Ask a question.\nFind your things.'), findsOneWidget);
+    expect(find.text('Lab'), findsOneWidget);
   });
 
   testWidgets('replay preserves completion, invitations and legacy signup', (
@@ -177,7 +252,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('SECRET'), findsNothing);
-    expect(find.text('AA batteries'), findsOneWidget);
+    expect(find.text('Sample containers'), findsOneWidget);
     await tester.tap(find.byKey(const Key('onboarding-skip')));
     await tester.pumpAndSettle();
     expect(writes, 2);
@@ -223,7 +298,7 @@ void main() {
     expect(find.bySemanticsLabel('Step 1 of 4'), findsOneWidget);
     await tester.tap(find.byKey(const Key('onboarding-next')));
     await tester.pump();
-    expect(find.text('One photo.\nLess typing.'), findsOneWidget);
+    expect(find.text('Capture it.\nMake it yours.'), findsOneWidget);
     expect(find.bySemanticsLabel('Step 2 of 4'), findsOneWidget);
     for (final animation in tester.widgetList<AnimatedSwitcher>(
       find.byType(AnimatedSwitcher),

@@ -105,6 +105,18 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### iOS archive platform verification
+
+Before validating an IPA with Apple, inspect every Mach-O executable in the
+exported app, including nested frameworks and extensions. Use `xcrun lipo -archs`
+to reject simulator architectures and `xcrun vtool -show-build` to confirm iOS
+device platforms. An arm64 slice can still target the simulator, so architecture
+alone is insufficient. Strict code signatures do not prove platform compatibility.
+Build 61's first export included a cached simulator `objective_c.framework`;
+Apple rejected it with 90087 and 91169. Preserve the failed package and receipts,
+run `flutter clean`, then rebuild with the verified production defines and export
+options. Do not patch or re-sign a rejected framework in the exported IPA.
+
 ### Canonical legal and native notifications
 
 Run the full web and mobile coverage suites, TypeScript, changed-file web lint,

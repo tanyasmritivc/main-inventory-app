@@ -1,5 +1,55 @@
 # Current state
 
+## October 12 general inventory categories and walkthrough
+
+- Category source `2384bbd`, draft PR #57 stacked on #56, passes all five CI jobs
+  in `38312460669`. 398 backend tests, 211 web tests, TypeScript/changed-file
+  ESLint, 319 mobile tests with coverage, clean analysis and disposable PostgreSQL
+  category/permission checks pass. Migration 040 is live, preserving all five
+  Teams and the existing plan constraint. Five selected backend files are deployed;
+  the live Team document access guards are retained in the composed workspace file.
+  Backup, migration and verified hashes are in
+  `/home/ubuntu/findez-categories-20261012`. API/database health and unauthenticated
+  Team-create 401 pass; no real Team or inventory is created for QA.
+- Web categories and truthful Space-delete confirmation are live from
+  `/home/ubuntu/findez-web-releases/web-inventory-categories-20261012/frontend`.
+  Server 211 tests and production webpack build pass. Candidate/public checks
+  verify 17 actual authenticated pages, six redirects, public legal documents,
+  16 current static assets, exact integration downloads, production origins and
+  category bundle markers. All other live source/config is preserved, including
+  three unrelated styling files; 758 previous static files remain available.
+  Restore `previous-web-rebuild.conf` from that release and restart only the web
+  service for rollback.
+- GitHub About, README, mobile setup, current product context, learning guide,
+  legacy EEZY prompt and customer Team copy describe homes, businesses, labs,
+  teams and industry. Editable App Store 1.0.8 has the exact requested name,
+  subtitle and broader description; no public review submission or build selection
+  is made. Categories are descriptive and do not change plans/access.
+- `fix/onboarding-light-dark`, based on `2384bbd`, simplifies the four local
+  onboarding examples, shortens copy, removes diagram clutter and uses explicit
+  Light/Dark contrast and general inventory examples. All 319 mobile tests and
+  clean analysis pass; rendered pages in both themes and 320pt layouts through
+  3.4x text are checked. Native iPhone 16e iOS 26.2 compilation and walkthrough
+  interactions pass in Light/Dark, including completion and persisted restart.
+  All five CI jobs pass on runtime `86669ee` in `38314482069`. Apple validation
+  rejects its first 1.0.8+61 export because `objective_c.framework` contains
+  simulator slices (90087/91169). The failed signed package and receipts are
+  preserved in `Documents/FindEZ/AppStore/1.0.8-build61-validation-rejected`.
+  The clean replacement on runtime `5acd4c7` passes all five CI jobs in
+  `38336413029`, strict app/extension signatures, production configuration and
+  device-platform checks for all 31 Mach-O executables. Apple validation/upload
+  pass without errors; delivery `f6a6c33f-7c34-4091-8df7-1c4ebf35e274` is accepted
+  at 19:27 PDT October 12. Apple processing is COMPLETE without errors/warnings;
+  build 61 is VALID, APP_STORE_ELIGIBLE, nonexpired and IN_BETA_TESTING. Both
+  existing internal groups are verified at 19:31 PDT and test notes are saved.
+  The clean archive, IPA, checksums, receipts, verifier
+  and phone checklist are preserved in `Documents/FindEZ/AppStore/1.0.8-build61`.
+  IPA SHA-256 is `527205291de7a52f6c1fff593a7f15acaffa7abc11e9eb830916e6b33c2c22c3`.
+  Physical acceptance remains deferred. Released 1.0.7 (59) and manual/unselected
+  1.0.8 draft states are verified unchanged after delivery; requested name/subtitle
+  remain saved. The historical gateway proposal now explicitly defers to the
+  deployed architecture and covers homes, businesses, labs, teams and industry.
+
 ## October 12 Space deletion and review lifecycle candidate
 
 - `fix/deleted-space-review-refresh`, based on delivered build 60, adds migration

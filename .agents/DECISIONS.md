@@ -1,5 +1,13 @@
 # Decisions
 
+## October 12 walkthrough clarity
+
+Keep the four account-free interactive examples and existing completion/replay,
+invitation and launch behavior. Use short general-inventory copy, one simple
+illustration per example and explicit theme contrast instead of dense diagrams.
+Keep system app fonts and accessibility scaling. Native previews and fictional
+examples do not create inventory or prove physical capture/permissions behavior.
+
 ## October 12 inventory audiences and Team categories
 
 FindEZ is an inventory product for homes, businesses, labs, schools, teams and

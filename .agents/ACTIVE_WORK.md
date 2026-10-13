@@ -27,14 +27,34 @@ Robot Room and provides their account privately for a targeted existing-entry
 repair; do not write that email or private row snapshots to repository context.
 Their Robot Room still exists with six pending records, so do not purge them as
 orphans. Binding them to the current Space lets its next deletion remove them.
-Current lane `feat/inventory-team-categories`, based on `e34b37b`, adds 29
+Completed lane `feat/inventory-team-categories`, based on `e34b37b`, adds 29
 alphabetical general inventory group categories with a bounded persisted custom
 label, neutral create forms and shared display labels. Migration 040 precedes
 backend/client deployment. Existing program keys, licensing and access stay
 compatible. README, current product context, learning guide and the legacy EEZY
 prompt describe homes, businesses, labs, teams and industry. Focused backend,
 mobile Light/Dark failed-draft and PostgreSQL checks pass; full checks/deployment
-are underway. Onboarding follows in a separate lane.
+pass. All five CI jobs pass on `2384bbd` (`38312460669`, draft PR #57).
+Migration 040, selected backend files and isolated web release are deployed;
+private backups/verified manifests and web rollback remain available. Public
+checks pass without creating real data. Current lane `fix/onboarding-light-dark`
+from `2384bbd` simplifies the four local examples in both themes while preserving
+Skip/Back/replay/invitation/launch state. All 319 tests, clean analysis and rendered
+Light/Dark/narrow/large-text checks and native walkthrough completion/restart
+pass. All five CI jobs pass on `86669ee` (`38314482069`). Apple validation catches
+a cached simulator `objective_c.framework` in the first signed 1.0.8+61 export;
+the rejected package/receipts are preserved. Clean runtime `5acd4c7` passes all
+five CI jobs in `38336413029`, strict signatures, production configuration and
+device-platform checks for 31 native executables. Apple validation/upload pass
+without errors at 19:27 PDT October 12; delivery
+`f6a6c33f-7c34-4091-8df7-1c4ebf35e274` is COMPLETE without errors/warnings.
+Build 61 is VALID, APP_STORE_ELIGIBLE, nonexpired and IN_BETA_TESTING; both
+existing internal groups and saved test notes are verified at 19:31 PDT.
+This delivery lane is complete. Durable archive/IPA, verifier,
+receipts and deferred phone checklist are in `Documents/FindEZ/AppStore/1.0.8-build61`.
+Public App Store submission remains held; released 59 and the manual/unselected
+1.0.8 draft, including requested metadata, are verified unchanged after delivery.
+Physical phone acceptance remains deferred by the user.
 
 ## October 12 build-60 TestFlight delivery
 
