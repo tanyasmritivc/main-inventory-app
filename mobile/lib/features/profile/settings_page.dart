@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_error.dart';
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/push_notifications.dart';
@@ -16,7 +17,8 @@ import 'terms_of_service_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.api});
+  final ApiClient? api;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -335,13 +337,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     context,
                     const Color(0x73FFFFFF),
                   ),
-                  label: 'App tour',
+                  label: 'Setup questions',
                   labelColor: AppTheme.adaptive(context, Colors.white),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (tourContext) => AppGradientBackground(
                         child: OnboardingPage(
+                          api: widget.api,
                           isReplay: true,
                           onFinished: () => Navigator.of(tourContext).pop(),
                         ),

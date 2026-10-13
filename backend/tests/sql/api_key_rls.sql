@@ -184,3 +184,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir space_review_lifecycle.sql
 
 \ir team_categories.sql
+
+\ir onboarding_answers.sql

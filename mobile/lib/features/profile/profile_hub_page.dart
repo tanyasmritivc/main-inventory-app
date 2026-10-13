@@ -268,7 +268,7 @@ class _ProfileHubPageState extends State<ProfileHubPage>
                 detail: widget.unreadCount > 0 ? '${widget.unreadCount}' : null,
               ),
               _row('Lent items', widget.onOpenCheckouts),
-              _row('App tour', widget.onOpenTour),
+              _row('Setup questions', widget.onOpenTour),
             ]),
           ],
         ),

@@ -1,9 +1,7 @@
 import '../../core/app_theme.dart';
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -47,15 +45,14 @@ class _StepConfig {
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
 
-/// Central controller for the liquid-glass walkthrough tutorial.
+/// Central controller for the in-app guided tour.
 ///
 /// Lifecycle:
 ///   1. Call [maybeStart] from MainShell after the user is authenticated.
 ///   2. Call [maybeShowSpaceStep] from a space-detail page in its initState.
 ///
-/// Steps 0-3 are shown sequentially via the main tutorial overlay.
-/// Step 4 (space detail FAB) is triggered independently the first time any
-/// space is opened in a session.
+/// The main tour points to six app controls. Space tools are introduced
+/// separately the first time a Space is opened.
 class TutorialController {
   TutorialController._();
   static final instance = TutorialController._();
@@ -86,9 +83,8 @@ class TutorialController {
     _StepConfig(
       pageIndex: 0,
       icon: Icons.home_outlined,
-      title: 'Your physical memory',
-      body:
-          'Home brings together things you remember, questions you can ask, and anything waiting for your review.',
+      title: 'Start at Home',
+      body: 'See recent items and anything waiting for your review.',
       cornerRadius: 14,
       targetKey: inventoryIconKey,
     ),
@@ -97,9 +93,9 @@ class TutorialController {
       pageIndex: 2,
       icon: Icons.qr_code_scanner,
       secondIcon: Icons.camera_alt_outlined,
-      title: 'Remember what you have',
+      title: 'Capture an item',
       body:
-          'Scan a barcode or take a photo. Clear results are remembered; anything uncertain waits safely in Review.',
+          'Take a photo or scan a barcode. Review AI suggestions before saving.',
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
@@ -107,9 +103,8 @@ class TutorialController {
     _StepConfig(
       pageIndex: 1,
       icon: Icons.auto_awesome,
-      title: 'Ask your physical memory',
-      body:
-          'Ask where something is, what you have, or what you need using natural language.',
+      title: 'Ask about saved items',
+      body: 'Ask where an item is or how many you have.',
       cornerRadius: 14,
       targetKey: assistTabKey,
     ),
@@ -117,9 +112,8 @@ class TutorialController {
     _StepConfig(
       pageIndex: 3,
       icon: Icons.search_rounded,
-      title: 'Find anything fast',
-      body:
-          'Search every remembered item and place when you want to browse directly.',
+      title: 'Search your inventory',
+      body: 'Find saved items by name or location.',
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
@@ -127,17 +121,16 @@ class TutorialController {
     _StepConfig(
       pageIndex: 3,
       icon: Icons.folder_outlined,
-      title: 'Inventory lives in spaces',
-      body: 'Open a space to see its items, projects, and collaboration tools.',
+      title: 'Open a Space',
+      body: 'Keep items together by room, shelf, or workplace.',
       cornerRadius: 20,
       targetKey: firstSpaceCardKey,
     ),
     _StepConfig(
       pageIndex: 3,
       icon: Icons.groups_outlined,
-      title: 'Coordinate in Teams',
-      body:
-          'Teams bring shared spaces, the Team Board, people, and activity into one workspace.',
+      title: 'Work with others',
+      body: 'Open Teams to share inventory, assign work, and manage access.',
       cornerRadius: 14,
       targetKey: teamsSegmentKey,
       targetRectTransform: (rect) =>
@@ -149,18 +142,16 @@ class TutorialController {
     _StepConfig(
       pageIndex: -1,
       icon: Icons.inventory_2_outlined,
-      title: 'Plan projects here',
-      body:
-          'Projects contains Build Readiness, saved Project Kits, and part reservations.',
+      title: 'Plan a project',
+      body: 'Check required items and reserve what you need.',
       cornerRadius: 18,
       targetKey: projectsCardKey,
     ),
     _StepConfig(
       pageIndex: -1,
       icon: Icons.add_circle_outline,
-      title: 'Add inventory',
-      body:
-          'Use + for manual entry, photos, and barcode scans. Other tools are in •••.',
+      title: 'Add an item',
+      body: 'Use + to add an item manually, take a photo, or scan a barcode.',
       cornerRadius: 30,
       targetKey: spaceDetailFabKey,
     ),
@@ -334,9 +325,7 @@ class TutorialController {
 
   static Future<void> _waitFrames(int n) async {
     for (var i = 0; i < n; i++) {
-      final c = Completer<void>();
-      SchedulerBinding.instance.addPostFrameCallback((_) => c.complete());
-      await c.future;
+      await WidgetsBinding.instance.endOfFrame;
     }
   }
 }
@@ -361,570 +350,358 @@ class _TutorialOverlay extends StatefulWidget {
 }
 
 class _TutorialOverlayState extends State<_TutorialOverlay>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   int _step = 0;
   Rect? _holeRect;
   bool _transitioning = false;
+  late final AnimationController _fade;
 
-  late final AnimationController _fadeCtrl;
-  late final AnimationController _holeEntryCtrl;
-  late final AnimationController _bounceCtrl;
+  bool get _reduceMotion =>
+      MediaQuery.disableAnimationsOf(context) ||
+      MediaQuery.accessibleNavigationOf(context);
 
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(
+    _fade = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 160),
     );
-    _holeEntryCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _bounceCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-
-    _enterStep();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showStep(0));
   }
 
   @override
   void dispose() {
-    _fadeCtrl.dispose();
-    _holeEntryCtrl.dispose();
-    _bounceCtrl.dispose();
+    _fade.dispose();
     super.dispose();
   }
 
-  // ── Position helpers ──────────────────────────────────────────────────────
-
-  Rect? _findRect() {
-    final config = widget.steps[_step];
-    final key = config.targetKey;
-    if (key != null) {
-      final ctx = key.currentContext;
-      if (ctx != null) {
-        final box = ctx.findRenderObject() as RenderBox?;
-        if (box != null && box.hasSize) {
-          final pos = box.localToGlobal(Offset.zero);
-          // Inflate 8px so the spotlight has breathing room around the widget.
-          final rect = pos & box.size;
-          return (config.targetRectTransform?.call(rect) ?? rect).inflate(8);
-        }
-      }
+  Rect? _findRect(int index) {
+    final config = widget.steps[index];
+    final target = config.targetKey?.currentContext;
+    final box = target?.findRenderObject();
+    final overlay = context.findRenderObject();
+    if (box is! RenderBox ||
+        overlay is! RenderBox ||
+        !box.hasSize ||
+        !box.attached) {
+      return null;
     }
-    return null;
+    final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
+    return (config.targetRectTransform?.call(rect) ?? rect).inflate(6);
   }
 
-  // ── Step transitions ──────────────────────────────────────────────────────
-
-  /// Animate into the current step (called on init and after each advance).
-  void _enterStep() {
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final rect = _findRect();
-      if (rect == null) {
-        // Target does not exist on this screen (e.g. the first-space
-        // card when the user has no spaces). Skip rather than showing
-        // an empty blocking scrim.
-        if (_step < widget.steps.length - 1) {
-          unawaited(_advance());
-        } else {
-          widget.onDismiss();
-        }
-        return;
-      }
-      if (mounted) setState(() => _holeRect = rect);
-      await _holeEntryCtrl.forward(from: 0);
-      if (mounted) await _fadeCtrl.forward();
-
-      // Re-measure after layout settles — the chat input resizes when
-      // the keyboard dismisses, which happens after the first frame.
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      if (!mounted) return;
-      final settled = _findRect();
-      if (settled != null && settled != _holeRect) {
-        setState(() => _holeRect = settled);
-      }
-    });
-  }
-
-  Future<void> _advance() async {
-    if (_transitioning) return;
-    _dismissKeyboard(context);
-    if (_step >= widget.steps.length - 1) {
-      widget.onComplete();
-      return;
-    }
+  Future<void> _showStep(int index, {int direction = 1}) async {
+    if (!mounted || _transitioning) return;
     _transitioning = true;
-
-    // 1. Fade out tooltip and collapse hole simultaneously.
-    await Future.wait([_fadeCtrl.reverse(), _holeEntryCtrl.reverse()]);
-    if (!mounted) {
-      _transitioning = false;
-      return;
-    }
-
-    // 2. Switch step and clear hole during transition.
-    final nextStep = _step + 1;
-    final nextConfig = widget.steps[nextStep];
-    if (mounted) {
-      setState(() {
-        _step = nextStep;
-        _holeRect = null;
-      });
-    }
-
-    // 3. Navigate page if the next step is on a different page.
-    if (nextConfig.pageIndex >= 0) {
-      await widget.onNavigate(nextConfig.pageIndex);
+    _dismissKeyboard(context);
+    if (_reduceMotion) {
+      _fade.value = 0;
     } else {
-      await Future.delayed(const Duration(milliseconds: 80));
+      await _fade.reverse();
     }
-    if (!mounted) {
-      _transitioning = false;
-      return;
-    }
-
-    // 4. Find the new target rect (retry up to 5 times in case it's not
-    //    rendered yet after the page animation).
-    Rect? newRect;
-    for (var attempt = 0; attempt < 5; attempt++) {
-      newRect = _findRect();
-      if (newRect != null) break;
-      await Future.delayed(const Duration(milliseconds: 120));
-      if (!mounted) {
-        _transitioning = false;
+    if (!mounted) return;
+    setState(() => _holeRect = null);
+    var candidate = index;
+    while (candidate >= 0 && candidate < widget.steps.length) {
+      final config = widget.steps[candidate];
+      if (config.pageIndex >= 0) await widget.onNavigate(config.pageIndex);
+      if (!mounted) return;
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final rect = _findRect(candidate);
+      if (rect != null) {
+        setState(() {
+          _step = candidate;
+          _holeRect = rect;
+        });
+        if (_reduceMotion) {
+          _fade.value = 1;
+        } else {
+          await _fade.forward();
+        }
+        if (mounted) setState(() => _transitioning = false);
         return;
       }
+      candidate += direction;
     }
-
-    if (newRect == null) {
-      _transitioning = false;
-      if (_step < widget.steps.length - 1) {
-        unawaited(_advance());
-      } else {
-        widget.onComplete();
-      }
-      return;
-    }
-
-    // 5. Animate into new step.
-    if (mounted) setState(() => _holeRect = newRect);
-    await _holeEntryCtrl.forward(from: 0);
-    if (mounted) await _fadeCtrl.forward();
+    if (!mounted) return;
     _transitioning = false;
+    if (direction > 0) widget.onComplete();
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  void _next() {
+    if (_transitioning) return;
+    if (_step == widget.steps.length - 1) {
+      widget.onComplete();
+    } else {
+      unawaited(_showStep(_step + 1));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Never render a blocking scrim with no spotlight to point at.
-    if (_holeRect == null) return const SizedBox.shrink();
-
-    final screen = MediaQuery.sizeOf(context);
-    final safePad = MediaQuery.paddingOf(context);
-    final config = widget.steps[_step];
     final hole = _holeRect;
-    final isLast = _step == widget.steps.length - 1;
-    final isMultiStep = widget.steps.length > 1;
-
-    final holeScale = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _holeEntryCtrl, curve: Curves.easeOut));
-    final bounceOffset = Tween<Offset>(
-      begin: const Offset(0, -0.4),
-      end: const Offset(0, 0.4),
-    ).animate(CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeInOut));
-
-    return Material(
-      type: MaterialType.transparency,
-      child: Stack(
-        children: [
-          // Dark scrim with spotlit hole.
-          Positioned.fill(
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: holeScale,
-                builder: (_, _) => CustomPaint(
-                  painter: _SpotlightPainter(
-                    holeRect: hole,
-                    holeScale: holeScale.value,
-                    cornerRadius: config.cornerRadius,
+    if (hole == null) return const SizedBox.shrink();
+    final config = widget.steps[_step];
+    return BlockSemantics(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) widget.onDismiss();
+        },
+        child: Material(
+          type: MaterialType.transparency,
+          child: LayoutBuilder(
+            builder: (context, constraints) => Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {},
+                    child: CustomPaint(
+                      painter: _SpotlightPainter(
+                        holeRect: hole,
+                        cornerRadius: config.cornerRadius,
+                        color: AppTheme.accentForeground(context),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-
-          // Tooltip card + animated arrow.
-          if (hole != null)
-            ..._buildTooltipAndArrow(
-              screen: screen,
-              safePad: safePad,
-              hole: hole,
-              config: config,
-              isLast: isLast,
-              isMultiStep: isMultiStep,
-              bounceOffset: bounceOffset,
-            ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildTooltipAndArrow({
-    required Size screen,
-    required EdgeInsets safePad,
-    required Rect hole,
-    required _StepConfig config,
-    required bool isLast,
-    required bool isMultiStep,
-    required Animation<Offset> bounceOffset,
-  }) {
-    const tooltipWidth = 280.0;
-    const tooltipHeight = 208.0;
-    const arrowSize = 28.0;
-    const gap = 10.0;
-
-    final inBottomHalf = hole.center.dy > screen.height / 2;
-
-    double tooltipTop;
-    double arrowTop;
-
-    if (inBottomHalf) {
-      // Spotlight is low on screen → tooltip above it, arrow points DOWN.
-      tooltipTop = hole.top - gap - arrowSize - tooltipHeight;
-      arrowTop = hole.top - gap - arrowSize;
-    } else {
-      // Spotlight is high → tooltip below it, arrow points UP.
-      arrowTop = hole.bottom + gap;
-      tooltipTop = arrowTop + arrowSize + gap;
-    }
-
-    // Clamp vertically so tooltip never bleeds off screen.
-    tooltipTop = tooltipTop.clamp(
-      safePad.top + 56.0,
-      screen.height - safePad.bottom - tooltipHeight - 12.0,
-    );
-
-    // Center tooltip on hole horizontally, clamped to screen edges.
-    double tooltipLeft = hole.center.dx - tooltipWidth / 2;
-    tooltipLeft = tooltipLeft.clamp(12.0, screen.width - tooltipWidth - 12.0);
-
-    // Center arrow on hole horizontally.
-    double arrowLeft = hole.center.dx - arrowSize / 2;
-    arrowLeft = arrowLeft.clamp(12.0, screen.width - arrowSize - 12.0);
-
-    return [
-      Positioned(
-        left: tooltipLeft,
-        top: tooltipTop,
-        width: tooltipWidth,
-        child: FadeTransition(
-          opacity: _fadeCtrl,
-          child: _TooltipCard(
-            config: config,
-            step: _step,
-            totalSteps: widget.steps.length,
-            isLast: isLast,
-            isMultiStep: isMultiStep,
-            onNext: _advance,
-            onSkip: () {
-              _dismissKeyboard(context);
-              widget.onDismiss();
-            },
-          ),
-        ),
-      ),
-      Positioned(
-        left: arrowLeft,
-        top: arrowTop,
-        width: arrowSize,
-        height: arrowSize,
-        child: FadeTransition(
-          opacity: _fadeCtrl,
-          child: SlideTransition(
-            position: bounceOffset,
-            child: Icon(
-              inBottomHalf
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              color: AppTheme.foreground(context, const Color(0xFF6997DD)),
-              size: arrowSize,
+                Positioned.fill(
+                  child: CustomSingleChildLayout(
+                    delegate: _TooltipLayout(
+                      hole: hole,
+                      safePad: MediaQuery.paddingOf(context),
+                      minimumHeight:
+                          190 *
+                          (MediaQuery.textScalerOf(context).scale(14) / 14)
+                              .clamp(1.0, 2.4),
+                    ),
+                    child: FadeTransition(
+                      opacity: _fade,
+                      child: _TooltipCard(
+                        config: config,
+                        step: _step,
+                        totalSteps: widget.steps.length,
+                        onNext: _transitioning ? null : _next,
+                        onBack: _step == 0 || _transitioning
+                            ? null
+                            : () => _showStep(_step - 1, direction: -1),
+                        onSkip: widget.onDismiss,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
-    ];
+    );
   }
 }
 
-// ─── Tooltip card ─────────────────────────────────────────────────────────────
+/// Position against the card's actual laid-out size, including text scaling.
+class _TooltipLayout extends SingleChildLayoutDelegate {
+  const _TooltipLayout({
+    required this.hole,
+    required this.safePad,
+    required this.minimumHeight,
+  });
+  final Rect hole;
+  final EdgeInsets safePad;
+  final double minimumHeight;
+  static const margin = 16.0;
+  static const gap = 12.0;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final size = constraints.biggest;
+    final top = safePad.top + margin;
+    final bottom = size.height - safePad.bottom - margin;
+    final above = (hole.top - gap - top).clamp(0.0, bottom - top);
+    final below = (bottom - hole.bottom - gap).clamp(0.0, bottom - top);
+    final available = above > below ? above : below;
+    final width = (size.width - 2 * margin).clamp(0.0, 360.0);
+    return BoxConstraints(
+      minWidth: width,
+      maxWidth: width,
+      maxHeight: available >= minimumHeight
+          ? available
+          : (bottom - top).clamp(0.0, size.height),
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final top = safePad.top + margin;
+    final bottom = size.height - safePad.bottom - margin;
+    final above = hole.top - gap - top;
+    final below = bottom - hole.bottom - gap;
+    final putAbove =
+        above >= childSize.height &&
+        (hole.center.dy > size.height / 2 || below < childSize.height);
+    var y = putAbove ? hole.top - gap - childSize.height : hole.bottom + gap;
+    y = y.clamp(top, (bottom - childSize.height).clamp(top, bottom));
+    final x = (hole.center.dx - childSize.width / 2).clamp(
+      margin,
+      (size.width - childSize.width - margin).clamp(margin, size.width),
+    );
+    return Offset(x, y);
+  }
+
+  @override
+  bool shouldRelayout(_TooltipLayout old) =>
+      old.hole != hole ||
+      old.safePad != safePad ||
+      old.minimumHeight != minimumHeight;
+}
 
 class _TooltipCard extends StatelessWidget {
   const _TooltipCard({
     required this.config,
     required this.step,
     required this.totalSteps,
-    required this.isLast,
-    required this.isMultiStep,
     required this.onNext,
-    this.onSkip,
+    required this.onBack,
+    required this.onSkip,
   });
-
   final _StepConfig config;
-  final int step;
-  final int totalSteps;
-  final bool isLast;
-  final bool isMultiStep;
-  final VoidCallback onNext;
-  final VoidCallback? onSkip;
+  final int step, totalSteps;
+  final VoidCallback? onNext, onBack;
+  final VoidCallback onSkip;
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.adaptive(
-              context,
-              Colors.white.withValues(alpha: 0.10),
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.adaptive(
-                context,
-                Colors.white.withValues(alpha: 0.20),
-              ),
-              width: 1.2,
-            ),
-            boxShadow: [BoxShadow(color: Color(0x266997DD), blurRadius: 20)],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context) => Material(
+    key: const Key('tutorial-card'),
+    color: AppTheme.surface(context),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: AppTheme.border(context)),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Icon(s)
-              Row(
-                children: [
-                  Icon(
-                    config.icon,
-                    color: AppTheme.foreground(
-                      context,
-                      const Color(0xFF6997DD),
-                    ),
-                    size: 28,
+              Expanded(
+                child: AppText(
+                  MediaQuery.textScalerOf(context).scale(12) > 20
+                      ? '${step + 1} / $totalSteps'
+                      : 'Step ${step + 1} of $totalSteps',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary(context),
                   ),
-                  if (config.secondIcon != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      config.secondIcon,
-                      color: AppTheme.foreground(
-                        context,
-                        const Color(0xFF6997DD),
-                      ),
-                      size: 22,
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Title
-              AppText(
-                config.title,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 4),
-              // Body
-              AppText(
-                config.body,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Footer: step counter + skip + action button
-              Row(
+              if (MediaQuery.textScalerOf(context).scale(14) > 22)
+                IconButton(
+                  onPressed: onSkip,
+                  tooltip: 'Skip tour',
+                  icon: const Icon(Icons.close_rounded),
+                )
+              else
+                TextButton(onPressed: onSkip, child: const AppText('Skip')),
+            ],
+          ),
+          Flexible(
+            fit: FlexFit.loose,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isMultiStep)
-                    AppText(
-                      '${step + 1} of $totalSteps',
+                  Semantics(
+                    header: true,
+                    liveRegion: true,
+                    child: AppText(
+                      config.title,
                       style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x61FFFFFF)),
-                        fontSize: 12,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary(context),
                       ),
                     ),
-                  if (isMultiStep && !isLast && onSkip != null) ...[
-                    const SizedBox(width: 16),
-                    GestureDetector(
-                      onTap: onSkip,
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 10,
-                        ),
-                        child: AppText(
-                          'Skip',
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Colors.white.withValues(alpha: 0.55),
-                            ),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  AppText(
+                    config.body,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      color: AppTheme.textSecondary(context),
                     ),
-                  ],
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: onNext,
-                    child: isLast
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0xFF6997DD),
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: AppText(
-                              'Got it ✓',
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Colors.white.withValues(alpha: 0.08),
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppTheme.adaptive(
-                                      context,
-                                      const Color(
-                                        0xFF6997DD,
-                                      ).withValues(alpha: 0.70),
-                                    ),
-                                  ),
-                                ),
-                                child: AppText(
-                                  'Next →',
-                                  style: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Colors.white,
-                                    ),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              if (step > 0) ...[
+                IconButton(
+                  onPressed: onBack,
+                  tooltip: 'Previous step',
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: FilledButton(
+                  key: const Key('tutorial-next'),
+                  onPressed: onNext,
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                  child: AppText(step == totalSteps - 1 ? 'Done' : 'Next'),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
-
-// ─── Spotlight painter ────────────────────────────────────────────────────────
 
 class _SpotlightPainter extends CustomPainter {
   const _SpotlightPainter({
     required this.holeRect,
-    required this.holeScale,
     required this.cornerRadius,
+    required this.color,
   });
-
-  final Rect? holeRect;
-  final double holeScale;
+  final Rect holeRect;
   final double cornerRadius;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // saveLayer is required for BlendMode.clear to punch a transparent hole.
-    canvas.saveLayer(Offset.zero & size, Paint());
-
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0x99000000),
+    final hole = RRect.fromRectAndRadius(
+      holeRect,
+      Radius.circular(cornerRadius),
     );
-
-    final hole = holeRect;
-    if (hole != null && holeScale > 0) {
-      final scaledHole = Rect.fromCenter(
-        center: hole.center,
-        width: hole.width * holeScale,
-        height: hole.height * holeScale,
-      );
-      final radius = (cornerRadius * holeScale).clamp(0.0, 120.0);
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(scaledHole, Radius.circular(radius)),
-        Paint()..blendMode = BlendMode.clear,
-      );
-
-      canvas.restore();
-
-      // Teal border painted after restore so it sits above the scrim.
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          scaledHole.inflate(1.5),
-          Radius.circular(radius + 1.5),
-        ),
-        Paint()
-          ..color = const Color(0xFF6997DD).withValues(alpha: 0.65)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0,
-      );
-    } else {
-      canvas.restore();
-    }
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(hole);
+    canvas.drawPath(path, Paint()..color = const Color(0x99000000));
+    canvas.drawRRect(
+      hole,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
   }
 
   @override
   bool shouldRepaint(_SpotlightPainter old) =>
       old.holeRect != holeRect ||
-      old.holeScale != holeScale ||
-      old.cornerRadius != cornerRadius;
+      old.cornerRadius != cornerRadius ||
+      old.color != color;
 }

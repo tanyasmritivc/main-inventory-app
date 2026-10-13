@@ -112,7 +112,16 @@ void main() {
     expect(find.byType(AuthPage), findsNothing);
     expect(find.byType(MainShell), findsNothing);
     expect(api.reads, 0);
+    final choices = [
+      'setup-use-household',
+      'setup-inventory-tools',
+      'setup-goal-find_items',
+      'setup-collaboration-solo',
+    ];
     for (var step = 0; step < 4; step++) {
+      await tester.ensureVisible(find.byKey(Key(choices[step])));
+      await tester.tap(find.byKey(Key(choices[step])));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('onboarding-next')));
       await tester.pumpAndSettle();
     }

@@ -2,6 +2,7 @@ import type { LegalSection } from "@/components/site/legal-document";
 
 export const LEGAL_VERSION = "2026-10-11";
 export const LEGAL_EFFECTIVE_DATE = "October 11, 2026";
+export const PRIVACY_EFFECTIVE_DATE = "October 12, 2026";
 export const COOKIE_NOTICE_TEXT = "FindEZ uses cookies for sign-in and saves preferences and drafts on this device. No analytics or advertising cookies are enabled.";
 
 export const privacySections: LegalSection[] = [
@@ -20,6 +21,7 @@ export const privacySections: LegalSection[] = [
     ],
     "bullets": [
       "Account and profile information: email, account identifiers, sign-in method, name, optional profile fields, team role, and account eligibility and Terms acknowledgments.",
+      "Optional setup answers: your intended use, inventory types, main goal, and whether you work alone or with others. Completed answers are linked to your account after sign-in, are not shared with Team members, and can be updated in Profile.",
       "Workspace content: inventory names, quantities, physical locations you enter, barcodes, part numbers, Spaces, notes, documents, project kits, team tasks, and sharing permissions.",
       "Submitted content: the photos, spreadsheets, prompts, corrections, and other files you choose to upload. Files can include metadata, including location information embedded by the device that created them.",
       "Service information: IP addresses, request and error logs, timestamps, account activity, and device tokens used for phone notifications.",
@@ -30,7 +32,7 @@ export const privacySections: LegalSection[] = [
     "id": "purposes",
     "heading": "3. Why we use information",
     "body": [
-      "We use information to authenticate you; store, search, identify, organize, and share inventory; answer your requests; run team features and notifications; provide support; prevent abuse; diagnose failures; and meet legal obligations.",
+      "We use information to authenticate you; store, search, identify, organize, and share inventory; answer your requests; run team features and notifications; provide support; use optional setup answers to guide setup and improve FindEZ; prevent abuse; diagnose failures; and meet legal obligations.",
       "Where a legal basis is required, we rely on providing the service you request, legitimate interests in security and reliable operation, legal obligations, or consent for an optional activity where required. A device permission does not authorize unrelated uses.",
       "When you confirm non-personal manufacturer facts, such as a barcode and part number, those facts may improve the shared parts catalog. Your private quantities, locations, notes, photos, and documents are not published as catalog entries."
     ]

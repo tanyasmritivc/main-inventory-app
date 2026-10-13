@@ -1,5 +1,47 @@
 # Current state
 
+## October 12 setup questions, guided tour and concise Auth delivered
+
+- Runtime `346d9ae`, draft PR #59 stacked on #58, replaces promotional onboarding
+  with four optional questions: use, inventory types, goal and collaboration.
+  The final user reference is followed with centered FindEZ typography, full-width
+  icon choices without radio circles, restrained glass and finite reduced-motion
+  transitions. Auth has one heading, inventory copy and optional work-detail
+  expansion; identity, provider, recovery and signup eligibility/Terms gates remain.
+- Account-bound local pending answers sync after sign-in. Confirmed saves, visible
+  retry, serialized edits and Profile → Setup questions are implemented. Migration
+  041 stores the latest owned answers in `onboarding_responses`, separate from
+  inventory/Teams, with owner reads, backend-only writes, integration-key exclusion
+  and auth-account deletion cascade. Operator queries are in
+  `docs/onboarding-answers.md`; no admin UI or tracking provider is added.
+- Migration/API and public privacy disclosure are live. Backup/database dump,
+  composed dirty-router preservation and deployment receipts are under
+  `/home/ubuntu/findez-onboarding-20261012`. Active web release is
+  `/home/ubuntu/findez-web-releases/web-onboarding-questions-20261012/frontend`;
+  unrelated source/config and 813 prior static assets are retained. Public Privacy
+  has the October 12 date; unchanged Terms retain October 11. Dedicated review
+  account save/read/idempotency and owner-override rejection pass; only its newly
+  created QA answer row was removed, restoring its initial state.
+- The actual six-step spotlight tour uses concise target-specific instructions,
+  opaque theme cards, adaptive measured layout and real Next/Back/Skip controls.
+  All 338 mobile tests with coverage and clean analysis pass. Native iPhone 16e
+  iOS 26.2 questionnaire completion, selected/multiple-choice accessibility and
+  Light/Dark/Auth screenshots pass. All five exact-source CI jobs pass in
+  `38346877463`, including 419 backend, 211 web and PostgreSQL isolation checks.
+- Clean signed 1.0.8 (62) archive/export, production configuration (actual
+  `PREVIEW_ONBOARDING` disabled), strict app/extension signatures, all 31 native
+  device executables and Apple validation pass. Upload
+  `3ab7200b-5045-499f-accb-2d5f4f7b6f2c` is COMPLETE without errors/warnings;
+  build 62 is VALID, APP_STORE_ELIGIBLE and IN_BETA_TESTING. Both existing internal
+  groups and saved test notes are verified at 21:49 PDT October 12. Durable IPA,
+  archive, receipts, verifier, screenshots and phone checklist are in
+  `Documents/FindEZ/AppStore/1.0.8-build62`. IPA SHA-256:
+  `ed2721cb8a610a9604e1fb5e9e5bc28264d4ff08ad81fb42628867ec2f259017`.
+  Released 1.0.7 (59), manual/unselected 1.0.8 and requested name/subtitle are
+  verified unchanged. Physical phone acceptance remains deferred; public App Store
+  submission remains held. The build-61 introduction below is historical and
+  superseded; the simulator is left on the clean Dark sign-in preview.
+
 ## October 12 general inventory categories and walkthrough
 
 - Category source `2384bbd`, draft PR #57 stacked on #56, passes all five CI jobs
