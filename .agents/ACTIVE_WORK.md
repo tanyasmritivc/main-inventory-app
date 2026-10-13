@@ -11,8 +11,13 @@ slides, account-bound pending answers, confirmed-save retry and Profile editing.
 Migration 041 adds owned `onboarding_responses` with account-deletion cascade,
 owner-only reads and backend-only writes; no Team/inventory data is generated.
 419 backend, 211 web and 330 mobile tests pass; disposable PostgreSQL isolation
-and validation checks pass. Native previews, exact-source CI, scoped backend/
-privacy deployment and clean 1.0.8+62 packaging/delivery are underway. Preserve
+and validation checks pass. Production migration/API and privacy disclosure are selectively deployed with
+private backups. Dedicated review-account save/read/idempotency QA passes and
+its newly created QA row is removed. The user then supplies an outlined-choice
+reference and requests simpler Auth. Current mobile styling uses centered
+questions, icon choices without radio circles, restrained glass and reduced-motion
+transitions; Auth has concise inventory copy and optional work-detail expansion.
+Native previews and clean 1.0.8+62 packaging/delivery are underway. Preserve
 public 1.0.7 (59), manual/unselected 1.0.8, other live VM changes and deferred
 physical acceptance. The earlier build-61 introduction is superseded by this
 clarification, not evidence that the spotlight tutorial was already corrected.

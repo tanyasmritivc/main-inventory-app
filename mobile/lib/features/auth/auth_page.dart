@@ -687,824 +687,338 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.adaptive(context, Colors.black),
-      appBar: AppBar(
-        title: AppText(_isLogin ? 'Sign in' : 'Create account'),
-        centerTitle: true,
-        backgroundColor: AppTheme.adaptive(context, Colors.black),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    IconData? icon,
+    int? maxLength,
+    List<String>? hints,
+    bool password = false,
+    TextInputType? keyboard,
+  }) => TextField(
+    controller: controller,
+    enabled: !_loading,
+    keyboardType: keyboard,
+    textInputAction: password ? TextInputAction.done : TextInputAction.next,
+    autofillHints: hints,
+    maxLength: maxLength,
+    obscureText: password,
+    onChanged: controller == _email
+        ? (_) => setState(() => _emailError = null)
+        : null,
+    onSubmitted: password
+        ? (_) => FocusManager.instance.primaryFocus?.unfocus()
+        : null,
+    style: AppTypography.bodyStyleOf(
+      context,
+      TextStyle(fontSize: 16, color: AppTheme.textPrimary(context)),
+    ),
+    decoration: InputDecoration(
+      labelText: label,
+      counterText: '',
+      prefixIcon: icon == null ? null : Icon(icon, size: 21),
+      errorText: controller == _email ? _emailError : null,
+      filled: true,
+      fillColor: AppTheme.surface(context),
+    ),
+  );
+
+  Widget _social(
+    OAuthProvider provider,
+    String label,
+    Widget icon,
+    VoidCallback action,
+  ) => OutlinedButton.icon(
+    onPressed: _loading ? null : action,
+    icon: _loading && _oauthProviderLoading == provider
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : icon,
+    label: AppText(label, textAlign: TextAlign.center),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: AppTheme.textPrimary(context),
+      backgroundColor: AppTheme.surface(context),
+      minimumSize: const Size(double.infinity, 52),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      side: BorderSide(
+        color: AppTheme.textPrimary(context).withValues(alpha: .18),
       ),
-      body: Container(
-        color: AppTheme.adaptive(context, Colors.black),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Stack(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+  );
+
+  void _switchMode() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _isLogin = !_isLogin;
+      _needsEmailVerification = false;
+      _verificationEmail = null;
+      _error = null;
+      _emailError = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: AutofillGroup(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0xFF171717),
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0x14FFFFFF),
-                        ),
-                        width: 0.5,
+                  const Center(child: FindEZWordmark(width: 144)),
+                  const SizedBox(height: 28),
+                  Semantics(
+                    header: true,
+                    child: AppText(
+                      _isLogin ? 'Welcome back' : 'Create your account',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -.4,
+                        color: AppTheme.textPrimary(context),
                       ),
                     ),
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  ),
+                  const SizedBox(height: 8),
+                  AppText(
+                    _isLogin
+                        ? 'Sign in to your inventory.'
+                        : 'Keep your inventory in one place.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppTheme.textSecondary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  if (!_isLogin) ...[
+                    _field(
+                      _firstName,
+                      'First name',
+                      maxLength: 50,
+                      hints: const [AutofillHints.givenName],
+                    ),
+                    const SizedBox(height: 12),
+                    _field(
+                      _lastName,
+                      'Last name',
+                      maxLength: 50,
+                      hints: const [AutofillHints.familyName],
+                    ),
+                    const SizedBox(height: 12),
+                    ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: const EdgeInsets.only(bottom: 16),
+                      title: const AppText(
+                        'Work details (optional)',
+                        style: TextStyle(fontSize: 14),
+                      ),
                       children: [
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: FindEZWordmark(),
+                        _field(
+                          _profileRole,
+                          'Role (optional)',
+                          maxLength: 120,
+                          hints: const [AutofillHints.jobTitle],
                         ),
                         const SizedBox(height: 12),
-                        AppText(
-                          _isLogin ? 'Welcome back' : 'Welcome',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.4,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        AppText(
-                          'by AI Robots Inc',
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0x4DFFFFFF),
-                            ),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        AppText(
-                          _isLogin
-                              ? 'Sign in to upload documents and view activity.'
-                              : 'Sign up to start uploading documents.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Colors.white.withValues(alpha: 0.60),
-                                ),
-                              ),
-                        ),
-                        const SizedBox(height: 18),
-                        if (!_isLogin) ...[
-                          TextField(
-                            controller: _firstName,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 50,
-                            style: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 15,
-                              ),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'First name',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: AppTheme.adaptive(
-                                context,
-                                Color(0xFF171717),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x40FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.givenName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _lastName,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 50,
-                            style: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 15,
-                              ),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Last name',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: AppTheme.adaptive(
-                                context,
-                                Color(0xFF171717),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x40FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.familyName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _profileRole,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 15,
-                              ),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Role (optional)',
-                              hintText: 'Student, mentor, coach…',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              filled: true,
-                              fillColor: AppTheme.adaptive(
-                                context,
-                                Color(0xFF171717),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x40FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.jobTitle],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _organization,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 15,
-                              ),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Organization (optional)',
-                              hintText: 'School, team, or company',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.apartment_rounded),
-                              filled: true,
-                              fillColor: AppTheme.adaptive(
-                                context,
-                                Color(0xFF171717),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x14FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0x40FFFFFF),
-                                  ),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [
-                              AutofillHints.organizationName,
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        TextField(
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          style: AppTypography.bodyStyleOf(
-                            context,
-                            TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
-                            ),
-                          ),
-                          onChanged: (_) => setState(() => _emailError = null),
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'you@company.com',
-                            hintStyle: AppTypography.bodyStyleOf(
-                              context,
-                              TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0x33FFFFFF),
-                                ),
-                                fontSize: 15,
-                              ),
-                            ),
-                            prefixIcon: Icon(Icons.alternate_email_rounded),
-                            filled: true,
-                            fillColor: AppTheme.adaptive(
-                              context,
-                              Color(0xFF171717),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x40FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          autofillHints: const [AutofillHints.email],
-                        ),
-                        if (_emailError != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: AppText(
-                              _emailError!,
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0xFFFF3B30),
-                                ),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _password,
-                          obscureText: true,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) =>
-                              FocusManager.instance.primaryFocus?.unfocus(),
-                          style: AppTypography.bodyStyleOf(
-                            context,
-                            TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
-                            ),
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline_rounded),
-                            filled: true,
-                            fillColor: AppTheme.adaptive(
-                              context,
-                              Color(0xFF171717),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Color(0x40FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          autofillHints: const [AutofillHints.password],
-                        ),
-                        if (_isLogin)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _loading ? null : _sendPasswordReset,
-                              child: const AppText('Forgot password?'),
-                            ),
-                          )
-                        else
-                          const SizedBox(height: 12),
-                        if (!_isLogin)
-                          Material(
-                            color: Colors.transparent,
-                            child: CheckboxListTile(
-                              contentPadding: EdgeInsets.zero,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              value: _legalAccepted,
-                              onChanged: _loading
-                                  ? null
-                                  : (value) => setState(
-                                      () => _legalAccepted = value ?? false,
-                                    ),
-                              title: const AppText(
-                                "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
-                                style: TextStyle(fontSize: 13),
-                              ),
-                            ),
-                          ),
-                        if (_isLogin)
-                          const AppText(
-                            'By continuing, you accept the Terms of Service and confirm you meet the account eligibility requirements, including age 13 or older.',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        Wrap(
-                          children: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const TermsOfServicePage(),
-                                ),
-                              ),
-                              child: const AppText(
-                                'Terms of Service',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const PrivacyPolicyPage(),
-                                ),
-                              ),
-                              child: const AppText(
-                                'Privacy Policy',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_error != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0xFF171717),
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.error_outline_rounded,
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: AppText(
-                                    _error!,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.adaptive(
-                              context,
-                              Colors.white,
-                            ),
-                            foregroundColor: AppTheme.adaptive(
-                              context,
-                              Colors.black,
-                            ),
-                            disabledBackgroundColor: AppTheme.adaptive(
-                              context,
-                              Colors.white.withValues(alpha: 0.4),
-                            ),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(14),
-                              ),
-                            ),
-                          ),
-                          child: (_loading && _oauthProviderLoading == null)
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              AppTheme.adaptive(
-                                                context,
-                                                Colors.black.withValues(
-                                                  alpha: 0.7,
-                                                ),
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const AppText('Please wait…'),
-                                  ],
-                                )
-                              : AppText(
-                                  _isLogin ? 'Sign in' : 'Create account',
-                                ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Divider(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Colors.white.withValues(alpha: 0.12),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: AppText(
-                                'OR',
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white.withValues(alpha: 0.4),
-                                  ),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  Colors.white.withValues(alpha: 0.12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (Theme.of(context).platform ==
-                            TargetPlatform.iOS) ...[
-                          _SocialButton(
-                            enabled: !_loading,
-                            onPressed: _loading ? null : _signInWithApple,
-                            icon: Icon(
-                              Icons.apple,
-                              color: AppTheme.foreground(context, Colors.white),
-                              size: 18,
-                            ),
-                            label: AppText(
-                              'Continue with Apple',
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Colors.white,
-                                ),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        _SocialButton(
-                          enabled: !_loading,
-                          onPressed: _loading ? null : _signInWithGoogle,
-                          icon:
-                              (_loading &&
-                                  _oauthProviderLoading == OAuthProvider.google)
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppTheme.adaptive(context, Colors.white),
-                                    ),
-                                  ),
-                                )
-                              : const _GoogleLogo(size: 18),
-                          label: AppText(
-                            (_loading &&
-                                    _oauthProviderLoading ==
-                                        OAuthProvider.google)
-                                ? 'Please wait…'
-                                : 'Continue with Google',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_needsEmailVerification) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0xFF171717),
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(
-                                      Icons.mark_email_unread_outlined,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: AppText(
-                                        'Check your email to confirm your account before logging in.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: AppTheme.adaptive(
-                                                context,
-                                                Colors.white.withValues(
-                                                  alpha: 0.85,
-                                                ),
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                OutlinedButton(
-                                  onPressed: (_resending || _loading)
-                                      ? null
-                                      : _resendVerificationEmail,
-                                  child: AppText(
-                                    _resending
-                                        ? 'Resending…'
-                                        : 'Resend verification email',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _isLogin = !_isLogin;
-                                    _needsEmailVerification = false;
-                                    _verificationEmail = null;
-                                    _error = null;
-                                    _emailError = null;
-                                  });
-                                },
-                          child: AppText(
-                            _isLogin
-                                ? 'Need an account? Sign up'
-                                : 'Have an account? Login',
-                            style: TextStyle(
-                              color: AppTheme.foreground(
-                                context,
-                                Colors.white.withValues(alpha: 0.85),
-                              ),
-                            ),
-                          ),
+                        _field(
+                          _organization,
+                          'Organization (optional)',
+                          maxLength: 120,
+                          hints: const [AutofillHints.organizationName],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  _field(
+                    _email,
+                    'Email',
+                    icon: Icons.alternate_email_rounded,
+                    keyboard: TextInputType.emailAddress,
+                    hints: const [AutofillHints.email],
+                  ),
+                  const SizedBox(height: 12),
+                  _field(
+                    _password,
+                    'Password',
+                    icon: Icons.lock_outline_rounded,
+                    password: true,
+                    hints: [
+                      _isLogin
+                          ? AutofillHints.password
+                          : AutofillHints.newPassword,
+                    ],
+                  ),
+                  if (_isLogin)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _loading ? null : _sendPasswordReset,
+                        child: const AppText(
+                          'Forgot password?',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    )
+                  else ...[
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _legalAccepted,
+                      onChanged: _loading
+                          ? null
+                          : (value) =>
+                                setState(() => _legalAccepted = value ?? false),
+                      title: const AppText(
+                        "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
+                        style: TextStyle(fontSize: 13, height: 1.4),
+                      ),
+                    ),
+                  ],
+                  if (_error != null) ...[
+                    Semantics(
+                      liveRegion: true,
+                      child: AppText(
+                        _error!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  FilledButton(
+                    onPressed: _loading ? null : _submit,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 54),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    child: _loading && _oauthProviderLoading == null
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : AppText(_isLogin ? 'Sign in' : 'Create account'),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: AppText(
+                          'or',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textSecondary(context),
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                    _social(
+                      OAuthProvider.apple,
+                      'Continue with Apple',
+                      const Icon(Icons.apple, size: 22),
+                      _signInWithApple,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  _social(
+                    OAuthProvider.google,
+                    'Continue with Google',
+                    const _GoogleLogo(size: 20),
+                    _signInWithGoogle,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_needsEmailVerification) ...[
+                    Semantics(
+                      liveRegion: true,
+                      child: AppText(
+                        'Check your email to confirm your account.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textSecondary(context),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _resending || _loading
+                          ? null
+                          : _resendVerificationEmail,
+                      child: AppText(
+                        _resending ? 'Resending…' : 'Resend verification email',
+                      ),
+                    ),
+                  ],
+                  TextButton(
+                    onPressed: _loading ? null : _switchMode,
+                    child: AppText(
+                      _isLogin
+                          ? 'New here? Create account'
+                          : 'Already have an account? Sign in',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isLogin)
+                    AppText(
+                      'By signing in, you accept our Terms and confirm you’re eligible (13+).',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: AppTheme.textSecondary(context),
+                      ),
+                    ),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const TermsOfServicePage(),
+                          ),
+                        ),
+                        child: const AppText(
+                          'Terms of Service',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PrivacyPolicyPage(),
+                          ),
+                        ),
+                        child: const AppText(
+                          'Privacy Policy',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1512,72 +1026,8 @@ class _AuthPageState extends State<AuthPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SocialButton extends StatefulWidget {
-  const _SocialButton({
-    required this.enabled,
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  final bool enabled;
-  final VoidCallback? onPressed;
-  final Widget icon;
-  final Widget label;
-
-  @override
-  State<_SocialButton> createState() => _SocialButtonState();
-}
-
-class _SocialButtonState extends State<_SocialButton> {
-  double _pressedOpacity = 1;
-
-  void _setPressed(bool pressed) {
-    if (!mounted) return;
-    setState(() => _pressedOpacity = pressed ? 0.7 : 1.0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: widget.enabled ? _pressedOpacity : 0.5,
-      child: IgnorePointer(
-        ignoring: !widget.enabled,
-        child: GestureDetector(
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          onTap: widget.onPressed,
-          child: Container(
-            width: double.infinity,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(
-                context,
-                Colors.white.withValues(alpha: 0.05),
-              ),
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(
-                color: AppTheme.adaptive(
-                  context,
-                  Colors.white.withValues(alpha: 0.12),
-                ),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [widget.icon, const SizedBox(width: 10), widget.label],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 class _GoogleLogo extends StatelessWidget {

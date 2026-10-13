@@ -5,6 +5,7 @@ import '../../core/ui/app_text.dart';
 import '../../core/ui/findez_wordmark.dart';
 import 'onboarding_answers.dart';
 import 'onboarding_prefs.dart';
+import 'onboarding_visuals.dart';
 
 /// Optional four-question setup. No sample inventory or automatic Team writes.
 class OnboardingPage extends StatefulWidget {
@@ -31,7 +32,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   int _step = 0;
   String? _useCase, _goal, _collaboration;
   final Set<String> _types = {};
-  bool _finishing = false, _loading = false, _completed = false;
+  bool _finishing = false,
+      _loading = false,
+      _completed = false,
+      _moving = false;
   String? _error;
   String? _owner;
 
@@ -118,17 +122,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
     _goal = a.primaryGoal;
     _collaboration = a.collaboration;
   });
-  void _go(int index) {
-    if (_finishing || index < 0 || index > 3) return;
+  Future<void> _go(int index) async {
+    if (_finishing || _moving || index < 0 || index > 3) return;
     FocusManager.instance.primaryFocus?.unfocus();
     if (_reduceMotion) {
       _pages.jumpToPage(index);
     } else {
-      _pages.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
-      );
+      setState(() => _moving = true);
+      try {
+        await _pages.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeInOutCubic,
+        );
+      } finally {
+        if (mounted) setState(() => _moving = false);
+      }
     }
   }
 
@@ -198,245 +207,276 @@ class _OnboardingPageState extends State<OnboardingPage> {
       if (!didPop) _go(_step - 1);
     },
     child: Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                  child: Row(
-                    children: [
-                      if (_step > 0)
-                        IconButton(
-                          tooltip: 'Previous step',
-                          onPressed: _finishing ? null : () => _go(_step - 1),
-                          icon: const Icon(Icons.arrow_back_rounded),
-                        ),
-                      const Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: FindEZWordmark(width: 104),
+      body: SetupBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Row(
+                      children: [
+                        if (_step > 0)
+                          IconButton(
+                            tooltip: 'Previous step',
+                            onPressed: _finishing || _moving
+                                ? null
+                                : () => _go(_step - 1),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                          ),
+                        const Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 8),
+                              child: FindEZWordmark(width: 104),
+                            ),
                           ),
                         ),
-                      ),
-                      if (MediaQuery.textScalerOf(context).scale(14) > 22)
-                        IconButton(
-                          key: const Key('onboarding-skip'),
-                          tooltip: widget.isReplay
-                              ? 'Close setup'
-                              : 'Skip setup',
-                          onPressed: _finishing
-                              ? null
-                              : () => _finish(skip: true),
-                          icon: const Icon(Icons.close_rounded),
-                        )
-                      else
-                        TextButton(
-                          key: const Key('onboarding-skip'),
-                          onPressed: _finishing
-                              ? null
-                              : () => _finish(skip: true),
-                          child: AppText(widget.isReplay ? 'Close' : 'Skip'),
-                        ),
-                    ],
+                        if (MediaQuery.textScalerOf(context).scale(14) > 22)
+                          IconButton(
+                            key: const Key('onboarding-skip'),
+                            tooltip: widget.isReplay
+                                ? 'Close setup'
+                                : 'Skip setup',
+                            onPressed: _finishing
+                                ? null
+                                : () => _finish(skip: true),
+                            icon: const Icon(Icons.close_rounded),
+                          )
+                        else
+                          TextButton(
+                            key: const Key('onboarding-skip'),
+                            onPressed: _finishing
+                                ? null
+                                : () => _finish(skip: true),
+                            child: AppText(widget.isReplay ? 'Close' : 'Skip'),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (_loading) const LinearProgressIndicator(),
-                Expanded(
-                  child: PageView(
-                    key: const Key('onboarding-pages'),
-                    controller: _pages,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onPageChanged: (i) => setState(() => _step = i),
-                    children: [
-                      _question(
-                        0,
-                        'What will you use FindEZ for?',
-                        'Optional. Saved with your account to guide setup and improve FindEZ.',
-                        [
-                          _choices(
-                            _uses,
-                            _useCase,
-                            (key) => setState(() => _useCase = key),
-                          ),
-                          if (_useCase == 'other')
-                            _otherField(
-                              _useOther,
-                              'Your use',
-                              'e.g. Costume department',
-                            ),
-                        ],
-                      ),
-                      _question(
-                        1,
-                        'What do you manage?',
-                        'Select all that apply.',
-                        [
-                          _choices(
-                            _inventory,
-                            null,
-                            (key) => setState(() {
-                              if (!_types.add(key)) _types.remove(key);
-                            }),
-                            multiple: true,
-                          ),
-                          if (_types.contains('other'))
-                            _otherField(
-                              _inventoryOther,
-                              'Other inventory',
-                              'e.g. Fabric and props',
-                            ),
-                        ],
-                      ),
-                      _question(
-                        2,
-                        'What would help you most?',
-                        'Choose your main goal.',
-                        [
-                          _choices(
-                            _goals,
-                            _goal,
-                            (key) => setState(() => _goal = key),
-                          ),
-                        ],
-                      ),
-                      _question(
-                        3,
-                        'Who will use this inventory?',
-                        'Sharing is always your choice.',
-                        [
-                          _choices(
-                            const {'solo': 'Just me', 'others': 'With others'},
-                            _collaboration,
-                            (key) => setState(() => _collaboration = key),
-                          ),
-                          const SizedBox(height: 24),
-                          AppText(
-                            'A good place to start',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          AppText(
-                            switch (_goal) {
-                              'identify_items' =>
-                                'Take a photo, review the suggestions, and save an item to a Space.',
-                              'track_stock' =>
-                                'Add an item and its quantity. Set a low-stock threshold when you need a reminder.',
-                              'organize_spaces' =>
-                                'Create a Space for a room, shelf, or work area, then add your items.',
-                              'share_inventory' =>
-                                'Start with a Space, then choose who can view or edit it.',
-                              _ =>
-                                'Add an item to a Space, then search its name or ask where it is.',
-                            },
-                            style: TextStyle(
-                              fontSize: 15,
-                              height: 1.4,
-                              color: AppTheme.textSecondary(context),
-                            ),
-                          ),
-                          if (_owner == null && !widget.isReplay) ...[
-                            const SizedBox(height: 16),
-                            AppText(
-                              'Your answers will be saved after you sign in.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.textSecondary(context),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+                    child: Semantics(
+                      label: 'Question ${_step + 1} of 4',
+                      child: ExcludeSemantics(
+                        child: Row(
+                          children: List.generate(
+                            4,
+                            (index) => Expanded(
+                              child: AnimatedContainer(
+                                duration: Duration(
+                                  milliseconds: _reduceMotion ? 0 : 320,
+                                ),
+                                curve: Curves.easeInOutCubic,
+                                height: 4,
+                                margin: EdgeInsets.only(
+                                  right: index == 3 ? 0 : 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: index <= _step
+                                      ? AppTheme.accentForeground(context)
+                                      : AppTheme.textMuted(
+                                          context,
+                                        ).withValues(alpha: .22),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_loading) const LinearProgressIndicator(),
+                  Expanded(
+                    child: PageView(
+                      key: const Key('onboarding-pages'),
+                      controller: _pages,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (i) => setState(() => _step = i),
+                      children: [
+                        _question(
+                          0,
+                          'What will you use FindEZ for?',
+                          'Choose one. Your answers help us improve FindEZ.',
+                          [
+                            _choices(
+                              _uses,
+                              _useCase,
+                              (key) => setState(() => _useCase = key),
+                              group: 'use',
+                            ),
+                            if (_useCase == 'other')
+                              _otherField(
+                                _useOther,
+                                'Your use',
+                                'e.g. Costume department',
+                              ),
+                          ],
+                        ),
+                        _question(
+                          1,
+                          'What do you manage?',
+                          'Select all that apply.',
+                          [
+                            _choices(
+                              _inventory,
+                              null,
+                              (key) => setState(() {
+                                if (!_types.add(key)) _types.remove(key);
+                              }),
+                              multiple: true,
+                              group: 'inventory',
+                            ),
+                            if (_types.contains('other'))
+                              _otherField(
+                                _inventoryOther,
+                                'Other inventory',
+                                'e.g. Fabric and props',
+                              ),
+                          ],
+                        ),
+                        _question(
+                          2,
+                          'What would help you most?',
+                          'Choose your main goal.',
+                          [
+                            _choices(
+                              _goals,
+                              _goal,
+                              (key) => setState(() => _goal = key),
+                              group: 'goal',
                             ),
                           ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_error != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Column(
-                              children: [
-                                AppText(
-                                  _error!,
-                                  style: TextStyle(
-                                    color: AppTheme.danger,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                if (_step == 0 &&
-                                    widget.isReplay &&
-                                    _owner != null)
-                                  TextButton(
-                                    onPressed: _loadAnswers,
-                                    child: const AppText('Retry'),
-                                  ),
-                              ],
-                            ),
-                          ),
                         ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppText(
-                              'Question ${_step + 1} of 4',
+                        _question(
+                          3,
+                          'Who will use this inventory?',
+                          'Sharing is always your choice.',
+                          [
+                            _choices(
+                              const {
+                                'solo': 'Just me',
+                                'others': 'With others',
+                              },
+                              _collaboration,
+                              (key) => setState(() => _collaboration = key),
+                              group: 'collaboration',
+                            ),
+                            const SizedBox(height: 24),
+                            AppText(
+                              'A good place to start',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            AppText(
+                              switch (_goal) {
+                                'identify_items' =>
+                                  'Take a photo, review the suggestions, and save an item to a Space.',
+                                'track_stock' =>
+                                  'Add an item and its quantity. Set a low-stock threshold when you need a reminder.',
+                                'organize_spaces' =>
+                                  'Create a Space for a room, shelf, or work area, then add your items.',
+                                'share_inventory' =>
+                                  'Start with a Space, then choose who can view or edit it.',
+                                _ =>
+                                  'Add an item to a Space, then search its name or ask where it is.',
+                              },
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 15,
+                                height: 1.4,
                                 color: AppTheme.textSecondary(context),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          key: const Key('onboarding-next'),
-                          onPressed: _finishing || _loading || !_valid
-                              ? null
-                              : () {
-                                  if (_step < 3) {
-                                    _go(_step + 1);
-                                  } else {
-                                    _finish();
-                                  }
-                                },
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(0, 52),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 16,
+                            if (_owner == null && !widget.isReplay) ...[
+                              const SizedBox(height: 16),
+                              AppText(
+                                'Your answers will be saved after you sign in.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.textSecondary(context),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Column(
+                                children: [
+                                  AppText(
+                                    _error!,
+                                    style: TextStyle(
+                                      color: AppTheme.danger,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  if (_step == 0 &&
+                                      widget.isReplay &&
+                                      _owner != null)
+                                    TextButton(
+                                      onPressed: _loadAnswers,
+                                      child: const AppText('Retry'),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: _finishing && !_completed
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            key: const Key('onboarding-next'),
+                            onPressed:
+                                _finishing || _loading || _moving || !_valid
+                                ? null
+                                : () {
+                                    if (_step < 3) {
+                                      _go(_step + 1);
+                                    } else {
+                                      _finish();
+                                    }
+                                  },
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 52),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 16,
+                              ),
+                            ),
+                            child: _finishing && !_completed
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : AppText(
+                                    _step == 3 && _owner != null
+                                        ? 'Save'
+                                        : 'Continue',
                                   ),
-                                )
-                              : AppText(
-                                  _step == 3 && _owner != null
-                                      ? 'Save'
-                                      : 'Continue',
-                                ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -453,14 +493,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
     key: ValueKey('onboarding-slide-$index'),
     padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
           header: true,
           child: AppText(
             title,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: FontWeight.w600,
               height: 1.12,
               letterSpacing: -.4,
@@ -471,6 +512,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         const SizedBox(height: 12),
         AppText(
           subtitle,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15,
             height: 1.4,
@@ -482,67 +524,117 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ],
     ),
   );
+  static IconData _choiceIcon(String key) => switch (key) {
+    'household' || 'household_items' => Icons.home_outlined,
+    'business' => Icons.storefront_outlined,
+    'laboratory' => Icons.science_outlined,
+    'education' => Icons.school_outlined,
+    'robotics' => Icons.smart_toy_outlined,
+    'manufacturing' => Icons.precision_manufacturing_outlined,
+    'warehouse' => Icons.warehouse_outlined,
+    'tools' => Icons.handyman_outlined,
+    'equipment' => Icons.settings_outlined,
+    'parts' => Icons.memory_outlined,
+    'supplies' => Icons.layers_outlined,
+    'products' => Icons.inventory_2_outlined,
+    'find_items' => Icons.search_rounded,
+    'identify_items' => Icons.photo_camera_outlined,
+    'track_stock' => Icons.bar_chart_rounded,
+    'organize_spaces' => Icons.grid_view_outlined,
+    'share_inventory' || 'others' => Icons.group_outlined,
+    'solo' => Icons.person_outline_rounded,
+    _ => Icons.edit_outlined,
+  };
+
   Widget _choices(
     Map<String, String> options,
     String? chosen,
     ValueChanged<String> onChoose, {
+    required String group,
     bool multiple = false,
-  }) => Column(
-    children: options.entries.map((entry) {
-      final selected = multiple
-          ? _types.contains(entry.key)
-          : chosen == entry.key;
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Semantics(
-          selected: selected,
-          checked: selected,
-          inMutuallyExclusiveGroup: !multiple,
-          child: ListTile(
-            key: Key(
-              'setup-${multiple
-                  ? 'inventory'
-                  : _step == 0
-                  ? 'use'
-                  : _step == 2
-                  ? 'goal'
-                  : 'collaboration'}-${entry.key}',
-            ),
-            titleAlignment: ListTileTitleAlignment.top,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 3,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            selected: selected,
-            selectedTileColor: AppTheme.accentTint(context),
-            onTap: _finishing ? null : () => onChoose(entry.key),
-            leading: Icon(
-              multiple
-                  ? (selected
-                        ? Icons.check_box_rounded
-                        : Icons.check_box_outline_blank_rounded)
-                  : (selected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked),
-              color: selected
-                  ? AppTheme.accentForeground(context)
-                  : AppTheme.textMuted(context),
-              size: 22,
-            ),
-            title: AppText(
-              entry.value,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textPrimary(context),
+  }) => BackdropGroup(
+    child: Column(
+      children: options.entries.map((entry) {
+        final selected = multiple
+            ? _types.contains(entry.key)
+            : chosen == entry.key;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: MergeSemantics(
+            child: Semantics(
+              key: Key('setup-$group-${entry.key}'),
+              label: entry.value,
+              button: true,
+              selected: selected,
+              enabled: !_finishing && !_moving,
+              onTap: _finishing || _moving ? null : () => onChoose(entry.key),
+              inMutuallyExclusiveGroup: !multiple,
+              child: ExcludeSemantics(
+                child: SetupGlassPanel(
+                  selected: selected,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: _finishing || _moving
+                          ? null
+                          : () => onChoose(entry.key),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 66),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 18,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                _choiceIcon(entry.key),
+                                size: 26,
+                                color: selected
+                                    ? AppTheme.accentForeground(context)
+                                    : AppTheme.textSecondary(context),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: AppText(
+                                  entry.value,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.35,
+                                    color: AppTheme.textPrimary(context),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ExcludeSemantics(
+                                child: AnimatedOpacity(
+                                  opacity: selected ? 1 : 0,
+                                  duration: Duration(
+                                    milliseconds: _reduceMotion ? 0 : 160,
+                                  ),
+                                  child: Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                    color: AppTheme.accentForeground(context),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      );
-    }).toList(),
+        );
+      }).toList(),
+    ),
   );
   Widget _otherField(
     TextEditingController controller,

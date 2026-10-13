@@ -74,6 +74,7 @@ Widget setup({
   Brightness brightness = Brightness.light,
   double scale = 1,
   bool replay = false,
+  bool reduceMotion = true,
   VoidCallback? done,
   Future<void> Function()? writer,
 }) => RepaintBoundary(
@@ -82,9 +83,10 @@ Widget setup({
     debugShowCheckedModeBanner: false,
     theme: qaTheme(brightness),
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(scale), disableAnimations: true),
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(scale),
+        disableAnimations: reduceMotion,
+      ),
       child: child!,
     ),
     home: OnboardingPage(
@@ -100,9 +102,9 @@ Future<void> choose(WidgetTester tester, String key) async {
     of: find.byKey(Key(key)),
     matching: find.byType(Icon),
   );
-  await tester.ensureVisible(finder);
+  await tester.ensureVisible(finder.first);
   await tester.pumpAndSettle();
-  await tester.tap(finder);
+  await tester.tap(finder.first);
   await tester.pumpAndSettle();
 }
 
@@ -195,6 +197,69 @@ void main() {
     expect(a?.inventoryTypes, containsAll(['tools', 'other']));
     expect(a?.inventoryOther, 'Fabric and props');
   });
+  testWidgets('assistive activation selects single and multiple choices', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(setup());
+      await tester.pumpAndSettle();
+      for (final key in ['setup-use-business', 'setup-inventory-tools']) {
+        final finder = find.byKey(Key(key));
+        await tester.ensureVisible(finder);
+        await tester.pumpAndSettle();
+        final node = tester.getSemantics(finder);
+        expect(
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap),
+          isTrue,
+        );
+        tester.binding.pipelineOwner.semanticsOwner!.performAction(
+          node.id,
+          ui.SemanticsAction.tap,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.widget<Semantics>(finder).properties.selected, isTrue);
+        await next(tester);
+      }
+    } finally {
+      semantics.dispose();
+    }
+  });
+  testWidgets(
+    'animated transitions resist repeated taps and preserve answers',
+    (tester) async {
+      await tester.pumpWidget(setup(reduceMotion: false));
+      await choose(tester, 'setup-use-business');
+      final page = tester
+          .widget<PageView>(find.byKey(const Key('onboarding-pages')))
+          .controller!;
+      await tester.tap(find.byKey(const Key('onboarding-next')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(page.page, greaterThan(0));
+      expect(page.page, lessThan(1));
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('onboarding-next')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.byKey(const Key('onboarding-next')));
+      await tester.pumpAndSettle();
+      expect(page.page, 1);
+      await tester.tap(find.byTooltip('Previous step'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<Semantics>(find.byKey(const Key('setup-use-business')))
+            .properties
+            .selected,
+        isTrue,
+      );
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'Skip does not fabricate answers or clear pending signup choices',
     (tester) async {
@@ -236,7 +301,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<ListTile>(find.byKey(const Key('setup-use-business')))
+          .widget<Semantics>(find.byKey(const Key('setup-use-business')))
+          .properties
           .selected,
       isTrue,
     );
@@ -352,6 +418,12 @@ void main() {
         ];
         for (var i = 0; i < 4; i++) {
           await choose(tester, keys[i]);
+          final scrollable = find.descendant(
+            of: find.byKey(ValueKey('onboarding-slide-$i')),
+            matching: find.byType(Scrollable),
+          );
+          tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+          await tester.pumpAndSettle();
           await tester.runAsync(() async {
             final image = await tester
                 .renderObject<RenderRepaintBoundary>(

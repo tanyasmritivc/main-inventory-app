@@ -1,5 +1,15 @@
 # Decisions
 
+## October 12 reference-led onboarding and auth presentation
+
+The user rejects the radio-circle list and decorative icon badge, then supplies
+an outlined-choice reference. Use centered questions, full-width icon choices,
+top progress and the established FindEZ sans-serif type. Glass is restrained and
+contrast-safe; finite page/selection transitions respect reduced motion. Keep
+the same four answers, owner isolation and confirmed-save behavior. Auth gets
+one heading, inventory-specific copy and optional work details behind expansion;
+preserve identity fields, signup consent/eligibility, recovery and all providers.
+
 ## October 12 onboarding answers and actual guided tour
 
 The screenshot identifies the six-step app spotlight tutorial separately from

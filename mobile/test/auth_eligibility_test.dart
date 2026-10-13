@@ -12,8 +12,8 @@ void main() {
           home: const AuthPage(),
         ),
       );
-      await tester.ensureVisible(find.text('Need an account? Sign up'));
-      await tester.tap(find.text('Need an account? Sign up'));
+      await tester.ensureVisible(find.text('New here? Create account'));
+      await tester.tap(find.text('New here? Create account'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
@@ -26,7 +26,7 @@ void main() {
         'Continue with Google',
       ]) {
         final button = label == 'Create account'
-            ? find.widgetWithText(ElevatedButton, label)
+            ? find.widgetWithText(FilledButton, label)
             : find.text(label);
         await tester.ensureVisible(button);
         await tester.tap(button);
@@ -43,7 +43,7 @@ void main() {
       await tester.ensureVisible(find.byType(CheckboxListTile));
       await tester.tap(find.byType(CheckboxListTile));
       await tester.pump();
-      final submit = find.widgetWithText(ElevatedButton, 'Create account');
+      final submit = find.widgetWithText(FilledButton, 'Create account');
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pumpAndSettle();
