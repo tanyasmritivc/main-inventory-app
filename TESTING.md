@@ -105,6 +105,22 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Optional Shopify development connector
+
+`backend/tests/test_shopify.py` uses placeholder settings and mocked transport:
+OAuth HMAC/browser/state, hostile hosts, encrypted token binding/rotation, scopes,
+version/partial failures/throttling, Team ownership, durable webhook calls and
+leased worker pages/refresh. `shopify-panel.test.tsx` covers the optional panel,
+commerce versus physical labels, member-only preview, pagination, write failures,
+confirmation and account/Team late responses. Existing PostgreSQL CI now includes
+`shopify_catalog.sql` for real migration-042 RLS, credential denial, lease/cursor
+fencing, duplicate imports/deliveries, pending uninstall, retry exhaustion,
+tombstones/redaction and unchanged native inventory. Run the full backend/web
+suites, TypeScript/lint/build and disposable SQL. See `docs/shopify-development.md`
+for real app/store acceptance; mocks do not validate Shopify installation, grants,
+query costs, token refresh, delivery timing or backup deletion. Migration 042 is
+not authorized for production by source implementation.
+
 ### Setup questionnaire and in-app guided tour
 
 Run the full backend/web/mobile suites, analysis, TypeScript and changed-file

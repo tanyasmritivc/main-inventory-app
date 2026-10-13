@@ -7,6 +7,7 @@ httpx==0.28.1
 h2==4.2.0
 requests==2.32.3
 python-jose[cryptography]==3.3.0
+cryptography==49.0.0
 supabase==2.11.0
 pypdf==5.2.0
 Pillow>=10.0.0

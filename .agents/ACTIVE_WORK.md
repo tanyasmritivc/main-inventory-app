@@ -1,5 +1,17 @@
 # Active work
 
+## October 12 Shopify development implementation
+
+Lane `feat/shopify-catalog-connection`, separate worktree
+`dev/findez-shopify-connector`, based on `08f06ca`. User authorizes milestone 1A
+implementation and chooses preparation for development testing with no Shopify
+app/store yet. Backend migration/adapter/worker/routes and optional Team web panel
+are implemented in source, disabled by default, with automated isolation/recovery
+checks. Production and merchant installation remain held by the user's explicit
+requirement. Real app/store acceptance and operator setup remain separate from
+passing mocks/SQL. See `docs/shopify-development.md`; no Team Ask/physical-location
+confirmation, public-distribution shell, pricing or external write work is included.
+
 ## October 12 optional Shopify discovery complete
 
 Documentation-only lane `docs/shopify-discovery`, based on `fdec959`, worktree

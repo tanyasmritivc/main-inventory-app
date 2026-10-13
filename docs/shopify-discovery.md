@@ -4,6 +4,10 @@ Assessment: October 12, 2026 (PDT). Audited source: `fdec959`, including deliver
 mobile build 62. Status: discovery and recommendation only. No integration,
 migration, merchant connection, pricing change or deployment was implemented.
 
+Implementation follow-up: milestone 1A source and development setup are now in
+[`shopify-development.md`](shopify-development.md). This report records the
+pre-implementation audit; no live-store or production capability is implied.
+
 FindEZ remains **THE AI MEMORY FOR THE PHYSICAL WORLD**: **Know what you have.
 Find what you need. Instantly.** Shopify is an additional feature for businesses
 that already use it. Adoption should reuse their existing data and reduce repeated

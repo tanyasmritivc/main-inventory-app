@@ -186,3 +186,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir team_categories.sql
 
 \ir onboarding_answers.sql
+\ir shopify_catalog.sql
