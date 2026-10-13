@@ -213,9 +213,12 @@ void main() {
           node.getSemanticsData().hasAction(ui.SemanticsAction.tap),
           isTrue,
         );
-        tester.binding.pipelineOwner.semanticsOwner!.performAction(
-          node.id,
-          ui.SemanticsAction.tap,
+        tester.binding.performSemanticsAction(
+          ui.SemanticsActionEvent(
+            viewId: tester.view.viewId,
+            nodeId: node.id,
+            type: ui.SemanticsAction.tap,
+          ),
         );
         await tester.pumpAndSettle();
         expect(tester.widget<Semantics>(finder).properties.selected, isTrue);
