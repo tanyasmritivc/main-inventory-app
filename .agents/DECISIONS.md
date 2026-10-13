@@ -1,5 +1,19 @@
 # Decisions
 
+## October 12 Shopify is an optional connector, not a product replacement
+
+The user confirms Shopify is an additional FindEZ feature, with reusable catalog
+adoption/import rules for other business platforms later. Preserve FindEZ's
+physical-memory identity and general pricing direction. Shopify catalog variants,
+commerce stock states and human-confirmed physical locations/counts are different
+facts. Reuse the existing backend/Spaces/Team permissions/Review/Ask foundation;
+do not feed catalog synchronization into name-merging item imports or the global
+manufacturer catalog. The discovery recommendation is read-only catalog onboarding
+followed by barcode/manual confirmation and Team-authorized lookup. Photo mapping,
+discrepancy workflows and external writes are subsequent increments with explicit
+gates. No production migration/deployment is authorized. See
+`docs/shopify-discovery.md` for verified findings and remaining gaps.
+
 ## October 12 reference-led onboarding and auth presentation
 
 The user rejects the radio-circle list and decorative icon badge, then supplies

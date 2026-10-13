@@ -1,5 +1,24 @@
 # Current state
 
+## October 12 optional Shopify connector discovery
+
+Discovery only on `docs/shopify-discovery`, based on delivered build-62 context
+`fdec959`, in `dev/findez-shopify-discovery`. The user clarifies Shopify is an
+additional feature and business adoption should reuse existing platform data;
+FindEZ remains the general physical-memory product. `docs/shopify-discovery.md`
+records source/live-schema findings, current official Shopify requirements,
+conceptual mapping, phases, security/retention and acceptance criteria.
+No Shopify implementation was found. Live items/FIND/Ask/Review hashes match the
+audited source; document/Team/router modules differ and must be preserved. Live
+schema confirms bins/external IDs and a public item-images bucket. Key gaps:
+catalog versus physical-observation identity, name-merging/quantity-additive item
+imports, missing newer-Team Ask scope, durable confirmation provenance, secure
+store credentials and sync jobs. Existing bin IDs lack app item-write bindings.
+Recommend read-only catalog onboarding, then barcode/manual location confirmation
+and grounded lookup; photo matching follows separate media/transport gates.
+No customer rows were read. No merchant connection, schema/runtime/pricing change
+or deployment was performed. Production migrations/deployments require explicit authorization.
+
 ## October 12 setup questions, guided tour and concise Auth delivered
 
 - Runtime `346d9ae`, draft PR #59 stacked on #58, replaces promotional onboarding
