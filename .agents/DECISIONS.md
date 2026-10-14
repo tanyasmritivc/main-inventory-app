@@ -2,8 +2,9 @@
 
 ## October 13 pre-submission mobile presentation
 
-The user chooses a questionnaire without a brand header and with a small X,
-image-backed Home captures, a compact translucent guided tour, and simpler Ask
+The user chooses a questionnaire without a brand header and with a plain small X
+without a surrounding circle. Its invisible 44-point tap area stays accessible.
+The presentation uses image-backed Home captures, a compact translucent guided tour, and simpler Ask
 copy. Keep the questionnaire's saved-answer and launch behavior unchanged.
 Home presentation excludes missing, invalid and failed images without removing
 inventory or changing quantities. Empty capture strips are omitted.
