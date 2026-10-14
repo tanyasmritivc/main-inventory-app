@@ -1,5 +1,24 @@
 # Current state
 
+## October 14 neutral glass controls before beta delivery
+
+The user rejects the inverted black Appearance choices in Light mode and asks
+for glass on neutral buttons using that fill. `GlassControl` reuses the existing
+frosted surface for Appearance choices, inventory category filters, scan-location
+choices, neutral scan/QR/import actions and sharing/save buttons. Selected
+controls use a restrained tint and outline; labels stay theme-aware and readable.
+Framework button semantics, disabled/busy handling, callback behavior and existing
+choice save/retry behavior remain. High contrast renders solid surfaces; orange
+primary actions and destructive colors remain. This is a Flutter glass treatment.
+Analysis and all 353 mobile tests with coverage pass locally, including the
+existing Appearance failure/pending-save and retained-route regressions.
+
+The pre-glass 1.0.8+63 IPA passed signing/configuration, all 31 device-platform
+checks and Apple validation, but was not uploaded. It is preserved separately in
+`Documents/FindEZ/AppStore/1.0.8-build63-before-glass`. Deliver only the rebuilt
+candidate after source, native and Apple checks. No production API/database,
+public review submission or Shopify release change is included.
+
 ## October 14 build-63 beta preparation authorized
 
 The user requests the updated simulator and next internal TestFlight build.

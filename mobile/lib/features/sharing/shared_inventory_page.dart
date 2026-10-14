@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -827,42 +828,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   final isActive = _selectedCategory == label;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedCategory = label),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? AppTheme.adaptive(context, Colors.white)
-                            : AppTheme.adaptive(
-                                context,
-                                const Color(0xFF171717),
-                              ),
-                        borderRadius: BorderRadius.circular(99),
-                        border: isActive
-                            ? null
-                            : Border.all(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                      ),
-                      child: AppText(
-                        label,
-                        style: TextStyle(
-                          color: isActive
-                              ? AppTheme.foreground(context, Colors.black)
-                              : AppTheme.foreground(
-                                  context,
-                                  const Color(0x73FFFFFF),
-                                ),
-                          fontSize: 13,
-                          fontWeight: isActive
-                              ? FontWeight.w500
-                              : FontWeight.w400,
+                    child: GlassControl(
+                      radius: 99,
+                      selected: isActive,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: AppText(
+                          label,
+                          style: TextStyle(
+                            color: isActive
+                                ? AppTheme.accentForeground(context)
+                                : AppTheme.foreground(
+                                    context,
+                                    const Color(0x73FFFFFF),
+                                  ),
+                            fontSize: 13,
+                            fontWeight: isActive
+                                ? FontWeight.w500
+                                : FontWeight.w400,
+                          ),
                         ),
                       ),
                     ),
@@ -2542,11 +2533,13 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.adaptive(context, Colors.white),
-                foregroundColor: AppTheme.adaptive(context, Colors.black),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+              style: GlassControl.buttonStyle(
+                context,
+                radius: 14,
+                base: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
               child: const AppText(
@@ -3145,11 +3138,13 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                           if (mounted) setState(() => _saving = false);
                         }
                       },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.adaptive(context, Colors.white),
-                  foregroundColor: AppTheme.adaptive(context, Colors.black),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                style: GlassControl.buttonStyle(
+                  context,
+                  radius: 14,
+                  base: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
                 child: _saving
@@ -3158,7 +3153,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppTheme.adaptive(context, Colors.black),
+                          color: AppTheme.textPrimary(context),
                         ),
                       )
                     : const AppText(

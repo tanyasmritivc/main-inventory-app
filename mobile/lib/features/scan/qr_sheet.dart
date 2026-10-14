@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -114,19 +115,22 @@ class QrOfferSheet extends StatelessWidget {
                       builder: (_) => QrDisplaySheet(item: item),
                     );
                   },
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(context, Colors.white),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Center(
-                      child: AppText(
-                        'Generate QR',
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.black),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                  child: GlassControl(
+                    radius: 14,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Center(
+                        child: AppText(
+                          'Generate QR',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary(context),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -706,20 +710,23 @@ class BulkQrDisplaySheet extends StatelessWidget {
             const SizedBox(height: 20),
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: double.infinity,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, Colors.white),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: Center(
-                  child: AppText(
-                    'Done',
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.black),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+              child: GlassControl(
+                radius: 99,
+                child: Container(
+                  width: double.infinity,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Center(
+                    child: AppText(
+                      'Done',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary(context),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

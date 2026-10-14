@@ -585,6 +585,14 @@ these interactions.
 
 ## Profile navigation regressions
 
+Neutral glass controls reuse the existing frosted surface and preserve the
+framework button's input/semantics behavior. Run `glass_control_test.dart` and
+the existing Appearance save/failure/pending-choice regressions, then full mobile
+coverage and analysis. Check Appearance selected theme/text size, import results,
+scan confirmation, QR action buttons, sharing and save actions in both themes.
+High contrast must disable blur and keep labels/selection readable. Use the
+rebuilt native candidate for visual acceptance; a pre-glass IPA is superseded.
+
 `mobile/test/profile_navigation_test.dart` covers the Home account control,
 four core destinations, every utility callback, actual shell routing
 to account details/settings and back to Home, safe read/retry/save failures,

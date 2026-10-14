@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
@@ -1148,52 +1149,39 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                                       return GestureDetector(
                                         onTap: () =>
                                             _onCategoryPillTapped(label),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isActive
-                                                ? AppTheme.adaptive(
-                                                    context,
-                                                    Colors.white,
-                                                  )
-                                                : AppTheme.adaptive(
-                                                    context,
-                                                    const Color(0xFF171717),
-                                                  ),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
+                                        child: GlassControl(
+                                          radius: 20,
+                                          selected: isActive,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 6,
                                             ),
-                                            border: isActive
-                                                ? null
-                                                : Border.all(
-                                                    color: AppTheme.adaptive(
-                                                      context,
-                                                      const Color(0x14FFFFFF),
-                                                    ),
-                                                    width: 0.5,
-                                                  ),
-                                          ),
-                                          child: Center(
-                                            child: AppText(
-                                              label,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: isActive
-                                                    ? AppTheme.foreground(
-                                                        context,
-                                                        Colors.black,
-                                                      )
-                                                    : AppTheme.foreground(
-                                                        context,
-                                                        const Color(0x73FFFFFF),
-                                                      ),
-                                                fontSize: 13,
-                                                fontWeight: isActive
-                                                    ? FontWeight.w500
-                                                    : FontWeight.w400,
+                                            decoration: BoxDecoration(
+                                              color: Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Center(
+                                              child: AppText(
+                                                label,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: isActive
+                                                      ? AppTheme.accentForeground(
+                                                          context,
+                                                        )
+                                                      : AppTheme.foreground(
+                                                          context,
+                                                          const Color(
+                                                            0x73FFFFFF,
+                                                          ),
+                                                        ),
+                                                  fontSize: 13,
+                                                  fontWeight: isActive
+                                                      ? FontWeight.w500
+                                                      : FontWeight.w400,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1252,27 +1240,24 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                               const SizedBox(height: 24),
                               GestureDetector(
                                 onTap: () => _addItem(),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.adaptive(
-                                      context,
-                                      Colors.white,
+                                child: GlassControl(
+                                  radius: 99,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
                                     ),
-                                    borderRadius: BorderRadius.circular(99),
-                                  ),
-                                  child: AppText(
-                                    'Add Item',
-                                    style: TextStyle(
-                                      color: AppTheme.foreground(
-                                        context,
-                                        Colors.black,
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: AppText(
+                                      'Add Item',
+                                      style: TextStyle(
+                                        color: AppTheme.textPrimary(context),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
                                       ),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
@@ -4410,11 +4395,13 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     onPressed: _items.isEmpty
                         ? null
                         : () => Navigator.of(context).pop(_items),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.adaptive(context, Colors.white),
-                      foregroundColor: AppTheme.adaptive(context, Colors.black),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    style: GlassControl.buttonStyle(
+                      context,
+                      radius: 14,
+                      base: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                     child: AppText('Save All (${_items.length})'),
@@ -4620,11 +4607,13 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.adaptive(context, Colors.white),
-                foregroundColor: AppTheme.adaptive(context, Colors.black),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+              style: GlassControl.buttonStyle(
+                context,
+                radius: 14,
+                base: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
               child: const AppText(

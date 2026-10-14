@@ -1,5 +1,16 @@
 # Decisions
 
+## October 14 glass replaces inverted neutral controls
+
+The user identifies black selected Appearance choices in Light mode and requests
+a glass treatment for all neutral buttons using the same inverted fill. Reuse
+the local frosted surface, with theme-aware labels and a tinted selection outline.
+Keep selection semantics, hit targets, pending-save lockouts and real callbacks.
+High contrast uses solid surfaces. Orange primary actions and destructive color
+meanings stay distinct. This is Flutter presentation, not native Liquid Glass API
+adoption or a backend/schema change. The validated pre-glass build-63 candidate
+is superseded before upload; deliver only the rebuilt and verified candidate.
+
 ## October 14 Account belongs on Home and weights ignore OS Bold Text
 
 The user removes Profile from the bottom navigation because FindEZ is an

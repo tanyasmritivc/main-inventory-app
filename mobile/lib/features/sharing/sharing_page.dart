@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -931,17 +932,19 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               height: 52,
               child: ElevatedButton(
                 onPressed: _saving ? null : _create,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.adaptive(context, Colors.white),
-                  foregroundColor: AppTheme.adaptive(context, Colors.black),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(99),
+                style: GlassControl.buttonStyle(
+                  context,
+                  radius: 99,
+                  base: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
                 ),
                 child: _saving
                     ? CircularProgressIndicator(
-                        color: AppTheme.adaptive(context, Colors.black),
+                        color: AppTheme.textPrimary(context),
                         strokeWidth: 2,
                       )
                     : const AppText(
@@ -1098,13 +1101,15 @@ class _ShareCodeSheet extends StatelessWidget {
                   SnackBar(content: AppText('Code copied: $code')),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.adaptive(context, Colors.white),
-                foregroundColor: AppTheme.adaptive(context, Colors.black),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(99),
+              style: GlassControl.buttonStyle(
+                context,
+                radius: 99,
+                base: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  elevation: 0,
                 ),
-                elevation: 0,
               ),
               child: const AppText(
                 'Copy Code',
@@ -1315,17 +1320,19 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               height: 52,
               child: ElevatedButton(
                 onPressed: _joining ? null : _join,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.adaptive(context, Colors.white),
-                  foregroundColor: AppTheme.adaptive(context, Colors.black),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(99),
+                style: GlassControl.buttonStyle(
+                  context,
+                  radius: 99,
+                  base: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
                 ),
                 child: _joining
                     ? CircularProgressIndicator(
-                        color: AppTheme.adaptive(context, Colors.black),
+                        color: AppTheme.textPrimary(context),
                         strokeWidth: 2,
                       )
                     : const AppText(

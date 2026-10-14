@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 
@@ -420,10 +421,10 @@ class _SuccessView extends StatelessWidget {
               height: 50,
               child: FilledButton(
                 onPressed: onViewItems,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.adaptive(context, Colors.white),
-                  foregroundColor: AppTheme.adaptive(context, Colors.black),
-                  shape: const StadiumBorder(),
+                style: GlassControl.buttonStyle(
+                  context,
+                  radius: 99,
+                  base: FilledButton.styleFrom(shape: const StadiumBorder()),
                 ),
                 child: const AppText('View Items'),
               ),

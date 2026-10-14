@@ -2,6 +2,15 @@
 
 ## October 14 build-63 internal TestFlight preparation
 
+Apple validation of the first build-63 candidate passes, but it is not uploaded.
+The user now requests glass instead of black Light-mode selection/action fills,
+with Appearance settings as the reference. Revise the same candidate before
+delivery: use the existing frosted surface for neutral controls, with a clear
+selected outline/tint, readable labels and solid high-contrast rendering. Preserve
+orange primary actions, destructive meanings, callbacks, busy/disabled states
+and inventory/API behavior. Rebuild and repeat exact-source release gates after
+this presentation change. Preserve the earlier signed candidate separately.
+
 The user authorizes continuation into the updated simulator and internal beta.
 Build 1.0.8+63 includes the completed Home/Account, typography, chat/import,
 onboarding/tour, four-tab motion, supplied logo and Light-default changes in
