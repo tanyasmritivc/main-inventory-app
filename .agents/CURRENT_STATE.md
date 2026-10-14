@@ -10,8 +10,12 @@ rows. Explicit Save persists uncertainty with its original photo/evidence and
 retry-safe identity. Chat photo analysis no longer writes Review at all.
 All 438 backend/API documentation tests and six subtests, 212 web tests,
 TypeScript, changed-file lint (existing warnings only), 357 mobile tests and
-Flutter analysis pass. Shared CI and the placeholder-config web build are
-pending. Production and TestFlight 63 remain unchanged. No migration or deletion
+Flutter analysis and the placeholder-config production web build pass. Runtime
+`19089e9` in Draft PR #68 passes all five CI gates (`38551614029`). All eight
+existing affected backend file hashes match the production baseline; both new
+helpers are absent. The exact combined ten-file backend bundle, patches and
+manifest are in `Documents/FindEZ/Releases/capture-save-boundary-2026-10-14`.
+Production and TestFlight 63 remain unchanged. No migration or deletion
 of historical Review entries is part of this change. Deploy backend support
 before dependent web/mobile releases; older Capture clients retain their old
 pending-review response. Native/physical upload-cancel-save acceptance and the

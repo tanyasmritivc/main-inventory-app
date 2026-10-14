@@ -16,7 +16,12 @@ retains old-client compatibility. Chat photo questions no longer create reviews.
 
 Local validation passes 438 backend/API documentation tests and six subtests,
 212 web tests, TypeScript, changed-file lint with existing warnings only, 357
-mobile tests and clean Flutter analysis. CI and web build are pending. Web uses
+mobile tests, clean Flutter analysis and a production web build with fictional
+configuration. Runtime `19089e9` in Draft PR #68 passes all five CI gates
+(`38551614029`). All eight existing affected backend file hashes match the
+production baseline, and both new helpers are absent. The combined ten-file
+backend bundle, patches and manifest are in
+`Documents/FindEZ/Releases/capture-save-boundary-2026-10-14`. Web uses
 the installed dependencies from an identical lockfile, with a gitignored local
 node_modules symlink. Local build configuration is fictional and must not ship.
 No deployment, migration, native upload or historical Review deletion has been

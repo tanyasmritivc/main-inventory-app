@@ -8,8 +8,8 @@ queue row. Only the explicit Save action persists them as pending reviews.
 Preserve the original signed photo and FIND evidence; allow bounded identity
 edits, scope reads/writes to the current owner, reject altered/expired previews,
 and reuse one source key for retry-safe saves. A fresh upload gets a new preview
-identity. Use a domain-separated key derived from existing server-only signing
-material, never a client credential or new model-generated evidence.
+identity. Use a domain-separated key derived from the existing server-only
+service credential, never a client credential or new model-generated evidence.
 
 Photo chat retains its conversation/photo context and performs inventory reads,
 but creates no Review items and does not claim results were saved there.
