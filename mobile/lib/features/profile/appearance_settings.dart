@@ -74,31 +74,37 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                 radius: 99,
                 selected: selected == entry.key,
                 enabled: onSelected != null,
-                child: ChoiceChip(
-                  label: AppText(entry.value),
-                  selected: selected == entry.key,
-                  onSelected: onSelected == null
-                      ? null
-                      : (chosen) {
-                          if (chosen) onSelected(entry.key);
-                        },
-                  showCheckmark: false,
-                  selectedColor: Colors.transparent,
-                  backgroundColor: Colors.transparent,
-                  disabledColor: Colors.transparent,
-                  labelStyle: TextStyle(
-                    color: selected == entry.key
-                        ? AppTheme.accentForeground(context)
-                        : AppTheme.textPrimary(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                // RawChip owns a canvas Material; keep it clear over the glass.
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(canvasColor: Colors.transparent),
+                  child: ChoiceChip(
+                    label: AppText(entry.value),
+                    selected: selected == entry.key,
+                    onSelected: onSelected == null
+                        ? null
+                        : (chosen) {
+                            if (chosen) onSelected(entry.key);
+                          },
+                    showCheckmark: false,
+                    selectedColor: Colors.transparent,
+                    backgroundColor: Colors.transparent,
+                    disabledColor: Colors.transparent,
+                    labelStyle: TextStyle(
+                      color: selected == entry.key
+                          ? AppTheme.accentForeground(context)
+                          : AppTheme.textPrimary(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
                   ),
-                  side: BorderSide.none,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.padded,
                 ),
               ),
             )
