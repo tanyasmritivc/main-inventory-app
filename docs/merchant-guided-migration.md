@@ -96,8 +96,11 @@ runtime is changed by this lane.
 
 ## Next task and limits
 
-The next useful step is configuring the isolated Shopify development app/store
-and completing the real end-to-end acceptance above, before adding more features.
+The user's latest October 14 instruction pauses this work and excludes Shopify
+from the current launch. Preserve the guide and development resources, with its
+feature flag off; do not continue until the user requests it.
+When resumed, the next useful step is configuring the isolated Shopify development
+app/store and completing the real end-to-end acceptance above, before adding more features.
 One server-configured pilot store is still the connector's scope; public app
 distribution, bulk enterprise adoption and costs require separate decisions.
 The aggregate report scans current catalog/mapping data; measure query cost and

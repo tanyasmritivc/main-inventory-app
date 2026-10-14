@@ -146,9 +146,12 @@ requires separate production authorization. Discovery is in `docs/shopify-discov
 Guided setup derives current import/mapping progress and a bounded variant queue
 in migration 045, with stable-ID shortcuts to reviewed confirmation and lookup.
 A Shopify development organization/app and sample-data test store now exist.
-The user intends this connector for launch; test resources validate the same code.
-The present one-store pilot still needs a customer installation/public-distribution
-path, actual OAuth/sync/grant acceptance and authorized production deployment.
+The user's latest October 14 instruction excludes these optional Shopify slices
+from the current launch and pauses work until requested again. Preserve source
+and test resources; keep all four feature flags off and migrations 042 through 045
+out of production. The present one-store pilot still needs a customer
+installation/public-distribution path, actual OAuth/sync/grant acceptance and
+authorized production deployment for a later release.
 
 `integrations/findez-mcp` is a local stdio process for Claude Desktop. Its eight
 tools wrap the public `/api/v1` integration API and use a user-issued scoped key.

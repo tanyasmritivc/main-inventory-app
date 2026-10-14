@@ -1,15 +1,17 @@
 # Decisions
 
-## October 14 Shopify is intended for launch
+## October 14 Shopify postponed and preserved
 
-The user clarifies that current Shopify work is for FindEZ's launch. Development
-app/store resources validate the launch feature and do not replace a production
-integration. Prepare a merchant-ready installation path and public distribution
-requirements for unrelated stores; the current server-configured single-store
-pilot is not sufficient. A registered Shopify app is required for automatic
-authorized reads/edits; spreadsheet import is the manual alternative without live
-sync. No irreversible distribution choice, production migration/deployment or
-public Apple submission is implicitly authorized by this clarification.
+The user's latest instruction supersedes the earlier launch requirement: hold
+Shopify, keep the work, and exclude it from the current launch. Preserve the
+connector, physical-memory, owner-edit and merchant-guide source lanes, draft PRs
+and development organization/app/store. Pause implementation, real-store setup
+and public-distribution work until the user asks to resume. Do not merge these
+runtime slices or migrations 042 through 045 into the launch release; keep
+SHOPIFY_ENABLED, SHOPIFY_WRITES_ENABLED, PHYSICAL_MEMORY_ENABLED and
+MERCHANT_MIGRATION_ENABLED off. Existing general inventory and launch mobile
+polish continue independently. Later merchant installation, real API acceptance,
+public-distribution approval and production authorization remain required gates.
 
 ## October 13 guided setup derives progress from verified records
 

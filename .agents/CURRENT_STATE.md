@@ -1,9 +1,18 @@
 # Current state
 
-## October 14 Shopify launch setup
+## October 14 Shopify deferred until after launch
 
-The user confirms the Shopify feature is intended for FindEZ's launch. They create
-the Partner organization and authorize app/store setup. Native Safari verifies
+The user's latest instruction pauses Shopify and explicitly excludes it from the
+current launch, superseding the earlier launch requirement. Preserve the source
+slices, draft PRs #60, #61, #63 through #66 and development resources. Do not merge
+their runtime or migrations into the launch release, enable their flags, continue
+Shopify setup/review or delete the work. Resume only on a new user request.
+The separate `feat/mobile-submission-polish` release lane contains no Shopify
+client feature or backend configuration; the existing inventory product stays
+in launch scope.
+
+Before postponing Shopify, the user creates the Partner organization and
+authorizes app/store setup. Native Safari verifies
 the created development app's active initial version: standalone, read_inventory
 and read_products, legacy install flow, webhook API 2026-10 and Shopify's placeholder
 app home. A Basic dev store is created with generated sample data and its dev badge
@@ -12,9 +21,10 @@ No client secret is read, no app installation is performed, no API grant/sync is
 claimed, and no distribution method is selected. The source TOML now explicitly
 matches the adapter's legacy scope-bearing OAuth flow.
 
-Source milestones 1A/1B, owner edits and guided migration are launch work validated
-through test resources. The one-store pilot is not merchant-ready public
-installation. Next: prepare customer store onboarding/public distribution, isolated
+Source milestones 1A/1B, owner edits and guided migration are preserved for a later
+release. All four feature flags default false; migrations 042 through 045 remain
+source-only. The one-store pilot is not merchant-ready public installation.
+When the user resumes: prepare customer store onboarding/public distribution, isolated
 HTTPS FindEZ/Supabase test runtime, exact callbacks/webhooks and real read/edit
 scope lifecycle acceptance. Public distribution/approval is required for unrelated
 merchant stores; its irreversible selection and any production migrations/deployment

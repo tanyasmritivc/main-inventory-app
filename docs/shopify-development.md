@@ -13,9 +13,12 @@ not applied to production, and nothing in this lane is deployed. This is a
 development pilot, not a public App Store installation implementation.
 The prior discovery report remains the product/architecture reference.
 
-The user clarifies that the Shopify feature is intended for FindEZ's launch.
-Development app/store testing validates the launch feature; it is not separate
-throwaway product work. The current one-store pilot still needs merchant-ready
+The user's latest October 14 instruction postpones Shopify until after launch and
+pauses further work. Preserve source, draft PRs and the development app/store;
+do not delete or include them in the current release. Keep SHOPIFY_ENABLED,
+SHOPIFY_WRITES_ENABLED, PHYSICAL_MEMORY_ENABLED and MERCHANT_MIGRATION_ENABLED off
+and migrations 042 through 045 out of production. Resume only when requested.
+For that later release, the current one-store pilot still needs merchant-ready
 onboarding, production configuration, real API acceptance and public distribution
 approval before it can serve unrelated customer stores. Shopify requires public
 distribution for many merchants and makes the chosen distribution method
@@ -63,10 +66,12 @@ and Team-aware lookup slice now exists in the separate milestone 1B source lane;
 see `docs/physical-memory.md`. It is also disabled, not deployed and not verified
 with a live store. Milestone 1A itself does not create physical records.
 
-## Prepare an isolated development installation
+## Deferred: prepare an isolated development installation
+
+Perform these steps only after the user resumes Shopify work.
 
 1. The development organization/app/store now exist. Keep them as test resources
-   while preparing the launch app and merchant installation workflow.
+   for the future merchant installation workflow.
    Distribution selection is irreversible; this work has not selected it.
    Use [Shopify's distribution guidance](https://shopify.dev/docs/apps/launch/distribution).
 2. Use a separate FindEZ backend, frontend and Supabase database with test users

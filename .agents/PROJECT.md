@@ -61,11 +61,14 @@ automatic visual matching or operational planning is implemented by these slices
 The first pilot should demonstrate reliable product finding and measure setup
 effort, finding/picking time, repeat employee use and willingness to pay.
 
-The user confirms on October 14 that current Shopify work is intended for launch.
-The development organization/app/store now exist to test the same launch feature.
-Prepare merchant-ready installation and required public-distribution approval;
-the current single-store pilot alone does not support unrelated customer stores.
-Photo matching and broader planning remain unbuilt subsequent capabilities.
+The user's latest October 14 instruction postpones Shopify until after launch,
+superseding the earlier launch requirement. Preserve its source, draft PRs and
+development organization/app/store, but pause further implementation, testing
+setup and distribution work. Exclude the connector, linked physical-memory UI,
+owner edits and merchant guide from this launch. Keep their feature flags off and
+migrations 042 through 045 unapplied to production. Resume only when the user
+requests it; merchant installation, real-store acceptance and public-distribution
+approval remain future gates. Photo matching and broader planning remain unbuilt.
 
 ## Users and markets
 

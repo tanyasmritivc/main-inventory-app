@@ -1,12 +1,21 @@
 # Active work
 
-## October 14 Shopify development setup and launch clarification
+## October 14 Shopify paused for a later release
+
+The user explicitly excludes Shopify from this launch and pauses it without
+deleting anything. Lane `fix/shopify-development-setup` records that decision and
+preserves the completed source/setup handoff in draft PR #66. All Shopify source
+lanes below are paused historical work, not active implementation tasks. Keep
+their runtime, migrations 042 through 045 and disabled UI out of the launch lane.
+No further setup, distribution/review or production work until the user resumes.
+
+### Preserved development setup
 
 Lane `fix/shopify-development-setup` in `dev/findez-commerce-memory`, based on
 guided-migration `87d6dc9` (PR #65). The user creates the Partner organization;
 the agent creates a read-only standalone development app and sample-data Basic dev
 store. Saved version settings are read back in Safari, with no secret access or
-store installation. Record actual setup and the user's launch requirement; align
+store installation. Record actual setup and the superseded launch requirement; align
 the configuration template with the existing legacy OAuth adapter. Do not select
 irreversible distribution or imply a one-store pilot is ready for customer launch.
 No production schema/runtime or public Apple submission changes.

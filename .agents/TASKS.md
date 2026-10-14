@@ -42,22 +42,19 @@ Reprioritize it when production state changes.
 - Reconcile stale top-level documentation that still describes retired hosting or a
   mobile-only web product surface.
 
-- Shopify is intended for FindEZ's launch, not deferred development-only work.
-  A development organization/app and sample-data Basic dev store now exist.
-  Connector, physical memory, owner edits and guided setup are source-complete
-  through PR #65; all flags remain off in production. Next: customer-store
-  onboarding and public-distribution preparation, isolated HTTPS test runtime and
-  real OAuth/query/refresh/webhook/retention acceptance. Test actual product/stock
-  grants, optional revocation, explicit reviewed edits and unknown-outcome recovery.
+## P2 later
+
+- Shopify is paused by the user's latest October 14 instruction and excluded
+  from this launch. Preserve source through draft PR #66 plus the development
+  organization/app and sample-data test store. Do not continue implementation,
+  installation/testing setup or distribution work until the user resumes.
+  Keep its four feature flags off and migrations 042 through 045 out of production
+  and the launch release. When resumed: merchant-ready installation/public
+  distribution, isolated HTTPS runtime, actual read/edit grants and revocation,
+  OAuth/query/refresh/webhook/retention acceptance and reviewed-action recovery.
   Follow `docs/shopify-development.md`, `docs/physical-memory.md`,
   `docs/shopify-owner-permissions.md` and `docs/merchant-guided-migration.md`.
-  The present one-store gate is insufficient for unrelated merchant launch.
-  Distribution selection is irreversible and production deployment/migrations
-  require explicit authorization. Preserve general inventory and pricing. Measure
-  merchant setup, finding/picking time and repeat use; photo matching and broader
-  planning remain subsequent unbuilt work.
-
-## P2 later
+  Preserve general inventory/pricing; photo matching and planning remain unbuilt.
 
 - Add real offline inventory persistence and conflict behavior for poor network
   conditions.
