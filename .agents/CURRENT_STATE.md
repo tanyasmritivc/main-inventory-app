@@ -1,5 +1,13 @@
 # Current state
 
+## October 14 launch excludes Shopify
+
+The user pauses Shopify and keeps it for a later release. Preserve its separate
+source lanes, draft PRs and development app/store. This mobile release lane
+contains no Shopify client feature or backend configuration. Do not bring its
+connector, linked physical-memory UI, owner edits, merchant guide or migrations
+042 through 045 into the current launch. Resume Shopify only on a new user request.
+
 ## October 13 mobile pre-submission polish in source
 
 Lane `feat/mobile-submission-polish` in `dev/findez-logo-light-default`, based on
@@ -29,7 +37,8 @@ dimensions. Durable assets, manifests and upload receipts are in
 `Documents/FindEZ/AppStore/screenshots-20261013`. Version 1.0.8 remains
 PREPARE_FOR_SUBMISSION, manual release, with no build selected. The optional
 wide creative header is separate from these screenshots. Separate Shopify source
-lanes remain disabled and unshipped; the production schema is unchanged.
+lanes remain disabled, unshipped and paused for a later release; the production
+schema is unchanged.
 
 ## October 12 setup questions, guided tour and concise Auth delivered
 

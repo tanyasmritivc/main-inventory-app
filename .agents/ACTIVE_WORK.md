@@ -9,8 +9,10 @@ simpler Ask presentation. Source lane `feat/mobile-submission-polish` in
 `dev/findez-logo-light-default` continues the authorized supplied logo and
 Light-default changes from build 62. Existing source branding edits are preserved.
 No App Review submission or production change is performed. Screenshot ZIPs are
-uploaded and checksum/order verified in the 1.0.8 draft. Separate Shopify lanes
-remain disabled and unshipped; complete their source handoff independently.
+uploaded and checksum/order verified in the 1.0.8 draft. The user's latest October
+14 instruction pauses Shopify and excludes it from this launch. Preserve its
+separate source, draft PRs and test resources; keep them disabled and unshipped.
+Do not continue Shopify work until the user asks to resume.
 
 ## October 12 clarified tutorial and onboarding questions
 
