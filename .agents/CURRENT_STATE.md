@@ -8,6 +8,25 @@ contains no Shopify client feature or backend configuration. Do not bring its
 connector, linked physical-memory UI, owner edits, merchant guide or migrations
 042 through 045 into the current launch. Resume Shopify only on a new user request.
 
+## October 14 focused chat and concise spreadsheet import in source
+
+Latest mobile-only continuation on `feat/mobile-submission-polish` adds a minimal
+spreadsheet ready view and conversation focus within the existing shell. A sent
+message hides the pill; pinned Back restores the previous tab without replacing
+ChatPage or losing its draft, conversation ID or streamed reply. Re-entering Ask
+resumes that conversation, and New chat restores tabs and the empty prompt.
+Import validation, processing, failures and actual result counts remain intact.
+The original focus regression fails before the fix. Light/Dark, retained request/
+draft, reset, previous-Find return, keyboard/large-text and pinned-scroll checks
+are in `mobile/test/chat_focus_test.dart`. Local analysis and all 350 mobile tests
+with coverage pass; the full local suite uses `--concurrency=1` after the parallel
+run stalled and was stopped. Full mobile CI must pass on the final source head.
+Actual-widget sample renders cover both themes, with narrow/large-text import
+layouts, preserved in Documents/FindEZ/AppStore/mobile-polish-20261014.
+No new native binary or physical
+acceptance is claimed; TestFlight upload and public submission remain held while
+the user reviews these changes. Shopify stays paused and excluded.
+
 ## October 13 mobile pre-submission polish in source
 
 Lane `feat/mobile-submission-polish` in `dev/findez-logo-light-default`, based on

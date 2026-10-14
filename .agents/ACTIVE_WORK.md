@@ -1,5 +1,17 @@
 # Active work
 
+## October 14 spreadsheet clarity and focused chat
+
+Continue `feat/mobile-submission-polish` in `dev/findez-logo-light-default` before
+the next TestFlight delivery. User requests fewer import-page words/icons and
+conversation focus after sending, in the existing screen. The import ready view
+now shows the destination, Choose file and format/size limit. Existing picker,
+validation, import, retry, partial-result reporting and navigation are retained.
+MainShell uses ChatPage's message state to hide its pill during conversations.
+Pinned Back returns to the previous tab without resetting the same ChatPage,
+messages, draft or in-flight stream. New chat restores the normal Ask navigation.
+No backend/API/schema, Shopify, production or Apple submission changes.
+
 ## October 13 mobile pre-submission polish
 
 User requests an unbranded questionnaire header with an accessible X, exclusion

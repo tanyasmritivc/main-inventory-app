@@ -1,5 +1,17 @@
 # Decisions
 
+## October 14 conversation focus stays in the existing shell
+
+After a message is submitted, hide the tab bar and keep the same ChatPage in its
+existing PageView. Pin a plain accessible Back control and New chat above the
+scrolling messages. Back returns to the tab the user came from while preserving
+the conversation, draft and streaming request; re-entering Ask resumes it.
+New chat explicitly clears the conversation and restores navigation. The empty
+Ask screen retains its normal tabs. Reduced motion skips navigation-size changes.
+Spreadsheet import needs only its destination, file action and accepted format/
+size limit, with real errors and result counts retained. Remove promotional
+explanations and decorative icons without changing import processing.
+
 ## October 13 pre-submission mobile presentation
 
 The user chooses a questionnaire without a brand header and with a plain small X

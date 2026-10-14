@@ -68,6 +68,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _pageTransitionGeneration = 0;
   int _chatGeneration = 0;
   String? _chatInitialMessage;
+  bool _chatHasMessages = false;
+  int _chatReturnPage = 0;
 
   Future<void> _prefetchInventoryCache() async {
     final generation = ++_inventoryCacheGeneration;
@@ -249,6 +251,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       });
     }
     _animateTo(1, haptic: true);
+  }
+
+  void _leaveChat() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _animateTo(_chatReturnPage, haptic: true);
+  }
+
+  void _onChatStateChanged(bool hasMessages) {
+    if (!mounted || _chatHasMessages == hasMessages) return;
+    setState(() => _chatHasMessages = hasMessages);
   }
 
   Future<void> _openProfile() async {
@@ -487,6 +499,34 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final chatFocused = _currentPage == 1 && _chatHasMessages;
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final navigation = keyboardVisible || chatFocused
+        ? const SizedBox.shrink()
+        : ListenableBuilder(
+            listenable: _profileStore,
+            builder: (context, _) => HomeNavigation(
+              monochrome: _currentPage == 3 && _inventorySection == 1,
+              profileAvatar: _profileStore.photoUrl.isEmpty
+                  ? null
+                  : MemberAvatar(
+                      key: ValueKey(_profileStore.photoRevision),
+                      name: _profileStore.name,
+                      photoUrl: _profileStore.photoUrl,
+                      colorHex: _profileStore.color,
+                      size: 24,
+                    ),
+              selectedIndex: _navigationIndex,
+              onSelected: _onNavigationTap,
+              destinationKeys: {
+                0: TutorialController.inventoryIconKey,
+                1: TutorialController.scanTabKey,
+                2: TutorialController.assistTabKey,
+              },
+            ),
+          );
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: _buildAppBar(),
@@ -508,6 +548,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 now.difference(_lastTabSwitchRefreshAt!) <
                     const Duration(seconds: 5);
             setState(() {
+              if (index == 1 && _currentPage != 1) {
+                _chatReturnPage = _currentPage;
+              }
               _currentPage = index;
               if (index == 3 && !tooSoon) {
                 _inventoryRefreshToken++;
@@ -531,6 +574,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               initialMessage: _chatInitialMessage,
               inPageView: true,
               pageController: _pageController,
+              onChatStateChanged: _onChatStateChanged,
+              onBack: _leaveChat,
               onInventoryMutated: () {
                 setState(() => _inventoryRefreshToken++);
                 unawaited(_prefetchInventoryCache());
@@ -594,29 +639,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ],
         ),
       ),
-      bottomNavigationBar: keyboardVisible
-          ? null
-          : ListenableBuilder(
-              listenable: _profileStore,
-              builder: (context, _) => HomeNavigation(
-                monochrome: _currentPage == 3 && _inventorySection == 1,
-                profileAvatar: _profileStore.photoUrl.isEmpty
-                    ? null
-                    : MemberAvatar(
-                        key: ValueKey(_profileStore.photoRevision),
-                        name: _profileStore.name,
-                        photoUrl: _profileStore.photoUrl,
-                        colorHex: _profileStore.color,
-                        size: 24,
-                      ),
-                selectedIndex: _navigationIndex,
-                onSelected: _onNavigationTap,
-                destinationKeys: {
-                  0: TutorialController.inventoryIconKey,
-                  1: TutorialController.scanTabKey,
-                  2: TutorialController.assistTabKey,
-                },
-              ),
+      bottomNavigationBar: reduceMotion || keyboardVisible
+          ? navigation
+          : AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              child: navigation,
             ),
     );
   }

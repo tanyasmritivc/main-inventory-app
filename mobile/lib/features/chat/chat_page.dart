@@ -35,6 +35,7 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onChatStateChanged,
+    this.onBack,
     this.pageController,
     this.onOpenDestination,
     this.photoPicker,
@@ -50,6 +51,7 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(bool hasMessages)? onChatStateChanged;
+  final VoidCallback? onBack;
   final PageController? pageController;
   final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
   final Future<AskPhoto?> Function(bool camera)? photoPicker;
@@ -2102,6 +2104,11 @@ class _ChatPageState extends State<ChatPage>
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onChatStateChanged?.call(_session.messages.isNotEmpty);
+    });
+
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2229,6 +2236,7 @@ class _ChatPageState extends State<ChatPage>
         _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
       });
+      widget.onChatStateChanged?.call(msgs.isNotEmpty);
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
@@ -2554,16 +2562,30 @@ class _ChatPageState extends State<ChatPage>
       child: MediaQuery.textScalerOf(context).scale(18) > 36
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [title, if (_session.messages.isNotEmpty) reset],
+              children: [
+                Row(children: [if (widget.onBack != null) _buildBack(), title]),
+                if (_session.messages.isNotEmpty) reset,
+              ],
             )
           : Row(
               children: [
+                if (widget.onBack != null) _buildBack(),
                 Expanded(child: title),
                 if (_session.messages.isNotEmpty) reset,
               ],
             ),
     );
   }
+
+  Widget _buildBack() => IconButton(
+    tooltip: 'Back',
+    onPressed: widget.onBack,
+    icon: Icon(
+      Icons.arrow_back_ios_new_rounded,
+      size: 20,
+      color: AppTheme.textPrimary(context),
+    ),
+  );
 
   Widget _buildEmptyState() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 16),
@@ -2717,23 +2739,25 @@ class _ChatPageState extends State<ChatPage>
           ),
           child: Column(
             children: [
+              if (_session.messages.isNotEmpty) ...[
+                _buildHeader(),
+                const SizedBox(height: 12),
+              ],
               Expanded(
                 child: ListView.separated(
                   controller: _scrollController,
                   padding: const EdgeInsets.only(top: 4, bottom: 12),
                   itemCount: _session.messages.isEmpty
                       ? 1
-                      : _session.messages.length + 1,
+                      : _session.messages.length,
                   separatorBuilder: (context, index) {
-                    if (index == 0) return const SizedBox(height: 16);
-                    final curr = _session.messages[index - 1];
-                    final next = _session.messages[index];
+                    final curr = _session.messages[index];
+                    final next = _session.messages[index + 1];
                     return SizedBox(height: curr.role == next.role ? 12 : 8);
                   },
                   itemBuilder: (context, index) {
                     if (_session.messages.isEmpty) return _buildEmptyState();
-                    if (index == 0) return _buildHeader();
-                    final messageIndex = index - 1;
+                    final messageIndex = index;
                     final m = _session.messages[messageIndex];
                     final isUser = m.role == 'user';
                     final isTyping =

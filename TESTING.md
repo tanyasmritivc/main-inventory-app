@@ -107,6 +107,16 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ### October 13 mobile submission polish
 
+The October 14 continuation adds `chat_focus_test.dart` against the actual
+MainShell, rather than a replacement navigation fixture. Verify focus only after
+submission, absence of tab targets during chat, a pinned Back/New chat row,
+previous-tab return, the same retained ChatPage state, an in-flight response and
+draft surviving Back, conversation IDs on follow-ups and reset restoring tabs.
+Repeat at 320pt with large text, keyboard and reduced motion. Scroll a long reply
+and keep Back reachable. Sample import renders must retain a destination, Choose
+file, format/size hint and Back in both themes without promotional icon rows.
+The import picker, validation, errors and actual result counts are unchanged.
+
 Run analysis and the complete mobile suite. The navigation tests verify the
 350 ms spring, surface pulse, horizontal stretch, fixed icon centers, final
 alignment, interrupted taps and reduced-motion cross-fades in both themes.
