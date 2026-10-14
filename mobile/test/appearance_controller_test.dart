@@ -43,7 +43,7 @@ double _contrast(Color a, Color b) {
 
 void main() {
   test(
-    'first launch preserves dark appearance and system text scaling',
+    'first launch defaults to light appearance and system text scaling',
     () async {
       final storage = _Storage();
       final controller = AppearanceController(storage: storage);
@@ -51,7 +51,7 @@ void main() {
       await Future.wait([controller.load(), controller.load()]);
       expect(storage.reads, 2);
       expect(controller.loaded, isTrue);
-      expect(controller.themeMode, ThemeMode.dark);
+      expect(controller.themeMode, ThemeMode.light);
       expect(controller.textSize, AppTextSize.standard);
       const system = _NonlinearScaler();
       expect(identical(controller.textScaler(system), system), isTrue);
@@ -94,7 +94,7 @@ void main() {
       final controller = AppearanceController();
       addTearDown(controller.dispose);
       await controller.load();
-      expect(controller.themeMode, ThemeMode.dark);
+      expect(controller.themeMode, ThemeMode.light);
       expect(controller.textSize, AppTextSize.standard);
       await controller.setThemeMode(ThemeMode.light);
       final prefs = await SharedPreferences.getInstance();
@@ -124,8 +124,8 @@ void main() {
       final storage = _Storage()..failWrite = true;
       final controller = AppearanceController(storage: storage);
       addTearDown(controller.dispose);
-      expect(await controller.setThemeMode(ThemeMode.light), isFalse);
-      expect(controller.themeMode, ThemeMode.dark);
+      expect(await controller.setThemeMode(ThemeMode.dark), isFalse);
+      expect(controller.themeMode, ThemeMode.light);
       expect(
         controller.error,
         'Could not save appearance settings. Please try again.',
@@ -146,16 +146,16 @@ void main() {
     final controller = AppearanceController(storage: storage);
     addTearDown(controller.dispose);
     await controller.load();
-    final save = controller.setThemeMode(ThemeMode.light);
+    final save = controller.setThemeMode(ThemeMode.dark);
     await Future<void>.delayed(Duration.zero);
     expect(controller.saving, isTrue);
-    expect(controller.themeMode, ThemeMode.dark);
+    expect(controller.themeMode, ThemeMode.light);
     expect(await controller.setTextSize(AppTextSize.large), isFalse);
     expect(storage.writes, 1);
     storage.pending!.complete(true);
     expect(await save, isTrue);
     expect(controller.saving, isFalse);
-    expect(controller.themeMode, ThemeMode.light);
+    expect(controller.themeMode, ThemeMode.dark);
   });
 
   test(

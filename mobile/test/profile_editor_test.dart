@@ -17,8 +17,6 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/profile_store.dart';
 import 'package:mobile/features/profile/profile_editor_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
-import 'package:mobile/features/shell/home_navigation.dart';
-import 'package:mobile/core/ui/member_avatar.dart';
 
 const _url =
     'https://api.test/storage/v1/object/sign/profile-photos/owner/avatar.png';
@@ -392,7 +390,7 @@ void main() {
     expect(store.photoUrl, isEmpty);
     expect(find.text('Unsaved name'), findsOneWidget);
   });
-  testWidgets('overview and nav use the saved photo and replacement revision', (
+  testWidgets('account summary uses the saved photo and replacement revision', (
     tester,
   ) async {
     final api = _Api();
@@ -415,16 +413,6 @@ void main() {
               onOpenNotifications: noop,
               onOpenCheckouts: noop,
               onOpenTour: noop,
-            ),
-            bottomNavigationBar: HomeNavigation(
-              selectedIndex: 4,
-              onSelected: (_) {},
-              profileAvatar: MemberAvatar(
-                key: ValueKey(store.photoRevision),
-                name: store.name,
-                photoUrl: store.photoUrl,
-                size: 24,
-              ),
             ),
           ),
         ),

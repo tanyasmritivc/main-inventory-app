@@ -32,8 +32,10 @@ class HomeOverview extends StatefulWidget {
     required this.onOpenItem,
     required this.onOpenSpace,
     this.error,
+    this.accountControl,
   });
   final List<InventoryItem> items;
+  final Widget? accountControl;
   final List<Map<String, dynamic>> spaces;
   final int? pendingReviews, lowStock, outOfStock, lentOut;
   final String? error;
@@ -51,6 +53,30 @@ class HomeOverview extends StatefulWidget {
 
 class _HomeOverviewState extends State<HomeOverview> {
   final _question = TextEditingController();
+  final _failedPhotos = <String>{};
+  @override
+  void didUpdateWidget(covariant HomeOverview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.items, widget.items)) _failedPhotos.clear();
+  }
+
+  String _photoKey(InventoryItem item) => '${item.itemId}:${item.imageUrl}';
+  bool _hasPhoto(InventoryItem item) {
+    final uri = Uri.tryParse((item.imageUrl ?? '').trim());
+    return uri != null &&
+        ['http', 'https'].contains(uri.scheme) &&
+        uri.host.isNotEmpty &&
+        !_failedPhotos.contains(_photoKey(item));
+  }
+
+  void _hideFailedPhoto(InventoryItem item) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_failedPhotos.contains(_photoKey(item))) {
+        setState(() => _failedPhotos.add(_photoKey(item)));
+      }
+    });
+  }
+
   @override
   void dispose() {
     _question.dispose();
@@ -75,9 +101,7 @@ class _HomeOverviewState extends State<HomeOverview> {
         .toSet()
         .take(2)
         .toList();
-    final photos = recent
-        .where((item) => (item.imageUrl ?? '').trim().isNotEmpty)
-        .toList();
+    final photos = recent.where(_hasPhoto).toList();
     final now = DateTime.now();
     final today = photos.where((item) {
       final date = item.createdAt.toLocal();
@@ -92,46 +116,58 @@ class _HomeOverviewState extends State<HomeOverview> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Semantics(
-              button: true,
-              label: 'My home, choose a Space',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: widget.onChooseSpace,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: AppText(
-                          'My home',
-                          boldWeight: FontWeight.w600,
-                          style: TextStyle(
-                            fontSize: 28,
-                            height: 1.15,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: -0.8,
-                            color: AppTheme.foreground(
-                              context,
-                              HomeColors.text,
+          Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Semantics(
+                    button: true,
+                    label: 'My home, choose a Space',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: widget.onChooseSpace,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: AppText(
+                                'My home',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  height: 1.15,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: -0.8,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    HomeColors.text,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(width: 7),
+                            Icon(
+                              CupertinoIcons.chevron_down,
+                              size: 15,
+                              color: AppTheme.foreground(
+                                context,
+                                HomeColors.hint,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 7),
-                      Icon(
-                        CupertinoIcons.chevron_down,
-                        size: 15,
-                        color: AppTheme.foreground(context, HomeColors.hint),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (widget.accountControl != null) ...[
+                const SizedBox(width: 12),
+                widget.accountControl!,
+              ],
+            ],
           ),
           const SizedBox(height: 18),
           MediaQuery(
@@ -144,9 +180,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                 context,
                 TextStyle(
                   fontSize: 17,
-                  fontWeight: MediaQuery.boldTextOf(context)
-                      ? FontWeight.w500
-                      : FontWeight.w400,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, HomeColors.text),
                 ),
               ),
@@ -156,9 +190,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                   context,
                   TextStyle(
                     fontSize: 17,
-                    fontWeight: MediaQuery.boldTextOf(context)
-                        ? FontWeight.w500
-                        : FontWeight.w400,
+                    fontWeight: FontWeight.w400,
                     color: AppTheme.foreground(context, HomeColors.hint),
                   ),
                 ),
@@ -270,23 +302,12 @@ class _HomeOverviewState extends State<HomeOverview> {
               ),
             ),
           ],
-          const SizedBox(height: 24),
-          _SectionLabel(
-            today.isNotEmpty || photos.isEmpty
-                ? 'Captured today'
-                : 'Recent captures',
-          ),
-          const SizedBox(height: 12),
-          if (captures.isEmpty)
-            AppText(
-              'No photo captures yet',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.foreground(context, HomeColors.hint),
-              ),
-            )
-          else
+          if (captures.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _SectionLabel(
+              today.isNotEmpty ? 'Captured today' : 'Recent captures',
+            ),
+            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = (constraints.maxWidth - 20) / 3;
@@ -301,6 +322,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                           item: captures[index],
                           width: width,
                           onTap: () => widget.onOpenItem(captures[index]),
+                          onImageError: () => _hideFailedPhoto(captures[index]),
                         ),
                       ],
                     ],
@@ -308,6 +330,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                 );
               },
             ),
+          ],
           const SizedBox(height: 24),
           const _SectionLabel('Where things live'),
           const SizedBox(height: 12),
@@ -390,7 +413,6 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppText(
     label,
-    boldWeight: FontWeight.w600,
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -460,7 +482,6 @@ class _DecisionTile extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: AppText(
                 count?.toString() ?? '-',
-                boldWeight: FontWeight.w600,
                 style: TextStyle(
                   fontSize: 32,
                   height: 1.1,
@@ -491,10 +512,12 @@ class _CaptureCard extends StatelessWidget {
     required this.item,
     required this.width,
     required this.onTap,
+    required this.onImageError,
   });
   final InventoryItem item;
   final double width;
   final VoidCallback onTap;
+  final VoidCallback onImageError;
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
@@ -507,11 +530,14 @@ class _CaptureCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              item.imageUrl!,
+              item.imageUrl!.trim(),
               width: width,
               height: width,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              errorBuilder: (_, _, _) {
+                onImageError();
+                return const SizedBox.shrink();
+              },
             ),
           ),
           const SizedBox(height: 8),

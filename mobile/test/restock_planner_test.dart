@@ -685,7 +685,7 @@ void main() {
             greaterThanOrEqualTo(4.5),
           );
         }
-        expect(text.text.style!.fontWeight, FontWeight.w500);
+        expect(text.text.style!.fontWeight, FontWeight.w400);
       },
     );
     testWidgets(

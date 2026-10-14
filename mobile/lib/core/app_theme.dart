@@ -72,20 +72,20 @@ class AppTheme {
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
           letterSpacing: -0.4,
         ),
         titleLarge: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
           letterSpacing: -0.3,
         ),
         titleMedium: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           letterSpacing: -0.1,
         ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         bodyLarge: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
@@ -103,7 +103,7 @@ class AppTheme {
         ),
         labelLarge: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           letterSpacing: 0.1,
         ),
       ),
@@ -118,7 +118,7 @@ class AppTheme {
         actionsIconTheme: IconThemeData(color: adapt(AppColors.muted)),
         titleTextStyle: TextStyle(
           fontSize: 17,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: adapt(Colors.white),
           letterSpacing: 0,
         ),
@@ -175,7 +175,7 @@ class AppTheme {
             return TextStyle(
               color: accentForegroundFor(brightness),
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
             );
           }
@@ -213,7 +213,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
           ),
         ),
@@ -233,7 +233,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: adapt(AppColors.primaryText),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
           ),
         ),
@@ -248,7 +248,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
         ),
         contentTextStyle: TextStyle(
           color: adapt(AppColors.muted),
@@ -277,7 +277,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 15,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
         subtitleTextStyle: TextStyle(
           color: adapt(AppColors.muted),
@@ -309,7 +309,7 @@ class AppTheme {
         unselectedLabelColor: adapt(AppColors.muted),
         indicatorColor: accentForegroundFor(brightness),
         dividerColor: adapt(AppColors.border),
-        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         unselectedLabelStyle: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
@@ -331,7 +331,7 @@ class AppTheme {
         secondaryLabelStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 13,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -10,12 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/core/inventory_cache.dart';
 import 'package:mobile/core/pro_status.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
 import 'package:mobile/features/profile/profile_page.dart';
-import 'package:mobile/features/shell/home_navigation.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 
 int _deleteRequests = 0;
@@ -36,6 +38,10 @@ class _ProfileApi extends ApiClient {
       const ReviewQueueResult(items: [], pendingCount: 0);
   @override
   Future<List<Map<String, dynamic>>> listSpaces() async => [];
+  @override
+  Future<List<dynamic>> getMyShares() async => [];
+  @override
+  Future<List<dynamic>> getJoinedShares() async => [];
   @override
   Future<List<Map<String, dynamic>>> getActiveCheckouts() async => [];
   @override
@@ -160,11 +166,103 @@ Widget _hub(
       onOpenCheckouts: () async => opened.add('checkouts'),
       onOpenTour: () async => opened.add('tour'),
     ),
-    bottomNavigationBar: HomeNavigation(selectedIndex: 4, onSelected: (_) {}),
   ),
 );
 
 void main() {
+  if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+    testWidgets(
+      'Home and Account renders keep identical weights with OS Bold Text',
+      (tester) async {
+        await tester.runAsync(() async {
+          await (FontLoader('FindEZQA')..addFont(
+                File(
+                  '/System/Library/Fonts/SFNS.ttf',
+                ).readAsBytes().then(ByteData.sublistView),
+              ))
+              .load();
+          await (FontLoader('MaterialIcons')
+                ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
+              .load();
+          await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+                rootBundle.load(
+                  'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+                ),
+              ))
+              .load();
+        });
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        Future<List<int>> render(String name) async {
+          late List<int> bytes;
+          await tester.runAsync(() async {
+            final image = await tester
+                .renderObject<RenderRepaintBoundary>(
+                  find.byKey(const Key('account-qa')),
+                )
+                .toImage(pixelRatio: 2);
+            final data = await image.toByteData(format: ui.ImageByteFormat.png);
+            bytes = data!.buffer.asUint8List();
+            await File('/private/tmp/$name.png').writeAsBytes(bytes);
+            image.dispose();
+          });
+          return bytes;
+        }
+
+        for (final brightness in Brightness.values) {
+          tester.platformDispatcher.accessibilityFeaturesTestValue =
+              FakeAccessibilityFeatures(boldText: false);
+          final theme = AppTheme.create(brightness);
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: const Key('account-qa'),
+              child: MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: theme.copyWith(
+                  listTileTheme: theme.listTileTheme.copyWith(
+                    titleTextStyle: theme.listTileTheme.titleTextStyle
+                        ?.copyWith(fontFamily: 'FindEZQA'),
+                    subtitleTextStyle: theme.listTileTheme.subtitleTextStyle
+                        ?.copyWith(fontFamily: 'FindEZQA'),
+                  ),
+                  textTheme: theme.textTheme.apply(fontFamily: 'FindEZQA'),
+                  primaryTextTheme: theme.primaryTextTheme.apply(
+                    fontFamily: 'FindEZQA',
+                  ),
+                  appBarTheme: theme.appBarTheme.copyWith(
+                    titleTextStyle: theme.appBarTheme.titleTextStyle?.copyWith(
+                      fontFamily: 'FindEZQA',
+                    ),
+                  ),
+                ),
+                builder: (_, child) => AppTypography(child: child!),
+                home: SafeArea(child: MainShell(api: _ProfileApi())),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final normal = await render('findez-home-account-${brightness.name}');
+          tester.platformDispatcher.accessibilityFeaturesTestValue =
+              FakeAccessibilityFeatures(boldText: true);
+          await tester.pumpAndSettle();
+          final bold = await render(
+            'findez-home-account-${brightness.name}-bold',
+          );
+          expect(bold, orderedEquals(normal));
+          await tester.tap(find.byTooltip('Account'));
+          await tester.pumpAndSettle();
+          await render('findez-account-hub-${brightness.name}');
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        }
+      },
+    );
+  }
   for (final brightness in Brightness.values) {
     for (final scale in [1.0, 2.6, 3.4]) {
       testWidgets(
@@ -222,7 +320,7 @@ void main() {
     }
   }
   for (final brightness in Brightness.values) {
-    testWidgets('${brightness.name} all five tabs support large text at 320pt', (
+    testWidgets('${brightness.name} all four tabs support large text at 320pt', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(320, 568);
@@ -242,7 +340,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      for (final index in [0, 1, 2, 3, 4]) {
+      for (final index in [0, 1, 2, 3]) {
         await tester.tap(find.byType(NavigationDestination).at(index));
         // Capture's intentional shimmer never settles; allow route/read frames.
         await tester.pump();
@@ -259,6 +357,15 @@ void main() {
           index,
         );
       }
+      await tester.tap(find.byType(NavigationDestination).at(0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byTooltip('Account').hitTestable(), findsOneWidget);
+      await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Account'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
   }
@@ -336,32 +443,29 @@ void main() {
     }
   }
 
-  testWidgets('profile destination retains rounded pill and selected circle', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_hub(_ProfileApi(), []));
-    await tester.pumpAndSettle();
-    final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(bar.selectedIndex, 4);
-    expect(bar.destinations.length, 5);
-    final profile = bar.destinations.last as NavigationDestination;
-    expect((profile.icon as Icon).icon, CupertinoIcons.person_crop_circle);
-    expect(
-      (profile.selectedIcon as Icon).icon,
-      CupertinoIcons.person_crop_circle_fill,
-    );
-    expect(find.text('Tanya'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
-    expect(find.text('More'), findsNothing);
-    expect(find.byType(Image), findsNothing);
-    final settingsSurface = tester.widget<Material>(
-      find
-          .ancestor(of: find.text('Settings'), matching: find.byType(Material))
-          .first,
-    );
-    expect(settingsSurface.color, AppTheme.darkSurface);
-    expect(settingsSurface.clipBehavior, Clip.antiAlias);
-  });
+  testWidgets(
+    'account utilities retain their summary without a navigation tab',
+    (tester) async {
+      await tester.pumpWidget(_hub(_ProfileApi(), []));
+      await tester.pumpAndSettle();
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.text('Account'), findsOneWidget);
+      expect(find.text('Tanya'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('More'), findsNothing);
+      expect(find.byType(Image), findsNothing);
+      final settingsSurface = tester.widget<Material>(
+        find
+            .ancestor(
+              of: find.text('Settings'),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(settingsSurface.color, AppTheme.darkSurface);
+      expect(settingsSurface.clipBehavior, Clip.antiAlias);
+    },
+  );
 
   testWidgets('all profile utilities open their existing destinations', (
     tester,
@@ -397,7 +501,7 @@ void main() {
   });
 
   testWidgets(
-    'shell routes Profile to settings and back without changing tab order',
+    'Home account control opens settings and profile, then returns to four tabs',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -406,13 +510,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(NavigationDestination).at(4));
+      await tester.enterText(find.byType(TextField), 'Where are my cables?');
+      await tester.tap(find.byTooltip('Account'));
       await tester.pumpAndSettle();
-      expect(find.byType(ProfileHubPage), findsOneWidget);
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        4,
-      );
+      expect(find.byType(ProfileHubPage, skipOffstage: false), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
       expect(find.text('Scanning'), findsOneWidget);
@@ -430,11 +532,22 @@ void main() {
       );
       await tester.pageBack();
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(NavigationDestination).at(0));
+      await tester.pageBack();
       await tester.pumpAndSettle();
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
         0,
+      );
+      expect(
+        tester
+            .widget<NavigationBar>(find.byType(NavigationBar))
+            .destinations
+            .length,
+        4,
+      );
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'Where are my cables?',
       );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox()); // Dispose shell polling timer.
@@ -447,7 +560,7 @@ void main() {
       final api = _NotificationRaceApi();
       await tester.pumpWidget(MaterialApp(home: MainShell(api: api)));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(NavigationDestination).at(4));
+      await tester.tap(find.byTooltip('Account'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Notifications'));
       await tester.pumpAndSettle();
@@ -642,7 +755,7 @@ void main() {
   );
 
   testWidgets(
-    'five-tab pill and profile stay scrollable with large text on a narrow screen',
+    'account utilities stay scrollable with large text on a narrow screen',
     (tester) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1;
@@ -666,8 +779,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(
         tester.getBottomLeft(find.text('Setup questions')).dy,
-        lessThan(tester.getTopLeft(find.byType(HomeNavigation)).dy),
+        lessThanOrEqualTo(568),
       );
+      expect(find.byType(NavigationBar), findsNothing);
     },
   );
 }

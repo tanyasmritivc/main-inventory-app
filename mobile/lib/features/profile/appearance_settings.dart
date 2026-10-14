@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/appearance_controller.dart';
 import '../../core/app_theme.dart';
 import 'package:mobile/core/ui/app_text.dart';
+import 'package:mobile/core/ui/glass_control.dart';
 
 class AppearanceSettings extends StatefulWidget {
   const AppearanceSettings({super.key, this.controller});
@@ -69,32 +70,42 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
         runSpacing: 8,
         children: choices.entries
             .map(
-              (entry) => ChoiceChip(
-                label: AppText(entry.value),
+              (entry) => GlassControl(
+                radius: 99,
                 selected: selected == entry.key,
-                onSelected: onSelected == null
-                    ? null
-                    : (chosen) {
-                        if (chosen) onSelected(entry.key);
-                      },
-                showCheckmark: false,
-                selectedColor: AppTheme.textPrimary(context),
-                backgroundColor: AppTheme.surface2(context),
-                disabledColor: selected == entry.key
-                    ? AppTheme.textPrimary(context)
-                    : AppTheme.surface2(context),
-                labelStyle: TextStyle(
-                  color: selected == entry.key
-                      ? (AppTheme.isDark(context)
-                            ? AppTheme.darkBg
-                            : Colors.white)
-                      : AppTheme.textPrimary(context),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                enabled: onSelected != null,
+                // RawChip owns a canvas Material; keep it clear over the glass.
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(canvasColor: Colors.transparent),
+                  child: ChoiceChip(
+                    label: AppText(entry.value),
+                    selected: selected == entry.key,
+                    onSelected: onSelected == null
+                        ? null
+                        : (chosen) {
+                            if (chosen) onSelected(entry.key);
+                          },
+                    showCheckmark: false,
+                    selectedColor: Colors.transparent,
+                    backgroundColor: Colors.transparent,
+                    disabledColor: Colors.transparent,
+                    labelStyle: TextStyle(
+                      color: selected == entry.key
+                          ? AppTheme.accentForeground(context)
+                          : AppTheme.textPrimary(context),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                  ),
                 ),
-                side: BorderSide(color: AppTheme.border(context)),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                materialTapTargetSize: MaterialTapTargetSize.padded,
               ),
             )
             .toList(),

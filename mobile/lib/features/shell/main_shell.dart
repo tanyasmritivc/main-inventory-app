@@ -59,7 +59,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
   int _inventorySection = 0;
   VoidCallback? _joinSpaceCallback;
-  int _notificationCount = 0;
+  final _notificationCount = ValueNotifier<int>(0);
+  bool _openingAccount = false;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
   int _notificationGeneration = 0;
@@ -68,6 +69,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _pageTransitionGeneration = 0;
   int _chatGeneration = 0;
   String? _chatInitialMessage;
+  bool _chatHasMessages = false;
+  int _chatReturnPage = 0;
 
   Future<void> _prefetchInventoryCache() async {
     final generation = ++_inventoryCacheGeneration;
@@ -136,7 +139,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       }
       if (widget.api.accountId != _notificationAccount && mounted) {
         _notificationGeneration++;
-        setState(() => _notificationCount = 0);
+        setState(() => _notificationCount.value = 0);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.of(
@@ -216,6 +219,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     _notificationTimer?.cancel();
     _pageController.dispose();
     _profileStore.dispose();
+    _notificationCount.dispose();
     super.dispose();
   }
 
@@ -231,12 +235,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     0 => 0,
     2 => 1,
     1 => 2,
-    4 => 4,
     _ => 3,
   };
 
   void _onNavigationTap(int index) {
-    const pages = [0, 2, 1, 3, 4];
+    const pages = [0, 2, 1, 3];
     _animateTo(pages[index], haptic: true);
   }
 
@@ -249,6 +252,83 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       });
     }
     _animateTo(1, haptic: true);
+  }
+
+  void _leaveChat() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _animateTo(_chatReturnPage, haptic: true);
+  }
+
+  void _onChatStateChanged(bool hasMessages) {
+    if (!mounted || _chatHasMessages == hasMessages) return;
+    setState(() => _chatHasMessages = hasMessages);
+  }
+
+  Widget _buildAccountControl() => ListenableBuilder(
+    listenable: Listenable.merge([_profileStore, _notificationCount]),
+    builder: (context, _) => IconButton(
+      key: const Key('home-account-button'),
+      tooltip: 'Account',
+      onPressed: () => unawaited(_openAccount()),
+      icon: Badge(
+        isLabelVisible: _notificationCount.value > 0,
+        label: AppText(
+          _notificationCount.value > 99 ? '99+' : '${_notificationCount.value}',
+          semanticsLabel: '${_notificationCount.value} unread notifications',
+        ),
+        child: _profileStore.photoUrl.isEmpty
+            ? Icon(
+                CupertinoIcons.person_crop_circle,
+                size: 28,
+                color: AppTheme.textPrimary(context),
+              )
+            : MemberAvatar(
+                key: ValueKey(_profileStore.photoRevision),
+                name: _profileStore.name,
+                photoUrl: _profileStore.photoUrl,
+                colorHex: _profileStore.color,
+                size: 28,
+              ),
+      ),
+    ),
+  );
+
+  Future<void> _openAccount() async {
+    if (_openingAccount) return;
+    _openingAccount = true;
+    HapticFeedback.lightImpact();
+    unawaited(_profileStore.load());
+    unawaited(_loadNotificationCount());
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => ValueListenableBuilder<int>(
+            valueListenable: _notificationCount,
+            builder: (context, count, _) => Scaffold(
+              backgroundColor: AppTheme.adaptive(
+                context,
+                HomeColors.background,
+              ),
+              appBar: AppBar(title: const AppText('Account')),
+              body: ProfileHubPage(
+                api: widget.api,
+                store: _profileStore,
+                showHeading: false,
+                onOpenProfile: _openProfile,
+                onOpenSettings: _openSettings,
+                onOpenDocuments: _openDocuments,
+                onOpenNotifications: _openNotifications,
+                onOpenCheckouts: _openCheckouts,
+                onOpenTour: _openTour,
+                unreadCount: count,
+              ),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      _openingAccount = false;
+    }
   }
 
   Future<void> _openProfile() async {
@@ -364,7 +444,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         return;
       }
       final count = notificationUnreadCount(result);
-      setState(() => _notificationCount = count);
+      setState(() => _notificationCount.value = count);
       await PushNotifications.setBadgeCount(count);
     } catch (_) {
       // Read-only badge refresh; the inbox shows a visible error if opened.
@@ -408,7 +488,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 return;
               }
               _notificationGeneration++;
-              setState(() => _notificationCount = count);
+              setState(() => _notificationCount.value = count);
             },
           ),
         ),
@@ -487,6 +567,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final chatFocused = _currentPage == 1 && _chatHasMessages;
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final navigation = keyboardVisible || chatFocused
+        ? const SizedBox.shrink()
+        : HomeNavigation(
+            monochrome: _currentPage == 3 && _inventorySection == 1,
+            selectedIndex: _navigationIndex,
+            onSelected: _onNavigationTap,
+            destinationKeys: {
+              0: TutorialController.inventoryIconKey,
+              1: TutorialController.scanTabKey,
+              2: TutorialController.assistTabKey,
+            },
+          );
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, HomeColors.background),
       appBar: _buildAppBar(),
@@ -499,7 +595,6 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           reverse: true,
           physics: const NeverScrollableScrollPhysics(),
           onPageChanged: (index) {
-            if (index == 4) unawaited(_profileStore.load());
             unawaited(_loadNotificationCount());
             final now = DateTime.now();
             final tooSoon =
@@ -508,6 +603,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 now.difference(_lastTabSwitchRefreshAt!) <
                     const Duration(seconds: 5);
             setState(() {
+              if (index == 1 && _currentPage != 1) {
+                _chatReturnPage = _currentPage;
+              }
               _currentPage = index;
               if (index == 3 && !tooSoon) {
                 _inventoryRefreshToken++;
@@ -521,6 +619,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               refreshToken: _inventoryRefreshToken,
               deletedSpaceId: _deletedSpaceId,
               onOpenAsk: _openAsk,
+              accountControl: _buildAccountControl(),
               onOpenReview: _openReview,
               onOpenCheckouts: _openCheckouts,
               onOpenSpace: _openHomeSpace,
@@ -531,6 +630,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               initialMessage: _chatInitialMessage,
               inPageView: true,
               pageController: _pageController,
+              onChatStateChanged: _onChatStateChanged,
+              onBack: _leaveChat,
               onInventoryMutated: () {
                 setState(() => _inventoryRefreshToken++);
                 unawaited(_prefetchInventoryCache());
@@ -580,43 +681,17 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 TeamsPage(api: widget.api),
               ],
             ),
-            ProfileHubPage(
-              api: widget.api,
-              store: _profileStore,
-              onOpenProfile: _openProfile,
-              onOpenSettings: _openSettings,
-              onOpenDocuments: _openDocuments,
-              onOpenNotifications: _openNotifications,
-              onOpenCheckouts: _openCheckouts,
-              onOpenTour: _openTour,
-              unreadCount: _notificationCount,
-            ),
           ],
         ),
       ),
-      bottomNavigationBar: keyboardVisible
-          ? null
-          : ListenableBuilder(
-              listenable: _profileStore,
-              builder: (context, _) => HomeNavigation(
-                monochrome: _currentPage == 3 && _inventorySection == 1,
-                profileAvatar: _profileStore.photoUrl.isEmpty
-                    ? null
-                    : MemberAvatar(
-                        key: ValueKey(_profileStore.photoRevision),
-                        name: _profileStore.name,
-                        photoUrl: _profileStore.photoUrl,
-                        colorHex: _profileStore.color,
-                        size: 24,
-                      ),
-                selectedIndex: _navigationIndex,
-                onSelected: _onNavigationTap,
-                destinationKeys: {
-                  0: TutorialController.inventoryIconKey,
-                  1: TutorialController.scanTabKey,
-                  2: TutorialController.assistTabKey,
-                },
-              ),
+      bottomNavigationBar: reduceMotion || keyboardVisible
+          ? navigation
+          : AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              child: navigation,
             ),
     );
   }

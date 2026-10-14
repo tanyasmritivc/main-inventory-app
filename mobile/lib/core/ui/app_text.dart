@@ -24,7 +24,6 @@ class AppText extends StatelessWidget {
     this.textWidthBasis,
     this.textHeightBehavior,
     this.selectionColor,
-    this.boldWeight,
   });
 
   final String data;
@@ -42,14 +41,13 @@ class AppText extends StatelessWidget {
   final TextWidthBasis? textWidthBasis;
   final TextHeightBehavior? textHeightBehavior;
   final Color? selectionColor;
-  final FontWeight? boldWeight;
 
   @override
   Widget build(BuildContext context) => MediaQuery(
     data: MediaQuery.of(context).copyWith(boldText: false),
     child: Text(
       data,
-      style: AppTypography.styleOf(context, style, boldWeight: boldWeight),
+      style: AppTypography.styleOf(context, style),
       strutStyle: strutStyle,
       textAlign: textAlign,
       textDirection: textDirection,

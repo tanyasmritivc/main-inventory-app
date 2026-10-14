@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userFacingError } from "@/lib/user-facing-error";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
-import { FindEZMark } from "@/components/site/findez-brand";
+import { FindEZWordmark } from "@/components/site/findez-brand";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
 import { normalizeAuthNext } from "@/lib/auth-callback";
 import { LEGAL_VERSION } from "@/lib/legal-content";
@@ -255,8 +255,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       <div className="auth-card">
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
-          <FindEZMark width={24} height={24} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 16, fontWeight: 590, color: "var(--ink)", letterSpacing: "-0.025em" }}>FindEZ</span>
+          <FindEZWordmark width={112} height={30} style={{ color: "var(--ink)", flexShrink: 0 }} />
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
           A product of AI Robots Inc

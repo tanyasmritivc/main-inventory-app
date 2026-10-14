@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/frosted_surface.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:mobile/features/onboarding/onboarding_answers.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
@@ -126,6 +127,29 @@ Future<void> answerAll(WidgetTester tester, {bool submit = true}) async {
 }
 
 void main() {
+  testWidgets('questionnaire has a small accessible X and no brand header', (
+    tester,
+  ) async {
+    await tester.pumpWidget(setup());
+    await tester.pumpAndSettle();
+    expect(find.text('Close'), findsNothing);
+    expect(find.text('Skip'), findsNothing);
+    final close = find.byKey(const Key('onboarding-skip'));
+    expect(tester.widget<IconButton>(close).tooltip, 'Skip setup');
+    expect((tester.widget<IconButton>(close).icon as Icon).size, 18);
+    expect(tester.getSize(close).shortestSide, greaterThanOrEqualTo(44));
+    expect(
+      find.ancestor(of: close, matching: find.byType(FrostedSurface)),
+      findsNothing,
+    );
+    expect(find.text('What will you use FindEZ for?'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'FindEZWordmark',
+      ),
+      findsNothing,
+    );
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {

@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/app_theme.dart';
-import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/features/profile/appearance_settings.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
 
@@ -41,7 +40,7 @@ class _Probe extends StatelessWidget {
         ),
       ],
     ),
-    bottomNavigationBar: HomeNavigation(selectedIndex: 4, onSelected: (_) {}),
+    bottomNavigationBar: HomeNavigation(selectedIndex: 0, onSelected: (_) {}),
   );
 }
 
@@ -155,7 +154,7 @@ void main() {
   );
 
   testWidgets(
-    'root honors device text scaling and Bold Text after changing size',
+    'root preserves scaling and light weights after Bold Text or text size changes',
     (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 1.7;
       tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -195,16 +194,16 @@ void main() {
       form.text = 'Unsaved typography draft';
       expect(media().textScaler.scale(15), closeTo(25.5, .001));
       expect(
-        AppTypography.boldTextOf(tester.element(find.byType(_Probe))),
-        isTrue,
+        MediaQuery.boldTextOf(tester.element(find.byType(_Probe))),
+        isFalse,
       );
-      expect(await renderedDraftWeight(), FontWeight.w500);
+      expect(await renderedDraftWeight(), FontWeight.w400);
       await controller.setTextSize(AppTextSize.larger);
       await tester.pumpAndSettle();
       expect(media().textScaler.scale(15), closeTo(33.15, .001));
       expect(
-        AppTypography.boldTextOf(tester.element(find.byType(_Probe))),
-        isTrue,
+        MediaQuery.boldTextOf(tester.element(find.byType(_Probe))),
+        isFalse,
       );
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           FakeAccessibilityFeatures(boldText: false);
@@ -213,7 +212,7 @@ void main() {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           FakeAccessibilityFeatures(boldText: true);
       await tester.pumpAndSettle();
-      expect(await renderedDraftWeight(), FontWeight.w500);
+      expect(await renderedDraftWeight(), FontWeight.w400);
       expect(
         tester.state<NavigatorState>(find.byType(Navigator).first),
         same(navigator),
@@ -232,15 +231,15 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(form.dispose);
       await _open(tester, controller, form);
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Light'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Dark'));
       await tester.pumpAndSettle();
-      expect(controller.themeMode, ThemeMode.dark);
+      expect(controller.themeMode, ThemeMode.light);
       expect(
         find.textContaining('Could not save appearance settings'),
         findsOneWidget,
       );
       storage.pending = Completer<bool>();
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Light'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Dark'));
       await tester.pump();
       expect(
         tester
@@ -250,7 +249,7 @@ void main() {
       );
       storage.pending!.complete(true);
       await tester.pumpAndSettle();
-      expect(controller.themeMode, ThemeMode.light);
+      expect(controller.themeMode, ThemeMode.dark);
       expect(
         find.textContaining('Could not save appearance settings'),
         findsNothing,

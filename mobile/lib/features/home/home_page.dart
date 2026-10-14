@@ -19,8 +19,10 @@ class HomePage extends StatefulWidget {
     required this.onOpenSpace,
     this.refreshToken = 0,
     this.deletedSpaceId,
+    this.accountControl,
   });
   final ApiClient api;
+  final Widget? accountControl;
   final ValueChanged<String> onOpenAsk;
   final VoidCallback onOpenReview, onOpenCheckouts;
   final Future<void> Function(Map<String, dynamic>) onOpenSpace;
@@ -201,6 +203,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) => RefreshIndicator(
     onRefresh: _load,
     child: HomeOverview(
+      accountControl: widget.accountControl,
       items: _items,
       spaces: _spaces,
       pendingReviews: _pendingReviews,

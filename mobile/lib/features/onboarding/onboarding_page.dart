@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/ui/app_text.dart';
-import '../../core/ui/findez_wordmark.dart';
 import 'onboarding_answers.dart';
 import 'onboarding_prefs.dart';
 import 'onboarding_visuals.dart';
@@ -226,34 +225,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 : () => _go(_step - 1),
                             icon: const Icon(Icons.arrow_back_rounded),
                           ),
-                        const Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 8),
-                              child: FindEZWordmark(width: 104),
-                            ),
+                        const Spacer(),
+                        IconButton(
+                          key: const Key('onboarding-skip'),
+                          tooltip: widget.isReplay
+                              ? 'Close setup'
+                              : 'Skip setup',
+                          onPressed: _finishing
+                              ? null
+                              : () => _finish(skip: true),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
-                        if (MediaQuery.textScalerOf(context).scale(14) > 22)
-                          IconButton(
-                            key: const Key('onboarding-skip'),
-                            tooltip: widget.isReplay
-                                ? 'Close setup'
-                                : 'Skip setup',
-                            onPressed: _finishing
-                                ? null
-                                : () => _finish(skip: true),
-                            icon: const Icon(Icons.close_rounded),
-                          )
-                        else
-                          TextButton(
-                            key: const Key('onboarding-skip'),
-                            onPressed: _finishing
-                                ? null
-                                : () => _finish(skip: true),
-                            child: AppText(widget.isReplay ? 'Close' : 'Skip'),
-                          ),
                       ],
                     ),
                   ),

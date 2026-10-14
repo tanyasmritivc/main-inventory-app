@@ -38,8 +38,7 @@ class AppearanceController extends ChangeNotifier {
   static const themeKey = 'findez.appearance.theme.v1';
   static const textSizeKey = 'findez.appearance.text-size.v1';
   final AppearanceStorage _storage;
-  ThemeMode _themeMode =
-      ThemeMode.dark; // Preserve the approved existing default.
+  ThemeMode _themeMode = ThemeMode.light;
   AppTextSize _textSize = AppTextSize.standard;
   bool _loaded = false;
   bool _saving = false;
@@ -62,7 +61,7 @@ class AppearanceController extends ChangeNotifier {
       if (_disposed) return;
       _themeMode = ThemeMode.values.firstWhere(
         (mode) => mode.name == theme,
-        orElse: () => ThemeMode.dark,
+        orElse: () => ThemeMode.light,
       );
       _textSize = AppTextSize.values.firstWhere(
         (value) => value.name == size,

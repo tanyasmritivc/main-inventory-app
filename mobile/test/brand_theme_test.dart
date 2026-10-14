@@ -106,14 +106,14 @@ void main() {
     );
   });
 
-  test('native icon is a full opaque square with original signal/paper', () {
+  test('supplied native icon is opaque with paper, ink and signal', () {
     final icon = image.decodePng(
       File('assets/brand/findez-app-icon.png').readAsBytesSync(),
     )!;
     expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
-    expect(icon.getPixel(0, 0).toList(), [17, 17, 18]);
+    expect(icon.getPixel(0, 0).toList(), [255, 255, 255]);
     expect(icon.getPixel(600, 300).toList(), [232, 89, 12]);
-    expect(icon.getPixel(400, 400).toList(), [255, 255, 255]);
+    expect(icon.getPixel(400, 400).toList(), [17, 17, 18]);
   });
 
   test(
@@ -123,8 +123,9 @@ void main() {
         final svg = await rootBundle.loadString('assets/brand/$name');
         expect(svg, contains('M25.25 40.75H55.25V70.75'));
         expect(svg, contains('M50.25 30.75H65.25V45.75'));
-        expect(svg, contains('stroke-linejoin="miter"'));
-        expect(svg, contains('stroke-linecap="butt"'));
+        // The supplied mark uses SVG's default miter joins and butt caps.
+        expect(svg, isNot(contains('stroke-linejoin="round"')));
+        expect(svg, isNot(contains('stroke-linecap="round"')));
         expect(svg, isNot(contains('<text')));
         expect(svg, isNot(contains('Gradient')));
       }

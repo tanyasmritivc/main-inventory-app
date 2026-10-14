@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -500,12 +501,14 @@ class _ScanPageState extends State<ScanPage> {
                         api: widget.api,
                       );
                     },
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppTheme.adaptive(context, Colors.white),
-                      foregroundColor: AppTheme.adaptive(context, Colors.black),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(99),
+                    style: GlassControl.buttonStyle(
+                      context,
+                      radius: 99,
+                      base: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(99),
+                        ),
                       ),
                     ),
                     child: const AppText(
@@ -930,16 +933,18 @@ class _ScanPageState extends State<ScanPage> {
                               }
                             }
                           },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.adaptive(ctx, Colors.white),
-                      disabledBackgroundColor: AppTheme.adaptive(
-                        ctx,
-                        const Color(0x1AFFFFFF),
-                      ),
-                      foregroundColor: AppTheme.adaptive(ctx, Colors.black),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    style: GlassControl.buttonStyle(
+                      ctx,
+                      radius: 12,
+                      base: ElevatedButton.styleFrom(
+                        disabledBackgroundColor: AppTheme.adaptive(
+                          ctx,
+                          const Color(0x1AFFFFFF),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                     child: const AppText(
@@ -1385,38 +1390,29 @@ class _ScanPageState extends State<ScanPage> {
                           onTap: () {
                             Navigator.pop(ctx, space);
                           },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _defaultLocation.text == space
-                                  ? AppTheme.adaptive(ctx, Colors.white)
-                                  : AppTheme.adaptive(
-                                      ctx,
-                                      const Color(0xFF171717),
-                                    ),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: _defaultLocation.text == space
-                                    ? AppTheme.adaptive(ctx, Colors.white)
-                                    : AppTheme.adaptive(
-                                        ctx,
-                                        const Color(0x14FFFFFF),
-                                      ),
+                          child: GlassControl(
+                            radius: 99,
+                            selected: _defaultLocation.text == space,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
                               ),
-                            ),
-                            child: AppText(
-                              space,
-                              style: TextStyle(
-                                color: _defaultLocation.text == space
-                                    ? AppTheme.foreground(ctx, Colors.black)
-                                    : AppTheme.foreground(ctx, Colors.white),
-                                fontSize: 13,
-                                fontWeight: _defaultLocation.text == space
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: AppText(
+                                space,
+                                style: TextStyle(
+                                  color: _defaultLocation.text == space
+                                      ? AppTheme.accentForeground(ctx)
+                                      : AppTheme.foreground(ctx, Colors.white),
+                                  fontSize: 13,
+                                  fontWeight: _defaultLocation.text == space
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
                               ),
                             ),
                           ),
@@ -1500,21 +1496,24 @@ class _ScanPageState extends State<ScanPage> {
                         Navigator.pop(ctx, name);
                       }
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.adaptive(ctx, Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: AppText(
-                        'Create',
-                        style: TextStyle(
-                          color: AppTheme.foreground(ctx, Colors.black),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                    child: GlassControl(
+                      radius: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: AppText(
+                          'Create',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary(ctx),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),

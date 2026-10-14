@@ -139,6 +139,23 @@ Widget _page(
 );
 
 void main() {
+  testWidgets('empty Ask has one prompt and no duplicated brand heading', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_page(_AskApi()));
+    await tester.pumpAndSettle();
+    expect(find.text('What would you like to know?'), findsOneWidget);
+    expect(find.byKey(const Key('ask-heading')), findsNothing);
+    expect(find.text('Ask FindEZ'), findsNothing);
+    expect(
+      find.text('Ask about your things, places, or projects.'),
+      findsNothing,
+    );
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).decoration!.hintText,
+      'Ask a question',
+    );
+  });
   for (final brightness in Brightness.values) {
     for (final scale in [1.0, 2.6]) {
       testWidgets('${brightness.name} Ask supports $scale text at 320pt', (
@@ -292,7 +309,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Ask FindEZ'), findsOneWidget);
+      expect(find.byKey(const Key('ask-heading')), findsOneWidget);
       expect(find.byType(AskQuestionCard), findsOneWidget);
       expect(find.text('What it read'), findsOneWidget);
       expect(find.byKey(const Key('ask-sources')), findsNothing);

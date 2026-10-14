@@ -1,3 +1,4 @@
+import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -756,32 +757,35 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(_buildResult()),
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: AppTheme.adaptive(context, Colors.white),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Center(
-                        child: AppText(
-                          () {
-                            final reviewCount = widget.items
-                                .where((item) => item.isPendingReview)
-                                .length;
-                            final saveCount = n - reviewCount;
-                            if (reviewCount == 0) {
-                              return 'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}';
-                            }
-                            if (saveCount == 0) {
-                              return 'Keep $reviewCount in Review';
-                            }
-                            return 'Save $saveCount · Review $reviewCount';
-                          }(),
-                          style: TextStyle(
-                            color: AppTheme.foreground(context, Colors.black),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                    child: GlassControl(
+                      radius: 99,
+                      child: Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Center(
+                          child: AppText(
+                            () {
+                              final reviewCount = widget.items
+                                  .where((item) => item.isPendingReview)
+                                  .length;
+                              final saveCount = n - reviewCount;
+                              if (reviewCount == 0) {
+                                return 'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}';
+                              }
+                              if (saveCount == 0) {
+                                return 'Keep $reviewCount in Review';
+                              }
+                              return 'Save $saveCount · Review $reviewCount';
+                            }(),
+                            style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),

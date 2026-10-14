@@ -1,5 +1,65 @@
 # Decisions
 
+## October 14 glass replaces inverted neutral controls
+
+The user identifies black selected Appearance choices in Light mode and requests
+a glass treatment for all neutral buttons using the same inverted fill. Reuse
+the local frosted surface, with theme-aware labels and a tinted selection outline.
+Keep selection semantics, hit targets, pending-save lockouts and real callbacks.
+High contrast uses solid surfaces. Orange primary actions and destructive color
+meanings stay distinct. This is Flutter presentation, not native Liquid Glass API
+adoption or a backend/schema change. The validated pre-glass build-63 candidate
+is superseded before upload; deliver only the rebuilt and verified candidate.
+
+## October 14 Account belongs on Home and weights ignore OS Bold Text
+
+The user removes Profile from the bottom navigation because FindEZ is an
+inventory tool. Keep four core tabs and move a small account control to Home's
+header. Its Account page retains existing editing, settings, documents, alerts,
+lent items and setup functions. The shell-owned profile store and live unread
+count stay shared so edits and notification reads update the Home control.
+Back returns to the existing Home, retaining its draft and content.
+
+This supersedes the earlier OS-dependent typography policy. Keep regular body
+and editable text (400), with at most medium emphasis (500), whether iOS Bold
+Text is enabled or disabled. Do not change the phone's global setting. Preserve
+OS/app text scaling, VoiceOver, Reduce Motion, high contrast and semantics.
+Remove obsolete bold-weight overrides rather than reintroducing them on screens.
+
+## October 14 conversation focus stays in the existing shell
+
+After a message is submitted, hide the tab bar and keep the same ChatPage in its
+existing PageView. Pin a plain accessible Back control and New chat above the
+scrolling messages. Back returns to the tab the user came from while preserving
+the conversation, draft and streaming request; re-entering Ask resumes it.
+New chat explicitly clears the conversation and restores navigation. The empty
+Ask screen retains its normal tabs. Reduced motion skips navigation-size changes.
+Spreadsheet import needs only its destination, file action and accepted format/
+size limit, with real errors and result counts retained. Remove promotional
+explanations and decorative icons without changing import processing.
+
+## October 13 pre-submission mobile presentation
+
+The user chooses a questionnaire without a brand header and with a plain small X
+without a surrounding circle. Its invisible 44-point tap area stays accessible.
+The presentation uses image-backed Home captures, a compact translucent guided tour, and simpler Ask
+copy. Keep the questionnaire's saved-answer and launch behavior unchanged.
+Home presentation excludes missing, invalid and failed images without removing
+inventory or changing quantities. Empty capture strips are omitted.
+
+Use one moving navigation indicator with a 350 ms spring, up to 1.4 horizontal
+stretch, and a separate 1.06 surface pulse. Icons and touch targets stay fixed.
+Reduce Motion uses a stationary cross-fade; high contrast uses solid surfaces.
+Apply glass locally to navigation, tutorial and small controls, rather than
+changing every product surface. Supplied logo assets are retained byte for byte
+in mobile; generated native icons preserve their pixels. Light is the default
+only when no valid appearance preference is stored. Explicit Dark and System
+preferences remain supported. Use ASCII punctuation in new comments and commits.
+
+Source is on `feat/mobile-submission-polish`, based on delivered build 62.
+Public App Review submission remains held pending final acceptance. Uploaded
+screenshots are assets in the 1.0.8 draft, not a completed review submission.
+
 ## October 12 reference-led onboarding and auth presentation
 
 The user rejects the radio-circle list and decorative icon badge, then supplies

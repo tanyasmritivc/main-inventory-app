@@ -1,6 +1,6 @@
 # Current architecture
 
-This describes the 2026-10-01 release candidate. Planned systems are labeled.
+This describes the current release foundation. Planned systems are labeled.
 
 ## Repository
 
@@ -17,9 +17,17 @@ This describes the 2026-10-01 release candidate. Planned systems are labeled.
 
 The Flutter app uses Supabase Auth directly, then sends the Supabase access token to
 FastAPI through `mobile/lib/core/api_client.dart`. Its main shell has Home, Capture,
-Ask, Find and Profile in the restored rounded icon pill. Home surfaces recent items, places, natural-language recall, and
+Ask and Find in the rounded four-icon pill. Profile and utilities open as an
+Account page from a small control at the top of Home, using the same owner-bound
+profile store and live unread notification count. Home surfaces recent items, places, natural-language recall, and
 pending Review items. Profile, team, sharing, project, document, checkout,
 notification, and settings flows remain.
+
+The app's shared typography keeps body/inputs regular (400) and emphasis at most
+medium (500), independently of OS Bold Text. Text scaling, VoiceOver, reduced
+motion and other accessibility settings remain supported. Active Ask conversations
+hide the pill within the existing shell; Back returns to the prior tab without
+discarding the chat or draft.
 
 The Next.js app serves the animated marketing homepage and authenticated product
 routes such as `/home`, `/scan`, `/review`, `/inventory`, `/assist`, `/checkout`,

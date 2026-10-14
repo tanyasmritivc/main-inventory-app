@@ -1,5 +1,69 @@
 # Active work
 
+## October 14 build-63 internal TestFlight delivery complete
+
+Final runtime `8abe3cc` on `feat/mobile-submission-polish` (PR #62) is delivered
+as 1.0.8 (63) to both existing internal groups. Analysis, 353 mobile tests with
+coverage, all five exact-source CI gates (`38543470459`), clean signed export,
+production configuration/supplied assets, app/extension signatures, 31 native
+device executables and Apple validation/upload pass. Apple delivery
+`81fcc8ae-92f0-4d05-9dd0-e4a0a492e0c1` is COMPLETE without errors/warnings, and
+63 is VALID/APP_STORE_ELIGIBLE/IN_BETA_TESTING with saved test notes at 02:56 PDT.
+
+Includes Home Account/four tabs, light weights independent of OS Bold Text,
+focused chat, concise import, supplied logo/Light default, setup X, compact tour,
+spring navigation and neutral glass controls. Native Home/Account, image-backed
+captures, Light/Dark glass choices, setup and empty Ask are checked; the inner
+chip canvas is transparent to retain continuous glass outlines. Native typed
+chat, full tour/import and physical accessibility/native-service acceptance are
+still pending through the final TestFlight binary. No real inventory/setup writes
+or global phone preferences were changed. User-authorized generated cache cleanup
+resolved disk pressure, preserving source, signed packages and supplied assets.
+
+Durable release records are in `Documents/FindEZ/AppStore/1.0.8-build63`.
+The earlier validated candidate remains preserved and was not uploaded. Public
+59, manual/unselected draft 1.0.8 and Shopify's separate paused source are
+verified unchanged. Public App Review remains held; Shopify is excluded.
+
+## October 14 Home account entry and stable light typography
+
+Delivered in build 63 on `feat/mobile-submission-polish`. User removes the
+Profile tab, moves its entry to the top of Home and requires stable light weights
+regardless of iOS Bold Text. The pill now has Home/Capture/Ask/Find with four-tab
+spring geometry. A small Home control opens Account, preserving profile editing,
+settings, documents, notifications, lent items and setup questions. The same
+profile store and live notification notifier serve both Home and Account; late
+badge reads remain fenced. Shared body/input weights are 400 and emphasis caps
+at 500; only automatic weight changes are suppressed. Text size and other
+accessibility preferences remain. Shopify stays paused; no API/schema, native
+lifecycle, production or Apple submission changes.
+
+## October 14 spreadsheet clarity and focused chat
+
+Delivered in build 63 from `feat/mobile-submission-polish` in
+`dev/findez-logo-light-default`. User requests fewer import-page words/icons and
+conversation focus after sending, in the existing screen. The import ready view
+now shows the destination, Choose file and format/size limit. Existing picker,
+validation, import, retry, partial-result reporting and navigation are retained.
+MainShell uses ChatPage's message state to hide its pill during conversations.
+Pinned Back returns to the previous tab without resetting the same ChatPage,
+messages, draft or in-flight stream. New chat restores the normal Ask navigation.
+No backend/API/schema, Shopify, production or Apple submission changes.
+
+## October 13 mobile pre-submission polish
+
+User requests an unbranded questionnaire header with an accessible X, exclusion
+of pictureless imports from Home captures, a compact translucent guided tour,
+350 ms spring navigation with fixed icons and Reduce Motion cross-fades, and
+simpler Ask presentation. Source lane `feat/mobile-submission-polish` in
+`dev/findez-logo-light-default` continues the authorized supplied logo and
+Light-default changes from build 62. Existing source branding edits are preserved.
+No App Review submission or production change is performed. Screenshot ZIPs are
+uploaded and checksum/order verified in the 1.0.8 draft. The user's latest October
+14 instruction pauses Shopify and excludes it from this launch. Preserve its
+separate source, draft PRs and test resources; keep them disabled and unshipped.
+Do not continue Shopify work until the user asks to resume.
+
 ## October 12 clarified tutorial and onboarding questions
 
 The user identifies the six-step in-app spotlight tutorial, then requests useful

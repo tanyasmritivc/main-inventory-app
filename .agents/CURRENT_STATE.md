@@ -1,5 +1,118 @@
 # Current state
 
+## October 14 build-63 internal TestFlight delivery
+
+Build 1.0.8 (63) is VALID, APP_STORE_ELIGIBLE and IN_BETA_TESTING in both existing
+internal groups, Testers and Internal Pilot Findez AI. Final runtime `8abe3cc`
+on `feat/mobile-submission-polish` (PR #62) passes analysis, all 353 mobile tests
+with coverage and all five CI gates in `38543470459`. Clean signed archive/export,
+production configuration, supplied assets, strict app/extension signatures and
+all 31 native device-platform checks pass. Apple validation/upload succeeds;
+delivery `81fcc8ae-92f0-4d05-9dd0-e4a0a492e0c1` is COMPLETE without errors/warnings.
+Group access and updated test notes are verified at 02:56 PDT October 14.
+
+The beta includes Home Account access and four core tabs, stable regular/medium
+weights independent of OS Bold Text, focused chat, concise import, plain setup X,
+compact tour, spring navigation, supplied branding and Light default. Neutral
+Appearance, inventory/scan choices and scan/QR/import/sharing/save actions use
+`GlassControl`, preserving callbacks, busy/disabled states and high contrast.
+The native preview caught RawChip's opaque canvas covering the glass outline;
+a local transparent canvas fixes it. Light/Dark choices now render continuously.
+
+Native build/install/launch, Home/Account routing, image-backed captures,
+Light/Dark Appearance, plain-X setup and empty Ask are observed on iPhone 16e
+(iOS 26.2). Automated text entry/paste could not submit a native chat prompt;
+active chat/Back/stream acceptance still needs the final phone binary. Other
+physical accessibility, camera/barcode, voice, provider auth, APNs, share handoff,
+account isolation, full tour/import and store-artwork checks remain pending.
+The simulator app is restored to Light; no inventory or setup-answer writes
+were performed. No production deployment or schema change is part of this lane.
+
+Durable archive/IPA, verifier, receipts, CI/tests, native screenshots and phone
+checklist are in `Documents/FindEZ/AppStore/1.0.8-build63`. IPA SHA-256:
+`d9fe4c008add1fd5f35e65fe5cc37bb58bca2596ec759cd8a1a1c62e2b8a6dea`.
+The validated pre-glass candidate was never uploaded and is preserved in
+`1.0.8-build63-before-glass`. Public 1.0.7 remains selected on 59; draft 1.0.8
+is unselected with manual release. Public submission is held. Shopify stays
+paused, preserved separately and excluded from this launch.
+
+## October 14 launch excludes Shopify
+
+The user pauses Shopify and keeps it for a later release. Preserve its separate
+source lanes, draft PRs and development app/store. This mobile release lane
+contains no Shopify client feature or backend configuration. Do not bring its
+connector, linked physical-memory UI, owner edits, merchant guide or migrations
+042 through 045 into the current launch. Resume Shopify only on a new user request.
+
+## October 14 Home account control and lighter typography in source
+
+Latest continuation moves Profile out of the pill, leaving four core destinations:
+Home, Capture, Ask and Find. A small Home header control opens Account and its
+existing utilities, with a Back route to the retained Home. Avatar edits and
+live unread counts use the same owner-bound store/notifier; late count responses
+cannot undo an inbox read. Four-tab indicator geometry preserves the existing
+spring, stretch, fixed icons and reduced-motion behavior. Chat focus stays intact.
+
+Shared typography now keeps body and inputs at 400 and caps emphasis at 500,
+independent of OS Bold Text. Theme controls, AppText, editable fields and answer
+styles use that policy. The old per-screen bold overrides and stored OS-weight
+preference are removed. Larger Text, app text size, semantics and other
+accessibility settings remain. The changed typography regression fails before
+the fix; local full suite passes all 349 tests with coverage and analysis is
+clean. Actual-widget Home renders are byte-identical with Bold Text on/off in
+Light/Dark; Account and four-tab layouts are also checked. These changes are delivered in internal build 63. Physical acceptance remains
+pending. No production or public submission change; Shopify stays excluded.
+
+## October 14 focused chat and concise spreadsheet import in source
+
+Latest mobile-only continuation on `feat/mobile-submission-polish` adds a minimal
+spreadsheet ready view and conversation focus within the existing shell. A sent
+message hides the pill; pinned Back restores the previous tab without replacing
+ChatPage or losing its draft, conversation ID or streamed reply. Re-entering Ask
+resumes that conversation, and New chat restores tabs and the empty prompt.
+Import validation, processing, failures and actual result counts remain intact.
+The original focus regression fails before the fix. Light/Dark, retained request/
+draft, reset, previous-Find return, keyboard/large-text and pinned-scroll checks
+are in `mobile/test/chat_focus_test.dart`. Local analysis and all 350 mobile tests
+with coverage pass; the full local suite uses `--concurrency=1` after the parallel
+run stalled and was stopped. Final build-63 source passes all five CI gates.
+Actual-widget sample renders cover both themes, with narrow/large-text import
+layouts, preserved in Documents/FindEZ/AppStore/mobile-polish-20261014.
+These changes are delivered in build 63. Physical chat/import acceptance and
+public review remain pending; Shopify stays paused and excluded.
+
+## October 13 mobile pre-submission polish in source
+
+Lane `feat/mobile-submission-polish` in `dev/findez-logo-light-default`, based on
+delivered build-62 context `fdec959`, implements the user's latest mobile requests:
+no questionnaire wordmark, an accessible plain small X, omission of pictureless/failed
+Home thumbnails, compact frosted tour cards with a light scrim, and simple Ask
+copy. One navigation pill slides and stretches up to 1.4 while the surface pulses
+to 1.06 over 350 ms. Icons and touch targets stay fixed. Reduce Motion cross-fades
+without scaling/stretch; high contrast uses solid surfaces.
+
+The supplied October 13 logo ZIP replaces mobile wordmark/mark/icon assets byte
+for byte, regenerates native icon sizes, and updates shared web branding. Light
+is the default for missing/invalid appearance preferences; saved choices remain.
+All 346 mobile tests with coverage and clean analysis pass. All 211 web tests,
+TypeScript and production webpack build pass. Sample Light/Dark tour and navigation
+renders pass. Exact source `7317590` passed all five CI gates in `38514764506`
+(draft PR #62). The subsequent plain-X correction passes 26 onboarding tests.
+The iPhone 16e iOS 26.2 native simulator build/install/launch passes; actual Light
+questionnaire shows the small X with no background circle or wordmark. The initial
+disk failure was recovered by user-approved removal of generated task caches.
+These changes are included in internal build 63. Physical acceptance is pending;
+no App Review submission or production deployment is performed.
+
+Six iPhone and six iPad screenshots from the supplied ZIPs are COMPLETE in the
+1.0.8 en-US draft, in supplied order with verified source MD5 checksums and image
+dimensions. Durable assets, manifests and upload receipts are in
+`Documents/FindEZ/AppStore/screenshots-20261013`. Version 1.0.8 remains
+PREPARE_FOR_SUBMISSION, manual release, with no build selected. The optional
+wide creative header is separate from these screenshots. Separate Shopify source
+lanes remain disabled, unshipped and paused for a later release; the production
+schema is unchanged.
+
 ## October 12 setup questions, guided tour and concise Auth delivered
 
 - Runtime `346d9ae`, draft PR #59 stacked on #58, replaces promotional onboarding
