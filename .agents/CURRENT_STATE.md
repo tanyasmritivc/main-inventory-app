@@ -7,9 +7,13 @@ Backend-only `fix/ask-response-punctuation` is based on mobile release record
 from new text, photo, project and document chat replies before emission and
 persistence, including legacy EEZY. User messages, tool data, inventory and
 answer source/navigation snapshots are unchanged. Existing history is retained.
-All 426 backend/API documentation tests and six subtests pass. Production is
-unchanged pending deployment authorization; this needs no migration or new
-mobile binary. Shopify remains paused and public App Review remains held.
+All 426 backend/API documentation tests and six subtests pass. Runtime `3b1c824`
+in Draft PR #67 passes all five CI gates (`38548331842`). Four existing live
+file hashes match the source baseline and the new helper is absent. The exact
+five-file bundle, patch and hash manifest are preserved in
+`Documents/FindEZ/Releases/chat-punctuation-2026-10-14`. Production is unchanged
+pending deployment authorization; this needs no migration or new mobile binary.
+Shopify remains paused and public App Review remains held.
 
 ## October 14 build-63 internal TestFlight delivery
 

@@ -8,9 +8,14 @@ Shared response instruction and output normalization cover normal/streamed
 text chat, deterministic project replies, photo explanations, document/image
 upload replies and legacy EEZY. Normalization happens before session/history
 persistence; it does not change user messages, tool payloads or source records.
-All 426 backend/API documentation tests and six subtests pass. The added tests
+Runtime `3b1c824` in Draft PR #67 passes all five CI gates (`38548331842`), all
+426 local backend/API documentation tests and six subtests. The added tests
 check emitted/final/session consistency and preservation of tool data, Unicode,
-newlines, source labels and input. Production deployment awaits authorization;
+newlines, source labels and input. Four live file hashes match the source baseline;
+the new helper does not yet exist in production. The exact five-file bundle,
+patch and hash manifest are in
+`Documents/FindEZ/Releases/chat-punctuation-2026-10-14`.
+Production deployment awaits authorization;
 no schema, FIND, auth, frontend or mobile source changes. Existing history,
 TestFlight 63 and held public submission remain as recorded below.
 
