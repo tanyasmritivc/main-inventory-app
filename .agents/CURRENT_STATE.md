@@ -1,5 +1,28 @@
 # Current state
 
+## October 13 Shopify physical-memory development increment
+
+Source lane `feat/commerce-physical-memory` in `dev/findez-commerce-memory`, based
+on connector `1a49e1c` (draft PR #61). Milestone 1B adds Team-authorized manual or
+exact-barcode-confirmed variant placement, existing Space/bin selection, optional
+observed count, revision conflicts, retry idempotency and append-only history.
+Independent FindEZ names and confirmations survive commerce disconnection; no
+catalog import writes native item quantities. Web Memory tab and mobile Team page
+use shared read-only lookup with name/SKU/barcode/variant disambiguation, sources,
+confirmation time and stale-location warnings. Personal Ask and FIND are unchanged.
+Feature flags default off; migration 043 is not applied to production.
+
+Local validation: 482 backend/API-doc tests, 232 web tests and 347 mobile tests with
+coverage pass, along with TypeScript, changed-file lint, Flutter analysis and real
+disposable PostgreSQL migration/RLS/concurrency/lifecycle checks. Final source CI
+and production web compilation must be recorded at the actual PR head. No actual
+Shopify app/store installation, live query/token/webhook verification or merchant
+acceptance is complete. No production migration/deployment is authorized. Guided
+business migration, visual catalog matching, discrepancy planning and Shopify
+writes remain unimplemented. The user emphasizes business migration and planning
+through FindEZ's physical-memory angle, rather than generic commerce chat.
+
+
 ## October 12 read-only Shopify development connector
 
 Source lane `feat/shopify-catalog-connection` in `dev/findez-shopify-connector`,

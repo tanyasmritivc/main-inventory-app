@@ -107,6 +107,16 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ### Optional Shopify development connector
 
+Milestone 1B adds `test_physical_memory.py`, `physical-memory.test.tsx` and
+`mobile/test/physical_memory_test.dart`. The SQL fixture now also applies migration
+043 and `physical_memory.sql`. Verify role/Team/Space/bin access, exact barcode
+aliases, optional count versus zero, multi-placement lookup, ambiguity, old
+confirmation warnings, mutation-intent rejection, account switches/revocation,
+retry idempotency, revision conflicts and append-only history. Disconnect races,
+Space/bin deletion/detachment and inherited API-key denial must not expose stale
+private evidence or change native quantities. Run full backend/web/mobile checks;
+real-store and native acceptance remain in `docs/physical-memory.md`.
+
 `backend/tests/test_shopify.py` uses placeholder settings and mocked transport:
 OAuth HMAC/browser/state, hostile hosts, encrypted token binding/rotation, scopes,
 version/partial failures/throttling, Team ownership, durable webhook calls and

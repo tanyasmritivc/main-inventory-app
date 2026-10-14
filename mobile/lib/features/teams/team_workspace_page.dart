@@ -17,6 +17,7 @@ import '../../core/ui/glass_fab.dart';
 import '../inventory/inventory_page.dart';
 import 'team_board_page.dart';
 import 'team_documents_page.dart';
+import 'physical_memory_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class TeamWorkspacePage extends StatefulWidget {
@@ -42,6 +43,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
   String _role = 'viewer';
   bool _loading = true;
   bool _loadInProgress = false;
+  bool _physicalMemoryEnabled = false;
   String? _error;
   Timer? _refreshTimer;
 
@@ -86,6 +88,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
       setState(() {
         _team = Map<String, dynamic>.from(results[0]['team'] ?? const {});
         _role = results[0]['role']?.toString() ?? 'viewer';
+        _physicalMemoryEnabled = results[0]['physical_memory_enabled'] == true;
         _spaces = List<Map<String, dynamic>>.from(
           results[1]['spaces'] ?? const [],
         );
@@ -515,6 +518,21 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ),
                   ],
                   const SizedBox(height: 20),
+                  if (_physicalMemoryEnabled)
+                    _WorkspaceRow(
+                      icon: CupertinoIcons.location,
+                      title: 'Physical memory',
+                      subtitle: 'Find and confirm product locations',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TeamPhysicalMemoryPage(
+                            api: widget.api,
+                            teamId: widget.initialTeamId!,
+                          ),
+                        ),
+                      ),
+                    ),
                   _WorkspaceRow(
                     icon: CupertinoIcons.archivebox,
                     title: 'Spaces',

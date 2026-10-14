@@ -24,6 +24,7 @@ os.environ.update(
         "FINDEZ_AGENT_KEY": "placeholder-agent-key",
         "PILOT_MODE": "true",
         "SHOPIFY_ENABLED": "false",
+        "PHYSICAL_MEMORY_ENABLED": "false",
         "SHOPIFY_CLIENT_SECRET": "placeholder-shopify-secret",
     }
 )

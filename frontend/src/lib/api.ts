@@ -869,7 +869,7 @@ export async function joinTeam({ token, code, bindToToken }: { token: string; co
 }
 
 export async function getTeamWorkspace({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ team: TeamData & { owner_user_id: string; join_code?: string }; role: TeamRole }>(`/teams/${teamId}/workspace`, { token });
+  return apiFetch<{ team: TeamData & { owner_user_id: string; join_code?: string }; role: TeamRole; physical_memory_enabled?: boolean }>(`/teams/${teamId}/workspace`, { token });
 }
 
 export async function getTeamSpaces({ token, teamId }: { token: string; teamId: string }) {
