@@ -107,6 +107,17 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ### Optional Shopify development connector
 
+Owner-edit source adds `test_shopify_edits.py`, `shopify-edits.test.tsx` and
+`shopify_permissions.sql` (migration 044) to the existing suites/SQL entry point.
+Verify live versus selected scopes including implied reads, owner-only policy
+changes, revision conflicts, role delegation, immutable intents, IO/token leases,
+review expiry and revocation before dispatch. Confirm fixed mutation targets,
+stock idempotency, product preflight and actual receipt validation. Timeout/partial
+responses must remain unknown and prevent new edits until owner acknowledgment;
+acknowledgment never fabricates success. Raw RPC/operation/lease access remains
+denied. CI now typechecks and compiles the production web with placeholder settings
+in addition to Jest. Live-store gates are in `docs/shopify-owner-permissions.md`.
+
 Milestone 1B adds `test_physical_memory.py`, `physical-memory.test.tsx` and
 `mobile/test/physical_memory_test.dart`. The SQL fixture now also applies migration
 043 and `physical_memory.sql`. Verify role/Team/Space/bin access, exact barcode

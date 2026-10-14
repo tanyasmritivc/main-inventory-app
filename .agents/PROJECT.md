@@ -32,15 +32,19 @@ and import/mapping rules for businesses already using commerce platforms. Bring
 their existing catalog into context without repeated entry or replacing their
 commerce system. Shopify owns commerce records; FindEZ records physical context.
 Keep catalog variants, Shopify quantity snapshots and confirmed physical
-observations distinct. Start read-only toward Shopify, preserve general pricing
-direction, and avoid Shopify-only product/navigation/business logic.
+observations distinct. Read-only is the default; owners can choose supported
+product/stock edits and change that later with actual Shopify grants, role checks
+and reviewed actions. Preserve general pricing direction and avoid Shopify-only
+product/navigation/business logic.
 
 Discovery is complete in `docs/shopify-discovery.md`. The read-only development
 connector (1A) and human-confirmed physical-location memory with Team-authorized
 lookup (1B) now exist in separate source lanes, disabled by default and not deployed.
 See `docs/shopify-development.md` and `docs/physical-memory.md`. No real Shopify
 app/store acceptance is complete. Photos, discrepancies, shipments and external
-writes remain later increments. This is not authorization for production
+writes beyond supported product details/stock adjustments remain later increments.
+Owner-controlled edit source is described in `docs/shopify-owner-permissions.md`;
+live grants and mutations remain unverified. This is not authorization for production
 migrations or deployment.
 
 Business adoption should feel like a guided migration into FindEZ: reuse the

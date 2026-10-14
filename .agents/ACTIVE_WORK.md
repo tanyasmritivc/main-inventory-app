@@ -1,13 +1,24 @@
 # Active work
 
+## October 13 owner-controlled Shopify permissions
+
+Root lane `feat/shopify-owner-permissions` in `dev/findez-commerce-memory`, based
+on `ef9489e` (draft PR #63). The user changes the read-only-first requirement:
+owners must choose read/edit access and change it later, and selects stock plus
+product details for the first supported edits. Implement separate owner-managed
+edit permissions, explicit Shopify grants, Team-role delegation, reviewed manual
+actions and audited duplicate-safe outcomes. No live permissions, production
+migration/deployment or merchant installation is authorized. Finish this slice,
+then continue guided merchant adoption or the appropriate acceptance work.
+
 ## October 13 commerce-linked physical memory
 
 Root implementation lane `feat/commerce-physical-memory` in
 `dev/findez-commerce-memory`, based on `1a49e1c`, stacks on draft PR #61. Source
 milestone 1B adds backend/migration 043, web Memory tab and mobile Team page for
 human-confirmed placements and grounded read-only lookup. Local backend/web/mobile,
-analysis/type/lint and disposable SQL checks pass. Final docs, exact-head CI and
-draft PR are being completed. Disabled by default; no production changes or live
+analysis/type/lint and disposable SQL checks pass. Runtime `ef9489e` in draft PR
+#63 passes all five CI gates in `38517193932`. Disabled by default; no production changes or live
 Shopify app/store acceptance. Follow `docs/physical-memory.md` and the development
 handoff. Migration/adoption must reuse merchant catalog identity and build useful
 physical context; guided setup, photos and operational planning are later scope.

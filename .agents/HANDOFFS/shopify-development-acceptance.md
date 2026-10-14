@@ -4,6 +4,14 @@ Scope: source milestones 1A and 1B are implemented. Continue real development se
 and acceptance once a Shopify app/store exists; neither is deployed or live-store
 verified. Do not describe the full migration/planning vision as implemented.
 
+Subsequent owner-edit source: `feat/shopify-owner-permissions` in the same
+`dev/findez-commerce-memory` worktree, based on `ef9489e` (PR #63). User selects
+adjustable owner permissions, stock adjustments and product details, followed by
+guided merchant adoption or appropriate acceptance. Migration 044 and
+`docs/shopify-owner-permissions.md` add policy/grant/role intersection, reviewed
+fixed mutations, IO leases, immutable intents, receipts and honest unknown recovery.
+No actual external grant/write or production change is authorized/performed.
+
 Branch: `feat/shopify-catalog-connection`; worktree
 `/Users/tanyasmritivictorcharles/dev/findez-shopify-connector`, based on discovery
 `08f06ca`. Use the latest branch head/draft implementation PR, not the stale

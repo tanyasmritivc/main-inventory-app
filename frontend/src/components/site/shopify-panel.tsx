@@ -9,6 +9,7 @@ import {
   disconnectShopify, getShopifyCatalog, getShopifyStatus, requestShopifySync, trustedAuthorizationUrl,
 } from "@/lib/shopify";
 import styles from "./shopify-panel.module.css";
+import {ShopifyPermissionsForm,ShopifyVariantEdits,ShopifyEditHistory} from "./shopify-edit-controls";
 
 function date(value: string | null) { return value ? new Date(value).toLocaleString() : "Not yet"; }
 const labels = { pending: "Authorization incomplete", connected: "Connected", reconnect_required: "Reconnect required", disconnected: "Disconnected", uninstalled: "Uninstalled" };
@@ -54,9 +55,10 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
     finally { pending.current = false; if (alive.current) setBusy(false); }
   }
 
-  function connect() {
+  function connect(store?:ShopifyConnection) {
     void action(async () => {
-      const approved = await confirmAction({ title: "Connect Shopify?", message: "This Team's members will be able to view the store's product catalog and Shopify stock records. FindEZ receives read-only access to products and inventory.", confirmLabel: "Continue to Shopify" });
+      const editing=store?.edit_products||store?.edit_inventory;
+      const approved = await confirmAction({ title: editing?"Approve Shopify access?":"Connect Shopify?", message: editing?`This Team can view products and stock. You selected edits for ${[store?.edit_products?"product details":"",store?.edit_inventory?"stock adjustments":""].filter(Boolean).join(" and ")}. Shopify will ask you to approve those permissions.`:"This Team's members will be able to view the store's product catalog and Shopify stock records. FindEZ receives read-only access to products and inventory.", confirmLabel: "Continue to Shopify" });
       if (!approved || !alive.current) return;
       const response = await authorizeShopify(teamId, token);
       if (alive.current) window.location.assign(trustedAuthorizationUrl(response.authorization_url, status?.pilot_shop ?? null));
@@ -75,9 +77,9 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
   if (!status) return error ? <div className="notice-error" role="alert">{error}<button className="product-button" onClick={() => { setError(null); void refresh(); }}>Retry connection</button></div> : null;
 
   return <section className={`product-card ${styles.panel}`} aria-label="Shopify connection">
-    <div className={styles.heading}><span className={styles.mark}><ShoppingBag size={21}/></span><div><h3>Shopify</h3><p>Bring your existing catalog into FindEZ.</p></div><span className="status-pill">Read-only</span></div>
+    <div className={styles.heading}><span className={styles.mark}><ShoppingBag size={21}/></span><div><h3>Shopify</h3><p>Bring your existing catalog into FindEZ.</p></div><span className="status-pill">{status.connections.some(store=>store.edit_products||store.edit_inventory)?"Owner-controlled access":"Read-only"}</span></div>
     {error && <div className="notice-error" role="alert">{error}</div>}
-    {status.connections.length === 0 && <div className={styles.setup}><p>Connect {status.pilot_shop}. Your catalog and commerce stock stay separate from your physical inventory.</p>{status.can_manage ? <button className="product-button primary" disabled={busy} onClick={connect}>Connect store</button> : <p>The Team owner can connect this store.</p>}</div>}
+    {status.connections.length === 0 && <div className={styles.setup}><p>Connect {status.pilot_shop}. Your catalog and commerce stock stay separate from your physical inventory.</p>{status.can_manage ? <button className="product-button primary" disabled={busy} onClick={()=>connect()}>Connect store</button> : <p>The Team owner can connect this store.</p>}</div>}
     {status.connections.map(store => <div key={store.connection_id} className={styles.store}>
       <div className={styles.storeTitle}><strong>{store.shop_name || store.shop_domain}</strong><span>{labels[store.status]}</span></div>
       <dl className={styles.times}><div><dt>Last complete sync</dt><dd>{date(store.last_success_at)}</dd></div><div><dt>Last attempt</dt><dd>{date(store.last_attempt_at)}</dd></div></dl>
@@ -86,7 +88,7 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
       <div className="product-actions">
         {(store.status === "connected" || store.status === "reconnect_required" || store.status === "pending") && <button className="product-button" disabled={busy} onClick={() => preview(store)}>Preview catalog</button>}
         {status.can_manage && store.status === "connected" && <button className="product-button" disabled={busy} onClick={() => void action(async () => { const result = await requestShopifySync(teamId, store.connection_id, token); if (!result.queued) throw new Error("Sync was not queued."); if (alive.current) await refresh(); })}><RefreshCw size={14}/>Sync now</button>}
-        {status.can_manage && store.status !== "connected" && <button className="product-button primary" disabled={busy} onClick={connect}>Reconnect</button>}
+        {status.can_manage && store.status !== "connected" && <button className="product-button primary" disabled={busy} onClick={()=>connect(store)}>Reconnect</button>}
         {status.can_manage && store.status !== "disconnected" && store.status !== "uninstalled" && <button className="product-button" disabled={busy} onClick={() => void action(async () => {
           const approved = await confirmAction({ title: "Disconnect Shopify?", message: "FindEZ will stop syncing and remove its imported catalog and credentials. Your saved physical items and Spaces stay in FindEZ.", confirmLabel: "Disconnect", danger: true });
           if (!approved || !alive.current) return;
@@ -95,6 +97,8 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
           if (alive.current) { setCatalog(null); await refresh(); }
         })}>Disconnect</button>}
       </div>
+      {status.can_manage&&<ShopifyPermissionsForm key={`${store.connection_id}:${store.permission_revision||0}`} teamId={teamId} token={token} store={store} onChanged={refresh} onAuthorize={()=>connect(store)} editsEnabled={!!status.edits_enabled}/>}
+      {status.can_manage&&<ShopifyEditHistory teamId={teamId} token={token} store={store}/>}
       {catalog?.connectionId === store.connection_id && <div className={styles.catalog}>
         <div><h4>Catalog preview</h4><p>Shopify records. Storage locations in FindEZ have not been confirmed here.</p></div>
         {catalog.variants.length === 0 && <p>{store.last_success_at ? "No current variants in this catalog." : "No variants imported yet."}</p>}
@@ -106,6 +110,7 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
           <div><strong>{variant.product_title}</strong><p>{variant.variant_title === "Default Title" ? "Standard variant" : variant.variant_title} / {variant.product_status.toLowerCase()}</p>
             <p>SKU: {variant.sku || "Not supplied"}</p>{variant.barcodes.length > 0 && <p>Barcodes: {variant.barcodes.map(b => b.value).join(", ")}</p>}
             {!variant.tracked ? <p>Shopify stock is not tracked.</p> : variant.shopify_inventory.length === 0 ? <p>No Shopify quantity snapshot available.</p> : variant.shopify_inventory.map(level => <p key={level.location_gid}>{level.location_name}{level.location_active ? "" : " (inactive)"}: {level.quantities.available ?? "Unknown"} available / {level.quantities.on_hand ?? "Unknown"} on hand. Synced {date(level.synced_at)}.</p>)}
+            {(store.can_edit_products||store.can_edit_inventory)&&<ShopifyVariantEdits key={`${variant.variant_gid}:${store.permission_revision||0}`} teamId={teamId} token={token} store={store} variant={variant} onChanged={refresh}/>}
           </div>
         </article>)}
         {catalog.next_cursor && <button className="product-button" disabled={busy} onClick={() => preview(store, true)}>Load more variants</button>}

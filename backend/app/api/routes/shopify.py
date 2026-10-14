@@ -13,13 +13,13 @@ from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
 from app.services.shopify_api import (
     API_VERSION, SHOP_QUERY, TOPICS, ShopifyAPI, ShopifyError, Vault, auth_url,
-    canonical_shop, ready, state_hash, verify_callback, verify_webhook,
+    canonical_shop, ready, state_hash, verify_callback, verify_webhook, requested_scopes, SCOPES,
 )
 from app.services.shopify_sync import rpc
 
 router = APIRouter(tags=["shopify"])
 COOKIE = "findez_shopify_state"
-PUBLIC_COLUMNS = "connection_id,team_id,shop_domain,shop_name,status,last_attempt_at,last_success_at,error_code"
+PUBLIC_COLUMNS = "connection_id,team_id,shop_domain,shop_name,status,last_attempt_at,last_success_at,error_code,edit_products,edit_inventory,edit_access,permission_revision,granted_scopes"
 
 
 def membership(team, actor, owner=False):
@@ -58,6 +58,12 @@ def status(team_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
     db = get_supabase_admin()
     rows = db.table("shopify_connections").select(PUBLIC_COLUMNS).eq("team_id", str(team_id)).execute().data or []
     for row in rows:
+        owner = bool(db.table("teams").select("team_id").eq("team_id", str(team_id)).eq("owner_user_id", user.user_id).limit(1).execute().data)
+        allowed = owner or (row.get("edit_access") == "editors" and member["role"] in ("mentor", "member"))
+        writes = getattr(settings, "shopify_writes_enabled", False) and row["status"] == "connected" and allowed
+        scopes = row.get("granted_scopes", [])
+        row["can_edit_products"] = bool(writes and row.get("edit_products") and "write_products" in scopes)
+        row["can_edit_inventory"] = bool(writes and row.get("edit_inventory") and "write_inventory" in scopes)
         jobs = db.table("shopify_sync_jobs").select("attempts,available_at").eq("connection_id", row["connection_id"]).execute().data or []
         row["sync_status"] = ("failed" if jobs and jobs[0]["available_at"] == "infinity" else
             "syncing" if jobs else "queued" if row["status"] == "connected" and not row["last_success_at"] else "idle")
@@ -65,23 +71,32 @@ def status(team_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
         pending = db.table("shopify_connections").select("sync_requested").eq("connection_id", row["connection_id"]).execute().data or []
         if row["sync_status"] == "idle" and pending and pending[0]["sync_requested"]:
             row["sync_status"] = "queued"
-    return {"enabled": True, "connections": rows, "can_manage": member["role"] == "owner", "pilot_shop": settings.shopify_pilot_shop}
+    return {"enabled": True, "connections": rows, "can_manage": member["role"] == "owner", "pilot_shop": settings.shopify_pilot_shop,
+        "edits_enabled": getattr(settings, "shopify_writes_enabled", False)}
 
 
 @router.post("/teams/{team_id}/shopify/authorize")
 def authorize(team_id: UUID, response: Response, user: AuthenticatedUser = Depends(get_current_user)):
     membership(team_id, user.user_id, owner=True)
     settings = enabled()
+    if not getattr(settings, "shopify_writes_enabled", False):
+        policies = get_supabase_admin().table("shopify_connections").select("edit_products,edit_inventory").eq(
+            "team_id", str(team_id)).eq("shop_domain", settings.shopify_pilot_shop).limit(1).execute().data or []
+        if any(row.get("edit_products") or row.get("edit_inventory") for row in policies):
+            raise HTTPException(503, "Disable edits in connection permissions before reconnecting without edit support.")
     nonce = secrets.token_urlsafe(32)
     try:
-        rpc("begin_auth", team=str(team_id), actor=user.user_id, shop=settings.shopify_pilot_shop, state_hash=state_hash(nonce))
+        started = rpc("begin_auth", team=str(team_id), actor=user.user_id, shop=settings.shopify_pilot_shop, state_hash=state_hash(nonce))
     except Exception:
         raise HTTPException(409, "The store cannot be connected to this team. Check its existing connection.") from None
     # The nonce is also bound to the browser that initiated the owner action.
     response.set_cookie(COOKIE, nonce, max_age=600, secure=True, httponly=True, samesite="lax",
         path="/integrations/shopify/callback")
     response.headers["Cache-Control"] = "no-store"
-    return {"authorization_url": auth_url(settings, nonce)}
+    scopes = started.get("requested_scopes", SCOPES) if isinstance(started, dict) else SCOPES
+    if not getattr(settings, "shopify_writes_enabled", False) and set(scopes) - SCOPES:
+        raise HTTPException(503, "Shopify edits are not enabled yet.")
+    return {"authorization_url": auth_url(settings, nonce, scopes)}
 
 
 @router.get("/integrations/shopify/callback")
@@ -105,7 +120,10 @@ def callback(request: Request):
         c = consumed["connection"]
         team_id = str(UUID(c["team_id"]))
         api = ShopifyAPI(settings, params["shop"])
-        tokens, scopes, access, refresh = api.tokens(code=params["code"])
+        expected = consumed.get("requested_scopes", SCOPES)
+        if not getattr(settings, "shopify_writes_enabled", False) and set(expected) - SCOPES:
+            raise ShopifyError()
+        tokens, scopes, access, refresh = api.tokens(code=params["code"], expected=expected)
         data, _ = api.query(SHOP_QUERY, {}, tokens["access"])
         shop = data["shop"]
         if shop["myshopifyDomain"] != c["shop_domain"]:

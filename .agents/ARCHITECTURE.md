@@ -56,7 +56,7 @@ defense in depth. The service-role key must never reach a client.
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
 related services. Production migrations are recorded through `041`; optional
-development migrations `042` and `043` exist in source only. They do not contain
+development migrations `042`, `043` and `044` exist in source only. They do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -133,7 +133,13 @@ and existing answer presentation. It is not a general Team agent and cannot invo
 personal inventory mutation tools. Ambiguity requires selection; unknown locations
 and old confirmations are explicit. Store disconnection deletes imported links
 and cache while preserving independently authored physical memories.
-See `docs/physical-memory.md` for contracts, limits and acceptance. No real Shopify
+See `docs/physical-memory.md` for contracts, limits and acceptance.
+Owner-controlled edit source adds separate policy flags, actual grant verification,
+role delegation, IO leases and immutable reviewed operations in migration 044.
+Fixed product detail and signed stock mutations require explicit confirmation;
+the read-only agent never invokes them. Unknown outcomes pause further writes and
+are not automatically replayed. `docs/shopify-owner-permissions.md` describes the
+supported fields and real-store gates. No real Shopify
 app/store acceptance or production migration/deployment is complete; the user
 requires separate production authorization. Discovery is in `docs/shopify-discovery.md`.
 

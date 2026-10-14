@@ -104,6 +104,8 @@ class Settings(BaseSettings):
     # Optional standalone development/custom-store pilot. Public App Store
     # distribution is a separate installation/billing review, not enabled here.
     shopify_enabled: bool = False
+    # Enable supported edits only after migration 044 and isolated app acceptance.
+    shopify_writes_enabled: bool = False
     shopify_client_id: str | None = None
     shopify_client_secret: str | None = None
     shopify_pilot_shop: str | None = None
