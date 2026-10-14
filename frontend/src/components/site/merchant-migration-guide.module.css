@@ -1,0 +1,19 @@
+.guide { border-top: 1px solid var(--app-border); margin-top: 20px; padding-top: 20px; }
+.guide header { display: flex; gap: 16px; justify-content: space-between; align-items: start; }
+.guide button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.guide button svg { flex-shrink: 0; }
+.guide h4 { font-size: 16px; font-weight: 600; margin: 0; }
+.guide h5 { margin: 0; font-size: 14px; font-weight: 600; }
+.guide p { color: var(--app-muted); font-size: 13px; line-height: 1.5; }
+.steps { display: grid; gap: 18px; list-style: none; margin: 22px 0; padding: 0; }
+.steps li { display: flex; gap: 12px; align-items: start; }
+.steps strong { font-size: 13px; }
+.steps p { margin: 5px 0; }
+.number,.done { height: 24px; width: 24px; flex: 0 0 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: var(--app-surface-2); color: var(--app-muted); }
+.done { color: var(--app-accent); }
+.queue,.next { padding: 16px; background: var(--app-surface-2); border-radius: 12px; }
+.queue > div { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--app-border); }
+.queue strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.queue small { display: block; color: var(--app-muted); font-size: 11px; margin-top: 4px; }
+.note { margin-top: 18px; }
+@media(max-width:600px) { .guide header { flex-direction: column; }.queue > div { align-items: start; flex-direction: column; } }

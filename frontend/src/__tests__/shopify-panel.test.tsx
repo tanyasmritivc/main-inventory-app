@@ -5,7 +5,7 @@ import { ShopifyPanel } from "@/components/site/shopify-panel";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import * as connector from "@/lib/shopify";
 
-jest.mock("@/lib/shopify", () => ({ ...jest.requireActual("@/lib/shopify"), getShopifyStatus: jest.fn(), getShopifyCatalog: jest.fn(), requestShopifySync: jest.fn(), disconnectShopify: jest.fn(), authorizeShopify: jest.fn() }));
+jest.mock("@/lib/shopify", () => ({ ...jest.requireActual("@/lib/shopify"), getShopifyStatus: jest.fn(), getShopifyCatalog: jest.fn(), requestShopifySync: jest.fn(), disconnectShopify: jest.fn(), authorizeShopify: jest.fn(), getMerchantProgress: jest.fn() }));
 const status = jest.mocked(connector.getShopifyStatus);
 const catalog = jest.mocked(connector.getShopifyCatalog);
 const sync = jest.mocked(connector.requestShopifySync);
@@ -118,4 +118,13 @@ test("untrusted redirects and image URLs are rejected", () => {
   expect(connector.catalogImage("javascript:alert(1)")).toBeNull();
   expect(connector.catalogImage("https://evil.test/private-image")).toBeNull();
   expect(connector.catalogImage("https://cdn.shopify.com/test.jpg")).toBe("https://cdn.shopify.com/test.jpg");
+});
+
+test.each([false,true])("merchant setup only mounts after its server capability is enabled (%s)", async enabled => {
+  status.mockResolvedValue({...connected,migration_enabled:enabled});
+  jest.mocked(connector.getMerchantProgress).mockResolvedValue({connection_id:"store-a",connection_status:"connected",sync_in_progress:false,checked_at:"2026-10-13T10:00:00Z",can_confirm:false,space_count:0,import_complete:false,last_complete_sync:null,total_variants:0,confirmed_variants:0,unconfirmed_variants:0,older_confirmations:0,unconfirmed_sample:[],confirmed_example:null});
+  render(<AppDialogProvider><ShopifyPanel teamId="team-a" token="actor-a" onOpenMemory={()=>{}} onOpenSpaces={()=>{}}/></AppDialogProvider>);
+  await screen.findByText("Preview catalog");
+  if(enabled) {await screen.findByText(/No variants are available yet/);expect(connector.getMerchantProgress).toHaveBeenCalledWith("team-a","store-a","actor-a");}
+  else {expect(screen.queryByText("Set up your stockroom")).toBeNull();expect(connector.getMerchantProgress).not.toHaveBeenCalled();}
 });

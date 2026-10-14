@@ -121,19 +121,22 @@ dependencies before runtime and record health/acceptance and rollback evidence.
 The user wants businesses to migrate their existing operational context into
 FindEZ so they can understand and plan their physical operation. The first slices
 provide catalog import and trusted placement, not an end-to-end migration wizard.
-The next narrow product task is guided adoption: show actual import progress,
+The following source increment adds guided adoption: show actual import progress,
 separate unmapped/confirmed variants, let employees work through storage locations
 and demonstrate their first successful location lookup. Reuse the existing
 connection, memory and Team APIs. Never infer that import completion means physical
 mapping is complete or convert commerce stock into observed counts.
+See `merchant-guided-migration.md` for its implemented boundaries and test gates.
 
 After development-store acceptance, test with merchants and measure setup effort,
 time to locate/pick a product, repeat employee use and willingness to pay. Use those
 results to prioritize photo evidence/catalog matching and actionable attention
 lists for unconfirmed or stale locations. Later planning must distinguish unknown
 physical stock, Shopify snapshots and employee observations. Document linkage,
-shipments, discrepancy resolution, forecasting and authorized Shopify writes remain
-future scope. Existing published pricing is preserved; no arbitrary new tier limits
+shipments, discrepancy resolution and forecasting remain future scope.
+Owner-selected product/stock write source exists separately in
+`shopify-owner-permissions.md`, with actual grants/mutations still unverified.
+Existing published pricing is preserved; no arbitrary new tier limits
 or revenue outcomes are promised.
 
 Shopify's current Claude connector covers commerce management through chat;

@@ -24,6 +24,7 @@ import { ItemDetails } from "@/components/site/item-details";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ShopifyPanel } from "@/components/site/shopify-panel";
 import { PhysicalMemoryPanel } from "@/components/site/physical-memory-panel";
+import {PhysicalSelection} from "@/lib/physical-memory";
 
 type Tab = "spaces" | "board" | "people" | "files" | "activity" | "memory";
 type CreateMode = "team" | "join" | "space" | "attach" | "task" | "item";
@@ -38,7 +39,7 @@ function relativeTime(value?: string) {
 function memberName(member?: TeamMember) { return member?.display_name?.trim() || member?.contact_email?.trim() || "Team member"; }
 
 export function TeamsClient() {
-  const { token } = useApiSession();
+  const { token,accountId } = useApiSession();
   const { confirmAction, promptValue } = useAppDialog();
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [teams, setTeams] = useState<TeamData[]>([]);
@@ -46,6 +47,7 @@ export function TeamsClient() {
   const [team, setTeam] = useState<(TeamData & { owner_user_id?: string }) | null>(null);
   const [role, setRole] = useState<TeamRole>("viewer");
   const [physicalEnabled, setPhysicalEnabled] = useState(false);
+  const [memorySelection,setMemorySelection]=useState<{teamId:string;accountId:string|null;selection:PhysicalSelection}>();
   const [tab, setTab] = useState<Tab>("spaces");
   const [spaces, setSpaces] = useState<TeamSpace[]>([]);
   const [board, setBoard] = useState<TeamBoardTask[]>([]);
@@ -212,7 +214,7 @@ export function TeamsClient() {
       {createMode && <TeamCreateForm mode={createMode} form={form} setForm={setForm} onSubmit={submitCreate} onCancel={() => setCreateMode(null)} working={working} spaces={availableSpaces} members={members} />}
       {error && <div className="notice-error">{error}</div>}
       <div className="product-tabs">{(["spaces", "board", "people", "files", "activity", ...(physicalEnabled ? ["memory"] : [])] as Tab[]).map((value) => <button className={tab === value ? "is-active" : ""} key={value} onClick={() => setTab(value)}>{value[0].toUpperCase() + value.slice(1)}{value === "spaces" ? ` ${spaces.length}` : value === "board" ? ` ${board.filter((task) => task.status !== "done").length}` : ""}</button>)}</div>
-      {tab === "memory" && physicalEnabled && selectedId && <PhysicalMemoryPanel key={`${token}:${selectedId}`} teamId={selectedId}/>}
+      {tab === "memory" && physicalEnabled && selectedId && <PhysicalMemoryPanel key={`${token}:${selectedId}`} teamId={selectedId} initialSelection={memorySelection?.teamId===selectedId&&memorySelection.accountId===accountId?memorySelection.selection:undefined}/>}
 
       {tab === "spaces" && <div className="team-panel"><div className="team-panel-heading"><h2>Spaces</h2>{canEdit && <div className="product-actions">{canManage && <button className="product-button" onClick={() => setCreateMode("space")}><Plus size={14} />Create</button>}<button className="product-button primary" onClick={() => setCreateMode("attach")}><Link2 size={14} />Link</button></div>}</div>{openSpace ? <div className="team-space-detail product-card"><div className="team-space-detail-head"><button className="product-button" onClick={() => { setOpenSpace(null); setDetailItem(null); }}>← Spaces</button><div><h3>{openSpace.name}</h3><span>{spaceItems.length} items</span></div>{canEdit && <button className="product-button primary" onClick={() => setCreateMode("item")}><Plus size={14} />Add</button>}</div><div className="team-item-table"><div className="team-item-head"><span>Item</span><span>Category</span><span>Qty</span><span /></div>{spaceItems.map((item) => <div className="team-item-row" key={item.item_id}><span><button type="button" onClick={() => setDetailItem(item)}><strong>{itemDisplayName(item)}</strong></button><small>{itemDisplayDescription(item) || item.brand || ""}</small></span><span>{item.category}</span><span>{item.quantity}</span><span>{canEdit && <><button onClick={() => void editSpaceItem(item)}>Edit</button><button onClick={() => void removeSpaceItem(item)}>Delete</button></>}</span></div>)}</div></div> : <div className="team-space-grid">{spaces.map((space) => <article key={space.id}><button onClick={() => void loadSpace(space)}><Archive size={18} /><span><strong>{space.name}</strong><small>{space.item_count ?? 0} items{space.owned_by_me ? " · yours" : ""}</small></span></button>{(canManage || space.owned_by_me) && <button className="team-card-menu" onClick={() => void removeSpace(space)} aria-label={`Remove ${space.name}`}><Trash2 size={14} /></button>}</article>)}{spaces.length === 0 && <div className="bare-empty"><Archive size={22} /><strong>No shared Spaces</strong></div>}</div>}</div>}
 
@@ -223,7 +225,7 @@ export function TeamsClient() {
       {tab === "files" && <div className="team-panel"><div className="team-panel-heading"><h2>Files</h2>{canEdit && <><button className="product-button primary" onClick={() => teamFileRef.current?.click()}><Plus size={14} />Upload</button><input ref={teamFileRef} hidden type="file" onChange={(event) => void uploadDocument(event)} /></>}</div><div className="team-files">{documents.map((document) => <article key={document.team_document_id}><FileText size={18} /><button onClick={() => void openDocument(document)}><strong>{document.filename}</strong><span>{relativeTime(document.created_at)} · {document.size_bytes ? `${Math.ceil(document.size_bytes / 1024)} KB` : "File"}</span></button>{canEdit && <button className="app-icon-button" onClick={() => void removeDocument(document)}><Trash2 size={14} /></button>}</article>)}{documents.length === 0 && <div className="bare-empty"><FileText size={22} /><strong>No files</strong></div>}</div></div>}
 
       {tab === "activity" && <div className="team-panel"><div className="team-panel-heading"><h2>Activity</h2></div><div className="activity-feed">{activity.map((entry) => <article className="activity-row" key={entry.activity_id}><span className="activity-icon"><History size={15} /></span><div><div className="activity-copy">{entry.summary}</div><div className="activity-meta">{relativeTime(entry.created_at)}</div></div></article>)}{activity.length === 0 && <div className="bare-empty"><History size={22} /><strong>No activity</strong></div>}</div></div>}
-      {tab === "people" && selectedId && token && <ShopifyPanel key={`${token}:${selectedId}`} teamId={selectedId} token={token}/>}
+      {tab === "people" && selectedId && token && <ShopifyPanel key={`${token}:${selectedId}`} teamId={selectedId} token={token} onOpenMemory={selection=>{setMemorySelection({teamId:selectedId,accountId,selection});setPhysicalEnabled(true);setTab("memory");}} onOpenSpaces={()=>{setMemorySelection(undefined);setTab("spaces");}}/>}
       <Dialog open={!!detailItem && !!openSpace} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Team item</DialogTitle>{detailItem && openSpace && selectedId && <ItemDetails item={detailItem} context={{ kind: "team", teamId: selectedId, spaceId: openSpace.id }} canEdit={canEdit} onChanged={next => { setDetailItem(next); setSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
     </section>
   );

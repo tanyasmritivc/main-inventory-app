@@ -115,6 +115,8 @@ class Settings(BaseSettings):
     shopify_active_key_id: str = "v1"
     # Native location observations/Team lookup; remains usable after disconnect.
     physical_memory_enabled: bool = False
+    # Guided import-to-confirmation flow. Requires migrations 042 through 045.
+    merchant_migration_enabled: bool = False
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod

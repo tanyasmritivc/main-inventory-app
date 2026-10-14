@@ -47,11 +47,16 @@ Owner-controlled edit source is described in `docs/shopify-owner-permissions.md`
 live grants and mutations remain unverified. This is not authorization for production
 migrations or deployment.
 
+Guided stockroom setup is now a further source slice, with factual sync/mapping
+progress, a bounded unconfirmed-variant queue and a reviewed-name shortcut into
+existing physical memory. See `docs/merchant-guided-migration.md`. It remains
+disabled and needs actual development-store and merchant-pilot acceptance.
+
 Business adoption should feel like a guided migration into FindEZ: reuse the
 merchant's catalog, preserve product/variant identity, map actual storage and help
 the team understand what it has and what needs attention. Shopify can remain the
 commerce system. FindEZ adds persistent physical memory and, in later increments,
-planning grounded in that memory. Do not claim an end-to-end migration wizard,
+planning grounded in that memory. Do not claim an end-to-end business migration wizard,
 automatic visual matching or operational planning is implemented by these slices.
 The first pilot should demonstrate reliable product finding and measure setup
 effort, finding/picking time, repeat employee use and willingness to pay.

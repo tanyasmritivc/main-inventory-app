@@ -25,6 +25,7 @@ os.environ.update(
         "PILOT_MODE": "true",
         "SHOPIFY_ENABLED": "false",
         "PHYSICAL_MEMORY_ENABLED": "false",
+        "MERCHANT_MIGRATION_ENABLED": "false",
         "SHOPIFY_CLIENT_SECRET": "placeholder-shopify-secret",
     }
 )

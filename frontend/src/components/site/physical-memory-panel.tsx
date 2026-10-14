@@ -5,18 +5,18 @@ import { useApiSession } from "@/lib/use-api-session";
 import { userFacingError } from "@/lib/user-facing-error";
 import { AskMarkdown } from "./ask-markdown";
 import { useAppDialog } from "./app-dialog-provider";
-import { askPhysical, candidateLabel, confirmPhysical, getPhysicalOptions, physicalHistory, PhysicalAnswer, PhysicalCandidate, PhysicalOptions } from "@/lib/physical-memory";
+import { askPhysical, candidateLabel, suggestedMemoryName, confirmPhysical, getPhysicalOptions, physicalHistory, PhysicalAnswer, PhysicalCandidate, PhysicalOptions, PhysicalSelection } from "@/lib/physical-memory";
 import styles from "./physical-memory-panel.module.css";
 
 function accessLost(reason:unknown) {
   return (typeof reason==="object"&&reason!==null&&"status" in reason&&[401,403].includes(Number(reason.status))) || (reason instanceof Error&&reason.message.includes("Your account changed"));
 }
 
-export function PhysicalMemoryPanel({teamId}: {teamId:string}) {
+export function PhysicalMemoryPanel({teamId,initialSelection}: {teamId:string;initialSelection?:PhysicalSelection}) {
   const {accountId} = useApiSession();
-  return accountId ? <PhysicalWorkspace key={`${teamId}:${accountId}`} teamId={teamId} account={accountId}/> : null;
+  return accountId ? <PhysicalWorkspace key={`${teamId}:${accountId}:${initialSelection?.connection_id||""}:${initialSelection?.variant_gid||""}`} teamId={teamId} account={accountId} initialSelection={initialSelection}/> : null;
 }
-function PhysicalWorkspace({teamId,account}: {teamId:string;account:string}) {
+function PhysicalWorkspace({teamId,account,initialSelection}: {teamId:string;account:string;initialSelection?:PhysicalSelection}) {
   const [options,setOptions] = useState<PhysicalOptions>();
   const [question,setQuestion] = useState("");
   const [barcode,setBarcode] = useState(false);
@@ -26,6 +26,7 @@ function PhysicalWorkspace({teamId,account}: {teamId:string;account:string}) {
   const [busy,setBusy] = useState(false);
   const [editing,setEditing] = useState(false);
   const alive=useRef(true),ticket=useRef(0),optionTicket=useRef(0),pending=useRef(false),working=useRef(false);
+  const initialized=useRef(false);
   const clearAccess=useCallback(()=>{
     ticket.current++;optionTicket.current++;pending.current=false;working.current=false;
     setAnswer(undefined);setSelected(undefined);setOptions(undefined);setQuestion("");setBusy(false);setEditing(false);
@@ -41,16 +42,17 @@ function PhysicalWorkspace({teamId,account}: {teamId:string;account:string}) {
     const timer=setInterval(refresh,30000);window.addEventListener("focus",refresh);
     return()=>{alive.current=false;clearInterval(timer);window.removeEventListener("focus",refresh);};
   },[loadOptions]);
-  async function search(candidate?:PhysicalCandidate) {
+  const search=useCallback(async(candidate?:PhysicalCandidate|PhysicalSelection)=> {
     if(pending.current||working.current||(!question.trim()&&!candidate)) return;
     pending.current=true;setBusy(true);setError("");setAnswer(undefined);setSelected(undefined);
     const request=++ticket.current;
     try {
-      const value=await askPhysical(teamId,account,candidate ? {question:"Where is this product?",...(candidate.memory_id?{memory_id:candidate.memory_id}:{connection_id:candidate.connection_id!,variant_gid:candidate.variant_gid!})} : {question:question.trim(),...(barcode?{barcode:question.trim()}: {})});
+      const value=await askPhysical(teamId,account,candidate ? {question:"Where is this product?",...("memory_id" in candidate&&candidate.memory_id?{memory_id:candidate.memory_id}:{connection_id:candidate.connection_id!,variant_gid:candidate.variant_gid!})} : {question:question.trim(),...(barcode?{barcode:question.trim()}: {})});
       if(alive.current&&request===ticket.current) {setAnswer(value);if(value.result.candidates.length===1) setSelected(value.result.candidates[0]);}
     } catch(reason) {if(alive.current&&request===ticket.current){if(accessLost(reason))clearAccess();else setError(userFacingError(reason,"Could not check this Team's physical memory."));}}
     finally {pending.current=false;if(alive.current&&request===ticket.current) setBusy(false);}
-  }
+  },[teamId,account,question,barcode,clearAccess]);
+  useEffect(()=>{if(initialSelection&&!initialized.current){initialized.current=true;void search(initialSelection);}},[initialSelection,search]);
   return <section className={`team-panel ${styles.panel}`} aria-label="Team physical memory">
     <div className="team-panel-heading"><div><h2>Physical memory</h2><p>Find a product. Confirm where it belongs.</p></div><span className="status-pill">Read-only lookup</span></div>
     <form className={styles.search} onSubmit={event=>{event.preventDefault();void search();}}>
@@ -66,7 +68,7 @@ function PhysicalWorkspace({teamId,account}: {teamId:string;account:string}) {
 }
 
 function LocationEditor({candidate,options,team,account,barcode,onSaved,onWorking,onAccessDenied}: {candidate:PhysicalCandidate;options:PhysicalOptions;team:string;account:string;barcode?:string;onSaved:(memory:string)=>Promise<void>;onWorking:(value:boolean)=>void;onAccessDenied:()=>void}) {
-  const [name,setName]=useState(candidate.native_label||"");
+  const [name,setName]=useState(()=>suggestedMemoryName(candidate));
   const [placement,setPlacement]=useState("");
   const [space,setSpace]=useState("");
   const [bin,setBin]=useState("");
@@ -100,7 +102,7 @@ function LocationEditor({candidate,options,team,account,barcode,onSaved,onWorkin
     {!options.can_confirm&&<p>You have view-only access. An editor can confirm a location.</p>}
     {options.can_confirm&&<form onSubmit={event=>{event.preventDefault();void save();}}>
       <label>FindEZ name<input className="product-input" required maxLength={200} value={name} disabled={!!candidate.native_label||busy} onChange={event=>setName(event.target.value)} placeholder="Write the name you want FindEZ to remember"/></label>
-      <p>This name and your location confirmation remain in FindEZ after disconnecting Shopify.</p>
+      <p>Review the suggested name. This name and your location confirmation remain in FindEZ after disconnecting Shopify.</p>
       {candidate.placements.length>0&&<label>Confirmation<select className="product-select" disabled={busy} value={placement} onChange={event=>select(event.target.value)}><option value="">Add another location</option>{candidate.placements.map(p=><option key={p.placement_id} value={p.placement_id}>{p.space_name}{p.bin_name?` / ${p.bin_name}`:""}</option>)}</select></label>}
       <div className={styles.fields}><label>Space<select required className="product-select" disabled={busy} value={space} onChange={event=>{setSpace(event.target.value);setBin("");}}><option value="">Choose a Team Space</option>{options.spaces.map(value=><option key={value.id} value={value.id}>{value.name}</option>)}</select></label><label>Bin<select className="product-select" disabled={busy||!space} value={bin} onChange={event=>setBin(event.target.value)}><option value="">Space only</option>{bins.map(value=><option key={value.id} value={value.id}>{value.name}</option>)}</select></label></div>
       <label>Count observed here (optional)<input className="product-input" type="number" min="0" max="2147483647" step="1" disabled={busy} value={count} onChange={event=>setCount(event.target.value)} placeholder="Unknown if blank"/></label>

@@ -12,6 +12,17 @@ guided merchant adoption or appropriate acceptance. Migration 044 and
 fixed mutations, IO leases, immutable intents, receipts and honest unknown recovery.
 No actual external grant/write or production change is authorized/performed.
 
+Owner-edit runtime `a58e84e` passes all five CI gates in `38521256695`, including
+real PostgreSQL and production web compilation. Guided setup follows in
+`feat/merchant-guided-migration`, based on that head, with migration 045 and
+`docs/merchant-guided-migration.md`. The factual report, bounded variant queue and
+reviewed name reuse existing confirmation and lookup. `MERCHANT_MIGRATION_ENABLED`
+defaults false. Extend isolated acceptance through the actual migration guide;
+no real merchant or production outcome is claimed. Guided runtime `d4cf468`
+(draft PR #65) passes all five CI gates in `38525045435`, with 509 backend/API-doc
+and 259 web tests, production web compilation, SQL isolation and mobile regressions.
+Source work is complete; real app/store setup and acceptance are next.
+
 Branch: `feat/shopify-catalog-connection`; worktree
 `/Users/tanyasmritivictorcharles/dev/findez-shopify-connector`, based on discovery
 `08f06ca`. Use the latest branch head/draft implementation PR, not the stale
@@ -46,7 +57,7 @@ not tested by mocks or SQL. CI status belongs to the actual PR head.
 
 User confirms no Shopify app/development store exists and chose preparation for
 development testing. Remaining: app/store registration and selected distribution,
-isolated backend/web/Supabase configuration, migrations 042/043 on that test database,
+isolated backend/web/Supabase configuration, migrations 042 through 045 on that test database,
 private credentials/vault key, HTTPS same-site origins and callback query-log
 redaction at all proxies. Verify app TOML with Shopify CLI, supervise the worker,
 then complete the real-store checklist in `docs/shopify-development.md`.
@@ -59,5 +70,6 @@ Disabled feature is the safe runtime rollback; leave independent physical data
 intact and keep compliance receiver credentials until redaction is complete.
 Public App Store distribution/billing/policy/backup-retention review remains a
 separate gate. Physical-location observations and bounded Team-aware read-only
-lookup exist in 1B source only. Guided migration, photo matching and operational
-planning are later increments. Existing FIND HTTP transport deferral stands.
+lookup exist in 1B source only. Guided stockroom migration and owner edits exist in
+further disabled source. Photo matching and operational planning remain unbuilt.
+Existing FIND HTTP transport deferral stands.

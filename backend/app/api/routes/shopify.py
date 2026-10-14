@@ -72,7 +72,8 @@ def status(team_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
         if row["sync_status"] == "idle" and pending and pending[0]["sync_requested"]:
             row["sync_status"] = "queued"
     return {"enabled": True, "connections": rows, "can_manage": member["role"] == "owner", "pilot_shop": settings.shopify_pilot_shop,
-        "edits_enabled": getattr(settings, "shopify_writes_enabled", False)}
+        "edits_enabled": getattr(settings, "shopify_writes_enabled", False),
+        "migration_enabled": getattr(settings, "merchant_migration_enabled", False) and getattr(settings, "physical_memory_enabled", False)}
 
 
 @router.post("/teams/{team_id}/shopify/authorize")
