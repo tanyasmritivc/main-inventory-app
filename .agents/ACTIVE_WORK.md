@@ -1,29 +1,33 @@
 # Active work
 
-## October 14 build-63 internal TestFlight preparation
+## October 14 build-63 internal TestFlight delivery complete
 
-Apple validation of the first build-63 candidate passes, but it is not uploaded.
-The user now requests glass instead of black Light-mode selection/action fills,
-with Appearance settings as the reference. Revise the same candidate before
-delivery: use the existing frosted surface for neutral controls, with a clear
-selected outline/tint, readable labels and solid high-contrast rendering. Preserve
-orange primary actions, destructive meanings, callbacks, busy/disabled states
-and inventory/API behavior. Rebuild and repeat exact-source release gates after
-this presentation change. Preserve the earlier signed candidate separately.
+Final runtime `8abe3cc` on `feat/mobile-submission-polish` (PR #62) is delivered
+as 1.0.8 (63) to both existing internal groups. Analysis, 353 mobile tests with
+coverage, all five exact-source CI gates (`38543470459`), clean signed export,
+production configuration/supplied assets, app/extension signatures, 31 native
+device executables and Apple validation/upload pass. Apple delivery
+`81fcc8ae-92f0-4d05-9dd0-e4a0a492e0c1` is COMPLETE without errors/warnings, and
+63 is VALID/APP_STORE_ELIGIBLE/IN_BETA_TESTING with saved test notes at 02:56 PDT.
 
-The user authorizes continuation into the updated simulator and internal beta.
-Build 1.0.8+63 includes the completed Home/Account, typography, chat/import,
-onboarding/tour, four-tab motion, supplied logo and Light-default changes in
-PR #62. Local analysis and 349 mobile tests pass on the presentation source;
-all five CI gates pass on `da49230`. Native simulator, clean production archive,
-exact-source CI, package verification, Apple validation and internal delivery
-are next. Public review submission remains held and Shopify stays excluded.
-Only regenerated task/Xcode caches are cleaned for space; durable signed
-packages, supplied assets and unrelated work remain intact.
+Includes Home Account/four tabs, light weights independent of OS Bold Text,
+focused chat, concise import, supplied logo/Light default, setup X, compact tour,
+spring navigation and neutral glass controls. Native Home/Account, image-backed
+captures, Light/Dark glass choices, setup and empty Ask are checked; the inner
+chip canvas is transparent to retain continuous glass outlines. Native typed
+chat, full tour/import and physical accessibility/native-service acceptance are
+still pending through the final TestFlight binary. No real inventory/setup writes
+or global phone preferences were changed. User-authorized generated cache cleanup
+resolved disk pressure, preserving source, signed packages and supplied assets.
+
+Durable release records are in `Documents/FindEZ/AppStore/1.0.8-build63`.
+The earlier validated candidate remains preserved and was not uploaded. Public
+59, manual/unselected draft 1.0.8 and Shopify's separate paused source are
+verified unchanged. Public App Review remains held; Shopify is excluded.
 
 ## October 14 Home account entry and stable light typography
 
-Continue `feat/mobile-submission-polish` before the next binary. User removes the
+Delivered in build 63 on `feat/mobile-submission-polish`. User removes the
 Profile tab, moves its entry to the top of Home and requires stable light weights
 regardless of iOS Bold Text. The pill now has Home/Capture/Ask/Find with four-tab
 spring geometry. A small Home control opens Account, preserving profile editing,
@@ -36,8 +40,8 @@ lifecycle, production or Apple submission changes.
 
 ## October 14 spreadsheet clarity and focused chat
 
-Continue `feat/mobile-submission-polish` in `dev/findez-logo-light-default` before
-the next TestFlight delivery. User requests fewer import-page words/icons and
+Delivered in build 63 from `feat/mobile-submission-polish` in
+`dev/findez-logo-light-default`. User requests fewer import-page words/icons and
 conversation focus after sending, in the existing screen. The import ready view
 now shows the destination, Choose file and format/size limit. Existing picker,
 validation, import, retry, partial-result reporting and navigation are retained.

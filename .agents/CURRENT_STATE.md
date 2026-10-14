@@ -1,34 +1,40 @@
 # Current state
 
-## October 14 neutral glass controls before beta delivery
+## October 14 build-63 internal TestFlight delivery
 
-The user rejects the inverted black Appearance choices in Light mode and asks
-for glass on neutral buttons using that fill. `GlassControl` reuses the existing
-frosted surface for Appearance choices, inventory category filters, scan-location
-choices, neutral scan/QR/import actions and sharing/save buttons. Selected
-controls use a restrained tint and outline; labels stay theme-aware and readable.
-Framework button semantics, disabled/busy handling, callback behavior and existing
-choice save/retry behavior remain. High contrast renders solid surfaces; orange
-primary actions and destructive colors remain. This is a Flutter glass treatment.
-Analysis and all 353 mobile tests with coverage pass locally, including the
-existing Appearance failure/pending-save and retained-route regressions.
+Build 1.0.8 (63) is VALID, APP_STORE_ELIGIBLE and IN_BETA_TESTING in both existing
+internal groups, Testers and Internal Pilot Findez AI. Final runtime `8abe3cc`
+on `feat/mobile-submission-polish` (PR #62) passes analysis, all 353 mobile tests
+with coverage and all five CI gates in `38543470459`. Clean signed archive/export,
+production configuration, supplied assets, strict app/extension signatures and
+all 31 native device-platform checks pass. Apple validation/upload succeeds;
+delivery `81fcc8ae-92f0-4d05-9dd0-e4a0a492e0c1` is COMPLETE without errors/warnings.
+Group access and updated test notes are verified at 02:56 PDT October 14.
 
-The pre-glass 1.0.8+63 IPA passed signing/configuration, all 31 device-platform
-checks and Apple validation, but was not uploaded. It is preserved separately in
-`Documents/FindEZ/AppStore/1.0.8-build63-before-glass`. Deliver only the rebuilt
-candidate after source, native and Apple checks. No production API/database,
-public review submission or Shopify release change is included.
+The beta includes Home Account access and four core tabs, stable regular/medium
+weights independent of OS Bold Text, focused chat, concise import, plain setup X,
+compact tour, spring navigation, supplied branding and Light default. Neutral
+Appearance, inventory/scan choices and scan/QR/import/sharing/save actions use
+`GlassControl`, preserving callbacks, busy/disabled states and high contrast.
+The native preview caught RawChip's opaque canvas covering the glass outline;
+a local transparent canvas fixes it. Light/Dark choices now render continuously.
 
-## October 14 build-63 beta preparation authorized
+Native build/install/launch, Home/Account routing, image-backed captures,
+Light/Dark Appearance, plain-X setup and empty Ask are observed on iPhone 16e
+(iOS 26.2). Automated text entry/paste could not submit a native chat prompt;
+active chat/Back/stream acceptance still needs the final phone binary. Other
+physical accessibility, camera/barcode, voice, provider auth, APNs, share handoff,
+account isolation, full tour/import and store-artwork checks remain pending.
+The simulator app is restored to Light; no inventory or setup-answer writes
+were performed. No production deployment or schema change is part of this lane.
 
-The user requests the updated simulator and next internal TestFlight build.
-The release candidate is 1.0.8+63 on `feat/mobile-submission-polish` (PR #62).
-Latest presentation source `da49230` passes analysis, all 349 mobile tests and
-all five CI jobs in `38537158439`. Native checks and Apple delivery are pending;
-uploaded 62 is still the available beta. App Store Connect confirms public
-1.0.7 uses 59 and editable 1.0.8 is unselected with manual release. Do not select
-or submit the public draft as part of this internal delivery. Shopify remains
-paused and absent from this build.
+Durable archive/IPA, verifier, receipts, CI/tests, native screenshots and phone
+checklist are in `Documents/FindEZ/AppStore/1.0.8-build63`. IPA SHA-256:
+`d9fe4c008add1fd5f35e65fe5cc37bb58bca2596ec759cd8a1a1c62e2b8a6dea`.
+The validated pre-glass candidate was never uploaded and is preserved in
+`1.0.8-build63-before-glass`. Public 1.0.7 remains selected on 59; draft 1.0.8
+is unselected with manual release. Public submission is held. Shopify stays
+paused, preserved separately and excluded from this launch.
 
 ## October 14 launch excludes Shopify
 
@@ -54,9 +60,8 @@ preference are removed. Larger Text, app text size, semantics and other
 accessibility settings remain. The changed typography regression fails before
 the fix; local full suite passes all 349 tests with coverage and analysis is
 clean. Actual-widget Home renders are byte-identical with Bold Text on/off in
-Light/Dark; Account and four-tab layouts are also checked. Latest native rebuild,
-phone acceptance and TestFlight delivery remain pending. No production or public
-submission changes; Shopify is still paused and excluded.
+Light/Dark; Account and four-tab layouts are also checked. These changes are delivered in internal build 63. Physical acceptance remains
+pending. No production or public submission change; Shopify stays excluded.
 
 ## October 14 focused chat and concise spreadsheet import in source
 
@@ -70,12 +75,11 @@ The original focus regression fails before the fix. Light/Dark, retained request
 draft, reset, previous-Find return, keyboard/large-text and pinned-scroll checks
 are in `mobile/test/chat_focus_test.dart`. Local analysis and all 350 mobile tests
 with coverage pass; the full local suite uses `--concurrency=1` after the parallel
-run stalled and was stopped. Full mobile CI must pass on the final source head.
+run stalled and was stopped. Final build-63 source passes all five CI gates.
 Actual-widget sample renders cover both themes, with narrow/large-text import
 layouts, preserved in Documents/FindEZ/AppStore/mobile-polish-20261014.
-No new native binary or physical
-acceptance is claimed; TestFlight upload and public submission remain held while
-the user reviews these changes. Shopify stays paused and excluded.
+These changes are delivered in build 63. Physical chat/import acceptance and
+public review remain pending; Shopify stays paused and excluded.
 
 ## October 13 mobile pre-submission polish in source
 
@@ -97,8 +101,8 @@ renders pass. Exact source `7317590` passed all five CI gates in `38514764506`
 The iPhone 16e iOS 26.2 native simulator build/install/launch passes; actual Light
 questionnaire shows the small X with no background circle or wordmark. The initial
 disk failure was recovered by user-approved removal of generated task caches.
-Physical acceptance and a new binary delivery remain pending. No App Review
-submission or production changes.
+These changes are included in internal build 63. Physical acceptance is pending;
+no App Review submission or production deployment is performed.
 
 Six iPhone and six iPad screenshots from the supplied ZIPs are COMPLETE in the
 1.0.8 en-US draft, in supplied order with verified source MD5 checksums and image
