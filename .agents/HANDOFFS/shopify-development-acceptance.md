@@ -18,7 +18,10 @@ real PostgreSQL and production web compilation. Guided setup follows in
 `docs/merchant-guided-migration.md`. The factual report, bounded variant queue and
 reviewed name reuse existing confirmation and lookup. `MERCHANT_MIGRATION_ENABLED`
 defaults false. Extend isolated acceptance through the actual migration guide;
-no real merchant or production outcome is claimed.
+no real merchant or production outcome is claimed. Guided runtime `d4cf468`
+(draft PR #65) passes all five CI gates in `38525045435`, with 509 backend/API-doc
+and 259 web tests, production web compilation, SQL isolation and mobile regressions.
+Source work is complete; real app/store setup and acceptance are next.
 
 Branch: `feat/shopify-catalog-connection`; worktree
 `/Users/tanyasmritivictorcharles/dev/findez-shopify-connector`, based on discovery

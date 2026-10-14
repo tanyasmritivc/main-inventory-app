@@ -65,7 +65,11 @@ detachment, old confirmations, viewers, revoked reads, stable ID navigation,
 Team/account changes and reviewed names without automatic saves. Full backend,
 web, TypeScript and changed-file lint run locally. CI also runs a production web
 build, PostgreSQL 17 fixtures, AI connector tests and existing mobile checks.
-Sample-only visual checks are separate from live-store acceptance.
+Sample-only visual checks are separate from live-store acceptance. Runtime
+`d4cf468` passes all five CI gates in `38525045435` (draft PR #65), including
+PostgreSQL and production web compilation. Local 509 backend/API-doc and 259 web
+tests, TypeScript and changed-file lint pass; Safari sample checks cover Light/Dark
+at 960px and a 320px viewport. No live store behavior is verified by these checks.
 
 Before enabling this for merchants:
 

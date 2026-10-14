@@ -12,8 +12,10 @@ and rechecks Team/store access and accessible placements. All flags default off.
 See `docs/merchant-guided-migration.md`; real app/store testing remains outstanding.
 509 backend/API-doc and 259 web tests pass, with TypeScript and changed-file lint.
 Safari sample layout checks cover Light/Dark at 960px and an actual 320px iframe
-viewport. Temporary fixture code is removed before commit. Real PostgreSQL and
-production web compilation are verified through CI before calling this slice done.
+viewport. Temporary fixture code is removed before commit. Runtime `d4cf468` in
+draft PR #65 passes all five CI gates in `38525045435`, including real PostgreSQL,
+production web compilation and existing mobile regressions. Source work is complete;
+actual development-store and merchant acceptance are the next gates.
 Automatic photo matching, planning and commercial value remain unverified/unbuilt.
 No production migrations/deployment or merchant installation is performed.
 
