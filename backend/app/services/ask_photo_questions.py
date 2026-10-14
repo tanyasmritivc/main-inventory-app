@@ -1,7 +1,6 @@
 """Photo identification and access-scoped ownership checks, never inventory writes."""
 
 import asyncio
-import hashlib
 import json
 import logging
 import math
@@ -16,7 +15,6 @@ from app.services.ask_presentation import answer_context_from_reads
 from app.services.catalog_service import enrich_scan_items_from_verified_catalog, barcode_candidates, _normalized_brand
 from app.services.items_repo import _singularize_word
 from app.services.find_pipeline import extract_inventory_items_with_find
-from app.services.review_queue import enqueue_uncertain_items
 from app.services.storage import delete_image, upload_image, _external_storage_url
 from app.services.supabase_client import get_supabase_admin
 
@@ -231,10 +229,7 @@ def format_photo_answer(*, identified: list[dict], inventory: list[dict], photo_
         sections.append('Inventory check\n\n' + '\n\n'.join(stock))
     else:
         sections.append('I could not identify the contents clearly enough to check your inventory. Try a closer photo of one item, with any label or barcode visible.')
-    if any(item.get('review_id') and item.get('review_status') == 'pending' for item in identified):
-        sections.append('Uncertain results are saved in Review on Home. No inventory item has been added.')
-    else:
-        sections.append('No inventory item has been added.')
+    sections.append('No inventory item has been added.')
     context = answer_context_from_reads({}, [{'tool': 'inventory_search', 'result': matches}])
     context['sources'] = [
         {'kind': 'photo', 'label': 'Attached photo', 'detail': 'Visible item details checked; repeated fragments grouped'},
@@ -264,10 +259,6 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
     for item in identified:
         if _uncertain(item):
             item['notes'] = ((item.get('notes') or '') + '\nFrom an Ask photo question; ownership is not confirmed.').strip()
-    identified = await asyncio.to_thread(
-        enqueue_uncertain_items, user_id=user_id,
-        source_digest='ask:' + hashlib.sha256(jpeg).hexdigest(), items=identified,
-    )
     subjects, inventory = await asyncio.gather(
         asyncio.to_thread(select_photo_subjects, identified),
         asyncio.to_thread(accessible_inventory, user_id),

@@ -536,7 +536,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           if (!item.review_id) {
             throw new Error('An uncertain item was not safely stored. Please scan the photo again.');
           }
-          if (item.review_status !== 'pending') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+          if (item.review_status !== 'pending' && item.review_status !== 'preview') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
           await updateReviewItem({ token: t, reviewId: item.review_id, item });
         }
         if (ready.length > 0) await bulkCreate({ token: t, items: ready });
@@ -1096,7 +1096,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           const ready = located.filter((item) => !item.scan_evidence?.needs_review);
                           for (const item of uncertain) {
                             if (!item.review_id) throw new Error('Uncertain capture was not stored safely.');
-                            if (item.review_status !== 'pending') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+                            if (item.review_status !== 'pending' && item.review_status !== 'preview') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
                             await updateReviewItem({ token: t, reviewId: item.review_id, item });
                           }
                           if (ready.length) await bulkCreate({ token: t, items: ready });

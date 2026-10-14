@@ -1,5 +1,58 @@
 # Current state
 
+## October 14 backend fixes live; mobile 64 delivered to internal TestFlight
+
+`fix/capture-review-save-boundary` in
+`/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary` is based on
+punctuation record `722b5c0`. New mobile/web Capture requests use `preview_only`;
+the backend returns signed, account-bound previews without creating Review
+rows. Explicit Save persists uncertainty with its original photo/evidence and
+retry-safe identity. Chat photo analysis no longer writes Review at all.
+All 438 backend/API documentation tests and six subtests, 212 web tests,
+TypeScript, changed-file lint (existing warnings only), 357 mobile tests and
+Flutter analysis and the placeholder-config production web build pass. Runtime
+`19089e9` in Draft PR #68 passes all five CI gates (`38551614029`). Before
+deployment, eight existing backend hashes matched the baseline and both new
+helpers were absent. The exact combined ten-file backend bundle, patches and
+manifest are in `Documents/FindEZ/Releases/capture-save-boundary-2026-10-14`.
+The user authorizes deployment. The ten backend files are selectively deployed
+with guarded hashes and backups at
+`/home/ubuntu/findez-capture-fixes-20261014.1ztxtg/backup`; unrelated checkout
+files are hash-verified unchanged. Service/database health pass, and missing
+session/invalid integration-key requests return 401. Read-only production checks
+verify reply punctuation, real preview signing, owner binding and the signed
+save route without database writes or FIND/model calls. Deployment/live receipts
+are beside the source bundle. No migration or historical Review deletion was
+performed. New chat/photo behavior is live; updated web source is not deployed
+and older Capture clients keep the old contract.
+
+Mobile 1.0.8 (64), runtime `8001b13`, is VALID, APP_STORE_ELIGIBLE and
+IN_BETA_TESTING in both existing internal groups, Testers and Internal Pilot
+Findez AI, verified at 04:54 PDT October 14. All five exact-runtime CI gates
+pass (`38554740296`), along with clean signed archive/export, production
+configuration, supplied assets, strict app/extension signatures and all 31
+native device-platform checks. Apple validation/upload and processing complete
+without errors or warnings, delivery `3dc129af-4c32-48f7-a69d-d55c9e97cdef`.
+Receipts, archive/IPA and the phone checklist are in
+`Documents/FindEZ/AppStore/1.0.8-build64`. IPA SHA-256:
+`a14d1d143abb399f37871fe8fbb16b712d3147d643572bbf0f4d0ac5bd28e393`.
+Build 64 enables preview-only extraction and explicit Save with the deployed
+backend. No build-64 simulator or physical-device acceptance is claimed;
+repeat camera/library upload-cancel-Home, photo chat, explicit Save/retry and
+account isolation on a phone. TestFlight 63 remains available with its legacy
+Capture contract. Public 1.0.7 stays selected on 59; draft 1.0.8 remains
+unselected with manual release. Public App Review and Shopify remain held.
+
+The user subsequently requests build 64 for an existing external tester.
+`Vinod Private Testing` contains only that tester, has no public link, and has
+build 64 assigned. At 05:08 PDT October 14, beta submission is
+WAITING_FOR_REVIEW/WAITING_FOR_BETA_REVIEW, with automatic notification enabled.
+Apple rejects a repeat invitation as ALREADY_ACCEPTED; no new invitation was
+sent and external build-64 availability is not yet claimed. Existing internal
+access continues, the broader External Pilot group has not received 64, and
+public App Store selection/release type remain unchanged. Targeted receipts
+and the delivery helper are in the build-64 release folder.
+
 ## October 14 chat punctuation candidate
 
 Backend-only `fix/ask-response-punctuation` is based on mobile release record
@@ -8,11 +61,11 @@ from new text, photo, project and document chat replies before emission and
 persistence, including legacy EEZY. User messages, tool data, inventory and
 answer source/navigation snapshots are unchanged. Existing history is retained.
 All 426 backend/API documentation tests and six subtests pass. Runtime `3b1c824`
-in Draft PR #67 passes all five CI gates (`38548331842`). Four existing live
-file hashes match the source baseline and the new helper is absent. The exact
+in Draft PR #67 passes all five CI gates (`38548331842`). Preflight matched four
+existing live hashes and confirmed the new helper absent. The exact
 five-file bundle, patch and hash manifest are preserved in
-`Documents/FindEZ/Releases/chat-punctuation-2026-10-14`. Production is unchanged
-pending deployment authorization; this needs no migration or new mobile binary.
+`Documents/FindEZ/Releases/chat-punctuation-2026-10-14`. This change is live in
+the combined backend deployment above; no migration or new binary is needed.
 Shopify remains paused and public App Review remains held.
 
 ## October 14 build-63 internal TestFlight delivery

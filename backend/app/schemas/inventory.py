@@ -171,6 +171,12 @@ class ExtractedInventoryItem(BaseModel):
     scan_evidence: ScanEvidence | None = None
     review_id: str | None = Field(default=None, max_length=36)
     review_status: str | None = Field(default=None, max_length=20)
+    review_token: str | None = Field(default=None, max_length=40000)
+
+
+class SaveCapturePreviewRequest(ExtractedInventoryItem):
+    model_config = ConfigDict(extra="forbid")
+    review_token: str = Field(min_length=1, max_length=40000)
 
 
 class MultiExtractSummary(BaseModel):

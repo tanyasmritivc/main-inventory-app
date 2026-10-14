@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.services.catalog_service import verified_catalog_id_for_identity
+from app.services.capture_previews import verify_capture_preview
 from app.services.items_repo import (
     _normalize_category,
     _normalize_location,
@@ -166,6 +167,30 @@ def list_review_items(*, user_id: str, limit: int = 100) -> tuple[list[dict], in
         .execute()
     )
     return items, int(count_result.count if count_result.count is not None else len(items))
+
+
+def save_capture_preview(*, user_id: str, preview_id: str, item: dict) -> dict:
+    preview = verify_capture_preview(
+        user_id=user_id, preview_id=preview_id, token=item.get('review_token') or '',
+    )
+    # Only editable identity fields come from the client. Photo and FIND evidence
+    # come from the signed preview, never from caller-supplied observations.
+    edits = {key: value for key, value in item.items()
+             if key in _EDITABLE_FIELDS and key != 'image_url'}
+    original = {**preview['item'], **edits}
+    client = get_supabase_admin()
+    client.table('capture_reviews').upsert(
+        _review_payload(user_id=user_id, source_key=preview['source_key'], item=original),
+        on_conflict='user_id,source_key', ignore_duplicates=True,
+    ).execute()
+    rows = (client.table('capture_reviews').select('*').eq('user_id', user_id)
+            .eq('source_key', preview['source_key']).limit(1).execute().data)
+    if not rows:
+        raise RuntimeError('The review item could not be saved')
+    record = rows[0]
+    if record.get('status') != 'pending':
+        raise ReviewItemConflict('This photo was already reviewed. Scan it again to make a new capture.')
+    return update_review_item(user_id=user_id, review_id=str(record['review_id']), updates=edits)
 
 
 def update_review_item(

@@ -220,6 +220,7 @@ export type ExtractedInventoryItem = {
   scan_evidence?: ScanEvidence | null;
   review_id?: string | null;
   review_status?: string | null;
+  review_token?: string | null;
 };
 
 export type ReviewItem = ExtractedInventoryItem & {
@@ -242,6 +243,7 @@ export type MultiExtractSummary = {
 export async function extractFromImageMulti(params: { token: string; file: File }) {
   const form = new FormData();
   form.append("file", params.file);
+  form.append("preview_only", "true");
   return apiFetch<{
     items: ExtractedInventoryItem[];
     summary: MultiExtractSummary;
@@ -299,7 +301,11 @@ export async function updateReviewItem(params: {
 }) {
   return apiFetch<{ review_item: ReviewItem }>(
     `/review-items/${encodeURIComponent(params.reviewId)}`,
-    { method: "PATCH", token: params.token, body: reviewItemPayload(params.item) },
+    {
+      method: params.item.review_status === "preview" ? "POST" : "PATCH",
+      token: params.token,
+      body: params.item.review_status === "preview" ? params.item : reviewItemPayload(params.item),
+    },
   );
 }
 
@@ -348,6 +354,7 @@ export async function deleteItem(params: { token: string; item_id: string }) {
 export async function extractFromImage(params: { token: string; file: File }) {
   const form = new FormData();
   form.append("file", params.file);
+  form.append("preview_only", "true");
   return apiFetch<{ extracted: Record<string, unknown>; image_url: string }>(
     "/extract_from_image",
     {

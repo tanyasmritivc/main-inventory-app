@@ -165,6 +165,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         scanEvidence: orig.scanEvidence,
         reviewId: orig.reviewId,
         reviewStatus: orig.reviewStatus,
+        reviewToken: orig.reviewToken,
       );
     });
   }
@@ -717,8 +718,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   const SizedBox(height: 4),
                   AppText(
-                    widget.items.any((item) => item.isPendingReview)
-                        ? 'Confirm clear items now. Uncertain items stay safely in Review until you assign them.'
+                    widget.items.any((item) => item.needsReview)
+                        ? 'Save clear items and keep uncertain items for review.'
                         : 'Review every visible detail before saving.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -770,7 +771,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                           child: AppText(
                             () {
                               final reviewCount = widget.items
-                                  .where((item) => item.isPendingReview)
+                                  .where((item) => item.needsReview)
                                   .length;
                               final saveCount = n - reviewCount;
                               if (reviewCount == 0) {

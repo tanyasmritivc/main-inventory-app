@@ -1,5 +1,65 @@
 # Active work
 
+## October 14 backend fixes live; mobile 64 internal TestFlight delivery complete
+
+Lane `fix/capture-review-save-boundary` in
+`/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary`, based on
+`722b5c0` from punctuation PR #67. Capture previews are local to the client and
+carry a bounded 24-hour signature binding owner, identity, source key, original
+FIND evidence and photos. A new authenticated POST saves a preview into existing
+`capture_reviews`; editable identity fields cannot replace signed observations
+or photos. Duplicate saves reuse one source key, handled records cannot revive,
+and tampering, another account or expiry fail before a queue write. Mobile/web
+preserve proof through edits/confirmation and save only after the explicit action.
+Old saved reviews keep PATCH/resolve/dismiss; extraction without the new flag
+retains old-client compatibility. Chat photo questions no longer create reviews.
+
+Local validation passes 438 backend/API documentation tests and six subtests,
+212 web tests, TypeScript, changed-file lint with existing warnings only, 357
+mobile tests, clean Flutter analysis and a production web build with fictional
+configuration. Runtime `19089e9` in Draft PR #68 passes all five CI gates
+(`38551614029`). Preflight matched eight existing backend file hashes and
+confirmed both new helpers absent. The combined ten-file
+backend bundle, patches and manifest are in
+`Documents/FindEZ/Releases/capture-save-boundary-2026-10-14`. Web uses
+the installed dependencies from an identical lockfile, with a gitignored local
+node_modules symlink. Local build configuration is fictional and must not ship.
+The user authorizes deployment. The ten backend files are selectively deployed
+with guarded hashes and rollback backups at
+`/home/ubuntu/findez-capture-fixes-20261014.1ztxtg/backup`. Unrelated checkout
+files are verified unchanged. Service/database health, missing-session and
+invalid-key 401s, reply punctuation, real preview signing, owner binding and
+the signed save route pass without database writes or FIND/model requests.
+Receipts are beside the source bundle. No migration or historical Review
+deletion was performed. Updated web source is not deployed.
+
+Mobile 1.0.8 (64), runtime `8001b13`, passes all five exact-source CI gates
+(`38554740296`), clean signed archive/export, production configuration/assets,
+strict signatures and all 31 native device-platform checks. Apple validation,
+upload and processing complete without errors/warnings. Delivery
+`3dc129af-4c32-48f7-a69d-d55c9e97cdef` is VALID/APP_STORE_ELIGIBLE/
+IN_BETA_TESTING in Testers and Internal Pilot Findez AI with saved test notes,
+verified at 04:54 PDT October 14. Durable receipts, archive/IPA and phone
+acceptance checklist are in `Documents/FindEZ/AppStore/1.0.8-build64`.
+The new binary uses preview-only extraction and the signed Save route.
+TestFlight 63 stays available with the legacy Capture contract. No build-64
+simulator or physical pass is claimed. Repeat physical camera/library
+random-photo/cancel/Home, photo chat, explicit Save, retry and owner isolation
+on build 64, plus the outstanding native service and accessibility checks.
+Public App Store selection/release type are verified unchanged; public
+submission and Shopify remain held.
+
+Build 64 is also submitted to TestFlight beta review at the user's request for
+one existing external tester. The private `Vinod Private Testing` group has
+only that tester, no public link and build 64. Status at 05:08 PDT October 14
+is WAITING_FOR_REVIEW/WAITING_FOR_BETA_REVIEW with automatic notification
+enabled. The tester previously accepted FindEZ's invitation; Apple returns
+ALREADY_ACCEPTED to resend, so no new invitation is claimed. External access
+needs Apple approval. Receipts and the helper are in the build-64 release folder.
+Existing internal groups stay available, the broader external pilot group is
+unchanged, and public submission stays held. Do not grant App Store Connect
+roles or remove/recreate the tester to bypass review.
+
 ## October 14 chat punctuation prepared
 
 Backend-only lane `fix/ask-response-punctuation` in
@@ -11,12 +71,12 @@ persistence; it does not change user messages, tool payloads or source records.
 Runtime `3b1c824` in Draft PR #67 passes all five CI gates (`38548331842`), all
 426 local backend/API documentation tests and six subtests. The added tests
 check emitted/final/session consistency and preservation of tool data, Unicode,
-newlines, source labels and input. Four live file hashes match the source baseline;
-the new helper does not yet exist in production. The exact five-file bundle,
+newlines, source labels and input. Preflight matched four live hashes and
+confirmed the new helper absent. The exact five-file bundle,
 patch and hash manifest are in
 `Documents/FindEZ/Releases/chat-punctuation-2026-10-14`.
-Production deployment awaits authorization;
-no schema, FIND, auth, frontend or mobile source changes. Existing history,
+This is live in the combined deployment above; no schema, FIND, auth, frontend
+or mobile source changes belong to punctuation. Existing history,
 TestFlight 63 and held public submission remain as recorded below.
 
 ## October 14 build-63 internal TestFlight delivery complete

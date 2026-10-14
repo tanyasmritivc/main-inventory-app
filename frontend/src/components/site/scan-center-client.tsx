@@ -115,7 +115,7 @@ export function ScanCenterClient() {
         if (!item.review_id) {
           throw new Error("An uncertain item was not safely stored. Please scan the photo again.");
         }
-        if (item.review_status !== "pending") throw new Error("This photo was already reviewed. Take a new photo to capture it again.");
+        if (item.review_status !== "pending" && item.review_status !== "preview") throw new Error("This photo was already reviewed. Take a new photo to capture it again.");
         await updateReviewItem({ token, reviewId: item.review_id, item });
       }
       const result = ready.length > 0

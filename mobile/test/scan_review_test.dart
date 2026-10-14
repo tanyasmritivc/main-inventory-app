@@ -9,6 +9,7 @@ class _FakeApi extends ApiClient {
   _FakeApi() : super(baseUrl: 'https://api.test');
 
   final List<String> updatedReviewIds = [];
+  bool failReview = false;
 
   @override
   Future<ReviewItem> updateReviewItem({
@@ -16,6 +17,7 @@ class _FakeApi extends ApiClient {
     required ExtractedInventoryItem item,
   }) async {
     updatedReviewIds.add(reviewId);
+    if (failReview) throw StateError('Review save failed');
     return ReviewItem.fromJson({
       ...item.toJson(),
       'review_id': reviewId,
@@ -59,6 +61,52 @@ ExtractedInventoryItem _item({required bool uncertain}) {
 }
 
 void main() {
+  test(
+    'an unsaved preview stays local until the explicit save helper runs',
+    () async {
+      final api = _FakeApi();
+      final item = _item(uncertain: true)
+        ..reviewStatus = 'preview'
+        ..reviewToken = 'signed-preview';
+      expect(api.updatedReviewIds, isEmpty);
+      expect(
+        ExtractedInventoryItem.fromJson(item.toJson()).reviewToken,
+        'signed-preview',
+      );
+      final plan = await prepareCaptureForSave(api: api, items: [item]);
+      expect(api.updatedReviewIds, ['review-1']);
+      expect(plan.reviewCount, 1);
+      expect(plan.inventoryItems, isEmpty);
+    },
+  );
+
+  test(
+    'an unsigned preview cannot be saved or promoted into inventory',
+    () async {
+      final api = _FakeApi();
+      final item = _item(uncertain: true)..reviewStatus = 'preview';
+      await expectLater(
+        prepareCaptureForSave(api: api, items: [item]),
+        throwsStateError,
+      );
+      expect(api.updatedReviewIds, isEmpty);
+    },
+  );
+
+  test(
+    'a failed preview save does not report a review count or inventory plan',
+    () async {
+      final api = _FakeApi()..failReview = true;
+      final item = _item(uncertain: true)
+        ..reviewStatus = 'preview'
+        ..reviewToken = 'signed-preview';
+      await expectLater(
+        prepareCaptureForSave(api: api, items: [item]),
+        throwsStateError,
+      );
+    },
+  );
+
   test(
     'uncertain captures are updated in Review, never bulk-save candidates',
     () async {
