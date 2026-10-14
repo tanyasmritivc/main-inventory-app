@@ -12,6 +12,7 @@ import json as _json_dumps
 from typing import Any, Iterator
 
 from app.services.agent_gateway_client import AgentGatewayClient
+from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads, project_answer_text
 from app.services.project_kits_service import get_project_readiness
 
@@ -467,6 +468,7 @@ def _sanitize_history(history: list[dict]) -> list[dict]:
 
 
 _SYSTEM_PROMPT = (
+    CHAT_STYLE_INSTRUCTION + "\n"
     "Keep answers grounded in authorized records. Never invent project requirements, "
     "stock quantities, or documents. Do not expose model names, providers, internal "
     "tools, infrastructure, or private reasoning. Explain evidence in ordinary product terms.\n"
@@ -1448,6 +1450,7 @@ def _run_agent(
         if not assistant_message:
             assistant_message = 'Let me think about that...'
 
+        assistant_message = format_chat_reply(assistant_message)
         st.conversation_history.append({'role': 'user', 'content': message})
         st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
         if len(st.conversation_history) > MAX_HISTORY:
@@ -1481,6 +1484,7 @@ def _run_agent(
     if not assistant_message:
         assistant_message = 'Let me think about that...'
 
+    assistant_message = format_chat_reply(assistant_message)
     st.conversation_history.append({'role': 'user', 'content': message})
     st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
     if len(st.conversation_history) > MAX_HISTORY:
@@ -1498,7 +1502,7 @@ def _run_agent(
 
 
 def _project_readiness_answer(*, user_id: str, message: str, detail: dict) -> dict:
-    answer = detail.get('_clarification') or project_answer_text(detail)
+    answer = format_chat_reply(detail.get('_clarification') or project_answer_text(detail))
     state = _get_state(user_id)
     state.conversation_history.extend([
         {'role': 'user', 'content': message},
@@ -1616,8 +1620,10 @@ def _iter_agent_streaming(
                     'arguments': tool_call.function.arguments,
                 },
             }
-        if accumulated_content and not accumulated_tool_calls:
-            yield {'type': 'delta', 'delta': accumulated_content}
+        if not accumulated_tool_calls:
+            accumulated_content = format_chat_reply(accumulated_content)
+            if accumulated_content:
+                yield {'type': 'delta', 'delta': accumulated_content}
 
         if accumulated_tool_calls:
             tool_calls_list = [accumulated_tool_calls[k] for k in sorted(accumulated_tool_calls)]

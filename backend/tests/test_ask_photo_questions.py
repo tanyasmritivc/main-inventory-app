@@ -261,7 +261,7 @@ def test_failed_analysis_cleans_only_new_source_before_review():
 
 @pytest.mark.parametrize('question,explain', [('Add this photo item', False), ('How does this work?', True)])
 def test_photo_requests_use_no_mutation_tools_and_keep_grounded_check(question, explain):
-    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='A servo controls position.'))])
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='A servo controls position\u2014using feedback.'))])
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [item()]})), \
          patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
@@ -270,11 +270,13 @@ def test_photo_requests_use_no_mutation_tools_and_keep_grounded_check(question, 
         result = asyncio.run(photos.answer_photo_question(user_id='user-1', message=question, image_bytes=image()))
     if explain:
         assert 'tools' not in gateway.call_args.kwargs
-        assert 'controls position' in result['assistant_message']
+        assert 'controls position - using feedback' in result['assistant_message']
+        assert 'Do not use em dashes' in gateway.call_args.kwargs['messages'][0]['content']
     else:
         gateway.assert_not_called()
         assert 'confirm the change' in result['assistant_message']
     assert 'No inventory item' in result['assistant_message']
+    assert '\u2014' not in result['assistant_message']
 
 
 def test_unknown_only_photo_does_not_generate_an_explanation_from_missing_identity():

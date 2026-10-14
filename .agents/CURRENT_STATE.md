@@ -1,5 +1,16 @@
 # Current state
 
+## October 14 chat punctuation candidate
+
+Backend-only `fix/ask-response-punctuation` is based on mobile release record
+`1604e68`. A shared instruction and reply formatter remove em dash punctuation
+from new text, photo, project and document chat replies before emission and
+persistence, including legacy EEZY. User messages, tool data, inventory and
+answer source/navigation snapshots are unchanged. Existing history is retained.
+All 426 backend/API documentation tests and six subtests pass. Production is
+unchanged pending deployment authorization; this needs no migration or new
+mobile binary. Shopify remains paused and public App Review remains held.
+
 ## October 14 build-63 internal TestFlight delivery
 
 Build 1.0.8 (63) is VALID, APP_STORE_ELIGIBLE and IN_BETA_TESTING in both existing
