@@ -8,6 +8,8 @@ embedded = false
 [access_scopes]
 scopes = "read_inventory,read_products"
 optional_scopes = ["write_inventory", "write_products"]
+# The current standalone adapter requests exact scopes in its OAuth URL.
+use_legacy_install_flow = true
 
 [auth]
 redirect_urls = ["https://api.dev.example.com/integrations/shopify/callback"]

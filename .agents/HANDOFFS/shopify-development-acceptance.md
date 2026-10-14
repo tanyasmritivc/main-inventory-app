@@ -1,7 +1,30 @@
 # Shopify development-store acceptance
 
-Scope: source milestones 1A and 1B are implemented. Continue real development setup
-and acceptance once a Shopify app/store exists; neither is deployed or live-store
+Status: PAUSED by the user's latest October 14 instruction. Shopify is excluded
+from the current launch, superseding the earlier launch requirement. Preserve
+all source slices, draft PRs and development resources. Do not continue setup,
+implementation or review until the user asks to resume. Keep the four feature
+flags off, migrations 042 through 045 out of production and Shopify runtime out
+of the launch branch. The remaining steps below are for a later release.
+
+October 14 setup: the user creates the Partner organization, and the agent creates
+and verifies the read-only standalone development app plus sample-data Basic dev
+store. The app's active initial version uses a Shopify placeholder home, legacy
+authorization-code install flow and API 2026-10. Callback URLs, webhook subscriptions
+and optional writes are not yet configured there. No app installation, actual
+grants, token/refresh/query acceptance or secret access is performed. Private links
+are saved in the local Documents/FindEZ/Shopify setup record.
+
+For a later release, test resources verify the preserved integration. The current
+single-store development gate must be extended to a merchant-ready installation
+path before merchant rollout, followed by public distribution
+review/approval, real API and security acceptance. Do not choose custom distribution
+for the future multi-merchant app or select any irreversible method without
+specific authorization. Source template installation mode now matches the current
+adapter; evaluate managed installation deliberately rather than changing one flag.
+
+Scope: source milestones 1A and 1B are implemented. When the user resumes, continue
+isolated development setup and acceptance; neither is deployed or live-store
 verified. Do not describe the full migration/planning vision as implemented.
 
 Subsequent owner-edit source: `feat/shopify-owner-permissions` in the same
@@ -21,7 +44,7 @@ defaults false. Extend isolated acceptance through the actual migration guide;
 no real merchant or production outcome is claimed. Guided runtime `d4cf468`
 (draft PR #65) passes all five CI gates in `38525045435`, with 509 backend/API-doc
 and 259 web tests, production web compilation, SQL isolation and mobile regressions.
-Source work is complete; real app/store setup and acceptance are next.
+Source work is complete; real app/store configuration and acceptance are deferred.
 
 Branch: `feat/shopify-catalog-connection`; worktree
 `/Users/tanyasmritivictorcharles/dev/findez-shopify-connector`, based on discovery
@@ -55,9 +78,9 @@ temporary fixture is removed and final build contains no QA route. Live-store
 OAuth, exact grants/query execution/costs, refresh, webhook timing and backups are
 not tested by mocks or SQL. CI status belongs to the actual PR head.
 
-User confirms no Shopify app/development store exists and chose preparation for
-development testing. Remaining: app/store registration and selected distribution,
-isolated backend/web/Supabase configuration, migrations 042 through 045 on that test database,
+The initial no-app/no-store condition is resolved. Remaining: launch distribution
+and customer installation design, isolated backend/web/Supabase configuration,
+migrations 042 through 045 on that test database,
 private credentials/vault key, HTTPS same-site origins and callback query-log
 redaction at all proxies. Verify app TOML with Shopify CLI, supervise the worker,
 then complete the real-store checklist in `docs/shopify-development.md`.

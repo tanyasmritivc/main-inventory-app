@@ -1,5 +1,18 @@
 # Decisions
 
+## October 14 Shopify postponed and preserved
+
+The user's latest instruction supersedes the earlier launch requirement: hold
+Shopify, keep the work, and exclude it from the current launch. Preserve the
+connector, physical-memory, owner-edit and merchant-guide source lanes, draft PRs
+and development organization/app/store. Pause implementation, real-store setup
+and public-distribution work until the user asks to resume. Do not merge these
+runtime slices or migrations 042 through 045 into the launch release; keep
+SHOPIFY_ENABLED, SHOPIFY_WRITES_ENABLED, PHYSICAL_MEMORY_ENABLED and
+MERCHANT_MIGRATION_ENABLED off. Existing general inventory and launch mobile
+polish continue independently. Later merchant installation, real API acceptance,
+public-distribution approval and production authorization remain required gates.
+
 ## October 13 guided setup derives progress from verified records
 
 The first merchant adoption flow reuses catalog variants, Team Spaces/bins and

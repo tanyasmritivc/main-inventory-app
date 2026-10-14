@@ -93,7 +93,8 @@ this source. `SHOPIFY_WRITES_ENABLED` defaults false. Opt in only in the isolate
 development installation with owner-approved app scopes and test records.
 `shopify.app.toml.example` declares base read scopes and optional product/inventory
 writes. Verify its installation/distribution configuration with Shopify CLI and
-the real app; no app currently exists and no live grant lifecycle is verified.
+the real app. A development app/store are now registered, but the initial app
+version declares reads only and no live grant lifecycle is verified.
 
 Current primary references:
 
