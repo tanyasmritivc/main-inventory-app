@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { MarketingNav } from "@/components/site/marketing-nav";
-import { FindEZMark } from "@/components/site/findez-brand";
+import { FindEZWordmark } from "@/components/site/findez-brand";
 
 export const PRODUCT_LINKS = [
   { label: "Capture Items", href: "/product/capture" },
@@ -25,7 +25,7 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
     <>
       <footer className={`product-footer ${theme === "light" ? "is-light" : ""}`}>
         <div className="product-footer__inner">
-          <Link href="/" className="product-footer__brand"><FindEZMark width={24} height={24} /><span>FindEZ</span></Link>
+          <Link href="/" className="product-footer__brand"><FindEZWordmark width={112} height={30}/></Link>
           <nav aria-label="Footer navigation">
             <Link href="/docs/api">Developers</Link>
             <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>

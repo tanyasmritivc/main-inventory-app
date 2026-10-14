@@ -10,6 +10,7 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { FindEZWordmark } from "./findez-brand";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 
 import { initLanding } from "./landing-morph-engine";
@@ -46,11 +47,7 @@ export function LandingMorph({ initialSignedIn = false }: { initialSignedIn?: bo
 
       <header id="hdr">
         <Link className="mark" href="/" aria-label="FindEZ, home">
-          <svg className="logo" viewBox="0 0 96 96" fill="none" aria-hidden="true">
-            <path d="M28 38H58V68" stroke="currentColor" strokeWidth="11" strokeLinejoin="miter" />
-            <path d="M53 28H68V43" stroke="#E8590C" strokeWidth="11" strokeLinejoin="miter" />
-          </svg>
-          <span>FindEZ</span>
+          <FindEZWordmark className="logo" width={108} height={29} />
         </Link>
         <nav className="top-links" aria-label="Main navigation">
           <Link href="/docs/api">Developers</Link>
@@ -240,7 +237,7 @@ export function LandingMorph({ initialSignedIn = false }: { initialSignedIn?: bo
             <span className="ln"><i className="g" style={d(130)}>a memory.</i></span>
           </h2>
           <div className="close-foot fade" style={d(260)}>
-            <span className="mark">FindEZ</span>
+            <span className="mark"><FindEZWordmark width={142} height={38}/></span>
           </div>
         </section>
       </main>

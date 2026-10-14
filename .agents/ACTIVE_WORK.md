@@ -1,5 +1,17 @@
 # Active work
 
+## October 13 mobile pre-submission polish
+
+User requests an unbranded questionnaire header with an accessible X, exclusion
+of pictureless imports from Home captures, a compact translucent guided tour,
+350 ms spring navigation with fixed icons and Reduce Motion cross-fades, and
+simpler Ask presentation. Source lane `feat/mobile-submission-polish` in
+`dev/findez-logo-light-default` continues the authorized supplied logo and
+Light-default changes from build 62. Existing source branding edits are preserved.
+No App Review submission or production change is performed. Screenshot ZIPs are
+uploaded and checksum/order verified in the 1.0.8 draft. Separate Shopify lanes
+remain disabled and unshipped; complete their source handoff independently.
+
 ## October 12 clarified tutorial and onboarding questions
 
 The user identifies the six-step in-app spotlight tutorial, then requests useful

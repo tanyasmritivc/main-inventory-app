@@ -51,6 +51,30 @@ class HomeOverview extends StatefulWidget {
 
 class _HomeOverviewState extends State<HomeOverview> {
   final _question = TextEditingController();
+  final _failedPhotos = <String>{};
+  @override
+  void didUpdateWidget(covariant HomeOverview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.items, widget.items)) _failedPhotos.clear();
+  }
+
+  String _photoKey(InventoryItem item) => '${item.itemId}:${item.imageUrl}';
+  bool _hasPhoto(InventoryItem item) {
+    final uri = Uri.tryParse((item.imageUrl ?? '').trim());
+    return uri != null &&
+        ['http', 'https'].contains(uri.scheme) &&
+        uri.host.isNotEmpty &&
+        !_failedPhotos.contains(_photoKey(item));
+  }
+
+  void _hideFailedPhoto(InventoryItem item) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_failedPhotos.contains(_photoKey(item))) {
+        setState(() => _failedPhotos.add(_photoKey(item)));
+      }
+    });
+  }
+
   @override
   void dispose() {
     _question.dispose();
@@ -75,9 +99,7 @@ class _HomeOverviewState extends State<HomeOverview> {
         .toSet()
         .take(2)
         .toList();
-    final photos = recent
-        .where((item) => (item.imageUrl ?? '').trim().isNotEmpty)
-        .toList();
+    final photos = recent.where(_hasPhoto).toList();
     final now = DateTime.now();
     final today = photos.where((item) {
       final date = item.createdAt.toLocal();
@@ -270,23 +292,12 @@ class _HomeOverviewState extends State<HomeOverview> {
               ),
             ),
           ],
-          const SizedBox(height: 24),
-          _SectionLabel(
-            today.isNotEmpty || photos.isEmpty
-                ? 'Captured today'
-                : 'Recent captures',
-          ),
-          const SizedBox(height: 12),
-          if (captures.isEmpty)
-            AppText(
-              'No photo captures yet',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.foreground(context, HomeColors.hint),
-              ),
-            )
-          else
+          if (captures.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _SectionLabel(
+              today.isNotEmpty ? 'Captured today' : 'Recent captures',
+            ),
+            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = (constraints.maxWidth - 20) / 3;
@@ -301,6 +312,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                           item: captures[index],
                           width: width,
                           onTap: () => widget.onOpenItem(captures[index]),
+                          onImageError: () => _hideFailedPhoto(captures[index]),
                         ),
                       ],
                     ],
@@ -308,6 +320,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                 );
               },
             ),
+          ],
           const SizedBox(height: 24),
           const _SectionLabel('Where things live'),
           const SizedBox(height: 12),
@@ -491,10 +504,12 @@ class _CaptureCard extends StatelessWidget {
     required this.item,
     required this.width,
     required this.onTap,
+    required this.onImageError,
   });
   final InventoryItem item;
   final double width;
   final VoidCallback onTap;
+  final VoidCallback onImageError;
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
@@ -507,11 +522,14 @@ class _CaptureCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              item.imageUrl!,
+              item.imageUrl!.trim(),
               width: width,
               height: width,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              errorBuilder: (_, _, _) {
+                onImageError();
+                return const SizedBox.shrink();
+              },
             ),
           ),
           const SizedBox(height: 8),

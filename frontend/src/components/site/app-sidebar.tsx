@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FindEZMark, FindEZWordmark } from "./findez-brand";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -288,26 +289,8 @@ export function AppSidebar({
       >
         <div className="app-sidebar-brand">
           <Link href="/home" aria-label="FindEZ home" onClick={closeDrawer}>
-            <svg
-              className="app-sidebar-logo"
-              viewBox="0 0 96 96"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M25.25 40.75H55.25V70.75"
-                stroke="currentColor"
-                strokeWidth="11"
-              />
-              <path
-                d="M50.25 30.75H65.25V45.75"
-                stroke="#E8590C"
-                strokeWidth="11"
-              />
-            </svg>
-            <span>
-              Find<span className="app-brand-ez">EZ</span>
-            </span>
+            <FindEZMark className="app-sidebar-logo" />
+            <span><FindEZWordmark textOnly width={77} height={30}/></span>
           </Link>
           <button
             onClick={onToggle}

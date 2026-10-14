@@ -10,6 +10,7 @@ import 'package:mobile/features/home/home_page.dart';
 import 'package:mobile/features/home/home_overview.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
 import 'package:mobile/features/chat/chat_page.dart';
+import 'support/image_http.dart';
 
 class _HomeApi extends ApiClient {
   _HomeApi({this.fail = false}) : super(baseUrl: 'https://api.test');
@@ -114,6 +115,69 @@ Widget _page(_HomeApi api, {ValueChanged<Map<String, dynamic>>? onSpace}) =>
     );
 
 void main() {
+  testWidgets('pictureless import rows never appear as photo captures', (
+    tester,
+  ) async {
+    final imports =
+        [
+              null,
+              '',
+              ' ',
+              'null',
+              'None',
+              'nan',
+              '/missing.jpg',
+              'file:///missing.jpg',
+            ].indexed
+            .map(
+              (entry) => InventoryItem(
+                itemId: 'import-${entry.$1}',
+                name: 'Imported row ${entry.$1}',
+                category: 'Supplies',
+                quantity: 10,
+                location: 'Shelf',
+                imageUrl: entry.$2,
+                createdAt: DateTime.now(),
+              ),
+            )
+            .toList();
+    await tester.pumpWidget(_overview(items: imports));
+    await tester.pumpAndSettle();
+    expect(find.text('Captured today'), findsNothing);
+    expect(find.text('Recent captures'), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(
+      tester.widget<HomeOverview>(find.byType(HomeOverview)).items.length,
+      8,
+    );
+    expect(find.text('Where things live'), findsOneWidget);
+  });
+  testWidgets('failed image decoding removes the whole capture tile', (
+    tester,
+  ) async {
+    final bad = InventoryItem(
+      itemId: 'bad-photo',
+      name: 'Broken thumbnail',
+      category: 'Supplies',
+      quantity: 7,
+      location: 'Shelf',
+      imageUrl: 'https://api.test/broken.png',
+      createdAt: DateTime.now(),
+    );
+    await tester.pumpWidget(_overview(items: [bad]));
+    await tester.pumpAndSettle();
+    expect(find.text('Captured today'), findsNothing);
+    expect(find.text('Broken thumbnail'), findsNothing);
+    expect(find.byType(Image), findsNothing);
+    expect(
+      tester
+          .widget<HomeOverview>(find.byType(HomeOverview))
+          .items
+          .single
+          .quantity,
+      7,
+    );
+  });
   FontWeight? renderedWeight(WidgetTester tester, String label) => tester
       .widget<RichText>(
         find.descendant(of: find.text(label), matching: find.byType(RichText)),
@@ -286,7 +350,7 @@ void main() {
       expect(overview.lowStock, 2);
       expect(overview.outOfStock, 1);
       expect(overview.lentOut, 1);
-      expect(find.text('No photo captures yet'), findsOneWidget);
+      expect(find.text('Captured today'), findsNothing);
       expect(find.byType(Image), findsNothing);
     },
   );
@@ -518,22 +582,27 @@ void main() {
   testWidgets(
     'photo strip uses retained images and does not imply old captures are from today',
     (tester) async {
-      final photo = InventoryItem(
-        itemId: 'photo',
-        name: 'Hex bolt',
-        category: 'Supplies',
-        quantity: 1,
-        location: 'Shelf',
-        imageUrl: 'https://api.test/item.jpg',
-        createdAt: DateTime(2020),
-      );
-      await tester.pumpWidget(_overview(items: [photo, _item('No photo')]));
-      await tester.pumpAndSettle();
-      expect(find.text('Recent captures'), findsOneWidget);
-      expect(find.text('Captured today'), findsNothing);
-      final image = tester.widget<Image>(find.byType(Image));
-      expect((image.image as NetworkImage).url, photo.imageUrl);
-      expect(find.text('Hex bolt'), findsOneWidget);
+      debugNetworkImageHttpClientProvider = () => ImageTestClient();
+      try {
+        final photo = InventoryItem(
+          itemId: 'photo',
+          name: 'Hex bolt',
+          category: 'Supplies',
+          quantity: 1,
+          location: 'Shelf',
+          imageUrl: 'https://api.test/item.jpg',
+          createdAt: DateTime(2020),
+        );
+        await tester.pumpWidget(_overview(items: [photo, _item('No photo')]));
+        await tester.pumpAndSettle();
+        expect(find.text('Recent captures'), findsOneWidget);
+        expect(find.text('Captured today'), findsNothing);
+        final image = tester.widget<Image>(find.byType(Image));
+        expect((image.image as NetworkImage).url, photo.imageUrl);
+        expect(find.text('Hex bolt'), findsOneWidget);
+      } finally {
+        debugNetworkImageHttpClientProvider = null;
+      }
     },
   );
 }

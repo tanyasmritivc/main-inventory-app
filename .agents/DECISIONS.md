@@ -1,5 +1,26 @@
 # Decisions
 
+## October 13 pre-submission mobile presentation
+
+The user chooses a questionnaire without a brand header and with a small X,
+image-backed Home captures, a compact translucent guided tour, and simpler Ask
+copy. Keep the questionnaire's saved-answer and launch behavior unchanged.
+Home presentation excludes missing, invalid and failed images without removing
+inventory or changing quantities. Empty capture strips are omitted.
+
+Use one moving navigation indicator with a 350 ms spring, up to 1.4 horizontal
+stretch, and a separate 1.06 surface pulse. Icons and touch targets stay fixed.
+Reduce Motion uses a stationary cross-fade; high contrast uses solid surfaces.
+Apply glass locally to navigation, tutorial and small controls, rather than
+changing every product surface. Supplied logo assets are retained byte for byte
+in mobile; generated native icons preserve their pixels. Light is the default
+only when no valid appearance preference is stored. Explicit Dark and System
+preferences remain supported. Use ASCII punctuation in new comments and commits.
+
+Source is on `feat/mobile-submission-polish`, based on delivered build 62.
+Public App Review submission remains held pending final acceptance. Uploaded
+screenshots are assets in the 1.0.8 draft, not a completed review submission.
+
 ## October 12 reference-led onboarding and auth presentation
 
 The user rejects the radio-circle list and decorative icon badge, then supplies

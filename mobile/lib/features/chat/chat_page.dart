@@ -17,6 +17,7 @@ import '../../core/config.dart';
 import '../../core/restock_plan.dart';
 import '../../core/ask_answer.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
 import 'ask_answer_view.dart';
 import '../scan/scan_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -2524,28 +2525,33 @@ class _ChatPageState extends State<ChatPage>
 
   Widget _buildHeader() {
     final title = AppText(
-      'Ask FindEZ',
+      key: const Key('ask-heading'),
+      'Ask',
       style: TextStyle(
         color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
-        fontSize: 28,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.8,
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
         height: 1.2,
       ),
     );
-    final reset = TextButton(
-      onPressed: _resetChat,
-      child: AppText(
-        'New chat',
-        style: TextStyle(
-          color: AppTheme.foreground(context, Color(0xFF85858E)),
-          fontSize: 13,
+    final reset = FrostedSurface(
+      radius: 16,
+      shadow: false,
+      child: TextButton(
+        onPressed: _resetChat,
+        child: AppText(
+          'New chat',
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFF85858E)),
+            fontSize: 13,
+          ),
         ),
       ),
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: MediaQuery.textScalerOf(context).scale(28) > 36
+      child: MediaQuery.textScalerOf(context).scale(18) > 36
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [title, if (_session.messages.isNotEmpty) reset],
@@ -2559,16 +2565,20 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  Widget _buildEmptyState() => Align(
-    alignment: Alignment.topLeft,
-    child: Padding(
-      padding: EdgeInsets.only(top: 8, left: 4),
-      child: AppText(
-        'Ask about your things, places, or projects.',
-        style: TextStyle(
-          color: AppTheme.foreground(context, Color(0xFF85858E)),
-          fontSize: 16,
-          height: 1.5,
+  Widget _buildEmptyState() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 16),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: AppText(
+          'What would you like to know?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            height: 1.25,
+          ),
         ),
       ),
     ),
@@ -2712,17 +2722,17 @@ class _ChatPageState extends State<ChatPage>
                   controller: _scrollController,
                   padding: const EdgeInsets.only(top: 4, bottom: 12),
                   itemCount: _session.messages.isEmpty
-                      ? 2
+                      ? 1
                       : _session.messages.length + 1,
                   separatorBuilder: (context, index) {
-                    if (index == 0) return const SizedBox(height: 24);
+                    if (index == 0) return const SizedBox(height: 16);
                     final curr = _session.messages[index - 1];
                     final next = _session.messages[index];
                     return SizedBox(height: curr.role == next.role ? 12 : 8);
                   },
                   itemBuilder: (context, index) {
-                    if (index == 0) return _buildHeader();
                     if (_session.messages.isEmpty) return _buildEmptyState();
+                    if (index == 0) return _buildHeader();
                     final messageIndex = index - 1;
                     final m = _session.messages[messageIndex];
                     final isUser = m.role == 'user';
@@ -2866,7 +2876,7 @@ class _ChatPageState extends State<ChatPage>
                           ),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Ask about your things',
+                          hintText: 'Ask a question',
                           isDense: true,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,

@@ -126,6 +126,25 @@ Future<void> answerAll(WidgetTester tester, {bool submit = true}) async {
 }
 
 void main() {
+  testWidgets('questionnaire has a small accessible X and no brand header', (
+    tester,
+  ) async {
+    await tester.pumpWidget(setup());
+    await tester.pumpAndSettle();
+    expect(find.text('Close'), findsNothing);
+    expect(find.text('Skip'), findsNothing);
+    final close = find.byKey(const Key('onboarding-skip'));
+    expect(tester.widget<IconButton>(close).tooltip, 'Skip setup');
+    expect((tester.widget<IconButton>(close).icon as Icon).size, 18);
+    expect(tester.getSize(close).shortestSide, greaterThanOrEqualTo(44));
+    expect(find.text('What will you use FindEZ for?'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'FindEZWordmark',
+      ),
+      findsNothing,
+    );
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {

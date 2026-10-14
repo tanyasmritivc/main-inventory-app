@@ -212,6 +212,17 @@ void main() {
           expect(find.text(titles[i]), findsOneWidget);
           expect(tester.takeException(), isNull);
           final rect = tester.getRect(find.byKey(const Key('tutorial-card')));
+          expect(rect.width, lessThanOrEqualTo(320));
+          if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+            expect(rect.height, lessThan(230));
+          }
+          expect(
+            find.descendant(
+              of: find.byKey(const Key('tutorial-card')),
+              matching: find.byType(BackdropFilter),
+            ),
+            findsWidgets,
+          );
           expect(rect.left, greaterThanOrEqualTo(16));
           expect(rect.right, lessThanOrEqualTo(374));
           expect(rect.top, greaterThanOrEqualTo(63));
@@ -274,7 +285,7 @@ void main() {
     tester,
   ) async {
     await mount(tester, Brightness.light);
-    await tester.tap(find.text('Skip'));
+    await tester.tap(find.byTooltip('Skip tour'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tutorial-card')), findsNothing);
     expect(

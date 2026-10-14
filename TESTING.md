@@ -105,6 +105,29 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### October 13 mobile submission polish
+
+Run analysis and the complete mobile suite. The navigation tests verify the
+350 ms spring, surface pulse, horizontal stretch, fixed icon centers, final
+alignment, interrupted taps and reduced-motion cross-fades in both themes.
+Retain five accessible destinations and the existing keyboard/safe-area layout.
+Home regressions exclude pictureless and invalid import thumbnails, remove failed
+image cards, preserve inventory quantities and use recent labels for older photos.
+Test thumbnails use a local image HTTP stub, never a production image service.
+
+The questionnaire tests retain all four answers and save/retry behavior while
+checking an 18pt X within a full accessible touch target and no wordmark header.
+Tutorial tests cover compact glass cards, safe placement, Next/Back/Skip,
+completion and 3.4x text. Ask tests check the simple empty prompt and preserve
+streaming, photos, sources, reset and account isolation.
+
+Use `FINDEZ_VISUAL_QA=true` with the existing questionnaire/tutorial/navigation
+tests for sample renders with loaded fonts. Template-height checks belong to
+those renders; the default Ahem font is deliberately not a native font.
+Inspect the actual native preview and verify Reduce Motion, rapid tab changes,
+Light/Dark, VoiceOver, keyboard and failed-image refresh on the final TestFlight
+binary. Widgets and simulator checks do not claim physical acceptance.
+
 ### Setup questionnaire and in-app guided tour
 
 Run the full backend/web/mobile suites, analysis, TypeScript and changed-file

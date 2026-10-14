@@ -232,15 +232,15 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(form.dispose);
       await _open(tester, controller, form);
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Light'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Dark'));
       await tester.pumpAndSettle();
-      expect(controller.themeMode, ThemeMode.dark);
+      expect(controller.themeMode, ThemeMode.light);
       expect(
         find.textContaining('Could not save appearance settings'),
         findsOneWidget,
       );
       storage.pending = Completer<bool>();
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Light'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Dark'));
       await tester.pump();
       expect(
         tester
@@ -250,7 +250,7 @@ void main() {
       );
       storage.pending!.complete(true);
       await tester.pumpAndSettle();
-      expect(controller.themeMode, ThemeMode.light);
+      expect(controller.themeMode, ThemeMode.dark);
       expect(
         find.textContaining('Could not save appearance settings'),
         findsNothing,

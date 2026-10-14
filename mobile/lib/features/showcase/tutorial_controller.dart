@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../onboarding/onboarding_prefs.dart';
 import 'package:mobile/core/ui/app_text.dart';
+import '../../core/ui/frosted_surface.dart';
 
 // ─── Keyboard helper ─────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ class TutorialController {
       pageIndex: 0,
       icon: Icons.home_outlined,
       title: 'Start at Home',
-      body: 'See recent items and anything waiting for your review.',
+      body: 'Review recent photos and items needing attention.',
       cornerRadius: 14,
       targetKey: inventoryIconKey,
     ),
@@ -94,8 +95,7 @@ class TutorialController {
       icon: Icons.qr_code_scanner,
       secondIcon: Icons.camera_alt_outlined,
       title: 'Capture an item',
-      body:
-          'Take a photo or scan a barcode. Review AI suggestions before saving.',
+      body: 'Take a photo or scan a barcode, then review the results.',
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
@@ -104,7 +104,7 @@ class TutorialController {
       pageIndex: 1,
       icon: Icons.auto_awesome,
       title: 'Ask about saved items',
-      body: 'Ask where an item is or how many you have.',
+      body: 'Find a saved item or check its quantity.',
       cornerRadius: 14,
       targetKey: assistTabKey,
     ),
@@ -113,7 +113,7 @@ class TutorialController {
       pageIndex: 3,
       icon: Icons.search_rounded,
       title: 'Search your inventory',
-      body: 'Find saved items by name or location.',
+      body: 'Search saved items by name or place.',
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
@@ -122,7 +122,7 @@ class TutorialController {
       pageIndex: 3,
       icon: Icons.folder_outlined,
       title: 'Open a Space',
-      body: 'Keep items together by room, shelf, or workplace.',
+      body: 'Group items by room, shelf, or work area.',
       cornerRadius: 20,
       targetKey: firstSpaceCardKey,
     ),
@@ -130,7 +130,7 @@ class TutorialController {
       pageIndex: 3,
       icon: Icons.groups_outlined,
       title: 'Work with others',
-      body: 'Open Teams to share inventory, assign work, and manage access.',
+      body: 'Share Spaces and coordinate with your team.',
       cornerRadius: 14,
       targetKey: teamsSegmentKey,
       targetRectTransform: (rect) =>
@@ -464,6 +464,13 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
                         holeRect: hole,
                         cornerRadius: config.cornerRadius,
                         color: AppTheme.accentForeground(context),
+                        scrim: Colors.black.withValues(
+                          alpha: MediaQuery.highContrastOf(context)
+                              ? .24
+                              : AppTheme.isDark(context)
+                              ? .18
+                              : .08,
+                        ),
                       ),
                     ),
                   ),
@@ -474,7 +481,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
                       hole: hole,
                       safePad: MediaQuery.paddingOf(context),
                       minimumHeight:
-                          190 *
+                          145 *
                           (MediaQuery.textScalerOf(context).scale(14) / 14)
                               .clamp(1.0, 2.4),
                     ),
@@ -523,7 +530,7 @@ class _TooltipLayout extends SingleChildLayoutDelegate {
     final above = (hole.top - gap - top).clamp(0.0, bottom - top);
     final below = (bottom - hole.bottom - gap).clamp(0.0, bottom - top);
     final available = above > below ? above : below;
-    final width = (size.width - 2 * margin).clamp(0.0, 360.0);
+    final width = (size.width - 2 * margin).clamp(0.0, 320.0);
     return BoxConstraints(
       minWidth: width,
       maxWidth: width,
@@ -573,100 +580,120 @@ class _TooltipCard extends StatelessWidget {
   final VoidCallback onSkip;
 
   @override
-  Widget build(BuildContext context) => Material(
-    key: const Key('tutorial-card'),
-    color: AppTheme.surface(context),
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-      side: BorderSide(color: AppTheme.border(context)),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppText(
-                  MediaQuery.textScalerOf(context).scale(12) > 20
-                      ? '${step + 1} / $totalSteps'
-                      : 'Step ${step + 1} of $totalSteps',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary(context),
-                  ),
-                ),
-              ),
-              if (MediaQuery.textScalerOf(context).scale(14) > 22)
-                IconButton(
-                  onPressed: onSkip,
-                  tooltip: 'Skip tour',
-                  icon: const Icon(Icons.close_rounded),
-                )
-              else
-                TextButton(onPressed: onSkip, child: const AppText('Skip')),
+  Widget build(BuildContext context) {
+    final large = MediaQuery.textScalerOf(context).scale(14) > 23;
+    final next = FrostedSurface(
+      radius: 16,
+      shadow: false,
+      tint: AppTheme.accentTint(context),
+      border: AppTheme.accentForeground(context).withValues(alpha: .2),
+      child: TextButton(
+        key: const Key('tutorial-next'),
+        onPressed: onNext,
+        style: TextButton.styleFrom(
+          foregroundColor: AppTheme.accentForeground(context),
+          minimumSize: const Size(76, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: AppText(step == totalSteps - 1 ? 'Done' : 'Next')),
+            if (!large) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_forward_rounded, size: 16),
             ],
-          ),
-          Flexible(
-            fit: FlexFit.loose,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+      ),
+    );
+    return FrostedSurface(
+      key: const Key('tutorial-card'),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Semantics(
-                    header: true,
-                    liveRegion: true,
+                  Expanded(
                     child: AppText(
-                      config.title,
+                      '${step + 1} / $totalSteps',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary(context),
+                        fontSize: 11,
+                        color: AppTheme.textPrimary(
+                          context,
+                        ).withValues(alpha: .75),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    config.body,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: AppTheme.textSecondary(context),
-                    ),
+                  IconButton(
+                    onPressed: onSkip,
+                    tooltip: 'Skip tour',
+                    icon: const Icon(Icons.close_rounded, size: 18),
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              if (step > 0) ...[
-                IconButton(
-                  onPressed: onBack,
-                  tooltip: 'Previous step',
-                  icon: const Icon(Icons.arrow_back_rounded),
+              Flexible(
+                fit: FlexFit.loose,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        liveRegion: true,
+                        child: AppText(
+                          config.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      AppText(
+                        config.body,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: AppTheme.textPrimary(
+                            context,
+                          ).withValues(alpha: .82),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: FilledButton(
-                  key: const Key('tutorial-next'),
-                  onPressed: onNext,
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                  child: AppText(step == totalSteps - 1 ? 'Done' : 'Next'),
-                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (step > 0)
+                    IconButton(
+                      onPressed: onBack,
+                      tooltip: 'Previous step',
+                      icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                    ),
+                  if (large) ...[
+                    const SizedBox(width: 8),
+                    Expanded(child: next),
+                  ] else ...[
+                    const Spacer(),
+                    next,
+                  ],
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SpotlightPainter extends CustomPainter {
@@ -674,10 +701,12 @@ class _SpotlightPainter extends CustomPainter {
     required this.holeRect,
     required this.cornerRadius,
     required this.color,
+    required this.scrim,
   });
   final Rect holeRect;
   final double cornerRadius;
   final Color color;
+  final Color scrim;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -689,13 +718,13 @@ class _SpotlightPainter extends CustomPainter {
       ..fillType = PathFillType.evenOdd
       ..addRect(Offset.zero & size)
       ..addRRect(hole);
-    canvas.drawPath(path, Paint()..color = const Color(0x99000000));
+    canvas.drawPath(path, Paint()..color = scrim);
     canvas.drawRRect(
       hole,
       Paint()
-        ..color = color
+        ..color = color.withValues(alpha: .65)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = 1.25,
     );
   }
 
@@ -703,5 +732,6 @@ class _SpotlightPainter extends CustomPainter {
   bool shouldRepaint(_SpotlightPainter old) =>
       old.holeRect != holeRect ||
       old.cornerRadius != cornerRadius ||
-      old.color != color;
+      old.color != color ||
+      old.scrim != scrim;
 }

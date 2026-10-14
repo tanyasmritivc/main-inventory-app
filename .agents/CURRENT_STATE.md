@@ -1,5 +1,33 @@
 # Current state
 
+## October 13 mobile pre-submission polish in source
+
+Lane `feat/mobile-submission-polish` in `dev/findez-logo-light-default`, based on
+delivered build-62 context `fdec959`, implements the user's latest mobile requests:
+no questionnaire wordmark, an accessible small X, omission of pictureless/failed
+Home thumbnails, compact frosted tour cards with a light scrim, and simple Ask
+copy. One navigation pill slides and stretches up to 1.4 while the surface pulses
+to 1.06 over 350 ms. Icons and touch targets stay fixed. Reduce Motion cross-fades
+without scaling/stretch; high contrast uses solid surfaces.
+
+The supplied October 13 logo ZIP replaces mobile wordmark/mark/icon assets byte
+for byte, regenerates native icon sizes, and updates shared web branding. Light
+is the default for missing/invalid appearance preferences; saved choices remain.
+All 346 mobile tests with coverage and clean analysis pass. All 211 web tests,
+TypeScript and production webpack build pass. Sample Light/Dark tour and navigation
+renders pass. The initial native simulator build ran out of disk; task-owned web
+caches and its failed DerivedData were removed with user approval, then a build
+for the booted arm64 simulator was started. Native/physical acceptance and a new
+binary delivery are still pending. No App Review submission or production changes.
+
+Six iPhone and six iPad screenshots from the supplied ZIPs are COMPLETE in the
+1.0.8 en-US draft, in supplied order with verified source MD5 checksums and image
+dimensions. Durable assets, manifests and upload receipts are in
+`Documents/FindEZ/AppStore/screenshots-20261013`. Version 1.0.8 remains
+PREPARE_FOR_SUBMISSION, manual release, with no build selected. The optional
+wide creative header is separate from these screenshots. Separate Shopify source
+lanes remain disabled and unshipped; the production schema is unchanged.
+
 ## October 12 setup questions, guided tour and concise Auth delivered
 
 - Runtime `346d9ae`, draft PR #59 stacked on #58, replaces promotional onboarding

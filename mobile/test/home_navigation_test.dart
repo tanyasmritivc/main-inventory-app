@@ -29,6 +29,133 @@ void _expectHiddenLabels(WidgetTester tester) {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final reduced in [false, true]) {
+      testWidgets(
+        'navigation springs or cross-fades in $brightness with Reduce Motion $reduced',
+        (tester) async {
+          var selected = 0;
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: ThemeData(brightness: brightness),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(disableAnimations: reduced),
+                child: child!,
+              ),
+              home: StatefulBuilder(
+                builder: (context, setState) => Scaffold(
+                  bottomNavigationBar: HomeNavigation(
+                    selectedIndex: selected,
+                    onSelected: (index) => setState(() => selected = index),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          List<Offset> centers() => List.generate(
+            5,
+            (i) => tester.getCenter(
+              find
+                  .descendant(
+                    of: find.byType(NavigationDestination).at(i),
+                    matching: find.byType(Icon),
+                  )
+                  .first,
+            ),
+          );
+          final fixed = centers();
+          await tester.tap(find.byType(NavigationDestination).at(4));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 84));
+          expect(centers(), fixed);
+          final scale = tester
+              .widget<Transform>(find.byKey(const Key('nav-surface-scale')))
+              .transform
+              .entry(0, 0);
+          final stretches = tester
+              .widgetList<Transform>(
+                find.byKey(const Key('nav-selection-stretch')),
+              )
+              .map((value) => value.transform.entry(0, 0))
+              .toList();
+          if (reduced) {
+            expect(scale, 1);
+            expect(stretches, [1, 1]);
+            final fades = tester
+                .widgetList<Opacity>(
+                  find.ancestor(
+                    of: find.byKey(const Key('nav-selection-stretch')),
+                    matching: find.byType(Opacity),
+                  ),
+                )
+                .map((value) => value.opacity)
+                .toList();
+            expect(fades.every((value) => value > 0 && value < 1), isTrue);
+          } else {
+            expect(scale, closeTo(1.06, .005));
+            expect(stretches.single, greaterThan(1));
+            expect(stretches.single, lessThanOrEqualTo(1.4));
+          }
+          await tester.pump(const Duration(milliseconds: 266));
+          expect(centers(), fixed);
+          expect(
+            tester
+                .widget<Transform>(find.byKey(const Key('nav-surface-scale')))
+                .transform
+                .entry(0, 0),
+            1,
+          );
+          expect(
+            tester
+                .widget<Transform>(
+                  find.byKey(const Key('nav-selection-stretch')),
+                )
+                .transform
+                .entry(0, 0),
+            1,
+          );
+          expect(
+            tester
+                .getCenter(find.byKey(const ValueKey('nav-selection-4.0')))
+                .dx,
+            closeTo(
+              tester.getCenter(find.byType(NavigationDestination).at(4)).dx,
+              .1,
+            ),
+          );
+          await tester.tap(find.byType(NavigationDestination).at(0));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 50));
+          final before = reduced
+              ? null
+              : tester.getRect(find.byKey(const Key('nav-selection-stretch')));
+          await tester.tap(find.byType(NavigationDestination).at(2));
+          await tester.pump();
+          if (before != null) {
+            final after = tester.getRect(
+              find.byKey(const Key('nav-selection-stretch')),
+            );
+            expect(after.center.dx, closeTo(before.center.dx, .1));
+            expect(after.width, closeTo(before.width, .1));
+          }
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .getCenter(find.byKey(const ValueKey('nav-selection-2.0')))
+                .dx,
+            closeTo(
+              tester.getCenter(find.byType(NavigationDestination).at(2)).dx,
+              .1,
+            ),
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
   testWidgets(
     'icons switch every tab with hidden labels and accessible names',
     (tester) async {
@@ -187,16 +314,7 @@ void main() {
           );
           await tester.pumpAndSettle();
           _expectHiddenLabels(tester);
-          final pill = find.descendant(
-            of: find.byType(HomeNavigation),
-            matching: find.byWidgetPredicate(
-              (widget) =>
-                  widget is DecoratedBox &&
-                  widget.decoration is BoxDecoration &&
-                  (widget.decoration as BoxDecoration).borderRadius ==
-                      BorderRadius.circular(30),
-            ),
-          );
+          final pill = find.byKey(const Key('nav-frame'));
           expect(pill, findsOneWidget);
           final pillBounds = tester.getRect(pill);
           expect(pillBounds.height, 58); // 56pt bar plus its 1pt border.
