@@ -1,5 +1,16 @@
 # Current state
 
+## October 14 build-63 beta preparation authorized
+
+The user requests the updated simulator and next internal TestFlight build.
+The release candidate is 1.0.8+63 on `feat/mobile-submission-polish` (PR #62).
+Latest presentation source `da49230` passes analysis, all 349 mobile tests and
+all five CI jobs in `38537158439`. Native checks and Apple delivery are pending;
+uploaded 62 is still the available beta. App Store Connect confirms public
+1.0.7 uses 59 and editable 1.0.8 is unselected with manual release. Do not select
+or submit the public draft as part of this internal delivery. Shopify remains
+paused and absent from this build.
+
 ## October 14 launch excludes Shopify
 
 The user pauses Shopify and keeps it for a later release. Preserve its separate

@@ -1,5 +1,17 @@
 # Active work
 
+## October 14 build-63 internal TestFlight preparation
+
+The user authorizes continuation into the updated simulator and internal beta.
+Build 1.0.8+63 includes the completed Home/Account, typography, chat/import,
+onboarding/tour, four-tab motion, supplied logo and Light-default changes in
+PR #62. Local analysis and 349 mobile tests pass on the presentation source;
+all five CI gates pass on `da49230`. Native simulator, clean production archive,
+exact-source CI, package verification, Apple validation and internal delivery
+are next. Public review submission remains held and Shopify stays excluded.
+Only regenerated task/Xcode caches are cleaned for space; durable signed
+packages, supplied assets and unrelated work remain intact.
+
 ## October 14 Home account entry and stable light typography
 
 Continue `feat/mobile-submission-polish` before the next binary. User removes the
