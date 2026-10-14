@@ -1,5 +1,19 @@
 # Decisions
 
+## October 13 merchant adoption uses independent physical memory
+
+The user emphasizes helping businesses migrate into FindEZ and plan using our
+physical-world angle. Reuse Shopify product/variant identity and catalog data,
+then accumulate employee-confirmed storage context. Shopify remains authoritative
+for commerce; counts observed in FindEZ do not overwrite commerce quantities.
+Migration 043 uses independent employee-authored memory names, stable external
+links, existing Team Spaces/bins and append-only placement history. Disconnect
+purges derived commerce data while retaining those authored memories. Grounded
+Team lookup is bounded and read-only, isolated from personal Ask mutation tools.
+These development slices do not implement a migration wizard or planning engine.
+Pilot acceptance and customer measurement precede broader claims or pricing limits.
+
+
 ## October 12 first Shopify increment uses an isolated development pilot
 
 The user says implement, then confirms no app/store exists and chooses preparing

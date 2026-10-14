@@ -21,6 +21,7 @@ from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
 from app.services.storage import create_document_signed_url, upload_team_document
+from app.services.physical_memory import available as physical_memory_available
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
@@ -124,7 +125,7 @@ def _team_document(team_id: str, document_id: str) -> dict:
 def get_workspace(team_id: str, user: AuthenticatedUser = Depends(get_current_user)):
     membership = _membership(team_id, user.user_id)
     team = _team(team_id)
-    return {"team": team, "role": membership["role"]}
+    return {"team": team, "role": membership["role"], "physical_memory_enabled": physical_memory_available(team_id)}
 
 
 @router.get("/spaces")

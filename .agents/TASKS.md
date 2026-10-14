@@ -48,8 +48,13 @@ Reprioritize it when production state changes.
   `feat/shopify-catalog-connection`, disabled and not deployed. User has no Shopify
   app/store yet; `docs/shopify-development.md` and the configuration template
   prepare isolated development testing. Next: create/configure a development app
-  and record real OAuth/query/refresh/webhook/retention acceptance, then implement
-  explicit physical-location confirmation and Team-aware Ask (1B). Preserve native
+  and record real OAuth/query/refresh/webhook/retention acceptance. Milestone 1B
+  physical-location confirmation and bounded Team-aware lookup are implemented in
+  `feat/commerce-physical-memory`, source-only; complete its isolated end-to-end
+  acceptance in `docs/physical-memory.md`. Next product increment: guided merchant
+  adoption from imported variants to confirmed storage, then real visual matching
+  and planning supported by verified observations. Measure setup effort, finding
+  time and repeat use with a merchant pilot before claiming commercial value. Preserve native
   inventory/pricing; no production migration/deployment without authorization.
   Public distribution/billing and backup deletion require review before rollout.
   Other adapters and external commerce writes remain later.

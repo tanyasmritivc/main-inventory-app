@@ -55,7 +55,8 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `041`, but they do not contain
+related services. Production migrations are recorded through `041`; optional
+development migrations `042` and `043` exist in source only. They do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -122,8 +123,17 @@ bound standalone OAuth, backend-only AES-GCM expiring credentials, fixed GraphQL
 PostgreSQL page jobs. A separate supervised worker handles pagination, retries,
 refresh and periodic reconciliation; signed webhooks persist receipts/dirty flags.
 Web Team > People has connection/status and catalog preview. Native inventory,
-manufacturer catalog, mobile and current Ask remain unchanged. Physical-location
-observations and newer-Team grounded Ask are still planned (1B). No real Shopify
+manufacturer catalog and personal Ask remain unchanged. Milestone 1B adds an
+optional web Memory tab and mobile Team physical-memory page, using the shared
+Team-authorized API and migration 043. Independent employee-authored memory names,
+Space/bin placements and append-only confirmations connect to catalog variants by
+stable IDs. Commerce quantities and optional observed counts stay separate.
+Lookup uses a bounded name/SKU/barcode/location grammar, deterministic retrieval
+and existing answer presentation. It is not a general Team agent and cannot invoke
+personal inventory mutation tools. Ambiguity requires selection; unknown locations
+and old confirmations are explicit. Store disconnection deletes imported links
+and cache while preserving independently authored physical memories.
+See `docs/physical-memory.md` for contracts, limits and acceptance. No real Shopify
 app/store acceptance or production migration/deployment is complete; the user
 requires separate production authorization. Discovery is in `docs/shopify-discovery.md`.
 

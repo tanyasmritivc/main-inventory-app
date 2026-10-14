@@ -44,7 +44,9 @@ Existing items, quantities, Spaces, bins, FIND, ASK, mobile, pricing and billing
 remain unchanged. This increment never creates physical inventory records and
 never performs a Shopify inventory/product/order mutation. Product removals
 tombstone commerce rows after a completed pass. The subsequent location-confirmation
-and Team-aware ASK slice is still unimplemented.
+and Team-aware lookup slice now exists in the separate milestone 1B source lane;
+see `docs/physical-memory.md`. It is also disabled, not deployed and not verified
+with a live store. Milestone 1A itself does not create physical records.
 
 ## Prepare an isolated development installation
 
@@ -171,5 +173,6 @@ Before enabling any merchant pilot, record actual development-store acceptance:
   preview disappears, with no physical item or stock count changes.
 
 Automated mocks and disposable SQL do not satisfy these live-store checks. Public
-distribution, connected-store ASK, location observations, photo matching, external
-writes, new tiers and pricing changes are outside this increment.
+distribution, photo matching, external writes, new tiers and pricing changes are
+outside this increment. Connected-store bounded lookup and location observations
+are the separate source-only milestone 1B, with acceptance in `docs/physical-memory.md`.

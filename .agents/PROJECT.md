@@ -35,11 +35,22 @@ Keep catalog variants, Shopify quantity snapshots and confirmed physical
 observations distinct. Start read-only toward Shopify, preserve general pricing
 direction, and avoid Shopify-only product/navigation/business logic.
 
-Discovery is complete in `docs/shopify-discovery.md`; no Shopify connector is
-implemented. Recommended first release connects/imports, confirms locations and
-provides Team-authorized grounded lookup. Photos, discrepancies, shipments and
-external writes are later increments. This is not authorization for production
+Discovery is complete in `docs/shopify-discovery.md`. The read-only development
+connector (1A) and human-confirmed physical-location memory with Team-authorized
+lookup (1B) now exist in separate source lanes, disabled by default and not deployed.
+See `docs/shopify-development.md` and `docs/physical-memory.md`. No real Shopify
+app/store acceptance is complete. Photos, discrepancies, shipments and external
+writes remain later increments. This is not authorization for production
 migrations or deployment.
+
+Business adoption should feel like a guided migration into FindEZ: reuse the
+merchant's catalog, preserve product/variant identity, map actual storage and help
+the team understand what it has and what needs attention. Shopify can remain the
+commerce system. FindEZ adds persistent physical memory and, in later increments,
+planning grounded in that memory. Do not claim an end-to-end migration wizard,
+automatic visual matching or operational planning is implemented by these slices.
+The first pilot should demonstrate reliable product finding and measure setup
+effort, finding/picking time, repeat employee use and willingness to pay.
 
 ## Users and markets
 

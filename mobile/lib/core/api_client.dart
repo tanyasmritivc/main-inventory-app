@@ -90,6 +90,48 @@ class ApiClient {
   final String? _teamSpaceId;
   String get baseUrl => _dio.options.baseUrl;
   String? get teamId => _teamId;
+  Future<Map<String, dynamic>> getPhysicalOptions(String teamId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/teams/${Uri.encodeComponent(teamId)}/physical/options',
+      options: _authOptions(),
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> askPhysical(
+    String teamId,
+    Map<String, dynamic> query,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/teams/${Uri.encodeComponent(teamId)}/physical/ask',
+      data: query,
+      options: _authOptions(),
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> confirmPhysical(
+    String teamId,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/teams/${Uri.encodeComponent(teamId)}/physical/confirm',
+      data: payload,
+      options: _authOptions(),
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> getPhysicalHistory(
+    String teamId,
+    String placementId,
+  ) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/teams/${Uri.encodeComponent(teamId)}/physical/placements/${Uri.encodeComponent(placementId)}/history',
+      options: _authOptions(),
+    );
+    return response.data ?? {};
+  }
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;

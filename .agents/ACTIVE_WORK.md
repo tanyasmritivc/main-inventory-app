@@ -1,5 +1,18 @@
 # Active work
 
+## October 13 commerce-linked physical memory
+
+Root implementation lane `feat/commerce-physical-memory` in
+`dev/findez-commerce-memory`, based on `1a49e1c`, stacks on draft PR #61. Source
+milestone 1B adds backend/migration 043, web Memory tab and mobile Team page for
+human-confirmed placements and grounded read-only lookup. Local backend/web/mobile,
+analysis/type/lint and disposable SQL checks pass. Final docs, exact-head CI and
+draft PR are being completed. Disabled by default; no production changes or live
+Shopify app/store acceptance. Follow `docs/physical-memory.md` and the development
+handoff. Migration/adoption must reuse merchant catalog identity and build useful
+physical context; guided setup, photos and operational planning are later scope.
+
+
 ## October 12 Shopify development implementation
 
 Lane `feat/shopify-catalog-connection`, separate worktree
