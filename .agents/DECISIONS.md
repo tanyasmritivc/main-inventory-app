@@ -1,5 +1,16 @@
 # Decisions
 
+## October 14 Shopify is intended for launch
+
+The user clarifies that current Shopify work is for FindEZ's launch. Development
+app/store resources validate the launch feature and do not replace a production
+integration. Prepare a merchant-ready installation path and public distribution
+requirements for unrelated stores; the current server-configured single-store
+pilot is not sufficient. A registered Shopify app is required for automatic
+authorized reads/edits; spreadsheet import is the manual alternative without live
+sync. No irreversible distribution choice, production migration/deployment or
+public Apple submission is implicitly authorized by this clarification.
+
 ## October 13 guided setup derives progress from verified records
 
 The first merchant adoption flow reuses catalog variants, Team Spaces/bins and

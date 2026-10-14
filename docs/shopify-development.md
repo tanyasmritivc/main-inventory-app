@@ -1,11 +1,26 @@
 # Read-only Shopify development connector
 
-October 12, 2026. Source milestone 1A implemented; disabled by default. No Shopify
-app or development store currently exists for this project (user confirmed).
+Source milestone 1A implemented; disabled by default. On October 14, the user
+created the Partner organization and the agent created and verified a development
+app and sample-data dev store. Their private dashboard links are kept in the local
+Shopify setup record, not in this repository. The initial app version is active,
+standalone, with `read_inventory,read_products`, legacy authorization-code install
+flow and webhook API version `2026-10`. It uses Shopify's placeholder app home;
+callback URLs, webhook subscriptions and optional write scopes are not configured
+on that initial version. No store installation or API grant has been verified.
 No merchant is connected, no live Shopify request is verified, migration 042 is
 not applied to production, and nothing in this lane is deployed. This is a
-development/custom-store pilot, not a public App Store installation implementation.
+development pilot, not a public App Store installation implementation.
 The prior discovery report remains the product/architecture reference.
+
+The user clarifies that the Shopify feature is intended for FindEZ's launch.
+Development app/store testing validates the launch feature; it is not separate
+throwaway product work. The current one-store pilot still needs merchant-ready
+onboarding, production configuration, real API acceptance and public distribution
+approval before it can serve unrelated customer stores. Shopify requires public
+distribution for many merchants and makes the chosen distribution method
+irreversible. No distribution method is selected on the development app.
+See [Shopify's distribution requirements](https://shopify.dev/docs/apps/launch/distribution).
 
 ## What this increment does
 
@@ -50,13 +65,14 @@ with a live store. Milestone 1A itself does not create physical records.
 
 ## Prepare an isolated development installation
 
-1. Create a Shopify development app/store through the Dev Dashboard, choosing a
-   standalone development/custom-store pilot rather than public distribution.
-   Distribution selection can be irreversible; this work has not selected it.
+1. The development organization/app/store now exist. Keep them as test resources
+   while preparing the launch app and merchant installation workflow.
+   Distribution selection is irreversible; this work has not selected it.
    Use [Shopify's distribution guidance](https://shopify.dev/docs/apps/launch/distribution).
 2. Use a separate FindEZ backend, frontend and Supabase database with test users
    and a test Team. Apply the existing schema/baseline and prior migrations, then
-   `backend/supabase/migrations/042_shopify_catalog.sql`. Numbered migrations alone
+   migrations 042 through 045 for connection, physical memory, owner edits and the
+   merchant guide. Numbered migrations alone
    do not reconstruct the production baseline. Never point test fixtures at production.
 3. Configure HTTPS frontend/API hosts on the same site, for example
    `www.dev.example.com` and `api.dev.example.com`. This is required for the secure
@@ -65,12 +81,20 @@ with a live store. Milestone 1A itself does not create physical records.
    rebuilding. Do not mix the test app with a production frontend/database.
 4. Use `integrations/shopify/shopify.app.toml.example` as the app configuration
    starting point. Replace the nonsecret client ID and all example origins. Register
-   the exact callback and webhook URLs. Configure only `read_inventory,read_products`.
-   The token adapter refuses missing or additional customer/order/write scopes.
+   the exact callback and webhook URLs. Required scopes are only
+   `read_inventory,read_products`; supported writes are declared as optional in the
+   target configuration and still need explicit owner approval. The initial app
+   version has only the reads. The adapter refuses missing or unexpected grants.
+   The template now explicitly selects `use_legacy_install_flow=true` to match the
+   current adapter's scope-bearing authorization URL. Shopify still supports this
+   flow but recommends managed installation for new apps; a launch installation
+   design must verify the selected flow and optional scope grant/revocation behavior.
+   Do not silently switch the configuration to a different authentication flow.
    Subscribe through app configuration; this adapter has no arbitrary GraphQL
    mutation/proxy endpoint. Verify the template with Shopify CLI once an app exists.
    [Subscriptions](https://shopify.dev/docs/apps/build/webhooks/get-started),
    [Standalone authorization](https://shopify.dev/docs/apps/build/authentication-authorization/authenticate-standalone-apps).
+   [Install configuration](https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration#access_scopes).
 5. Store these settings privately in the test backend's environment, not in git,
    screenshots, frontend configuration, chat or logs:
 

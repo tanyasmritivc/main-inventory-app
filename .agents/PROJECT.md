@@ -61,6 +61,12 @@ automatic visual matching or operational planning is implemented by these slices
 The first pilot should demonstrate reliable product finding and measure setup
 effort, finding/picking time, repeat employee use and willingness to pay.
 
+The user confirms on October 14 that current Shopify work is intended for launch.
+The development organization/app/store now exist to test the same launch feature.
+Prepare merchant-ready installation and required public-distribution approval;
+the current single-store pilot alone does not support unrelated customer stores.
+Photo matching and broader planning remain unbuilt subsequent capabilities.
+
 ## Users and markets
 
 FindEZ serves households, small businesses, laboratories, schools, makerspaces,

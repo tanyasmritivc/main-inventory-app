@@ -56,7 +56,7 @@ defense in depth. The service-role key must never reach a client.
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
 related services. Production migrations are recorded through `041`; optional
-development migrations `042`, `043` and `044` exist in source only. They do not contain
+development migrations `042` through `045` exist in source only. They do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -142,6 +142,13 @@ are not automatically replayed. `docs/shopify-owner-permissions.md` describes th
 supported fields and real-store gates. No real Shopify
 app/store acceptance or production migration/deployment is complete; the user
 requires separate production authorization. Discovery is in `docs/shopify-discovery.md`.
+
+Guided setup derives current import/mapping progress and a bounded variant queue
+in migration 045, with stable-ID shortcuts to reviewed confirmation and lookup.
+A Shopify development organization/app and sample-data test store now exist.
+The user intends this connector for launch; test resources validate the same code.
+The present one-store pilot still needs a customer installation/public-distribution
+path, actual OAuth/sync/grant acceptance and authorized production deployment.
 
 `integrations/findez-mcp` is a local stdio process for Claude Desktop. Its eight
 tools wrap the public `/api/v1` integration API and use a user-issued scoped key.

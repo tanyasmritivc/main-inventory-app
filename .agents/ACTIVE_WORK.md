@@ -1,5 +1,16 @@
 # Active work
 
+## October 14 Shopify development setup and launch clarification
+
+Lane `fix/shopify-development-setup` in `dev/findez-commerce-memory`, based on
+guided-migration `87d6dc9` (PR #65). The user creates the Partner organization;
+the agent creates a read-only standalone development app and sample-data Basic dev
+store. Saved version settings are read back in Safari, with no secret access or
+store installation. Record actual setup and the user's launch requirement; align
+the configuration template with the existing legacy OAuth adapter. Do not select
+irreversible distribution or imply a one-store pilot is ready for customer launch.
+No production schema/runtime or public Apple submission changes.
+
 ## October 13 guided merchant migration
 
 Root lane `feat/merchant-guided-migration` in `dev/findez-commerce-memory`, based

@@ -1,5 +1,21 @@
 # Shopify development-store acceptance
 
+October 14 setup: the user creates the Partner organization, and the agent creates
+and verifies the read-only standalone development app plus sample-data Basic dev
+store. The app's active initial version uses a Shopify placeholder home, legacy
+authorization-code install flow and API 2026-10. Callback URLs, webhook subscriptions
+and optional writes are not yet configured there. No app installation, actual
+grants, token/refresh/query acceptance or secret access is performed. Private links
+are saved in the local Documents/FindEZ/Shopify setup record.
+
+The Shopify feature is intended for FindEZ's launch. Test resources verify the same
+launch code. The current single-store development gate must be extended to a
+merchant-ready installation path before launch, followed by public distribution
+review/approval, real API and security acceptance. Do not choose custom distribution
+for the future multi-merchant app or select any irreversible method without
+specific authorization. Source template installation mode now matches the current
+adapter; evaluate managed installation deliberately rather than changing one flag.
+
 Scope: source milestones 1A and 1B are implemented. Continue real development setup
 and acceptance once a Shopify app/store exists; neither is deployed or live-store
 verified. Do not describe the full migration/planning vision as implemented.
@@ -55,9 +71,9 @@ temporary fixture is removed and final build contains no QA route. Live-store
 OAuth, exact grants/query execution/costs, refresh, webhook timing and backups are
 not tested by mocks or SQL. CI status belongs to the actual PR head.
 
-User confirms no Shopify app/development store exists and chose preparation for
-development testing. Remaining: app/store registration and selected distribution,
-isolated backend/web/Supabase configuration, migrations 042 through 045 on that test database,
+The initial no-app/no-store condition is resolved. Remaining: launch distribution
+and customer installation design, isolated backend/web/Supabase configuration,
+migrations 042 through 045 on that test database,
 private credentials/vault key, HTTPS same-site origins and callback query-log
 redaction at all proxies. Verify app TOML with Shopify CLI, supervise the worker,
 then complete the real-store checklist in `docs/shopify-development.md`.

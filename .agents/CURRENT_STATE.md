@@ -1,5 +1,27 @@
 # Current state
 
+## October 14 Shopify launch setup
+
+The user confirms the Shopify feature is intended for FindEZ's launch. They create
+the Partner organization and authorize app/store setup. Native Safari verifies
+the created development app's active initial version: standalone, read_inventory
+and read_products, legacy install flow, webhook API 2026-10 and Shopify's placeholder
+app home. A Basic dev store is created with generated sample data and its dev badge
+is verified. Private dashboard links live in Documents/FindEZ/Shopify locally.
+No client secret is read, no app installation is performed, no API grant/sync is
+claimed, and no distribution method is selected. The source TOML now explicitly
+matches the adapter's legacy scope-bearing OAuth flow.
+
+Source milestones 1A/1B, owner edits and guided migration are launch work validated
+through test resources. The one-store pilot is not merchant-ready public
+installation. Next: prepare customer store onboarding/public distribution, isolated
+HTTPS FindEZ/Supabase test runtime, exact callbacks/webhooks and real read/edit
+scope lifecycle acceptance. Public distribution/approval is required for unrelated
+merchant stores; its irreversible selection and any production migrations/deployment
+remain subject to explicit authorization. Personal sign-in is accepted for this
+setup; business/app contact email changes and additional user grants are not made.
+
+
 ## October 13 guided merchant setup development
 
 Lane `feat/merchant-guided-migration`, based on owner-edit `a58e84e` (draft PR #64),

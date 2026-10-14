@@ -3,8 +3,9 @@
 Source lane `feat/merchant-guided-migration`, stacked on owner-permission source
 `a58e84e` (draft PR #64). This is an additional Shopify feature within existing
 FindEZ Teams. It does not replace personal inventory, Capture, FIND, Ask or pricing.
-No Shopify development app/store exists yet; no live merchant or production
-installation is claimed.
+A Shopify development app and sample-data test store are now registered; isolated
+FindEZ runtime configuration and real connection acceptance remain outstanding.
+No live merchant or production installation is claimed.
 
 ## Implemented behavior
 

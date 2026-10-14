@@ -42,34 +42,22 @@ Reprioritize it when production state changes.
 - Reconcile stale top-level documentation that still describes retired hosting or a
   mobile-only web product surface.
 
+- Shopify is intended for FindEZ's launch, not deferred development-only work.
+  A development organization/app and sample-data Basic dev store now exist.
+  Connector, physical memory, owner edits and guided setup are source-complete
+  through PR #65; all flags remain off in production. Next: customer-store
+  onboarding and public-distribution preparation, isolated HTTPS test runtime and
+  real OAuth/query/refresh/webhook/retention acceptance. Test actual product/stock
+  grants, optional revocation, explicit reviewed edits and unknown-outcome recovery.
+  Follow `docs/shopify-development.md`, `docs/physical-memory.md`,
+  `docs/shopify-owner-permissions.md` and `docs/merchant-guided-migration.md`.
+  The present one-store gate is insufficient for unrelated merchant launch.
+  Distribution selection is irreversible and production deployment/migrations
+  require explicit authorization. Preserve general inventory and pricing. Measure
+  merchant setup, finding/picking time and repeat use; photo matching and broader
+  planning remain subsequent unbuilt work.
+
 ## P2 later
-
-- Owner-selected Shopify product/stock edit source is in
-  `feat/shopify-owner-permissions`, runtime `a58e84e` in PR #64. All five CI gates
-  pass in `38521256695`, including SQL isolation and production web build.
-  Test actual app grants,
-  revocation, token refresh and mutations in a real development store before any
-  merchant launch. `docs/shopify-owner-permissions.md` defines the bounded fields
-  and explicit confirmation/recovery behavior. Production remains untouched.
-  Guided adoption source follows in `feat/merchant-guided-migration`; verify the
-  catalog/storage progress, queue and first grounded lookup on a real test store.
-  Follow `docs/merchant-guided-migration.md` before merchant rollout.
-
-- Optional Shopify connector milestone 1A is implemented in source on
-  `feat/shopify-catalog-connection`, disabled and not deployed. User has no Shopify
-  app/store yet; `docs/shopify-development.md` and the configuration template
-  prepare isolated development testing. Next: create/configure a development app
-  and record real OAuth/query/refresh/webhook/retention acceptance. Milestone 1B
-  physical-location confirmation and bounded Team-aware lookup are implemented in
-  `feat/commerce-physical-memory`, source-only; complete its isolated end-to-end
-  acceptance in `docs/physical-memory.md`. Guided setup now exists as further
-  disabled source; validate adoption from imported variants to confirmed storage
-  and the first lookup, then investigate real visual matching
-  and planning supported by verified observations. Measure setup effort, finding
-  time and repeat use with a merchant pilot before claiming commercial value. Preserve native
-  inventory/pricing; no production migration/deployment without authorization.
-  Public distribution/billing and backup deletion require review before rollout.
-  Other adapters and external commerce writes remain later.
 
 - Add real offline inventory persistence and conflict behavior for poor network
   conditions.
