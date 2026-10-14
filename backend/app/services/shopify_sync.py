@@ -59,7 +59,7 @@ def work_once(settings=None):
         if datetime.fromisoformat(credentials["access_expires_at"].replace("Z", "+00:00")) <= now + timedelta(seconds=60):
             if datetime.fromisoformat(credentials["refresh_expires_at"].replace("Z", "+00:00")) <= now:
                 raise ShopifyError("reconnect")
-            tokens, _, access, refresh = api.tokens(refresh=tokens["refresh"])
+            tokens, _, access, refresh = api.tokens(refresh=tokens["refresh"], expected=c.get("granted_scopes", {"read_products", "read_inventory"}))
             if not rpc("save_tokens", **fence, tokens=vault.encrypt(tokens, c["connection_id"], c["generation"]),
                 access_expiry=access, refresh_expiry=refresh):
                 return True

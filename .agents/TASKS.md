@@ -44,6 +44,14 @@ Reprioritize it when production state changes.
 
 ## P2 later
 
+- Owner-selected Shopify product/stock edit source is in
+  `feat/shopify-owner-permissions`, based on PR #63. Finish exact-source permission,
+  immutable-review, lease and unknown-outcome checks. Then test actual app grants,
+  revocation, token refresh and mutations in a real development store before any
+  merchant launch. `docs/shopify-owner-permissions.md` defines the bounded fields
+  and explicit confirmation/recovery behavior. Production remains untouched.
+  The user authorizes continuing guided merchant adoption after this slice.
+
 - Optional Shopify connector milestone 1A is implemented in source on
   `feat/shopify-catalog-connection`, disabled and not deployed. User has no Shopify
   app/store yet; `docs/shopify-development.md` and the configuration template

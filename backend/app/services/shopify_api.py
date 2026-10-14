@@ -1,4 +1,4 @@
-"""Bounded Shopify adapter. Only fixed read queries and OAuth token exchange."""
+"""Bounded Shopify adapter with fixed reads and separately gated mutations."""
 import base64
 import hashlib
 import hmac
@@ -13,6 +13,31 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 API_VERSION = "2026-10"
 SCOPES = frozenset({"read_products", "read_inventory"})
+OPTIONAL_SCOPES = frozenset({"write_products", "write_inventory"})
+ALLOWED_SCOPES = SCOPES | OPTIONAL_SCOPES
+ACCESS_QUERY = "query FindEZAccess { currentAppInstallation { accessScopes { handle } } }"
+PRODUCT_QUERY = """query FindEZProduct($id: ID!) {
+ product(id: $id) { id title vendor productType tags updatedAt }
+}"""
+INVENTORY_QUERY = """query FindEZInventory($id: ID!, $location: ID!) {
+ inventoryItem(id: $id) { id tracked inventoryLevel(locationId: $location) {
+  location { id name isActive } quantities(names: ["available"]) { name quantity }
+ } }
+}"""
+REVOKE_MUTATION = """mutation FindEZRevoke($scopes: [String!]!) {
+ appRevokeAccessScopes(scopes: $scopes) { revoked { handle } userErrors { field message } }
+}"""
+PRODUCT_MUTATION = """mutation FindEZProductEdit($product: ProductUpdateInput!) {
+ productUpdate(product: $product) {
+  product { id title vendor productType tags updatedAt } userErrors { field message }
+ }
+}"""
+INVENTORY_MUTATION = """mutation FindEZStockEdit($input: InventoryAdjustQuantitiesInput!, $key: String!) {
+ inventoryAdjustQuantities(input: $input) @idempotent(key: $key) {
+  inventoryAdjustmentGroup { createdAt reason referenceDocumentUri changes { name delta } }
+  userErrors { code field message }
+ }
+}"""
 TOPICS = frozenset({"products/create", "products/update", "products/delete",
     "inventory_items/create", "inventory_items/update", "inventory_items/delete",
     "inventory_levels/update", "inventory_levels/connect", "inventory_levels/disconnect",
@@ -135,18 +160,34 @@ def verify_webhook(body, signature, secret):
     return isinstance(signature, str) and bool(re.fullmatch(r"[A-Za-z0-9+/]{43}=", signature)) and hmac.compare_digest(expected, signature)
 
 
-def auth_url(settings, state):
+def effective_scopes(scopes):
+    result = set(scopes)
+    for resource in ("products", "inventory"):
+        if "write_" + resource in result:
+            result.add("read_" + resource)
+    return result
+
+
+def requested_scopes(connection):
+    return SCOPES | ({"write_products"} if connection.get("edit_products") else set()) | (
+        {"write_inventory"} if connection.get("edit_inventory") else set())
+
+
+def auth_url(settings, state, scopes=SCOPES):
+    if not set(scopes) <= ALLOWED_SCOPES or not SCOPES <= effective_scopes(scopes):
+        raise ShopifyError()
     return f"https://{canonical_shop(settings.shopify_pilot_shop)}/admin/oauth/authorize?" + urlencode({
-        "client_id": settings.shopify_client_id, "scope": ",".join(sorted(SCOPES)),
+        "client_id": settings.shopify_client_id, "scope": ",".join(sorted(scopes)),
         "redirect_uri": settings.shopify_redirect_uri, "state": state,
     })
 
 
-def token_metadata(data):
+def token_metadata(data, expected=SCOPES):
     try:
         granted = set(data["scope"].split(","))
-        # This pilot never accepts overbroad customer/order/write scopes.
-        if granted != SCOPES or not data["access_token"] or not data["refresh_token"]:
+        # Accept only the exact owner-selected capability set, including implied reads.
+        if (not granted <= ALLOWED_SCOPES or effective_scopes(granted) != effective_scopes(expected)
+            or not data["access_token"] or not data["refresh_token"]):
             raise ValueError()
         access, refresh = int(data["expires_in"]), int(data["refresh_token_expires_in"])
         if access <= 0 or refresh <= 0:
@@ -168,14 +209,14 @@ class ShopifyAPI:
         if self.owns_client:
             self.client.close()
 
-    def tokens(self, *, code=None, refresh=None):
+    def tokens(self, *, code=None, refresh=None, expected=SCOPES):
         payload = {"client_id": self.settings.shopify_client_id, "client_secret": self.settings.shopify_client_secret}
         if code:
             payload.update(code=code, expiring=1)
         else:
             payload.update(grant_type="refresh_token", refresh_token=refresh)
         response = self._post("/admin/oauth/access_token", data=payload)
-        return token_metadata(self._json(response))
+        return token_metadata(self._json(response), expected)
 
     def _post(self, path, **kwargs):
         try:
@@ -202,8 +243,17 @@ class ShopifyAPI:
             raise ShopifyError() from None
 
     def query(self, query, variables, token):
-        if query not in (SHOP_QUERY, VARIANTS_QUERY, LEVELS_QUERY):
+        if query not in (SHOP_QUERY, VARIANTS_QUERY, LEVELS_QUERY, ACCESS_QUERY, PRODUCT_QUERY, INVENTORY_QUERY):
             raise ShopifyError()
+        return self._graphql(query, variables, token)
+
+    def mutation(self, operation, variables, token):
+        queries = {"product": PRODUCT_MUTATION, "inventory": INVENTORY_MUTATION, "revoke": REVOKE_MUTATION}
+        if operation not in queries:
+            raise ShopifyError()
+        return self._graphql(queries[operation], variables, token)[0]
+
+    def _graphql(self, query, variables, token):
         response = self._post(f"/admin/api/{API_VERSION}/graphql.json",
             json={"query": query, "variables": variables}, headers={"X-Shopify-Access-Token": token})
         if response.headers.get("X-Shopify-API-Version") != API_VERSION:

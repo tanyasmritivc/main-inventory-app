@@ -1,5 +1,21 @@
 # Current state
 
+## October 13 owner-controlled Shopify edit development
+
+Lane `feat/shopify-owner-permissions`, based on `ef9489e` (PR #63), implements
+adjustable owner product/stock edit flags and owner-only versus Team-editor
+delegation. Actual live grants intersect current roles and saved policy; broader
+grants use explicit approval and local restrictions take effect immediately.
+Migration 044 adds bounded IO leases and immutable reviewed operations. Product
+title/vendor/type/tags and signed Shopify available-stock adjustments use fixed
+mutations, confirmation and verified receipts. Unknowns block further edits until
+owner acknowledgment of a real Shopify check, without claiming success.
+504 backend tests, 13 new edit UI tests and the 10 existing connector UI tests pass.
+Final full web/type/lint/build and real SQL isolation are being verified through CI;
+local Docker service is unavailable. Feature defaults off. No live store, real
+permissions/write acceptance, production migration/deployment or mobile binary.
+Scope and gates are in `docs/shopify-owner-permissions.md`.
+
 ## October 13 Shopify physical-memory development increment
 
 Source lane `feat/commerce-physical-memory` in `dev/findez-commerce-memory`, based
@@ -15,8 +31,8 @@ Feature flags default off; migration 043 is not applied to production.
 Local validation: 482 backend/API-doc tests, 232 web tests and 347 mobile tests with
 coverage pass, along with TypeScript, changed-file lint, Flutter analysis, production
 webpack compilation with placeholder configuration and real disposable PostgreSQL
-migration/RLS/concurrency/lifecycle checks. Final source CI must be recorded at
-the actual PR head. No actual
+migration/RLS/concurrency/lifecycle checks. Runtime `ef9489e` (draft PR #63) passed
+all five CI gates in `38517193932`. No actual
 Shopify app/store installation, live query/token/webhook verification or merchant
 acceptance is complete. No production migration/deployment is authorized. Guided
 business migration, visual catalog matching, discrepancy planning and Shopify

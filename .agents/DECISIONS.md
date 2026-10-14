@@ -1,5 +1,20 @@
 # Decisions
 
+## October 13 Shopify access is owner-selected and adjustable
+
+The user requires read/edit according to owner preferences, changeable later, and
+selects stock plus product details. Read-only is the default rather than a permanent
+limitation. Owner flags, live Shopify grants and current Team roles all bound the
+supported action. Owners may delegate to mentors/members; viewers cannot edit.
+Increased external access requires Shopify approval; local downgrades block new
+dispatches immediately and external grant revocation is verified separately.
+Edits are explicit reviewed forms, not arbitrary agent mutations. Product fields
+are title/vendor/type/tags; stock is a signed available-stock adjustment, never an
+automatic physical-count overwrite. Duplicate/unknown dispatches do not replay;
+unknowns pause edits until an owner checks Shopify, without inventing success.
+Migration 044 and the write flag are development-only. See
+`docs/shopify-owner-permissions.md` for actual-store gates and limitations.
+
 ## October 13 merchant adoption uses independent physical memory
 
 The user emphasizes helping businesses migrate into FindEZ and plan using our

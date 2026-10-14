@@ -9,12 +9,20 @@ export type ShopifyConnection = {
   last_attempt_at: string | null;
   last_success_at: string | null;
   error_code: string | null;
+  edit_products?: boolean;
+  edit_inventory?: boolean;
+  edit_access?: "owner" | "editors";
+  permission_revision?: number;
+  granted_scopes?: string[];
+  can_edit_products?: boolean;
+  can_edit_inventory?: boolean;
 };
 export type ShopifyStatus = {
   enabled: boolean;
   can_manage: boolean;
   pilot_shop: string | null;
   connections: ShopifyConnection[];
+  edits_enabled?: boolean;
 };
 export type ShopifyVariant = {
   variant_gid: string;
@@ -68,4 +76,41 @@ export function catalogImage(value: string | null) {
       (url.hostname === "cdn.shopify.com" || url.hostname.endsWith(".shopifycdn.com"))) return url.href;
   } catch { /* Unsupported URLs render the catalog placeholder. */ }
   return null;
+}
+
+export type ShopifyPermissions = {
+  edit_products: boolean; edit_inventory: boolean; edit_access: "owner" | "editors"; expected_revision: number;
+};
+export type ShopifyAccessResult = {
+  saved?: boolean; revision?: number; needs_authorization: boolean | null; revocation_pending: boolean; granted_scopes?: string[];
+};
+export type ShopifyEdit = {
+  operation_id: string; kind: "product" | "inventory";
+  state: "prepared" | "sending" | "succeeded" | "failed" | "unknown";
+  intent: {product_gid?: string; changes?: Record<string,string|string[]>; inventory_item_gid?: string; location_gid?: string; delta?: number};
+  snapshot: { title?: string; vendor?: string; productType?: string; tags?: string[]; available?: number; location_name?: string; checked_at: string; variant_title: string };
+  receipt?: { message?: string; product?: Record<string,unknown>; adjustment?: Record<string,unknown> } | null;
+  created_at?: string; dispatched_at?: string | null; reviewed_at?: string | null;
+};
+function storeBase(team:string,id:string) {return `${base(team)}/${encodeURIComponent(id)}`;}
+export function saveShopifyPermissions(team:string,id:string,token:string,body:ShopifyPermissions) {
+  return apiRequest<ShopifyAccessResult>(`${storeBase(team,id)}/permissions`,{...options(token),method:"PATCH",body:JSON.stringify(body)});
+}
+export function refreshShopifyPermissions(team:string,id:string,token:string) {
+  return apiRequest<ShopifyAccessResult>(`${storeBase(team,id)}/permissions/refresh`,{...options(token),method:"POST"});
+}
+export function prepareShopifyEdit(team:string,id:string,token:string,body: {kind:"product"|"inventory";variant_gid:string;changes?:Record<string,string|string[]>;location_gid?:string;delta?:number}) {
+  return apiRequest<ShopifyEdit>(`${storeBase(team,id)}/edits/prepare`,{...options(token),method:"POST",body:JSON.stringify(body)});
+}
+export function executeShopifyEdit(team:string,id:string,token:string,operation:string) {
+  return apiRequest<ShopifyEdit>(`${storeBase(team,id)}/edits/${encodeURIComponent(operation)}/execute`,{...options(token),method:"POST",body:JSON.stringify({confirmed:true})});
+}
+export function getShopifyEdit(team:string,id:string,token:string,operation:string) {
+  return apiRequest<ShopifyEdit>(`${storeBase(team,id)}/edits/${encodeURIComponent(operation)}`,options(token));
+}
+export function getShopifyEdits(team:string,id:string,token:string) {
+  return apiRequest<{operations:ShopifyEdit[]}>(`${storeBase(team,id)}/edits`,options(token));
+}
+export function reviewUnknownShopifyEdit(team:string,id:string,token:string,operation:string) {
+  return apiRequest<{reviewed:boolean;state:"unknown"}>(`${storeBase(team,id)}/edits/${encodeURIComponent(operation)}/review-unknown`,{...options(token),method:"POST",body:JSON.stringify({checked_in_shopify:true})});
 }
