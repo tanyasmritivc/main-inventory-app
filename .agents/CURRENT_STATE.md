@@ -43,6 +43,16 @@ account isolation on a phone. TestFlight 63 remains available with its legacy
 Capture contract. Public 1.0.7 stays selected on 59; draft 1.0.8 remains
 unselected with manual release. Public App Review and Shopify remain held.
 
+The user subsequently requests build 64 for an existing external tester.
+`Vinod Private Testing` contains only that tester, has no public link, and has
+build 64 assigned. At 05:08 PDT October 14, beta submission is
+WAITING_FOR_REVIEW/WAITING_FOR_BETA_REVIEW, with automatic notification enabled.
+Apple rejects a repeat invitation as ALREADY_ACCEPTED; no new invitation was
+sent and external build-64 availability is not yet claimed. Existing internal
+access continues, the broader External Pilot group has not received 64, and
+public App Store selection/release type remain unchanged. Targeted receipts
+and the delivery helper are in the build-64 release folder.
+
 ## October 14 chat punctuation candidate
 
 Backend-only `fix/ask-response-punctuation` is based on mobile release record

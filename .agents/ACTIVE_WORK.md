@@ -49,6 +49,17 @@ on build 64, plus the outstanding native service and accessibility checks.
 Public App Store selection/release type are verified unchanged; public
 submission and Shopify remain held.
 
+Build 64 is also submitted to TestFlight beta review at the user's request for
+one existing external tester. The private `Vinod Private Testing` group has
+only that tester, no public link and build 64. Status at 05:08 PDT October 14
+is WAITING_FOR_REVIEW/WAITING_FOR_BETA_REVIEW with automatic notification
+enabled. The tester previously accepted FindEZ's invitation; Apple returns
+ALREADY_ACCEPTED to resend, so no new invitation is claimed. External access
+needs Apple approval. Receipts and the helper are in the build-64 release folder.
+Existing internal groups stay available, the broader external pilot group is
+unchanged, and public submission stays held. Do not grant App Store Connect
+roles or remove/recreate the tester to bypass review.
+
 ## October 14 chat punctuation prepared
 
 Backend-only lane `fix/ask-response-punctuation` in
