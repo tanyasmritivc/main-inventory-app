@@ -1,6 +1,6 @@
 # Active work
 
-## October 14 capture save boundary prepared
+## October 14 backend fixes live; mobile 64 preparing
 
 Lane `fix/capture-review-save-boundary` in
 `/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary`, based on
@@ -18,15 +18,23 @@ Local validation passes 438 backend/API documentation tests and six subtests,
 212 web tests, TypeScript, changed-file lint with existing warnings only, 357
 mobile tests, clean Flutter analysis and a production web build with fictional
 configuration. Runtime `19089e9` in Draft PR #68 passes all five CI gates
-(`38551614029`). All eight existing affected backend file hashes match the
-production baseline, and both new helpers are absent. The combined ten-file
+(`38551614029`). Preflight matched eight existing backend file hashes and
+confirmed both new helpers absent. The combined ten-file
 backend bundle, patches and manifest are in
 `Documents/FindEZ/Releases/capture-save-boundary-2026-10-14`. Web uses
 the installed dependencies from an identical lockfile, with a gitignored local
 node_modules symlink. Local build configuration is fictional and must not ship.
-No deployment, migration, native upload or historical Review deletion has been
-performed. Backend support must precede the new web/mobile release. TestFlight
-63 retains the old Capture behavior until a new binary is installed. Repeat
+The user authorizes deployment. The ten backend files are selectively deployed
+with guarded hashes and rollback backups at
+`/home/ubuntu/findez-capture-fixes-20261014.1ztxtg/backup`. Unrelated checkout
+files are verified unchanged. Service/database health, missing-session and
+invalid-key 401s, reply punctuation, real preview signing, owner binding and
+the signed save route pass without database writes or FIND/model requests.
+Receipts are beside the source bundle. No migration or historical Review
+deletion was performed. Updated web source is not deployed. Mobile 1.0.8 (64)
+is preparing from clean generated files and verified build-63 configuration.
+TestFlight 63 stays available and keeps the old Capture behavior until updated.
+Repeat
 physical random-photo/cancel/Home, photo chat, explicit Save, retry and owner
 isolation on that binary. Public submission and Shopify remain held.
 
@@ -41,12 +49,12 @@ persistence; it does not change user messages, tool payloads or source records.
 Runtime `3b1c824` in Draft PR #67 passes all five CI gates (`38548331842`), all
 426 local backend/API documentation tests and six subtests. The added tests
 check emitted/final/session consistency and preservation of tool data, Unicode,
-newlines, source labels and input. Four live file hashes match the source baseline;
-the new helper does not yet exist in production. The exact five-file bundle,
+newlines, source labels and input. Preflight matched four live hashes and
+confirmed the new helper absent. The exact five-file bundle,
 patch and hash manifest are in
 `Documents/FindEZ/Releases/chat-punctuation-2026-10-14`.
-Production deployment awaits authorization;
-no schema, FIND, auth, frontend or mobile source changes. Existing history,
+This is live in the combined deployment above; no schema, FIND, auth, frontend
+or mobile source changes belong to punctuation. Existing history,
 TestFlight 63 and held public submission remain as recorded below.
 
 ## October 14 build-63 internal TestFlight delivery complete
