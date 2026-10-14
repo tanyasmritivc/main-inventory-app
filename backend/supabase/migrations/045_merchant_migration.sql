@@ -33,7 +33,8 @@ DECLARE c shopify_connections; member_role text; result jsonb; BEGIN
     SELECT variant_gid,product_title,variant_title,sku FROM progress WHERE mapped
     ORDER BY product_title,variant_title,variant_gid LIMIT 1) x)
  ) INTO result FROM progress;
- RETURN result||jsonb_build_object('connection_id',p_connection,'checked_at',now(),
+ RETURN result||jsonb_build_object('connection_id',p_connection,'connection_status',c.status,'checked_at',now(),
+  'sync_in_progress',c.sync_requested OR EXISTS(SELECT 1 FROM shopify_sync_jobs WHERE connection_id=p_connection),
   'can_confirm',member_role IN ('owner','mentor','member') AND c.status='connected',
   'space_count',(SELECT count(*) FROM team_spaces ts JOIN spaces s ON s.id=ts.space_id WHERE ts.team_id=p_team),
   'import_complete',coalesce(c.installed_at IS NOT NULL AND c.last_success_at>=c.installed_at,false),

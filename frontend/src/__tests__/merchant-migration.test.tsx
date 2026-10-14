@@ -8,7 +8,7 @@ jest.mock("@/lib/shopify",()=>({...jest.requireActual("@/lib/shopify"),getMercha
 const progress=jest.mocked(api.getMerchantProgress);
 const store:api.ShopifyConnection={connection_id:"store-a",shop_domain:"pilot.myshopify.com",shop_name:"Pilot",status:"connected",sync_status:"idle",last_attempt_at:null,last_success_at:"2026-10-13T10:00:00Z",error_code:null};
 const variant:api.MigrationVariant={variant_gid:"gid://shopify/ProductVariant/30",product_title:"Hoodie",variant_title:"Black M",sku:"Shared-SKU"};
-const report:api.MerchantProgress={connection_id:"store-a",checked_at:"2026-10-13T10:00:00Z",can_confirm:true,space_count:1,import_complete:true,last_complete_sync:"2026-10-13T10:00:00Z",total_variants:3,confirmed_variants:1,unconfirmed_variants:2,older_confirmations:1,unconfirmed_sample:[variant,{...variant,variant_gid:"gid://shopify/ProductVariant/31",variant_title:"Black L"}],confirmed_example:{...variant,variant_gid:"gid://shopify/ProductVariant/32",variant_title:"White M"}};
+const report:api.MerchantProgress={connection_id:"store-a",connection_status:"connected",sync_in_progress:false,checked_at:"2026-10-13T10:00:00Z",can_confirm:true,space_count:1,import_complete:true,last_complete_sync:"2026-10-13T10:00:00Z",total_variants:3,confirmed_variants:1,unconfirmed_variants:2,older_confirmations:1,unconfirmed_sample:[variant,{...variant,variant_gid:"gid://shopify/ProductVariant/31",variant_title:"Black L"}],confirmed_example:{...variant,variant_gid:"gid://shopify/ProductVariant/32",variant_title:"White M"}};
 const open=jest.fn(),spaces=jest.fn();
 function view(team="team-a",token="actor-a",connection=store) {return <MerchantMigrationGuide teamId={team} token={token} store={connection} onOpenMemory={open} onOpenSpaces={spaces}/>;}
 beforeEach(()=>{jest.resetAllMocks();progress.mockResolvedValue(report);});
@@ -29,8 +29,8 @@ test("lookup uses an actually confirmed example and does not mark finding as com
 });
 
 test("partial import never displays a completed import even when the available subset is mapped",async()=>{
-  progress.mockResolvedValue({...report,import_complete:false,confirmed_variants:3,unconfirmed_variants:0,unconfirmed_sample:[]});
-  render(view("team-a","actor-a",{...store,sync_status:"syncing"}));
+  progress.mockResolvedValue({...report,sync_in_progress:true,import_complete:false,confirmed_variants:3,unconfirmed_variants:0,unconfirmed_sample:[]});
+  render(view());
   await screen.findByText(/current import has not completed/);
   expect(screen.getByText(/available records may be incomplete/)).toBeTruthy();
   expect(screen.getByText("2")).toBeTruthy();expect(screen.getByText("3")).toBeTruthy();
@@ -73,8 +73,8 @@ test("Team/account switch clears records and discards the old pending response",
   expect(screen.queryByText("Hoodie / Black L")).toBeNull();expect(open).not.toHaveBeenCalled();
 });
 
-test("reconnect keeps cached progress labeled and disables confirmation",async()=>{
-  progress.mockResolvedValue({...report,can_confirm:false});render(view("team-a","actor-a",{...store,status:"reconnect_required"}));
+test("fresh reconnect status labels cached progress even when the panel's previous state was connected",async()=>{
+  progress.mockResolvedValue({...report,connection_status:"reconnect_required",can_confirm:false});render(view());
   await screen.findByText(/Renew Shopify access before adding locations/);
   expect(screen.getByText("1")).toBeTruthy();
   expect((screen.getAllByRole("button",{name:"Confirm location"})[0] as HTMLButtonElement).disabled).toBe(true);

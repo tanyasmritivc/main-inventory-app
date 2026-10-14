@@ -52,6 +52,7 @@ SELECT pg_temp.check(jsonb_array_length(pg_temp.migration_report()->'unconfirmed
 SELECT pg_temp.check(pg_temp.migration_report()->'unconfirmed_sample'->0->>'variant_gid'='gid://shopify/ProductVariant/2','queue uses deterministic stable IDs, not repeated SKUs');
 SELECT pg_temp.check(pg_temp.migration_report()->'confirmed_example'->>'variant_gid'='gid://shopify/ProductVariant/1','lookup points to a confirmed variant');
 SELECT pg_temp.check(pg_temp.migration_report()->>'import_complete'='true','current install completed sync');
+SELECT pg_temp.check(pg_temp.migration_report()->>'sync_in_progress'='false','idle connection is not reported as syncing');
 SELECT pg_temp.check(pg_temp.migration_report()->>'can_confirm'='true','editor can confirm');
 SELECT pg_temp.check(pg_temp.migration_report('c1000000-0000-0000-0000-000000000003')->>'can_confirm'='false','viewer reads progress without writes');
 SELECT pg_temp.check(pg_temp.migration_report('c1000000-0000-0000-0000-000000000002')->>'error'='permission','foreign actor blocked');
@@ -61,6 +62,13 @@ UPDATE shopify_connections SET installed_at=now()+interval '1 minute' WHERE conn
 SELECT pg_temp.check(pg_temp.migration_report()->>'import_complete'='false','previous install sync cannot mark a new import complete');
 UPDATE shopify_connections SET status='reconnect_required' WHERE connection_id='c3000000-0000-0000-0000-000000000001';
 SELECT pg_temp.check(pg_temp.migration_report()->>'can_confirm'='false','reconnect requires renewed access before mapping');
+SELECT pg_temp.check(pg_temp.migration_report()->>'connection_status'='reconnect_required','fresh connection state accompanies progress');
+UPDATE shopify_connections SET sync_requested=true WHERE connection_id='c3000000-0000-0000-0000-000000000001';
+SELECT pg_temp.check(pg_temp.migration_report()->>'sync_in_progress'='true','queued sync accompanies progress');
+UPDATE shopify_connections SET sync_requested=false WHERE connection_id='c3000000-0000-0000-0000-000000000001';
+INSERT INTO shopify_sync_jobs(connection_id,generation) SELECT connection_id,generation FROM shopify_connections WHERE connection_id='c3000000-0000-0000-0000-000000000001';
+SELECT pg_temp.check(pg_temp.migration_report()->>'sync_in_progress'='true','active page job accompanies progress without a queued flag');
+DELETE FROM shopify_sync_jobs WHERE connection_id='c3000000-0000-0000-0000-000000000001';
 UPDATE shopify_connections SET status='connected',installed_at=now()-interval '1 hour' WHERE connection_id='c3000000-0000-0000-0000-000000000001';
 DELETE FROM bins WHERE id='c5000000-0000-0000-0000-000000000002';
 SELECT pg_temp.check(pg_temp.migration_report()->>'older_confirmations'='0','deleted bin cannot continue a stale progress badge');

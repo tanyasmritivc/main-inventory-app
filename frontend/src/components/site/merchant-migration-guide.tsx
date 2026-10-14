@@ -30,6 +30,7 @@ function ScopedGuide({teamId,token,store,onOpenMemory,onOpenSpaces}:GuideProps) 
   },[refresh]);
   function open(row:MigrationVariant) {onOpenMemory({connection_id:store.connection_id,variant_gid:row.variant_gid});}
   const mapped=!!progress&&progress.confirmed_variants>0;
+  const connected=progress?.connection_status==="connected";
   const fullyMapped=!!progress&&progress.import_complete&&progress.total_variants>0&&progress.confirmed_variants===progress.total_variants;
   return <section className={styles.guide} aria-label="Merchant setup">
     <header><div><h4>Set up your stockroom</h4><p>Your catalog is the starting point. Confirm where products belong.</p></div><button className="product-button" onClick={()=>void refresh()}>Check progress</button></header>
@@ -37,8 +38,8 @@ function ScopedGuide({teamId,token,store,onOpenMemory,onOpenSpaces}:GuideProps) 
     {!progress&&!error&&<p role="status">Checking catalog and location records...</p>}
     {progress&&<>
       <ol className={styles.steps}>
-        <li><span className={store.status==="connected"?styles.done:styles.number}>{store.status==="connected"?<Check size={13}/>:"1"}</span><div><strong>Connect Shopify</strong><p>{store.status==="connected"?"Store connected.":"Cached records are available. Renew Shopify access before adding locations."}</p></div></li>
-        <li><span className={progress.import_complete?styles.done:styles.number}>{progress.import_complete?<Check size={13}/>:"2"}</span><div><strong>Bring in your catalog</strong><p>{progress.total_variants} variants available.{progress.import_complete?` Last complete sync: ${new Date(progress.last_complete_sync!).toLocaleString()}.`:" The current import has not completed yet."}{store.sync_status==="syncing"||store.sync_status==="queued"?" Sync is in progress; available records may be incomplete.":""}</p></div></li>
+        <li><span className={connected?styles.done:styles.number}>{connected?<Check size={13}/>:"1"}</span><div><strong>Connect Shopify</strong><p>{connected?"Store connected.":"Cached records are available. Renew Shopify access before adding locations."}</p></div></li>
+        <li><span className={progress.import_complete?styles.done:styles.number}>{progress.import_complete?<Check size={13}/>:"2"}</span><div><strong>Bring in your catalog</strong><p>{progress.total_variants} variants available.{progress.import_complete?` Last complete sync: ${new Date(progress.last_complete_sync!).toLocaleString()}.`:" The current import has not completed yet."}{progress.sync_in_progress?" Sync is in progress; available records may be incomplete.":""}</p></div></li>
         <li><span className={fullyMapped?styles.done:styles.number}>{fullyMapped?<Check size={13}/>:"3"}</span><div><strong>Confirm storage</strong><p>{progress.confirmed_variants} of {progress.total_variants} variants have an accessible confirmed location. {progress.unconfirmed_variants} still need a location.</p>{progress.older_confirmations>0&&<p>{progress.older_confirmations} variants have confirmations at least 7 days old. Recheck those locations.</p>}</div></li>
         <li><span className={styles.number}>4</span><div><strong>Try a location lookup</strong><p>{mapped?"Use a saved variant to see its location, source and confirmation time.":"Confirm one product first, then try finding it from another employee's account."}</p>{progress.confirmed_example&&<button className="product-button" onClick={()=>open(progress.confirmed_example!)}><Search size={14}/>Locate {label(progress.confirmed_example)}</button>}</div></li>
       </ol>

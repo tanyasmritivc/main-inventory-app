@@ -27,7 +27,9 @@ Counts of mapped variants are not counts of physical units.
 An import is complete only after a successful full sync for the current installation.
 Cached records from a partial or earlier installation cannot mark a new import
 complete. The guide shows partial-sync context, a bounded first-five unconfirmed
-variant queue, and one actually confirmed example for a first lookup. Stable
+variant queue, and one actually confirmed example for a first lookup. Connection
+renewal and sync-in-progress labels come from the fresh report, even when the
+surrounding panel's earlier status has not refreshed yet. Stable
 connection/variant IDs distinguish variants even when SKUs are repeated or absent.
 An empty completed catalog differs from a catalog still awaiting import.
 

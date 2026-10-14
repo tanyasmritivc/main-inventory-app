@@ -118,7 +118,7 @@ export function reviewUnknownShopifyEdit(team:string,id:string,token:string,oper
 
 export type MigrationVariant = {variant_gid:string;product_title:string;variant_title:string;sku:string|null};
 export type MerchantProgress = {
-  connection_id:string;checked_at:string;can_confirm:boolean;space_count:number;
+  connection_id:string;connection_status:"connected"|"reconnect_required";sync_in_progress:boolean;checked_at:string;can_confirm:boolean;space_count:number;
   import_complete:boolean;last_complete_sync:string|null;
   total_variants:number;confirmed_variants:number;unconfirmed_variants:number;older_confirmations:number;
   unconfirmed_sample:MigrationVariant[];confirmed_example:MigrationVariant|null;
