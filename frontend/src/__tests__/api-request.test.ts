@@ -1,4 +1,4 @@
-import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, getReviewItems, getSpaces, joinShare, joinTeam, resolveReviewItem } from "@/lib/api";
+import { ApiError, SESSION_EXPIRED_MESSAGE, apiRequest, extractFromImageMulti, getReviewItems, getSpaces, joinShare, joinTeam, resolveReviewItem, updateReviewItem } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 
 jest.mock("@/lib/session", () => ({ getAccessToken: jest.fn() }));
@@ -138,4 +138,20 @@ test("review queue requests stay authenticated and send only editable fields", a
     quantity: 1,
     location: "Drawer",
   });
+});
+
+test("photo extraction requests a preview and saves its signed evidence only on explicit save", async () => {
+  jest.mocked(getAccessToken).mockResolvedValue("live-token");
+  const item = { name: "Unidentified item", category: "Other", quantity: 1,
+    review_id: "preview-1", review_status: "preview", review_token: "signed-preview",
+    scan_evidence: { needs_review: true } };
+  fetchMock.mockResolvedValueOnce(jsonResponse(200, { items: [item], summary: { total_detected: 1, categories: {} } }))
+    .mockResolvedValueOnce(jsonResponse(200, { review_item: { ...item, status: "pending" } }));
+  const result = await extractFromImageMulti({ token: "fallback", file: new File(["photo"], "photo.jpg") });
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect((fetchMock.mock.calls[0][1].body as FormData).get("preview_only")).toBe("true");
+  await updateReviewItem({ token: "fallback", reviewId: "preview-1", item: result.items[0] });
+  expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer live-token");
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual(item);
 });

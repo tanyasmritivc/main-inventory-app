@@ -10,7 +10,7 @@ class ReviewCapturePlan {
   final int reviewCount;
 }
 
-/// Persists edits to uncertain results and returns only items that are safe to
+/// Saves uncertain previews or edits saved reviews, and returns items safe to
 /// create as ordinary inventory.
 Future<ReviewCapturePlan> prepareCaptureForSave({
   required ApiClient api,
@@ -29,9 +29,15 @@ Future<ReviewCapturePlan> prepareCaptureForSave({
         'An uncertain item was not safely stored. Please scan the photo again.',
       );
     }
-    if (item.reviewStatus != 'pending') {
+    if (item.reviewStatus != 'pending' && item.reviewStatus != 'preview') {
       throw StateError(
         'This photo was already reviewed. Take a new photo to capture it again.',
+      );
+    }
+    if (item.reviewStatus == 'preview' &&
+        (item.reviewToken == null || item.reviewToken!.isEmpty)) {
+      throw StateError(
+        'This photo preview is unavailable. Scan the photo again.',
       );
     }
     await api.updateReviewItem(reviewId: reviewId, item: item);

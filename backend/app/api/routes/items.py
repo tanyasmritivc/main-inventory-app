@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import anyio
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from PIL import Image
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -83,6 +83,7 @@ from app.services.usage_service import (
     is_pro_user,
 )
 from app.services.review_queue import enqueue_uncertain_items
+from app.services.capture_previews import preview_uncertain_items
 
 router = APIRouter(tags=["inventory"])
 
@@ -507,6 +508,7 @@ def delete_item_photo_route(
 async def extract_from_image_route(
     request: Request,
     file: UploadFile = File(...),
+    preview_only: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> ExtractFromImageResponse:
     raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
@@ -572,12 +574,15 @@ async def extract_from_image_route(
         raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
 
     try:
-        items = enqueue_uncertain_items(
+        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+        items = prepare(
             user_id=user.user_id, source_digest=source_digest, items=items
         )
     except Exception as exc:
-        logger.exception("Could not durably queue an uncertain capture result")
+        logger.exception("Could not prepare an uncertain capture result")
         raise service_unavailable(
+            "Photo preview could not be prepared. Please try again."
+            if preview_only is True else
             "The uncertain item could not be saved for review. Please try again."
         ) from exc
     extracted = items[0] if items else {}
@@ -590,6 +595,7 @@ async def extract_from_image_route(
 async def inventory_extract_from_image_route(
     request: Request,
     file: UploadFile = File(...),
+    preview_only: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> MultiExtractFromImageResponse:
     raw = await file.read(MAX_SCAN_IMAGE_BYTES + 1)
@@ -668,12 +674,15 @@ async def inventory_extract_from_image_route(
 
     items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
     try:
-        items = enqueue_uncertain_items(
+        prepare = preview_uncertain_items if preview_only is True else enqueue_uncertain_items
+        items = prepare(
             user_id=user.user_id, source_digest=source_digest, items=items
         )
     except Exception as exc:
-        logger.exception("Could not durably queue uncertain capture results")
+        logger.exception("Could not prepare uncertain capture results")
         raise service_unavailable(
+            "Photo preview could not be prepared. Please try again."
+            if preview_only is True else
             "Uncertain items could not be saved for review. Please try again."
         ) from exc
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import service_unavailable
 from app.schemas.inventory import (
+    SaveCapturePreviewRequest,
     ResolveReviewItemRequest,
     ResolveReviewItemResponse,
     ReviewItemResponse,
@@ -21,7 +22,9 @@ from app.services.review_queue import (
     list_review_items,
     resolve_review_item,
     update_review_item,
+    save_capture_preview,
 )
+from app.services.capture_previews import InvalidCapturePreview
 from app.services.spaces_repo import SpaceLimitExceeded
 
 
@@ -62,6 +65,25 @@ def update_review_item_route(
     except Exception as exc:
         logger.exception("Could not update review item")
         raise service_unavailable("Review item could not be updated. Try again.") from exc
+
+
+@router.post("/{preview_id}", response_model=ReviewItemResponse)
+def save_capture_preview_route(
+    preview_id: UUID,
+    payload: SaveCapturePreviewRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ReviewItemResponse:
+    try:
+        item = save_capture_preview(user_id=user.user_id, preview_id=str(preview_id),
+                                    item=payload.model_dump(exclude_unset=True))
+        return ReviewItemResponse(review_item=item)
+    except InvalidCapturePreview as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except (ReviewItemConflict, ReviewItemNotFound) as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        logger.exception('Could not save the capture preview')
+        raise service_unavailable('Review item could not be saved. Try again.') from exc
 
 
 @router.post("/{review_id}/resolve", response_model=ResolveReviewItemResponse)

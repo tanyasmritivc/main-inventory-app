@@ -1,5 +1,24 @@
 # Decisions
 
+## October 14 uploading does not commit a capture
+
+New first-party Capture uploads request preview-only extraction. Uncertain
+results receive an account-bound, expiring signed preview, without a Review
+queue row. Only the explicit Save action persists them as pending reviews.
+Preserve the original signed photo and FIND evidence; allow bounded identity
+edits, scope reads/writes to the current owner, reject altered/expired previews,
+and reuse one source key for retry-safe saves. A fresh upload gets a new preview
+identity. Use a domain-separated key derived from existing server-only signing
+material, never a client credential or new model-generated evidence.
+
+Photo chat retains its conversation/photo context and performs inventory reads,
+but creates no Review items and does not claim results were saved there.
+Keep the existing extraction contract for older clients without the preview
+flag until updated clients are delivered. This compatibility path still queues
+uncertainty on upload; the full Capture fix requires the new mobile binary.
+No migration, historical Review cleanup or automatic inventory creation belongs
+to this fix. Existing saved reviews and their resolve/dismiss behavior remain.
+
 ## October 14 assistant replies avoid em dashes
 
 Apply a shared writing instruction to text chat, photo explanations, document

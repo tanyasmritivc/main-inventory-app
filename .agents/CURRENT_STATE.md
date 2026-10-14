@@ -1,5 +1,22 @@
 # Current state
 
+## October 14 capture save boundary candidate
+
+`fix/capture-review-save-boundary` in
+`/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary` is based on
+punctuation record `722b5c0`. New mobile/web Capture requests use `preview_only`;
+the backend returns signed, account-bound previews without creating Review
+rows. Explicit Save persists uncertainty with its original photo/evidence and
+retry-safe identity. Chat photo analysis no longer writes Review at all.
+All 438 backend/API documentation tests and six subtests, 212 web tests,
+TypeScript, changed-file lint (existing warnings only), 357 mobile tests and
+Flutter analysis pass. Shared CI and the placeholder-config web build are
+pending. Production and TestFlight 63 remain unchanged. No migration or deletion
+of historical Review entries is part of this change. Deploy backend support
+before dependent web/mobile releases; older Capture clients retain their old
+pending-review response. Native/physical upload-cancel-save acceptance and the
+next signed mobile release remain outstanding. Shopify/public review stay held.
+
 ## October 14 chat punctuation candidate
 
 Backend-only `fix/ask-response-punctuation` is based on mobile release record

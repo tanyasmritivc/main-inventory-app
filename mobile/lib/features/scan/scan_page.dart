@@ -1705,6 +1705,7 @@ class _ScanPageState extends State<ScanPage> {
             scanEvidence: it.scanEvidence,
             reviewId: it.reviewId,
             reviewStatus: it.reviewStatus,
+            reviewToken: it.reviewToken,
           ),
         );
         // The backend failure index is relative to the confident-only bulk

@@ -468,7 +468,7 @@ class ApiClient {
         ? filename
         : '${filename.split('.').first}.jpg';
     final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
-    final form = dio.FormData.fromMap({'file': file});
+    final form = dio.FormData.fromMap({'file': file, 'preview_only': true});
     debugPrint(
       'FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image',
     );
@@ -505,10 +505,14 @@ class ApiClient {
     required String reviewId,
     required ExtractedInventoryItem item,
   }) async {
-    final res = await _dio.patch<Map<String, dynamic>>(
+    final res = await _dio.request<Map<String, dynamic>>(
       '/review-items/${Uri.encodeComponent(reviewId)}',
-      data: item.toReviewJson(),
-      options: _authOptions(),
+      data: item.reviewStatus == 'preview'
+          ? item.toJson()
+          : item.toReviewJson(),
+      options: _authOptions().copyWith(
+        method: item.reviewStatus == 'preview' ? 'POST' : 'PATCH',
+      ),
     );
     return ReviewItem.fromJson(
       (res.data?['review_item'] as Map<String, dynamic>?) ?? const {},
@@ -1965,6 +1969,7 @@ class ExtractedInventoryItem {
     this.scanEvidence,
     this.reviewId,
     this.reviewStatus,
+    this.reviewToken,
   });
 
   String name;
@@ -1984,6 +1989,7 @@ class ExtractedInventoryItem {
   ScanEvidence? scanEvidence;
   String? reviewId;
   String? reviewStatus;
+  String? reviewToken;
 
   bool get needsReview => scanEvidence?.needsReview == true;
   bool get isPendingReview =>
@@ -2020,6 +2026,7 @@ class ExtractedInventoryItem {
           : null,
       reviewId: json['review_id']?.toString(),
       reviewStatus: json['review_status']?.toString(),
+      reviewToken: json['review_token']?.toString(),
     );
   }
 
@@ -2046,6 +2053,7 @@ class ExtractedInventoryItem {
       if (scanEvidence != null) 'scan_evidence': scanEvidence!.toJson(),
       if (reviewId != null) 'review_id': reviewId,
       if (reviewStatus != null) 'review_status': reviewStatus,
+      if (reviewToken != null) 'review_token': reviewToken,
     };
   }
 

@@ -56,7 +56,7 @@ def test_uncertain_item_and_no_match_are_honest_and_visible_in_review():
     result = photos.format_photo_answer(identified=[item(scan_evidence={'needs_review': True}, review_id='r', review_status='pending')], inventory=[], photo_url=URL)
     text = result['assistant_message']
     assert 'I am not certain' in text and 'does not mean you do not own' in text
-    assert 'Review on Home' in text and 'No inventory item has been added' in text
+    assert 'Review on Home' not in text and 'No inventory item has been added' in text
 
 
 def test_zero_stock_and_output_has_no_private_fields():
@@ -166,7 +166,6 @@ def test_noisy_photo_service_returns_consolidated_reply_through_existing_contrac
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': noisy_scene()})), \
          patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']), \
          patch.object(photos, 'accessible_inventory', return_value=[]), \
          patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
         result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='What is in this photo, and do I own it?', image_bytes=image()))
@@ -229,12 +228,12 @@ def test_accessible_inventory_deduplicates_only_authorized_live_reads():
 
 
 @pytest.mark.parametrize('message', ['What is this? Do I own it?', 'What are its dimensions?', 'Measure the width'])
-def test_photo_service_pipeline_review_and_inventory_without_mutation(message):
+def test_photo_service_checks_inventory_without_creating_reviews(message):
     uncertain = item(scan_evidence={'needs_review': True})
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)) as upload, \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [uncertain]})) as extract, \
          patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']) as review, \
+         patch('app.services.review_queue.enqueue_uncertain_items') as review, \
          patch.object(photos, 'accessible_inventory', return_value=[]) as inventory, \
          patch.object(photos, 'gateway_completion') as gateway:
         result = asyncio.run(photos.answer_photo_question(user_id='user-1', message=message, image_bytes=image()))
@@ -242,7 +241,7 @@ def test_photo_service_pipeline_review_and_inventory_without_mutation(message):
     assert upload.call_args.kwargs['filename'].startswith('ask-')
     assert 'include_measurements' not in extract.call_args.kwargs
     assert extract.call_args.kwargs['source_frame_url'] == URL
-    assert review.call_args.kwargs['source_digest'].startswith('ask:')
+    review.assert_not_called()
     assert 'ownership is not confirmed' in uncertain['notes']
     inventory.assert_called_once_with('user-1')
     gateway.assert_not_called()
@@ -252,7 +251,7 @@ def test_photo_service_pipeline_review_and_inventory_without_mutation(message):
 def test_failed_analysis_cleans_only_new_source_before_review():
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(side_effect=FindPipelineError('SECRET'))), \
-         patch.object(photos, 'delete_image') as delete, patch.object(photos, 'enqueue_uncertain_items') as review:
+         patch.object(photos, 'delete_image') as delete, patch('app.services.review_queue.enqueue_uncertain_items') as review:
         with pytest.raises(FindPipelineError):
             asyncio.run(photos.answer_photo_question(user_id='user-1', message='What is this?', image_bytes=image()))
     delete.assert_called_once_with(path=PATH)
@@ -265,7 +264,6 @@ def test_photo_requests_use_no_mutation_tools_and_keep_grounded_check(question, 
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [item()]})), \
          patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']), \
          patch.object(photos, 'accessible_inventory', return_value=[]), patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
         result = asyncio.run(photos.answer_photo_question(user_id='user-1', message=question, image_bytes=image()))
     if explain:
@@ -284,7 +282,6 @@ def test_unknown_only_photo_does_not_generate_an_explanation_from_missing_identi
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
          patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [unknown]})), \
          patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'enqueue_uncertain_items', side_effect=lambda **kw: kw['items']), \
          patch.object(photos, 'accessible_inventory', return_value=[]), patch.object(photos, 'gateway_completion') as gateway:
         result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='How does this work?', image_bytes=image()))
     gateway.assert_not_called()

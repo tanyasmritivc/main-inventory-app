@@ -1,5 +1,30 @@
 # Active work
 
+## October 14 capture save boundary prepared
+
+Lane `fix/capture-review-save-boundary` in
+`/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary`, based on
+`722b5c0` from punctuation PR #67. Capture previews are local to the client and
+carry a bounded 24-hour signature binding owner, identity, source key, original
+FIND evidence and photos. A new authenticated POST saves a preview into existing
+`capture_reviews`; editable identity fields cannot replace signed observations
+or photos. Duplicate saves reuse one source key, handled records cannot revive,
+and tampering, another account or expiry fail before a queue write. Mobile/web
+preserve proof through edits/confirmation and save only after the explicit action.
+Old saved reviews keep PATCH/resolve/dismiss; extraction without the new flag
+retains old-client compatibility. Chat photo questions no longer create reviews.
+
+Local validation passes 438 backend/API documentation tests and six subtests,
+212 web tests, TypeScript, changed-file lint with existing warnings only, 357
+mobile tests and clean Flutter analysis. CI and web build are pending. Web uses
+the installed dependencies from an identical lockfile, with a gitignored local
+node_modules symlink. Local build configuration is fictional and must not ship.
+No deployment, migration, native upload or historical Review deletion has been
+performed. Backend support must precede the new web/mobile release. TestFlight
+63 retains the old Capture behavior until a new binary is installed. Repeat
+physical random-photo/cancel/Home, photo chat, explicit Save, retry and owner
+isolation on that binary. Public submission and Shopify remain held.
+
 ## October 14 chat punctuation prepared
 
 Backend-only lane `fix/ask-response-punctuation` in

@@ -105,6 +105,28 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Capture preview and explicit save
+
+`test_capture_previews.py` verifies both extraction routes with preview-only
+requests, the old-client contract, no queue writes during previews, signed owner/
+identity/evidence binding, expiry, tampering, retry idempotency, handled-record
+rejection and private-field exclusion. Photo Ask regressions reject Review side
+effects. Mobile's `capture_preview_api_test.dart` exercises actual multipart
+requests and authenticated POST-versus-PATCH behavior through a hermetic Dio
+adapter; `scan_review_test.dart` checks proof retention, uncertainty routing and
+failure propagation. Web API tests cover preview requests and explicit saves.
+Run all surface tests, Flutter analysis, TypeScript, changed-file lint and web
+build with fictional configuration. Do not deploy that build configuration.
+
+Deploy backend support before the new web/mobile clients. Old mobile binaries
+retain their original extraction contract, so the full Capture behavior needs
+the updated binary. Before native release, upload and cancel a random photo,
+return Home and confirm its Review count is unchanged. Repeat camera and library,
+chat-photo uncertainty, explicit Save, interrupted/retried Save, edited identity,
+retained photos, expiry and account switches. Only explicitly saved uncertainty
+should appear in Needs identifying. Preserve existing Review rows; tests do not
+authorize historical cleanup. Automated/API results do not prove phone behavior.
+
 ### Assistant reply punctuation
 
 `backend/tests/test_chat_response_style.py` verifies that gateway replies with

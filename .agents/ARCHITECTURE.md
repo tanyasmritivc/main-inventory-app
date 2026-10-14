@@ -98,8 +98,12 @@ Photo flow:
 4. The uploaded source image and available per-item crops are copied to the
    `item-images` bucket before the FIND job is deleted in `finally`. Masks and
    geometry are not stored.
-5. Clear results may be added to inventory. Uncertain results are saved in
-   `capture_reviews` until the user confirms or dismisses them.
+5. New clients request preview-only extraction. Uncertain results carry an
+   account-bound signed preview and create no Review row until explicit Save.
+   Saved uncertainty lives in `capture_reviews` until confirmation or dismissal.
+   Older clients without the preview flag retain the previous queue-on-upload
+   contract during rollout. Photo Ask saves its conversation context, not Review
+   items.
 6. Review resolution saves the crop or source image as the item's primary
    `image_url`. Lists render a thumbnail only when the item has an image.
 
