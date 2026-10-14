@@ -1,5 +1,19 @@
 # Active work
 
+## October 14 Home-only colour correction complete locally
+
+Lane `feat/mobile-color-accents` in `dev/findez-mobile-color-accents`, based on
+`3a36026`. The accepted scope is Home numbers only: mustard identifying,
+purple buying, maroon out of stock, forest green lent. Cards/labels stay neutral;
+search hint is smaller regular grey (14pt), with regular grey suggestion text
+(12pt) and full-size typed input (17pt). Unknown counts retain neutral dashes.
+Rejected card fills and other-page experiments are removed from the candidate.
+Analysis, all 357 existing mobile tests with coverage and both-theme colour
+contrast pass. Home is visually checked on the actual iPhone 16e debug simulator
+after attach/hot restart, using the existing native shell. Proof is in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14/home-numbers-light-native.png`.
+No new TestFlight upload or public submission. Wait for next-page directions.
+
 ## October 14 backend fixes live; mobile 64 internal TestFlight delivery complete
 
 Lane `fix/capture-review-save-boundary` in

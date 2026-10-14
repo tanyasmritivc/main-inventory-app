@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-14: Home colour belongs to decision numbers, not card fills
+
+The user rejects the experimental coloured surfaces. Home retains neutral cards
+and labels; only the numbers use mustard for need identifying, purple for to buy,
+maroon for out of stock and forest green for lent out. Zero uses its category's
+colour; unknown reads keep a neutral dash. Search examples must look like hints:
+smaller regular grey text on the neutral field, separate from larger typed input.
+Suggestions are smaller regular grey text. Finish Home before changing another
+page, and wait for the user's page-specific instructions.
+
 ## October 14 uploading does not commit a capture
 
 New first-party Capture uploads request preview-only extraction. Uncertain

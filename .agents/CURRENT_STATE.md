@@ -1,5 +1,22 @@
 # Current state
 
+## October 14 Home-only number colours and smaller placeholder
+
+`feat/mobile-color-accents` in `dev/findez-mobile-color-accents` is based on
+`3a36026`. The user rejects coloured card fills and scopes this pass to Home.
+Only decision numbers use mustard (identifying), purple (to buy), maroon
+(out of stock) and forest green (lent), including zero; unknown values remain
+neutral dashes. Cards and labels retain the neutral baseline. The white search
+field has a 14pt regular grey hint and 17pt entered text; suggestions use 12pt
+regular grey text. Other-page experiments are removed from the candidate.
+Analysis and all 357 existing mobile tests with coverage pass. All four number
+colours and the hint meet 4.5:1 contrast in both themes. The running iPhone 16e
+debug simulator is refreshed through Flutter attach/hot restart, and Home is
+visually verified with native fonts/icons. Native proof is in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14/home-numbers-light-native.png`.
+No new binary is uploaded: TestFlight remains 64. Wait for the user's next-page
+instructions; no broader palette or layout pass is authorized.
+
 ## October 14 backend fixes live; mobile 64 delivered to internal TestFlight
 
 `fix/capture-review-save-boundary` in
