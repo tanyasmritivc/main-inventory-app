@@ -26,7 +26,8 @@ preserve independently authored names after disconnect, separate observed counts
 enforce revisions/idempotency and keep append-only history. Ambiguous/unknown/stale
 locations are explicit; personal Ask mutation tools remain isolated. Local 482
 backend, 232 web and 347 mobile tests with coverage pass, as do SQL isolation and
-analysis/type/lint. Exact-source CI/build results must be recorded at final PR head.
+analysis/type/lint and production webpack compilation with placeholder configuration.
+Exact-source CI results must be recorded at final PR head.
 
 Validation: 457 backend/API-doc and 221 web tests, TypeScript, changed-file ESLint,
 production webpack build and real disposable PostgreSQL RLS/lifecycle pass.

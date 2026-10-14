@@ -13,9 +13,10 @@ confirmation time and stale-location warnings. Personal Ask and FIND are unchang
 Feature flags default off; migration 043 is not applied to production.
 
 Local validation: 482 backend/API-doc tests, 232 web tests and 347 mobile tests with
-coverage pass, along with TypeScript, changed-file lint, Flutter analysis and real
-disposable PostgreSQL migration/RLS/concurrency/lifecycle checks. Final source CI
-and production web compilation must be recorded at the actual PR head. No actual
+coverage pass, along with TypeScript, changed-file lint, Flutter analysis, production
+webpack compilation with placeholder configuration and real disposable PostgreSQL
+migration/RLS/concurrency/lifecycle checks. Final source CI must be recorded at
+the actual PR head. No actual
 Shopify app/store installation, live query/token/webhook verification or merchant
 acceptance is complete. No production migration/deployment is authorized. Guided
 business migration, visual catalog matching, discrepancy planning and Shopify
