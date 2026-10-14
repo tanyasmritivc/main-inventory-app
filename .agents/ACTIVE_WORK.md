@@ -1,6 +1,6 @@
 # Active work
 
-## October 14 backend fixes live; mobile 64 preparing
+## October 14 backend fixes live; mobile 64 internal TestFlight delivery complete
 
 Lane `fix/capture-review-save-boundary` in
 `/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary`, based on
@@ -31,12 +31,23 @@ files are verified unchanged. Service/database health, missing-session and
 invalid-key 401s, reply punctuation, real preview signing, owner binding and
 the signed save route pass without database writes or FIND/model requests.
 Receipts are beside the source bundle. No migration or historical Review
-deletion was performed. Updated web source is not deployed. Mobile 1.0.8 (64)
-is preparing from clean generated files and verified build-63 configuration.
-TestFlight 63 stays available and keeps the old Capture behavior until updated.
-Repeat
-physical random-photo/cancel/Home, photo chat, explicit Save, retry and owner
-isolation on that binary. Public submission and Shopify remain held.
+deletion was performed. Updated web source is not deployed.
+
+Mobile 1.0.8 (64), runtime `8001b13`, passes all five exact-source CI gates
+(`38554740296`), clean signed archive/export, production configuration/assets,
+strict signatures and all 31 native device-platform checks. Apple validation,
+upload and processing complete without errors/warnings. Delivery
+`3dc129af-4c32-48f7-a69d-d55c9e97cdef` is VALID/APP_STORE_ELIGIBLE/
+IN_BETA_TESTING in Testers and Internal Pilot Findez AI with saved test notes,
+verified at 04:54 PDT October 14. Durable receipts, archive/IPA and phone
+acceptance checklist are in `Documents/FindEZ/AppStore/1.0.8-build64`.
+The new binary uses preview-only extraction and the signed Save route.
+TestFlight 63 stays available with the legacy Capture contract. No build-64
+simulator or physical pass is claimed. Repeat physical camera/library
+random-photo/cancel/Home, photo chat, explicit Save, retry and owner isolation
+on build 64, plus the outstanding native service and accessibility checks.
+Public App Store selection/release type are verified unchanged; public
+submission and Shopify remain held.
 
 ## October 14 chat punctuation prepared
 

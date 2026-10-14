@@ -1,6 +1,6 @@
 # Current state
 
-## October 14 backend fixes deployed; mobile 64 preparing
+## October 14 backend fixes live; mobile 64 delivered to internal TestFlight
 
 `fix/capture-review-save-boundary` in
 `/Users/tanyasmritivictorcharles/dev/findez-capture-save-boundary` is based on
@@ -24,10 +24,24 @@ verify reply punctuation, real preview signing, owner binding and the signed
 save route without database writes or FIND/model calls. Deployment/live receipts
 are beside the source bundle. No migration or historical Review deletion was
 performed. New chat/photo behavior is live; updated web source is not deployed
-and older Capture clients keep the old contract. Mobile 1.0.8 (64) is preparing
-from clean generated files and verified build-63 production configuration.
-TestFlight 63 stays available. Native/physical upload-cancel-save acceptance
-remains outstanding. Shopify/public App Review remain held.
+and older Capture clients keep the old contract.
+
+Mobile 1.0.8 (64), runtime `8001b13`, is VALID, APP_STORE_ELIGIBLE and
+IN_BETA_TESTING in both existing internal groups, Testers and Internal Pilot
+Findez AI, verified at 04:54 PDT October 14. All five exact-runtime CI gates
+pass (`38554740296`), along with clean signed archive/export, production
+configuration, supplied assets, strict app/extension signatures and all 31
+native device-platform checks. Apple validation/upload and processing complete
+without errors or warnings, delivery `3dc129af-4c32-48f7-a69d-d55c9e97cdef`.
+Receipts, archive/IPA and the phone checklist are in
+`Documents/FindEZ/AppStore/1.0.8-build64`. IPA SHA-256:
+`a14d1d143abb399f37871fe8fbb16b712d3147d643572bbf0f4d0ac5bd28e393`.
+Build 64 enables preview-only extraction and explicit Save with the deployed
+backend. No build-64 simulator or physical-device acceptance is claimed;
+repeat camera/library upload-cancel-Home, photo chat, explicit Save/retry and
+account isolation on a phone. TestFlight 63 remains available with its legacy
+Capture contract. Public 1.0.7 stays selected on 59; draft 1.0.8 remains
+unselected with manual release. Public App Review and Shopify remain held.
 
 ## October 14 chat punctuation candidate
 
