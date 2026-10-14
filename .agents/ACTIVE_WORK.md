@@ -1,5 +1,18 @@
 # Active work
 
+## October 14 Home account entry and stable light typography
+
+Continue `feat/mobile-submission-polish` before the next binary. User removes the
+Profile tab, moves its entry to the top of Home and requires stable light weights
+regardless of iOS Bold Text. The pill now has Home/Capture/Ask/Find with four-tab
+spring geometry. A small Home control opens Account, preserving profile editing,
+settings, documents, notifications, lent items and setup questions. The same
+profile store and live notification notifier serve both Home and Account; late
+badge reads remain fenced. Shared body/input weights are 400 and emphasis caps
+at 500; only automatic weight changes are suppressed. Text size and other
+accessibility preferences remain. Shopify stays paused; no API/schema, native
+lifecycle, production or Apple submission changes.
+
 ## October 14 spreadsheet clarity and focused chat
 
 Continue `feat/mobile-submission-polish` in `dev/findez-logo-light-default` before

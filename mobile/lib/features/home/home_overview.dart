@@ -32,8 +32,10 @@ class HomeOverview extends StatefulWidget {
     required this.onOpenItem,
     required this.onOpenSpace,
     this.error,
+    this.accountControl,
   });
   final List<InventoryItem> items;
+  final Widget? accountControl;
   final List<Map<String, dynamic>> spaces;
   final int? pendingReviews, lowStock, outOfStock, lentOut;
   final String? error;
@@ -114,46 +116,58 @@ class _HomeOverviewState extends State<HomeOverview> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Semantics(
-              button: true,
-              label: 'My home, choose a Space',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: widget.onChooseSpace,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: AppText(
-                          'My home',
-                          boldWeight: FontWeight.w600,
-                          style: TextStyle(
-                            fontSize: 28,
-                            height: 1.15,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: -0.8,
-                            color: AppTheme.foreground(
-                              context,
-                              HomeColors.text,
+          Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Semantics(
+                    button: true,
+                    label: 'My home, choose a Space',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: widget.onChooseSpace,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: AppText(
+                                'My home',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  height: 1.15,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: -0.8,
+                                  color: AppTheme.foreground(
+                                    context,
+                                    HomeColors.text,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(width: 7),
+                            Icon(
+                              CupertinoIcons.chevron_down,
+                              size: 15,
+                              color: AppTheme.foreground(
+                                context,
+                                HomeColors.hint,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 7),
-                      Icon(
-                        CupertinoIcons.chevron_down,
-                        size: 15,
-                        color: AppTheme.foreground(context, HomeColors.hint),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (widget.accountControl != null) ...[
+                const SizedBox(width: 12),
+                widget.accountControl!,
+              ],
+            ],
           ),
           const SizedBox(height: 18),
           MediaQuery(
@@ -166,9 +180,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                 context,
                 TextStyle(
                   fontSize: 17,
-                  fontWeight: MediaQuery.boldTextOf(context)
-                      ? FontWeight.w500
-                      : FontWeight.w400,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.foreground(context, HomeColors.text),
                 ),
               ),
@@ -178,9 +190,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                   context,
                   TextStyle(
                     fontSize: 17,
-                    fontWeight: MediaQuery.boldTextOf(context)
-                        ? FontWeight.w500
-                        : FontWeight.w400,
+                    fontWeight: FontWeight.w400,
                     color: AppTheme.foreground(context, HomeColors.hint),
                   ),
                 ),
@@ -403,7 +413,6 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppText(
     label,
-    boldWeight: FontWeight.w600,
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -473,7 +482,6 @@ class _DecisionTile extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: AppText(
                 count?.toString() ?? '-',
-                boldWeight: FontWeight.w600,
                 style: TextStyle(
                   fontSize: 32,
                   height: 1.1,

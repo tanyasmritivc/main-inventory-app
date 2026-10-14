@@ -1,62 +1,36 @@
 import 'package:flutter/material.dart';
 
 /// One weight policy for app text, framework controls and editable text.
-/// The real device preference stays in this scope while Flutter's blanket
-/// w700 override is suppressed below it. Text scaling is never replaced.
+/// Weights stay regular or medium regardless of OS Bold Text. Other
+/// accessibility preferences and text scaling stay intact.
 class AppTypography extends StatelessWidget {
   const AppTypography({super.key, required this.child});
 
   final Widget child;
 
-  static bool boldTextOf(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<_TypographyPreference>()
-          ?.boldText ??
-      MediaQuery.boldTextOf(context);
-
-  static FontWeight _weight(
-    TextStyle style,
-    bool boldText, {
-    bool body = false,
-    FontWeight? boldWeight,
-  }) {
+  static FontWeight _weight(TextStyle style, {bool body = false}) {
+    if (body) return FontWeight.w400;
     final normal = style.fontWeight ?? FontWeight.w400;
-    if (boldText) {
-      return boldWeight ??
-          (!body &&
-                  (normal.value >= FontWeight.w600.value ||
-                      (style.fontSize ?? 0) >= 20)
-              ? FontWeight.w600
-              : FontWeight.w500);
-    }
-    return normal.value > FontWeight.w600.value ? FontWeight.w600 : normal;
+    return normal.value > FontWeight.w500.value ? FontWeight.w500 : normal;
   }
 
-  static TextStyle styleOf(
-    BuildContext context,
-    TextStyle? style, {
-    FontWeight? boldWeight,
-  }) {
+  static TextStyle styleOf(BuildContext context, TextStyle? style) {
     final effective = DefaultTextStyle.of(context).style.merge(style);
     return (style ?? const TextStyle()).copyWith(
-      fontWeight: _weight(
-        effective,
-        boldTextOf(context),
-        boldWeight: boldWeight,
-      ),
+      fontWeight: _weight(effective),
     );
   }
 
   static TextStyle bodyStyleOf(BuildContext context, [TextStyle? style]) {
     final effective = DefaultTextStyle.of(context).style.merge(style);
     return (style ?? const TextStyle()).copyWith(
-      fontWeight: _weight(effective, boldTextOf(context), body: true),
+      fontWeight: _weight(effective, body: true),
     );
   }
 
-  static ThemeData _theme(ThemeData theme, bool boldText) {
+  static ThemeData _theme(ThemeData theme) {
     TextStyle? adapt(TextStyle? style, {bool body = false}) =>
-        style?.copyWith(fontWeight: _weight(style, boldText, body: body));
+        style?.copyWith(fontWeight: _weight(style, body: body));
     TextTheme textTheme(TextTheme text) => TextTheme(
       displayLarge: adapt(text.displayLarge),
       displayMedium: adapt(text.displayMedium),
@@ -74,9 +48,34 @@ class AppTypography extends StatelessWidget {
       labelMedium: adapt(text.labelMedium),
       labelSmall: adapt(text.labelSmall),
     );
+    ButtonStyle? buttonStyle(ButtonStyle? style) => style?.copyWith(
+      textStyle: WidgetStateProperty.resolveWith(
+        (states) => adapt(style.textStyle?.resolve(states)),
+      ),
+    );
     final input = theme.inputDecorationTheme;
     return theme.copyWith(
       textTheme: textTheme(theme.textTheme),
+      filledButtonTheme: FilledButtonThemeData(
+        style: buttonStyle(theme.filledButtonTheme.style),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: buttonStyle(theme.elevatedButtonTheme.style),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: buttonStyle(theme.outlinedButtonTheme.style),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: buttonStyle(theme.textButtonTheme.style),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: buttonStyle(theme.segmentedButtonTheme.style),
+      ),
+      floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
+        extendedTextStyle: adapt(
+          theme.floatingActionButtonTheme.extendedTextStyle,
+        ),
+      ),
       primaryTextTheme: textTheme(theme.primaryTextTheme),
       appBarTheme: theme.appBarTheme.copyWith(
         titleTextStyle: adapt(theme.appBarTheme.titleTextStyle),
@@ -128,24 +127,8 @@ class AppTypography extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final boldText = boldTextOf(context);
-    return _TypographyPreference(
-      boldText: boldText,
-      child: MediaQuery(
-        data: MediaQuery.of(context).copyWith(boldText: false),
-        child: Theme(data: _theme(Theme.of(context), boldText), child: child),
-      ),
-    );
-  }
-}
-
-class _TypographyPreference extends InheritedWidget {
-  const _TypographyPreference({required this.boldText, required super.child});
-
-  final bool boldText;
-
-  @override
-  bool updateShouldNotify(_TypographyPreference oldWidget) =>
-      boldText != oldWidget.boldText;
+  Widget build(BuildContext context) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(boldText: false),
+    child: Theme(data: _theme(Theme.of(context)), child: child),
+  );
 }

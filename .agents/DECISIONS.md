@@ -1,5 +1,20 @@
 # Decisions
 
+## October 14 Account belongs on Home and weights ignore OS Bold Text
+
+The user removes Profile from the bottom navigation because FindEZ is an
+inventory tool. Keep four core tabs and move a small account control to Home's
+header. Its Account page retains existing editing, settings, documents, alerts,
+lent items and setup functions. The shell-owned profile store and live unread
+count stay shared so edits and notification reads update the Home control.
+Back returns to the existing Home, retaining its draft and content.
+
+This supersedes the earlier OS-dependent typography policy. Keep regular body
+and editable text (400), with at most medium emphasis (500), whether iOS Bold
+Text is enabled or disabled. Do not change the phone's global setting. Preserve
+OS/app text scaling, VoiceOver, Reduce Motion, high contrast and semantics.
+Remove obsolete bold-weight overrides rather than reintroducing them on screens.
+
 ## October 14 conversation focus stays in the existing shell
 
 After a message is submitted, hide the tab bar and keep the same ChatPage in its

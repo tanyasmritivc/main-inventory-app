@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/core/inventory_cache.dart';
 import 'package:mobile/features/chat/chat_page.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
@@ -106,7 +107,7 @@ Future<void> _mount(
           textScaler: TextScaler.linear(scale),
           disableAnimations: reduceMotion,
         ),
-        child: SafeArea(child: child!),
+        child: AppTypography(child: SafeArea(child: child!)),
       ),
       home: RepaintBoundary(
         key: const Key('chat-focus-qa'),

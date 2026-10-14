@@ -8,6 +8,26 @@ contains no Shopify client feature or backend configuration. Do not bring its
 connector, linked physical-memory UI, owner edits, merchant guide or migrations
 042 through 045 into the current launch. Resume Shopify only on a new user request.
 
+## October 14 Home account control and lighter typography in source
+
+Latest continuation moves Profile out of the pill, leaving four core destinations:
+Home, Capture, Ask and Find. A small Home header control opens Account and its
+existing utilities, with a Back route to the retained Home. Avatar edits and
+live unread counts use the same owner-bound store/notifier; late count responses
+cannot undo an inbox read. Four-tab indicator geometry preserves the existing
+spring, stretch, fixed icons and reduced-motion behavior. Chat focus stays intact.
+
+Shared typography now keeps body and inputs at 400 and caps emphasis at 500,
+independent of OS Bold Text. Theme controls, AppText, editable fields and answer
+styles use that policy. The old per-screen bold overrides and stored OS-weight
+preference are removed. Larger Text, app text size, semantics and other
+accessibility settings remain. The changed typography regression fails before
+the fix; local full suite passes all 349 tests with coverage and analysis is
+clean. Actual-widget Home renders are byte-identical with Bold Text on/off in
+Light/Dark; Account and four-tab layouts are also checked. Latest native rebuild,
+phone acceptance and TestFlight delivery remain pending. No production or public
+submission changes; Shopify is still paused and excluded.
+
 ## October 14 focused chat and concise spreadsheet import in source
 
 Latest mobile-only continuation on `feat/mobile-submission-polish` adds a minimal

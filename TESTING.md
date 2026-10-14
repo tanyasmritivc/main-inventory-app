@@ -120,7 +120,7 @@ The import picker, validation, errors and actual result counts are unchanged.
 Run analysis and the complete mobile suite. The navigation tests verify the
 350 ms spring, surface pulse, horizontal stretch, fixed icon centers, final
 alignment, interrupted taps and reduced-motion cross-fades in both themes.
-Retain five accessible destinations and the existing keyboard/safe-area layout.
+Retain four accessible destinations and the existing keyboard/safe-area layout.
 Home regressions exclude pictureless and invalid import thumbnails, remove failed
 image cards, preserve inventory quantities and use recent labels for older photos.
 Test thumbnails use a local image HTTP stub, never a production image service.
@@ -319,26 +319,23 @@ coverage and analysis pass. Before release, repeat cold Home -> Space and
 Find -> Space on the exact final binary, including slow/offline reads and
 account switching. Source/widget results are not a native physical pass.
 
-### App-wide Bold Text hierarchy
+### Stable light typography and OS Bold Text
 
 `app_typography_test.dart` verifies rendered RichText and EditableText weights:
-app and framework supporting text/inputs use 500 and headings/buttons use 600
-with Bold Text enabled, in both themes. Switching off restores normal body
-weights and caps previous heavy emphasis at 600. Text semantics, layout options,
+app and framework supporting text/inputs use 400 and headings/buttons cap at 500
+in both themes, with identical weights when OS Bold Text changes. Text semantics, layout options,
 monospace styling, OS scaling and other accessibility flags are retained.
 `appearance_widget_test.dart` changes the actual app root's OS preference and
 app text size while retaining its Navigator and an unsaved form draft.
 
-Read the actual Bold Text preference with `AppTypography.boldTextOf`; the
-MediaQuery value below the policy is deliberately false to prevent Flutter from
+The MediaQuery Bold Text value below the shared policy is false to prevent Flutter from
 replacing every requested weight with 700. Theme controls, editable fields,
 input decorations and Markdown/selectable answers must use the shared policy.
 `home_page_test.dart` retains Light/Dark 320pt regressions through 3.4x with
 scrollable Space rows and reachable Review actions. Run the full mobile suite
-with coverage and analysis (274 tests pass for the app-wide implementation).
-Check the exact native binary across Home, Capture, Ask, Find, Profile, forms
-and dialogs with Bold Text enabled; widget weights alone are not physical
-visual acceptance. The user's build-52 approval covers Home only.
+with coverage and analysis. Check the exact native binary across Home, Capture,
+Ask, Find, Account, forms and dialogs while toggling Bold Text. Widget weights
+and sample renders do not replace physical acceptance.
 
 ### Mobile appearance and text size
 
@@ -588,19 +585,21 @@ these interactions.
 
 ## Profile navigation regressions
 
-`mobile/test/profile_navigation_test.dart` covers the fifth circular Profile
-destination, unchanged pill/order, every utility callback, actual shell routing
+`mobile/test/profile_navigation_test.dart` covers the Home account control,
+four core destinations, every utility callback, actual shell routing
 to account details/settings and back to Home, safe read/retry/save failures,
 disposed late reads, malformed avatar-color fallback, separate account/settings
 reads, a real Material ink surface for utility rows (including newer Flutter),
 confirmed deletion cancellation with no request, and narrow/large-text
-scrolling above the reserved navigation area. `home_page_test.dart` also locks
-the five-tab order. Existing account APIs and billing behavior are not changed.
+scrolling without a navigation bar on Account. It verifies an old notification
+read cannot restore an unread count after an inbox write, and Home drafts survive
+the account/settings route. `home_page_test.dart` also locks the four-tab order.
+Existing account APIs and billing behavior are not changed.
 
 `mobile/test/home_navigation_test.dart` locks the icon-only presentation for
 every selected tab, retained screen-reader names/selected state/tap actions and
-long-press tooltip names. It checks the saved profile avatar selected and
-unselected, centered icons, full destination touch targets of at least 44 points,
+long-press tooltip names. It checks four-tab spring/selection alignment,
+centered icons, full destination touch targets of at least 44 points,
 narrow/landscape layout, large text, circular selection and reserved safe-area
 space outside the 56pt visible bar. Test both standalone navigation and the
 actual app's parent-SafeArea arrangement: no doubled inset, stretched pill or

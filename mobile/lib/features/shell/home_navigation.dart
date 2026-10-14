@@ -11,13 +11,11 @@ class HomeNavigation extends StatefulWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.destinationKeys = const {},
-    this.profileAvatar,
     this.monochrome = false,
   });
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Map<int, Key> destinationKeys;
-  final Widget? profileAvatar;
   final bool monochrome;
   @override
   State<HomeNavigation> createState() => _HomeNavigationState();
@@ -25,6 +23,7 @@ class HomeNavigation extends StatefulWidget {
 
 class _HomeNavigationState extends State<HomeNavigation>
     with SingleTickerProviderStateMixin {
+  static const _destinationCount = 4;
   static const duration = Duration(milliseconds: 350);
   late final AnimationController _motion;
   late double _from, _to;
@@ -51,7 +50,8 @@ class _HomeNavigationState extends State<HomeNavigation>
 
   double get _progress =>
       _motion.value == 1 ? 1 : _slide.x(_motion.value * .35) / _slide.x(.35);
-  double get _position => (_from + (_to - _from) * _progress).clamp(0, 4);
+  double get _position =>
+      (_from + (_to - _from) * _progress).clamp(0, _destinationCount - 1);
   double get _bias {
     final travel = _progress.clamp(0.0, 1.0);
     return _fromBias * (1 - travel) + (_to >= _from ? 1 : -1) * travel;
@@ -132,8 +132,8 @@ class _HomeNavigationState extends State<HomeNavigation>
   ) {
     const diameter = 36.0;
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final physicalIndex = rtl ? 4 - index : index;
-    final center = 1 + (width - 2) / 5 * (physicalIndex + .5);
+    final physicalIndex = rtl ? _destinationCount - 1 - index : index;
+    final center = 1 + (width - 2) / _destinationCount * (physicalIndex + .5);
     return Positioned(
       left: center - diameter / 2,
       top: 11,
@@ -290,23 +290,6 @@ class _HomeNavigationState extends State<HomeNavigation>
                         : null,
                   ),
                   label: 'Find',
-                ),
-                NavigationDestination(
-                  icon:
-                      widget.profileAvatar ??
-                      Icon(
-                        CupertinoIcons.person_crop_circle,
-                        key: widget.destinationKeys[4],
-                      ),
-                  selectedIcon:
-                      widget.profileAvatar ??
-                      Icon(
-                        CupertinoIcons.person_crop_circle_fill,
-                        color: widget.monochrome
-                            ? AppTheme.textPrimary(context)
-                            : null,
-                      ),
-                  label: 'Profile',
                 ),
               ],
             ),

@@ -24,8 +24,10 @@ class ProfileHubPage extends StatefulWidget {
     required this.onOpenTour,
     this.unreadCount = 0,
     this.store,
+    this.showHeading = true,
   });
   final ApiClient api;
+  final bool showHeading;
   final Future<void> Function() onOpenProfile;
   final Future<void> Function() onOpenSettings;
   final Future<void> Function() onOpenDocuments;
@@ -152,15 +154,17 @@ class _ProfileHubPageState extends State<ProfileHubPage>
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
           children: [
-            AppText(
-              'Profile',
-              style: TextStyle(
-                color: AppTheme.foreground(context, HomeColors.text),
-                fontSize: 28,
-                fontWeight: FontWeight.w400,
+            if (widget.showHeading) ...[
+              AppText(
+                'Account',
+                style: TextStyle(
+                  color: AppTheme.foreground(context, HomeColors.text),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
+            ],
             Material(
               color: AppTheme.adaptive(context, HomeColors.surface),
               borderRadius: BorderRadius.circular(16),

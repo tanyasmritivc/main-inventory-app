@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/app_colors.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
 
-const _labels = ['Home', 'Capture', 'Ask', 'Find', 'Profile'];
+const _labels = ['Home', 'Capture', 'Ask', 'Find'];
 
 void _expectHiddenLabels(WidgetTester tester) {
   final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
@@ -56,7 +55,7 @@ void main() {
           );
           await tester.pumpAndSettle();
           List<Offset> centers() => List.generate(
-            5,
+            4,
             (i) => tester.getCenter(
               find
                   .descendant(
@@ -67,7 +66,7 @@ void main() {
             ),
           );
           final fixed = centers();
-          await tester.tap(find.byType(NavigationDestination).at(4));
+          await tester.tap(find.byType(NavigationDestination).at(3));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 84));
           expect(centers(), fixed);
@@ -119,10 +118,10 @@ void main() {
           );
           expect(
             tester
-                .getCenter(find.byKey(const ValueKey('nav-selection-4.0')))
+                .getCenter(find.byKey(const ValueKey('nav-selection-3.0')))
                 .dx,
             closeTo(
-              tester.getCenter(find.byType(NavigationDestination).at(4)).dx,
+              tester.getCenter(find.byType(NavigationDestination).at(3)).dx,
               .1,
             ),
           );
@@ -180,7 +179,7 @@ void main() {
           ),
         );
 
-        for (final index in [1, 2, 3, 4, 0]) {
+        for (final index in [1, 2, 3, 0]) {
           await tester.tap(find.byType(NavigationDestination).at(index));
           await tester.pumpAndSettle();
           expect(
@@ -198,7 +197,7 @@ void main() {
             final node = tester.getSemantics(find.text(_labels[destination]));
             expect(
               node.label,
-              '${_labels[destination]}\nTab ${destination + 1} of 5',
+              '${_labels[destination]}\nTab ${destination + 1} of 4',
             );
             expect(
               node.flagsCollection.isSelected,
@@ -210,41 +209,13 @@ void main() {
             );
           }
         }
-        expect(tapped, [1, 2, 3, 4, 0]);
+        expect(tapped, [1, 2, 3, 0]);
         expect(tester.takeException(), isNull);
       } finally {
         semantics.dispose();
       }
     },
   );
-
-  testWidgets('saved profile avatar remains visible selected and unselected', (
-    tester,
-  ) async {
-    for (final selected in [0, 4]) {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: HomeNavigation(
-              selectedIndex: selected,
-              onSelected: (_) {},
-              profileAvatar: const CircleAvatar(
-                key: Key('saved-avatar'),
-                radius: 12,
-                child: Icon(CupertinoIcons.person_fill),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      _expectHiddenLabels(tester);
-      expect(find.byKey(const Key('saved-avatar')), findsOneWidget);
-      expect(find.byIcon(CupertinoIcons.person_crop_circle), findsNothing);
-      expect(find.byIcon(CupertinoIcons.person_crop_circle_fill), findsNothing);
-      expect(tester.takeException(), isNull);
-    }
-  });
 
   testWidgets(
     'compact pills keep safe insets outside, centered icons and full tap targets',
