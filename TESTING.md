@@ -105,6 +105,18 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Assistant reply punctuation
+
+`backend/tests/test_chat_response_style.py` verifies that gateway replies with
+U+2014 punctuation are normalized before sync, raw-event and SSE output and
+session persistence. Check that deltas and the final answer agree while user
+input, tool arguments/results and source labels remain unchanged. Document
+summaries and legacy chat share the same instruction and formatter; Ask-photo
+regressions include a model explanation that ignores the writing instruction.
+Run the full backend/API documentation suite. This is server-side response
+presentation and requires no schema migration or mobile binary. Do not rewrite
+historical messages as part of this change.
+
 ### October 13 mobile submission polish
 
 The October 14 continuation adds `chat_focus_test.dart` against the actual

@@ -1,5 +1,14 @@
 # Decisions
 
+## October 14 assistant replies avoid em dashes
+
+Apply a shared writing instruction to text chat, photo explanations, document
+summaries and legacy EEZY chat. Normalize any remaining U+2014 punctuation to a
+spaced ASCII hyphen before assistant text is emitted and saved. Keep user input,
+tool arguments/results, inventory records and source/navigation snapshots intact.
+This applies to new replies without rewriting existing conversation history.
+The policy belongs in the shared backend so mobile and web use the same output.
+
 ## October 14 glass replaces inverted neutral controls
 
 The user identifies black selected Appearance choices in Light mode and requests

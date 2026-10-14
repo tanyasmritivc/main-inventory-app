@@ -1,5 +1,24 @@
 # Active work
 
+## October 14 chat punctuation prepared
+
+Backend-only lane `fix/ask-response-punctuation` in
+`/Users/tanyasmritivictorcharles/dev/findez-chat-punctuation`, based on `1604e68`.
+Shared response instruction and output normalization cover normal/streamed
+text chat, deterministic project replies, photo explanations, document/image
+upload replies and legacy EEZY. Normalization happens before session/history
+persistence; it does not change user messages, tool payloads or source records.
+Runtime `3b1c824` in Draft PR #67 passes all five CI gates (`38548331842`), all
+426 local backend/API documentation tests and six subtests. The added tests
+check emitted/final/session consistency and preservation of tool data, Unicode,
+newlines, source labels and input. Four live file hashes match the source baseline;
+the new helper does not yet exist in production. The exact five-file bundle,
+patch and hash manifest are in
+`Documents/FindEZ/Releases/chat-punctuation-2026-10-14`.
+Production deployment awaits authorization;
+no schema, FIND, auth, frontend or mobile source changes. Existing history,
+TestFlight 63 and held public submission remain as recorded below.
+
 ## October 14 build-63 internal TestFlight delivery complete
 
 Final runtime `8abe3cc` on `feat/mobile-submission-polish` (PR #62) is delivered
