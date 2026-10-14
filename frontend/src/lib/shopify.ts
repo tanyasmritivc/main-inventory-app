@@ -23,6 +23,7 @@ export type ShopifyStatus = {
   pilot_shop: string | null;
   connections: ShopifyConnection[];
   edits_enabled?: boolean;
+  migration_enabled?: boolean;
 };
 export type ShopifyVariant = {
   variant_gid: string;
@@ -113,4 +114,15 @@ export function getShopifyEdits(team:string,id:string,token:string) {
 }
 export function reviewUnknownShopifyEdit(team:string,id:string,token:string,operation:string) {
   return apiRequest<{reviewed:boolean;state:"unknown"}>(`${storeBase(team,id)}/edits/${encodeURIComponent(operation)}/review-unknown`,{...options(token),method:"POST",body:JSON.stringify({checked_in_shopify:true})});
+}
+
+export type MigrationVariant = {variant_gid:string;product_title:string;variant_title:string;sku:string|null};
+export type MerchantProgress = {
+  connection_id:string;checked_at:string;can_confirm:boolean;space_count:number;
+  import_complete:boolean;last_complete_sync:string|null;
+  total_variants:number;confirmed_variants:number;unconfirmed_variants:number;older_confirmations:number;
+  unconfirmed_sample:MigrationVariant[];confirmed_example:MigrationVariant|null;
+};
+export function getMerchantProgress(team:string,id:string,token:string) {
+  return apiRequest<MerchantProgress>(`${storeBase(team,id)}/migration`,options(token));
 }

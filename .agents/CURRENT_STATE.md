@@ -1,5 +1,22 @@
 # Current state
 
+## October 13 guided merchant setup development
+
+Lane `feat/merchant-guided-migration`, based on owner-edit `a58e84e` (draft PR #64),
+adds actual catalog/mapping progress and a first-five unconfirmed-variant queue.
+Stable IDs open existing Team Memory; catalog-derived names are suggested for
+employee review, with explicit Space/bin confirmation and no automatic save or
+stock change. One confirmed example supports grounded lookup, not a claim of
+successful physical picking. Migration 045 derives reports from existing records
+and rechecks Team/store access and accessible placements. All flags default off.
+See `docs/merchant-guided-migration.md`; real app/store testing remains outstanding.
+509 backend/API-doc and 259 web tests pass, with TypeScript and changed-file lint.
+Safari sample layout checks cover Light/Dark at 960px and an actual 320px iframe
+viewport. Temporary fixture code is removed before commit. Real PostgreSQL and
+production web compilation are verified through CI before calling this slice done.
+Automatic photo matching, planning and commercial value remain unverified/unbuilt.
+No production migrations/deployment or merchant installation is performed.
+
 ## October 13 owner-controlled Shopify edit development
 
 Lane `feat/shopify-owner-permissions`, based on `ef9489e` (PR #63), implements
@@ -10,9 +27,9 @@ Migration 044 adds bounded IO leases and immutable reviewed operations. Product
 title/vendor/type/tags and signed Shopify available-stock adjustments use fixed
 mutations, confirmation and verified receipts. Unknowns block further edits until
 owner acknowledgment of a real Shopify check, without claiming success.
-504 backend tests, 13 new edit UI tests and the 10 existing connector UI tests pass.
-Final full web/type/lint/build and real SQL isolation are being verified through CI;
-local Docker service is unavailable. Feature defaults off. No live store, real
+504 backend tests and 245 full web tests pass, with TypeScript and changed-file lint.
+Runtime `a58e84e` (draft PR #64) passes all five CI gates in `38521256695`, including
+real PostgreSQL isolation and a production web build. Feature defaults off. No live store, real
 permissions/write acceptance, production migration/deployment or mobile binary.
 Scope and gates are in `docs/shopify-owner-permissions.md`.
 
@@ -35,8 +52,9 @@ migration/RLS/concurrency/lifecycle checks. Runtime `ef9489e` (draft PR #63) pas
 all five CI gates in `38517193932`. No actual
 Shopify app/store installation, live query/token/webhook verification or merchant
 acceptance is complete. No production migration/deployment is authorized. Guided
-business migration, visual catalog matching, discrepancy planning and Shopify
-writes remain unimplemented. The user emphasizes business migration and planning
+business migration and owner-controlled edits are further source slices;
+visual catalog matching and discrepancy planning remain unimplemented.
+The user emphasizes business migration and planning
 through FindEZ's physical-memory angle, rather than generic commerce chat.
 
 

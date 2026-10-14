@@ -189,3 +189,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir shopify_catalog.sql
 \ir physical_memory.sql
 \ir shopify_permissions.sql
+\ir merchant_migration.sql

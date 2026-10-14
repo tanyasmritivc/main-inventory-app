@@ -10,13 +10,15 @@ import {
 } from "@/lib/shopify";
 import styles from "./shopify-panel.module.css";
 import {ShopifyPermissionsForm,ShopifyVariantEdits,ShopifyEditHistory} from "./shopify-edit-controls";
+import {MerchantMigrationGuide} from "./merchant-migration-guide";
+import {PhysicalSelection} from "@/lib/physical-memory";
 
 function date(value: string | null) { return value ? new Date(value).toLocaleString() : "Not yet"; }
 const labels = { pending: "Authorization incomplete", connected: "Connected", reconnect_required: "Reconnect required", disconnected: "Disconnected", uninstalled: "Uninstalled" };
 
 // Parent keys this by account token + Team so neither cached results nor pending
 // actions survive a scope switch. Every late response also checks this mount.
-export function ShopifyPanel({ teamId, token }: { teamId: string; token: string }) {
+export function ShopifyPanel({ teamId, token, onOpenMemory,onOpenSpaces }: { teamId: string; token: string;onOpenMemory?:(selection:PhysicalSelection)=>void;onOpenSpaces?:()=>void }) {
   const [status, setStatus] = useState<ShopifyStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,6 +101,7 @@ export function ShopifyPanel({ teamId, token }: { teamId: string; token: string 
       </div>
       {status.can_manage&&<ShopifyPermissionsForm key={`${store.connection_id}:${store.permission_revision||0}`} teamId={teamId} token={token} store={store} onChanged={refresh} onAuthorize={()=>connect(store)} editsEnabled={!!status.edits_enabled}/>}
       {status.can_manage&&<ShopifyEditHistory teamId={teamId} token={token} store={store}/>}
+      {status.migration_enabled&&onOpenMemory&&onOpenSpaces&&(store.status==="connected"||store.status==="reconnect_required")&&<MerchantMigrationGuide key={store.connection_id} teamId={teamId} token={token} store={store} onOpenMemory={onOpenMemory} onOpenSpaces={onOpenSpaces}/>}
       {catalog?.connectionId === store.connection_id && <div className={styles.catalog}>
         <div><h4>Catalog preview</h4><p>Shopify records. Storage locations in FindEZ have not been confirmed here.</p></div>
         {catalog.variants.length === 0 && <p>{store.last_success_at ? "No current variants in this catalog." : "No variants imported yet."}</p>}

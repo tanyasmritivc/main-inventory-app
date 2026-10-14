@@ -31,6 +31,7 @@ from app.api.routes.invitations import router as invitations_router
 from app.api.routes.onboarding import router as onboarding_router
 from app.api.routes.shopify import router as shopify_router
 from app.api.routes.shopify_edits import router as shopify_edits_router
+from app.api.routes.merchant_migration import router as merchant_migration_router
 from app.api.routes.physical_memory import router as physical_memory_router
 
 api_router = APIRouter()
@@ -64,4 +65,5 @@ api_router.include_router(invitations_router)
 api_router.include_router(onboarding_router)
 api_router.include_router(shopify_router)
 api_router.include_router(shopify_edits_router)
+api_router.include_router(merchant_migration_router)
 api_router.include_router(physical_memory_router)

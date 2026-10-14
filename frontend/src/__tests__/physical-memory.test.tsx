@@ -96,3 +96,23 @@ test("focus rechecks membership and clears a revoked result",async()=>{
   fireEvent(window,new Event("focus"));await screen.findByText("Your Team access changed. Reopen this Team.");
   expect(screen.queryByLabelText("FindEZ name")).toBeNull();
 });
+
+test("guided variant opens a scoped lookup and a reviewable name without saving",async()=>{
+  render(<AppDialogProvider><PhysicalMemoryPanel teamId="team-a" initialSelection={{connection_id:"store-a",variant_gid:"gid://shopify/ProductVariant/30"}}/></AppDialogProvider>);
+  await screen.findByLabelText("FindEZ name");
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(ask).toHaveBeenCalledWith("team-a","actor-a",{question:"Where is this product?",connection_id:"store-a",variant_gid:"gid://shopify/ProductVariant/30"});
+  expect((screen.getByLabelText("FindEZ name") as HTMLInputElement).value).toBe("Hoodie / Black M");
+  expect(save).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("FindEZ name"),{target:{value:"Our stockroom hoodie"}});
+  fireEvent.change(screen.getByLabelText("Space"),{target:{value:"space-a"}});
+  save.mockRejectedValue(new Error("Try again"));fireEvent.click(screen.getByText("Confirm location"));await screen.findByRole("alert");
+  expect(save.mock.calls[0][2]).toMatchObject({native_label:"Our stockroom hoodie",connection_id:"store-a",variant_gid:"gid://shopify/ProductVariant/30",space_id:"space-a",observed_count:null});
+});
+
+test("suggestions omit Shopify's default variant and preserve existing native names",()=>{
+  expect(api.suggestedMemoryName({...candidate,variant_title:"Default Title"})).toBe("Hoodie");
+  expect(api.suggestedMemoryName({...candidate,native_label:"Our  original name"})).toBe("Our  original name");
+  expect(api.suggestedMemoryName({...candidate,product_title:"  Hoodie\nshirt\t ",variant_title:null})).toBe("Hoodie shirt");
+  expect(Array.from(api.suggestedMemoryName({...candidate,product_title:"😀".repeat(201),variant_title:null}))).toHaveLength(200);
+});

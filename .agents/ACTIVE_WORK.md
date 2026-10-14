@@ -1,5 +1,16 @@
 # Active work
 
+## October 13 guided merchant migration
+
+Root lane `feat/merchant-guided-migration` in `dev/findez-commerce-memory`, based
+on `a58e84e` (draft PR #64). User authorizes continuing guided merchant adoption
+after adjustable owner permissions. Add actual import/mapping progress and a
+small unconfirmed-variant queue, reuse the existing Space/bin confirmation and
+grounded Team lookup, and suggest a reviewable name without repeated catalog entry.
+No automatic physical mapping, photo matching, planning, production migration or
+deployment is authorized/claimed. Owner-edit runtime passes all five CI gates in
+`38521256695`, including the real PostgreSQL tests and production web build.
+
 ## October 13 owner-controlled Shopify permissions
 
 Root lane `feat/shopify-owner-permissions` in `dev/findez-commerce-memory`, based

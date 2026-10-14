@@ -45,12 +45,15 @@ Reprioritize it when production state changes.
 ## P2 later
 
 - Owner-selected Shopify product/stock edit source is in
-  `feat/shopify-owner-permissions`, based on PR #63. Finish exact-source permission,
-  immutable-review, lease and unknown-outcome checks. Then test actual app grants,
+  `feat/shopify-owner-permissions`, runtime `a58e84e` in PR #64. All five CI gates
+  pass in `38521256695`, including SQL isolation and production web build.
+  Test actual app grants,
   revocation, token refresh and mutations in a real development store before any
   merchant launch. `docs/shopify-owner-permissions.md` defines the bounded fields
   and explicit confirmation/recovery behavior. Production remains untouched.
-  The user authorizes continuing guided merchant adoption after this slice.
+  Guided adoption source follows in `feat/merchant-guided-migration`; verify the
+  catalog/storage progress, queue and first grounded lookup on a real test store.
+  Follow `docs/merchant-guided-migration.md` before merchant rollout.
 
 - Optional Shopify connector milestone 1A is implemented in source on
   `feat/shopify-catalog-connection`, disabled and not deployed. User has no Shopify
@@ -59,8 +62,9 @@ Reprioritize it when production state changes.
   and record real OAuth/query/refresh/webhook/retention acceptance. Milestone 1B
   physical-location confirmation and bounded Team-aware lookup are implemented in
   `feat/commerce-physical-memory`, source-only; complete its isolated end-to-end
-  acceptance in `docs/physical-memory.md`. Next product increment: guided merchant
-  adoption from imported variants to confirmed storage, then real visual matching
+  acceptance in `docs/physical-memory.md`. Guided setup now exists as further
+  disabled source; validate adoption from imported variants to confirmed storage
+  and the first lookup, then investigate real visual matching
   and planning supported by verified observations. Measure setup effort, finding
   time and repeat use with a merchant pilot before claiming commercial value. Preserve native
   inventory/pricing; no production migration/deployment without authorization.

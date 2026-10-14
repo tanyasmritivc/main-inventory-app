@@ -1,5 +1,17 @@
 # Decisions
 
+## October 13 guided setup derives progress from verified records
+
+The first merchant adoption flow reuses catalog variants, Team Spaces/bins and
+physical confirmation history. Progress is derived rather than saved as duplicate
+flags: a current full sync completes import, and accessible active placements
+confirm mapping. Multiple placements count once; a catalog image or quantity is
+never physical confirmation. The bounded unmapped queue uses stable variant IDs,
+suggests a name for employee review and requires an explicit save. A first lookup
+does not establish physical finding success. Pilot measurement and real Shopify
+acceptance precede broader matching/planning or commercial claims. This remains
+optional development source with no production authorization.
+
 ## October 13 Shopify access is owner-selected and adjustable
 
 The user requires read/edit according to owner preferences, changeable later, and
