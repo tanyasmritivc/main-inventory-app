@@ -1,5 +1,18 @@
 # Active work
 
+## October 14 two neutral glass selectors complete locally
+
+The user explicitly confirms Capture's Scan Barcode/Auto Extract selector and
+Find's Spaces/Teams selector. Neutral grey selection glass replaces their
+orange fills and orange selected foregrounds. Existing motion, callbacks,
+navigation palette and high-contrast fallback remain. Analysis and all 357
+mobile tests with coverage pass. A complete arm64 native simulator app is now
+installed and running, including the accepted Home changes. Native Capture,
+Spaces, Teams and Home are visually verified; screenshots/receipt are in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14`. The older attach-only preview
+was not persistent across relaunch; the new installed app addresses that.
+No new TestFlight upload or public submission. Wait for further directions.
+
 ## October 14 Home-only colour correction complete locally
 
 Lane `feat/mobile-color-accents` in `dev/findez-mobile-color-accents`, based on

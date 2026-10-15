@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-10-14: Capture and Find selection pills use neutral glass
+
+The user identifies Scan Barcode/Auto Extract and Spaces/Teams as the two
+orange selection pills to change. Use neutral grey glass and ordinary readable
+selected labels/icons, preserving their interaction and the bottom navigation's
+existing palette. Reuse FrostedSurface and its high-contrast fallback. This is
+a scoped selector change, not a return to coloured cards or a layout redesign.
+
 ## 2026-10-14: Home colour belongs to decision numbers, not card fills
 
 The user rejects the experimental coloured surfaces. Home retains neutral cards

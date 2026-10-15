@@ -20,6 +20,7 @@ import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../shopping/shopping_list_page.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
 import 'confirm_scan_sheet.dart';
 import 'review_capture.dart';
 import 'qr_sheet.dart';
@@ -2047,21 +2048,14 @@ class _ScanPageState extends State<ScanPage> {
                           top: 0,
                           bottom: 0,
                           width: halfW,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentTint(context),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x14FFFFFF),
-                                ),
-                                width: 0.5,
-                              ),
-                            ),
+                          child: FrostedSurface(
+                            radius: 99,
+                            shadow: false,
+                            tint: AppTheme.neutralSelectionTint(context),
+                            child: const SizedBox.expand(),
                           ),
                         ),
-                        // Labels row — sits above the sliding pill
+                        // Labels stay fixed above the sliding pill.
                         Row(
                           children: [
                             Expanded(
@@ -2086,9 +2080,7 @@ class _ScanPageState extends State<ScanPage> {
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
                                           color: _cameraMode
-                                              ? AppTheme.accentForeground(
-                                                  context,
-                                                )
+                                              ? AppTheme.textPrimary(context)
                                               : AppTheme.foreground(
                                                   context,
                                                   const Color(0x8CFFFFFF),
@@ -2151,9 +2143,7 @@ class _ScanPageState extends State<ScanPage> {
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
                                           color: !_cameraMode
-                                              ? AppTheme.accentForeground(
-                                                  context,
-                                                )
+                                              ? AppTheme.textPrimary(context)
                                               : AppTheme.foreground(
                                                   context,
                                                   const Color(0x8CFFFFFF),

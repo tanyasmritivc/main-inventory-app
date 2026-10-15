@@ -384,6 +384,9 @@ class AppTheme {
   static Color accentTint(BuildContext context) =>
       accentTintFor(Theme.of(context).brightness);
 
+  static Color neutralSelectionTint(BuildContext context) =>
+      isDark(context) ? const Color(0xFF3A3A3D) : const Color(0xFFE6E6E9);
+
   // Adaptive helpers
   static Color bg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? darkBg : lightBg;

@@ -1,5 +1,21 @@
 # Current state
 
+## October 14 neutral Capture and Find selectors installed in simulator
+
+The user confirms the two requested controls are Scan Barcode/Auto Extract and
+Spaces/Teams. Both now use neutral grey glass with primary-text labels/icons;
+navigation palette and motion are retained. Existing FrostedSurface handles blur
+and the solid high-contrast fallback. Analysis and all 357 mobile tests with
+coverage pass. A full arm64 iOS Simulator build is installed and launched on
+iPhone 16e (iOS 26.2), replacing the older installed preview. Capture, both Find
+selection states and the accepted Home numbers/hints are visually verified.
+Proof is in `Documents/FindEZ/Design/mobile-colors-2026-10-14`. This is a local
+debug app, not another TestFlight delivery; TestFlight remains build 64.
+Initial native builds hit disk exhaustion. Generated compiler cache and the
+temporary build-64 verification extraction were cleared after the durable
+release IPA/archive hashes were reverified. Release artifacts and app data are
+preserved. Wait for further page instructions; no broad palette pass.
+
 ## October 14 Home-only number colours and smaller placeholder
 
 `feat/mobile-color-accents` in `dev/findez-mobile-color-accents` is based on
