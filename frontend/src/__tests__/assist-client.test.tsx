@@ -12,7 +12,7 @@ beforeEach(() => {
   localStorage.clear();
   jest.mocked(accountRequest).mockImplementation(async (_account, path) => {
     if (path === '/conversations') return [{ id: 'fixture-chat', title: 'Workshop tools' }] as never;
-    if (path === '/conversations/fixture-chat') return { messages: [{ id: 'answer', role: 'assistant', content: 'The recorded location is Workbench.', created_at: '2026-10-15T00:00:00Z' }] } as never;
+    if (path === '/conversations/fixture-chat') return { messages: [{ id: 'question', role: 'user', content: 'Where are my tools?', created_at: '2026-10-15T00:00:00Z' }, { id: 'answer', role: 'assistant', content: 'The recorded location is Workbench.', created_at: '2026-10-15T00:00:00Z' }] } as never;
     throw new Error(`Unexpected fixture request: ${path}`);
   });
 });

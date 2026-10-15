@@ -1744,6 +1744,15 @@ html.dark .app-frame .ask-workspace {
 .app-frame .ask-empty p { margin: 0; }
 .app-frame .ask-chat .ask-composer { margin-top: 0; }
 .app-frame .ask-thread:not(:empty) { padding-bottom: 20px; }
+.app-frame .ask-message.is-user { width: fit-content; max-width: 85%; margin-left: auto; }
+.app-frame .ask-message.is-user > strong { text-align: right; }
+.app-frame .ask-message.is-user .ask-body {
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--app-surface-2);
+  color: var(--app-text);
+  overflow-wrap: anywhere;
+}
 .app-frame .ask-composer-box {
   border: 1px solid var(--app-border);
   border-radius: 24px;

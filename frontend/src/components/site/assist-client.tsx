@@ -385,7 +385,7 @@ function AssistClientWorkspace({
                 [process.env.NEXT_PUBLIC_SUPABASE_URL || ""],
               );
               return (
-                <article className="ask-message" key={m.id}>
+                <article className={`ask-message${m.role === "user" ? " is-user" : ""}`} key={m.id}>
                   <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>
                   {photoUrl && (
                     <img src={photoUrl} alt="Photo used for this question" />
