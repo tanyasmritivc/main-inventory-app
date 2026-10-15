@@ -1,5 +1,14 @@
 # Active work
 
+## October 15 centered Ask FindEZ
+
+Completed and published PR #76, runtime `80ba01b`, with centered Ask content,
+static light/dark gradient, history dialog and right-aligned neutral user bubbles.
+238 web tests, TypeScript, lint (zero errors), all five CI jobs and responsive
+Safari previews pass. Live route/assets checks pass. Existing Safari login had
+expired before the signed-in recheck. Backend/database unchanged; release and
+rollback details are recorded in CURRENT_STATE.md.
+
 ## October 14 workspace and inventory selection
 
 User explicitly authorizes planning and executing a website-wide hierarchy,

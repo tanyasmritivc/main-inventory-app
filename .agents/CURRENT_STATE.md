@@ -1,5 +1,26 @@
 # Current state
 
+## October 15 centered Ask page published
+
+PR #76 website runtime `80ba01b557dc38e5f24dc8d0472c39be2c56bb28` is live.
+Ask uses a centered empty state and composer with a faint static sage/lavender
+gradient in both themes. History opens in a bounded dialog; user prompts sit in
+right-aligned neutral bubbles, and FindEZ replies remain on the left. Existing
+photo, streaming, draft, source and inventory behavior is preserved.
+
+All 238 web tests, TypeScript and all five CI jobs pass (38822672148). Changed-file
+lint has zero errors and three existing warnings. Actual-component Safari
+previews verify desktop centering, 390px light/dark prompt bubbles and 390x500
+history dialogs. Live public/authentication checks pass; a signed-in visual
+recheck was unavailable because the existing Safari session had expired.
+
+Build `yM8utqb1HXdG80bVkcZYW` runs from
+`/home/ubuntu/findez-web-releases/web-ask-centered-20261015-r2/frontend`.
+11 public routes, 20 authentication guards and three CSS assets pass, preserving
+production configuration and 1,304 prior immutable assets. Backend/database are
+unchanged. Receipts: `Documents/FindEZ/Releases/ask-centered-2026-10-15/final`.
+Rollback: `/home/ubuntu/findez-ask-centered-20261015-r2/previous-web-rebuild.conf`.
+
 ## October 15 workspace hierarchy published
 
 PR #75 is live: Workspace (Personal or Team), then Inventory, then dashboard.
