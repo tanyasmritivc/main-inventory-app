@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, MessageSquarePlus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { AskMarkdown } from "@/components/site/ask-markdown";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
 import { accountRequest } from "@/lib/account-request";
 import {
@@ -56,6 +57,7 @@ function AssistClientWorkspace({
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
   const photoInput = useRef<HTMLInputElement>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const loadHistory = useCallback(async () => {
     if (!accountId) return;
     const account = accountId,
@@ -119,6 +121,7 @@ function AssistClientWorkspace({
   }
   async function openConversation(id: string) {
     if (!accountId || sending) return;
+    setHistoryOpen(false);
     const account = accountId,
       generation = epoch.current,
       ticket = ++request.current;
@@ -305,11 +308,61 @@ function AssistClientWorkspace({
     }
   }
   return (
-    <section>
-      <header className="workspace-heading">
-        <div>
-          <h1>Ask FindEZ</h1>
-        </div>
+    <section className="ask-workspace">
+      <header className="ask-toolbar">
+        <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+          <DialogTrigger asChild>
+            <button className="workspace-button" disabled={sending}>History</button>
+          </DialogTrigger>
+          <DialogContent className="workspace-dialog ask-history-dialog" aria-describedby={undefined}>
+            <div className="app-frame ask-history-surface">
+              <aside className="workspace-history" aria-label="Conversation history">
+                <div className="workspace-section-heading">
+                  <DialogTitle>History</DialogTitle>
+                  <button
+                    className="workspace-button"
+                    aria-label="Refresh history"
+                    title="Refresh history"
+                    disabled={sending}
+                    onClick={() =>
+                      void loadHistory().catch(() =>
+                        setError("Could not refresh history."),
+                      )
+                    }
+                  >
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
+                {conversations.map((c) => (
+                  <div className="ask-history-row" key={c.id}>
+                    <button
+                      className="ask-history-title"
+                      title={c.title || "New conversation"}
+                      aria-current={c.id === conversationId ? "true" : undefined}
+                      disabled={sending}
+                      onClick={() => void openConversation(c.id)}
+                    >
+                      {c.title || "New conversation"}
+                    </button>
+                    <button
+                      className="ask-history-delete"
+                      disabled={sending}
+                      aria-label={`Delete ${c.title || "conversation"}`}
+                      onClick={() => void removeConversation(c.id)}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+                {!conversations.length && (
+                  <p className="workspace-muted">
+                    Your saved conversations appear here.
+                  </p>
+                )}
+              </aside>
+            </div>
+          </DialogContent>
+        </Dialog>
         <button
           className="workspace-button"
           onClick={newChat}
@@ -319,52 +372,9 @@ function AssistClientWorkspace({
           New conversation
         </button>
       </header>
-      <div className="workspace-split">
-        <aside className="workspace-history" aria-label="Conversation history">
-          <div className="workspace-section-heading">
-            <h2>History</h2>
-            <button
-              className="workspace-button"
-              aria-label="Refresh history"
-              title="Refresh history"
-              disabled={sending}
-              onClick={() =>
-                void loadHistory().catch(() =>
-                  setError("Could not refresh history."),
-                )
-              }
-            >
-              <RefreshCw size={14} />
-            </button>
-          </div>
-          {conversations.map((c) => (
-            <div className="ask-history-row" key={c.id}>
-              <button
-                className="ask-history-title"
-                title={c.title || "New conversation"}
-                aria-current={c.id === conversationId ? "true" : undefined}
-                disabled={sending}
-                onClick={() => void openConversation(c.id)}
-              >
-                {c.title || "New conversation"}
-              </button>
-              <button
-                className="ask-history-delete"
-                disabled={sending}
-                aria-label={`Delete ${c.title || "conversation"}`}
-                onClick={() => void removeConversation(c.id)}
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-          {!conversations.length && (
-            <p className="workspace-muted">
-              Your saved conversations appear here.
-            </p>
-          )}
-        </aside>
-        <div>
+      <div className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}>
+        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>Ask FindEZ</h1>
+        <div className="ask-thread">
           {opening ? (
             <p role="status">Opening conversation…</p>
           ) : (
@@ -452,19 +462,21 @@ function AssistClientWorkspace({
               );
             })
           )}
-          {!messages.length && (
-            <div className="ask-empty">
-              <p className="workspace-muted">
-                Find an item, check stock, or attach a photo.
-              </p>
-            </div>
-          )}
-          {(error || sessionError) && (
-            <div className="workspace-error" role="alert">
-              {error || sessionError}
-            </div>
-          )}
-          <form className="ask-composer" onSubmit={(e) => void send(e)}>
+        </div>
+        {!messages.length && !opening && (
+          <div className="ask-empty">
+            <p className="workspace-muted">
+              Find an item, check stock, or attach a photo.
+            </p>
+          </div>
+        )}
+        {(error || sessionError) && (
+          <div className="workspace-error" role="alert">
+            {error || sessionError}
+          </div>
+        )}
+        <form className="ask-composer" onSubmit={(e) => void send(e)}>
+          <div className="ask-composer-box">
             {preview && (
               <div className="ask-photo-preview">
                 <img src={preview} alt="Attached photo" />
@@ -527,11 +539,11 @@ function AssistClientWorkspace({
                 </button>
               )}
             </div>
-            <p className="workspace-muted ask-disclaimer">
-              Check AI answers before making changes.
-            </p>
-          </form>
-        </div>
+          </div>
+          <p className="workspace-muted ask-disclaimer">
+            Check AI answers before making changes.
+          </p>
+        </form>
       </div>
     </section>
   );

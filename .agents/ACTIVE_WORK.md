@@ -1,5 +1,13 @@
 # Active work
 
+## October 15 centered Ask FindEZ
+
+Lane `fix/web-ask-centered-20261015` owns the website Ask layout only. Center the
+empty state and composer, make history available on demand, and use a subtle
+static light/dark gradient. Preserve conversations, photos, sources, send/stop
+behavior and inventory isolation. Validate web checks and responsive visual
+previews, then publish through an isolated website release.
+
 ## October 14 workspace and inventory selection
 
 User explicitly authorizes planning and executing a website-wide hierarchy,
