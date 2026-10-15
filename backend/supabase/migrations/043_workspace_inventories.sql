@@ -4,7 +4,7 @@ BEGIN;
 
 CREATE TABLE public.app_inventories (
   inventory_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  owner_user_id uuid NOT NULL,
   team_id uuid REFERENCES public.teams(team_id) ON DELETE CASCADE,
   created_by_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   name text NOT NULL CHECK (length(btrim(name)) BETWEEN 1 AND 100),
@@ -32,7 +32,7 @@ BEGIN
     WHERE owner_user_id = v_owner AND team_id IS NOT DISTINCT FROM p_team_id AND is_default;
   IF v_id IS NULL THEN
     INSERT INTO public.app_inventories(owner_user_id, team_id, created_by_user_id, name, is_default)
-      VALUES(v_owner, p_team_id, v_owner, CASE WHEN p_team_id IS NULL THEN 'My inventory' ELSE 'Inventory' END, true)
+      VALUES(v_owner, p_team_id, (SELECT id FROM auth.users WHERE id=v_owner), CASE WHEN p_team_id IS NULL THEN 'My inventory' ELSE 'Inventory' END, true)
       ON CONFLICT DO NOTHING RETURNING inventory_id INTO v_id;
     IF v_id IS NULL THEN
       SELECT inventory_id INTO STRICT v_id FROM public.app_inventories
@@ -558,6 +558,12 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.findez_delete_inventory_team(uuid,uuid) FROM public,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.findez_delete_inventory_team(uuid,uuid) TO service_role;
+
+-- Older installations retained records after some owner accounts were removed.
+-- Keep those original owner IDs, without reassigning or exposing their data.
+-- Enforce real accounts for every new/changed owner after the backfill.
+ALTER TABLE public.app_inventories ADD CONSTRAINT app_inventories_owner_user_id_fkey
+  FOREIGN KEY(owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE NOT VALID;
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;

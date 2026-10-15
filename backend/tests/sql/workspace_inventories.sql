@@ -23,6 +23,11 @@ create table if not exists public.project_kit_reservations (
   kit_item_id uuid references public.project_kit_items(id), inventory_item_id uuid references public.items(item_id),quantity integer,created_by_user_id uuid
 );
 
+-- Historical owner IDs can outlive an account in the deployed schema.
+insert into public.teams(team_id,name,owner_user_id) values
+('a9000000-0000-0000-0000-000000000001','Legacy workspace','a9000000-0000-0000-0000-000000000002');
+insert into public.items(user_id,name,category,quantity,location) values
+('a9000000-0000-0000-0000-000000000002','Retained legacy part','Hardware',1,'Unsorted');
 create temporary table inventory_before as select item_id,user_id,name,quantity,space_id from public.items;
 create table if not exists public.team_shares (
   share_id uuid primary key default gen_random_uuid(),owner_user_id uuid not null,share_name text
@@ -32,6 +37,13 @@ select pg_temp.check(not exists (
   select * from inventory_before except select item_id,user_id,name,quantity,space_id from public.items
 ), 'inventory grouping retains every original item and owner');
 select pg_temp.check((select count(*) = 0 from public.items where inventory_id is null), 'legacy items receive a default inventory');
+select pg_temp.check((select inv.owner_user_id=i.user_id and inv.created_by_user_id is null from public.items i join public.app_inventories inv using(inventory_id) where i.name='Retained legacy part'), 'removed-account records retain their original owner without impersonation');
+do $$ begin
+  begin
+    insert into public.app_inventories(owner_user_id,name) values('a9000000-0000-0000-0000-000000000003','Invalid new owner');
+    raise exception 'new unknown owner accepted';
+  exception when foreign_key_violation then raise notice 'PASS: new inventory owners must have real accounts'; end;
+end $$;
 select pg_temp.check((select count(*) = 0 from public.items i join public.spaces s on s.id=i.space_id where i.inventory_id<>s.inventory_id), 'linked Team Spaces and items receive the same boundary');
 
 begin;
