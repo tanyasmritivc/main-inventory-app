@@ -711,17 +711,23 @@ html.dark .app-frame {
   object-fit: contain;
 }
 .command-panel {
+  --command-top: clamp(16px, 10dvh, 80px);
   position: fixed !important;
   left: 50% !important;
-  top: 18% !important;
+  top: var(--command-top) !important;
+  /* Dialog's utility translate is independent of transform. Own both here. */
+  translate: none;
   transform: translateX(-50%) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   width: min(560px, calc(100vw - 32px)) !important;
   padding: 0 !important;
   border: 1px solid #ddd;
   border-radius: 12px;
   background: #fff;
   color: #161616;
-  max-height: 65vh;
+  max-height: min(560px, calc(100dvh - var(--command-top) - 16px));
   overflow: hidden;
   box-shadow: 0 20px 80px #0003;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -732,7 +738,8 @@ html.dark .app-frame {
   border-color: #303033;
 }
 .command-panel .command-input-row {
-  padding: 18px;
+  flex-shrink: 0;
+  padding: 0 52px 0 18px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -747,8 +754,10 @@ html.dark .app-frame {
   color: inherit;
 }
 .command-panel .command-results {
+  min-height: 0;
   overflow: auto;
-  max-height: 50vh;
+  overscroll-behavior: contain;
+  max-height: none;
   padding: 9px;
 }
 .command-panel .command-results button {
@@ -1572,6 +1581,21 @@ html .app-frame.is-team-workspace {
   padding: 16px 0;
 }
 .app-frame .settings-panel > footer { padding: 16px 0 0; background: transparent; }
+.app-frame .settings-link-row {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 16px;
+}
+.app-frame .settings-link-row > span { min-width: 0; }
+.app-frame .settings-link-row > svg { justify-self: end; }
+.app-frame .settings-link-label { display: flex; align-items: center; gap: 12px; }
+.app-frame .settings-link-copy { display: grid; gap: 4px; }
+.app-frame .settings-row-icon { flex-shrink: 0; }
+.app-frame .settings-link-row + .settings-link-row { border-top: 1px solid var(--app-border); }
+.app-frame .settings-static-row > :is(span, strong) { font-size: 13px; }
+.app-frame .settings-static-row > strong { min-width: 0; overflow-wrap: anywhere; }
+.app-frame .settings-static-row > .settings-appearance-label { flex-direction: column; align-items: flex-start; gap: 4px; }
+.app-frame .settings-theme-choice { justify-self: end; width: fit-content; max-width: 100%; }
 .app-frame .workspace-chips { gap: 8px; margin-top: 16px; }
 .app-frame .workspace-chips :is(button, a) { border: 0; padding: 6px 12px; }
 .app-frame .workspace-chips .is-active { background: var(--app-surface-2); color: var(--app-text); }
@@ -1619,6 +1643,7 @@ html .app-frame.is-team-workspace {
 .app-frame .label-toolbar .product-tabs button { min-height: 44px; padding: 8px 0 12px; }
 @media (max-width: 859px) {
   .app-frame :is(.workspace-heading, .product-page-header, .inventory-page-header) { align-items: flex-start; }
+  .app-frame .settings-theme-choice { justify-self: start; }
   .app-frame .workspace-actions { gap: 8px; }
   .app-frame .find-review-card { padding: 16px; }
   .app-frame .source-tabs { gap: 18px; }

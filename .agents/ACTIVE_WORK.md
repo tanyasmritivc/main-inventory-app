@@ -1,5 +1,21 @@
 # Active work
 
+## October 14 Settings and navigation popup layout correction
+
+Lane `fix/web-settings-rows-20261014`, based on `fc20f3a`, owns the user's
+Settings screenshot follow-up. Text-only links inherit a three-column icon grid,
+putting Plans/legal labels in its 32px icon column. Normalize link rows to a
+flexible content column plus a trailing chevron, group existing Developer icons
+with their labels, and keep Appearance compact. Preserve all routes, actions and
+account state. All 223 web tests, TypeScript and Settings lint pass. Actual
+component previews verify all sections in both themes and desktop/390px widths.
+The top navigation popup also resets the independent utility translate, stays
+inside short viewports, scrolls results beneath its visible input, removes repeated
+section captions and restores trigger focus on close. Use the existing isolated
+website release process. Not deployed yet. The user additionally requests durable
+original spreadsheet columns across backend, mobile and web; that work follows
+in a separate implementation lane.
+
 ## October 14 website clarity live
 
 Lane `release/web-launch-20261014`, based on `4e71506`, is complete in PR #72.

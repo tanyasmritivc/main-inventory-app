@@ -381,7 +381,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
 
       <section className="settings-panel">
         <Link className="settings-link-row" href="/pricing">
-          <span><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
+          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
           <ChevronRight size={16} />
         </Link>
       </section>
@@ -391,19 +391,15 @@ function SettingsWorkspace({ email }: { email: string | null }) {
           <h2>Developer</h2>
         </header>
         <Link className="settings-link-row" href="/settings/api-keys">
-          <span className="settings-row-icon">
-            <KeyRound size={16} />
-          </span>
-          <span>
+          <span className="settings-link-label">
+            <span className="settings-row-icon"><KeyRound size={16} /></span>
             <strong>API keys</strong>
           </span>
           <ChevronRight size={16} />
         </Link>
         <Link className="settings-link-row" href="/docs/api">
-          <span className="settings-row-icon">
-            <BookOpen size={16} />
-          </span>
-          <span>
+          <span className="settings-link-label">
+            <span className="settings-row-icon"><BookOpen size={16} /></span>
             <strong>API documentation</strong>
           </span>
           <ChevronRight size={16} />
@@ -415,15 +411,15 @@ function SettingsWorkspace({ email }: { email: string | null }) {
           <h2>Help and information</h2>
         </header>
         <Link className="settings-link-row" href="/privacy">
-          Privacy policy
+          <span>Privacy policy</span>
           <ChevronRight size={16} />
         </Link>
         <Link className="settings-link-row" href="/terms">
-          Terms of service
+          <span>Terms of service</span>
           <ChevronRight size={16} />
         </Link>
         <a className="settings-link-row" href="mailto:info@findez.ai">
-          Contact support
+          <span>Contact support</span>
           <ChevronRight size={16} />
         </a>
       </section>
@@ -436,7 +432,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
           <strong>{email || "Not available"}</strong>
         </div>
         <div className="settings-static-row">
-          <span>
+          <span className="settings-appearance-label">
             Appearance<small>Follows your device unless you pick one.</small>
           </span>
           <div className="settings-theme-choice">

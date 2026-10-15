@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "@/components/site/app-shell";
 import { SettingsClient } from "@/components/site/settings-client";
@@ -21,6 +21,7 @@ const client = {
     }),
   },
 };
+const mockNavigate = jest.fn();
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => client,
 }));
@@ -31,7 +32,7 @@ jest.mock("@/lib/use-api-session", () => ({
 jest.mock("next/navigation", () => ({
   usePathname: () => "/settings",
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockNavigate,
     replace: jest.fn(),
     refresh: jest.fn(),
   }),
@@ -60,6 +61,24 @@ beforeEach(() => {
     .mockImplementation(async (_id, path) =>
       path === "/notifications" ? { unread_count: 2 } : profile,
     );
+});
+test("page search opens with its input focused, filters destinations and closes after navigation or Escape", async () => {
+  const user = userEvent.setup();
+  render(<AppShell><p>Workspace</p></AppShell>);
+  const trigger = screen.getByRole("button", { name: "Go to a page" });
+  await user.click(trigger);
+  const dialog = screen.getByRole("dialog", { name: "Navigate FindEZ" });
+  const input = within(dialog).getByRole("textbox", { name: "Search features and pages" });
+  expect(document.activeElement).toBe(input);
+  await user.type(input, "documents");
+  await user.click(within(dialog).getByRole("button", { name: "Documents and notes" }));
+  expect(mockNavigate).toHaveBeenCalledWith("/documents");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  await user.click(trigger);
+  expect(screen.getByRole("textbox", { name: "Search features and pages" })).toHaveProperty("value", "");
+  await user.keyboard("{Escape}");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(document.activeElement).toBe(trigger);
 });
 test("loads identity and the saved avatar without waiting on a network getUser request", async () => {
   render(
