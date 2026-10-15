@@ -174,8 +174,6 @@ class _InvitationDialogState extends State<InvitationDialog> {
               if (_preview != null)
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.action,
-                    foregroundColor: AppTheme.onAction,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

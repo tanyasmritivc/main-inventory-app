@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'ui/app_colors.dart';
 import 'ui/brand_colors.dart';
+import 'ui/glass_control.dart';
 
 class AppTheme {
   static ThemeData create(Brightness brightness) {
@@ -10,10 +11,18 @@ class AppTheme {
     final bg = adapt(AppColors.background);
     final surface = adapt(AppColors.surface);
     final surface2 = adapt(AppColors.surface2);
+    Widget glassBackground(
+      BuildContext context,
+      Set<WidgetState> states,
+      Widget? child,
+    ) => GlassControl(
+      enabled: !states.contains(WidgetState.disabled),
+      child: child ?? const SizedBox.shrink(),
+    );
 
     final scheme = brightness == Brightness.dark
         ? const ColorScheme.dark(
-            primary: BrandColors.signal,
+            primary: BrandColors.paper,
             onPrimary: BrandColors.ink,
             primaryContainer: AppColors.surface2,
             onPrimaryContainer: BrandColors.paper,
@@ -38,8 +47,8 @@ class AppTheme {
             onErrorContainer: AppColors.danger,
           )
         : const ColorScheme.light(
-            primary: BrandColors.signal,
-            onPrimary: BrandColors.ink,
+            primary: BrandColors.ink,
+            onPrimary: BrandColors.paper,
             primaryContainer: BrandColors.surface,
             onPrimaryContainer: BrandColors.ink,
             secondary: lightTextSecondary,
@@ -157,23 +166,23 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: BrandColors.signal,
-        foregroundColor: BrandColors.ink,
-        elevation: 6,
+        backgroundColor: accentTintFor(brightness),
+        foregroundColor: adapt(Colors.white),
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
-        indicatorColor: accentTintFor(brightness),
+        indicatorColor: navigationTintFor(brightness),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return TextStyle(
-              color: accentForegroundFor(brightness),
+              color: navigationForegroundFor(brightness),
               fontSize: 11,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
@@ -188,7 +197,7 @@ class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return IconThemeData(
-              color: accentForegroundFor(brightness),
+              color: navigationForegroundFor(brightness),
               size: 22,
             );
           }
@@ -206,8 +215,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.signal,
-          foregroundColor: BrandColors.ink,
+          backgroundColor: Colors.transparent,
+          foregroundColor: adapt(Colors.white),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -216,7 +225,16 @@ class AppTheme {
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
           ),
-        ),
+        ).copyWith(backgroundBuilder: glassBackground),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: adapt(Colors.white),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+        ).copyWith(backgroundBuilder: glassBackground),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -361,31 +379,37 @@ class AppTheme {
   static const Color darkTextMuted = Color(0xFF8E8E93);
   static const Color darkHint = BrandColors.inkMuted;
 
-  // Shared accent colors (same in both modes)
+  // Shared semantic colors and neutral action fill.
   static const Color amber = AppColors.warning;
   static const Color danger = AppColors.danger;
   static const Color success = AppColors.success;
   static const Color blue = AppColors.info;
-  static const Color action = BrandColors.signal;
+  static const Color action = AppColors.accent;
   static const Color onAction = BrandColors.ink;
 
-  // Signal stays exact on filled actions. Orange foreground derivatives keep
-  // small text/icons readable on neutral surfaces and restrained selection tints.
+  // Controls are neutral. Navigation keeps its separate orange selection.
   static Color accentForegroundFor(Brightness brightness) =>
-      brightness == Brightness.dark
-      ? const Color(0xFFF6803D)
-      : const Color(0xFFB83E05);
+      brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
   static Color accentForeground(BuildContext context) =>
       accentForegroundFor(Theme.of(context).brightness);
-  static Color accentTintFor(Brightness brightness) => Color.alphaBlend(
-    BrandColors.signal.withValues(alpha: 0.08),
-    brightness == Brightness.dark ? darkSurface : lightSurface,
-  );
+  static Color accentTintFor(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const Color(0xFF333335)
+      : const Color(0xFFF0F0F2);
   static Color accentTint(BuildContext context) =>
       accentTintFor(Theme.of(context).brightness);
 
+  static Color navigationForegroundFor(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const Color(0xFFF6803D)
+      : const Color(0xFFB83E05);
+  static Color navigationTintFor(Brightness brightness) => Color.alphaBlend(
+    BrandColors.signal.withValues(alpha: 0.08),
+    brightness == Brightness.dark ? darkSurface : lightSurface,
+  );
+
   static Color neutralSelectionTint(BuildContext context) =>
-      isDark(context) ? const Color(0xFF3A3A3D) : const Color(0xFFE6E6E9);
+      accentTint(context);
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>
@@ -450,6 +474,9 @@ class AppTheme {
     // Ink is also a background token. In a foreground role it must stay
     // readable, including when a child receives an already-resolved color.
     if (rgb == 0x111112) return color;
+    if (rgb == 0xE6E6E9 || rgb == 0xE8590C) {
+      return accentForeground(context).withValues(alpha: color.a);
+    }
     if (color.a > 0 &&
         (rgb == 0xFFFFFF ||
             rgb == 0xF2F2F7 ||
@@ -561,7 +588,7 @@ class AppTheme {
       case 0xFF7A2F:
         return withAlpha(dark ? darkTextSecondary : lightTextSecondary);
       case 0xE8590C:
-        return withAlpha(BrandColors.signal);
+        return withAlpha(action);
       case 0x13241E:
         return dark ? const Color(0xFF15281F) : const Color(0xFFEAF3EE);
       case 0x281316:

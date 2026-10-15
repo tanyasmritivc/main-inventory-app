@@ -635,8 +635,6 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.action,
-                          foregroundColor: AppTheme.onAction,
                           elevation: 0,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(

@@ -1609,10 +1609,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       ),
                       decoration: BoxDecoration(
                         color: isOwnerRow
-                            ? AppTheme.adaptive(
-                                context,
-                                const Color(0x1AFBBF24),
-                              )
+                            ? AppTheme.neutralSelectionTint(context)
                             : AppTheme.adaptive(
                                 context,
                                 const Color(0xFF171717),
@@ -1623,10 +1620,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         isOwnerRow ? 'Owner' : 'Member',
                         style: TextStyle(
                           color: isOwnerRow
-                              ? AppTheme.foreground(
-                                  context,
-                                  const Color(0xFFFBBF24),
-                                )
+                              ? AppTheme.textPrimary(context)
                               : AppTheme.foreground(
                                   context,
                                   const Color(0x73FFFFFF),

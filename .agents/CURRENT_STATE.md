@@ -1,5 +1,24 @@
 # Current state
 
+## October 14 app-wide neutral controls, orange bottom navigation
+
+The user expands this lane to all mobile UI accents and confirms orange should
+remain only in bottom navigation. Shared action/selection roles are neutral;
+navigation has separate orange tokens. GlassFab uses a grey frosted surface
+with a readable icon and quieter shadow. Primary/filled/elevated controls,
+category/appearance pills, chat controls, onboarding/tour accents, Teams icons
+and invite surfaces inherit neutral styles. Decorative owner badges are also
+neutral. Supplied brand artwork, accepted Home counts and semantic statuses
+remain. Native iPhone 16e checks cover Find, Space filters/Add menu, Teams,
+chat and onboarding, with Space/Teams/onboarding checked in both themes.
+The final arm64 debug build is installed; Light mode is restored and Find is
+open for review. No inventory/answer saves or chat submissions were made.
+Flutter analysis is clean and all 357 mobile tests with coverage pass. A final
+parallel run stalled during tooling cleanup; a clean serial rerun passes in full.
+Proof is in `Documents/FindEZ/Design/mobile-colors-2026-10-14` using the
+`*-neutral-controls-*-native.png` filenames. No new TestFlight upload or public
+submission; TestFlight remains build 64.
+
 ## October 14 neutral Capture and Find selectors installed in simulator
 
 The user confirms the two requested controls are Scan Barcode/Auto Extract and

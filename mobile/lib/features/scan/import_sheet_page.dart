@@ -257,8 +257,6 @@ class _ReadyView extends StatelessWidget {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              backgroundColor: AppTheme.action,
-              foregroundColor: AppTheme.onAction,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),

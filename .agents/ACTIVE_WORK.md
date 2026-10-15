@@ -1,5 +1,17 @@
 # Active work
 
+## October 14 app-wide neutral UI accent refinement
+
+Lane `feat/mobile-color-accents` now covers the user's app-wide accent request:
+all shared action/selection roles are neutral grey/glass; bottom navigation
+retains dedicated orange tokens. Floating plus buttons, Space filter pills,
+Teams invite/icons, chat, onboarding/tour and default button styles follow the
+same roles. Brand artwork and accepted Home number colours remain. The final
+arm64 simulator app is installed, with native checks in both themes and Light
+restored on Find. Analysis and all 357 mobile tests with coverage pass.
+Screenshot proof is in the existing mobile-colors design
+folder. No customer writes, TestFlight upload or public submission.
+
 ## October 14 two neutral glass selectors complete locally
 
 The user explicitly confirms Capture's Scan Barcode/Auto Extract selector and

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import 'app_typography.dart';
 
-/// Active purchase counts use the brand accent; labels and icons convey state.
+/// Purchase counts use neutral foregrounds; labels and icons convey state.
 abstract final class RestockStatusColors {
   static Color toBuy(BuildContext context) =>
       AppTheme.accentForeground(context);

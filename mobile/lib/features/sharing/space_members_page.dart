@@ -154,19 +154,15 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.adaptive(
+                                        color: AppTheme.neutralSelectionTint(
                                           context,
-                                          const Color(0x1AFBBF24),
                                         ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: AppText(
                                         'Owner',
                                         style: TextStyle(
-                                          color: AppTheme.foreground(
-                                            context,
-                                            Color(0xFFFBBF24),
-                                          ),
+                                          color: AppTheme.textPrimary(context),
                                           fontSize: 9,
                                           fontWeight: FontWeight.w700,
                                         ),

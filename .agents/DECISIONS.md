@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-10-14: Mobile UI accents are neutral except bottom navigation
+
+The user expands the request to the whole mobile app and explicitly keeps
+orange only in bottom navigation. Buttons, floating Add controls, selection
+pills, focus accents, onboarding/tour controls, Teams icons and invite surfaces
+use neutral grey or restrained glass. Keep navigation's orange in dedicated
+tokens so shared action styles cannot recolour other controls. This supersedes
+the earlier orange primary-action treatment. Preserve supplied logo assets,
+the accepted Home number colours and semantic warning/error/success meanings.
+Use readable foregrounds in both themes and the existing solid high-contrast
+fallback. No route, API, permissions or data behavior changes belong here.
+
 ## 2026-10-14: Capture and Find selection pills use neutral glass
 
 The user identifies Scan Barcode/Auto Extract and Spaces/Teams as the two
