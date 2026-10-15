@@ -1,5 +1,25 @@
 # Current state
 
+## October 14 original imported fields published
+
+PR #74 runtime `bd1c8a1` preserves ordered original Excel/CSV/JSON source fields
+and maps each sheet independently, preventing distinct source rows from merging.
+Web and mobile source show Imported details with exact named headers, duplicate
+and unnamed positions, nested JSON and empty/zero/false values. Read-only
+verification retains all source values in 295 rows across the supplied workbook.
+459 backend/API-doc tests, 225 web tests, TypeScript, changed-file lint and Flutter
+analysis pass; all five exact-source CI jobs pass (38686833571), including full
+mobile tests and PostgreSQL migration checks. Local mobile tests initially ran
+out of disk; generated-cache cleanup was completed and a rerun was interrupted.
+Migration 042 and three hash-guarded backend files are live, preserving existing
+items and unrelated source. The isolated website build `dY0WQXameBIfVROypzxBZ`
+at `web-import-columns-20261014/frontend` passes 11 public routes, 17 auth guards
+and three CSS checks, preserving configuration and 1,122 prior assets. Receipts
+and rollback are in `Documents/FindEZ/Releases/import-columns-2026-10-14` and
+`/home/ubuntu/findez-import-columns-20261014`. Existing items were not reimported;
+previously discarded fields cannot be recovered automatically. Mobile support is
+committed and CI-verified but is not in the existing TestFlight build 65.
+
 ## October 14 Settings and navigation correction published
 
 PR #73 runtime `7b44165` is live. Settings Plans/legal links use full-width text

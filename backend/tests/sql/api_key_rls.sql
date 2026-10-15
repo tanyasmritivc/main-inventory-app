@@ -187,3 +187,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 
 \ir onboarding_answers.sql
 \ir item_import_data.sql
+\ir workspace_inventories.sql

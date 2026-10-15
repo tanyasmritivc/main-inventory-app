@@ -15,12 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache
-def get_supabase_admin() -> Client:
+def get_supabase_raw() -> Client:
     settings = get_settings()
     return create_client(
         str(settings.supabase_url),
         str(settings.supabase_service_role_key),
     )
+
+
+def get_supabase_admin() -> Client:
+    from app.services.inventory_scope import scoped_client
+    return scoped_client(get_supabase_raw())
 
 
 _thread_local = threading.local()
@@ -41,7 +46,8 @@ def create_supabase_admin() -> Client:
             str(settings.supabase_service_role_key),
         )
         _thread_local.admin_client = client
-    return client
+    from app.services.inventory_scope import scoped_client
+    return scoped_client(client)
 
 
 def supabase_execute_with_retry(fn: Callable[[], T], max_attempts: int = 3) -> T:

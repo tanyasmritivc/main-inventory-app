@@ -11,6 +11,7 @@ from uuid import uuid4
 import json as _json_dumps
 from typing import Any, Iterator
 
+from app.services.inventory_scope import inventory_cache_key
 from app.services.agent_gateway_client import AgentGatewayClient
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads, project_answer_text
@@ -430,15 +431,15 @@ def _save_session(user_id: str, state: _SessionState) -> None:
 
 def _get_state(user_id: str) -> _SessionState:
     with _LOCK:
-        if user_id not in _SESSION:
-            _SESSION[user_id] = _load_session(user_id)
-        return _SESSION[user_id]
+        if inventory_cache_key(user_id) not in _SESSION:
+            _SESSION[inventory_cache_key(user_id)] = _load_session(user_id)
+        return _SESSION[inventory_cache_key(user_id)]
 
 
 def _persist_state(user_id: str) -> None:
     """Write current in-memory state to Supabase."""
     with _LOCK:
-        state = _SESSION.get(user_id)
+        state = _SESSION.get(inventory_cache_key(user_id))
     if state:
         _save_session(user_id, state)
 

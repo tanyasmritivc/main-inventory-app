@@ -7,6 +7,7 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 from app.services.catalog_service import verified_catalog_id_for_identity
 from app.services.items_repo import _resolve_space_id, invalidate_inventory_cache
 from app.services.supabase_client import get_supabase_admin
+from app.services.inventory_scope import current_inventory
 
 
 _FIELDS = (
@@ -40,7 +41,9 @@ def save_capture_items(*, user_id: str, items: list[dict], max_new_items: int | 
     seen = set()
     for index, item in enumerate(items):
         request_id = item.get('client_request_id')
-        item_id = str(uuid5(NAMESPACE_URL, f'findez:capture:v1:{user_id}:{request_id}')) if request_id else str(uuid4())
+        scope = current_inventory.get()
+        identity = f'{user_id}:{scope.inventory_id}' if scope else user_id
+        item_id = str(uuid5(NAMESPACE_URL, f'findez:capture:v1:{identity}:{request_id}')) if request_id else str(uuid4())
         if item_id in seen:
             failures.append({'index': index, 'reason': 'This capture appears twice. Keep one copy and retry.'})
             continue

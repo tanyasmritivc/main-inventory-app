@@ -11,6 +11,7 @@ import httpx
 
 from app.services.supabase_client import get_supabase_admin
 from app.services.spaces_repo import SpaceLimitExceeded, count_spaces, get_or_create_space
+from app.services.inventory_scope import inventory_cache_key
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ _CACHE_TTL = 60  # seconds
 
 def _get_cached_inventory(user_id: str) -> list | None:
     with _CACHE_LOCK:
-        entry = _INVENTORY_CACHE.get(user_id)
+        entry = _INVENTORY_CACHE.get(inventory_cache_key(user_id))
         if entry and (time.time() - entry[1]) < _CACHE_TTL:
             return entry[0]
     return None
@@ -30,12 +31,14 @@ def _get_cached_inventory(user_id: str) -> list | None:
 
 def _set_cached_inventory(user_id: str, items: list) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE[user_id] = (items, time.time())
+        _INVENTORY_CACHE[inventory_cache_key(user_id)] = (items, time.time())
 
 
 def invalidate_inventory_cache(user_id: str) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE.pop(user_id, None)
+        for key in list(_INVENTORY_CACHE):
+            if key == user_id or key.endswith(':' + user_id):
+                _INVENTORY_CACHE.pop(key, None)
 
 
 def _singularize_word(word: str) -> str:

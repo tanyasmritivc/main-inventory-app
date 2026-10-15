@@ -51,6 +51,9 @@ def create_share(*, user_id: str, share_name: str, permission: str) -> dict:
 
 
 def get_my_shares(*, user_id: str) -> list:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get():
+        return []
     client = get_supabase_admin()
     shares = (
         client.table('team_shares')
@@ -106,6 +109,9 @@ def join_share(*, user_id: str, share_code: str) -> dict:
 
 
 def get_joined_shares(*, user_id: str) -> list:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get():
+        return []
     client = get_supabase_admin()
     memberships = (
         client.table('team_members')
