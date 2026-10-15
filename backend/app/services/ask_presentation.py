@@ -1,6 +1,16 @@
 """Public Ask evidence, derived only from access-scoped reads, never generated text."""
 
 from datetime import datetime, timezone
+import math
+
+
+MATCH_BASES = {'barcode match', 'brand and part-number match', 'possible name match'}
+
+
+def recorded_quantity(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return int(value) if math.isfinite(value) and value >= 0 and value % 1 == 0 else None
 
 
 def _text(value: object, limit: int = 200) -> str:
@@ -84,8 +94,9 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
             rows.append({
                 'id': item_id,
                 'name': _text(item.get('name')) or 'Unnamed item',
-                'available_quantity': _count(item.get('quantity')),
+                'available_quantity': recorded_quantity(item.get('quantity')),
                 'location': _text(item.get('space_name') or item.get('location')),
+                'match_basis': item.get('_match_basis') if item.get('_match_basis') in MATCH_BASES else None,
             })
 
     # These are the bounded records actually supplied to the assistant, not all
@@ -124,6 +135,8 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
             for doc in result:
                 if isinstance(doc, dict):
                     source('document', _text(doc.get('display_name') or doc.get('filename')) or 'Document details', 'Document details checked')
+    if rows:
+        source('inventory', 'Location evidence', 'Recorded locations only. Physical confirmation time is not recorded; the answer check time is not a sighting.')
     return {
         'sources': sources[:20],
         'rows': rows[:100],

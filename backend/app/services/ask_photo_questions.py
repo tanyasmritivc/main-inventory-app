@@ -11,7 +11,7 @@ from uuid import uuid4
 from app.core.config import get_settings
 from app.services.agent_gateway_client import gateway_completion
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
-from app.services.ask_presentation import answer_context_from_reads
+from app.services.ask_presentation import answer_context_from_reads, recorded_quantity
 from app.services.catalog_service import enrich_scan_items_from_verified_catalog, barcode_candidates, _normalized_brand
 from app.services.items_repo import _singularize_word
 from app.services.find_pipeline import extract_inventory_items_with_find
@@ -192,12 +192,15 @@ def format_photo_answer(*, identified: list[dict], inventory: list[dict], photo_
         for item, kind in found:
             if item['item_id'] not in seen:
                 seen.add(item['item_id'])
-                matches.append(item)
+                matches.append({**item, '_match_basis': kind})
         if exact:
-            available = sum(max(0, int(item.get('quantity') or 0)) for item, _ in exact)
-            places = sorted({_photo_text(item.get('space_name') or item.get('location') or 'Unsorted', 60) for item, _ in exact})
+            counts = [recorded_quantity(item.get('quantity')) for item, _ in exact]
+            quantity = f'{sum(counts)} units recorded' if all(count is not None for count in counts) else 'quantity not fully recorded'
+            places = sorted({_photo_text(item.get('space_name') or item.get('location'), 60) for item, _ in exact
+                             if str(item.get('space_name') or item.get('location') or '').strip().lower() not in ('', 'unsorted')})
             locations = ', '.join(places[:3]) + (f' and {len(places) - 3} other locations' if len(places) > 3 else '')
-            exact_lines.append(f'- {name}: {available} units available at {locations} ({exact[0][1]}).')
+            location = f'recorded location: {locations}' if locations else 'recorded location not set'
+            exact_lines.append(f'- {name}: {quantity}; {location} ({exact[0][1]}).')
         elif possible:
             possible_names.append(name)
         else:
@@ -227,13 +230,15 @@ def format_photo_answer(*, identified: list[dict], inventory: list[dict], photo_
                           else 'No matching saved items for: ' + ', '.join(unmatched_names) + '.')
                          + ' This does not mean you do not own them.')
         sections.append('Inventory check\n\n' + '\n\n'.join(stock))
+        if matches:
+            sections.append('Locations are saved records, without a physical confirmation time. Product identifiers do not prove which individual object is in the photo.')
     else:
         sections.append('I could not identify the contents clearly enough to check your inventory. Try a closer photo of one item, with any label or barcode visible.')
     sections.append('No inventory item has been added.')
     context = answer_context_from_reads({}, [{'tool': 'inventory_search', 'result': matches}])
     context['sources'] = [
         {'kind': 'photo', 'label': 'Attached photo', 'detail': 'Visible item details checked; repeated fragments grouped'},
-        {'kind': 'inventory', 'label': 'Inventory', 'detail': f'{len(inventory)} accessible item records checked for matches'},
+        {'kind': 'inventory', 'label': 'Inventory', 'detail': f'{len(inventory)} accessible item records checked by identifier or name, without visual similarity comparison. Locations are recorded, not physically confirmed.'},
     ]
     context['photo_url'] = photo_url
     return {'assistant_message': '\n\n'.join(sections), 'answer_context': context}

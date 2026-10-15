@@ -407,7 +407,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ),
           ),
           const SizedBox(height: 8),
-          // Match to existing row
+          // Reuse a name without claiming an item link or stock update.
           GestureDetector(
             onTap: () => _pickExisting(i),
             child: Container(
@@ -425,8 +425,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   Expanded(
                     child: AppText(
                       match != null
-                          ? 'Match found: ${match.name}'
-                          : 'Match to existing item?',
+                          ? 'Similar saved name: ${match.name}'
+                          : 'Use a saved item name',
                       style: TextStyle(
                         color: match != null
                             ? AppTheme.foreground(
@@ -923,7 +923,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: 'Search existing items…',
+                    hintText: 'Search saved names',
                     hintStyle: AppTypography.bodyStyleOf(
                       context,
                       TextStyle(

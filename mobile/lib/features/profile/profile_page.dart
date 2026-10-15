@@ -20,6 +20,7 @@ import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 import 'profile_editor_page.dart';
 import 'appearance_settings.dart';
+import 'plans_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -1341,6 +1342,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
 
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: ListTile(
+                title: const AppText('Plans'),
+                subtitle: const AppText('Compare Free, Pro, Team and Business'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const PlansPage()),
+                ),
+              ),
+            ),
             const AppearanceSettings(),
 
             // ── Scanning ─────────────────────────────────────────────────────

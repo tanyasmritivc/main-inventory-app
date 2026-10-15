@@ -2,6 +2,7 @@ import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
@@ -251,7 +252,8 @@ class _ScanPageState extends State<ScanPage> {
   // Counter-based IDs so items created in the same microsecond always get
   // distinct keys, preventing Flutter from reusing widget state across items.
   int _idCounter = 0;
-  String _newScannedId() => '${++_idCounter}';
+  String _newScannedId() =>
+      '${DateTime.now().microsecondsSinceEpoch}_${++_idCounter}_${math.Random.secure().nextInt(1 << 32)}';
 
   void _removeItemAt(int index) {
     if (!mounted) return;
@@ -1254,7 +1256,7 @@ class _ScanPageState extends State<ScanPage> {
             reason: message ?? 'You\'ve reached your free scan limit.',
           );
         } else {
-          // Pro users should not receive 429 — refresh status in case DB is stale
+          // Pro users should not receive 429 - refresh status in case DB is stale
           unawaited(ProStatus.refresh(widget.api));
           setState(() => _error = 'Something went wrong. Please try again.');
         }
@@ -1634,7 +1636,14 @@ class _ScanPageState extends State<ScanPage> {
     if (edited == null || !mounted) return;
     setState(() {
       _scannedItems = edited
-          .map((e) => _ScannedItem(id: _newScannedId(), item: e))
+          .asMap()
+          .entries
+          .map(
+            (entry) => _ScannedItem(
+              id: _scannedItems[entry.key].id,
+              item: entry.value,
+            ),
+          )
           .toList();
     });
     await _saveAll();
@@ -1660,7 +1669,7 @@ class _ScanPageState extends State<ScanPage> {
     });
 
     try {
-      // The user's chosen space always wins — never let the AI-extracted
+      // The user's chosen space always wins - never let the AI-extracted
       // location default ("Unsorted") override the explicitly selected space.
       final selectedSpace = _defaultLocation.text.trim().isEmpty
           ? 'Unsorted'
@@ -1727,7 +1736,9 @@ class _ScanPageState extends State<ScanPage> {
       final plan = await prepareCaptureForSave(
         api: widget.api,
         items: normalized,
+        isCurrent: () => mounted,
       );
+      if (!mounted) return;
       final inventoryItems = plan.inventoryItems;
       if (inventoryItems.isEmpty) {
         if (!mounted) return;
@@ -1739,9 +1750,13 @@ class _ScanPageState extends State<ScanPage> {
           ),
         );
         setState(() {
-          _scannedItems = const [];
-          _saveFailures = const {};
-          _error = null;
+          _scannedItems = _scannedItems
+              .where((row) => failures.containsKey(row.id))
+              .toList();
+          _saveFailures = failures;
+          _error = failures.isEmpty
+              ? null
+              : 'Fix the highlighted rows and try again.';
         });
         widget.onSaved();
         return;
@@ -1750,12 +1765,22 @@ class _ScanPageState extends State<ScanPage> {
       debugPrint('FINDEZ bulkCreate: saving to space "$selectedSpace"');
       debugPrint('FINDEZ bulkCreate: sending ${inventoryItems.length} item(s)');
 
-      final res = await widget.api.bulkCreateInventory(items: inventoryItems);
+      final res = await widget.api.bulkCreateInventory(
+        items: inventoryItems,
+        requestIds: indexMap,
+      );
       if (!mounted) return;
+      final accepted = res.confirmedIndices(inventoryItems.length);
+      final savedIds = accepted.map((index) => indexMap[index]).toSet();
+      final totalExpected = _scannedItems.length;
+      final savedReviewIds = _scannedItems
+          .where((row) => row.item.needsReview && !failures.containsKey(row.id))
+          .map((row) => row.id)
+          .toSet();
 
       debugPrint(
-        'FINDEZ bulkCreate: response — inserted=${res.inserted.length} '
-        'failures=${res.failures.length} — '
+        'FINDEZ bulkCreate: response - inserted=${res.inserted.length} '
+        'failures=${res.failures.length} - '
         '${res.inserted.map((it) => '"${it.name}" id=${it.itemId}').join(', ')}',
       );
 
@@ -1771,21 +1796,37 @@ class _ScanPageState extends State<ScanPage> {
             .toString();
       }
 
+      for (var index = 0; index < indexMap.length; index++) {
+        if (!accepted.contains(index)) {
+          backendFailures.putIfAbsent(
+            indexMap[index],
+            () => 'Saving could not be confirmed. Retry this item.',
+          );
+        }
+      }
       final allFailures = <String, String>{...failures, ...backendFailures};
+      setState(() {
+        _scannedItems = _scannedItems
+            .where(
+              (row) =>
+                  !savedIds.contains(row.id) &&
+                  !savedReviewIds.contains(row.id),
+            )
+            .toList();
+      });
       if (allFailures.isNotEmpty) {
         setState(() => _saveFailures = allFailures);
       }
 
       final insertedCount = res.inserted.length;
       // Items silently dropped: sent to server but neither inserted nor failed.
-      // This happens when the backend deduplicates two items with the same
-      // normalized name within a single batch.
+      // Older servers may omit receipts. Keep every unconfirmed draft.
       final silentDrops =
           inventoryItems.length - insertedCount - res.failures.length;
       if (silentDrops > 0) {
         debugPrint(
-          'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
-          '(server name deduplication). Sent=${inventoryItems.length}, '
+          'FINDEZ bulkCreate: WARNING - $silentDrops item(s) silently dropped '
+          '(incomplete receipt). Sent=${inventoryItems.length}, '
           'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
         );
       }
@@ -1801,7 +1842,6 @@ class _ScanPageState extends State<ScanPage> {
           }
         }
 
-        final totalExpected = _scannedItems.length;
         final allSucceeded =
             allFailures.isEmpty &&
             silentDrops == 0 &&
@@ -1831,7 +1871,7 @@ class _ScanPageState extends State<ScanPage> {
         widget.onSaved();
 
         if (allSucceeded) {
-          // Every item saved — clear the list and offer QR codes.
+          // Every item saved - clear the list and offer QR codes.
           final noBarcodeItems = res.inserted
               .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
               .toList();
@@ -1867,7 +1907,7 @@ class _ScanPageState extends State<ScanPage> {
             });
           }
         } else {
-          // Partial save — keep failed items visible; show summary dialog.
+          // Partial save - keep failed items visible; show summary dialog.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             _showSaveFailureSummary(
@@ -1879,6 +1919,7 @@ class _ScanPageState extends State<ScanPage> {
           });
         }
       } else {
+        if (plan.reviewCount > 0) widget.onSaved();
         setState(
           () => _error =
               'Couldn\'t save those items. Fix the highlighted rows and try again.',
@@ -1891,7 +1932,7 @@ class _ScanPageState extends State<ScanPage> {
       final body = rawBody.length > 300
           ? '${rawBody.substring(0, 300)}…'
           : rawBody;
-      debugPrint('FINDEZ bulkCreate error: HTTP $status — $body');
+      debugPrint('FINDEZ bulkCreate error: HTTP $status - $body');
       setState(() {
         _errorStage = _ErrorStage.save;
         _error = describeError(e).$1;
@@ -2406,7 +2447,7 @@ class _ScanPageState extends State<ScanPage> {
                                   if (_showLongWaitHint) ...[
                                     const SizedBox(height: 14),
                                     AppText(
-                                      'Analyzing your photo — this may take a moment...',
+                                      'Analyzing your photo - this may take a moment...',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme

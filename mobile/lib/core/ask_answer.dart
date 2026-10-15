@@ -29,13 +29,15 @@ class AskResultRow {
     this.requiredQuantity,
     this.location = '',
     this.status,
+    this.matchBasis,
   });
   final String id;
   final String name;
-  final int availableQuantity;
+  final int? availableQuantity;
   final int? requiredQuantity;
   final String location;
   final String? status;
+  final String? matchBasis;
 }
 
 class AskAnswerContext {
@@ -89,10 +91,14 @@ class AskAnswerContext {
         if (raw is! Map) continue;
         final name = text(raw['name']);
         final available = count(raw['available_quantity']);
-        if (name.isEmpty || available == null) continue;
+        if (name.isEmpty ||
+            !raw.containsKey('available_quantity') ||
+            (available == null && raw['available_quantity'] != null)) {
+          continue;
+        }
         final required = count(raw['required_quantity']);
         // Derive readiness from quantities. Do not trust a conflicting badge.
-        final status = required == null
+        final status = required == null || available == null
             ? null
             : available >= required
             ? 'have'
@@ -107,6 +113,14 @@ class AskAnswerContext {
             requiredQuantity: required,
             location: text(raw['location']),
             status: status,
+            matchBasis:
+                const {
+                  'barcode match',
+                  'brand and part-number match',
+                  'possible name match',
+                }.contains(raw['match_basis'])
+                ? raw['match_basis'] as String
+                : null,
           ),
         );
       }

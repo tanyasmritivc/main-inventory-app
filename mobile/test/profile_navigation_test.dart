@@ -517,6 +517,7 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Scanning'), 150);
       expect(find.text('Scanning'), findsOneWidget);
       expect(
         tester.widget<ProfilePage>(find.byType(ProfilePage)).settingsOnly,
@@ -652,6 +653,7 @@ void main() {
         1,
       ); // Settings does not reread hidden profile details.
       expect(find.text('Edit'), findsNothing);
+      await tester.scrollUntilVisible(find.text('Scanning'), 150);
       expect(find.text('Scanning'), findsOneWidget);
       expect(find.text('Confirm before saving'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Sign out'), 300);

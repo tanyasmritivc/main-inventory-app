@@ -131,7 +131,7 @@ test("review queue requests stay authenticated and send only editable fields", a
 
   expect(fetchMock.mock.calls[0][0]).toContain("/review-items?limit=200");
   expect(fetchMock.mock.calls[1][0]).toContain("/review-items/10000000-0000-0000-0000-000000000001/resolve");
-  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer live-token");
+  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer fallback");
   expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual({
     name: "Bolt",
     category: "Hardware",
@@ -152,6 +152,6 @@ test("photo extraction requests a preview and saves its signed evidence only on 
   expect((fetchMock.mock.calls[0][1].body as FormData).get("preview_only")).toBe("true");
   await updateReviewItem({ token: "fallback", reviewId: "preview-1", item: result.items[0] });
   expect(fetchMock.mock.calls[1][1].method).toBe("POST");
-  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer live-token");
+  expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer fallback");
   expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual(item);
 });

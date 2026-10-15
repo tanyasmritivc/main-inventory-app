@@ -242,6 +242,30 @@ void main() {
     },
   );
 
+  test('unknown quantity retains location and allowlisted match evidence', () {
+    final context = AskAnswerContext.fromJson({
+      'rows': [
+        {
+          'name': 'Drill',
+          'available_quantity': null,
+          'location': 'Garage',
+          'match_basis': 'possible name match',
+        },
+        {
+          'name': 'Bolt',
+          'available_quantity': 0,
+          'match_basis': 'invented visual match',
+        },
+        {'name': 'Invalid'},
+      ],
+    });
+    expect(context.rows, hasLength(2));
+    expect(context.rows.first.availableQuantity, isNull);
+    expect(context.rows.first.location, 'Garage');
+    expect(context.rows.first.matchBasis, 'possible name match');
+    expect(context.rows.last.matchBasis, isNull);
+  });
+
   test('SSE decoder preserves fragmented UTF-8 and additive context', () async {
     final text =
         'data: {"content":"Drill - café"}\n\n'

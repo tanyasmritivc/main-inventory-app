@@ -27,6 +27,7 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
         <div className="product-footer__inner">
           <Link href="/" className="product-footer__brand"><FindEZWordmark width={112} height={30}/></Link>
           <nav aria-label="Footer navigation">
+            <Link href="/pricing">Plans</Link>
             <Link href="/docs/api">Developers</Link>
             <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
             <Link href="/privacy">Privacy</Link>

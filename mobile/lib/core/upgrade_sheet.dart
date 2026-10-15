@@ -6,6 +6,7 @@ import 'api_client.dart';
 import 'app_theme.dart';
 import 'pro_status.dart';
 import 'package:mobile/core/ui/app_text.dart';
+import '../features/profile/plans_page.dart';
 
 Future<void> showUpgradeSheet(
   BuildContext context,
@@ -146,6 +147,12 @@ class _LimitSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).push<void>(MaterialPageRoute(builder: (_) => const PlansPage())),
+            child: const AppText('Compare plans'),
+          ),
           GestureDetector(
             onTap: () async {
               final joined = await _showJoinCodeDialog(context, api);

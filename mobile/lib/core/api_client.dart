@@ -483,10 +483,27 @@ class ApiClient {
 
   Future<BulkCreateResult> bulkCreateInventory({
     required List<ExtractedInventoryItem> items,
+    List<String>? requestIds,
   }) async {
+    if (requestIds != null && requestIds.length != items.length) {
+      throw ArgumentError('Every capture needs its own request ID.');
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/bulk_create',
-      data: <String, dynamic>{'items': items.map((i) => i.toJson()).toList()},
+      options: _authOptions(),
+      data: <String, dynamic>{
+        'items': items
+            .asMap()
+            .entries
+            .map(
+              (entry) => {
+                ...entry.value.toJson(),
+                if (requestIds != null)
+                  'client_request_id': requestIds[entry.key],
+              },
+            )
+            .toList(),
+      },
     );
     final data = res.data ?? {};
     return BulkCreateResult.fromJson(data);
@@ -2402,10 +2419,34 @@ class MultiExtractResult {
 }
 
 class BulkCreateResult {
-  BulkCreateResult({required this.inserted, required this.failures});
+  BulkCreateResult({
+    required this.inserted,
+    required this.failures,
+    this.acceptedIndices,
+  });
 
   final List<InventoryItem> inserted;
   final List<Map<String, dynamic>> failures;
+  final List<int>? acceptedIndices;
+
+  Set<int> confirmedIndices(int submittedCount) {
+    final indices = acceptedIndices;
+    if (indices == null) {
+      return failures.isEmpty && inserted.length == submittedCount
+          ? Set<int>.from(List.generate(submittedCount, (index) => index))
+          : <int>{};
+    }
+    final accepted = indices.toSet();
+    if (accepted.length != indices.length ||
+        accepted.length != inserted.length ||
+        accepted.any((index) => index < 0 || index >= submittedCount) ||
+        failures.any((failure) => accepted.contains(failure['index']))) {
+      throw const FormatException(
+        'Saving could not be confirmed. Your draft is safe to retry.',
+      );
+    }
+    return accepted;
+  }
 
   factory BulkCreateResult.fromJson(Map<String, dynamic> json) {
     final inserted = (json['inserted'] as List<dynamic>? ?? [])
@@ -2416,6 +2457,13 @@ class BulkCreateResult {
     return BulkCreateResult(
       inserted: inserted.map(InventoryItem.fromJson).toList(),
       failures: failures,
+      acceptedIndices: !json.containsKey('accepted_indices')
+          ? null
+          : json['accepted_indices'] is List
+          ? (json['accepted_indices'] as List)
+                .map((value) => value is int ? value : -1)
+                .toList()
+          : [-1],
     );
   }
 }
