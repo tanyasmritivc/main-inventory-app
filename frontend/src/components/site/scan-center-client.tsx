@@ -212,8 +212,7 @@ export function ScanCenterClient() {
           <div className="barcode-layout">
             <div className="barcode-camera"><BarcodeScanner onDetected={(value) => { setBarcode(value); void lookup(value); }} /></div>
             <div className="barcode-entry">
-              <h2>Barcode</h2>
-              <div className="scan-input-action"><input id="barcode-value" className="product-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="UPC, EAN, or manufacturer code" /><button className="product-button primary" disabled={!barcode.trim() || working} onClick={() => void lookup()}>{working ? "Looking up…" : "Look up"}</button></div>
+              <div className="scan-input-action"><input id="barcode-value" aria-label="Barcode" className="product-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="UPC, EAN, or manufacturer code" /><button className="product-button primary" disabled={!barcode.trim() || working} onClick={() => void lookup()}>{working ? "Looking up…" : "Look up"}</button></div>
               {barcodeResult && <div className="scan-result"><strong>Found</strong>{barcodeFields.map(([key, value]) => <div key={key}><span>{formatFieldName(key)}</span><b>{value == null || value === "" ? "" : String(value)}</b></div>)}<button className="workspace-button" onClick={() => { setManual({ quantity: "1", category: String(barcodeResult.category || "Other"), name: String(barcodeResult.name || barcodeResult.title || ""), brand: String(barcodeResult.brand || ""), barcode, part_number: String(barcodeResult.part_number || "") }); setMode("manual"); }}>Review and add item</button></div>}
             </div>
           </div>
@@ -253,8 +252,8 @@ export function ScanCenterClient() {
           </div>
         )}
 
-        {mode === "spreadsheet" && <div className="scan-choice"><FileSpreadsheet size={24} /><h2>Spreadsheet</h2><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)} disabled={!space}>Choose file</button>{!space && <span>Choose a Space first</span>}</div>}
-        {mode === "bom" && <div className="scan-choice"><FolderKanban size={24} /><h2>Project BOM</h2><Link className="product-button primary" href="/project-kits">Open kits</Link></div>}
+        {mode === "spreadsheet" && <div className="scan-choice"><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)} disabled={!space}>Choose file</button>{!space && <span>Choose a Space first</span>}</div>}
+        {mode === "bom" && <div className="scan-choice"><Link className="product-button primary" href="/project-kits">Open kits</Link></div>}
       </div>
       {token && <Dialog open={spreadsheetOpen} onOpenChange={setSpreadsheetOpen}><DialogContent><SpreadsheetImportModal spaceName={space} token={token} onSuccess={(count) => { setSaved(`${count} item${count === 1 ? "" : "s"} imported into ${space}.`); }} /></DialogContent></Dialog>}
     </section>

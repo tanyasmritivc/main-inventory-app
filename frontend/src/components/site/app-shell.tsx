@@ -8,7 +8,6 @@ import { Bell, Menu, Search, UserRound } from "lucide-react";
 import {
   APP_NAV_ITEMS,
   AppSidebar,
-  activeNavItem,
 } from "@/components/site/app-sidebar";
 import {
   Dialog,
@@ -205,17 +204,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .toLowerCase()
       .includes(commandQuery.trim().toLowerCase()),
   );
-  const activeItem = activeNavItem(pathname);
-  const pageLabel = pathname.startsWith("/settings/api-keys")
-    ? "API keys"
-    : pathname.startsWith("/settings")
-      ? "Settings"
-      : pathname.startsWith("/notifications")
-        ? "Notifications"
-        : pathname.startsWith("/docs/api")
-          ? "API documentation"
-          : (activeItem?.label ?? "Workspace");
-
   return (
     <AppThemeProvider>
       <div
@@ -243,9 +231,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu size={19} />
           </button>
-          <div className="app-breadcrumbs" aria-label="Current location">
-            <span>{pageLabel}</span>
-          </div>
           <div className="app-topbar-spacer" />
           <button
             className="app-command-trigger"

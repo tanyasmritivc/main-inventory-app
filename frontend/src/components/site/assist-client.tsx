@@ -454,7 +454,6 @@ function AssistClientWorkspace({
           )}
           {!messages.length && (
             <div className="ask-empty">
-              <h2>How can I help?</h2>
               <p className="workspace-muted">
                 Find an item, check stock, or attach a photo.
               </p>

@@ -1,5 +1,27 @@
 # Active work
 
+## October 14 website clarity live
+
+Lane `release/web-launch-20261014`, based on `4e71506`, is complete in PR #72.
+Runtime `65226c5` removes repeated shell/Collections/Space titles and the redundant
+FindEZ section caption. Open rows, quiet dividers, simpler filters/secondary
+actions, consistent spacing and bounded Review photos replace crowded containers.
+Teams uses its visible tabs for section identity, Project kits has one Space
+prompt and Labels tabs have proper spacing. Sidebar contraction is verified and
+the original pinned preference restored. Routes, actions and permissions remain.
+223 web tests, TypeScript, the actual-config production build and all five
+exact-runtime CI gates pass (`38683070099`); lint has existing warnings only.
+Both-theme/narrow component fixtures and signed-in Safari pages are checked.
+The live web service now uses `web-clarity-20261014-r3/frontend`, build ID
+`bSG_l1U3Nn-HPx_vC7FHX`. Public checks cover 11 routes, 17 protected route guards
+and three workspace CSS assets; 1,006 old static assets remain for open tabs.
+Production configuration and the dirty VM checkout are preserved. Backend PID
+and start time are unchanged. Receipts, source hashes, build log and rollback
+records are in `Documents/FindEZ/Releases/web-clarity-2026-10-14/published` and
+`/home/ubuntu/findez-web-clarity-20261014-r3`. Shopify and public Apple submission
+remain held; pricing is planned UI with paid purchases unavailable. Supporting
+backend reliability work is not deployed by this web-only lane.
+
 ## October 14 one-time guided tour fix and TestFlight preparation
 
 The user authorizes an updated TestFlight beta, then requires the intermittent
