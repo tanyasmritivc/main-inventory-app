@@ -275,8 +275,10 @@ class _ResultRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle = row.requiredQuantity != null
-        ? '${row.availableQuantity} of ${row.requiredQuantity}'
-        : '${row.availableQuantity} available${row.location.isEmpty ? '' : ' - ${row.location}'}';
+        ? '${row.availableQuantity ?? 'Unknown'} of ${row.requiredQuantity}'
+        : '${row.availableQuantity == null ? 'Quantity unknown' : '${row.availableQuantity} recorded'}\n'
+              '${row.location.isEmpty || row.location.toLowerCase() == 'unsorted' ? 'Recorded location not set' : 'Recorded location: ${row.location}'}'
+              '${row.matchBasis == null ? '' : '\n${row.matchBasis}'}';
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -204,6 +204,7 @@ export type ScanEvidence = {
 };
 
 export type ExtractedInventoryItem = {
+  client_request_id?: string;
   name: string;
   category: string;
   subcategory?: string | null;
@@ -250,6 +251,7 @@ export async function extractFromImageMulti(params: { token: string; file: File 
   }>("/inventory/extract_from_image", {
     method: "POST",
     token: params.token,
+    bindToToken: true,
     body: form,
   });
 }
@@ -258,11 +260,12 @@ export async function bulkCreate(params: {
   token: string;
   items: ExtractedInventoryItem[];
 }) {
-  return apiFetch<{ inserted: InventoryItem[]; failures: Array<Record<string, unknown>> }>(
+  return apiFetch<{ inserted: InventoryItem[]; failures: Array<Record<string, unknown>>; accepted_indices?: number[] }>(
     "/inventory/bulk_create",
     {
       method: "POST",
       token: params.token,
+      bindToToken: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: params.items }),
     }
@@ -304,6 +307,7 @@ export async function updateReviewItem(params: {
     {
       method: params.item.review_status === "preview" ? "POST" : "PATCH",
       token: params.token,
+      bindToToken: true,
       body: params.item.review_status === "preview" ? params.item : reviewItemPayload(params.item),
     },
   );
@@ -316,7 +320,7 @@ export async function resolveReviewItem(params: {
 }) {
   return apiFetch<{ item: InventoryItem }>(
     `/review-items/${encodeURIComponent(params.reviewId)}/resolve`,
-    { method: "POST", token: params.token, body: reviewItemPayload(params.item) },
+    { method: "POST", token: params.token, bindToToken: true, body: reviewItemPayload(params.item) },
   );
 }
 
@@ -326,7 +330,7 @@ export async function dismissReviewItem(params: {
 }) {
   return apiFetch<{ review_item: ReviewItem }>(
     `/review-items/${encodeURIComponent(params.reviewId)}`,
-    { method: "DELETE", token: params.token },
+    { method: "DELETE", token: params.token, bindToToken: true },
   );
 }
 
@@ -369,6 +373,7 @@ export async function processBarcode(params: { token: string; barcode: string })
   return apiFetch<{ result: Record<string, unknown> }>("/process_barcode", {
     method: "POST",
     token: params.token,
+    bindToToken: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ barcode: params.barcode }),
   });
@@ -673,8 +678,8 @@ export type Space = {
   item_count?: number;
 };
 
-export async function getSpaces({ token }: { token: string }): Promise<Space[]> {
-  const raw = await apiFetch<unknown>('/spaces', { token });
+export async function getSpaces({ token, bindToToken = false }: { token: string; bindToToken?: boolean }): Promise<Space[]> {
+  const raw = await apiFetch<unknown>('/spaces', { token, bindToToken });
   if (Array.isArray(raw)) return raw as Space[];
   if (raw !== null && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).spaces)) {
     return (raw as { spaces: Space[] }).spaces;
@@ -687,6 +692,7 @@ export async function createSpace({ token, name }: { token: string; name: string
   return apiFetch<{ space: Space }>('/spaces', {
     method: 'POST',
     token,
+    bindToToken: true,
     body: { name },
   });
 }

@@ -154,6 +154,7 @@ class ScanEvidence(BaseModel):
 
 
 class ExtractedInventoryItem(BaseModel):
+    client_request_id: str | None = Field(default=None, min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)
     subcategory: str | None = Field(default=None, max_length=100)
@@ -201,6 +202,7 @@ class BulkCreateRequest(BaseModel):
 class BulkCreateResponse(BaseModel):
     inserted: list[dict]
     failures: list[dict]
+    accepted_indices: list[int] = Field(default_factory=list)
 
 
 class ReviewItemUpdate(BaseModel):

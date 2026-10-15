@@ -1,5 +1,35 @@
 # Current state
 
+## October 14 launch reliability candidate and planned pricing UI
+
+Lane `fix/launch-find-reliability` preserves individual captured objects instead
+of aggregating names. Owner-bound retry identities, database read-back receipts
+and indexed outcomes prevent duplicate retry quantities and silent batch loss.
+Both clients keep unconfirmed drafts. Web capture/review requests bind to the
+initiating token and ignore late results across accounts. Mobile stops disposed
+multi-step saves. Photo ASK exposes identifier/name evidence, unknown quantities
+stay unknown and result locations are labelled recorded, without fabricated
+physical confirmations. The user defers image-similarity work because FIND source
+is unavailable; the live API inspection exposes no such endpoint.
+
+The public `/pricing` page and mobile Settings -> Plans now compare the requested
+five tiers with monthly/yearly prices. They are explicitly planned, with paid
+controls unavailable and current entitlements unchanged. No live payment link is
+invented. Stripe subscription checkout, StoreKit purchase/restore/verification,
+new tier enforcement and commercial configuration remain unfinished. Legacy
+robotics pricing UI is replaced; its backend is not reactivated or repurposed.
+
+Validation: 455 backend/API-doc tests and six subtests, 223 web tests, TypeScript,
+changed-file lint (three existing Assist warnings), clean Flutter analysis and
+362 mobile tests with coverage pass. The fictional-config production web build
+passes with webpack caching temporarily disabled for disk space; source config
+is restored. Safari renders the pricing comparison locally. The arm64 native
+simulator app is rebuilt/installed and Plans is checked in Light/Dark, including
+annual pricing and navigation back. Light is restored with Plans open. No
+customer inventory or answers were written. No migration, production deployment, new TestFlight
+binary or public submission. See
+`HANDOFFS/2026-10-14-launch-readiness.md` for verified capabilities and release gates.
+
 ## October 14 app-wide neutral controls, orange bottom navigation
 
 The user expands this lane to all mobile UI accents and confirms orange should

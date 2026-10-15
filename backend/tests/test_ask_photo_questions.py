@@ -34,7 +34,7 @@ def item(**changes):
 
 def test_strong_identifiers_match_product_not_physical_ownership():
     result = photos.format_photo_answer(identified=[item()], inventory=[item(), item(item_id='b', quantity=3, location='Loft')], photo_url=URL)
-    assert '5 units available' in result['assistant_message']
+    assert '5 units recorded' in result['assistant_message']
     assert 'Garage, Loft' in result['assistant_message']
     assert 'Your inventory lists these products' in result['assistant_message']
     assert len(result['answer_context']['rows']) == 2
@@ -61,8 +61,19 @@ def test_uncertain_item_and_no_match_are_honest_and_visible_in_review():
 
 def test_zero_stock_and_output_has_no_private_fields():
     result = photos.format_photo_answer(identified=[item()], inventory=[item(quantity=0, user_id='SECRET', internal_model='SECRET')], photo_url=URL)
-    assert '0 units available' in result['assistant_message']
+    assert '0 units recorded' in result['assistant_message']
     assert 'SECRET' not in json.dumps(result)
+
+
+@pytest.mark.parametrize('quantity', [None, -1, 0.5, True, float('nan')])
+def test_unknown_quantity_and_unset_location_are_never_claimed_as_confirmed(quantity):
+    result = photos.format_photo_answer(identified=[item()], inventory=[item(quantity=quantity, location='Unsorted')], photo_url=URL)
+    assert 'quantity not fully recorded' in result['assistant_message']
+    assert 'recorded location not set' in result['assistant_message']
+    assert '0 units recorded' not in result['assistant_message']
+    row = result['answer_context']['rows'][0]
+    assert row['available_quantity'] is None and row['match_basis'] == 'barcode match'
+    assert 'physical confirmation time' in result['assistant_message']
 
 
 def test_empty_and_large_photo_results_are_explicitly_bounded():
@@ -77,7 +88,7 @@ def test_repeated_fragments_do_not_become_repeated_objects_or_stock_totals():
     result = photos.format_photo_answer(identified=[item() for _ in range(30)], inventory=[item()], photo_url=URL)
     text = result['assistant_message']
     assert text.count('- Servo (') == 1
-    assert text.count('2 units available') == 1
+    assert text.count('2 units recorded') == 1
     assert '30' not in text and 'additional' not in text
     assert len(result['answer_context']['rows']) == 1
 
@@ -193,14 +204,14 @@ def test_same_named_products_with_different_identifiers_remain_distinct():
     result = photos.format_photo_answer(identified=[first, second], inventory=inventory, photo_url=URL)
     assert len(result['answer_context']['rows']) == 2
     assert 'Part: M-1' in result['assistant_message'] and 'Part: M-2' in result['assistant_message']
-    assert '2 units available' in result['assistant_message'] and '4 units available' in result['assistant_message']
+    assert '2 units recorded' in result['assistant_message'] and '4 units recorded' in result['assistant_message']
 
 
 def test_low_confidence_cannot_confirm_stock_even_without_review_flag():
     photo = item(confidence=0.3)
     result = photos.format_photo_answer(identified=[photo], inventory=[item()], photo_url=URL)
     assert 'Possible name matches' in result['assistant_message']
-    assert 'units available' not in result['assistant_message']
+    assert 'units recorded' not in result['assistant_message']
 
 
 def test_measurements_are_shown_only_when_requested_and_keep_estimate_caveat():

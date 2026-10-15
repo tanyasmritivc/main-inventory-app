@@ -105,6 +105,28 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Launch capture receipts and planned pricing
+
+`backend/tests/test_capture_save.py` saves through the capture service and reads
+through the real item repository against an isolated deep-copying store. It
+covers same-named objects/variants/photos/locations, owner-bound retry IDs, lost
+responses after commit, write failure, changed retry payloads, quotas, mixed
+owners and explicit route receipts. It does not prove production database or
+physical camera acceptance.
+
+Web `scan-capture.test.tsx` checks partial draft retention, stable retry IDs and
+late-account photo responses. Receipt tests on web/mobile reject malformed or
+conflicting success indices. Ask regressions preserve unknown quantities and
+allowlisted product matching evidence. An answer check timestamp is never a
+physical confirmation timestamp.
+
+`pricing-plans.test.tsx` checks the five prices/periods and unavailable purchase
+controls. Mobile `plans_page_test.dart` covers annual prices and narrow 2.6x
+layouts in Light/Dark. Pricing is preparation only: no real purchase, restore,
+provider notification or new quota enforcement is exercised. Follow
+`.agents/HANDOFFS/2026-10-14-launch-readiness.md` before enabling billing or shipping
+this lane. Native release packaging must verify matching app/extension versions.
+
 ### Capture preview and explicit save
 
 `test_capture_previews.py` verifies both extraction routes with preview-only

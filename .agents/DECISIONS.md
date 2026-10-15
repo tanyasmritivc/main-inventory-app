@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-10-14: Launch capture identity and honest evidence
+
+Capture saves represent separately reviewed physical observations, so equal names
+must not merge their locations, variants or photos. Reuse existing item UUIDs with
+owner-bound request identities and real read-back receipts for retry safety.
+Imports retain their separate legacy contract. Neither an inventory edit nor an
+answer retrieval time proves physical presence. Use recorded-location wording
+until a genuine confirmation workflow exists. Exact identifiers establish a
+product match; name similarity is tentative. The user explicitly defers visual
+similarity because FIND source is unavailable. Shopify remains outside launch.
+
+## 2026-10-14: Planned subscriptions are distinct from payment readiness
+
+The user supplies five USD tiers and limits and requests UI preparation before
+Stripe is configured. Show Free, Pro 19/149, Team 99/790, Business 299/2490 and
+Enterprise custom, with monthly/yearly choices. Preserve current pilot access.
+Do not enable checkout, fake a Stripe URL or grant access from a success page.
+iOS subscriptions require an actual native purchase/restore and verified backend
+entitlement path; a pricing screen alone does not implement it. New limits stay
+planned until the provider lifecycle and server enforcement are implemented.
+
 ## 2026-10-14: Mobile UI accents are neutral except bottom navigation
 
 The user expands the request to the whole mobile app and explicitly keeps

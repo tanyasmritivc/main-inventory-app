@@ -380,6 +380,13 @@ function SettingsWorkspace({ email }: { email: string | null }) {
       </section>
 
       <section className="settings-panel">
+        <Link className="settings-link-row" href="/pricing">
+          <span><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
+          <ChevronRight size={16} />
+        </Link>
+      </section>
+
+      <section className="settings-panel">
         <header>
           <h2>Developer</h2>
         </header>

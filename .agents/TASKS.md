@@ -5,6 +5,17 @@ Reprioritize it when production state changes.
 
 ## P0 critical
 
+- Finish the November 1 core launch gates in
+  `HANDOFFS/2026-10-14-launch-readiness.md`: release the tested capture receipt
+  candidate, validate real capture -> save -> reopen -> find, measure FIND quality
+  and latency, and exercise ambiguous/unknown/recorded-location answers. Image
+  similarity is deferred by the user; Shopify stays disabled.
+- Before charging, implement account-bound Stripe subscriptions and StoreKit
+  purchase/restore with verified provider lifecycle and shared backend
+  entitlements. The new five-tier pricing UI is planned copy, not paid access or
+  new quota enforcement. Configure products, test failures/refunds/renewals and
+  reconcile the legacy one-time billing route before activation.
+
 - Finish physical/filtered release acceptance after the approved Space cache fix.
   On October 4, owner-scoped rename/delete invalidation and six regressions passed
   all 349 backend/API-doc tests; the reviewed file was selectively deployed with
@@ -24,11 +35,9 @@ Reprioritize it when production state changes.
   Obtain new authorization before starting any TLS/private-route migration;
   do not treat it as active work or a completed security correction.
 
-- Patch Next.js 16.3.4 to the minimal 16.3.6 security release in a separate web
-  lane; run web tests/typecheck/production build and deploy with preserved VM
-  dependencies/output. October 1 audit flags GHSA-vcvr-r3jv-pc5j; the current
-  source has no `next/og` or `ImageResponse` usage (its vulnerable path), but the
-  dependency audit is not clean. MCP production-dependency audit is clean.
+- Verify production uses the reviewed Next.js security update. This candidate's
+  lockfile is already on 16.3.8; do not repeat the stale 16.3.4 -> 16.3.6 source
+  task. Preserve VM dependencies/output during any authorized deployment.
 - Finish and review the Flutter UIScene lifecycle migration. Validate the signed iOS
   build and record its TestFlight status.
 - Define retention and deletion behavior before persisting masks, geometry,

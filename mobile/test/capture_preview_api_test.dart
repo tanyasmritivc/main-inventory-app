@@ -29,7 +29,15 @@ class CaptureAdapter implements dio.HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
-    final result = options.path == '/inventory/extract_from_image'
+    final result = options.path == '/inventory/bulk_create'
+        ? {
+            'inserted': [],
+            'accepted_indices': [],
+            'failures': [
+              {'index': 0},
+            ],
+          }
+        : options.path == '/inventory/extract_from_image'
         ? {
             'items': [preview],
             'summary': {'total_detected': 1, 'categories': {}},
@@ -131,6 +139,19 @@ void main() {
     await api.updateReviewItem(reviewId: 'saved-1', item: old);
     expect(adapter.requests.last.method, 'PATCH');
     expect(adapter.requests.last.data.containsKey('review_token'), isFalse);
+    final receipt = await api.bulkCreateInventory(
+      items: [old],
+      requestIds: ['stable-capture-1'],
+    );
+    expect(
+      adapter.requests.last.data['items'][0]['client_request_id'],
+      'stable-capture-1',
+    );
+    expect(
+      adapter.requests.last.headers['Authorization'],
+      startsWith('Bearer '),
+    );
+    expect(receipt.confirmedIndices(1), isEmpty);
     client.close();
   });
 }

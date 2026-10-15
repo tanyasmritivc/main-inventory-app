@@ -414,19 +414,19 @@ function AssistClientWorkspace({
                         <thead>
                           <tr>
                             <th>Item</th>
-                            <th>Available</th>
+                            <th>{m.context.rows.some(r => r.requiredQuantity !== undefined) ? "Available" : "Recorded quantity"}</th>
                             {m.context.rows.some(r => r.requiredQuantity !== undefined) && <th>Needed</th>}
-                            <th>Location</th>
+                            <th>Recorded location</th>
                           </tr>
                         </thead>
                         <tbody>
                           {m.context.rows.map((r, i) => (
                             <tr key={`${r.id}-${i}`}>
-                              <td>{r.name}</td>
-                              <td>{r.availableQuantity}</td>
+                              <td>{r.name}{r.matchBasis && <small className="workspace-muted" style={{ display: "block" }}>{r.matchBasis}</small>}</td>
+                              <td>{r.availableQuantity ?? "Unknown"}</td>
                               {m.context?.rows.some(row => row.requiredQuantity !== undefined) && <td>{r.requiredQuantity ?? ""}</td>}
                               <td>
-                                {r.location}
+                                {!r.location || r.location.toLowerCase() === "unsorted" ? "Not set" : r.location}
                                 {r.status ? (
                                   <span
                                     className={`workspace-badge ${r.status}`}

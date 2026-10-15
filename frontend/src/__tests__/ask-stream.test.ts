@@ -91,3 +91,14 @@ test("saved photo URLs must belong to this account and the configured storage or
     ]),
   ).toBeUndefined();
 });
+
+test("unknown counts remain unknown and photo match evidence is allowlisted", () => {
+  const context = parseAskContext({ rows: [
+    { name: "Drill", available_quantity: null, location: "Garage", match_basis: "possible name match", updated_at: "today" },
+    { name: "Bolt", available_quantity: 0, match_basis: "invented visual match" },
+  ] });
+  expect(context?.rows[0].availableQuantity).toBeNull();
+  expect(context?.rows[0].matchBasis).toBe("possible name match");
+  expect(context?.rows[1].matchBasis).toBeUndefined();
+  expect(JSON.stringify(context)).not.toContain("today");
+});

@@ -12,6 +12,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
+import { confirmedCaptureIndices } from "@/lib/capture-receipt";
 
 type ScanMode = "barcode" | "photo" | "manual" | "spreadsheet" | "bom";
 
@@ -69,42 +70,67 @@ export function ScanCenterClient() {
   const [spreadsheetOpen, setSpreadsheetOpen] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (token) getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
+  useEffect(() => {
+    setItems([]); setScanSummary(null); setBarcodeResult(null); setSpace(""); setSpaces([]);
+    setBarcode(""); setManual({ category: "Other", quantity: "1" }); setSpreadsheetOpen(false);
+    setError(null); setSaved(null); setWorking(false);
+  }, [accountId]);
+
+  useEffect(() => {
+    let active = true;
+    if (token) getSpaces({ token, bindToToken: true }).then(rows => {
+      if (active) setSpaces(rows.map(row => row.name));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [token]);
 
   async function addDestinationSpace() {
+    if (!token || !accountId || working) return;
+    const account = accountId;
     const name = (await promptValue({ title: "Create a Space", message: "Choose where imported items should be saved.", label: "Space name", placeholder: "Build room", confirmLabel: "Create Space" }))?.trim();
-    if (!token || !name) return;
+    if (!name || owner.current !== account) return;
     setWorking(true); setError(null);
     try {
       await createSpace({ token, name });
-      const rows = await getSpaces({ token });
+      if (owner.current !== account) return;
+      const rows = await getSpaces({ token, bindToToken: true });
+      if (owner.current !== account) return;
       setSpaces(rows.map((row) => row.name));
       setSpace(name);
       setSaved(`${name} is ready as a destination.`);
     } catch (reason) {
-      setError(userFacingError(reason, "The Space could not be created."));
-    } finally { setWorking(false); }
+      if (owner.current === account) setError(userFacingError(reason, "The Space could not be created."));
+    } finally { if (owner.current === account) setWorking(false); }
   }
 
   async function lookup(value = barcode) {
-    if (!token || !value.trim()) return;
+    if (!token || !accountId || !value.trim() || working) return;
+    const account = accountId;
     setWorking(true); setError(null); setSaved(null);
-    try { const result = await processBarcode({ token, barcode: value.trim() }); setBarcodeResult(result.result ?? result); }
-    catch (reason) { setError(userFacingError(reason, "The barcode could not be looked up.")); }
-    finally { setWorking(false); }
+    try { const result = await processBarcode({ token, barcode: value.trim() }); if (owner.current === account) setBarcodeResult(result.result ?? result); }
+    catch (reason) { if (owner.current === account) setError(userFacingError(reason, "The barcode could not be looked up.")); }
+    finally { if (owner.current === account) setWorking(false); }
   }
 
   async function scanPhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]; if (!token || !file) return;
+    const file = event.target.files?.[0]; if (!token || !accountId || !file || working) return;
+    const account = accountId;
     if (!space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
     setWorking(true); setError(null); setItems([]); setScanSummary(null); setSaved(null);
-    try { const result = await extractFromImageMulti({ token, file }); setItems(result.items ?? []); setScanSummary(result.summary); }
-    catch (reason) { setError(userFacingError(reason, "The photo could not be analyzed.")); }
-    finally { setWorking(false); event.target.value = ""; }
+    try {
+      const result = await extractFromImageMulti({ token, file });
+      if (owner.current === account) {
+        setItems((result.items ?? []).map(item => ({ ...item, client_request_id: crypto.randomUUID() })));
+        setScanSummary(result.summary);
+      }
+    }
+    catch (reason) { if (owner.current === account) setError(userFacingError(reason, "The photo could not be analyzed.")); }
+    finally { if (owner.current === account) setWorking(false); event.target.value = ""; }
   }
 
   async function saveDetected() {
-    if (!token || items.length === 0) return;
+    if (!token || !accountId || items.length === 0 || working) return;
+    const account = accountId;
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     setWorking(true); setError(null);
     try {
@@ -112,24 +138,33 @@ export function ScanCenterClient() {
       const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
       const ready = located.filter((item) => !item.scan_evidence?.needs_review);
       for (const item of uncertain) {
+        if (owner.current !== account) return;
         if (!item.review_id) {
           throw new Error("An uncertain item was not safely stored. Please scan the photo again.");
         }
         if (item.review_status !== "pending" && item.review_status !== "preview") throw new Error("This photo was already reviewed. Take a new photo to capture it again.");
         await updateReviewItem({ token, reviewId: item.review_id, item });
       }
+      if (owner.current !== account) return;
       const result = ready.length > 0
         ? await bulkCreate({ token, items: ready })
         : { inserted: [], failures: [] };
+      if (owner.current !== account) return;
+      const accepted = confirmedCaptureIndices(result, ready.length);
+      const remaining = ready.filter((_, index) => !accepted.has(index));
       const messages = [];
-      if (result.inserted.length) messages.push(`${result.inserted.length} added to ${space}`);
+      if (accepted.size) messages.push(`${accepted.size} saved to ${space}`);
       if (uncertain.length) messages.push(`${uncertain.length} kept in Review`);
-      setSaved(`${messages.join(" · ")}.`);
-      setItems([]);
-      setScanSummary(null);
+      setSaved(messages.length ? `${messages.join(" · ")}.` : null);
+      setItems(remaining);
+      if (remaining.length) {
+        setError(`${remaining.length} ${remaining.length === 1 ? "item was" : "items were"} not confirmed saved. Your remaining drafts are available to correct or retry.`);
+      } else {
+        setScanSummary(null);
+      }
     }
-    catch (reason) { setError(userFacingError(reason, "The detected items could not be saved.")); }
-    finally { setWorking(false); }
+    catch (reason) { if (owner.current === account) setError(userFacingError(reason, "The detected items could not be saved.")); }
+    finally { if (owner.current === account) setWorking(false); }
   }
 
   async function saveManual(event: React.FormEvent) {
@@ -157,7 +192,7 @@ export function ScanCenterClient() {
         <h1>Capture</h1>
         <div className="scan-destination">
           <span>to</span>
-          <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
+          <select id="scan-destination" className="product-select" disabled={working} value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
           <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
         </div>
       </header>
@@ -193,10 +228,10 @@ export function ScanCenterClient() {
                 <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
                 <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>
               </div>
-              <div className="find-review-list">
+              <fieldset disabled={working} className="find-review-list" style={{ border: 0, padding: 0, minWidth: 0 }}>
                 {items.map((item, index) => {
                   const update = (changes: Partial<ExtractedInventoryItem>) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...changes } : row));
-                  return <article className="find-review-card" key={`${item.name}-${index}`}>
+                  return <article className="find-review-card" key={item.client_request_id ?? index}>
                     <header><span>Object {index + 1}</span>{item.scan_evidence?.needs_review ? <b className="find-review-warning">Review needed</b> : <b>{percent(item.confidence) ? `${percent(item.confidence)} identity` : "Detected"}</b>}<button type="button" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></header>
                     {item.image_url && <Image unoptimized width={720} height={480} className="find-review-image" src={item.image_url} alt={`Captured ${item.name || `object ${index + 1}`}`} />}
                     <div className="find-review-primary">
@@ -213,7 +248,7 @@ export function ScanCenterClient() {
                     <label className="find-review-notes"><span>Saved notes</span><textarea className="product-textarea" value={item.notes ?? ""} onChange={(event) => update({ notes: event.target.value || null })} /></label>
                   </article>;
                 })}
-              </div>
+              </fieldset>
             </div>}
           </div>
         )}

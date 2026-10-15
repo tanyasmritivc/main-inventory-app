@@ -15,10 +15,16 @@ class ReviewCapturePlan {
 Future<ReviewCapturePlan> prepareCaptureForSave({
   required ApiClient api,
   required List<ExtractedInventoryItem> items,
+  bool Function()? isCurrent,
 }) async {
   final inventoryItems = <ExtractedInventoryItem>[];
   var reviewCount = 0;
   for (final item in items) {
+    if (isCurrent != null && !isCurrent()) {
+      throw StateError(
+        'The capture session changed. No further items were saved.',
+      );
+    }
     if (!item.needsReview) {
       inventoryItems.add(item);
       continue;

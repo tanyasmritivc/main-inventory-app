@@ -46,7 +46,6 @@ from app.services.documents_repo import create_activity
 from app.services.items_repo import (
     _merge_by_item_id,
     add_item,
-    bulk_create_items,
     delete_item,
     search_items_basic,
     update_item,
@@ -713,45 +712,44 @@ def inventory_bulk_create_route(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BulkCreateResponse:
     items_to_insert = [i.model_dump() for i in payload.items]
-    if not is_pro_user(user.user_id):
+    owners = {
+        _resolve_owner_for_joined_space(user.user_id, (item.get('location') or '').strip())
+        for item in items_to_insert if (item.get('location') or '').strip()
+    }
+    if len(owners) > 1:
+        raise bad_request('Save to one account at a time. Your draft has not changed.')
+    target_user_id = next(iter(owners), user.user_id)
+    slots_remaining = None
+    if not is_pro_user(target_user_id):
         try:
-            count_result = get_supabase_admin().table("items").select("item_id", count="exact").eq("user_id", user.user_id).execute()
-            current = count_result.count or 0
+            count_result = get_supabase_admin().table("items").select("item_id", count="exact").eq("user_id", target_user_id).execute()
+            if count_result.count is None:
+                raise ValueError('Item count unavailable')
+            current = count_result.count
         except Exception:
-            current = 0
-        slots_remaining = FREE_ITEM_LIMIT - current
-        if slots_remaining <= 0:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "item_limit_reached",
-                    "message": "Free plan limit of 30 items reached.",
-                    "upgrade_required": True,
-                },
-            )
-        items_to_insert = items_to_insert[:slots_remaining]
-    # Resolve target user_id for joined spaces (all items share one location in photo-upload flow)
-    bulk_location = ""
-    for it in items_to_insert:
-        loc = (it.get("location") or "").strip()
-        if loc:
-            bulk_location = loc
-            break
-    target_user_id = _resolve_owner_for_joined_space(user.user_id, bulk_location)
+            raise service_unavailable('Your item limit could not be checked. Please try again.')
+        slots_remaining = max(0, FREE_ITEM_LIMIT - current)
 
     try:
-        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
+        from app.services.capture_save import save_capture_items
+        inserted, failures = save_capture_items(user_id=target_user_id, items=items_to_insert, max_new_items=slots_remaining)
 
         try:
             create_activity(
                 user_id=user.user_id,
-                summary=f"Saved {len(inserted)} scanned items to inventory",
+                summary=f"Confirmed {len(inserted)} saved capture records",
                 metadata={"type": "bulk_create", "inserted": len(inserted), "failures": len(failures)},
                             )
         except Exception:
             logger.exception("Failed to write bulk create activity")
 
-        return BulkCreateResponse(inserted=inserted, failures=failures)
+        failed_indices = {failure['index'] for failure in failures}
+        return BulkCreateResponse(
+            inserted=inserted, failures=failures,
+            accepted_indices=[index for index in range(len(items_to_insert)) if index not in failed_indices],
+        )
+    except SpaceLimitExceeded:
+        raise HTTPException(403, 'FREE_TIER_SPACE_LIMIT')
     except httpx.HTTPError:
         logger.exception("Upstream error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")

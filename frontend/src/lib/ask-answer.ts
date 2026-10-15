@@ -2,10 +2,11 @@ export type AskSource = { kind: string; label: string; detail: string };
 export type AskRow = {
   id: string;
   name: string;
-  availableQuantity: number;
+  availableQuantity: number | null;
   requiredQuantity?: number;
   location: string;
   status?: "have" | "low" | "missing";
+  matchBasis?: string;
 };
 export type AskAnswerContext = {
   sources: AskSource[];
@@ -50,21 +51,23 @@ export function parseAskContext(value: unknown): AskAnswerContext | undefined {
     const name = text(value.name),
       availableQuantity = count(value.available_quantity),
       requiredQuantity = count(value.required_quantity);
-    if (!name || availableQuantity === undefined) continue;
+    if (!name || (availableQuantity === undefined && value.available_quantity !== null)) continue;
     rows.push({
       id: text(value.id),
       name,
-      availableQuantity,
+      availableQuantity: availableQuantity ?? null,
       requiredQuantity,
       location: text(value.location),
       status:
-        requiredQuantity === undefined
+        requiredQuantity === undefined || availableQuantity === undefined
           ? undefined
           : availableQuantity >= requiredQuantity
             ? "have"
             : availableQuantity === 0
               ? "missing"
               : "low",
+      matchBasis: ["barcode match", "brand and part-number match", "possible name match"].includes(value.match_basis)
+        ? value.match_basis : undefined,
     });
   }
   return {

@@ -1,5 +1,20 @@
 # Active work
 
+## October 14 launch reliability candidate
+
+Lane `fix/launch-find-reliability`, based on `3543cb7`, fixes name-only capture
+aggregation, silent limit truncation, unsafe retries and web/mobile partial draft
+loss. Real saved receipts and account-bound requests preserve capture identity.
+ASK exposes match evidence and recorded-location semantics with unknown counts.
+The user explicitly defers visual-similarity work because FIND source is absent;
+Shopify stays disabled. Five-tier web/mobile pricing UI is planned only. Stripe,
+StoreKit purchases/restores, verified entitlements and new limits remain unbuilt.
+455 backend/API-doc tests, 223 web tests, 362 mobile tests with coverage, analysis,
+TypeScript and the fictional-config web build pass. The native arm64 simulator
+build passes; Plans, annual prices and back navigation are checked in both themes
+and Light is restored. No production migration/deployment or Apple upload/submission.
+See `HANDOFFS/2026-10-14-launch-readiness.md` for the capability audit and next gates.
+
 ## October 14 app-wide neutral UI accent refinement
 
 Lane `feat/mobile-color-accents` now covers the user's app-wide accent request:
