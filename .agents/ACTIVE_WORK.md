@@ -2,11 +2,12 @@
 
 ## October 15 centered Ask FindEZ
 
-Lane `fix/web-ask-centered-20261015` owns the website Ask layout only. Center the
-empty state and composer, make history available on demand, and use a subtle
-static light/dark gradient. Preserve conversations, photos, sources, send/stop
-behavior and inventory isolation. Validate web checks and responsive visual
-previews, then publish through an isolated website release.
+Completed and published PR #76, runtime `80ba01b`, with centered Ask content,
+static light/dark gradient, history dialog and right-aligned neutral user bubbles.
+238 web tests, TypeScript, lint (zero errors), all five CI jobs and responsive
+Safari previews pass. Live route/assets checks pass. Existing Safari login had
+expired before the signed-in recheck. Backend/database unchanged; release and
+rollback details are recorded in CURRENT_STATE.md.
 
 ## October 14 workspace and inventory selection
 
