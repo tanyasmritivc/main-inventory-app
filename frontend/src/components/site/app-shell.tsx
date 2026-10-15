@@ -3,7 +3,7 @@ import { accountRequest } from "@/lib/account-request";
 import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Menu, Search, UserRound } from "lucide-react";
 import {
   APP_NAV_ITEMS,
@@ -39,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [],
   );
   const [commandOpen, setCommandOpen] = useState(false);
+  const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [userInitial, setUserInitial] = useState("");
   const [userName, setUserName] = useState("Your account");
@@ -235,6 +236,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="app-command-trigger"
             aria-label="Go to a page"
+            ref={commandTrigger}
             onClick={() => setCommandOpen(true)}
           >
             <Search size={15} />
@@ -271,7 +273,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="app-content">{children}</div>
         </main>
         <Dialog open={commandOpen} onOpenChange={setCommandOpen}>
-          <DialogContent className="command-panel">
+          <DialogContent
+            className="command-panel"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              commandTrigger.current?.focus();
+            }}
+          >
             <DialogTitle className="sr-only">Navigate FindEZ</DialogTitle>
             <DialogDescription className="sr-only">
               Search and open a feature.
@@ -285,7 +293,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 onChange={(event) => setCommandQuery(event.target.value)}
                 placeholder="Search features and pages"
               />
-              <kbd>esc</kbd>
             </div>
             <div className="command-results">
               {commandItems.map((item) => {
@@ -302,7 +309,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Icon size={17} />
                     <span>
                       <strong>{item.label}</strong>
-                      <small>{item.section}</small>
                     </span>
                   </button>
                 );

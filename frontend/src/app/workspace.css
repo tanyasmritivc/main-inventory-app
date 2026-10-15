@@ -711,17 +711,23 @@ html.dark .app-frame {
   object-fit: contain;
 }
 .command-panel {
+  --command-top: clamp(16px, 10dvh, 80px);
   position: fixed !important;
   left: 50% !important;
-  top: 18% !important;
+  top: var(--command-top) !important;
+  /* Dialog's utility translate is independent of transform. Own both here. */
+  translate: none;
   transform: translateX(-50%) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   width: min(560px, calc(100vw - 32px)) !important;
   padding: 0 !important;
   border: 1px solid #ddd;
   border-radius: 12px;
   background: #fff;
   color: #161616;
-  max-height: 65vh;
+  max-height: min(560px, calc(100dvh - var(--command-top) - 16px));
   overflow: hidden;
   box-shadow: 0 20px 80px #0003;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -732,7 +738,8 @@ html.dark .app-frame {
   border-color: #303033;
 }
 .command-panel .command-input-row {
-  padding: 18px;
+  flex-shrink: 0;
+  padding: 0 52px 0 18px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -747,8 +754,10 @@ html.dark .app-frame {
   color: inherit;
 }
 .command-panel .command-results {
+  min-height: 0;
   overflow: auto;
-  max-height: 50vh;
+  overscroll-behavior: contain;
+  max-height: none;
   padding: 9px;
 }
 .command-panel .command-results button {
