@@ -111,12 +111,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     });
     _load();
     _loadMembers();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(
-        TutorialController.instance.maybeShowSpaceStep(context: context),
-      );
-    });
   }
 
   @override

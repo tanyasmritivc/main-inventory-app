@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-10-14: Guided tour belongs to a fresh installation
+
+Automatic product guidance is installation-scoped, not account-scoped. Prepare
+its durable state before onboarding/authentication can write preferences, and
+consume the one automatic attempt before displaying any overlay. Finishing,
+skipping, backgrounding, interrupted startup and sign-in changes must never
+re-arm it. Existing sessions or legacy onboarding/tour preferences suppress it
+on upgrade. Opening personal or shared Spaces no longer starts a separate tour.
+Failed storage confirmation must keep automatic guidance closed. Preserve setup
+questions and pending first-Space creation independently of tour eligibility.
+
 ## 2026-10-14: Launch capture identity and honest evidence
 
 Capture saves represent separately reviewed physical observations, so equal names

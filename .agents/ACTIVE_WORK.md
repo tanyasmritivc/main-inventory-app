@@ -1,5 +1,22 @@
 # Active work
 
+## October 14 one-time guided tour fix and TestFlight preparation
+
+The user authorizes an updated TestFlight beta, then requires the intermittent
+returning-user tour bug fixed first. Lane `fix/first-install-tour` is based on
+`89b1bb9`. Replace per-account signup/rearm triggers with one installation claim,
+consumed before display. Migrate existing installs to quiet state, cancel delayed
+starts on disposal/account changes, and remove later automatic Space tours.
+All 375 mobile tests with coverage and five runtime CI gates pass; analysis is
+clean. Native upgrade/Space/cold-restart checks pass. TestFlight 1.0.8 (65) is
+VALID and available to the two existing internal groups. Vinod's existing private
+group is assigned, but Apple rejects 65's external review submission while build
+64 is WAITING_FOR_REVIEW. Retry the saved build-65 helper's `prepare` and `status`
+after 64 finishes; 65 is READY_FOR_BETA_SUBMISSION, not externally available yet.
+Runtime source is `8fbfacd`, PR #71. Durable signed IPA/archive/receipts are in
+`Documents/FindEZ/AppStore/1.0.8-build65`. Public App Store selection is verified
+unchanged, Shopify remains held and no production backend deployment occurred.
+
 ## October 14 launch reliability candidate
 
 Lane `fix/launch-find-reliability`, based on `3543cb7`, fixes name-only capture

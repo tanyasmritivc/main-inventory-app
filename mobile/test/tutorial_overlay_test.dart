@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/showcase/tutorial_controller.dart';
+import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -168,7 +169,11 @@ void main() {
     Brightness brightness, {
     double scale = 1,
     bool withSpace = true,
+    bool fresh = true,
   }) async {
+    if (fresh) {
+      await OnboardingPrefs.prepareGuidedTourInstall(hasSession: false);
+    }
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -294,5 +299,51 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('an interrupted tour never returns on reopen or another login', (
+    tester,
+  ) async {
+    await mount(tester, Brightness.light);
+    expect(find.byKey(const Key('tutorial-card')), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    // Do not finish or Skip. A fresh widget represents reopening the shell.
+    await mount(tester, Brightness.light, fresh: false);
+    expect(find.byKey(const Key('tutorial-card')), findsNothing);
+    OnboardingPrefs.justSignedUp = true;
+    await OnboardingPrefs.setCoachmarkPending('tour-user', true);
+    await OnboardingPrefs.setPostSignupPending(true);
+    await tester.tap(find.text('Start tour'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tutorial-card')), findsNothing);
+    OnboardingPrefs.justSignedUp = false;
+  });
+
+  testWidgets('legacy installations never gain an automatic tour on update', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'onboarding_completed': true,
+      'coachmark_pending_tour-user': true,
+    });
+    await OnboardingPrefs.prepareGuidedTourInstall(hasSession: false);
+    await mount(tester, Brightness.light, fresh: false);
+    expect(find.byKey(const Key('tutorial-card')), findsNothing);
+  });
+
+  testWidgets('dismiss during startup cancels a delayed overlay', (
+    tester,
+  ) async {
+    await OnboardingPrefs.prepareGuidedTourInstall(hasSession: false);
+    await tester.pumpWidget(MaterialApp(home: const TourHarness()));
+    await tester.tap(find.text('Start tour'));
+    await tester.pump();
+    TutorialController.instance.dismiss();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tutorial-card')), findsNothing);
+    await tester.tap(find.text('Start tour'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tutorial-card')), findsNothing);
   });
 }

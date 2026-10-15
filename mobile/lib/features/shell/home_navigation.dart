@@ -243,10 +243,8 @@ class _HomeNavigationState extends State<HomeNavigation>
               },
               destinations: [
                 NavigationDestination(
-                  icon: Icon(
-                    CupertinoIcons.house,
-                    key: widget.destinationKeys[0],
-                  ),
+                  key: widget.destinationKeys[0],
+                  icon: Icon(CupertinoIcons.house),
                   selectedIcon: Icon(
                     CupertinoIcons.house_fill,
                     color: widget.monochrome
@@ -256,10 +254,8 @@ class _HomeNavigationState extends State<HomeNavigation>
                   label: 'Home',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    CupertinoIcons.barcode_viewfinder,
-                    key: widget.destinationKeys[1],
-                  ),
+                  key: widget.destinationKeys[1],
+                  icon: Icon(CupertinoIcons.barcode_viewfinder),
                   selectedIcon: Icon(
                     CupertinoIcons.barcode_viewfinder,
                     color: widget.monochrome
@@ -269,10 +265,8 @@ class _HomeNavigationState extends State<HomeNavigation>
                   label: 'Capture',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    CupertinoIcons.chat_bubble,
-                    key: widget.destinationKeys[2],
-                  ),
+                  key: widget.destinationKeys[2],
+                  icon: Icon(CupertinoIcons.chat_bubble),
                   selectedIcon: Icon(
                     CupertinoIcons.chat_bubble_fill,
                     color: widget.monochrome
