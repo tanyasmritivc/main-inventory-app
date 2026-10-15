@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from app.core.config import get_settings
 from app.schemas.inventory import ExtractedInventoryItem
+from app.services.inventory_scope import current_inventory
 
 
 PREVIEW_LIFETIME_SECONDS = 86400
@@ -37,6 +38,9 @@ def preview_uncertain_items(*, user_id: str, source_digest: str, items: list[dic
             data = {'owner': user_id, 'id': preview_id,
                     'source_key': f'photo:{source_digest}:{preview_id}:{index}', 'item': item,
                     'expires': int(time.time()) + PREVIEW_LIFETIME_SECONDS}
+            scope = current_inventory.get()
+            if scope:
+                data['inventory_id'] = scope.inventory_id
             payload = base64.urlsafe_b64encode(json.dumps(data, separators=(',', ':')).encode()).decode().rstrip('=')
             signature = hmac.new(_key(), payload.encode(), hashlib.sha256).hexdigest()
             item = {**item, 'review_id': preview_id, 'review_status': 'preview',
@@ -54,6 +58,9 @@ def verify_capture_preview(*, user_id: str, preview_id: str, token: str) -> dict
         if not hmac.compare_digest(signature, expected):
             raise ValueError()
         data = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+        scope = current_inventory.get()
+        if data.get('inventory_id') != (scope.inventory_id if scope else None):
+            raise ValueError()
         if data['owner'] != user_id or data['id'] != preview_id or data['expires'] <= time.time():
             raise ValueError()
         UUID(data['id'])

@@ -30,6 +30,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 class AuthenticatedUser:
     user_id: str
     first_name: str | None = None
+    actor_id: str | None = None
 
 
 class _KidNotFound(Exception):

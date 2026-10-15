@@ -11,6 +11,8 @@ import httpx
 
 from app.services.supabase_client import get_supabase_admin
 from app.services.spaces_repo import SpaceLimitExceeded, count_spaces, get_or_create_space
+from app.services.inventory_scope import current_inventory, inventory_cache_key
+from fastapi import HTTPException
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ _CACHE_TTL = 60  # seconds
 
 def _get_cached_inventory(user_id: str) -> list | None:
     with _CACHE_LOCK:
-        entry = _INVENTORY_CACHE.get(user_id)
+        entry = _INVENTORY_CACHE.get(inventory_cache_key(user_id))
         if entry and (time.time() - entry[1]) < _CACHE_TTL:
             return entry[0]
     return None
@@ -30,12 +32,14 @@ def _get_cached_inventory(user_id: str) -> list | None:
 
 def _set_cached_inventory(user_id: str, items: list) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE[user_id] = (items, time.time())
+        _INVENTORY_CACHE[inventory_cache_key(user_id)] = (items, time.time())
 
 
 def invalidate_inventory_cache(user_id: str) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE.pop(user_id, None)
+        for key in list(_INVENTORY_CACHE):
+            if key == user_id or ':' in key:
+                _INVENTORY_CACHE.pop(key, None)
 
 
 def _singularize_word(word: str) -> str:
@@ -155,6 +159,8 @@ def _resolve_space_id(*, user_id: str, location: str) -> str | None:
         return space.get("id") if space else None
     except SpaceLimitExceeded:
         raise
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Failed to resolve space for location %s", loc)
         return None
@@ -214,10 +220,24 @@ def list_items(*, user_id: str) -> list[dict]:
     if cached is not None:
         return cached
     supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
-    )
-    items = resp.data or []
+    items = []
+    if current_inventory.get():
+        # PostgREST caps each response. Walk the selected inventory, with a
+        # stable tie breaker, so large inventories are actually searchable.
+        offset = 0
+        while True:
+            resp = _execute_with_retry(lambda: supabase.table("items").select("*").eq("user_id", user_id)
+                .order("created_at", desc=True).order("item_id").range(offset, offset + 499).execute())
+            page = resp.data or []
+            items.extend(page)
+            if len(page) < 500:
+                break
+            offset += len(page)
+    else:
+        resp = _execute_with_retry(
+            lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        )
+        items = resp.data or []
     _set_cached_inventory(user_id, items)
     return items
 
@@ -488,6 +508,9 @@ def delete_item(*, user_id: str, item_id: str) -> bool:
 
 def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     supabase = get_supabase_admin()
+    if current_inventory.get():
+        # Validate before creating a location or changing any related record.
+        supabase.record('items','item_id',item_id)
 
     allowed = {
         "name",
@@ -568,6 +591,11 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     q = (q or "").strip()
     if not q:
         return list_items(user_id=user_id)
+    if current_inventory.get():
+        fields=('name','part_number','brand','category','subcategory','location','notes','purchase_source','barcode')
+        target=q.casefold()
+        return [item for item in list_items(user_id=user_id)
+                if any(target in str(item.get(field) or '').casefold() for field in fields)]
 
     supabase = get_supabase_admin()
     pattern = f"%{q}%"

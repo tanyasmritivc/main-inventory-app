@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/site/inventory-link";
 import { useEffect, useRef, useState } from "react";
 import { Search, ShoppingCart, Camera } from "lucide-react";
 import { accountRequest } from "@/lib/account-request";

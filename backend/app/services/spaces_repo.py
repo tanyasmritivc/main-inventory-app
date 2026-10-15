@@ -3,6 +3,8 @@ import time
 
 from app.services.limits import LIMITS, get_user_tier
 from app.services.supabase_client import get_supabase_admin
+from app.services.inventory_scope import current_inventory
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,8 @@ def _execute_with_retry(fn, max_attempts: int = 3):
 def count_spaces(*, user_id: str) -> int:
     """Count real named spaces for the user, excluding any 'Unsorted' rows."""
     supabase = get_supabase_admin()
+    if current_inventory.get():
+        supabase = supabase.raw
     resp = _execute_with_retry(
         lambda: supabase.table("spaces")
         .select("id, name")
@@ -52,10 +56,10 @@ def _find_space_by_name(*, user_id: str, name: str) -> dict | None:
         .execute()
     )
     target = (name or "").strip().lower()
-    for row in resp.data or []:
-        if (row.get("name") or "").strip().lower() == target:
-            return row
-    return None
+    matches = [row for row in resp.data or [] if (row.get('name') or '').strip().lower()==target]
+    if len(matches)>1:
+        raise HTTPException(409,'More than one Space uses this name. Choose its inventory on the website.')
+    return matches[0] if matches else None
 
 
 def space_exists(*, user_id: str, name: str) -> bool:
@@ -70,6 +74,14 @@ def space_exists(*, user_id: str, name: str) -> bool:
 def list_spaces(*, user_id: str) -> list[dict]:
     """Return all spaces for user with item_count derived from items.space_id."""
     supabase = get_supabase_admin()
+    scope=current_inventory.get()
+    if scope:
+        rows=[]
+        while True:
+            page=supabase.raw.table('app_inventory_space_summaries').select('id,name,created_at,item_count').eq('inventory_id',scope.inventory_id).order('name').order('id').range(len(rows),len(rows)+499).execute().data or []
+            rows.extend(page)
+            if len(page)<500:
+                return rows
     spaces_resp = _execute_with_retry(
         lambda: supabase.table("spaces")
         .select("id, name, created_at")

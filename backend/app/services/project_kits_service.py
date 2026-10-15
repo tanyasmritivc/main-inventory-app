@@ -99,6 +99,10 @@ def _get_authorized_kit(kit_id: str, user_id: str) -> tuple[dict, bool]:
     if not response.data:
         raise HTTPException(404, 'This project kit no longer exists.')
     kit = response.data[0]
+    from app.services.inventory_scope import current_inventory
+    scope = current_inventory.get()
+    if scope:
+        return kit, scope.can_edit
     share_id = kit.get('share_id')
     if share_id:
         try:

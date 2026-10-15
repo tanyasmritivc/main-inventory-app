@@ -1,4 +1,6 @@
+import { activeInventory } from "@/lib/inventory-selection";
 export type DocumentEntry = {
+  inventory_id?: string;
   storage_path: string;
   user_id?: string;
   filename: string;
@@ -9,6 +11,11 @@ export type DocumentEntry = {
   created_at?: string;
   item_id?: string | null;
 };
+export function documentOwner(doc: DocumentEntry, accountId: string) {
+  const selected = activeInventory();
+  return selected && selected.accountId === accountId && doc.inventory_id === selected.inventory_id
+    ? doc.user_id || accountId : accountId;
+}
 export function documentKind(doc: DocumentEntry) {
   const name = doc.filename.toLowerCase(),
     mime = doc.mime_type?.toLowerCase() ?? "";

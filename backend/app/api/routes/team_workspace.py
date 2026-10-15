@@ -1,3 +1,4 @@
+from postgrest.exceptions import APIError
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
@@ -20,7 +21,7 @@ from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
-from app.services.storage import create_document_signed_url, upload_team_document
+from app.services.storage import create_document_signed_url, document_path_in_scope, upload_team_document
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
@@ -168,12 +169,19 @@ def create_team_space(
     body: CreateTeamSpace,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    _manager(team_id, user.user_id)
+    membership = _manager(team_id, user.user_id)
     team = _team(team_id)
     name = body.name.strip()
     if not name:
         raise HTTPException(422, "Enter a Space name.")
-    space = get_or_create_space(user_id=team["owner_user_id"], name=name)
+    from app.services.inventory_scope import InventoryScope, current_inventory
+    from app.services.supabase_client import get_supabase_raw
+    inventory = get_supabase_raw().rpc('findez_default_inventory',{'p_user_id':team['owner_user_id'],'p_team_id':team_id}).execute().data
+    context = current_inventory.set(InventoryScope(str(inventory),user.user_id,team['owner_user_id'],team_id,membership['role']))
+    try:
+        space = get_or_create_space(user_id=team["owner_user_id"],name=name)
+    finally:
+        current_inventory.reset(context)
     existing = get_supabase_admin().table("team_spaces").select("team_id").eq(
         "space_id", space["id"]
     ).limit(1).execute().data or []
@@ -223,9 +231,14 @@ def detach_team_space(
     space, _ = _space_access(team_id, space_id, user.user_id)
     if membership["role"] not in ("owner", "mentor") and space["user_id"] != user.user_id:
         raise HTTPException(403, "Only a manager or the Space owner can remove it.")
-    deleted = get_supabase_admin().table("team_spaces").delete().eq(
-        "team_id", team_id
-    ).eq("space_id", space_id).execute().data or []
+    try:
+        deleted = get_supabase_admin().table("team_spaces").delete().eq(
+            "team_id",team_id
+        ).eq("space_id",space_id).execute().data or []
+    except APIError as exc:
+        if exc.code in ('23505','23514'):
+            raise HTTPException(409,'Resolve linked project allocations or duplicate Space names before removing this Space.')
+        raise
     if deleted:
         _record(team_id, user.user_id, "space_removed", f"Removed {space['name']} from the team", {"space_id": space_id})
     return {"removed": True, "space_deleted": False}
@@ -238,9 +251,7 @@ def list_team_space_items(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     space, membership = _space_access(team_id, space_id, user.user_id)
-    items = get_supabase_admin().table("items").select("*").eq(
-        "user_id", space["user_id"]
-    ).eq("space_id", space_id).order("created_at", desc=True).execute().data or []
+    items = get_supabase_admin().table("items").select("*").eq("space_id", space_id).order("created_at", desc=True).execute().data or []
     return {"space": space, "items": items, "role": membership["role"]}
 
 
@@ -274,13 +285,13 @@ def update_team_space_item(
     space, _ = _space_access(team_id, space_id, user.user_id, write=True)
     if body.item_id != item_id:
         raise HTTPException(422, "The item identifier does not match.")
-    exists = get_supabase_admin().table("items").select("item_id,name").eq(
+    exists = get_supabase_admin().table("items").select("item_id,name,user_id").eq(
         "item_id", item_id
-    ).eq("user_id", space["user_id"]).eq("space_id", space_id).limit(1).execute().data or []
+    ).eq("space_id", space_id).limit(1).execute().data or []
     if not exists:
         raise HTTPException(404, "This item is not in the Team Space.")
     updates = body.model_dump(exclude_none=True, exclude={"item_id", "location"})
-    item = update_item(user_id=space["user_id"], item_id=item_id, updates=updates)
+    item = update_item(user_id=exists[0]["user_id"], item_id=item_id, updates=updates)
     if not item:
         raise HTTPException(500, "The item could not be updated.")
     _record(team_id, user.user_id, "item_updated", f"Updated {item['name']} in {space['name']}", {"space_id": space_id, "item_id": item_id})
@@ -291,12 +302,12 @@ def _team_space_item_owner(
     *, team_id: str, space_id: str, item_id: str, user_id: str, write: bool
 ) -> str:
     space, _ = _space_access(team_id, space_id, user_id, write=write)
-    rows = get_supabase_admin().table("items").select("item_id").eq(
+    rows = get_supabase_admin().table("items").select("item_id,user_id").eq(
         "item_id", item_id
-    ).eq("user_id", space["user_id"]).eq("space_id", space_id).limit(1).execute().data or []
+    ).eq("space_id", space_id).limit(1).execute().data or []
     if not rows:
         raise HTTPException(404, "This item is not in the Team Space.")
-    return str(space["user_id"])
+    return str(rows[0]["user_id"])
 
 
 @router.get(
@@ -409,12 +420,12 @@ def delete_team_space_item(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     space, _ = _space_access(team_id, space_id, user.user_id, write=True)
-    rows = get_supabase_admin().table("items").select("item_id,name").eq(
+    rows = get_supabase_admin().table("items").select("item_id,name,user_id").eq(
         "item_id", item_id
-    ).eq("user_id", space["user_id"]).eq("space_id", space_id).limit(1).execute().data or []
+    ).eq("space_id", space_id).limit(1).execute().data or []
     if not rows:
         return {"deleted": True}
-    if not delete_item(user_id=space["user_id"], item_id=item_id):
+    if not delete_item(user_id=rows[0]["user_id"], item_id=item_id):
         raise HTTPException(500, "The item could not be deleted.")
     _record(team_id, user.user_id, "item_deleted", f"Deleted {rows[0]['name']} from {space['name']}", {"space_id": space_id, "item_id": item_id})
     return {"deleted": True}
@@ -493,12 +504,16 @@ async def upload_team_document_route(
 
 @router.get("/documents/{document_id}/open")
 def open_team_document(
+    response: Response,
     team_id: str,
     document_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     _membership(team_id, user.user_id)
     document = _team_document(team_id, document_id)
+    if not document_path_in_scope(document['storage_path'],f'teams/{team_id}/'):
+        raise HTTPException(404,'Document not found')
+    response.headers['Cache-Control']='private, no-store'
     return {"url": create_document_signed_url(storage_path=document["storage_path"])}
 
 
@@ -512,6 +527,8 @@ def delete_team_document(
 ) -> Response:
     membership = _editor(team_id, user.user_id)
     document = _team_document(team_id, document_id)
+    if not document_path_in_scope(document['storage_path'],f'teams/{team_id}/'):
+        raise HTTPException(404,'Document not found')
     if (
         document.get("uploaded_by") != user.user_id
         and membership["role"] not in ("owner", "mentor")

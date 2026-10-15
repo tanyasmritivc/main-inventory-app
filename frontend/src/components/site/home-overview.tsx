@@ -1,8 +1,10 @@
 "use client";
-import Link from "next/link";
+import { canEditInventory } from "@/lib/inventory-selection";
+import { useInventoryRouter } from "@/components/site/inventory-link";
+import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Camera, MapPin, RefreshCw, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import { accountRequest } from "@/lib/account-request";
 import { itemDisplayName, type InventoryItem, type Space } from "@/lib/api";
 import {
@@ -20,7 +22,8 @@ export function HomeOverview() {
 function HomeOverviewWorkspace() {
   const { accountId, error: sessionError } = useApiSession(),
     restock = useRestock(accountId),
-    router = useRouter();
+    router = useInventoryRouter();
+  const { adopt: adoptRestock } = restock;
   const [checkedAt, setCheckedAt] = useState(0);
   const owner = useRef(accountId);
   const request = useRef(0);
@@ -62,6 +65,7 @@ function HomeOverviewWorkspace() {
     ]);
     if (owner.current !== account || ticket !== request.current) return;
     const [inventory, spaces, review, checkouts, profile] = results;
+    if (inventory.status === "fulfilled") adoptRestock(inventory.value.items.map(item => item.item_id));
     setData({
       items:
         inventory.status === "fulfilled" ? inventory.value.items : undefined,
@@ -91,7 +95,7 @@ function HomeOverviewWorkspace() {
     );
     setCheckedAt(Date.now());
     setLoading(false);
-  }, [accountId]);
+  }, [accountId, adoptRestock]);
   useEffect(() => {
     let active = true;
     void Promise.resolve().then(() => {
@@ -162,9 +166,9 @@ function HomeOverviewWorkspace() {
           >
             <RefreshCw size={15} />
           </button>
-          <Link className="workspace-button primary" href="/scan">
+          <Link className="workspace-button primary" href={canEditInventory() ? "/scan" : "/inventory"}>
             <Camera size={15} />
-            Capture
+            {canEditInventory() ? "Capture" : "View inventory"}
           </Link>
         </div>
       </header>
@@ -248,7 +252,7 @@ function HomeOverviewWorkspace() {
             <p className="workspace-muted">
               Capture what you have, then give it a Space.
             </p>
-            <Link href="/scan" className="workspace-button">
+            <Link aria-disabled={!canEditInventory()} href={canEditInventory() ? "/scan" : "/inventory"} className="workspace-button">
               Capture your first items
             </Link>
           </div>

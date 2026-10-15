@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/site/inventory-link";
 
 export function InteriorLoading({ page }: { page?: string }) {
   return (

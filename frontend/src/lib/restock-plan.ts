@@ -1,3 +1,4 @@
+import { activeInventory } from "@/lib/inventory-selection";
 export type RestockEntry = {
   minimum?: number;
   buy_quantity?: number;
@@ -6,8 +7,30 @@ export type RestockEntry = {
   receipt_total?: number;
 };
 export type RestockPlan = Record<string, RestockEntry>;
-export const restockKey = (account: string) => `findez-restock-v1:${account}`;
+export const restockKey = (account: string) => {
+  const inventory = activeInventory();
+  return `findez-restock-v1:${account}${inventory ? `:inventory:${inventory.inventory_id}` : ""}`;
+};
 export const RESTOCK_EVENT = "findez-restock-changed";
+export function adoptRestockEntries(storage: Pick<Storage,"getItem"|"setItem">, account: string, itemIds: readonly string[]) {
+  const selected=activeInventory();
+  if (!selected || selected.accountId!==account || !itemIds.length) return false;
+  const legacy=decodeRestock(storage.getItem(`findez-restock-v1:${account}`));
+  const key=restockKey(account), plan=decodeRestock(storage.getItem(key));
+  const marker=JSON.parse(storage.getItem(`${key}:adopted`) || "[]") as unknown;
+  if (!Array.isArray(marker) || marker.some(value => typeof value!=="string")) throw new Error("Could not read the previous purchase plan migration.");
+  const adopted=new Set<string>(marker);
+  let changed=false;
+  for (const id of itemIds) if (legacy[id] && !adopted.has(id)) {
+    if (!plan[id]) plan[id]=legacy[id];
+    adopted.add(id); changed=true;
+  }
+  if (changed) {
+    storage.setItem(key,JSON.stringify(plan));
+    storage.setItem(`${key}:adopted`,JSON.stringify([...adopted]));
+  }
+  return changed;
+}
 export function decodeRestock(raw: string | null): RestockPlan {
   if (raw === null) return {};
   const decoded: unknown = JSON.parse(raw);

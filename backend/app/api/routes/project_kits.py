@@ -142,7 +142,8 @@ def release_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_curre
 @router.delete('/{kit_id}')
 def delete_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
     kit, _ = _get_authorized_kit(kit_id, user.user_id)
-    if kit['created_by_user_id'] != user.user_id:
+    from app.services.inventory_scope import current_inventory
+    if not current_inventory.get() and kit['created_by_user_id'] != user.user_id:
         raise HTTPException(403, 'Only the person who created this project kit can delete it.')
     get_supabase_admin().table('project_kits').delete().eq('id', kit_id).execute()
     return {'deleted': True}

@@ -59,3 +59,15 @@ api_router.include_router(review_router)
 api_router.include_router(invitations_router)
 
 api_router.include_router(onboarding_router)
+
+# The same inventory journeys run behind an explicit, server-validated context.
+# Account, collaboration administration and public integration APIs stay outside.
+from app.api.routes.inventory_workspaces import router as workspace_selection_router, scoped_router
+api_router.include_router(workspace_selection_router)
+for scoped_feature_router in (
+    items_router, inventory_router, ai_router, imports_router, documents_router,
+    activity_router, checkouts_router, spaces_router, bins_router,
+    conversations_router, project_kits_router, review_router, sharing_router,
+):
+    scoped_router.include_router(scoped_feature_router)
+api_router.include_router(scoped_router)

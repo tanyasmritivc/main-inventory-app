@@ -1,3 +1,4 @@
+import { activeInventory, assertInventory, inventoryApiPath } from "@/lib/inventory-selection";
 import { apiBase, ApiError } from "@/lib/api";
 import { accountToken } from "@/lib/account-request";
 import { parseAskContext, type AskAnswerContext } from "@/lib/ask-answer";
@@ -94,7 +95,10 @@ export async function askQuestion({
       !photo.type.startsWith("image/"))
   )
     throw new Error("Choose a photo smaller than 10 MB.");
+  const selected = activeInventory();
+  if (selected && selected.accountId !== accountId) throw new Error("Your account changed. Reopen this page.");
   const token = await accountToken(accountId);
+  assertInventory(selected);
   const form = new FormData();
   if (photo) {
     form.append("file", photo);
@@ -102,7 +106,7 @@ export async function askQuestion({
     if (conversationId) form.append("conversation_id", conversationId);
   }
   const response = await fetch(
-    `${apiBase()}${photo ? "/ai_photo_question" : "/ai_command?stream=true"}`,
+    `${apiBase()}${inventoryApiPath(photo ? "/ai_photo_question" : "/ai_command?stream=true", selected)}`,
     {
       method: "POST",
       signal,
@@ -127,6 +131,7 @@ export async function askQuestion({
       null,
     );
   await readAskEvents(response.body, (event) => {
+    assertInventory(selected);
     if (event.content || event.delta)
       onDelta(event.content || event.delta || "");
     if (event.type === "status" && event.message) onStatus(event.message);
@@ -138,4 +143,5 @@ export async function askQuestion({
       });
   });
   await accountToken(accountId);
+  assertInventory(selected);
 }

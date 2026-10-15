@@ -732,6 +732,46 @@ html.dark .app-frame {
   box-shadow: 0 20px 80px #0003;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+.interior-loading.inventory-loading { min-height: 60dvh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 24px; color: var(--light-muted); }
+.app-frame.workspace-directory { min-height: 100dvh; }
+.app-frame .workspace-directory-header { min-height: 76px; padding: 16px clamp(20px, 4vw, 56px); display: flex; align-items: center; gap: 24px; border-bottom: 1px solid var(--app-border); }
+.app-frame .workspace-directory-header > a:first-child { display: flex; flex-shrink: 0; }
+.app-frame .workspace-directory-header svg { width: 112px; height: 32px; }
+.app-frame .workspace-directory-header nav { min-width: 0; display: flex; gap: 12px; font-size: 13px; color: var(--app-muted); }
+.app-frame .workspace-directory-header nav > :last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-frame .workspace-account { margin-left: auto; font-size: 13px; }
+.app-frame .workspace-directory-main { width: min(100%, 1080px); margin: 0 auto; padding: clamp(32px, 6vw, 76px) clamp(20px, 4vw, 48px) 64px; }
+.app-frame .workspace-directory-main > .product-page-header { margin-bottom: 28px; }
+.app-frame .workspace-directory-main .directory-search { max-width: 380px; margin-bottom: 26px; }
+.app-frame .directory-rows { border-top: 1px solid var(--app-border); }
+.app-frame .directory-row { min-height: 80px; padding: 18px 4px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--app-border); text-decoration: none; }
+.app-frame .directory-row:hover { background: var(--app-surface-2); }
+.app-frame .directory-row strong { min-width: 0; overflow-wrap: anywhere; font-size: 15px; font-weight: 500; }
+.app-frame .directory-row > span { flex-shrink: 0; color: var(--app-muted); font-size: 12px; }
+.app-frame .directory-inventory-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.app-frame .directory-inventory-link > span { flex-shrink: 0; color: var(--app-muted); font-size: 12px; }
+.app-frame .directory-rename { flex-shrink: 0; padding: 10px 6px; border: 0; background: none; color: var(--app-muted); font-size: 12px; cursor: pointer; }
+.app-frame .directory-rename:hover { color: var(--app-text); text-decoration: underline; }
+.app-frame .directory-shared { margin-top: 48px; }
+.app-frame .directory-shared h2 { margin-bottom: 18px; font-size: 15px; font-weight: 500; }
+.app-frame .directory-pagination { display: flex; align-items: center; gap: 16px; margin-top: 24px; font-size: 12px; }
+.workspace-dialog.inventory-creation-dialog { translate: none; transform: translate(-50%, -50%); display: block; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; }
+.workspace-dialog.inventory-creation-dialog form { display: grid; gap: 20px; margin-top: 24px; }
+.workspace-dialog.inventory-creation-dialog label { display: grid; gap: 8px; font-size: 13px; }
+.workspace-dialog.inventory-creation-dialog .product-button { justify-self: end; }
+.app-frame .app-inventory-switcher { min-width: 0; max-width: 48%; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.app-frame .app-inventory-switcher a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.app-frame .app-inventory-switcher > span { color: var(--app-muted); }
+@media (max-width: 600px) {
+  .app-frame .workspace-directory-header { gap: 14px; flex-wrap: wrap; }
+  .app-frame .workspace-directory-header nav { order: 3; flex-basis: 100%; }
+  .app-frame .workspace-directory-main > .product-page-header { align-items: flex-start; flex-direction: column; gap: 20px; }
+  .app-frame .directory-row { gap: 12px; }
+  .app-frame .app-inventory-switcher { max-width: 45%; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 11px; }
+  .app-frame .app-inventory-switcher > span { display: none; }
+  .app-frame .app-inventory-switcher a { max-width: 100%; }
+}
 .dark .command-panel {
   background: #171718;
   color: #f3f3f2;

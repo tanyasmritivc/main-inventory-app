@@ -1,9 +1,12 @@
 "use client";
+import { activeInventory, assertInventory, canEditInventory } from "@/lib/inventory-selection";
+import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/site/inventory-link";
+
 import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import { getAccessToken } from "@/lib/session";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
@@ -221,10 +224,11 @@ function InventoryStats({
 
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spaces'; locationFilter?: string; itemFilter?: string }) {
-  const router = useRouter();
+  const router = useInventoryRouter();
   const { confirmAction, promptValue } = useAppDialog();
   const { accountId } = useApiSession();
   const restock = useRestock(accountId);
+  const { adopt: adoptRestock } = restock;
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
@@ -246,6 +250,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const [createSpaceError, setCreateSpaceError] = useState<string | null>(null);
   const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
+  const canEdit = canEditInventory();
+  const [movingSpace, setMovingSpace] = useState<Space | null>(null);
   const [joinSpaceOpen, setJoinSpaceOpen] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinSpaceError, setJoinSpaceError] = useState<string | null>(null);
@@ -329,7 +335,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    return (await getAccessToken()) ?? '';
+    const inventory=activeInventory();
+    const value=(await getAccessToken()) ?? '';
+    assertInventory(inventory);
+    return value;
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -342,7 +351,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
-      if (!q) setAllItems(res?.items ?? []);
+      if (!q) { setAllItems(res?.items ?? []); adoptRestock((res?.items ?? []).map(item => item.item_id)); }
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to load inventory'));
     } finally {
@@ -351,11 +360,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   useEffect(() => {
+    let active=true;
     const init = async () => {
       setLoading(true);
       try {
         const t = (await getAccessToken()) ?? '';
-        if (!t) return;
+        if (!t || !active) return;
         setToken(t);
         const [itemsResult, spacesResult, checkoutsResult, reviewsResult] = await Promise.allSettled([
           searchItems({ token: t, query: '' }),
@@ -364,7 +374,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           getReviewItems({ token: t, limit: 1 }),
         ]);
 
+        if (!active) return;
         if (itemsResult.status === 'fulfilled') {
+          adoptRestock((itemsResult.value?.items ?? []).map(item => item.item_id));
           setAllItems(itemsResult.value?.items ?? []);
           setItems(itemsResult.value?.items ?? []);
         } else {
@@ -389,12 +401,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       } catch (e) {
         console.error(e);
       } finally {
-        setLoading(false);
-        setInitSettled(true);
+        if (active) { setLoading(false); setInitSettled(true); }
       }
     };
     void init();
-  }, []);
+    return () => { active=false; };
+  }, [adoptRestock]);
 
   useEffect(() => {
     if (!query.trim() || !token) return;
@@ -672,8 +684,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   async function onRenameSpace(space: Space) {
+    const inventory=activeInventory();
     const name = (await promptValue({ title: 'Rename Space', label: 'Space name', initialValue: space.name, confirmLabel: 'Rename' }))?.trim();
-    if (!name) return;
+    if (!name || activeInventory()!==inventory) return;
     const normalized = normalizeLocation(name);
     if (!normalized || normalized === space.name) return;
     setLoading(true);
@@ -692,7 +705,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   async function onDeleteSpace(space: Space) {
+    const inventory=activeInventory();
     if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "This Space, its saved items, and any pending identifications will be permanently deleted.", confirmLabel: 'Delete Space', danger: true })) return;
+    if (activeInventory()!==inventory) return;
     setLoading(true);
     setError(null);
     try {
@@ -842,9 +857,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
-    cols.push({ field: 'actions', label: 'Actions' })
+    if (canEdit) cols.push({ field: 'actions', label: 'Actions' })
     return cols
-  }, [visibleItems])
+  }, [visibleItems, canEdit])
 
   const gridTemplate = useMemo(() => {
     return tableColumns.map(col => {
@@ -888,9 +903,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   async function checkOut(item: InventoryItem) {
+    const inventory=activeInventory();
     const borrower = await promptValue({ title: `Check out “${itemDisplayName(item)}”`, label: 'Checked out to', placeholder: 'Person or team', confirmLabel: 'Continue' });
     if (!borrower?.trim()) return;
     const due = await promptValue({ title: 'When is it due back?', message: 'Choose a date, or cancel to leave the due date blank.', label: 'Due date', inputType: 'date', confirmLabel: 'Set due date' });
+    if (activeInventory()!==inventory) return;
     const t = token || (await refreshToken());
     if (!t) return;
     try {
@@ -948,16 +965,16 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find')}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
-        {!selectedSpace && !viewingSharedSpace && (
+        {!selectedSpace && !viewingSharedSpace && canEdit && (
           <div className="product-actions">
             {props.mode === "inventory" && <Link href="/scan" className="product-button primary">Add items</Link>}
-            <button
+            {!activeInventory() && <button
               type="button"
               onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
               className="product-button"
             >
               Join
-            </button>
+            </button>}
             <button
               type="button"
               onClick={() => setCreateSpaceOpen(true)}
@@ -974,7 +991,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           <form className="home-command" onSubmit={openAssist}>
             <Search size={18} aria-hidden="true" />
             <input value={homePrompt} onChange={(event) => setHomePrompt(event.target.value)} placeholder="Ask about your inventory" aria-label="Ask FindEZ" />
-            <button type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
+            <button disabled={!canEdit} type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
             <button type="submit" className="home-command-submit" disabled={!homePrompt.trim()}>Ask<ArrowRight size={16} /></button>
           </form>
 
@@ -1286,12 +1303,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             ← My Spaces
           </button>
 
-          <div style={{ marginBottom: 4 }}>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
-          </div>
-
           {/* Toolbar */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20, marginBottom: 20 }}>
+            {canEdit && <>
             <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' }}>
               Upload Image
               <input
@@ -1305,7 +1319,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => openSpreadsheet(selectedSpace ?? '')} style={toolbarBtnStyle}>Import Spreadsheet</button>
             <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
-            <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
+            {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
+            </>}
             <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
@@ -1338,7 +1353,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>
+              {canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
             <>
@@ -1428,7 +1443,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
-                      <ItemPhotoGallery itemId={item.item_id} canEdit onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
+                      <ItemPhotoGallery itemId={item.item_id} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
@@ -1443,7 +1458,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                         ))
                       }
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
-                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedItemId(null)}
@@ -1501,7 +1516,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 </div>
                 <div className="space-card-actions">
                   {/* Upload image */}
-                  <label
+                  {canEdit && <label
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
@@ -1514,9 +1529,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       style={{ display: 'none' }}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f, space); }}
                     />
-                  </label>
+                  </label>}
                   {/* Share */}
-                  <button
+                  {canEdit && !activeInventory()?.team_id && <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
@@ -1524,9 +1539,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                   >
                     <Share2 size={14} />
-                  </button>
+                  </button>}
                   {/* Rename/Delete only for canonical spaces that have a server record */}
-                  {spaceObj && (
+                  {spaceObj && canEdit && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -1542,6 +1557,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" side="top">
                         <DropdownMenuItem onSelect={() => void onRenameSpace(spaceObj)}>Rename space</DropdownMenuItem>
+                        {activeInventory() && <DropdownMenuItem onSelect={() => setMovingSpace(spaceObj)}>Move to inventory</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1645,6 +1661,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
       {/* ── Dialogs ───────────────────────────────────────────────────────── */}
 
+      {movingSpace && <MoveSpaceInventory space={movingSpace} onClose={() => setMovingSpace(null)} onMoved={() => { setMovingSpace(null); setSelectedSpace(null); void refreshAll(); }} />}
       {/* New Space */}
       <Dialog open={createSpaceOpen} onOpenChange={(open) => { setCreateSpaceOpen(open); if (!open) { setCreateSpaceError(null); setNewSpaceName(''); } }}>
         <DialogContent className="findez-form-dialog" style={{ maxWidth: 560 }}>
@@ -1818,7 +1835,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

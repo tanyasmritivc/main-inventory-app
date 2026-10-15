@@ -1,5 +1,5 @@
 export type RestockScope =
-  | { key: string; label: string; kind: "personal"; canEdit: true }
+  | { key: string; label: string; kind: "personal"; canEdit: boolean }
   | {
       key: string;
       label: string;

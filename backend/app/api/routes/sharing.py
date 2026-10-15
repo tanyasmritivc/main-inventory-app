@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 class CreateShareRequest(BaseModel):
     share_name: str = Field(default="My Inventory", min_length=1, max_length=100)
     permission: Literal["view", "edit"] = "view"
+    space_id: uuid.UUID | None = None
 
 
 class JoinShareRequest(BaseModel):
@@ -74,6 +75,7 @@ async def create_share_route(
         user_id=user.user_id,
         share_name=share_name,
         permission=permission,
+        **({'space_id': str(body.space_id)} if body.space_id else {}),
     )
     return result
 

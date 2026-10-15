@@ -409,18 +409,10 @@ def delete_team(*, requesting_user_id: str, team_id: str) -> bool:
         return False
     if team[0]["owner_user_id"] != requesting_user_id:
         raise PermissionError("OWNER_ONLY")
-    # Licenses do not have a foreign key to teams; clear the stale redemption
-    # reference before the team's cascading delete.
-    supabase_execute_with_retry(
-        lambda: supabase.table("licenses").update({
-            "redeemed_by": None,
-            "redeemed_at": None,
-        }).eq("redeemed_by", team_id).execute()
-    )
-    supabase_execute_with_retry(
-        lambda: supabase.table("teams").delete().eq("team_id", team_id).execute()
-    )
-    return True
+    result = supabase.rpc('findez_delete_inventory_team', {
+        'p_team_id':team_id,'p_actor_id':requesting_user_id,
+    }).execute()
+    return bool(result.data)
 
 
 # ── License redemption ─────────────────────────────────────────────────────────

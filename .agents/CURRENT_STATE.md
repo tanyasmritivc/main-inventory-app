@@ -1,5 +1,56 @@
 # Current state
 
+## October 15 workspace hierarchy published
+
+PR #75 is live: Workspace (Personal or Team), then Inventory, then dashboard.
+Physical Spaces belong to inventories. Home, capture/import, Find, Assist/history,
+documents, Review, activity, lending, kits and purchase plans retain inventory
+context. Account settings and billing remain global. Existing mobile/API routes
+remain compatible; the new chooser is website-only.
+
+Website runtime `eb67ce1120128a14ffcd369458cd268187dd62d0`, build
+`PTR7zEZHl_uHR-Ay09uw3`, runs from
+`/home/ubuntu/findez-web-releases/web-workspace-inventories-20261015-r2/frontend`.
+Backend runtime `eb3eee0c0232c7433b25f05541737cc766b134cb` and migration 043
+are live. All original values across 21 tables were preserved inside the locked
+migration transaction. Historical records with removed account owners keep their
+owner IDs; the NOT VALID owner foreign key enforces new writes without rewriting
+those records. Documents remain private. No customer records were created for QA.
+
+511 backend/API-doc tests, 237 web tests, TypeScript, PostgreSQL isolation and
+record-preservation checks pass. All five CI jobs pass for final runtime in run
+38702261152. Desktop/narrow and light/dark previews pass. Signed-in live Safari
+verifies Personal and Team dashboards, refresh, scoped capture destinations,
+private documents, separate Assist history, selected-Team administration and the
+corrected Space toolbar. 11 public routes, 20 protected routes and three CSS
+assets pass; 1,241 prior assets and production configuration are retained.
+
+Receipts: `Documents/FindEZ/Releases/workspace-inventories-2026-10-15`.
+Remote base record: `/home/ubuntu/findez-workspace-inventories-20261015`;
+backend backup: `backend-backup-r2` beneath that record. Final web rollback:
+`/home/ubuntu/findez-workspace-inventories-20261015-r2/previous-web-rebuild.conf`.
+Runtime rollback retains the additive database schema. Payments remain disabled.
+
+## October 14 original imported fields published
+
+PR #74 runtime `bd1c8a1` preserves ordered original Excel/CSV/JSON source fields
+and maps each sheet independently, preventing distinct source rows from merging.
+Web and mobile source show Imported details with exact named headers, duplicate
+and unnamed positions, nested JSON and empty/zero/false values. Read-only
+verification retains all source values in 295 rows across the supplied workbook.
+459 backend/API-doc tests, 225 web tests, TypeScript, changed-file lint and Flutter
+analysis pass; all five exact-source CI jobs pass (38686833571), including full
+mobile tests and PostgreSQL migration checks. Local mobile tests initially ran
+out of disk; generated-cache cleanup was completed and a rerun was interrupted.
+Migration 042 and three hash-guarded backend files are live, preserving existing
+items and unrelated source. The isolated website build `dY0WQXameBIfVROypzxBZ`
+at `web-import-columns-20261014/frontend` passes 11 public routes, 17 auth guards
+and three CSS checks, preserving configuration and 1,122 prior assets. Receipts
+and rollback are in `Documents/FindEZ/Releases/import-columns-2026-10-14` and
+`/home/ubuntu/findez-import-columns-20261014`. Existing items were not reimported;
+previously discarded fields cannot be recovered automatically. Mobile support is
+committed and CI-verified but is not in the existing TestFlight build 65.
+
 ## October 14 Settings and navigation correction published
 
 PR #73 runtime `7b44165` is live. Settings Plans/legal links use full-width text

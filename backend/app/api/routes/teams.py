@@ -1,3 +1,4 @@
+from postgrest.exceptions import APIError
 """
 Team management endpoints.
 
@@ -300,6 +301,11 @@ def delete_team_route(
         return {"deleted": deleted}
     except PermissionError:
         raise HTTPException(403, "Only the team owner can delete this team.")
+
+    except APIError as exc:
+        if exc.code in ('23505','23514'):
+            raise HTTPException(409,'Resolve linked project allocations or duplicate Space names before removing this workspace.')
+        raise
 
 
 @router.get("/{team_id}/members")

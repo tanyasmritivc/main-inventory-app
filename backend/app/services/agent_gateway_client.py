@@ -28,6 +28,15 @@ class _Completions:
 
     def create(self, **kwargs: Any) -> SimpleNamespace:
         extra_headers = kwargs.pop("extra_headers", None) or {}
+        from app.services.inventory_scope import current_inventory
+        scope = current_inventory.get()
+        if scope:
+            # The gateway also retains conversation state. Namespace at its
+            # transport boundary, including callers that bypass the helper.
+            import hashlib
+            thread = str(extra_headers.get('X-Agent-Conversation-ID', 'default'))
+            identity = f'{scope.inventory_id}:{scope.actor_id}:{thread}'
+            extra_headers['X-Agent-Conversation-ID'] = 'inventory-' + hashlib.sha256(identity.encode()).hexdigest()
         payload = dict(kwargs)
         payload["stream"] = False
         with httpx.Client(timeout=self._owner.timeout) as client:

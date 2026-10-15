@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, RefreshCw, ShoppingCart } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
 import { accountRequest } from "@/lib/account-request";
 import { itemDisplayName, type InventoryItem } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+import { activeInventory } from "@/lib/inventory-selection";
 import { useRestock } from "@/lib/use-restock";
 import {
   recordRestockArrival,
@@ -57,6 +58,7 @@ function RestockClientWorkspace() {
       action: "plan" | "threshold" | "receipt";
     } | null>(null),
     [count, setCount] = useState("1");
+  const { adopt: adoptRestock } = restock;
   const load = useCallback(async () => {
     if (!accountId) return;
     const account = accountId,
@@ -72,8 +74,10 @@ function RestockClientWorkspace() {
           ? { method: "POST", body: { query: "" } }
           : {},
       );
-      if (owner.current === account && ticket === loadTicket.current)
+      if (owner.current === account && ticket === loadTicket.current) {
+        adoptRestock(result.items.map(item => item.item_id));
         setItems(result.items);
+      }
     } catch (e) {
       if (owner.current === account && ticket === loadTicket.current)
         setError(userFacingError(e, "Could not load this inventory."));
@@ -81,7 +85,7 @@ function RestockClientWorkspace() {
       if (owner.current === account && ticket === loadTicket.current)
         setLoading(false);
     }
-  }, [accountId, scope]);
+  }, [accountId, scope, adoptRestock]);
   useEffect(() => {
     setEdit(null);
     setPicker(false);
@@ -89,6 +93,11 @@ function RestockClientWorkspace() {
   }, [load]);
   useEffect(() => {
     if (!accountId) return;
+    const selected = activeInventory();
+    if (selected) {
+      setScopes([{ key: "personal", label: selected.name, kind: "personal", canEdit: selected.can_edit }]);
+      return;
+    }
     const account = accountId;
     let active = true;
     void Promise.allSettled([

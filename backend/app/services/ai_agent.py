@@ -5,12 +5,14 @@ from datetime import datetime, timezone
 import json
 import logging
 import threading
+from contextvars import copy_context
 import time
 import re
 from uuid import uuid4
 import json as _json_dumps
 from typing import Any, Iterator
 
+from app.services.inventory_scope import inventory_cache_key
 from app.services.agent_gateway_client import AgentGatewayClient
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads, project_answer_text
@@ -155,9 +157,12 @@ def _inventory_knowledge(*, user_id: str, query: str = '', include_projects: boo
                 'shared_and_joined_items': shared_items, 'project_kits': []}
     client = get_supabase_admin()
     kit_fields = 'id,name,location,share_id,owner_user_id,created_by_user_id,updated_at'
-    raw_kits = client.table('project_kits').select(
-        kit_fields
-    ).eq('created_by_user_id', user_id).is_('share_id', 'null').execute().data or []
+    from app.services.inventory_scope import current_inventory
+    scoped = current_inventory.get() is not None
+    kit_query = client.table('project_kits').select(kit_fields)
+    if not scoped:
+        kit_query = kit_query.eq('created_by_user_id', user_id).is_('share_id', 'null')
+    raw_kits = kit_query.execute().data or []
     for share_id in accessible_shares:
         raw_kits.extend(client.table('project_kits').select(
             kit_fields
@@ -166,7 +171,7 @@ def _inventory_knowledge(*, user_id: str, query: str = '', include_projects: boo
     for kit in raw_kits:
         share_id = str(kit.get('share_id') or '')
         is_personal = not share_id and kit.get('created_by_user_id') == user_id
-        if not is_personal and share_id not in accessible_shares:
+        if not scoped and not is_personal and share_id not in accessible_shares:
             continue
         lines = client.table('project_kit_items').select(
             'name,part_number,brand,required_quantity'
@@ -430,15 +435,15 @@ def _save_session(user_id: str, state: _SessionState) -> None:
 
 def _get_state(user_id: str) -> _SessionState:
     with _LOCK:
-        if user_id not in _SESSION:
-            _SESSION[user_id] = _load_session(user_id)
-        return _SESSION[user_id]
+        if inventory_cache_key(user_id) not in _SESSION:
+            _SESSION[inventory_cache_key(user_id)] = _load_session(user_id)
+        return _SESSION[inventory_cache_key(user_id)]
 
 
 def _persist_state(user_id: str) -> None:
     """Write current in-memory state to Supabase."""
     with _LOCK:
-        state = _SESSION.get(user_id)
+        state = _SESSION.get(inventory_cache_key(user_id))
     if state:
         _save_session(user_id, state)
 
@@ -1713,7 +1718,7 @@ async def iter_ai_command_events_async(
         finally:
             asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
 
-    thread = threading.Thread(target=_run_sync, daemon=True)
+    thread = threading.Thread(target=copy_context().run, args=(_run_sync,), daemon=True)
     thread.start()
     try:
         while True:
@@ -1724,7 +1729,7 @@ async def iter_ai_command_events_async(
                 raise item
             yield item
     finally:
-        thread.join(timeout=10)
+        await asyncio.to_thread(thread.join, timeout=10)
 
 
 async def iter_ai_command_sse_async(
@@ -1764,7 +1769,7 @@ async def iter_ai_command_sse_async(
         finally:
             asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
 
-    thread = threading.Thread(target=_run_sync, daemon=True)
+    thread = threading.Thread(target=copy_context().run, args=(_run_sync,), daemon=True)
     thread.start()
     try:
         while True:
@@ -1775,7 +1780,7 @@ async def iter_ai_command_sse_async(
                 raise item
             yield item
     finally:
-        thread.join(timeout=10)
+        await asyncio.to_thread(thread.join, timeout=10)
 
 
 def run_ai_command(

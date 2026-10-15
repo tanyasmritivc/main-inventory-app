@@ -1,5 +1,6 @@
 import type { TeamCategory } from "./team-categories";
-import { getAccessToken } from "@/lib/session";
+import { getAccessToken, getAccessSession } from "@/lib/session";
+import { activeInventory, assertInventory, inventoryApiPath } from "@/lib/inventory-selection";
 
 export type InventoryItem = {
   /** Original imported values, independent of current stock and location. */
@@ -111,9 +112,17 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
 }
 
 async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
+  const selected = activeInventory();
+  const scopedPath = inventoryApiPath(path, selected);
   // Prefer the live session token: a token captured earlier by a component can be
   // stale after Supabase's hourly refresh. The explicit token is the fallback.
-  const token = opts.bindToToken ? opts.token : (await getAccessToken()) || opts.token;
+  let token = opts.bindToToken ? opts.token : (await getAccessToken()) || opts.token;
+  if (scopedPath !== path && selected) {
+    const session = await getAccessSession();
+    if (!session || session.accountId !== selected.accountId) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
+    token = opts.bindToToken ? opts.token : session.token;
+    assertInventory(selected);
+  }
   if (!token) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
   let bodyToSend: BodyInit | undefined;
   const autoHeaders: Record<string, string> = {};
@@ -133,7 +142,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
   }
   let res: Response;
   try {
-    res = await fetch(`${apiBase()}${path}`, {
+    res = await fetch(`${apiBase()}${scopedPath}`, {
       method: opts.method || "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -147,6 +156,8 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
     if (isAbortError(error)) throw error;
     throw new ApiError("We couldn't connect to FindEZ. Check your connection and try again.", 0, null);
   }
+
+  if (scopedPath !== path) assertInventory(selected);
 
   if (!res.ok) {
     const text = await res.text();
@@ -165,6 +176,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
 
   if (res.status === 204) return undefined as T;
   const text = await res.text();
+  if (scopedPath !== path) assertInventory(selected);
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
@@ -429,6 +441,7 @@ export async function createShare(params: { token: string; share_name: string; p
 
 export async function getMyShares(params: { token: string }) {
   type MyShare = { share_id: string; share_name: string; share_code: string; code?: string; permission: string; member_count: number };
+  if (activeInventory()?.team_id) return { shares: [] as MyShare[] };
   const data = await apiFetch<{ shares?: MyShare[] } | MyShare[]>("/sharing/my-shares", { token: params.token });
   return { shares: Array.isArray(data) ? data : data.shares ?? [] };
 }
@@ -443,6 +456,7 @@ export async function getJoinedShares(params: { token: string }) {
     owner?: string;
     team_shares?: JoinedShare | JoinedShare[] | null;
   };
+  if (activeInventory()) return { shares: [] as JoinedShare[] };
   const data = await apiFetch<{ shares?: JoinedMembership[] } | JoinedMembership[]>("/sharing/joined", { token: params.token });
   const memberships = Array.isArray(data) ? data : data.shares ?? [];
   const shares = memberships.flatMap((membership): JoinedShare[] => {
@@ -791,8 +805,12 @@ export async function streamAiCommand({
   onDelta: (delta: string) => void;
   onConversationId?: (id: string) => void;
 }) {
-  const accessToken = (await getAccessToken()) || token;
-  const response = await fetch(`${apiBase()}/ai_command?stream=true`, {
+  const selected = activeInventory();
+  const session = selected ? await getAccessSession() : null;
+  if (selected && session?.accountId !== selected.accountId) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
+  const accessToken = session?.token || (await getAccessToken()) || token;
+  assertInventory(selected);
+  const response = await fetch(`${apiBase()}${inventoryApiPath('/ai_command?stream=true', selected)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -810,6 +828,7 @@ export async function streamAiCommand({
   let buffer = '';
   while (true) {
     const { value, done } = await reader.read();
+    if (activeInventory() !== selected) { await reader.cancel(); assertInventory(selected); }
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
     const blocks = buffer.split('\n\n');

@@ -1,5 +1,29 @@
 # Active work
 
+## October 14 workspace and inventory selection
+
+User explicitly authorizes planning and executing a website-wide hierarchy,
+illustrated by Supabase organization/project pickers. Lane
+`feat/web-workspace-inventories-20261014`, based on import runtime `bd1c8a1`,
+owns: choose personal or Team workspace, choose inventory, then its dashboard.
+Keep physical Spaces inside inventories and keep account/profile/billing global.
+Scope Home, capture/import, Find, Assist context/history, documents, Review,
+activity, lending, kits and browser purchase plans. Preserve existing ownership
+and permissions; backfill source associations into default inventories without
+deleting/reimporting customer data. Add an authorized server-side inventory API
+boundary and ensure stale responses, caches, photo proofs and IDs cannot cross
+inventories. Existing mobile and integration contracts remain compatible.
+Implement two quiet selection pages, visible workspace/inventory switching and
+context-preserving navigation. Validate different inventories, different members,
+view-only roles, writes/reads, forged IDs, refresh/back and narrow layouts before
+release. Import PR #74 runtime `bd1c8a1` is published with migration 042.
+Completed and published October 15. Backend `eb3eee0` plus migration 043 and
+website `eb67ce1` are live. Original values across 21 tables preserved, including
+removed-owner legacy records. 511 backend/API-doc tests, 237 web tests, TypeScript,
+SQL isolation/preservation checks and all five final-source CI jobs pass. Live
+Safari confirms scoped navigation, capture, documents and Assist histories.
+Release receipts and rollback paths are recorded in CURRENT_STATE.md.
+
 ## October 14 preserve uploaded inventory columns
 
 Lane `feat/import-original-columns-20261014`, based on `7b44165`, owns durable

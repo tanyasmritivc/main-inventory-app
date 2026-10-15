@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 def _resolve_import_target(
     *, requesting_user_id: str, location: str, share_id: str | None
 ) -> tuple[str, str]:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get() and share_id:
+        raise HTTPException(422,'Choose a Space within this inventory.')
     if not share_id:
         return requesting_user_id, location
 
@@ -49,6 +52,9 @@ def _resolve_import_target(
 def _resolve_analysis_target(
     *, requesting_user_id: str, location: str, share_id: str | None
 ) -> tuple[str, str]:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get() and share_id:
+        raise HTTPException(422,'Choose a Space within this inventory.')
     if not share_id:
         return requesting_user_id, location
     try:
