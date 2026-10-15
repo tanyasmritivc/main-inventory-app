@@ -9,8 +9,23 @@ changes cannot restart it; opening personal/shared Spaces no longer launches a
 second tour. Selected navigation destinations retain spotlight keys so the first
 step correctly highlights Home. Setup answers and first-Space creation remain
 independent. All 375 mobile tests with coverage pass and Flutter analysis is clean.
-TestFlight 1.0.8 (65) packaging is in progress, with matching app/extension version
-configuration. No upload yet, public submission held and Shopify disabled.
+TestFlight 1.0.8 (65), runtime `8fbfacd84b1773f9332f55df6be1cc1049c550fb`, is
+uploaded, VALID and IN_BETA_TESTING for both existing internal groups. All five
+exact-runtime CI jobs pass. The signed app/ShareExtension versions match, all 31
+native executables target iOS, production configuration/brand assets are verified,
+and Apple validation passes. Simulator upgrade, Space entry and cold restart stay
+quiet with the existing session/data retained. IPA, archive, checksums and receipts
+are in `Documents/FindEZ/AppStore/1.0.8-build65`.
+
+Vinod's existing private group contains build 65 and only the intended tester, but
+external review submission returns Apple's 422
+`ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW`: build 64 is WAITING_FOR_REVIEW.
+Build 65 remains READY_FOR_BETA_SUBMISSION, so Vinod cannot install it yet. Retry
+the saved private beta helper's `prepare`, then `status`, after build 64's review
+finishes. Do not claim 65 is awaiting its own review or already available externally.
+Public 1.0.7/build 59 and unselected draft 1.0.8 are verified unchanged. Shopify
+stays disabled, no production backend/web deployment occurred, and physical phone
+acceptance remains pending.
 
 ## October 14 launch reliability candidate and planned pricing UI
 

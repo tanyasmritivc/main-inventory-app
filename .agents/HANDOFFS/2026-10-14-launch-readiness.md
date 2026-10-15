@@ -112,20 +112,37 @@ These describe the required integration, not functionality shipped in this lane.
    demonstrated paths pass. Recruit representative testers and measure repeat
    use, finding time and willingness to pay. No growth or revenue result is assumed.
 
-The native debug build passes with existing Pod target warnings and a parent/
-share-extension version mismatch (64 vs 17). The next release archive must set and
-verify matching app/extension marketing and build versions. The current debug
-installation does not prove this release packaging gate. Plans is visually checked
-in Light/Dark and Light is restored. No inventory/answer writes were made.
+The native release packaging gate is now satisfied by TestFlight 1.0.8 (65),
+runtime `8fbfacd84b1773f9332f55df6be1cc1049c550fb`, PR #71 stacked on #70.
+The signed app and ShareExtension both use 1.0.8 (65), all 31 native executables
+target iOS, brand/production configuration/signatures are verified and Apple
+validation passes. Durable IPA/archive/checksums and processing/assignment receipts
+are in `Documents/FindEZ/AppStore/1.0.8-build65`. All five exact-runtime CI jobs
+pass: https://github.com/tanyasmritivc/main-inventory-app/actions/runs/38673167944.
+The new tour guard consumes a single fresh-install attempt before display and
+migrates existing installations quietly. Native upgrade, Space open and cold
+restart checks pass, all 375 mobile tests with coverage pass and analysis is clean.
+No inventory/answer writes were made. Physical-device acceptance remains pending.
 
-Public App Store submission remains held. Existing TestFlight build 64 does not
-contain this lane or the subsequent neutral-control source. A new tested binary
-and review/distribution step are still required.
+Build 65 is VALID and IN_BETA_TESTING for both existing internal groups. It is
+also assigned only to the intended external private group, Vinod Private Testing,
+but Apple's 422 `ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW` blocks its external
+review submission because build 64 is WAITING_FOR_REVIEW. Build 65 remains
+READY_FOR_BETA_SUBMISSION and cannot yet be installed externally. Once 64's review
+finishes, run the saved `vinodrex-testflight.rb prepare`, then `status`, from the
+build-65 package. The commands are idempotent and verify the private tester, build
+checksum, group membership and unchanged public App Store state. No new invitation
+was sent for 65, and the old build/review was preserved.
+
+Public App Store submission remains held: public 1.0.7/build 59 and the unselected
+1.0.8 draft are verified unchanged. Shopify stays disabled. No production backend
+or web deployment occurred; this beta includes the mobile changes, not deployment
+of the new server capture receipt/idempotency implementation.
 
 ## Validation for this source candidate
 
 455 backend/API-doc tests and six subtests, 223 web tests, TypeScript, changed-file
-lint (three existing Assist warnings), clean Flutter analysis and 362 mobile
+lint (three existing Assist warnings), clean Flutter analysis and 375 mobile
 tests with coverage pass. The production web build uses fictional service
 configuration and a temporary cache-off webpack setting because local disk is
 constrained; source config is restored. Do not deploy that build artifact.
