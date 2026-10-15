@@ -1,5 +1,17 @@
 # Active work
 
+## October 14 one-time guided tour fix and TestFlight preparation
+
+The user authorizes an updated TestFlight beta, then requires the intermittent
+returning-user tour bug fixed first. Lane `fix/first-install-tour` is based on
+`89b1bb9`. Replace per-account signup/rearm triggers with one installation claim,
+consumed before display. Migrate existing installs to quiet state, cancel delayed
+starts on disposal/account changes, and remove later automatic Space tours.
+All 375 mobile tests with coverage pass and Flutter analysis is clean. Native
+existing-install checks and TestFlight 1.0.8 (65) packaging are in progress.
+Public App Store submission and Shopify stay held; no production backend
+deployment is authorized here.
+
 ## October 14 launch reliability candidate
 
 Lane `fix/launch-find-reliability`, based on `3543cb7`, fixes name-only capture

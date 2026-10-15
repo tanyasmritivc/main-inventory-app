@@ -59,6 +59,15 @@ Future<void> main() async {
     anonKey: AppConfig.supabaseAnonKey,
   );
 
+  try {
+    await OnboardingPrefs.prepareGuidedTourInstall(
+      hasSession: Supabase.instance.client.auth.currentSession != null,
+    );
+  } catch (_) {
+    // Keep the app usable without displaying an unconfirmed automatic tour.
+    debugPrint('Could not prepare the one-time guided tour');
+  }
+
   if (launchMode == 1) {
     runApp(
       const MaterialApp(

@@ -105,6 +105,18 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### First-install guided tour
+
+`tour_install_test.dart` verifies the durable one-time claim, concurrent starts,
+legacy installation migration, retained sessions and failed writes. Overlay
+tests cover interrupted/reopened tours, stale signup flags and cancellation
+during delayed startup. `onboarding_launch_test.dart` exercises real MainShell
+navigation: the first spotlight starts at Home, background/resume dismisses it,
+and a recreated authenticated shell stays quiet. Destination keys must resolve
+for selected icons as well as unselected icons. Opening either kind of Space
+must never trigger automatic guidance. Repeat on a fresh test installation and
+an upgraded existing installation; preserve real user data during validation.
+
 ### Launch capture receipts and planned pricing
 
 `backend/tests/test_capture_save.py` saves through the capture service and reads

@@ -180,6 +180,59 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets(
+    'fresh-install Home tour is not replayed after interrupted restart',
+    (tester) async {
+      addTearDown(Supabase.instance.client.auth.stopAutoRefresh);
+      await OnboardingPrefs.prepareGuidedTourInstall(hasSession: false);
+      await OnboardingPrefs.setCompleted(true);
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: 'test@example.test',
+        password: 'test-password',
+      );
+      await tester.pumpWidget(_gate(_Api()));
+      await tester.pumpAndSettle();
+      for (var frame = 0; frame < 20; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.byKey(const Key('tutorial-card')), findsOneWidget);
+      expect(find.text('Start at Home'), findsOneWidget);
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pump();
+      for (final state in [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      await OnboardingPrefs.prepareGuidedTourInstall(hasSession: true);
+      OnboardingPrefs.justSignedUp = true;
+      await OnboardingPrefs.setPostSignupPending(true);
+      await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
+      await tester.pumpAndSettle();
+      for (var frame = 0; frame < 20; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.byType(MainShell), findsOneWidget);
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
+      OnboardingPrefs.justSignedUp = false;
+      await tester.pumpWidget(const SizedBox());
+      Supabase.instance.client.auth.stopAutoRefresh();
+      await tester.pump();
+    },
+  );
+
   for (final kind in ['space', 'team']) {
     testWidgets('$kind invitation survives pre-auth onboarding and restart', (
       tester,

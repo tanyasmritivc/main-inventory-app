@@ -143,12 +143,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
     _rebuildCategoryKeys();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(
-        TutorialController.instance.maybeShowSpaceStep(context: context),
-      );
-    });
   }
 
   int _totalCount() {

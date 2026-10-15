@@ -1,5 +1,17 @@
 # Current state
 
+## October 14 guided tour limited to first installation
+
+Lane `fix/first-install-tour` adds an installation-scoped, durable claim before
+any automatic tour display. Existing authenticated/legacy installations migrate
+to consumed state. Interrupted starts, backgrounding, sign-in flags and account
+changes cannot restart it; opening personal/shared Spaces no longer launches a
+second tour. Selected navigation destinations retain spotlight keys so the first
+step correctly highlights Home. Setup answers and first-Space creation remain
+independent. All 375 mobile tests with coverage pass and Flutter analysis is clean.
+TestFlight 1.0.8 (65) packaging is in progress, with matching app/extension version
+configuration. No upload yet, public submission held and Shopify disabled.
+
 ## October 14 launch reliability candidate and planned pricing UI
 
 Lane `fix/launch-find-reliability` preserves individual captured objects instead

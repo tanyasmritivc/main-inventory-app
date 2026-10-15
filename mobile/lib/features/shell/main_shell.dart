@@ -127,6 +127,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       }
     });
     unawaited(_syncSetupAnswers());
+    unawaited(_createPendingFirstSpace());
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -171,18 +172,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _maybeLaunchTutorial() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
-    await _createPendingFirstSpace();
-    final postSignupPending = await OnboardingPrefs.isPostSignupPending();
-    if (OnboardingPrefs.justSignedUp || postSignupPending) {
-      OnboardingPrefs.justSignedUp = false;
-      await OnboardingPrefs.setCoachmarkPending(uid, true);
-      await OnboardingPrefs.setPostSignupPending(false);
-    }
-    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
-    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
-    if (!pending || seen) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
+      if (!mounted || widget.api.accountId != uid) return;
       await TutorialController.instance.maybeStart(
         userId: uid,
         pageController: _pageController,
@@ -218,6 +209,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _authSub?.cancel();
     _notificationTimer?.cancel();
+    TutorialController.instance.dismiss();
     _pageController.dispose();
     _profileStore.dispose();
     _notificationCount.dispose();
@@ -226,6 +218,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      TutorialController.instance.dismiss();
+    }
     if (state == AppLifecycleState.resumed) {
       unawaited(_loadNotificationCount());
       unawaited(_initializePushNotifications());

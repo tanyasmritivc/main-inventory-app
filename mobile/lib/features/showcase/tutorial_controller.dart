@@ -50,10 +50,9 @@ class _StepConfig {
 ///
 /// Lifecycle:
 ///   1. Call [maybeStart] from MainShell after the user is authenticated.
-///   2. Call [maybeShowSpaceStep] from a space-detail page in its initState.
+///   2. The installation gets one automatic attempt, consumed before display.
 ///
-/// The main tour points to six app controls. Space tools are introduced
-/// separately the first time a Space is opened.
+/// The tour points to six app controls. Opening Spaces never starts another tour.
 class TutorialController {
   TutorialController._();
   static final instance = TutorialController._();
@@ -74,13 +73,14 @@ class TutorialController {
   BuildContext? _lastContext;
   String _userId = '';
   bool _active = false;
-  bool _spaceStepShown = false;
+  bool _starting = false;
+  int _generation = 0;
   StreamSubscription<AuthState>? _authSub;
 
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0 — Home is the product's physical-memory front door.
+    // Step 0 - Home is the product's physical-memory front door.
     _StepConfig(
       pageIndex: 0,
       icon: Icons.home_outlined,
@@ -89,7 +89,7 @@ class TutorialController {
       cornerRadius: 14,
       targetKey: inventoryIconKey,
     ),
-    // Step 1 — capture
+    // Step 1 - capture
     _StepConfig(
       pageIndex: 2,
       icon: Icons.qr_code_scanner,
@@ -99,7 +99,7 @@ class TutorialController {
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
-    // Step 2 — Ask
+    // Step 2 - Ask
     _StepConfig(
       pageIndex: 1,
       icon: Icons.auto_awesome,
@@ -108,7 +108,7 @@ class TutorialController {
       cornerRadius: 14,
       targetKey: assistTabKey,
     ),
-    // Step 3 — Find
+    // Step 3 - Find
     _StepConfig(
       pageIndex: 3,
       icon: Icons.search_rounded,
@@ -117,7 +117,7 @@ class TutorialController {
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
-    // Step 4 — first space card
+    // Step 4 - first space card
     _StepConfig(
       pageIndex: 3,
       icon: Icons.folder_outlined,
@@ -138,86 +138,50 @@ class TutorialController {
     ),
   ];
 
-  List<_StepConfig> get _spaceSteps => [
-    _StepConfig(
-      pageIndex: -1,
-      icon: Icons.inventory_2_outlined,
-      title: 'Plan a project',
-      body: 'Check required items and reserve what you need.',
-      cornerRadius: 18,
-      targetKey: projectsCardKey,
-    ),
-    _StepConfig(
-      pageIndex: -1,
-      icon: Icons.add_circle_outline,
-      title: 'Add an item',
-      body: 'Use + to add an item manually, take a photo, or scan a barcode.',
-      cornerRadius: 30,
-      targetKey: spaceDetailFabKey,
-    ),
-  ];
-
-  // ── Public API ────────────────────────────────────────────────────────────
-
-  /// Call this from MainShell after the user is confirmed authenticated.
+  /// Only a fresh installation can claim its first automatic display.
   Future<void> maybeStart({
     required String userId,
     required PageController pageController,
     required BuildContext context,
   }) async {
-    _dismissKeyboard(context);
-    if (_active) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('tutorial_done_$userId') ?? false) return;
-    if (!context.mounted) return;
-
-    _userId = userId;
-    _pageController = pageController;
-    _spaceStepShown = false;
-    _active = true;
-
-    // Listen for sign-out to reset the tutorial key.
-    _authSub?.cancel();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((ev) {
-      if (ev.event == AuthChangeEvent.signedOut) unawaited(_onSignOut());
-    });
-
-    // Ensure we start on the product's front door.
-    await _navigateToPage(0);
-    await _waitFrames(2);
-    if (!context.mounted) {
-      _active = false;
-      return;
+    if (_active || _starting || userId.isEmpty || !context.mounted) return;
+    final generation = ++_generation;
+    _starting = true;
+    try {
+      final allowed = await OnboardingPrefs.claimGuidedTour();
+      if (!allowed || !context.mounted || generation != _generation) return;
+      _userId = userId;
+      _pageController = pageController;
+      _active = true;
+      _authSub?.cancel();
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+        event,
+      ) {
+        final account = event.session?.user.id;
+        if (event.event == AuthChangeEvent.signedOut ||
+            (account != null && account != userId)) {
+          dismiss();
+        }
+      });
+      _dismissKeyboard(context);
+      await _navigateToPage(0);
+      await _waitFrames(2);
+      if (!context.mounted || generation != _generation) return;
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      if (!context.mounted || generation != _generation) return;
+      _showOverlay(context, steps: _mainSteps);
+    } catch (_) {
+      if (generation == _generation) dismiss();
+      debugPrint('Could not start the one-time guided tour');
+    } finally {
+      if (generation == _generation) _starting = false;
     }
-
-    _dismissKeyboard(context);
-    await Future.delayed(const Duration(milliseconds: 150));
-    if (!context.mounted) {
-      _active = false;
-      return;
-    }
-    _showOverlay(context, steps: _mainSteps, isSpaceStep: false);
   }
 
-  /// Call this from the space-detail page initState (via addPostFrameCallback).
-  Future<void> maybeShowSpaceStep({required BuildContext context}) async {
-    // Only show once per user, and only when the main tutorial isn't running.
-    if (_active || _spaceStepShown) return;
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('space_discovery_done_$userId') ?? false) return;
-    _spaceStepShown = true;
-
-    await _waitFrames(2);
-    if (!context.mounted) return;
-
-    _userId = userId;
-    _showOverlay(context, steps: _spaceSteps, isSpaceStep: true);
-  }
-
-  /// Forcefully dismisses the overlay without marking as complete.
+  /// Dismiss without re-arming this installation, including pending launches.
   void dismiss() {
+    _generation++;
+    _starting = false;
     final ctx = _lastContext;
     if (ctx != null) _dismissKeyboard(ctx);
     _removeOverlay();
@@ -229,31 +193,21 @@ class TutorialController {
     _active = false;
     _authSub?.cancel();
     _authSub = null;
+    _userId = '';
+    _pageController = null;
+    _lastContext = null;
   }
 
   // ── Internal ──────────────────────────────────────────────────────────────
 
-  void _showOverlay(
-    BuildContext context, {
-    required List<_StepConfig> steps,
-    required bool isSpaceStep,
-  }) {
-    // Main-tab targets may not exist until their page is rendered. Space-page
-    // targets must be live because no navigation occurs between those steps.
+  void _showOverlay(BuildContext context, {required List<_StepConfig> steps}) {
+    // Main-tab targets may not exist until their page is rendered.
     final resolvedSteps = steps
         .where((s) => s.pageIndex >= 0 || s.targetKey?.currentContext != null)
         .toList();
 
     if (resolvedSteps.isEmpty) {
-      // Nothing to point at — mark done so we don't reshow on every launch.
-      if (!isSpaceStep && _userId.isNotEmpty) {
-        SharedPreferences.getInstance().then(
-          (prefs) => prefs.setBool('tutorial_done_$_userId', true),
-        );
-      }
-      _active = false;
-      _authSub?.cancel();
-      _authSub = null;
+      unawaited(_onComplete());
       return;
     }
 
@@ -264,8 +218,8 @@ class TutorialController {
       builder: (_) => _TutorialOverlay(
         steps: resolvedSteps,
         onNavigate: _navigateToPage,
-        onComplete: isSpaceStep ? _completeSpaceDiscovery : _onComplete,
-        onDismiss: isSpaceStep ? _completeSpaceDiscovery : _skipMainTutorial,
+        onComplete: _onComplete,
+        onDismiss: _skipMainTutorial,
       ),
     );
     Overlay.of(context).insert(_entry!);
@@ -277,6 +231,7 @@ class TutorialController {
   }
 
   Future<void> _onComplete() async {
+    final userId = _userId;
     final ctx = _lastContext;
     if (ctx != null) _dismissKeyboard(ctx);
     _removeOverlay();
@@ -288,32 +243,19 @@ class TutorialController {
     _active = false;
     _authSub?.cancel();
     _authSub = null;
-    if (_userId.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('tutorial_done_$_userId', true);
-      await OnboardingPrefs.markCoachmarkSeen(_userId);
+    if (userId.isNotEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('tutorial_done_$userId', true);
+        await OnboardingPrefs.markCoachmarkSeen(userId);
+      } catch (_) {
+        // The installation claim already prevents an automatic replay.
+        debugPrint('Could not save legacy tour completion');
+      }
     }
   }
 
   void _skipMainTutorial() => unawaited(_onComplete());
-
-  void _completeSpaceDiscovery() {
-    _removeOverlay();
-    _active = false;
-    if (_userId.isNotEmpty) {
-      SharedPreferences.getInstance().then(
-        (prefs) => prefs.setBool('space_discovery_done_$_userId', true),
-      );
-    }
-  }
-
-  Future<void> _onSignOut() async {
-    dismiss();
-    _spaceStepShown = false;
-    if (_userId.isNotEmpty) {
-      _userId = '';
-    }
-  }
 
   Future<void> _navigateToPage(int page) async {
     final ctrl = _pageController;
