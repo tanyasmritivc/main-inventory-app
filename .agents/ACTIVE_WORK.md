@@ -1,5 +1,17 @@
 # Active work
 
+## October 14 preserve uploaded inventory columns
+
+Lane `feat/import-original-columns-20261014`, based on `7b44165`, owns durable
+original column names and values for Excel/CSV/JSON imports, per-sheet mapping,
+and imported details on mobile and web. The supplied workbook has 280 populated
+rows in Sheet1 and 15 in a different Timing Belts layout, including unnamed
+columns containing data. Preserve ordered duplicate/unnamed headers and structured
+JSON values. Add an additive item snapshot column only after live-schema checking;
+keep ordinary capture/CRUD and sharing permissions unchanged. Do not reimport or
+modify existing customer inventory as verification. Settings/navigation PR #73
+continues its separate exact-source release checks.
+
 ## October 14 Settings and navigation popup layout correction
 
 Lane `fix/web-settings-rows-20261014`, based on `fc20f3a`, owns the user's
@@ -12,7 +24,14 @@ component previews verify all sections in both themes and desktop/390px widths.
 The top navigation popup also resets the independent utility translate, stays
 inside short viewports, scrolls results beneath its visible input, removes repeated
 section captions and restores trigger focus on close. Use the existing isolated
-website release process. Not deployed yet. The user additionally requests durable
+website release process. Published runtime `7b44165` after all five exact-source CI gates, 224 web tests,
+TypeScript, changed-file lint, actual-config production build and Safari
+short/narrow/both-theme previews. Live build `D-x-qQyJQDdszMNcrtfXh` uses
+`web-settings-navigation-20261014/frontend`, preserves production configuration
+and 1,064 prior static assets. 11 public routes, 17 auth guards and three CSS
+assets pass; backend unchanged. Receipts/rollback are in the matching local
+release folder and `/home/ubuntu/findez-settings-navigation-20261014`.
+The user additionally requests durable
 original spreadsheet columns across backend, mobile and web; that work follows
 in a separate implementation lane.
 

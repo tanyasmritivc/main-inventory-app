@@ -1,5 +1,20 @@
 # Current state
 
+## October 14 Settings and navigation correction published
+
+PR #73 runtime `7b44165` is live. Settings Plans/legal links use full-width text
+rows, Developer icons stay with labels, and Appearance stays compact. The top
+page-navigation dialog resets the independent utility translate, fits short
+viewports, keeps its input visible above scrolling results, removes repetitive
+section captions and returns keyboard focus on close. 224 web tests, TypeScript,
+changed-file lint, production build and all five CI jobs pass (38685597933).
+Safari verifies both themes and desktop/390px layouts. Live build
+`D-x-qQyJQDdszMNcrtfXh` at `web-settings-navigation-20261014/frontend` passes
+11 public routes, 17 auth guards and three CSS asset checks, retaining 1,064 old
+assets and production configuration. Backend is unchanged. Receipts and rollback
+are in `Documents/FindEZ/Releases/settings-navigation-2026-10-14` and
+`/home/ubuntu/findez-settings-navigation-20261014`.
+
 ## October 14 website clarity published
 
 PR #72, runtime `65226c5a49557a62298b8b9eb499c72a4b8d32f0`, is live on

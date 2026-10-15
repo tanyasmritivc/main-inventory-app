@@ -105,6 +105,16 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+### Original import fields
+
+`test_import_original_fields.py` verifies differently shaped worksheets, exact
+CSV labels/spacing, duplicate/unnamed columns, JSON structures and save/reload
+isolation. The PostgreSQL fixture applies migration 042 and checks JSON round
+trips and invalid shapes. Web item-detail tests and mobile imported-detail
+widget tests cover exact labels, zero/false/empty values, escaped content and
+narrow large-text layouts. Use the supplied workbook read-only to verify both
+sheets are represented; do not reimport into customer inventory for QA.
+
 ### First-install guided tour
 
 `tour_install_test.dart` verifies the durable one-time claim, concurrent starts,

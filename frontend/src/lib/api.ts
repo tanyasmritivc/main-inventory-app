@@ -2,6 +2,12 @@ import type { TeamCategory } from "./team-categories";
 import { getAccessToken } from "@/lib/session";
 
 export type InventoryItem = {
+  /** Original imported values, independent of current stock and location. */
+  import_data?: {
+    filename: string;
+    sheet: string;
+    fields: { name: string; value: unknown }[];
+  } | null;
   item_id: string;
   name: string;
   category: string;

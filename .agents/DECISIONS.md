@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-14: Preserve original uploaded columns alongside live inventory
+
+Excel, CSV and JSON imports retain an ordered source snapshot on each item, with
+exact named headers, duplicate/unnamed positions, empty values and structured JSON.
+Map each worksheet independently. Keep source values separate from current
+quantity/location and show them as Imported details on mobile and web. Do not
+collapse source data into generic Notes, discard unmapped columns or merge rows
+whose source fields differ. Legacy items stay unchanged; historical lost columns
+cannot be recovered without a source-file reimport.
+
 ## 2026-10-14: Use one visible page identity and open web layouts
 
 The user explicitly selects open layouts with quiet dividers and fewer boxes.
