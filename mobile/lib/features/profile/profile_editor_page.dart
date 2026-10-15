@@ -511,8 +511,6 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
                       FilledButton(
                         onPressed: _busy ? null : _save,
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.action,
-                          foregroundColor: AppTheme.onAction,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: AppText(

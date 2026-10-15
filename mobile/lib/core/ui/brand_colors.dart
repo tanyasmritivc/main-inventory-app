@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Exact supplied FindEZ guide tokens. AppColors uses readable dark status
-/// variants; orange signal is for primary actions, never stock/error status.
+/// variants; orange signal is reserved for branding and bottom navigation.
 abstract final class BrandColors {
   static const ink = Color(0xFF111112);
   static const signal = Color(0xFFE8590C);

@@ -17,6 +17,7 @@ import '../../core/ui/member_avatar.dart';
 import '../../core/push_notifications.dart';
 import '../../core/notification_snapshot.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
 import '../chat/chat_page.dart';
 import '../checkout/checkout_page.dart';
 import '../documents/documents_page.dart';
@@ -506,44 +507,45 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           title: SizedBox(
             key: TutorialController.teamsSegmentKey,
             width: 210,
-            child: CupertinoSlidingSegmentedControl<int>(
-              groupValue: _inventorySection,
-              backgroundColor: AppTheme.surface2(context),
-              thumbColor: _inventorySection == 1
-                  ? (AppTheme.isDark(context)
-                        ? const Color(0xFF636366)
-                        : Colors.white)
-                  : AppTheme.accentTint(context),
-              children: {
-                0: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText(
-                    'Spaces',
-                    style: TextStyle(
-                      color: _inventorySection == 0
-                          ? AppTheme.accentForeground(context)
-                          : AppTheme.textSecondary(context),
+            child: FrostedSurface(
+              radius: 10,
+              shadow: false,
+              tint: AppTheme.surface2(context),
+              child: CupertinoSlidingSegmentedControl<int>(
+                groupValue: _inventorySection,
+                backgroundColor: Colors.transparent,
+                thumbColor: AppTheme.neutralSelectionTint(context),
+                children: {
+                  0: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppText(
+                      'Spaces',
+                      style: TextStyle(
+                        color: _inventorySection == 0
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.textSecondary(context),
+                      ),
                     ),
                   ),
-                ),
-                1: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: AppText(
-                    'Teams',
-                    style: TextStyle(
-                      color: _inventorySection == 1
-                          ? AppTheme.textPrimary(context)
-                          : AppTheme.textSecondary(context),
+                  1: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppText(
+                      'Teams',
+                      style: TextStyle(
+                        color: _inventorySection == 1
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.textSecondary(context),
+                      ),
                     ),
                   ),
-                ),
-              },
-              onValueChanged: (value) {
-                if (value != null && value != _inventorySection) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _inventorySection = value);
-                }
-              },
+                },
+                onValueChanged: (value) {
+                  if (value != null && value != _inventorySection) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _inventorySection = value);
+                  }
+                },
+              ),
             ),
           ),
           actions: [

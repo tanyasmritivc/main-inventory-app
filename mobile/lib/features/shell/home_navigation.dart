@@ -151,7 +151,7 @@ class _HomeNavigationState extends State<HomeNavigation>
             decoration: BoxDecoration(
               color: widget.monochrome
                   ? AppTheme.textPrimary(context).withValues(alpha: .1)
-                  : AppTheme.accentTint(context),
+                  : AppTheme.navigationTintFor(Theme.of(context).brightness),
               shape: BoxShape.circle,
               border: Border.all(
                 color: AppTheme.textPrimary(context).withValues(alpha: .025),

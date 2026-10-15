@@ -87,15 +87,13 @@ class SetupGlassPanel extends StatelessWidget {
                             ? AppTheme.accentForeground(context)
                             : AppTheme.textPrimary(context))
                         .withValues(
-                          alpha: selected
-                              ? .6
-                              : highContrast
-                              ? .3
-                              : dark
-                              ? .18
+                          alpha: highContrast
+                              ? .4
+                              : selected
+                              ? .25
                               : .18,
                         ),
-                width: selected ? 1.5 : 1,
+                width: selected && highContrast ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(20),
             ),

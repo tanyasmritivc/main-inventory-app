@@ -1,5 +1,63 @@
 # Current state
 
+## October 14 app-wide neutral controls, orange bottom navigation
+
+The user expands this lane to all mobile UI accents and confirms orange should
+remain only in bottom navigation. Shared action/selection roles are neutral;
+navigation has separate orange tokens. GlassFab uses a grey frosted surface
+with a readable icon and quieter shadow. Primary/filled/elevated controls,
+category/appearance pills, chat controls, onboarding/tour accents, Teams icons
+and invite surfaces inherit neutral styles. Decorative owner badges are also
+neutral. Supplied brand artwork, accepted Home counts and semantic statuses
+remain. Native iPhone 16e checks cover Find, Space filters/Add menu, Teams,
+chat and onboarding, with Space/Teams/onboarding checked in both themes.
+The final arm64 debug build is installed; Light mode is restored and Find is
+open for review. No inventory/answer saves or chat submissions were made.
+Flutter analysis is clean and all 357 mobile tests with coverage pass. A final
+parallel run stalled during tooling cleanup; a clean serial rerun passes in full.
+Proof is in `Documents/FindEZ/Design/mobile-colors-2026-10-14` using the
+`*-neutral-controls-*-native.png` filenames. No new TestFlight upload or public
+submission; TestFlight remains build 64.
+
+## October 14 neutral Capture and Find selectors installed in simulator
+
+The user confirms the two requested controls are Scan Barcode/Auto Extract and
+Spaces/Teams. Both now use neutral grey glass with primary-text labels/icons;
+navigation palette and motion are retained. Existing FrostedSurface handles blur
+and the solid high-contrast fallback. Analysis and all 357 mobile tests with
+coverage pass. A full arm64 iOS Simulator build is installed and launched on
+iPhone 16e (iOS 26.2), replacing the older installed preview. Capture, both Find
+selection states and the accepted Home numbers/hints are visually verified.
+Proof is in `Documents/FindEZ/Design/mobile-colors-2026-10-14`. This is a local
+debug app, not another TestFlight delivery; TestFlight remains build 64.
+The user finds Capture's first grey pill too heavy. A Capture-only refinement
+lightens its tint and outline and keeps both labels at regular weight. Analysis
+and all 357 tests pass again. The rebuilt app is installed and Capture is
+visually checked in both themes, then returned to Light mode for review.
+Proof: `capture-soft-grey-glass-native.png` and
+`capture-soft-grey-glass-dark-native.png` in the same design folder.
+Initial native builds hit disk exhaustion. Generated compiler cache and the
+temporary build-64 verification extraction were cleared after the durable
+release IPA/archive hashes were reverified. Release artifacts and app data are
+preserved. Wait for further page instructions; no broad palette pass.
+
+## October 14 Home-only number colours and smaller placeholder
+
+`feat/mobile-color-accents` in `dev/findez-mobile-color-accents` is based on
+`3a36026`. The user rejects coloured card fills and scopes this pass to Home.
+Only decision numbers use mustard (identifying), purple (to buy), maroon
+(out of stock) and forest green (lent), including zero; unknown values remain
+neutral dashes. Cards and labels retain the neutral baseline. The white search
+field has a 14pt regular grey hint and 17pt entered text; suggestions use 12pt
+regular grey text. Other-page experiments are removed from the candidate.
+Analysis and all 357 existing mobile tests with coverage pass. All four number
+colours and the hint meet 4.5:1 contrast in both themes. The running iPhone 16e
+debug simulator is refreshed through Flutter attach/hot restart, and Home is
+visually verified with native fonts/icons. Native proof is in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14/home-numbers-light-native.png`.
+No new binary is uploaded: TestFlight remains 64. Wait for the user's next-page
+instructions; no broader palette or layout pass is authorized.
+
 ## October 14 backend fixes live; mobile 64 delivered to internal TestFlight
 
 `fix/capture-review-save-boundary` in

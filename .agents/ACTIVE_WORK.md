@@ -1,5 +1,49 @@
 # Active work
 
+## October 14 app-wide neutral UI accent refinement
+
+Lane `feat/mobile-color-accents` now covers the user's app-wide accent request:
+all shared action/selection roles are neutral grey/glass; bottom navigation
+retains dedicated orange tokens. Floating plus buttons, Space filter pills,
+Teams invite/icons, chat, onboarding/tour and default button styles follow the
+same roles. Brand artwork and accepted Home number colours remain. The final
+arm64 simulator app is installed, with native checks in both themes and Light
+restored on Find. Analysis and all 357 mobile tests with coverage pass.
+Screenshot proof is in the existing mobile-colors design
+folder. No customer writes, TestFlight upload or public submission.
+
+## October 14 two neutral glass selectors complete locally
+
+The user explicitly confirms Capture's Scan Barcode/Auto Extract selector and
+Find's Spaces/Teams selector. Neutral grey selection glass replaces their
+orange fills and orange selected foregrounds. Existing motion, callbacks,
+navigation palette and high-contrast fallback remain. Analysis and all 357
+mobile tests with coverage pass. A complete arm64 native simulator app is now
+installed and running, including the accepted Home changes. Native Capture,
+Spaces, Teams and Home are visually verified; screenshots/receipt are in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14`. The older attach-only preview
+was not persistent across relaunch; the new installed app addresses that.
+Capture's initially heavy grey pill is subsequently softened on user feedback:
+lighter tint/outline and regular label weights, with high-contrast fallback
+retained. Analysis and all 357 tests pass again; the updated installed app is
+visually checked in light and dark themes and left on Capture in Light mode.
+Native proof uses the `capture-soft-grey-glass` filenames in the same folder.
+No new TestFlight upload or public submission. Wait for further directions.
+
+## October 14 Home-only colour correction complete locally
+
+Lane `feat/mobile-color-accents` in `dev/findez-mobile-color-accents`, based on
+`3a36026`. The accepted scope is Home numbers only: mustard identifying,
+purple buying, maroon out of stock, forest green lent. Cards/labels stay neutral;
+search hint is smaller regular grey (14pt), with regular grey suggestion text
+(12pt) and full-size typed input (17pt). Unknown counts retain neutral dashes.
+Rejected card fills and other-page experiments are removed from the candidate.
+Analysis, all 357 existing mobile tests with coverage and both-theme colour
+contrast pass. Home is visually checked on the actual iPhone 16e debug simulator
+after attach/hot restart, using the existing native shell. Proof is in
+`Documents/FindEZ/Design/mobile-colors-2026-10-14/home-numbers-light-native.png`.
+No new TestFlight upload or public submission. Wait for next-page directions.
+
 ## October 14 backend fixes live; mobile 64 internal TestFlight delivery complete
 
 Lane `fix/capture-review-save-boundary` in

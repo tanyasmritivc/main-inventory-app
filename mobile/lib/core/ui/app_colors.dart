@@ -10,7 +10,7 @@ class AppColors {
   static const swipe = Color(0x1AFFFFFF);
 
   static const border = Color(0xFF363638);
-  static const accent = BrandColors.signal;
+  static const accent = Color(0xFFE6E6E9);
   static const primaryText = BrandColors.paper;
   static const muted = Color(0xFFAEAEB2);
   static const hint = BrandColors.inkMuted;

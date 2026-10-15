@@ -47,17 +47,18 @@ class GlassControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final highContrast = MediaQuery.highContrastOf(context);
-    final tint = Color.alphaBlend(
-      AppTheme.action.withValues(alpha: selected ? .08 : 0),
-      AppTheme.surface(context),
+    final tint = selected
+        ? AppTheme.neutralSelectionTint(context)
+        : AppTheme.surface(context);
+    final border = AppTheme.textPrimary(context).withValues(
+      alpha: highContrast
+          ? .4
+          : !enabled
+          ? .08
+          : selected
+          ? .22
+          : .12,
     );
-    final border = selected
-        ? AppTheme.accentForeground(
-            context,
-          ).withValues(alpha: highContrast ? 1 : (enabled ? .6 : .4))
-        : AppTheme.textPrimary(
-            context,
-          ).withValues(alpha: highContrast ? .4 : (enabled ? .15 : .08));
     return FrostedSurface(
       radius: radius,
       tint: tint,

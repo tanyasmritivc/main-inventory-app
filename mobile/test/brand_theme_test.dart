@@ -10,6 +10,7 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/ui/app_colors.dart';
 import 'package:mobile/core/ui/brand_colors.dart';
 import 'package:mobile/core/ui/findez_wordmark.dart';
+import 'package:mobile/core/ui/frosted_surface.dart';
 import 'package:mobile/core/ui/primary_gradient_button.dart';
 import 'package:mobile/features/inventory/item_editor_sheet.dart';
 
@@ -32,8 +33,14 @@ void main() {
     expect(BrandColors.danger.toARGB32(), 0xFFC9363E);
     for (final brightness in Brightness.values) {
       final theme = AppTheme.create(brightness);
-      expect(theme.colorScheme.primary, BrandColors.signal);
-      expect(theme.colorScheme.onPrimary, BrandColors.ink);
+      expect(
+        theme.colorScheme.primary,
+        brightness == Brightness.dark ? BrandColors.paper : BrandColors.ink,
+      );
+      expect(
+        theme.colorScheme.onPrimary,
+        brightness == Brightness.dark ? BrandColors.ink : BrandColors.paper,
+      );
       expect(theme.bottomSheetTheme.showDragHandle, isFalse);
       final scheme = theme.colorScheme;
       final accent = AppTheme.accentForegroundFor(brightness);
@@ -47,9 +54,22 @@ void main() {
       }
       expect(
         theme.floatingActionButtonTheme.backgroundColor,
-        BrandColors.signal,
+        AppTheme.accentTintFor(brightness),
       );
-      expect(theme.floatingActionButtonTheme.foregroundColor, BrandColors.ink);
+      expect(theme.floatingActionButtonTheme.foregroundColor, accent);
+      expect(
+        theme.navigationBarTheme.iconTheme!.resolve({
+          WidgetState.selected,
+        })!.color,
+        AppTheme.navigationForegroundFor(brightness),
+      );
+      expect(
+        _contrast(
+          AppTheme.navigationForegroundFor(brightness),
+          AppTheme.navigationTintFor(brightness),
+        ),
+        greaterThanOrEqualTo(4.5),
+      );
       for (final pair in [
         (scheme.primary, scheme.onPrimary),
         (scheme.primaryContainer, scheme.onPrimaryContainer),
@@ -202,29 +222,31 @@ void main() {
       },
     );
 
-    testWidgets('${brightness.name} primary button is flat and contrast safe', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.create(brightness),
-          home: Scaffold(
-            body: PrimaryGradientButton(
-              onPressed: () {},
-              child: const Text('Continue'),
+    testWidgets(
+      '${brightness.name} primary button is neutral and contrast safe',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.create(brightness),
+            home: Scaffold(
+              body: PrimaryGradientButton(
+                onPressed: () {},
+                child: const Text('Continue'),
+              ),
             ),
           ),
-        ),
-      );
-      final ink = tester.widget<Ink>(find.byType(Ink));
-      final decoration = ink.decoration! as BoxDecoration;
-      expect(decoration.gradient, isNull);
-      expect(decoration.color, BrandColors.signal);
-      expect(
-        DefaultTextStyle.of(tester.element(find.text('Continue'))).style.color,
-        BrandColors.ink,
-      );
-    });
+        );
+        final surface = tester.widget<FrostedSurface>(
+          find.byType(FrostedSurface),
+        );
+        final foreground = DefaultTextStyle.of(
+          tester.element(find.text('Continue')),
+        ).style.color!;
+        expect(surface.tint, isNot(BrandColors.signal));
+        expect(_contrast(foreground, surface.tint!), greaterThanOrEqualTo(4.5));
+        expect(foreground, AppTheme.accentForegroundFor(brightness));
+      },
+    );
 
     for (final scale in [1.0, 2.6]) {
       testWidgets(

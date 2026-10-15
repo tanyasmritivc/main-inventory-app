@@ -14,6 +14,24 @@ class HomeColors {
   static const amber = Color(0xFFE4AF46);
 }
 
+abstract final class HomeDecisionColors {
+  static Color identifying(BuildContext context) => AppTheme.isDark(context)
+      ? const Color(0xFFD6AF4C)
+      : const Color(0xFF946900);
+
+  static Color toBuy(BuildContext context) => AppTheme.isDark(context)
+      ? const Color(0xFFB59AD9)
+      : const Color(0xFF74429B);
+
+  static Color outOfStock(BuildContext context) => AppTheme.isDark(context)
+      ? const Color(0xFFE49AA5)
+      : const Color(0xFF9E3545);
+
+  static Color lent(BuildContext context) => AppTheme.isDark(context)
+      ? const Color(0xFF8FBEA2)
+      : const Color(0xFF1D6045);
+}
+
 class HomeOverview extends StatefulWidget {
   const HomeOverview({
     super.key,
@@ -189,9 +207,9 @@ class _HomeOverviewState extends State<HomeOverview> {
                 hintStyle: AppTypography.bodyStyleOf(
                   context,
                   TextStyle(
-                    fontSize: 17,
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    color: AppTheme.foreground(context, HomeColors.hint),
+                    color: AppTheme.textMuted(context),
                   ),
                 ),
                 filled: true,
@@ -247,9 +265,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.pendingReviews,
                         label: 'need identifying',
-                        color: widget.pendingReviews == 0
-                            ? AppTheme.textSecondary(context)
-                            : AppTheme.accentForeground(context),
+                        color: HomeDecisionColors.identifying(context),
                         onTap: widget.onOpenReview,
                       ),
                     ),
@@ -258,9 +274,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.lowStock,
                         label: 'to buy',
-                        color: widget.lowStock == 0
-                            ? AppTheme.textSecondary(context)
-                            : AppTheme.accentForeground(context),
+                        color: HomeDecisionColors.toBuy(context),
                         onTap: widget.onOpenLowStock,
                       ),
                     ),
@@ -276,6 +290,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.outOfStock,
                         label: 'out of stock',
+                        color: HomeDecisionColors.outOfStock(context),
                         onTap: widget.onOpenOutOfStock,
                       ),
                     ),
@@ -284,6 +299,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                       child: _DecisionTile(
                         count: widget.lentOut,
                         label: 'lent out',
+                        color: HomeDecisionColors.lent(context),
                         onTap: widget.onOpenCheckouts,
                       ),
                     ),
@@ -443,9 +459,9 @@ class _Suggestion extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: AppTheme.foreground(context, HomeColors.secondary),
+              color: AppTheme.textMuted(context),
             ),
           ),
         ),
@@ -486,7 +502,9 @@ class _DecisionTile extends StatelessWidget {
                   fontSize: 32,
                   height: 1.1,
                   fontWeight: FontWeight.w400,
-                  color: AppTheme.foreground(context, color),
+                  color: count == null
+                      ? AppTheme.textMuted(context)
+                      : AppTheme.foreground(context, color),
                 ),
               ),
             ),
