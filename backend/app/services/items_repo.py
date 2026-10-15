@@ -1,6 +1,7 @@
 
 from datetime import datetime, timezone
 import logging
+import json
 import re
 import threading as _threading
 import time
@@ -221,6 +222,13 @@ def list_items(*, user_id: str) -> list[dict]:
     return items
 
 
+def _bulk_item_key(item: dict) -> str:
+    key = f"{_normalize_item_name(str(item.get('name') or ''))}::{str(item.get('location') or '').strip().lower()}"
+    if item.get('import_data'):
+        key += '::' + json.dumps(item['import_data'], sort_keys=True, ensure_ascii=False)
+    return key
+
+
 def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], list[dict]]:
     supabase = get_supabase_admin()
     inserted: list[dict] = []
@@ -233,7 +241,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             continue
         n = _normalize_item_name(str(it.get("name") or ""))
         if n:
-            key = f"{n}::{(it.get('location') or '').strip().lower()}"
+            key = _bulk_item_key(it)
             if key not in existing_by_norm:
                 existing_by_norm[key] = it
 
@@ -270,6 +278,9 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             failures.append({"index": idx, "reason": "invalid name"})
             continue
 
+        if it.get('import_data'):
+            norm = _bulk_item_key(it)
+
         if norm not in aggregated:
             aggregated[norm] = {
                 "name": name,
@@ -284,6 +295,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": it.get("barcode"),
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
+                "import_data": it.get("import_data"),
                 "catalog_id": None,
             }
             aggregated_qty[norm] = 0
@@ -330,7 +342,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 catalog_id=str(base["catalog_id"]),
             )
 
-        existing = existing_by_norm.get(f"{norm}::{loc_key}")
+        existing = existing_by_norm.get(_bulk_item_key(base))
         if existing and isinstance(existing, dict):
             item_id = str(existing.get("item_id") or "")
             if not item_id:
@@ -372,6 +384,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": base.get("barcode"),
                 "purchase_source": base.get("purchase_source"),
                 "notes": base.get("notes"),
+                **({"import_data": base["import_data"]} if base.get("import_data") else {}),
                 "catalog_id": base.get("catalog_id"),
             }
         )

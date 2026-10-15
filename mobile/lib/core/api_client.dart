@@ -1763,6 +1763,44 @@ class BarcodeLookupResult {
   }
 }
 
+class ImportedItemField {
+  const ImportedItemField({required this.name, required this.value});
+  final String name;
+  final dynamic value;
+
+  String get displayValue => value == null || value == ''
+      ? 'Empty'
+      : value is Map || value is List
+      ? jsonEncode(value)
+      : value.toString();
+}
+
+class ImportedItemData {
+  const ImportedItemData({
+    required this.filename,
+    required this.sheet,
+    required this.fields,
+  });
+  final String filename;
+  final String sheet;
+  final List<ImportedItemField> fields;
+
+  factory ImportedItemData.fromJson(Map<String, dynamic> json) =>
+      ImportedItemData(
+        filename: (json['filename'] ?? '').toString(),
+        sheet: (json['sheet'] ?? '').toString(),
+        fields: (json['fields'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (field) => ImportedItemField(
+                name: (field['name'] ?? '').toString(),
+                value: field['value'],
+              ),
+            )
+            .toList(),
+      );
+}
+
 class InventoryItem {
   InventoryItem({
     required this.itemId,
@@ -1782,6 +1820,7 @@ class InventoryItem {
     this.tags,
     this.confidence,
     this.catalogId,
+    this.importData,
   });
 
   final String itemId;
@@ -1800,6 +1839,7 @@ class InventoryItem {
   final List<String>? tags;
   final double? confidence;
   final String? catalogId;
+  final ImportedItemData? importData;
   final DateTime createdAt;
 
   /// The identifier users scan first in inventory lists. Catalogued parts are
@@ -1838,6 +1878,11 @@ class InventoryItem {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
       catalogId: json['catalog_id']?.toString(),
+      importData: json['import_data'] is Map
+          ? ImportedItemData.fromJson(
+              Map<String, dynamic>.from(json['import_data'] as Map),
+            )
+          : null,
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),

@@ -63,6 +63,28 @@ export function ItemDetails({
             </div>
           ))}
       </dl>
+      {item.import_data?.fields?.length ? (
+        <section style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--app-border)" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 500 }}>Imported details</h3>
+          <p className="workspace-muted" style={{ fontSize: 12, overflowWrap: "anywhere" }}>
+            {item.import_data.filename} / {item.import_data.sheet}
+          </p>
+          <dl style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,180px),1fr))", gap: 18, marginTop: 18 }}>
+            {item.import_data.fields.map((field, index) => (
+              <div key={index}>
+                <dt className="workspace-muted" style={{ fontSize: 11, overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
+                  {field.name.trim() ? field.name : `Column ${index + 1}`}
+                </dt>
+                <dd style={{ margin: "5px 0", fontSize: 13, overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
+                  {field.value === null || field.value === undefined || field.value === ""
+                    ? "Empty"
+                    : typeof field.value === "object" ? JSON.stringify(field.value) : String(field.value)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
       <ItemPhotoGallery
         itemId={item.item_id}
         context={context}

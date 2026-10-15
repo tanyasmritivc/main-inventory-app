@@ -18,6 +18,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import 'item_detail_drag_sheet.dart';
+import 'imported_item_details.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 /// Opens the comprehensive item detail bottom sheet.
@@ -1797,6 +1798,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
               ),
             ),
+            if (item.importData != null)
+              ImportedItemDetails(data: item.importData!),
             if (_catalogFuture != null)
               FutureBuilder<VerifiedCatalogPart?>(
                 future: _catalogFuture,
