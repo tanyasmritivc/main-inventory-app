@@ -1,5 +1,35 @@
 # Current state
 
+## October 14 website clarity published
+
+PR #72, runtime `65226c5a49557a62298b8b9eb499c72a4b8d32f0`, is live on
+the existing self-hosted website. The user selected open layouts with quiet
+dividers: remove the repeated toolbar title, first FindEZ navigation caption,
+duplicate Collections/Space headings, repeated Team tab headings and extra
+Project kits Space prompts. Recent items and Spaces use open rows; filters and
+secondary actions are lighter, inputs have consistent spacing, Labels tabs are
+separated and Review photos no longer fill the page. Contracted/expanded sidebar
+states work, with the user's original pinned preference restored after checking.
+
+223 web tests, TypeScript and the production webpack build with actual production
+configuration pass. Existing lint warnings remain; all five exact-runtime CI
+jobs pass in run `38683070099`. Actual-component fixtures cover light/dark and
+narrow layouts; signed-in Safari checks cover the screenshot routes and loaded
+inventory. Public release checks cover 11 public routes, 17 protected route
+guards and three workspace CSS files. Build ID is `bSG_l1U3Nn-HPx_vC7FHX` at
+`/home/ubuntu/findez-web-releases/web-clarity-20261014-r3/frontend`.
+
+The service switch preserves its production environment, unrelated dirty checkout
+and 1,006 previous immutable assets. Rollback drop-in is
+`/home/ubuntu/findez-web-clarity-20261014-r3/previous-web-rebuild.conf`; the first
+release record also retains the original October 12 rollback. Receipts and hashes
+are in `Documents/FindEZ/Releases/web-clarity-2026-10-14`, with final delivery in
+`published`. Backend process/start time are unchanged; no database changes or
+customer inventory writes were made. Pending web branding, pricing and capture
+client preparation are included. Pricing remains planned, paid purchasing is
+disabled, Shopify remains disabled and newer backend capture receipt/identity
+semantics remain a separate deployment. Mobile/TestFlight state below is unchanged.
+
 ## October 14 guided tour limited to first installation
 
 Lane `fix/first-install-tour` adds an installation-scoped, durable claim before

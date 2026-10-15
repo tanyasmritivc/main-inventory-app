@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-10-14: Use one visible page identity and open web layouts
+
+The user explicitly selects open layouts with quiet dividers and fewer boxes.
+Keep one page title in content; the shared toolbar is for navigation utilities.
+Remove the redundant FindEZ navigation caption and contract navigation labels
+with the rail. Prefer simple rows, spaced text tabs and restrained secondary
+actions. Preserve necessary input, photo, dialog and permission boundaries.
+Do not add decorative copy or icons to fill newly opened space.
+
 ## 2026-10-14: Guided tour belongs to a fresh installation
 
 Automatic product guidance is installation-scoped, not account-scoped. Prepare

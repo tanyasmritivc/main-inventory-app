@@ -1,22 +1,26 @@
 # Active work
 
-## October 14 website clarity and release
+## October 14 website clarity live
 
-The user authorizes publishing pending website changes, then requests screenshot-
-guided cleanup before release. Lane `release/web-launch-20261014`, based on
-`4e71506`, owns web shell/title hierarchy, contracted sidebar labels and crowded
-containers/controls. Keep one page identity, preserve routes/actions/auth, prefer
-open rows with quiet dividers and retain meaningful photo/dialog boundaries.
-Inspect and preserve production source/config in the isolated release workflow.
-The repeated shell title, first navigation caption and duplicate Collections and
-Space titles are removed. Open Space/recent-item rows, borderless filters and
-lighter secondary actions share consistent spacing; Review previews are bounded.
-Web tests and TypeScript pass; changed-file lint has existing warnings only. Local
-fictional-data component previews cover light/dark and navigation states. Production
-build and authenticated verification remain release gates. The live web service
-is still the October 12 onboarding release; nothing new has been switched. Shopify
-and public Apple submission remain held; billing is UI preparation with purchases
-unavailable. This lane does not deploy unrelated backend behavior.
+Lane `release/web-launch-20261014`, based on `4e71506`, is complete in PR #72.
+Runtime `65226c5` removes repeated shell/Collections/Space titles and the redundant
+FindEZ section caption. Open rows, quiet dividers, simpler filters/secondary
+actions, consistent spacing and bounded Review photos replace crowded containers.
+Teams uses its visible tabs for section identity, Project kits has one Space
+prompt and Labels tabs have proper spacing. Sidebar contraction is verified and
+the original pinned preference restored. Routes, actions and permissions remain.
+223 web tests, TypeScript, the actual-config production build and all five
+exact-runtime CI gates pass (`38683070099`); lint has existing warnings only.
+Both-theme/narrow component fixtures and signed-in Safari pages are checked.
+The live web service now uses `web-clarity-20261014-r3/frontend`, build ID
+`bSG_l1U3Nn-HPx_vC7FHX`. Public checks cover 11 routes, 17 protected route guards
+and three workspace CSS assets; 1,006 old static assets remain for open tabs.
+Production configuration and the dirty VM checkout are preserved. Backend PID
+and start time are unchanged. Receipts, source hashes, build log and rollback
+records are in `Documents/FindEZ/Releases/web-clarity-2026-10-14/published` and
+`/home/ubuntu/findez-web-clarity-20261014-r3`. Shopify and public Apple submission
+remain held; pricing is planned UI with paid purchases unavailable. Supporting
+backend reliability work is not deployed by this web-only lane.
 
 ## October 14 one-time guided tour fix and TestFlight preparation
 
