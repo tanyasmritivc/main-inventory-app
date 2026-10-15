@@ -5,6 +5,8 @@ from pydantic import BaseModel
 class DocumentRecord(BaseModel):
     storage_path: str
     user_id: str | None = None
+    inventory_id: str | None = None
+    item_id: str | None = None
     filename: str
     display_name: str | None = None
     mime_type: str | None = None

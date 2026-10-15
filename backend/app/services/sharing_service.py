@@ -37,7 +37,7 @@ def generate_unique_code(client) -> str:
     raise ValueError('Could not generate unique code')
 
 
-def create_share(*, user_id: str, share_name: str, permission: str) -> dict:
+def create_share(*, user_id: str, share_name: str, permission: str, space_id: str | None = None) -> dict:
     client = get_supabase_admin()
     code = generate_unique_code(client)
     result = client.table('team_shares').insert({
@@ -46,13 +46,14 @@ def create_share(*, user_id: str, share_name: str, permission: str) -> dict:
         'share_name': share_name,
         'permission': permission,
         'is_active': True,
+        **({'space_id': space_id} if space_id else {}),
     }).execute()
     return result.data[0] if result.data else {}
 
 
 def get_my_shares(*, user_id: str) -> list:
     from app.services.inventory_scope import current_inventory
-    if current_inventory.get():
+    if current_inventory.get() and current_inventory.get().team_id:
         return []
     client = get_supabase_admin()
     shares = (
@@ -151,10 +152,16 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
     s, _ = get_share_access(requesting_user_id=requesting_user_id, share_id=share_id)
     from app.services.items_repo import search_items_basic
     all_items = search_items_basic(user_id=s['owner_user_id'], q='')
-    space_name = (s.get('share_name') or '').strip().lower()
-    if space_name:
-        return [item for item in all_items if (item.get('location') or '').strip().lower() == space_name]
-    return all_items
+    return [item for item in all_items if _share_contains(s,item)]
+
+
+def _share_contains(share: dict, item: dict) -> bool:
+    if share.get('inventory_id') and item.get('inventory_id') != share['inventory_id']:
+        return False
+    if share.get('space_id'):
+        return item.get('space_id') == share['space_id']
+    name = (share.get('share_name') or '').strip().lower()
+    return not name or (item.get('location') or '').strip().lower() == name
 
 
 def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, bool]:
@@ -197,7 +204,7 @@ def _get_share_item(*, share: dict, item_id: str) -> dict:
     for item in owner_items:
         if item.get('item_id') != item_id:
             continue
-        if not space_name or (item.get('location') or '').strip().lower() == space_name:
+        if _share_contains(share,item):
             return item
         break
     raise ValueError('Item not found in this space')
@@ -265,10 +272,7 @@ def get_share_item_events(*, requesting_user_id: str, share_id: str, item_id: st
     from app.services.items_repo import search_items_basic
     owner_items = search_items_basic(user_id=s['owner_user_id'], q='')
     space_name = (s.get('share_name') or '').strip().lower()
-    if space_name:
-        space_items = [i for i in owner_items if (i.get('location') or '').strip().lower() == space_name]
-    else:
-        space_items = owner_items
+    space_items = [i for i in owner_items if _share_contains(s,i)]
     item_ids_in_space = {i['item_id'] for i in space_items if i.get('item_id')}
     if item_id not in item_ids_in_space:
         raise ValueError('Item not found in this share')

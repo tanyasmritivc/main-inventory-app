@@ -1,8 +1,9 @@
 "use client";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
-import Link from "next/link";
+import Link from "@/components/site/inventory-link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import {
   BookOpen,
   Camera,
@@ -63,7 +64,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
   const { promptValue, showNotice } = useAppDialog();
   const { theme, setTheme } = useAppTheme();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const router = useRouter();
+  const router = useInventoryRouter();
   const photoRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingName, setEditingName] = useState("");

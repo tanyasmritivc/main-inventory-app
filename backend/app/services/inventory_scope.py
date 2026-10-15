@@ -37,7 +37,7 @@ TABLES = frozenset((
     'items', 'spaces', 'bins', 'documents', 'activity_log', 'capture_reviews',
     'conversations', 'messages', 'checkouts', 'item_events', 'project_kits',
     'project_kit_items', 'project_kit_reservations', 'conversation_history', 'query_logs',
-    'user_memory', 'conversation_sessions',
+    'user_memory', 'conversation_sessions', 'team_shares',
 ))
 PRIVATE = frozenset(('conversations', 'messages', 'conversation_history', 'query_logs', 'user_memory', 'conversation_sessions'))
 PRIVATE_LEGACY = frozenset(('documents', 'capture_reviews'))
@@ -50,6 +50,7 @@ PARENTS = {
     'capture_reviews': {'space_id': ('spaces', 'id'), 'resolved_item_id': ('items', 'item_id')},
     'checkouts': {'item_id': ('items', 'item_id')},
     'messages': {'conversation_id': ('conversations', 'id')},
+    'team_shares': {'space_id': ('spaces', 'id')},
     'project_kit_items': {'kit_id': ('project_kits', 'id')},
     'project_kit_reservations': {'kit_id': ('project_kits', 'id'), 'kit_item_id': ('project_kit_items', 'id'), 'inventory_item_id': ('items', 'item_id')},
 }
@@ -141,6 +142,12 @@ class InventoryQuery:
 
     def select(self, *args, **kwargs):
         self.operation = 'select'
+        if args and isinstance(args[0], str) and '*' not in args[0]:
+            extra = ['inventory_id']
+            if self.table in PRIVATE_LEGACY:
+                extra += ['inventory_visibility']
+            fields = args[0].split(',')
+            args = (args[0] + ''.join(',' + field for field in extra if field not in fields), *args[1:])
         self.query = self.query.select(*args, **kwargs).eq('inventory_id', self.client.scope.inventory_id)
         if self.table in PRIVATE and self.table != 'messages':
             self.query = self.query.eq('user_id', self.client.scope.actor_id)

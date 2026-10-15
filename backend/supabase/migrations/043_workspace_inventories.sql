@@ -6,7 +6,7 @@ CREATE TABLE public.app_inventories (
   inventory_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   team_id uuid REFERENCES public.teams(team_id) ON DELETE CASCADE,
-  created_by_user_id uuid NOT NULL REFERENCES auth.users(id),
+  created_by_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   name text NOT NULL CHECK (length(btrim(name)) BETWEEN 1 AND 100),
   is_default boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()
@@ -54,7 +54,7 @@ DO $$ DECLARE t text; BEGIN
     'conversations','messages','checkouts','item_events','project_kits','project_kit_items',
     'project_kit_reservations','conversation_history','query_logs'] LOOP
     IF to_regclass('public.' || t) IS NOT NULL THEN
-      EXECUTE format('ALTER TABLE public.%I ADD COLUMN inventory_id uuid REFERENCES public.app_inventories(inventory_id)', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN inventory_id uuid REFERENCES public.app_inventories(inventory_id) ON DELETE CASCADE', t);
       EXECUTE format('CREATE INDEX %I ON public.%I(inventory_id)', t || '_inventory_id_idx', t);
     END IF;
   END LOOP;
@@ -106,13 +106,13 @@ END $$;
 -- Isolate private learned facts and resumable Assist state without breaking old
 -- clients' user-only UPSERT constraints on the original tables.
 CREATE TABLE public.inventory_user_memory (
-  inventory_id uuid NOT NULL REFERENCES public.app_inventories(inventory_id),
+  inventory_id uuid NOT NULL REFERENCES public.app_inventories(inventory_id) ON DELETE CASCADE,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   id uuid NOT NULL DEFAULT gen_random_uuid(), key text NOT NULL, value text,
   updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(inventory_id,user_id,key)
 );
 CREATE TABLE public.inventory_conversation_sessions (
-  inventory_id uuid NOT NULL REFERENCES public.app_inventories(inventory_id),
+  inventory_id uuid NOT NULL REFERENCES public.app_inventories(inventory_id) ON DELETE CASCADE,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   history jsonb NOT NULL DEFAULT '[]', last_item_name text, last_user_message text,
   updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(inventory_id,user_id)
@@ -136,6 +136,41 @@ END $$;
 ALTER TABLE public.spaces DROP CONSTRAINT IF EXISTS spaces_user_id_name_key;
 CREATE UNIQUE INDEX spaces_inventory_name ON public.spaces(inventory_id, user_id, name);
 CREATE UNIQUE INDEX capture_reviews_inventory_source ON public.capture_reviews(inventory_id,user_id,source_key);
+
+-- A Space invitation refers to a stable location, never every same-named
+-- location in a different inventory. Existing links retain their owner/access.
+ALTER TABLE public.team_shares ADD COLUMN inventory_id uuid REFERENCES public.app_inventories(inventory_id) ON DELETE CASCADE;
+ALTER TABLE public.team_shares ADD COLUMN space_id uuid REFERENCES public.spaces(id) ON DELETE CASCADE;
+UPDATE public.team_shares sh SET space_id=(SELECT s.id FROM public.spaces s
+  WHERE s.user_id=sh.owner_user_id AND lower(s.name)=lower(sh.share_name)
+  AND (SELECT count(*) FROM public.spaces s2 WHERE s2.user_id=sh.owner_user_id AND lower(s2.name)=lower(sh.share_name))=1);
+UPDATE public.team_shares sh SET inventory_id=coalesce((SELECT inventory_id FROM public.spaces WHERE id=sh.space_id),public.findez_default_inventory(sh.owner_user_id));
+CREATE FUNCTION public.findez_bind_share_inventory() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE location_inventory uuid; matches integer;
+BEGIN
+  IF NEW.inventory_id IS NULL AND NEW.space_id IS NULL THEN
+    SELECT count(*) INTO matches FROM public.spaces WHERE user_id=NEW.owner_user_id AND lower(name)=lower(NEW.share_name);
+    IF matches>1 THEN RAISE check_violation USING message='Choose this Space from its inventory before sharing it.'; END IF;
+    SELECT id,inventory_id INTO NEW.space_id,NEW.inventory_id FROM public.spaces
+      WHERE user_id=NEW.owner_user_id AND lower(name)=lower(NEW.share_name);
+  ELSIF NEW.space_id IS NULL THEN
+    SELECT count(*) INTO matches FROM public.spaces WHERE inventory_id=NEW.inventory_id AND user_id=NEW.owner_user_id AND lower(name)=lower(NEW.share_name);
+    IF matches>1 THEN RAISE check_violation USING message='Choose a single Space to share.'; END IF;
+    SELECT id INTO NEW.space_id FROM public.spaces WHERE inventory_id=NEW.inventory_id AND user_id=NEW.owner_user_id AND lower(name)=lower(NEW.share_name);
+  END IF;
+  IF NEW.space_id IS NOT NULL THEN
+    SELECT inventory_id INTO STRICT location_inventory FROM public.spaces WHERE id=NEW.space_id AND user_id=NEW.owner_user_id;
+    IF NEW.inventory_id IS NOT NULL AND NEW.inventory_id<>location_inventory THEN
+      RAISE check_violation USING message='This Space belongs to another inventory.';
+    END IF;
+    NEW.inventory_id:=location_inventory;
+  END IF;
+  NEW.inventory_id:=coalesce(NEW.inventory_id,public.findez_default_inventory(NEW.owner_user_id));
+  RETURN NEW;
+END $$;
+CREATE TRIGGER team_shares_inventory BEFORE INSERT OR UPDATE ON public.team_shares
+  FOR EACH ROW EXECUTE FUNCTION public.findez_bind_share_inventory();
 
 -- Validate related IDs even for service-role writes and legacy callers. An
 -- inventory record cannot link a different inventory's location, item or chat.
@@ -179,11 +214,17 @@ BEGIN
     selected_inventory := public.findez_default_inventory(owner_id, workspace_team);
   END IF;
   NEW.inventory_id := selected_inventory;
+  IF TG_TABLE_NAME='spaces' AND EXISTS (SELECT 1 FROM public.spaces s
+      WHERE s.inventory_id=selected_inventory AND lower(s.name)=lower(data->>'name') AND s.id<>(data->>'id')::uuid) THEN
+    RAISE unique_violation USING message='A Space with this name already exists in this inventory.';
+  END IF;
   -- Direct authenticated clients retain ownership checks and must also belong
   -- to the inventory's workspace. HTTP app writes have an independent server check.
   IF auth.uid() IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.app_inventories inv WHERE inv.inventory_id = selected_inventory
-      AND ((inv.team_id IS NULL AND inv.owner_user_id = auth.uid()) OR EXISTS (
+      AND ((inv.team_id IS NULL AND inv.owner_user_id = auth.uid())
+        OR (inv.team_id = (nullif(current_setting('request.jwt.claims', true),'')::jsonb->>'api_workspace_id')::uuid
+          AND nullif(current_setting('request.jwt.claims', true),'')::jsonb ? 'api_key_id') OR EXISTS (
         SELECT 1 FROM public.team_memberships m WHERE m.team_id = inv.team_id
           AND m.user_id = auth.uid() AND m.role IN ('owner','mentor','member')))
   ) THEN RAISE insufficient_privilege USING message = 'inventory write access denied'; END IF;
@@ -205,6 +246,10 @@ CREATE VIEW public.app_inventory_summaries AS SELECT inv.*,
   FROM public.app_inventories inv;
 REVOKE ALL ON public.app_inventory_summaries FROM anon, authenticated;
 GRANT SELECT ON public.app_inventory_summaries TO service_role;
+CREATE VIEW public.app_inventory_space_summaries AS SELECT s.*,
+  (SELECT count(*) FROM public.items i WHERE i.space_id=s.id) AS item_count FROM public.spaces s;
+REVOKE ALL ON public.app_inventory_space_summaries FROM anon,authenticated;
+GRANT SELECT ON public.app_inventory_space_summaries TO service_role;
 
 -- Review resolution retains its source inventory, including Unsorted captures.
 create or replace function public.resolve_capture_review(
@@ -293,6 +338,226 @@ revoke all on function public.resolve_capture_review(uuid, uuid, jsonb, uuid, uu
 grant execute on function public.resolve_capture_review(uuid, uuid, jsonb, uuid, uuid)
   to service_role;
 
+
+-- Retain reservation behavior after adding the inventory_id column. The old
+-- local variable had the same name as the new column.
+create or replace function public.replace_project_kit_reservations(
+  p_kit_id uuid,
+  p_actor_user_id uuid,
+  p_allocations jsonb
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  allocation jsonb;
+  v_item_id uuid;
+  requested integer;
+  stock integer;
+  already_reserved integer;
+begin
+  if not exists (select 1 from project_kits where id = p_kit_id) then
+    raise exception 'PROJECT_KIT_NOT_FOUND';
+  end if;
+
+  perform 1 from items
+  where item_id in (
+    select (entry->>'inventory_item_id')::uuid
+    from jsonb_array_elements(p_allocations) entry
+  )
+  for update;
+
+  for v_item_id in
+    select distinct (entry->>'inventory_item_id')::uuid
+    from jsonb_array_elements(p_allocations) entry
+  loop
+    select quantity into stock from items where item_id = v_item_id;
+    if stock is null then raise exception 'INVENTORY_ITEM_NOT_FOUND'; end if;
+
+    select coalesce(sum((entry->>'quantity')::integer), 0) into requested
+    from jsonb_array_elements(p_allocations) entry
+    where (entry->>'inventory_item_id')::uuid = v_item_id;
+
+    select coalesce(sum(quantity), 0) into already_reserved
+    from project_kit_reservations
+    where inventory_item_id = v_item_id and kit_id <> p_kit_id;
+
+    if requested < 0 or requested + already_reserved > stock then
+      raise exception 'INSUFFICIENT_UNRESERVED_STOCK';
+    end if;
+  end loop;
+
+  delete from project_kit_reservations where kit_id = p_kit_id;
+  for allocation in select * from jsonb_array_elements(p_allocations)
+  loop
+    requested := (allocation->>'quantity')::integer;
+    if requested > 0 then
+      if not exists (
+        select 1 from project_kit_items
+        where id = (allocation->>'kit_item_id')::uuid and kit_id = p_kit_id
+      ) then raise exception 'KIT_ITEM_MISMATCH'; end if;
+
+      insert into project_kit_reservations(
+        kit_id, kit_item_id, inventory_item_id, quantity, created_by_user_id
+      ) values (
+        p_kit_id,
+        (allocation->>'kit_item_id')::uuid,
+        (allocation->>'inventory_item_id')::uuid,
+        requested,
+        p_actor_user_id
+      );
+    end if;
+  end loop;
+end;
+$$;
+
+revoke all on function public.replace_project_kit_reservations(uuid, uuid, jsonb)
+  from public, anon, authenticated;
+grant execute on function public.replace_project_kit_reservations(uuid, uuid, jsonb)
+  to service_role;
+
+
+-- Move the physical Space and its dependent records as one transaction. A kit
+-- allocated across other Spaces must be resolved explicitly before moving it.
+CREATE FUNCTION public.findez_move_inventory_space(p_space uuid, p_inventory uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE s public.spaces; source_inventory uuid; kit_ids uuid[];
+BEGIN
+  SELECT * INTO STRICT s FROM public.spaces WHERE id=p_space FOR UPDATE;
+  source_inventory := s.inventory_id;
+  IF source_inventory=p_inventory THEN RETURN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.app_inventories WHERE inventory_id=p_inventory) THEN
+    RAISE foreign_key_violation USING message='destination inventory not found';
+  END IF;
+  SELECT coalesce(array_agg(id),'{}') INTO kit_ids FROM public.project_kits
+    WHERE inventory_id=source_inventory AND lower(location)=lower(s.name);
+  IF EXISTS (SELECT 1 FROM public.project_kit_reservations r
+      JOIN public.items i ON i.item_id=r.inventory_item_id
+      WHERE (r.kit_id=ANY(kit_ids)) <> (i.space_id=p_space)) THEN
+    RAISE check_violation USING message='Resolve project allocations across Spaces before moving this Space.';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.capture_reviews r JOIN public.items i ON i.item_id=r.resolved_item_id
+      WHERE (r.space_id=p_space OR i.space_id=p_space) AND r.space_id IS NOT NULL
+        AND i.space_id IS DISTINCT FROM r.space_id) THEN
+    RAISE check_violation USING message='Resolve linked reviews before moving this Space.';
+  END IF;
+  UPDATE public.spaces SET inventory_id=p_inventory WHERE id=p_space;
+  UPDATE public.bins SET inventory_id=p_inventory WHERE space_id=p_space;
+  UPDATE public.items SET inventory_id=p_inventory WHERE space_id=p_space;
+  UPDATE public.team_shares SET inventory_id=p_inventory WHERE space_id=p_space;
+  UPDATE public.project_kits SET inventory_id=p_inventory WHERE id=ANY(kit_ids);
+  UPDATE public.project_kit_items SET inventory_id=p_inventory WHERE kit_id=ANY(kit_ids);
+  UPDATE public.project_kit_reservations SET inventory_id=p_inventory WHERE kit_id=ANY(kit_ids);
+  UPDATE public.documents SET inventory_id=p_inventory WHERE item_id IN (SELECT item_id FROM public.items WHERE space_id=p_space);
+  UPDATE public.capture_reviews SET inventory_id=p_inventory WHERE space_id=p_space
+    OR resolved_item_id IN (SELECT item_id FROM public.items WHERE space_id=p_space);
+  IF to_regclass('public.item_events') IS NOT NULL THEN
+    UPDATE public.item_events SET inventory_id=p_inventory WHERE item_id IN (SELECT item_id FROM public.items WHERE space_id=p_space);
+  END IF;
+  IF to_regclass('public.checkouts') IS NOT NULL THEN
+    UPDATE public.checkouts SET inventory_id=p_inventory WHERE item_id IN (SELECT item_id FROM public.items WHERE space_id=p_space);
+  END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.findez_move_inventory_space(uuid,uuid) FROM public,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.findez_move_inventory_space(uuid,uuid) TO service_role;
+
+-- Old mobile/Team endpoints keep working. Their existing link/unlink operation
+-- also moves the same records into or out of the Team's default inventory.
+CREATE FUNCTION public.findez_team_space_inventory() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE space_owner uuid; target uuid; linked_team uuid;
+BEGIN
+  SELECT user_id INTO space_owner FROM public.spaces WHERE id=coalesce(NEW.space_id,OLD.space_id);
+  IF space_owner IS NULL THEN RETURN coalesce(NEW,OLD); END IF;
+  IF TG_OP='INSERT' THEN
+    SELECT s.inventory_id INTO target FROM public.spaces s JOIN public.app_inventories inv USING(inventory_id)
+      WHERE s.id=NEW.space_id AND inv.team_id=NEW.team_id;
+    target := coalesce(target,public.findez_default_inventory(space_owner,NEW.team_id));
+  ELSE
+    target := public.findez_default_inventory(space_owner);
+  END IF;
+  PERFORM public.findez_move_inventory_space(coalesce(NEW.space_id,OLD.space_id),target);
+  RETURN coalesce(NEW,OLD);
+END $$;
+CREATE TRIGGER team_spaces_inventory AFTER INSERT OR DELETE ON public.team_spaces
+  FOR EACH ROW EXECUTE FUNCTION public.findez_team_space_inventory();
+
+CREATE FUNCTION public.findez_link_inventory_space() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE inventory_team uuid;
+BEGIN
+  SELECT team_id INTO inventory_team FROM public.app_inventories WHERE inventory_id=NEW.inventory_id;
+  IF inventory_team IS NOT NULL THEN
+    INSERT INTO public.team_spaces(team_id,space_id,linked_by)
+      VALUES(inventory_team,NEW.id,NEW.user_id) ON CONFLICT(space_id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER spaces_inventory_team_link AFTER INSERT ON public.spaces
+  FOR EACH ROW EXECUTE FUNCTION public.findez_link_inventory_space();
+
+-- Deleting a Team removes collaboration, not its members' physical records.
+-- Retain any remaining Team-level inventory for its owner as a personal one.
+CREATE FUNCTION public.findez_retain_team_inventories() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE inv record; person record; t text; archive_id uuid; archive_name text;
+BEGIN
+  DELETE FROM public.team_spaces WHERE team_id=OLD.team_id;
+  FOR inv IN SELECT * FROM public.app_inventories WHERE team_id=OLD.team_id LOOP
+    FOREACH t IN ARRAY ARRAY['conversations','conversation_history','query_logs',
+      'inventory_user_memory','inventory_conversation_sessions'] LOOP
+      IF to_regclass('public.'||t) IS NOT NULL THEN
+        FOR person IN EXECUTE format('SELECT DISTINCT user_id FROM public.%I WHERE inventory_id=$1 AND user_id<>$2',t) USING inv.inventory_id,inv.owner_user_id LOOP
+          archive_name:=left(OLD.name,25)||' - '||left(inv.name,25)||' '||inv.inventory_id::text;
+          INSERT INTO public.app_inventories(owner_user_id,created_by_user_id,name)
+            VALUES(person.user_id,person.user_id,archive_name) ON CONFLICT DO NOTHING;
+          SELECT inventory_id INTO STRICT archive_id FROM public.app_inventories
+            WHERE team_id IS NULL AND owner_user_id=person.user_id AND name=archive_name;
+          EXECUTE format('UPDATE public.%I SET inventory_id=$1 WHERE inventory_id=$2 AND user_id=$3',t)
+            USING archive_id,inv.inventory_id,person.user_id;
+        END LOOP;
+      END IF;
+    END LOOP;
+    IF to_regclass('public.messages') IS NOT NULL THEN
+      UPDATE public.messages m SET inventory_id=c.inventory_id FROM public.conversations c
+        WHERE m.conversation_id=c.id AND m.inventory_id=inv.inventory_id AND m.inventory_id<>c.inventory_id;
+    END IF;
+    UPDATE public.app_inventories SET team_id=NULL,is_default=false,
+      name=left(OLD.name,25)||' - '||left(inv.name,25)||' '||inv.inventory_id::text
+      WHERE inventory_id=inv.inventory_id;
+  END LOOP;
+  RETURN OLD;
+END $$;
+CREATE TRIGGER teams_retain_inventories BEFORE DELETE ON public.teams
+  FOR EACH ROW EXECUTE FUNCTION public.findez_retain_team_inventories();
+
+CREATE FUNCTION public.findez_transfer_inventory_owner() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+  UPDATE public.app_inventories SET owner_user_id=NEW.owner_user_id WHERE team_id=NEW.team_id;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER teams_inventory_owner AFTER UPDATE OF owner_user_id ON public.teams
+  FOR EACH ROW EXECUTE FUNCTION public.findez_transfer_inventory_owner();
+
+-- Keep license cleanup and collaboration removal atomic if a related physical
+-- record prevents the Team from being removed.
+CREATE FUNCTION public.findez_delete_inventory_team(p_team_id uuid,p_actor_id uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE owner_id uuid;
+BEGIN
+  SELECT owner_user_id INTO owner_id FROM public.teams WHERE team_id=p_team_id FOR UPDATE;
+  IF owner_id IS NULL THEN RETURN false; END IF;
+  IF owner_id<>p_actor_id THEN RAISE insufficient_privilege USING message='Team owner required'; END IF;
+  IF to_regclass('public.licenses') IS NOT NULL THEN
+    UPDATE public.licenses SET redeemed_by=NULL,redeemed_at=NULL WHERE redeemed_by=p_team_id;
+  END IF;
+  DELETE FROM public.teams WHERE team_id=p_team_id;
+  RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION public.findez_delete_inventory_team(uuid,uuid) FROM public,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.findez_delete_inventory_team(uuid,uuid) TO service_role;
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;

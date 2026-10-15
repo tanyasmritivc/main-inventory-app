@@ -7,6 +7,8 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.storage import document_path_in_scope
+from app.services.inventory_scope import current_inventory
 
 
 logger = logging.getLogger(__name__)
@@ -92,6 +94,10 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
     supabase = get_supabase_admin()
     if not storage_path or not storage_path.strip():
         return None
+    if not current_inventory.get() and not document_path_in_scope(storage_path,f'{user_id}/'):
+        return None
+    def checked(row):
+        return row if row and document_path_in_scope(storage_path,f"{row.get('user_id') or user_id}/") else None
 
     try:
         resp = _execute_with_retry(
@@ -105,7 +111,7 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
             .limit(1)
             .execute()
         )
-        return (resp.data or [None])[0]
+        return checked((resp.data or [None])[0])
     except Exception as e:
         if not _is_missing_display_name_column_error(e):
             raise
@@ -117,7 +123,7 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
             .limit(1)
             .execute()
         )
-        return (resp.data or [None])[0]
+        return checked((resp.data or [None])[0])
 
 
 def rename_document(*, user_id: str, storage_path: str, display_name: str) -> dict | None:

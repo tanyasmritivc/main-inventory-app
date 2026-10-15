@@ -23,6 +23,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/settings",
   "/sharing",
   "/teams",
+  "/workspaces",
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {

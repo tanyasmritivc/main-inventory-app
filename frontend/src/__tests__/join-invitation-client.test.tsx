@@ -44,7 +44,7 @@ test("Team acceptance uses the Team endpoint", async () => {
   render(<JoinInvitationClient kind="team" code="TEAM23" />);
   await screen.findByRole("button", { name: "Join team" });
   await userEvent.click(screen.getByRole("button", { name: "Join team" }));
-  await waitFor(() => expect(replace).toHaveBeenCalledWith("/teams"));
+  await waitFor(() => expect(replace).toHaveBeenCalledWith("/workspaces/team-123"));
   expect(joinTeam).toHaveBeenCalledWith({ token: "test-token", code: "TEAM23", bindToToken: true });
 });
 

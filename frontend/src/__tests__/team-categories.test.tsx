@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TeamsClient } from '@/components/site/teams-client';

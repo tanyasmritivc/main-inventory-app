@@ -321,7 +321,8 @@ def _check_not_viewer_for_team_write(requesting_user_id: str, target_user_id: st
 
 def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> str:
     """Return the space owner's user_id if location is a joined edit-access space, else requesting_user_id."""
-    if not location or not location.strip():
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get() or not location or not location.strip():
         return requesting_user_id
     try:
         client = get_supabase_admin()
@@ -398,14 +399,16 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
         if location:
             items = [i for i in items if (i.get("location") or "").lower() == str(location).lower()]
 
-        try:
-            create_activity(
-                user_id=user.user_id,
-                summary=f"Searched inventory: {payload.query}",
-                metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
-                            )
-        except Exception:
-            logger.exception("Failed to write search activity")
+        from app.services.inventory_scope import current_inventory
+        if raw_query or not current_inventory.get():
+            try:
+                create_activity(
+                    user_id=user.user_id,
+                    summary=f"Searched inventory: {payload.query}",
+                    metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
+                                )
+            except Exception:
+                logger.exception("Failed to write search activity")
 
         return SearchItemsResponse(items=items, parsed=parsed)
     except httpx.HTTPError:
@@ -433,6 +436,8 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
         return UpdateItemResponse(item=updated)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
@@ -722,7 +727,11 @@ def inventory_bulk_create_route(
     slots_remaining = None
     if not is_pro_user(target_user_id):
         try:
-            count_result = get_supabase_admin().table("items").select("item_id", count="exact").eq("user_id", target_user_id).execute()
+            client = get_supabase_admin()
+            from app.services.inventory_scope import current_inventory
+            if current_inventory.get():
+                client = client.raw
+            count_result = client.table("items").select("item_id", count="exact").eq("user_id", target_user_id).execute()
             if count_result.count is None:
                 raise ValueError('Item count unavailable')
             current = count_result.count

@@ -50,8 +50,8 @@ export function JoinInvitationClient({ code, kind, navigate = (url) => window.lo
       if (!owner || data.session?.access_token !== token) throw new Error("Please refresh this invitation before joining.");
       let destination: string;
       if (kind === "team") {
-        await joinTeam({ token, code, bindToToken: true });
-        destination = "/teams";
+        const joined = await joinTeam({ token, code, bindToToken: true });
+        destination = `/workspaces/${encodeURIComponent(joined.membership.team_id)}`;
       } else {
         const share = await joinShare({ token, share_code: code, bindToToken: true });
         destination = `/sharing/${encodeURIComponent(share.share_id)}`;

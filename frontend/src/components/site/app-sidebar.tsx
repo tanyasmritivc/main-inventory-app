@@ -1,8 +1,10 @@
 "use client";
+import { canEditInventory } from "@/lib/inventory-selection";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
-import Link from "next/link";
+import Link from "@/components/site/inventory-link";
 import { FindEZMark, FindEZWordmark } from "./findez-brand";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   BookOpen,
@@ -74,8 +76,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     keywords: ["places", "locations", "shared"],
   },
   {
-    label: "Teams",
-    route: "/teams",
+    label: "Workspaces",
+    route: "/workspaces",
     icon: Users,
     section: "Your world",
     keywords: ["workspace", "board", "members"],
@@ -187,7 +189,7 @@ export function AppSidebar({
   onPin?: () => void;
 }) {
   const pathname = usePathname(),
-    router = useRouter();
+    router = useInventoryRouter();
   const container = useRef<HTMLElement>(null);
   const desktop = useSyncExternalStore(subscribeViewport, () => window.innerWidth >= 860, () => true);
   const [hovered, setHovered] = useState(false);
@@ -315,7 +317,7 @@ export function AppSidebar({
             (section) => (
               <div className="app-nav-section" key={section}>
                 {section !== "FindEZ" && <p>{section}</p>}
-                {APP_NAV_ITEMS.filter((item) => item.section === section).map(
+                {APP_NAV_ITEMS.filter((item) => item.section === section && (canEditInventory() || item.route !== "/scan")).map(
                   (item) => {
                     const Icon = item.icon;
                     return (

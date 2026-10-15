@@ -1,5 +1,6 @@
 "use client";
-import Link from "next/link";
+import { activeInventory, canEditInventory } from "@/lib/inventory-selection";
+import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, FileUp, Plus, RefreshCw } from "lucide-react";
 import {
@@ -20,6 +21,7 @@ import { accountRequest, accountToken } from "@/lib/account-request";
 import {
   documentKind,
   ownedNotePath,
+  documentOwner,
   trustedDocumentUrl,
   type DocumentEntry,
 } from "@/lib/documents";
@@ -83,7 +85,7 @@ function DocumentsClientWorkspace({
       account,
       `/documents/open?${new URLSearchParams({ storage_path: doc.storage_path })}`,
     );
-    const url = trustedDocumentUrl(result.url, account, origins);
+    const url = trustedDocumentUrl(result.url, documentOwner(doc, account), origins);
     if (!url)
       throw new Error(
         "This document could not be opened safely. Please refresh and try again.",
@@ -233,29 +235,13 @@ function DocumentsClientWorkspace({
       let document = draft.doc;
       if (document) {
         if (
-          !ownedNotePath(document.storage_path, account) ||
+          !ownedNotePath(document.storage_path, documentOwner(document, account)) ||
           documentKind(document) !== "notes"
         )
           throw new Error("This note does not belong to this account.");
-        const token = await accountToken(account);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/documents/${document.storage_path.split("/").map(encodeURIComponent).join("/")}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-              "Content-Type": "text/plain",
-              "x-upsert": "true",
-            },
-            body: draft.text,
-          },
-        );
-        if (!response.ok)
-          throw new Error(
-            "Your note could not be saved. Your draft is available to retry.",
-          );
-        await accountToken(account);
+        await accountRequest(account, "/documents/note", {
+          method: "PATCH", body: { storage_path: document.storage_path, text: draft.text },
+        });
       } else {
         const form = new FormData();
         form.append(
@@ -379,7 +365,7 @@ function DocumentsClientWorkspace({
           <h1>Documents and notes</h1>
           <p>
             {docs.length} files and notes
-            {itemFilter ? " attached to this item" : " in your account"}.
+            {itemFilter ? " attached to this item" : (activeInventory() ? " in this inventory" : " in your account")}.
           </p>
         </div>
         <div className="workspace-actions">
@@ -393,7 +379,7 @@ function DocumentsClientWorkspace({
           </button>
           <button
             className="workspace-button"
-            disabled={working}
+            disabled={working || !canEditInventory()}
             onClick={() => {
               setError("");
               setNote({ text: "", title: "" });
@@ -404,14 +390,14 @@ function DocumentsClientWorkspace({
           </button>
           <button
             className="workspace-button"
-            disabled={working}
+            disabled={working || !canEditInventory()}
             onClick={() => importInput.current?.click()}
           >
             Import inventory
           </button>
           <button
             className="workspace-button primary"
-            disabled={working}
+            disabled={working || !canEditInventory()}
             onClick={() => fileInput.current?.click()}
           >
             <FileUp size={15} />
@@ -527,14 +513,14 @@ function DocumentsClientWorkspace({
               <div className="workspace-actions">
                 <button
                   className="workspace-button"
-                  disabled={working}
+                  disabled={working || !canEditInventory()}
                   onClick={() => void rename(d)}
                 >
                   Rename
                 </button>
                 <button
                   className="workspace-button"
-                  disabled={working}
+                  disabled={working || !canEditInventory()}
                   onClick={() => {
                     setLinking(d);
                     setLinkId(d.item_id || itemFilter);
@@ -569,7 +555,7 @@ function DocumentsClientWorkspace({
                 </button>
                 <button
                   className="workspace-button"
-                  disabled={working}
+                  disabled={working || !canEditInventory()}
                   onClick={() => void remove(d)}
                 >
                   Delete
@@ -609,7 +595,7 @@ function DocumentsClientWorkspace({
             className="workspace-input"
             value={note?.title || ""}
             maxLength={196}
-            disabled={working}
+            disabled={working || !canEditInventory()}
             onChange={(e) =>
               setNote((n) => (n ? { ...n, title: e.target.value } : n))
             }
@@ -620,7 +606,7 @@ function DocumentsClientWorkspace({
             className="workspace-input"
             value={note?.text || ""}
             maxLength={256 * 1024}
-            disabled={working}
+            disabled={working || !canEditInventory()}
             onChange={(e) =>
               setNote((n) => (n ? { ...n, text: e.target.value } : n))
             }
@@ -640,7 +626,7 @@ function DocumentsClientWorkspace({
             </button>
             <button
               className="workspace-button primary"
-              disabled={working}
+              disabled={working || !canEditInventory()}
               onClick={() => void saveNote()}
             >
               {working ? "Saving…" : "Save note"}

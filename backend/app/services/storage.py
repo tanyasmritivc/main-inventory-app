@@ -1,17 +1,36 @@
 
 import mimetypes
 from dataclasses import dataclass
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import unquote, urlsplit, urlunsplit
 from uuid import uuid4
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
+from app.services.inventory_scope import current_inventory
 
 
 @dataclass
 class StoredImage:
     path: str
     url: str
+
+
+def document_path_in_scope(path: str, prefix: str) -> bool:
+    """Reject foreign or traversal paths, including percent-encoded segments."""
+    decoded = path
+    for _ in range(5):
+        expanded = unquote(decoded)
+        if expanded == decoded:
+            break
+        decoded = expanded
+    else:
+        return False
+    return (
+        path.startswith(prefix)
+        and decoded.startswith(prefix)
+        and "\\" not in decoded
+        and all(segment not in ("", ".", "..") for segment in decoded.split("/"))
+    )
 
 
 def _external_storage_url(url: str, public_base_url: str | None) -> str:
@@ -36,6 +55,9 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
 
     safe_filename = filename.replace("/", "_").replace("\\", "_")
     path = f"{user_id}/{safe_filename}"
+    scope = current_inventory.get()
+    if scope:
+        path = f"{user_id}/{scope.inventory_id}-{uuid4().hex}-{safe_filename}"
 
     bucket = supabase.storage.from_(settings.supabase_storage_bucket)
     bucket.upload(
@@ -72,6 +94,9 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
 
     safe_filename = filename.replace("/", "_").replace("\\", "_")
     path = f"{user_id}/docs/{safe_filename}"
+    scope = current_inventory.get()
+    if scope:
+        path = f"{user_id}/docs/{scope.inventory_id}-{uuid4().hex}-{safe_filename}"
 
     bucket = supabase.storage.from_("documents")
     bucket.upload(
@@ -80,13 +105,8 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
         file_options={"content-type": _guess_content_type(filename), "x-upsert": "true"},
     )
 
-    if settings.supabase_storage_public:
-        url = bucket.get_public_url(path)
-        return StoredImage(path=path, url=url)
-
-    signed = bucket.create_signed_url(path, settings.supabase_storage_signed_url_ttl_seconds)
-    url = signed.get("signedURL") or signed.get("signedUrl")
-    return StoredImage(path=path, url=url)
+    # Documents remain private independently of the public image bucket flag.
+    return StoredImage(path=path,url=create_document_signed_url(storage_path=path))
 
 
 def upload_team_document(
@@ -108,11 +128,7 @@ def upload_team_document(
         },
     )
 
-    signed = bucket.create_signed_url(
-        path, settings.supabase_storage_signed_url_ttl_seconds
-    )
-    url = signed.get("signedURL") or signed.get("signedUrl")
-    return StoredImage(path=path, url=url)
+    return StoredImage(path=path,url=create_document_signed_url(storage_path=path))
 
 
 def create_document_signed_url(*, storage_path: str) -> str:

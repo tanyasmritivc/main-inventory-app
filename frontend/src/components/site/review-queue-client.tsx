@@ -1,4 +1,5 @@
 "use client";
+import { canEditInventory } from "@/lib/inventory-selection";
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
@@ -140,17 +141,17 @@ export function ReviewQueueClient() {
               {item.image_url && <Image unoptimized width={720} height={480} className="review-queue-image" src={item.image_url} alt={`Captured ${item.name || "item"}`} />}
               <Evidence item={item} />
               <div className="review-fields">
-                <label><span>Name</span><input className="product-input" value={item.name} onChange={(event) => change(item.review_id, { name: event.target.value })} /></label>
-                <label><span>Category</span><input className="product-input" value={item.category} onChange={(event) => change(item.review_id, { category: event.target.value })} /></label>
-                <label><span>Location</span><input className="product-input" value={item.location ?? ""} placeholder="Required" onChange={(event) => change(item.review_id, { location: event.target.value })} /></label>
-                <label><span>Quantity</span><input className="product-input" type="number" min={0} max={100000} value={item.quantity} onChange={(event) => change(item.review_id, { quantity: Number(event.target.value) })} /></label>
-                <label><span>Brand</span><input className="product-input" value={item.brand ?? ""} onChange={(event) => change(item.review_id, { brand: event.target.value || null })} /></label>
-                <label><span>Part / model #</span><input className="product-input" value={item.part_number ?? ""} onChange={(event) => change(item.review_id, { part_number: event.target.value || null })} /></label>
+                <label><span>Name</span><input disabled={!canEditInventory()} className="product-input" value={item.name} onChange={(event) => change(item.review_id, { name: event.target.value })} /></label>
+                <label><span>Category</span><input disabled={!canEditInventory()} className="product-input" value={item.category} onChange={(event) => change(item.review_id, { category: event.target.value })} /></label>
+                <label><span>Location</span><input disabled={!canEditInventory()} className="product-input" value={item.location ?? ""} placeholder="Required" onChange={(event) => change(item.review_id, { location: event.target.value })} /></label>
+                <label><span>Quantity</span><input disabled={!canEditInventory()} className="product-input" type="number" min={0} max={100000} value={item.quantity} onChange={(event) => change(item.review_id, { quantity: Number(event.target.value) })} /></label>
+                <label><span>Brand</span><input disabled={!canEditInventory()} className="product-input" value={item.brand ?? ""} onChange={(event) => change(item.review_id, { brand: event.target.value || null })} /></label>
+                <label><span>Part / model #</span><input disabled={!canEditInventory()} className="product-input" value={item.part_number ?? ""} onChange={(event) => change(item.review_id, { part_number: event.target.value || null })} /></label>
               </div>
-              <label className="review-notes"><span>Notes</span><textarea className="product-textarea" value={item.notes ?? ""} onChange={(event) => change(item.review_id, { notes: event.target.value || null })} /></label>
+              <label className="review-notes"><span>Notes</span><textarea disabled={!canEditInventory()} className="product-textarea" value={item.notes ?? ""} onChange={(event) => change(item.review_id, { notes: event.target.value || null })} /></label>
               <footer>
-                <button type="button" className="product-button danger" disabled={saving} onClick={() => void dismiss(item)}><Trash2 size={15} />Dismiss</button>
-                <button type="button" className="product-button primary" disabled={saving} onClick={() => void resolve(item)}><Check size={16} />{saving ? "Saving…" : "Confirm and add to Find"}</button>
+                <button type="button" className="product-button danger" disabled={saving || !canEditInventory()} onClick={() => void dismiss(item)}><Trash2 size={15} />Dismiss</button>
+                <button type="button" className="product-button primary" disabled={saving || !canEditInventory()} onClick={() => void resolve(item)}><Check size={16} />{saving ? "Saving…" : "Confirm and add to Find"}</button>
               </footer>
             </article>
           );

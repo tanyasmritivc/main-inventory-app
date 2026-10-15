@@ -67,7 +67,7 @@ api_router.include_router(workspace_selection_router)
 for scoped_feature_router in (
     items_router, inventory_router, ai_router, imports_router, documents_router,
     activity_router, checkouts_router, spaces_router, bins_router,
-    conversations_router, project_kits_router, review_router,
+    conversations_router, project_kits_router, review_router, sharing_router,
 ):
     scoped_router.include_router(scoped_feature_router)
 api_router.include_router(scoped_router)

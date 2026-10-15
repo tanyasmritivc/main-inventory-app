@@ -1,8 +1,10 @@
 "use client";
 import { useCallback, useSyncExternalStore } from "react";
 import { accountToken } from "@/lib/account-request";
+import { activeInventory, assertInventory } from "@/lib/inventory-selection";
 import {
   changeRestock,
+  adoptRestockEntries,
   decodeRestock,
   RESTOCK_EVENT,
   restockKey,
@@ -55,7 +57,9 @@ export function useRestock(accountId: string | null) {
   const change = useCallback(
     async (id: string, update: (entry: RestockEntry) => RestockEntry) => {
       if (!accountId) throw new Error("Please sign in again.");
+      const inventory = activeInventory();
       await accountToken(accountId);
+      assertInventory(inventory);
       try {
         changeRestock(localStorage, accountId, id, update);
       } catch {
@@ -67,5 +71,16 @@ export function useRestock(accountId: string | null) {
     },
     [accountId],
   );
-  return { ...state, change, reload };
+  const adopt = useCallback((itemIds: readonly string[]) => {
+    if (!accountId) return;
+    const key=restockKey(accountId);
+    try {
+      if (!adoptRestockEntries(localStorage,accountId,itemIds)) return;
+      cache.delete(key);
+    } catch {
+      cache.set(key,{raw:localStorage.getItem(key),snapshot:UNREADABLE});
+    }
+    window.dispatchEvent(new Event(RESTOCK_EVENT));
+  },[accountId]);
+  return { ...state, change, reload, adopt };
 }

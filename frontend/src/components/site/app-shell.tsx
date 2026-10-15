@@ -1,8 +1,9 @@
 "use client";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 import { accountRequest } from "@/lib/account-request";
 import { subscribeNotifications } from "@/lib/notification-state";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Menu, Search, UserRound } from "lucide-react";
 import {
@@ -16,12 +17,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { AppThemeProvider } from "@/components/site/use-app-theme";
+import Link from "@/components/site/inventory-link";
+import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+export function AppShell({ children, inventory }: { children: React.ReactNode; inventory?: InventorySelection }) {
+  const router = useInventoryRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -199,7 +202,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const commandItems = APP_NAV_ITEMS.filter((item) =>
+  const commandItems = APP_NAV_ITEMS.filter((item) => (inventory?.can_edit !== false || item.route !== "/scan") &&
     [item.label, item.section, ...(item.keywords ?? [])]
       .join(" ")
       .toLowerCase()
@@ -232,6 +235,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu size={19} />
           </button>
+          {inventory && <nav className="app-inventory-switcher" aria-label="Current inventory">
+            <Link href="/workspaces">{inventory.workspace.name}</Link>
+            <span aria-hidden="true">/</span>
+            <Link href={`/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`}>{inventory.name}</Link>{!inventory.can_edit && <small>View only</small>}
+          </nav>}
           <div className="app-topbar-spacer" />
           <button
             className="app-command-trigger"

@@ -1,5 +1,6 @@
 import { apiRequest, type ApiRequestOptions } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { activeInventory, assertInventory } from "@/lib/inventory-selection";
 
 export async function accountToken(accountId: string): Promise<string> {
   const { data, error } = await createSupabaseBrowserClient().auth.getSession();
@@ -16,12 +17,15 @@ export async function accountRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
+  const inventory = activeInventory();
   const token = await accountToken(accountId);
+  assertInventory(inventory);
   const result = await apiRequest<T>(path, {
     ...options,
     token,
     bindToToken: true,
   });
   await accountToken(accountId);
+  assertInventory(inventory);
   return result;
 }

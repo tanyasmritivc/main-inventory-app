@@ -1,5 +1,10 @@
 import { TeamsClient } from "@/components/site/teams-client";
 import { ProtectedAppPage } from "@/components/site/protected-app-page";
-export const metadata = { title: "Teams" };
+import { redirect } from "next/navigation";
+export const metadata = { title: "Workspace settings" };
 
-export default function TeamsPage() { return <ProtectedAppPage returnTo="/teams"><TeamsClient /></ProtectedAppPage>; }
+export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ team?: string }> }) {
+  const { team } = await searchParams;
+  if (!team) redirect("/workspaces");
+  return <ProtectedAppPage returnTo={`/teams?team=${encodeURIComponent(team)}`}><TeamsClient selectedTeamId={team} /></ProtectedAppPage>;
+}

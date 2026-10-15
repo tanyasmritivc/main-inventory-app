@@ -19,6 +19,8 @@ import { teamCategories, teamCategoryLabel } from "@/lib/team-categories";
 import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ItemDetails } from "@/components/site/item-details";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -35,7 +37,12 @@ function relativeTime(value?: string) {
 
 function memberName(member?: TeamMember) { return member?.display_name?.trim() || member?.contact_email?.trim() || "Team member"; }
 
-export function TeamsClient() {
+export function TeamsClient({ selectedTeamId }: { selectedTeamId?: string }) {
+  const { accountId } = useApiSession();
+  return <TeamsClientWorkspace key={accountId || "signed-out"} selectedTeamId={selectedTeamId} />;
+}
+function TeamsClientWorkspace({ selectedTeamId }: { selectedTeamId?: string }) {
+  const router = useRouter();
   const { token } = useApiSession();
   const { confirmAction, promptValue } = useAppDialog();
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
@@ -68,10 +75,11 @@ export function TeamsClient() {
     try {
       const result = await getMyTeams({ token });
       setTeams(result.teams ?? []);
-      setSelectedId((current) => current && result.teams.some((entry) => entry.team_id === current) ? current : result.teams[0]?.team_id ?? null);
+      if (selectedTeamId && !result.teams.some((entry) => entry.team_id === selectedTeamId)) throw new Error("This workspace is unavailable. Choose another workspace.");
+      setSelectedId((current) => selectedTeamId || (current && result.teams.some((entry) => entry.team_id === current) ? current : result.teams[0]?.team_id ?? null));
     } catch (reason) { setError(userFacingError(reason, "Could not load teams.")); }
     finally { setLoading(false); }
-  }, [token]);
+  }, [token, selectedTeamId]);
 
   const loadWorkspace = useCallback(async () => {
     if (!token || !selectedId) return;
@@ -186,17 +194,20 @@ export function TeamsClient() {
     if (!token || !selectedId || !team) return;
     const deleting = role === "owner"; if (!await confirmAction({ title: `${deleting ? "Delete" : "Leave"} “${team.name}”?`, message: deleting ? 'Deleting the Team cannot be undone.' : 'You will lose access to this Team.', confirmLabel: deleting ? 'Delete Team' : 'Leave Team', danger: true })) return;
     if (deleting) await deleteTeam({ token, teamId: selectedId }); else await leaveTeam({ token, teamId: selectedId });
-    setSelectedId(null); setTeam(null); await loadTeams();
+    setSelectedId(null); setTeam(null);
+    if (selectedTeamId) router.push("/workspaces"); else await loadTeams();
   }
 
   const availableSpaces = ownedSpaces.filter((space) => !spaces.some((teamSpace) => teamSpace.id === space.id));
   const memberMap = useMemo(() => new Map(members.map((member) => [member.user_id, member])), [members]);
 
+  if (selectedTeamId && !selectedId && !loading) return <section className="product-page"><h1>Workspace settings</h1>{error && <p role="alert" className="notice-error">{error}</p>}<Link className="product-button" href="/workspaces">Choose a workspace</Link></section>;
+
   if (!selectedId && !loading) return <section className="product-page"><header className="product-page-header"><h1>Team</h1><div className="product-actions"><button className="product-button" onClick={() => setCreateMode("join")}>Join</button><button className="product-button primary" onClick={() => setCreateMode("team")}><Plus size={15} />New team</button></div></header>{createMode && <TeamCreateForm mode={createMode} form={form} setForm={setForm} onSubmit={submitCreate} onCancel={() => setCreateMode(null)} working={working} />}{error && <div className="notice-error">{error}</div>}<div className="bare-empty"><Users size={24} /><strong>No teams</strong></div></section>;
 
   return (
     <section className="teams-page product-page">
-      <header className="product-page-header team-page-header"><div className="team-title-row"><select className="team-title-select" aria-label="Current team" value={selectedId ?? ""} onChange={(event) => { setSelectedId(event.target.value); setOpenSpace(null); setDetailItem(null); }}>{teams.map((entry) => <option key={entry.team_id} value={entry.team_id}>{entry.name}</option>)}</select><span className="status-pill">{role}</span><span>{teamCategoryLabel(team?.program, team?.custom_category)}</span></div><div className="product-actions"><button className="product-button" onClick={() => setCreateMode("join")}>Join</button><button className="product-button" onClick={() => setCreateMode("team")}><Plus size={15} />New</button><button className="app-icon-button" aria-label="Refresh team" onClick={() => void loadWorkspace()}><RefreshCw size={15} /></button></div></header>
+      <header className="product-page-header team-page-header"><div className="team-title-row">{selectedTeamId ? <h1>{team?.name || "Workspace settings"}</h1> : <select className="team-title-select" aria-label="Current team" value={selectedId ?? ""} onChange={(event) => { setSelectedId(event.target.value); setOpenSpace(null); setDetailItem(null); }}>{teams.map((entry) => <option key={entry.team_id} value={entry.team_id}>{entry.name}</option>)}</select>}<span className="status-pill">{role}</span><span>{teamCategoryLabel(team?.program, team?.custom_category)}</span></div><div className="product-actions">{selectedTeamId ? <Link className="product-button" href={`/workspaces/${encodeURIComponent(selectedTeamId)}`}>Inventories</Link> : <><button className="product-button" onClick={() => setCreateMode("join")}>Join</button><button className="product-button" onClick={() => setCreateMode("team")}><Plus size={15} />New</button></>}<button className="app-icon-button" aria-label="Refresh team" onClick={() => void loadWorkspace()}><RefreshCw size={15} /></button></div></header>
       {createMode && <TeamCreateForm mode={createMode} form={form} setForm={setForm} onSubmit={submitCreate} onCancel={() => setCreateMode(null)} working={working} spaces={availableSpaces} members={members} />}
       {error && <div className="notice-error">{error}</div>}
       <div className="product-tabs">{(["spaces", "board", "people", "files", "activity"] as Tab[]).map((value) => <button className={tab === value ? "is-active" : ""} key={value} onClick={() => setTab(value)}>{value[0].toUpperCase() + value.slice(1)}{value === "spaces" ? ` ${spaces.length}` : value === "board" ? ` ${board.filter((task) => task.status !== "done").length}` : ""}</button>)}</div>

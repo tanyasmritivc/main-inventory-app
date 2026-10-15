@@ -1,5 +1,22 @@
 # Current state
 
+## October 15 workspace hierarchy candidate
+
+PR #75 adds Personal/Team workspace selection, then inventory selection, before
+the website dashboard. Inventory-scoped routes enforce membership and role before
+querying data; parent IDs, caches, uploads, streaming Assist context and delayed
+responses retain that boundary. Existing records receive default associations;
+private legacy documents and conversations retain their original visibility.
+Physical Spaces can move between inventories in the same workspace with their
+linked records, while conflicting allocations fail without partial changes.
+Account settings and billing remain global. Existing mobile/API routes remain.
+
+511 backend/API-doc tests, 237 web tests and TypeScript pass. Isolated PostgreSQL
+checks include record preservation, private storage, Team removal, Space moves,
+project allocations and legacy API keys. Both-theme desktop/narrow component
+previews pass. This is a candidate: migration 043 and runtime are not live yet.
+
+
 ## October 14 original imported fields published
 
 PR #74 runtime `bd1c8a1` preserves ordered original Excel/CSV/JSON source fields

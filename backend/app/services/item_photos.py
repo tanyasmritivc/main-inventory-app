@@ -165,6 +165,11 @@ def _storage_path(*, user_id: str, image_url: str) -> str | None:
 
 def _image_url_is_referenced(*, user_id: str, image_url: str) -> bool:
     client = get_supabase_admin()
+    # Storage cleanup must account for all inventories sharing this object.
+    # This returns only a boolean and never exposes another inventory's rows.
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get():
+        client = client.raw
     items = (
         client.table("items")
         .select("item_id")

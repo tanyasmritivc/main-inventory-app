@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-15: Choose workspace and inventory before the website dashboard
+
+The user selected a two-level entry flow using Supabase organization/project
+pickers as the reference. A workspace is Personal or an existing Team; an
+inventory is an isolated project within it; a Space is a physical location.
+Use explicit URL inventory context and an authorized server boundary for every
+inventory data journey. Keep account/billing administration global, membership
+and roles authoritative, private conversations actor-specific, and legacy private
+documents private. Existing records keep their IDs, owners and content and gain
+default inventory associations. Existing mobile and integration contracts remain
+compatible; the new selector is website-only. Never aggregate all workspace
+history into a selected inventory or silently choose the first Team.
+
+
 ## 2026-10-14: Preserve original uploaded columns alongside live inventory
 
 Excel, CSV and JSON imports retain an ordered source snapshot on each item, with

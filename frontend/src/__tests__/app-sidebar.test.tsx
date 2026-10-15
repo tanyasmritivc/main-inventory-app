@@ -26,7 +26,7 @@ test("makes every current mobile capability and developer entry point directly r
     "/inventory",
     "/assist",
     "/spaces",
-    "/teams",
+    "/workspaces",
     "/documents",
     "/review",
     "/restock",

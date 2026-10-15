@@ -103,3 +103,51 @@ def test_photo_proof_is_bound_to_the_inventory_not_only_the_account():
                 current_inventory.reset(second)
     finally:
         current_inventory.reset(token)
+
+
+def test_both_assist_streams_keep_their_inventory_inside_worker_threads():
+    import asyncio
+    from app.services import ai_agent
+    def events(**kwargs):
+        yield {'type':'done','result':current_inventory.get().inventory_id,'assistant_message':'Saved evidence'}
+    async def run(inventory,stream):
+        token=current_inventory.set(InventoryScope(inventory,'actor','owner',None,'owner'))
+        try:
+            return [entry async for entry in stream(user_id='owner',message='Where is my part?')]
+        finally:
+            current_inventory.reset(token)
+    async def concurrent():
+        return await asyncio.gather(run('a',ai_agent.iter_ai_command_events_async),run('b',ai_agent.iter_ai_command_events_async),run('c',ai_agent.iter_ai_command_sse_async))
+    with patch.object(ai_agent,'_iter_agent_streaming',side_effect=events):
+        first,second,sse=asyncio.run(concurrent())
+    assert first[0]['result']=='a' and second[0]['result']=='b'
+    assert '"result": "c"' in sse[0]
+
+
+def test_gateway_threads_and_uploaded_names_cannot_collide_between_inventories():
+    from app.services.agent_gateway_client import AgentGatewayClient
+    from app.services.storage import upload_document,upload_image
+    settings=SimpleNamespace(findez_agent_base_url='https://gateway.test',findez_agent_key='fictional',
+        supabase_storage_bucket='item-images',supabase_storage_public=True,supabase_public_url=None,supabase_storage_signed_url_ttl_seconds=60)
+    raw=MagicMock()
+    raw.storage.from_().get_public_url.return_value='https://storage.test/image.jpg'
+    raw.storage.from_().create_signed_url.return_value={'signedURL':'https://storage.test/doc.txt'}
+    http=MagicMock(); http.__enter__.return_value=http
+    http.post().json.return_value={}
+    with patch('app.services.agent_gateway_client.get_settings',return_value=settings), \
+         patch('app.services.agent_gateway_client.httpx.Client',return_value=http), \
+         patch('app.services.storage.get_settings',return_value=settings), \
+         patch('app.services.storage.get_supabase_admin',return_value=raw):
+        agent=AgentGatewayClient()
+        paths=[]
+        for inventory in ('a','b'):
+            token=current_inventory.set(InventoryScope(inventory,'actor','owner',None,'owner'))
+            try:
+                agent.chat.completions.create(extra_headers={'X-Agent-Conversation-ID':'same-owner-thread'})
+                paths += [upload_document(user_id='owner',filename='same.txt',content=b'Note').path,
+                          upload_image(user_id='owner',filename='same.jpg',content=b'Image').path]
+            finally:
+                current_inventory.reset(token)
+        headers=[call.kwargs['headers']['X-Agent-Conversation-ID'] for call in http.post.call_args_list if call.kwargs]
+        assert len(set(headers))==2
+        assert len(set(paths))==4

@@ -16,8 +16,12 @@ inventories. Existing mobile and integration contracts remain compatible.
 Implement two quiet selection pages, visible workspace/inventory switching and
 context-preserving navigation. Validate different inventories, different members,
 view-only roles, writes/reads, forged IDs, refresh/back and narrow layouts before
-release. Import PR #74 is a separate prerequisite lane, awaiting full CI and
-guarded migration/backend/web delivery; do not ship incomplete workspace scope.
+release. Import PR #74 runtime `bd1c8a1` is published with migration 042.
+The complete workspace candidate passes 511 backend/API-doc tests, 237 web tests,
+TypeScript and isolated PostgreSQL migration/privacy/legacy-integration checks.
+Desktop and narrow chooser/dashboard/dialog fixtures pass in both themes.
+Release remains pending exact-source CI, production build and guarded migration
+043/backend/web publication. Preserve deployed document privacy protections.
 
 ## October 14 preserve uploaded inventory columns
 

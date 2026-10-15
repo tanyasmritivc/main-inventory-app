@@ -756,3 +756,23 @@ flutter test --no-pub --dart-define=FINDEZ_VISUAL_QA=true test/profile_editor_te
 This writes layout-only PNGs to `/private/tmp/findez-profile-editor-qa.png` and
 `/private/tmp/findez-documents-qa.png`; native fonts, permissions and photos still
 require the physical-device checks in release-checklist section 11.
+
+## Website workspace and inventory boundaries
+
+Run the full backend and web suites and TypeScript before publishing this flow.
+`test_inventory_journeys.py` exercises real HTTP routes with isolated storage:
+member/viewer permissions, forged parents, capture persistence and retry identity,
+private documents/conversations and more than 1,000 records.
+`test_inventory_scope.py` covers query fences, review/photo proofs, private state,
+concurrent streaming workers and gateway context. The web inventory transport and
+navigation suites check stale responses/writes, account changes, chooser levels,
+missing context, read-only access and legacy purchase-plan adoption.
+
+The SQL entry point includes document storage and workspace fixtures. It must
+pass on a fresh isolated PostgreSQL instance before migration 043 is published:
+Space graph moves, kit reservations, Team removal, private conversation retention,
+stable invitations, exact counts and legacy API-key writes must remain correct.
+Use fictional component fixtures for desktop/narrow light/dark visual checks.
+After release, verify signed-in chooser/navigation/refresh without writing to
+customer inventory. Back up the live database and affected files, verify source
+hashes, apply the additive migration before runtime, and retain rollback files.
