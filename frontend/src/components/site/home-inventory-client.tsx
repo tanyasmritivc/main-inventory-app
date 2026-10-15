@@ -1303,12 +1303,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             ← My Spaces
           </button>
 
-          <div style={{ marginBottom: 4 }}>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
-          </div>
-
           {/* Toolbar */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20, marginBottom: 20 }}>
+            {canEdit && <>
             <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' }}>
               Upload Image
               <input
@@ -1322,7 +1319,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button type="button" onClick={() => openSpreadsheet(selectedSpace ?? '')} style={toolbarBtnStyle}>Import Spreadsheet</button>
             <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
-            <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
+            {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
+            </>}
             <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
@@ -1355,7 +1353,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>
+              {canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
             <>
@@ -1518,7 +1516,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                 </div>
                 <div className="space-card-actions">
                   {/* Upload image */}
-                  <label
+                  {canEdit && <label
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
@@ -1531,18 +1529,17 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       style={{ display: 'none' }}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f, space); }}
                     />
-                  </label>
+                  </label>}
                   {/* Share */}
-                  <button
+                  {canEdit && !activeInventory()?.team_id && <button
                     type="button"
-                    disabled={!canEdit || Boolean(activeInventory()?.team_id)}
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                   >
                     <Share2 size={14} />
-                  </button>
+                  </button>}
                   {/* Rename/Delete only for canonical spaces that have a server record */}
                   {spaceObj && canEdit && (
                     <DropdownMenu>
