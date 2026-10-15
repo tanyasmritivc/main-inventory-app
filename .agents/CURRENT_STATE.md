@@ -1,21 +1,35 @@
 # Current state
 
-## October 15 workspace hierarchy candidate
+## October 15 workspace hierarchy published
 
-PR #75 adds Personal/Team workspace selection, then inventory selection, before
-the website dashboard. Inventory-scoped routes enforce membership and role before
-querying data; parent IDs, caches, uploads, streaming Assist context and delayed
-responses retain that boundary. Existing records receive default associations;
-private legacy documents and conversations retain their original visibility.
-Physical Spaces can move between inventories in the same workspace with their
-linked records, while conflicting allocations fail without partial changes.
-Account settings and billing remain global. Existing mobile/API routes remain.
+PR #75 is live: Workspace (Personal or Team), then Inventory, then dashboard.
+Physical Spaces belong to inventories. Home, capture/import, Find, Assist/history,
+documents, Review, activity, lending, kits and purchase plans retain inventory
+context. Account settings and billing remain global. Existing mobile/API routes
+remain compatible; the new chooser is website-only.
 
-511 backend/API-doc tests, 237 web tests and TypeScript pass. Isolated PostgreSQL
-checks include record preservation, private storage, Team removal, Space moves,
-project allocations and legacy API keys. Both-theme desktop/narrow component
-previews pass. This is a candidate: migration 043 and runtime are not live yet.
+Website runtime `eb67ce1120128a14ffcd369458cd268187dd62d0`, build
+`PTR7zEZHl_uHR-Ay09uw3`, runs from
+`/home/ubuntu/findez-web-releases/web-workspace-inventories-20261015-r2/frontend`.
+Backend runtime `eb3eee0c0232c7433b25f05541737cc766b134cb` and migration 043
+are live. All original values across 21 tables were preserved inside the locked
+migration transaction. Historical records with removed account owners keep their
+owner IDs; the NOT VALID owner foreign key enforces new writes without rewriting
+those records. Documents remain private. No customer records were created for QA.
 
+511 backend/API-doc tests, 237 web tests, TypeScript, PostgreSQL isolation and
+record-preservation checks pass. All five CI jobs pass for final runtime in run
+38702261152. Desktop/narrow and light/dark previews pass. Signed-in live Safari
+verifies Personal and Team dashboards, refresh, scoped capture destinations,
+private documents, separate Assist history, selected-Team administration and the
+corrected Space toolbar. 11 public routes, 20 protected routes and three CSS
+assets pass; 1,241 prior assets and production configuration are retained.
+
+Receipts: `Documents/FindEZ/Releases/workspace-inventories-2026-10-15`.
+Remote base record: `/home/ubuntu/findez-workspace-inventories-20261015`;
+backend backup: `backend-backup-r2` beneath that record. Final web rollback:
+`/home/ubuntu/findez-workspace-inventories-20261015-r2/previous-web-rebuild.conf`.
+Runtime rollback retains the additive database schema. Payments remain disabled.
 
 ## October 14 original imported fields published
 
