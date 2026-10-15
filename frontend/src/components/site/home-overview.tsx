@@ -232,17 +232,13 @@ function HomeOverviewWorkspace() {
               key={item.item_id}
               href={`/inventory?item=${encodeURIComponent(item.item_id)}`}
             >
-              {item.image_url ? (
+              {item.image_url && (
                 <img src={item.image_url} alt={itemDisplayName(item)} />
-              ) : (
-                <span className="photo-placeholder">
-                  <Camera size={22} />
-                </span>
               )}
-              <strong>{itemDisplayName(item)}</strong>
-              <small>
-                {item.quantity} · {item.location || "Unsorted"}
-              </small>
+              <span className="home-recent-copy">
+                <strong>{itemDisplayName(item)}</strong>
+                <small>{item.quantity} · {item.location || "Unsorted"}</small>
+              </span>
             </Link>
           ))}
         </div>

@@ -1,5 +1,23 @@
 # Active work
 
+## October 14 website clarity and release
+
+The user authorizes publishing pending website changes, then requests screenshot-
+guided cleanup before release. Lane `release/web-launch-20261014`, based on
+`4e71506`, owns web shell/title hierarchy, contracted sidebar labels and crowded
+containers/controls. Keep one page identity, preserve routes/actions/auth, prefer
+open rows with quiet dividers and retain meaningful photo/dialog boundaries.
+Inspect and preserve production source/config in the isolated release workflow.
+The repeated shell title, first navigation caption and duplicate Collections and
+Space titles are removed. Open Space/recent-item rows, borderless filters and
+lighter secondary actions share consistent spacing; Review previews are bounded.
+Web tests and TypeScript pass; changed-file lint has existing warnings only. Local
+fictional-data component previews cover light/dark and navigation states. Production
+build and authenticated verification remain release gates. The live web service
+is still the October 12 onboarding release; nothing new has been switched. Shopify
+and public Apple submission remain held; billing is UI preparation with purchases
+unavailable. This lane does not deploy unrelated backend behavior.
+
 ## October 14 one-time guided tour fix and TestFlight preparation
 
 The user authorizes an updated TestFlight beta, then requires the intermittent

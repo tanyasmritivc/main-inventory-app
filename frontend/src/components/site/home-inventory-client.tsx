@@ -945,10 +945,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find'}</h1>
+          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find')}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
-        {!selectedSpace && (
+        {!selectedSpace && !viewingSharedSpace && (
           <div className="product-actions">
             {props.mode === "inventory" && <Link href="/scan" className="product-button primary">Add items</Link>}
             <button
@@ -1055,15 +1055,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
             ← My Spaces
           </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>
-              {viewingSharedSpace.spaceName}
-            </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.13)' : 'rgba(0,0,0,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.26)' : 'rgba(0,0,0,0.25)'}`, color: viewingSharedSpace.isOwned ? 'var(--light-muted)' : 'var(--copper)' }}>
-              {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
-            </span>
-          </div>
 
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
             <span>{sharedSpaceLoading ? '…' : `${sharedSpaceItems.length} items`}</span>
@@ -1489,7 +1480,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             </button>
           </div>
         )}
-        <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>
+        {props.mode !== 'spaces' && <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>}
         <div className="inventory-space-list">
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;

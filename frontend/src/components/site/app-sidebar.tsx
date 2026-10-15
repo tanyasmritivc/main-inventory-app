@@ -314,7 +314,7 @@ export function AppSidebar({
           {(["FindEZ", "Your world", "Organize", "You"] as const).map(
             (section) => (
               <div className="app-nav-section" key={section}>
-                <p>{section}</p>
+                {section !== "FindEZ" && <p>{section}</p>}
                 {APP_NAV_ITEMS.filter((item) => item.section === section).map(
                   (item) => {
                     const Icon = item.icon;
