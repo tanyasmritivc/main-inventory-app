@@ -1615,6 +1615,8 @@ html .app-frame.is-team-workspace {
 .app-frame .home-recent small { display: block; margin-top: 4px; font-size: 12px; }
 .app-frame .ask-empty { padding: 24px 0 32px; }
 .app-frame .label-toolbar { gap: 24px; padding-bottom: 14px; }
+.app-frame .label-toolbar > .product-tabs { flex-direction: row; align-items: center; gap: 24px; }
+.app-frame .label-toolbar .product-tabs button { min-height: 44px; padding: 8px 0 12px; }
 @media (max-width: 859px) {
   .app-frame :is(.workspace-heading, .product-page-header, .inventory-page-header) { align-items: flex-start; }
   .app-frame .workspace-actions { gap: 8px; }
