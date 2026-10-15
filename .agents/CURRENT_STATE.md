@@ -11,6 +11,12 @@ iPhone 16e (iOS 26.2), replacing the older installed preview. Capture, both Find
 selection states and the accepted Home numbers/hints are visually verified.
 Proof is in `Documents/FindEZ/Design/mobile-colors-2026-10-14`. This is a local
 debug app, not another TestFlight delivery; TestFlight remains build 64.
+The user finds Capture's first grey pill too heavy. A Capture-only refinement
+lightens its tint and outline and keeps both labels at regular weight. Analysis
+and all 357 tests pass again. The rebuilt app is installed and Capture is
+visually checked in both themes, then returned to Light mode for review.
+Proof: `capture-soft-grey-glass-native.png` and
+`capture-soft-grey-glass-dark-native.png` in the same design folder.
 Initial native builds hit disk exhaustion. Generated compiler cache and the
 temporary build-64 verification extraction were cleared after the durable
 release IPA/archive hashes were reverified. Release artifacts and app data are

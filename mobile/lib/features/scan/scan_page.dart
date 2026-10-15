@@ -2051,7 +2051,16 @@ class _ScanPageState extends State<ScanPage> {
                           child: FrostedSurface(
                             radius: 99,
                             shadow: false,
-                            tint: AppTheme.neutralSelectionTint(context),
+                            tint: AppTheme.isDark(context)
+                                ? const Color(0xFF333335)
+                                : const Color(0xFFF0F0F2),
+                            border: AppTheme.textPrimary(context).withValues(
+                              alpha: MediaQuery.highContrastOf(context)
+                                  ? 0.35
+                                  : AppTheme.isDark(context)
+                                  ? 0.10
+                                  : 0.045,
+                            ),
                             child: const SizedBox.expand(),
                           ),
                         ),
@@ -2106,9 +2115,7 @@ class _ScanPageState extends State<ScanPage> {
                                                     const Color(0x8CFFFFFF),
                                                   ),
                                             fontSize: 14,
-                                            fontWeight: _cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
+                                            fontWeight: FontWeight.w400,
                                           ),
                                           child: const AppText(
                                             'Scan Barcode',
@@ -2169,9 +2176,7 @@ class _ScanPageState extends State<ScanPage> {
                                                     const Color(0x8CFFFFFF),
                                                   ),
                                             fontSize: 14,
-                                            fontWeight: !_cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
+                                            fontWeight: FontWeight.w400,
                                           ),
                                           child: const AppText(
                                             'Auto Extract',

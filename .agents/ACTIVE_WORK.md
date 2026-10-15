@@ -11,6 +11,11 @@ installed and running, including the accepted Home changes. Native Capture,
 Spaces, Teams and Home are visually verified; screenshots/receipt are in
 `Documents/FindEZ/Design/mobile-colors-2026-10-14`. The older attach-only preview
 was not persistent across relaunch; the new installed app addresses that.
+Capture's initially heavy grey pill is subsequently softened on user feedback:
+lighter tint/outline and regular label weights, with high-contrast fallback
+retained. Analysis and all 357 tests pass again; the updated installed app is
+visually checked in light and dark themes and left on Capture in Light mode.
+Native proof uses the `capture-soft-grey-glass` filenames in the same folder.
 No new TestFlight upload or public submission. Wait for further directions.
 
 ## October 14 Home-only colour correction complete locally
