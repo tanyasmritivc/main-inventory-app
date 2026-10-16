@@ -15,7 +15,6 @@ function css(text: string): CSSProperties {
     return [key, declaration.slice(colon + 1).trim()];
   })) as CSSProperties;
 }
-const v = landingLabValues();
 function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
   const signedIn = useMarketingSession(initialSignedIn);
   return <nav className="fzl-site-actions" aria-label="Main navigation">
@@ -25,6 +24,7 @@ function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
   </nav>;
 }
 export function LandingLab({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
+  const v = landingLabValues(undefined, siteNavigation);
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
@@ -42,13 +42,13 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 <section id="hero" style={css(v.heroSec)} data-lab-style="heroSec">
 <div style={css(v.heroBox)} data-lab-style="heroBox">
 <canvas id="fzField" aria-label="A real workbench photo; a scanning lens names the parts it passes over" style={css("position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair")}></canvas>
-<div style={css("position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
+<div style={css(siteNavigation ? "position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,11,.25),rgba(11,11,11,.15) 50%,rgba(11,11,11,.25));pointer-events:none" : "position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
 <div style={css(v.heroCopy)} data-lab-style="heroCopy">
-<h1 style={css("font-weight:400;font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-.03em;margin:18px auto 0;max-width:15ch;color:#FFF")}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
-<div style={css("display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto")}>
+<h1 style={css(`font-weight:400;font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-.03em;margin:${siteNavigation ? "0 auto" : "18px auto 0"};max-width:${siteNavigation ? "26ch;text-wrap:balance" : "15ch"};color:#FFF`)}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
+{!siteNavigation && <div style={css("display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto")}>
 <a href="/signup" className="btn" style={css("background:#FFF;color:#000")}>{"Get started"}</a>
 <a href="#waitlist" className="btn" style={css("border:1px solid rgba(255,255,255,.25);color:#FFF")}>{"Join the iPhone waitlist"}</a>
-</div>
+</div>}
 </div>
 <span className="mono hide-s" style={css("position:absolute;left:20px;bottom:20px;color:#6B6B6B")}>{"Move your cursor to scan"}</span>
 <span className="mono" style={css("position:absolute;right:20px;bottom:20px;color:#6B6B6B")}><span data-lab-text="scanCount">{v.scanCount}</span></span>

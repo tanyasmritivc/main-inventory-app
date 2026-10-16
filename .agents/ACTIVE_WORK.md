@@ -1,5 +1,14 @@
 # Active work
 
+## October 16 contained homepage hero
+
+Active on `fix/landing-contained-hero-20261016`. Homepage-only permanent inset and
+rounded hero frame, vertically centered wider headline and no duplicate hero
+buttons. Retain header/footer and original `/lab` reference. Web checks, responsive
+browser acceptance and selective publication follow. Tanya authorizes future web
+changes to be published after checking, without a separate prototype/approval.
+No mobile build is required for this web-only change.
+
 ## October 16 mobile hierarchy TestFlight delivery
 
 Apple acknowledged 1.0.8 (66), runtime `8dc9fdd`, on PR #85. All five exact-runtime

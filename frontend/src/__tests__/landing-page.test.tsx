@@ -45,6 +45,7 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
+  expect(within(document.getElementById("hero")!).queryAllByRole("link")).toHaveLength(0);
   for (const id of ["hero", "stmt", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }

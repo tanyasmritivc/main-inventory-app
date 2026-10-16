@@ -2,7 +2,7 @@
 export const initialLabState = { W: 1440, H: 900, still: false, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 0, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1,
       ci: 0, qn: 999, an: 999, phase: 'hold' as 'hold' | 'q' | 'think' | 'a', askOn: false, seen: 3, email: '', joined: false, err: false, mk: {} as Record<string, number>, gx: 0 };
 export type LabState = typeof initialLabState;
-export function landingLabValues(state: LabState = initialLabState) {
+export function landingLabValues(state: LabState = initialLabState, containedHero = false) {
 
     const S = state, W = S.W || 1440, H = S.H || 900, narrow = W < 860;
     const c = (v: number) => Math.max(0, Math.min(1, v)), ss = (t: number) => t * t * (3 - 2 * t), L = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -16,10 +16,10 @@ export function landingLabValues(state: LabState = initialLabState) {
 
     /* hero */
     const hm = ss(c(S.hp * 2.4));
-    const heroSec = 'padding:0 ' + (hm * (narrow ? 12 : 28)).toFixed(1) + 'px';
-    const heroBox = 'position:relative;height:' + (narrow ? 640 : 800) + 'px;border-radius:' + (hm * 28).toFixed(1) + 'px;overflow:hidden;background:#0B0B0B;transform:scale(' + (1 - .05 * S.hp).toFixed(4) + ');transform-origin:50% 0';
+    const heroSec = containedHero ? 'padding:12px clamp(12px,1.8vw,28px) 0' : 'padding:0 ' + (hm * (narrow ? 12 : 28)).toFixed(1) + 'px';
+    const heroBox = 'position:relative;height:' + (containedHero ? 'clamp(420px,calc(100svh - 104px),900px)' : (narrow ? 640 : 800) + 'px') + ';border-radius:' + (containedHero ? '16' : (hm * 28).toFixed(1)) + 'px;overflow:hidden;background:#0B0B0B;transform:scale(' + (1 - .05 * S.hp).toFixed(4) + ');transform-origin:50% 0';
     const progBar = 'height:2px;background:#000;transform-origin:0 50%;transform:scaleX(' + S.prog.toFixed(4) + ')';
-    const heroCopy = 'position:absolute;left:0;right:0;top:' + (narrow ? 70 : 96) + 'px;text-align:center;padding:0 20px;pointer-events:none;opacity:' + (1 - c(S.hp * 1.8)).toFixed(3) + ';transform:translateY(' + (-S.hp * 60).toFixed(1) + 'px)';
+    const heroCopy = (containedHero ? 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 24px' : 'position:absolute;left:0;right:0;top:' + (narrow ? 70 : 96) + 'px;text-align:center;padding:0 20px') + ';pointer-events:none;opacity:' + (1 - c(S.hp * 1.8)).toFixed(3) + ';transform:translateY(' + (-S.hp * 60).toFixed(1) + 'px)';
     const scanCount = S.seen + ' object' + (S.seen === 1 ? '' : 's') + ' in view';
 
     /* statement: words rise out of blur */
@@ -250,7 +250,7 @@ class LabEngine {
   }
   paint() {
     if (this.disposed) return;
-    const values = landingLabValues(this.state);
+    const values = landingLabValues(this.state, this.header !== null);
     for (const binding of this.bindings) {
       const { element, kind, path } = binding;
       const value = atPath(values, path);

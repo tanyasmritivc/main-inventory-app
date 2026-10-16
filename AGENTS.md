@@ -46,6 +46,9 @@ verify the current behavior, and update the stale document as part of the work.
 - Do not blindly pull or reset the production VM checkout. It has carried
   unrelated local work. Inspect and preserve it before deployment.
 - Commit and push completed changes. Use one implementation lane per pull request.
+- For completed web changes, check the result and publish directly. Tanya gave
+  standing authorization on October 16; a separate prototype or approval round is
+  unnecessary. Preserve unrelated runtime changes and retain rollback assets.
 - After each completed functional mobile change, run the checks, increment the
   build number, build and verify the signed production IPA, then upload to the
   existing internal TestFlight groups. Tanya explicitly authorized this standing
