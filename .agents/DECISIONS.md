@@ -1,5 +1,16 @@
 # Decisions
 
+## October 15 organization actions and deletion scope
+
+Use one owner-only three-dot menu for organization actions on cards and inside an
+organization. Rename keeps the existing identity-preserving workflow. Tanya chose
+deletion only when no workspaces are attached, including workspaces the owner
+cannot see in their assigned directory. Require the exact current organization
+name. A backend-only database function rechecks ownership/membership, serializes
+changes on the organization, preserves workspaces and records a durable audit in
+the same transaction as organization membership/invitation cleanup. Do not expand
+this into cascading workspace, inventory or item deletion.
+
 ## October 15 workspace discovery versus inventory access
 
 Workspace members may discover inventory names and explicitly approved directory

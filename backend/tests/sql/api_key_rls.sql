@@ -193,3 +193,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir organization_access.sql
 \ir member_invitation_consent.sql
 \ir workspace_directory.sql
+\ir organization_delete.sql

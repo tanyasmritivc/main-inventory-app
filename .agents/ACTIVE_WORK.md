@@ -1,5 +1,17 @@
 # Active work
 
+## October 15 organization actions menu
+
+Completed and published PR #84, runtime `a21ea8d`, migration 047, build
+`3hd1z4zQK8kaRdhzoIf3X`. Owner-only three-dot menus offer Rename and Delete on
+organization cards and selected Workspaces/People pages. Delete requires the
+exact current name and no attached workspaces, enforced transactionally with a
+durable audit. Existing workspace/inventory controls remain unchanged. 565
+backend tests plus six subtests, 296 web tests, TypeScript, lint with zero errors,
+production build, isolated SQL/concurrency checks and all five CI gates pass.
+Live signed-in Safari opens/cancels both dialogs and verifies context menus;
+no customer QA writes. See CURRENT_STATE.md for release and rollback receipts.
+
 ## October 15 approved Lab homepage publication
 
 Published at `/` on PR #83, runtime `4caa38c`, build

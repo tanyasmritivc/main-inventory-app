@@ -1,5 +1,22 @@
 # FindEZ test suite
 
+## Organization actions menu and empty deletion
+
+Run backend/web suites, TypeScript, changed-file lint and the production build.
+`organization-actions` covers the icon menu, Rename, keyboard dismissal, typed
+Delete confirmation, cancellation, errors, receipt validation, pending writes and
+unmounts. Its scoped JSDOM helper supplies unsupported native top-layer selector
+states for Floating UI; browser acceptance must use the real Radix menu.
+`test_organization_delete.py` checks actor binding, errors and exact receipts.
+The disposable SQL suite includes migration 047 and tests creator-only access,
+stale names, unassigned attached workspaces, atomic membership/invitation removal,
+audit retention and replay. Check simultaneous workspace creation/deletion and
+duplicate deletes in isolation. Before publication, verify existing production
+rows, policies and function ACLs remain unchanged by the additive migration.
+Browser-check cards and selected organization menus at desktop/390px in both
+themes. Live QA opens and cancels dialogs only; never delete customer records as
+a release probe. Keep the homepage and workspace/inventory actions unchanged.
+
 The repository has one automated test entry point for all three product surfaces:
 
 ```bash

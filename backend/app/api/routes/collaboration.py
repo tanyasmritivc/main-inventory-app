@@ -122,6 +122,27 @@ def rename_organization(organization_id: UUID, body: Name, user: AuthenticatedUs
     return {'organization': {**rows[0], 'role': org['role']}}
 
 
+@router.delete('/organizations/{organization_id}')
+def delete_empty_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = get_supabase_raw().rpc('findez_delete_empty_organization', {
+            'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'Only the organization owner can delete it.'),
+                  'P0002': (404, 'Organization not found.'),
+                  '23503': (409, 'Only organizations with no workspaces can be deleted.'),
+                  '40P01': (409, 'The organization is being updated. Try again.'),
+                  '40001': (409, 'The organization name changed. Reopen the confirmation.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message)
+        raise
+    if not isinstance(result, dict) or result.get('deleted') is not True or result.get('organization_id') != str(organization_id):
+        raise HTTPException(503, 'Deletion could not be confirmed. Refresh before retrying.')
+    return {'deleted': True, 'organization_id': str(organization_id)}
+
+
 @router.post('/organizations/{organization_id}/members')
 def add_organization_member(organization_id: UUID, body: OrganizationMember, user: AuthenticatedUser = Depends(get_current_user)):
     return invite_or_change(user.user_id, 'organization', str(organization_id), body.role, email=body.email)
