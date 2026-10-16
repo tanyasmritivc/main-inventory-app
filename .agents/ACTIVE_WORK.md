@@ -1,5 +1,13 @@
 # Active work
 
+## October 16 homepage section removal
+
+Same homepage lane and PR #86, based on `428ab8c`. Tanya requests removing the
+duplicate-purchase demo (`own`) and roadmap (`vision`) from the published
+homepage. Omit their markup so no reserved section space remains. Preserve the
+original `/lab` reference, contained single-line hero, remaining sections and
+header/footer. Web-only checks and selective publication are in progress.
+
 ## October 16 contained homepage hero
 
 The additional 700ms entrance fade was rejected and rolled back to this verified

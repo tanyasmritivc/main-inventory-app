@@ -160,7 +160,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </section>
 
-<section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
+{!siteNavigation && <section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
 <div className="split">
 <div style={css("position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size")}>
 <svg viewBox="0 0 800 550" role="img" aria-label="A camera recognizing a USB-C hub and finding two similar ones you already own" style={css("position:absolute;inset:0;width:100%;height:100%")}>
@@ -182,7 +182,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="who" style={css(v.whoSec)} data-lab-style="whoSec">
 <div className="wrap" style={css("text-align:center")}>
@@ -230,7 +230,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </section>
 
-<section id="vision" style={css(v.visSec)} data-lab-style="visSec">
+{!siteNavigation && <section id="vision" style={css(v.visSec)} data-lab-style="visSec">
 <div style={css("max-width:1200px;margin:0 auto;padding:0 24px")}>
 <div style={css(v.visHead)} data-lab-style="visHead">
 <h2 className="h2" style={css("margin-top:16px;max-width:16ch")}>{"From inventory to action."}</h2>
@@ -250,7 +250,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="app" style={css("padding:140px 0 120px;overflow:hidden")}>
 <div className="wrap" style={css("text-align:center")}>
