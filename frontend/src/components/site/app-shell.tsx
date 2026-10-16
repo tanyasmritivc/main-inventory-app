@@ -204,8 +204,8 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   }, []);
 
   const navigationItems = context?.items || (inventory ? [
-    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)),
-    { label: "People and access", route: "/inventory-access", icon: Users, section: "You" },
+    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Dashboard","/inventory":"Items","/spaces":"Locations","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
+    { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
   ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
   const breadcrumbs = context?.breadcrumbs || (inventory ? [
     inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },

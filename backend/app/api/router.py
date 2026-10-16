@@ -68,6 +68,8 @@ from app.api.routes.collaboration import router as collaboration_router
 api_router.include_router(collaboration_router)
 from app.api.routes.access_invitations import router as access_invitations_router
 api_router.include_router(access_invitations_router)
+from app.api.routes.workspace_directory import router as directory_router
+api_router.include_router(directory_router)
 for scoped_feature_router in (
     items_router, inventory_router, ai_router, imports_router, documents_router,
     activity_router, checkouts_router, spaces_router, bins_router,

@@ -25,6 +25,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/teams",
   "/organizations",
   "/inventory-access",
+  "/inventory-access-request",
   "/workspaces",
 ] as const;
 

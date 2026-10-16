@@ -820,3 +820,15 @@ switches during pending saves. Run full backend/web suites, TypeScript, changed-
 lint, production build and all five CI gates. Inspect cards/dialogs at desktop and
 390px in both themes. Live QA opens/cancels dialogs only; do not rename customer
 resources as probes. No schema or native behavior changes are required.
+
+## Workspace hub and inventory discovery
+
+The workspace directory exposes names and approved descriptions independently of
+content access. Run `test_workspace_directory.py`, `workspace-directory-access`,
+the full backend/web suites, TypeScript and changed-file lint. SQL fixtures include
+`workspace_directory.sql`: hidden discovery/search, no counts or ownership leaks,
+no grants from requests, viewer-only approval, cancellation, expiry, membership
+revocation and approval replay. Rehearse migration 046 against a network-isolated
+restored production copy and compare all original public rows and policies.
+Use fictional desktop/narrow light/dark UI fixtures. Live checks are read-only;
+do not submit real access requests or alter customer visibility for QA.

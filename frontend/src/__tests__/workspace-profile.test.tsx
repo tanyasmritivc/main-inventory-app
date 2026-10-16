@@ -77,7 +77,7 @@ test("page search opens with its input focused, filters destinations and closes 
   const input = within(dialog).getByRole("textbox", { name: "Search features and pages" });
   expect(document.activeElement).toBe(input);
   await user.type(input, "documents");
-  await user.click(within(dialog).getByRole("button", { name: "Documents and notes" }));
+  await user.click(within(dialog).getByRole("button", { name: "Documents" }));
   expect(mockNavigate).toHaveBeenCalledWith("/documents?inventory=tools");
   expect(screen.queryByRole("dialog")).toBeNull();
   await user.click(trigger);
@@ -228,7 +228,7 @@ test("workspace navigation selects only the current section and retains its pare
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
  expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
- expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
+ expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc?view=inventories");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
 });
 test("account navigation requires a context before offering inventory actions",async()=>{

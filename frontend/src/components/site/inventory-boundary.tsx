@@ -6,6 +6,7 @@ import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
 import { activeInventory, isInventoryPage, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import { AppShell } from "@/components/site/app-shell";
+import { ApiError } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
 export function InventoryBoundary({ children }: { children: React.ReactNode }) {
@@ -36,7 +37,7 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
         selectInventory(value);
         setVerified(value);
         setError("");
-      }).catch((reason) => { if (live) setError(userFacingError(reason, "This inventory could not be opened.")); });
+      }).catch((reason) => { if (live) { if (reason instanceof ApiError && reason.status === 403) router.replace(`/inventory-access-request/${encodeURIComponent(inventoryId)}`); else setError(userFacingError(reason, "This inventory could not be opened.")); } });
     return () => { live = false; selectInventory(null); };
   }, [accountId, inventoryId, required, router]);
   useEffect(() => () => { selectInventory(null); }, []);

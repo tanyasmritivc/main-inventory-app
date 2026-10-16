@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 workspace hub and discoverable inventory directory
+
+Active lane `feat/workspace-hub-directory-20261015` owns the Phase 1 workspace
+overview, distinct inventory navigation, approved directory names/descriptions,
+visible-vs-open access, hidden inventories and recipient-initiated access requests.
+Reuse existing tasks, workspace files, physical locations and scoped audit history.
+No Slack-style discussions, workspace AI, calendar, group permissions or integrations
+in this phase. Inventory content authorization and invitation consent remain.
+Inspect/rehearse an additive migration before publication; no customer QA writes.
+
 ## October 15 creator rename
 
 Completed and published PR #80 runtime `905923a`, lane
