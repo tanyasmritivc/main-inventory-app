@@ -1,5 +1,20 @@
 # Current state
 
+## October 15 contextual navigation candidate
+
+`fix/web-context-navigation-20261015` separates context selection from management.
+Organizations expose Workspaces/People; selected workspaces expose inventories,
+people, locations, board, documents and activity. Inventory navigation contains
+inventory workflows; account navigation no longer offers unscoped inventory tools.
+Selection uses quiet cards and creation dialogs, and inventory-name breadcrumbs
+open the selected dashboard. Existing team board/files are reused as scoped panels.
+Inventory access settings are separated into People, Permissions, Locations and
+History. Original backend authorization and APIs are unchanged.
+
+252 web tests, TypeScript and changed-file lint pass. Desktop and 390px actual-
+component Safari previews show the context navigation and choice pages in both
+themes. Production build and all-five CI gates are pending before publication.
+
 ## October 15 organization and inventory access published
 
 PR #77 runtime `5462d87010f4bc62baf57c5adc21bd8fc8574e15` and migration 044

@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-10-15: Navigation follows the selected FindEZ context
+
+Separate organization/workspace selection from management. Organizations expose
+Workspaces and People; workspaces expose Inventories, People, Locations, Board,
+Documents and Activity according to existing access. Inventory navigation exposes
+capture/find/record workflows and people/access settings. Account navigation must
+not offer unscoped inventory actions. Use restrained choice cards, on-demand
+creation dialogs, one content heading and breadcrumbs that preserve the selected
+context. Inventory-name breadcrumbs open that inventory's dashboard. Reuse working
+team tools as individual workspace panels, preserving API authorization and legacy
+routes. Do not copy infrastructure administration or invented usage data from the
+Supabase visual reference.
+
 ## 2026-10-15: Explicit organizations and inventory permissions
 
 Organizations administer membership; existing Teams remain workspaces/projects.

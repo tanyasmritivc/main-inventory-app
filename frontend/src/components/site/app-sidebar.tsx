@@ -36,7 +36,7 @@ export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "FindEZ" | "Your world" | "Organize" | "You";
+  section: string;
   keywords?: string[];
 };
 export const APP_NAV_ITEMS: AppNavItem[] = [
@@ -179,6 +179,9 @@ export function AppSidebar({
   avatarUrl,
   pinned = false,
   onPin,
+  items = APP_NAV_ITEMS,
+  activeRoute,
+  homeHref = "/home",
 }: {
   onToggle: () => void;
   sidebarOpen: boolean;
@@ -187,6 +190,9 @@ export function AppSidebar({
   avatarUrl?: string;
   pinned?: boolean;
   onPin?: () => void;
+  items?: AppNavItem[];
+  activeRoute?: string;
+  homeHref?: string;
 }) {
   const pathname = usePathname(),
     router = useInventoryRouter();
@@ -249,7 +255,7 @@ export function AppSidebar({
     };
   }, [sidebarOpen, onToggle]);
   const [error, setError] = useState("");
-  const active = activeNavItem(pathname);
+  const active = activeRoute ? items.find((item) => item.route === activeRoute) : items.filter((item) => pathname === item.route || pathname.startsWith(`${item.route}/`)).sort((a,b) => b.route.length - a.route.length)[0];
   function closeDrawer() {
     if (window.innerWidth < 860 && sidebarOpen) onToggle();
   }
@@ -290,7 +296,7 @@ export function AppSidebar({
         inert={!desktop && !sidebarOpen}
       >
         <div className="app-sidebar-brand">
-          <Link href="/home" aria-label="FindEZ home" onClick={closeDrawer}>
+          <Link href={homeHref} aria-label="FindEZ home" onClick={closeDrawer}>
             <FindEZMark className="app-sidebar-logo" />
             <span><FindEZWordmark textOnly width={77} height={30}/></span>
           </Link>
@@ -313,11 +319,11 @@ export function AppSidebar({
           </button>}
         </div>
         <nav className="app-sidebar-nav">
-          {(["FindEZ", "Your world", "Organize", "You"] as const).map(
+          {[...new Set(items.map((item) => item.section))].map(
             (section) => (
               <div className="app-nav-section" key={section}>
                 {section !== "FindEZ" && <p>{section}</p>}
-                {APP_NAV_ITEMS.filter((item) => item.section === section && (canEditInventory() || item.route !== "/scan")).map(
+                {items.filter((item) => item.section === section && (canEditInventory() || item.route !== "/scan")).map(
                   (item) => {
                     const Icon = item.icon;
                     return (

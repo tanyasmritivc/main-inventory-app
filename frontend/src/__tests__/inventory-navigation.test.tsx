@@ -93,3 +93,11 @@ test("changing accounts clears private workspace names while the next directory 
   rerender(<WorkspaceDirectory workspaceId="personal"/>);
   expect(screen.queryByRole("link",{name:/Workshop parts/})).toBeNull();
 });
+
+test("choosing an inventory does not mix in people, locations or audit administration",async()=>{
+ render(<WorkspaceDirectory workspaceId="team"/>);
+ await screen.findByRole("link",{name:/Workshop parts/});
+ expect(jest.mocked(accountRequest).mock.calls.some((call)=>/\/(?:overview|audit)$/.test(call[1]))).toBe(false);
+ expect(screen.queryByRole("combobox",{name:"Member"})).toBeNull();
+ expect(screen.queryByRole("button",{name:"Add location"})).toBeNull();
+});

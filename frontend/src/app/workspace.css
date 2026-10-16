@@ -1815,3 +1815,48 @@ html.dark .app-frame .ask-workspace {
  .app-frame .app-inventory-switcher a:last-child { flex-shrink: 0; }
  .app-frame .collaboration-sections .directory-row > span:first-child { min-width: 0; flex-shrink: 1; overflow-wrap: anywhere; }
 }
+
+/* Context selection stays quiet; management belongs to the selected level. */
+.app-frame .context-directory { max-width: 1120px; }
+.app-frame .context-card-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); gap: 16px; align-items: stretch; }
+.app-frame .context-card { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 136px; padding: 24px; border: 1px solid var(--app-border); border-radius: 12px; background: var(--app-surface); text-decoration: none; transition: border-color 160ms ease, background 160ms ease; }
+.app-frame .context-card:hover, .app-frame .context-card:focus-within { background: var(--app-surface-2); border-color: var(--app-muted); }
+.app-frame .context-card strong { font-size: 16px; font-weight: 500; overflow-wrap: anywhere; }
+.app-frame .context-card > span, .app-frame .context-card-link > span { color: var(--app-muted); font-size: 13px; }
+.app-frame .context-card-link { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 10px; text-decoration: none; padding: 24px; }
+.app-frame .context-inventory-card { padding: 0; }
+.app-frame .context-inventory-card .directory-rename { align-self: flex-end; margin: -8px 18px 12px; padding: 4px 6px; }
+.app-frame .context-people-list { border-top: 1px solid var(--app-border); }
+.app-frame .context-person { display: flex; align-items: center; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--app-border); }
+.app-frame .context-person strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.app-frame .context-person > span { font-size: 13px; color: var(--app-muted); }
+.app-frame .context-single-section { margin-top: 0; gap: 24px; }
+.app-frame .context-single-section > section { padding-top: 0; border-top: 0; }
+.app-frame .context-single-section .directory-row { min-height: 64px; padding: 18px 0; }
+.app-frame .context-embedded { gap: 24px; }
+.app-frame .context-embedded .team-panel-heading > h2 { display: none; }
+.app-frame .context-embedded .team-panel-heading { justify-content: flex-end; }
+.app-frame .context-tabs a { display: inline-flex; padding: 12px 0; margin-right: 24px; color: var(--app-muted); font-size: 13px; text-decoration: none; border-bottom: 1px solid transparent; }
+.app-frame .context-tabs a.is-active { border-color: var(--app-text); color: var(--app-text); }
+.app-frame .context-crumb { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.app-frame .app-inventory-switcher > .context-crumb { color: var(--app-text); }
+.app-frame .context-crumb > span { color: var(--app-muted); flex-shrink: 0; }
+.app-frame .app-inventory-switcher .context-crumb:last-of-type { flex-shrink: 1; }
+@media (max-width: 600px) {
+ .app-frame .context-card-grid { grid-template-columns: minmax(0,1fr); gap: 12px; }
+ .app-frame .context-card { min-height: 112px; padding: 20px; }
+ .app-frame .context-inventory-card { padding: 0; }
+ .app-frame .context-card-link { padding: 20px; }
+ .app-frame .context-person { gap: 12px; }
+ .app-frame .context-crumb { gap: 8px; }
+ .app-frame .app-inventory-switcher > .context-crumb { display: flex; }
+ .app-frame .context-tabs { overflow-x: auto; white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) { .app-frame .context-card { transition: none; } }
+
+.app-frame.is-context-management .app-sidebar-nav a.is-active { color: var(--app-text); background: var(--app-surface-2); }
+
+@media (max-width: 600px) {
+ .app-frame .context-directory > .product-page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+ .app-frame .context-directory > .product-page-header > .product-actions { justify-content: flex-start; align-self: flex-start; }
+}
