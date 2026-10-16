@@ -164,7 +164,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    if (widget.readOnly) {
+    if (widget.readOnly || !widget.api.canEdit) {
       _showProductInfo(context, item);
       return;
     }
@@ -217,6 +217,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -512,6 +520,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _addItem() async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final created = await showModalBottomSheet<ItemEditorResult>(
       context: context,
       isScrollControlled: true,
@@ -572,8 +588,16 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         }
         return;
       }
+      if (e.response?.statusCode == 403 &&
+          widget.api.inventoryContext != null &&
+          describeError(e).$2 != ErrorKind.planLimit) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
+        return;
+      }
       if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
+        // Legacy unscoped item-limit behavior.
         if (!ProStatus.isPro) {
           showUpgradeSheet(
             context,
@@ -861,28 +885,33 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 borderRadius: BorderRadius.circular(14),
               ),
               onSelected: _onFabItemTap,
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: 'Import Spreadsheet',
-                  child: ListTile(
-                    leading: Icon(Icons.table_chart_outlined),
-                    title: AppText('Import Spreadsheet'),
+              itemBuilder: (_) => [
+                if (!widget.readOnly)
+                  const PopupMenuItem(
+                    value: 'Import Spreadsheet',
+                    child: ListTile(
+                      leading: Icon(Icons.table_chart_outlined),
+                      title: AppText('Import Spreadsheet'),
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'Share Space',
-                  child: ListTile(
-                    leading: Icon(Icons.share_outlined),
-                    title: AppText('Share Space'),
+                if (!widget.readOnly &&
+                    (widget.api.inventoryContext == null ||
+                        widget.api.inventoryContext!.isPersonal))
+                  const PopupMenuItem(
+                    value: 'Share Space',
+                    child: ListTile(
+                      leading: Icon(Icons.share_outlined),
+                      title: AppText('Share Space'),
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'Join Space',
-                  child: ListTile(
-                    leading: Icon(Icons.person_add_outlined),
-                    title: AppText('Join Space'),
+                if (widget.api.inventoryContext == null)
+                  const PopupMenuItem(
+                    value: 'Join Space',
+                    child: ListTile(
+                      leading: Icon(Icons.person_add_outlined),
+                      title: AppText('Join Space'),
+                    ),
                   ),
-                ),
                 PopupMenuItem(
                   value: 'Print Bin Label',
                   child: ListTile(
@@ -890,13 +919,15 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     title: AppText('Print Bin Label'),
                   ),
                 ),
-                PopupMenuItem(
-                  value: 'Members',
-                  child: ListTile(
-                    leading: Icon(Icons.people_outline),
-                    title: AppText('Members'),
+                if (widget.api.inventoryContext == null ||
+                    widget.api.inventoryContext!.isPersonal)
+                  const PopupMenuItem(
+                    value: 'Members',
+                    child: ListTile(
+                      leading: Icon(Icons.people_outline),
+                      title: AppText('Members'),
+                    ),
                   ),
-                ),
               ],
             ),
           ],
@@ -1910,6 +1941,7 @@ class _InventoryPageState extends State<InventoryPage>
           thresholds: thresholds,
           allItems: _items,
           spaceId: resolvedSpaceId,
+          readOnly: !widget.api.canEdit,
         ),
       ),
     );
@@ -2139,6 +2171,7 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _loadJoinedShares() async {
+    if (widget.api.inventoryContext != null) return;
     if (!mounted) return;
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start',
@@ -2161,6 +2194,10 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _loadMyShares() async {
+    if (widget.api.inventoryContext != null &&
+        !widget.api.inventoryContext!.isPersonal) {
+      return;
+    }
     debugPrint(
       '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares start',
     );
@@ -2332,6 +2369,14 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _addItem() async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final created = await showModalBottomSheet<ItemEditorResult>(
       context: context,
       isScrollControlled: true,
@@ -2396,8 +2441,16 @@ class _InventoryPageState extends State<InventoryPage>
         }
         return;
       }
+      if (e.response?.statusCode == 403 &&
+          widget.api.inventoryContext != null &&
+          describeError(e).$2 != ErrorKind.planLimit) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
+        return;
+      }
       if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
+        // Legacy unscoped item-limit behavior.
         if (!ProStatus.isPro) {
           showUpgradeSheet(
             context,
@@ -2424,6 +2477,16 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
+    if (!widget.api.canEdit) {
+      await showItemDetailSheet(
+        context,
+        item: item,
+        api: widget.api,
+        permission: 'view',
+        spaceName: item.location,
+      );
+      return;
+    }
     final currentThreshold = _thresholds.value[item.itemId];
     final updates = await showModalBottomSheet<ItemEditorResult>(
       context: context,
@@ -2474,6 +2537,14 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
+    if (!widget.api.canEdit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('You have view-only access to this inventory.'),
+        ),
+      );
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2680,7 +2751,7 @@ class _InventoryPageState extends State<InventoryPage>
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
           sliver: SliverList.separated(
-            itemCount: allSpaces.length + 1,
+            itemCount: allSpaces.length + (widget.api.canEdit ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               if (index == allSpaces.length) {
@@ -2861,63 +2932,72 @@ class _InventoryPageState extends State<InventoryPage>
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  IconButton(
-                                    onPressed: () {
-                                      HapticFeedback.lightImpact();
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (_) =>
-                                            DraggableScrollableSheet(
-                                              initialChildSize: 0.65,
-                                              maxChildSize: 0.92,
-                                              minChildSize: 0.4,
-                                              builder: (_, _) =>
-                                                  ShareSpaceSheet(
-                                                    spaceName: loc,
-                                                    api: widget.api,
-                                                  ),
-                                            ),
-                                      );
-                                    },
-                                    tooltip: 'Share space',
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints.tightFor(
-                                      width: 32,
-                                      height: 32,
-                                    ),
-                                    icon: Icon(
-                                      Icons.person_add_alt_1_rounded,
-                                      color: AppTheme.foreground(
-                                        context,
-                                        Color(0x99FFFFFF),
+                                  if (widget.api.canEdit &&
+                                      (widget.api.inventoryContext == null ||
+                                          widget
+                                              .api
+                                              .inventoryContext!
+                                              .isPersonal))
+                                    IconButton(
+                                      onPressed: () {
+                                        HapticFeedback.lightImpact();
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (_) =>
+                                              DraggableScrollableSheet(
+                                                initialChildSize: 0.65,
+                                                maxChildSize: 0.92,
+                                                minChildSize: 0.4,
+                                                builder: (_, _) =>
+                                                    ShareSpaceSheet(
+                                                      spaceName: loc,
+                                                      api: widget.api,
+                                                    ),
+                                              ),
+                                        );
+                                      },
+                                      tooltip: 'Share space',
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                            width: 32,
+                                            height: 32,
+                                          ),
+                                      icon: Icon(
+                                        Icons.person_add_alt_1_rounded,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x99FFFFFF),
+                                        ),
+                                        size: 18,
                                       ),
-                                      size: 18,
                                     ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      HapticFeedback.selectionClick();
-                                      _showSpaceMenu(context, loc, spaceId);
-                                    },
-                                    tooltip: 'Space options',
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints.tightFor(
-                                      width: 32,
-                                      height: 32,
-                                    ),
-                                    icon: Icon(
-                                      Icons.more_horiz,
-                                      color: AppTheme.foreground(
-                                        context,
-                                        Color(0x60FFFFFF),
+                                  if (widget.api.canEdit)
+                                    IconButton(
+                                      onPressed: () {
+                                        HapticFeedback.selectionClick();
+                                        _showSpaceMenu(context, loc, spaceId);
+                                      },
+                                      tooltip: 'Space options',
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                            width: 32,
+                                            height: 32,
+                                          ),
+                                      icon: Icon(
+                                        Icons.more_horiz,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x60FFFFFF),
+                                        ),
+                                        size: 19,
                                       ),
-                                      size: 19,
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -3204,7 +3284,10 @@ class _InventoryPageState extends State<InventoryPage>
     } on dio.DioException catch (e) {
       if (!mounted || !context.mounted) return;
       final status = e.response?.statusCode;
-      if (status == 402 || status == 403) {
+      if (status == 402 ||
+          (status == 403 &&
+              (widget.api.inventoryContext == null ||
+                  describeError(e).$2 == ErrorKind.planLimit))) {
         if (!ProStatus.isPro) {
           showUpgradeSheet(
             context,
@@ -3623,7 +3706,7 @@ class _InventoryPageState extends State<InventoryPage>
       }
       _itemsReadGeneration++;
       _itemsLoad = null;
-      InventoryCache.removeSpace(spaceId);
+      InventoryCache.removeSpace(spaceId, contextKey: widget.api.cacheKey);
       widget.onSpaceDeleted?.call(spaceId);
     } catch (e) {
       if (mounted && context.mounted) {
@@ -3982,6 +4065,8 @@ class _InventoryPageState extends State<InventoryPage>
                                                   return _SearchResultsList(
                                                     rows: rows,
                                                     thresholds: thresholds,
+                                                    readOnly:
+                                                        !widget.api.canEdit,
                                                     onEdit: _editItem,
                                                     onDelete: _deleteItem,
                                                   );
@@ -4002,16 +4087,19 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
-        child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
-      ),
+      floatingActionButton: !widget.api.canEdit
+          ? null
+          : Padding(
+              padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),
+              child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
+            ),
     );
   }
 }
 
 class _SearchResultsList extends StatelessWidget {
   const _SearchResultsList({
+    this.readOnly = false,
     required this.rows,
     required this.thresholds,
     required this.onEdit,
@@ -4019,6 +4107,7 @@ class _SearchResultsList extends StatelessWidget {
   });
 
   final List<InventoryItem> rows;
+  final bool readOnly;
   final Map<String, int> thresholds;
   final Future<void> Function(InventoryItem item) onEdit;
   final Future<void> Function(InventoryItem item) onDelete;
@@ -4035,6 +4124,9 @@ class _SearchResultsList extends StatelessWidget {
             (threshold != null && threshold >= 0 && item.quantity <= threshold);
         final imageUrl = (item.imageUrl ?? '').trim();
         return Dismissible(
+          direction: readOnly
+              ? DismissDirection.none
+              : DismissDirection.horizontal,
           key: ValueKey(item.itemId),
           background: Container(
             alignment: Alignment.centerLeft,

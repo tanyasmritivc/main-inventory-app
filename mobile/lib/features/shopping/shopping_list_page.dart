@@ -181,7 +181,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       stockSaved = true;
       if (!_current) return;
       if (widget.shareId == null && widget.api.teamId == null) {
-        InventoryCache.updateItem(updated);
+        InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
       }
       await RestockPrefs.finishReceipt(item.itemId, account: _account);
       if (!_current) return;

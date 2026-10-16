@@ -1,5 +1,31 @@
 # Decisions
 
+## October 16 TestFlight delivery preference
+
+Tanya requests a new TestFlight build after each completed mobile change. Treat
+this as standing authorization to increment, check, archive, validate, upload and
+assign to the existing internal groups when available. Tanya subsequently said
+to stop once upload is confirmed instead of waiting for Apple processing. Report
+processing and assignment as pending; do not claim installability without evidence.
+Keep public App Store version/build
+selection and submission held. Distinguish Apple upload, processing, internal
+availability, external beta review and physical acceptance. Never claim an upload
+alone means testers can install. Keep credentials and durable release receipts
+outside source control. Documentation-only follow-ups do not produce another IPA.
+
+## October 16 mobile working context
+
+Mobile now follows the existing optional organization -> workspace -> inventory
+relationships. Replace the old Teams shell segment with a collection chooser and
+keep Home/Capture/Ask/Find inside one authorized inventory. Workspaces remain the
+existing Team records; do not duplicate or migrate them for mobile. Account-bound
+immutable API clients and Navigator lifetimes prevent retargeting in-flight saves
+or carrying drafts/caches across selections. Restore only a previously chosen ID,
+reauthorized by the backend. Incoming spreadsheet shares require an explicit
+inventory destination. Keep personal collections and existing explicit shared-code
+Join flows compatible. This is source implementation, not a native release.
+
+
 ## October 15 organization actions and deletion scope
 
 Use one owner-only three-dot menu for organization actions on cards and inside an

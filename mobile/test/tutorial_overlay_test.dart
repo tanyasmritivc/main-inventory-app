@@ -211,7 +211,7 @@ void main() {
           'Ask about saved items',
           'Search your inventory',
           'Open a Space',
-          'Work with others',
+          'Choose your inventory',
         ];
         for (var i = 0; i < 6; i++) {
           expect(find.text(titles[i]), findsOneWidget);

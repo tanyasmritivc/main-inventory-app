@@ -48,7 +48,7 @@ Future<void> showItemDetailSheet(
     builder: (_) => _ItemDetailSheet(
       item: item,
       api: api,
-      permission: permission,
+      permission: api.canEdit ? permission : 'view',
       shareId: shareId,
       initialThreshold: initialThreshold,
       spaceName: spaceName,
@@ -277,7 +277,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _photos = result.photos;
         _selectedPhotoIndex = 0;
       });
-      InventoryCache.updateItem(result.item);
+      InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
@@ -328,7 +328,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           _selectedPhotoIndex = _photos.isEmpty ? 0 : _photos.length - 1;
         }
       });
-      InventoryCache.updateItem(result.item);
+      InventoryCache.updateItem(result.item, contextKey: widget.api.cacheKey);
       widget.onItemUpdated?.call(result.item);
       ScaffoldMessenger.of(
         context,
@@ -359,7 +359,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _lastSavedNotes = notes;
         _item = updated;
       });
-      InventoryCache.updateItem(updated);
+      InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
       widget.onItemUpdated?.call(updated);
       return true;
     } catch (_) {
@@ -460,7 +460,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           _purchaseSourceSaveFailed = false;
           _item = updated;
         });
-        InventoryCache.updateItem(updated);
+        InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
         widget.onItemUpdated?.call(updated);
       }
       return true;

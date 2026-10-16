@@ -21,7 +21,7 @@ import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
-import 'features/shell/main_shell.dart';
+import 'features/workspaces/inventory_context_host.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
 import 'features/sharing/invitation_host.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -185,12 +185,21 @@ class _MyAppState extends State<MyApp> {
       try {
         await ShareHandlerPlatform.instance.resetInitialSharedMedia();
         if (!mounted) return;
-        await navigator.push<bool>(
+        final selectedApi = await navigator.push<ApiClient>(
           MaterialPageRoute(
-            builder: (_) =>
-                SharedSpreadsheetPage(api: _api, filePath: attachment.path),
+            builder: (_) => InventoryContextHost(api: _api, pickOnly: true),
           ),
         );
+        if (selectedApi != null && mounted) {
+          await navigator.push<bool>(
+            MaterialPageRoute(
+              builder: (_) => SharedSpreadsheetPage(
+                api: selectedApi,
+                filePath: attachment.path,
+              ),
+            ),
+          );
+        }
       } catch (error) {
         debugPrint('[ShareImport] could not present import: $error');
       } finally {
@@ -472,7 +481,10 @@ class _AuthGateState extends State<LaunchAuthGate> {
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
             child: SafeArea(
-              child: MainShell(key: ValueKey(session.user.id), api: widget.api),
+              child: InventoryContextHost(
+                key: ValueKey(session.user.id),
+                api: widget.api,
+              ),
             ),
           );
         }

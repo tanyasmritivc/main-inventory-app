@@ -51,7 +51,9 @@ class HomeOverview extends StatefulWidget {
     required this.onOpenSpace,
     this.error,
     this.accountControl,
+    this.title = 'My home',
   });
+  final String title;
   final List<InventoryItem> items;
   final Widget? accountControl;
   final List<Map<String, dynamic>> spaces;
@@ -141,7 +143,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                   alignment: Alignment.centerLeft,
                   child: Semantics(
                     button: true,
-                    label: 'My home, choose a Space',
+                    label: '${widget.title}, choose a Space',
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
                       onTap: widget.onChooseSpace,
@@ -152,7 +154,7 @@ class _HomeOverviewState extends State<HomeOverview> {
                           children: [
                             Flexible(
                               child: AppText(
-                                'My home',
+                                widget.title,
                                 style: TextStyle(
                                   fontSize: 28,
                                   height: 1.15,

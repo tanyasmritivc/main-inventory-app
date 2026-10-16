@@ -1,5 +1,28 @@
 # FindEZ test suite
 
+## Mobile organization and inventory parity
+
+Run `flutter analyze --no-pub` and `flutter test --no-pub --concurrency=1` from
+`mobile/`. `inventory_context_test.dart` exercises real authenticated API-client
+routing with synthetic HTTP responses, viewer guards, account/selection races,
+invalid parent contexts, offline restoration, refresh and cache isolation.
+`hierarchy_page_test.dart` covers directories, role-dependent controls, consent,
+restricted requests, inventory-admin review, create/refresh, location parents,
+share-import selection, cold access-link handoff and readable viewer item details.
+It also checks the scoped shell at 2.6x text without the old Teams segment.
+Launch/tour tests retain pre-auth onboarding and one-time tour behavior after a
+validated inventory opens. Optional `FINDEZ_VISUAL_QA=true` captures both phone
+themes; that test uses the macOS system font and is skipped by normal CI.
+
+Run the existing backend inventory/collaboration/consent/directory/rename/deletion
+suites and the web boundary/navigation tests listed in
+`docs/plans/mobile-hierarchy-parity.md`. No backend/schema/web code is changed.
+These tests do not prove native camera/OAuth/universal links, actual email delivery
+or a signed-in cross-client round trip. Complete the disposable-account device
+plan in that document before publication. Run Flutter processes sequentially on
+low disk space; native builds require more free space than the current machine.
+
+
 ## Organization actions menu and empty deletion
 
 Run backend/web suites, TypeScript, changed-file lint and the production build.

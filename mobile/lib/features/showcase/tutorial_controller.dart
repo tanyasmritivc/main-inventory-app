@@ -28,7 +28,6 @@ class _StepConfig {
     required this.body,
     this.cornerRadius = 16,
     this.targetKey,
-    this.targetRectTransform,
   });
 
   /// PageView index to navigate to before showing this step. -1 = stay.
@@ -41,7 +40,6 @@ class _StepConfig {
 
   /// A GlobalKey whose RenderBox will be spotlighted.
   final GlobalKey? targetKey;
-  final Rect Function(Rect)? targetRectTransform;
 }
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
@@ -129,12 +127,10 @@ class TutorialController {
     _StepConfig(
       pageIndex: 3,
       icon: Icons.groups_outlined,
-      title: 'Work with others',
-      body: 'Share Spaces and coordinate with your team.',
+      title: 'Choose your inventory',
+      body: 'Switch your workspace and inventory from the context at the top.',
       cornerRadius: 14,
       targetKey: teamsSegmentKey,
-      targetRectTransform: (rect) =>
-          Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
     ),
   ];
 
@@ -330,7 +326,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
       return null;
     }
     final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
-    return (config.targetRectTransform?.call(rect) ?? rect).inflate(6);
+    return rect.inflate(6);
   }
 
   Future<void> _showStep(int index, {int direction = 1}) async {

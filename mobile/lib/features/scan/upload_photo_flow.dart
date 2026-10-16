@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -419,6 +420,7 @@ Future<void> runUploadPhotoFlow({
     builder: (_) => ConfirmScanSheet(
       items: extracted.items,
       defaultLocation: preselectedSpace,
+      existingItems: InventoryCache.forContext(api.cacheKey),
     ),
   );
   if (confirmed == null || !context.mounted) return;
