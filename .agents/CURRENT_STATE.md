@@ -2,6 +2,14 @@
 
 ## October 16 contained homepage hero published
 
+Tanya rejected the subsequent white page entrance fade. The service is restored
+to this verified single-line release, and source revert `2199675` removes only
+that fade. Fresh loads and refreshes are fully visible. Post-rollback desktop and
+390px browser checks confirm the retained hero, header/footer, no overflow or
+console errors and reduced motion. All 296 web tests, TypeScript and changed-file
+lint pass. Receipt:
+`/home/ubuntu/findez-contained-fade-20261016/rollback-20261016.json`.
+
 PR #86 runtime `558832d56bbfe936d5823a3318a4d091d3259213` is live. The hero
 has permanent responsive side insets, 16px corners and a viewport-fitting height.
 The headline is centered on both axes and stays on one line at desktop widths;

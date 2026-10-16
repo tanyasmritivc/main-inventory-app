@@ -2,6 +2,12 @@
 
 ## October 16 contained homepage hero
 
+The additional 700ms entrance fade was rejected and rolled back to this verified
+single-line release at Tanya's request. The page is immediately visible on load
+and refresh; the existing header scroll fade remains. Source revert `2199675`
+matches the restored runtime. All 296 web tests, TypeScript/lint and live
+desktop/390px browser checks pass after rollback.
+
 Completed and published on `fix/landing-contained-hero-20261016`, PR #86, runtime
 `558832d`, build `WHx0_Dq0xSlkEnn5Gvbv6`. Permanent inset/rounded frame,
 viewport-fitting hero, centered single-line desktop headline and no duplicate
