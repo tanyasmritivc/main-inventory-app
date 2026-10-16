@@ -2,12 +2,13 @@
 
 ## October 15 creator rename
 
-Active lane `feat/creator-rename-20261015` adds owner-controlled organization and
-workspace rename, and creator-aware inventory rename, through existing IDs. Web
-selection cards and selected-context headers expose quiet Rename dialogs. Backend
-checks current access and ownership; existing inventory management rights remain.
-No schema migration, production data change or mobile change is planned. Validation
-and publication are in progress.
+Completed and published PR #80 runtime `905923a`, lane
+`feat/creator-rename-20261015`. Organization/workspace owners and inventory creators
+have name-only Rename controls with backend access checks; existing inventory
+manager rights and all stable resource relationships remain. 537 backend/268 web
+tests, TypeScript, lint, production build, all five CI gates and signed-in live
+Safari dialog/cancel checks pass. No customer data changed for QA. No migration or
+mobile change. See CURRENT_STATE.md for runtime and rollback receipts.
 
 ## October 15 recipient-approved membership
 
