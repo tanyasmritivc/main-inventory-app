@@ -1856,6 +1856,29 @@ html.dark .app-frame .ask-workspace {
 
 .app-frame.is-context-management .app-sidebar-nav a.is-active { color: var(--app-text); background: var(--app-surface-2); }
 
+.invitation-review { --app-text:#161616; --app-muted:#747474; --app-border:#e4e4e4; --app-surface:#fafafa; min-height:100dvh; display:grid; align-items:center; padding:48px 24px; background:var(--app-surface); color:var(--app-text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.dark .invitation-review { --app-text:#f3f3f2; --app-muted:#a0a0a6; --app-border:#303033; --app-surface:#171718; }
+.invitation-review > section { width:100%; max-width:440px; margin:auto; display:grid; gap:24px; }
+.invitation-review .invitation-brand { color:var(--app-muted); text-decoration:none; font-size:15px; }
+.invitation-review h1 { font-size:32px; font-weight:500; letter-spacing:-.04em; line-height:1.2; overflow-wrap:anywhere; margin:12px 0 0; }
+.invitation-review p { margin:0; line-height:1.6; }
+.invitation-review .workspace-muted { color:var(--app-muted); }
+.invitation-review form, .invitation-review label { display:grid; gap:12px; }
+.invitation-review :is(input,.product-button) { min-height:44px; padding:10px 14px; color:var(--app-text); background:transparent; border:1px solid var(--app-border); border-radius:8px; font:inherit; box-sizing:border-box; }
+.invitation-review input { width:100%; letter-spacing:.1em; }
+.invitation-review .product-button { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; cursor:pointer; }
+.invitation-review .product-actions { display:flex; gap:12px; flex-wrap:wrap; }
+.invitation-review button:disabled { opacity:.5; cursor:default; }
+.invitation-review :is(a,button,input):focus-visible { outline:2px solid var(--app-text); outline-offset:3px; }
+:is(.app-frame,.workspace-dialog) .invitation-delivery { display:grid; gap:16px; margin:24px 0; }
+:is(.app-frame,.workspace-dialog) .invitation-delivery p { margin:0; line-height:1.6; }
+:is(.app-frame,.workspace-dialog) .invitation-delivery label { display:grid; gap:8px; }
+:is(.app-frame,.workspace-dialog) .invitation-delivery code { letter-spacing:.1em; overflow-wrap:anywhere; }
+.app-frame .pending-invitations { margin-top:40px; }
+.app-frame .pending-invitations h2 { margin-bottom:16px; }
+.app-frame .pending-invitations .context-person > div { min-width:0; display:grid; gap:6px; overflow-wrap:anywhere; }
+.app-frame .invitation-review-link { margin-top:12px; }
+
 @media (max-width: 600px) {
  .app-frame .context-directory > .product-page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
  .app-frame .context-directory > .product-page-header > .product-actions { justify-content: flex-start; align-self: flex-start; }

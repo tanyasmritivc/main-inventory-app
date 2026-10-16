@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, History, RefreshCw } from "lucide-react";
 import { ActivityEntry } from "@/lib/api";
@@ -143,6 +144,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
       <header className="product-page-header">
         <h1>{mode === "notifications" ? "Notifications" : "Activity"}</h1>
         <div className="product-actions">
+          {mode === "notifications" && <Link className="product-button" href="/join/access">Enter invitation code</Link>}
           {mode === "notifications" && unread > 0 && (
             <button
               className="app-icon-button"
@@ -179,8 +181,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
           !sessionError && (
             <div className="bare-empty">
               <Icon size={23} />
-              <strong>{mode === "notifications" ? "No team updates yet" : "No activity yet"}</strong>
-              {mode === "notifications" && <p>Team changes appear here.</p>}
+              <strong>{mode === "notifications" ? "No notifications yet" : "No activity yet"}</strong>
             </div>
           )}
         {!loading &&
@@ -209,6 +210,7 @@ function ActivityWorkspace({ mode }: { mode: "activity" | "notifications" }) {
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
+                {entry.invitation && <Link className="product-button invitation-review-link" href={`/join/access?invitation=${encodeURIComponent(entry.invitation.invitation_id)}`}>Review invitation</Link>}
               </div>
               {entry.is_read === false && (
                 <span className="unread-dot" aria-label="Unread" />

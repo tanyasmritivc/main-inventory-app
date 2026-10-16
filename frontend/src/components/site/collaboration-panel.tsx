@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
 import { userFacingError } from "@/lib/user-facing-error";
+import type { InvitationDelivery } from "@/lib/access-invitation";
+import { InvitationDeliveryDetails, PendingInvitations } from "@/components/site/access-invitation-tools";
 
 type Member = { user_id: string; display_name: string; role: string; workspace_role?: string; override?: string; source?: string };
 type Location = { location_id: string; name: string; parent_id: string | null };
@@ -34,6 +36,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   const { accountId } = useApiSession();
   const [data, setData] = useState<Access | null>(null), [error, setError] = useState("");
   const [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
+  const [delivery, setDelivery] = useState<InvitationDelivery | null>(null);
   const [policy, setPolicy] = useState("workspace"), [defaultRole, setDefaultRole] = useState("viewer");
   const [memberId, setMemberId] = useState(""), [memberRole, setMemberRole] = useState("viewer");
   const [name, setName] = useState(""), [parent, setParent] = useState(""), [location, setLocation] = useState("");
@@ -54,10 +57,10 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   }, [accountId, base, inventoryId, revision, section]);
   async function save(path: string, method: "POST" | "PUT" | "PATCH", body: Record<string, unknown>) {
     if (!accountId || busy) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setDelivery(null);
     try {
-      await accountRequest(accountId, path, { method, body });
-      if (alive.current) { setRevision((v) => v + 1); setName(""); }
+      const result = await accountRequest<Partial<InvitationDelivery>>(accountId, path, { method, body });
+      if (alive.current) { setRevision((v) => v + 1); setName(""); if (result.invitation && result.code && result.invite_url) setDelivery(result as InvitationDelivery); }
     } catch (reason) { if (alive.current) setError(userFacingError(reason, "The change could not be saved.")); }
     finally { if (alive.current) setBusy(false); }
   }
@@ -65,6 +68,8 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   const manager = inventoryId ? data?.inventory?.can_manage && data.inventory.team_id : ["owner", "mentor"].includes(data?.workspace?.role || "");
   const candidates = inventoryId ? data?.members.filter((m) => !["owner", "mentor"].includes(m.workspace_role || "")) : data?.candidates;
   const show = (value: CollaborationSection) => section === "all" || section === value;
+  const existing = data?.members.find((m) => m.user_id === memberId);
+  const invites = memberId && (!existing || existing.role === "none") && memberRole !== "none";
   return <div className={`collaboration-sections ${section !== "all" ? "context-single-section" : ""}`}>
     {error && <p role="alert" className="notice-error">{error} <button className="product-button" onClick={() => setRevision((v) => v + 1)}>Retry</button></p>}
     {!data ? <p role="status">Loading access...</p> : <>
@@ -85,8 +90,10 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
           <label>Member<select required className="product-select" value={memberId} onChange={(e) => setMemberId(e.target.value)}><option value="">Choose member</option>{candidates?.map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name === "Member" ? `Member ${m.user_id.slice(0, 8)}` : m.display_name}</option>)}</select></label>
           <label>Role<select className="product-select" value={memberRole} onChange={(e) => setMemberRole(e.target.value)}>
             <option value="viewer">Viewer</option><option value="editor">Editor</option><option value="admin">Admin</option><option value="none">{inventoryId ? "No access" : "Remove from workspace"}</option>{inventoryId && <option value="inherit">Use default</option>}
-          </select></label><button className="product-button" disabled={busy || !memberId}>Save role</button>
+          </select></label><button className="product-button" disabled={busy || !memberId}>{invites ? "Send invitation" : "Save role"}</button>
         </form>}
+        {delivery && <InvitationDeliveryDetails delivery={delivery} />}
+        {manager && <PendingInvitations scope={inventoryId ? "inventory" : "workspace"} resourceId={inventoryId || workspaceId!} revision={revision} />}
       </section>}
       {show("locations") && manager && <section>{section === "all" && <h2>Physical locations</h2>}
         {!inventoryId && <div className="directory-rows">{data.locations.map((loc) => <div className="directory-row" key={loc.location_id}>{locationPath(loc, data.locations)}</div>)}</div>}

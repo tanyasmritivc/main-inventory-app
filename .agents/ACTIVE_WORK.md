@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 recipient-approved membership
+
+Active lane `feat/member-invitation-consent-20261015` replaces immediate new
+organization/workspace membership and newly granted inventory access with pending
+recipient-approved invitations. Add email review links, recipient-bound codes and
+in-app notifications, acceptance/decline, expiry and sender cancellation. Enforce
+consent in the database-backed API, preserve existing memberships, and recheck
+sender authority and parent membership on acceptance. No real invitations or
+customer access changes during QA. Inspect/rehearse migration 045 before release.
+
 ## October 15 contextual website navigation
 
 Completed and published PR #78, runtime `5d9906f`, on lane

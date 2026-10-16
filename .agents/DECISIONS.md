@@ -1,5 +1,16 @@
 # Decisions
 
+## New collaboration members must consent (October 15)
+
+An administrator's Add/Assign action creates an invitation when it would introduce
+a new organization/workspace membership or inventory access. Access begins only
+after the recipient, signed in with the invited confirmed email, explicitly
+accepts. Email/code/notification previews and sign-in are read-only. Existing
+memberships remain; authorized existing-role edits and revocation stay immediate.
+Pending invitations expire after seven days and can be cancelled. Acceptance
+rechecks current sender authority and parent scope transactionally; replay never
+restores later-revoked access. Old Space/Team self-join flows remain compatible.
+
 ## 2026-10-15: Navigation follows the selected FindEZ context
 
 Separate organization/workspace selection from management. Organizations expose

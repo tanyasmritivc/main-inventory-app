@@ -16,7 +16,7 @@ const data={inventory:{name:"Tools",team_id:"team",can_manage:true,access_mode:"
 beforeEach(()=>{
  jest.clearAllMocks();
  jest.mocked(useApiSession).mockReturnValue({accountId:"owner",loading:false,error:null} as ReturnType<typeof useApiSession>);
- jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> (path.endsWith("/audit") ? {activity:[]} : data) as never);
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> (path.startsWith("/access-invitations?") ? {invitations:[]} : path.endsWith("/audit") ? {activity:[]} : data) as never);
 });
 test("inventory permissions are explicit saved actions with viewer defaults",async()=>{
  render(<CollaborationPanel inventoryId="tools"/>);
@@ -41,6 +41,7 @@ test("a viewer sees permitted people and history but no policy or role writes",a
 });
 test("failed role changes retain the selected member and do not report success",async()=>{
  jest.mocked(accountRequest).mockImplementation(async(_actor,path,options)=>{
+  if(path.startsWith("/access-invitations?")) return {invitations:[]} as never;
   if(options?.method) throw new Error("Permission changed. Refresh and try again.");
   return (path.endsWith("/audit")?{activity:[]}:data) as never;
  });
@@ -81,14 +82,14 @@ test("organization selection and workspace selection do not expose management fo
  expect(screen.queryByText("Alex")).toBeNull();
 });
 test("organization people have a dedicated destination with no inventory or workspace creation controls",async()=>{
- jest.mocked(accountRequest).mockResolvedValue({organization:{organization_id:"acme",name:"Acme Company",role:"owner"},workspaces:[{team_id:"october",name:"Client October"}],members:[member]});
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> path.startsWith("/access-invitations?") ? {invitations:[]} as never : {organization:{organization_id:"acme",name:"Acme Company",role:"owner"},workspaces:[{team_id:"october",name:"Client October"}],members:[member]} as never);
  render(<OrganizationDirectory organizationId="acme" view="people"/>);
  await screen.findByText("Alex");
  expect(screen.queryByRole("link",{name:/Client October/})).toBeNull();
  expect(screen.queryByRole("button",{name:"New workspace"})).toBeNull();
  expect(screen.queryByRole("textbox",{name:"Account email"})).toBeNull();
- await userEvent.click(screen.getByRole("button",{name:"Add member"}));
- expect(screen.getByRole("dialog",{name:"Add organization member"})).toBeTruthy();
+ await userEvent.click(screen.getByRole("button",{name:"Invite member"}));
+ expect(screen.getByRole("dialog",{name:"Invite organization member"})).toBeTruthy();
 });
 test("individual workspace sections avoid loading unrelated history",async()=>{
  jest.mocked(accountRequest).mockResolvedValue({workspace:{name:"Robotics",role:"owner",organization_id:"org"},members:[member],candidates:[member],locations:[]});

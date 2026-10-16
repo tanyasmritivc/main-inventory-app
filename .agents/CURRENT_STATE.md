@@ -1,5 +1,24 @@
 # Current state
 
+## October 15 recipient-consent candidate
+
+`feat/member-invitation-consent-20261015` replaces immediate new organization and
+workspace membership, and newly granted inventory access, with recipient-bound
+pending invitations. Email links, 12-character codes and Notifications open an
+explicit Accept/Decline review. Sender cancellation, seven-day expiry, verified
+email matching and acceptance-time authority/parent checks are enforced in new
+migration 045. Existing memberships/role edits remain. The old immediate-grant RPC
+is private and its replacement rejects new membership without consent. Existing
+Space/Team code joins still require their established explicit Join action.
+
+528 backend tests, 262 web tests, TypeScript and changed-file lint (zero errors,
+one existing warning) pass. Disposable PostgreSQL verifies consent, wrong and
+unverified recipients, signup after invitation, email changes, cancellation,
+expiry, decline, replay after revocation, sender revocation and changed parents.
+Concurrent acceptance/decline/cancellation produces one consistent decision and
+at most one membership/audit. Production migration, build and CI remain pending.
+No customer invitations or membership changes have been made for QA.
+
 ## October 15 contextual navigation published
 
 `fix/web-context-navigation-20261015` separates context selection from management.

@@ -2,6 +2,7 @@ import os
 import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+import pytest
 
 os.environ.setdefault("SUPABASE_URL", "https://placeholder.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "placeholder-anon")
@@ -10,6 +11,13 @@ os.environ.setdefault("SUPABASE_JWKS_URL", "https://placeholder.supabase.co/.wel
 os.environ.setdefault("FINDEZ_AGENT_KEY", "placeholder-agent-key")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from app.api.routes import notifications, teams
+
+
+@pytest.fixture(autouse=True)
+def invitation_transport():
+    # Existing activity tests do not contact the invitation database.
+    with patch.object(notifications, 'notification_rows', return_value=[]), patch.object(notifications, 'invitation_rpc', return_value={'saved': True}):
+        yield
 
 
 def database(results):
@@ -46,6 +54,15 @@ def test_empty_recipient_list_never_loads_other_teams_activity():
     assert result == {"notifications": [], "unread_count": 0}
     client.table.assert_called_once_with("team_notification_recipients")
     query.eq.assert_called_once_with("user_id", "user")
+
+
+def test_pending_invitation_is_visible_without_team_membership():
+    client, _ = database([[]])
+    row = {'activity_id': 'invite', 'is_read': False, 'action': 'access_invitation'}
+    with patch.object(notifications, 'get_supabase_admin', return_value=client), patch.object(notifications, 'notification_rows', return_value=[row]) as invites:
+        result = notifications.list_notifications(SimpleNamespace(user_id='recipient'))
+    invites.assert_called_once_with('recipient')
+    assert result == {'notifications': [row], 'unread_count': 1}
 
 
 def test_mark_read_writes_only_authenticated_recipient_pairs_within_history_window():

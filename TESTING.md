@@ -789,3 +789,22 @@ choice cards, People, Locations, inventory settings tabs and dialogs on desktop
 and at 390px in both themes. Verify signed-in context switching, browser Back and
 refresh, existing board/files and scoped inventory links without modifying
 customer data or permissions. This release has no database or mobile changes.
+
+## Recipient-approved collaboration invitations
+
+Run `test_access_invitation_consent.py`, `test_notification_inbox.py` and the full
+backend suite. The SQL entry point includes `member_invitation_consent.sql` after
+the original organization fixtures: existing membership preservation, no grants
+on send/preview/read, verified recipient binding, signup after invitation,
+expiry/cancel/decline, stale-parent/sender rejection and replay after revocation.
+Use a disposable network-isolated PostgreSQL instance for simultaneous
+accept/accept, accept/decline and accept/cancel checks; assert one status and at
+most one membership and acceptance audit. Never use customer accounts as probes.
+
+Web `access-invitation-consent` covers explicit decisions, failed writes, account
+switches, sign-in/code continuity, pending sender lists and email-delivery failure.
+Run full coverage, TypeScript, changed-file lint, production build and all five CI
+gates. Inspect review/delivery dialogs and notifications at desktop/390px in both
+themes. Rehearse migration 045 against a restored production copy and compare all
+original public rows and policies before applying it. Preserve the consent guard
+if a runtime rollback is required. Do not send real invitation emails during QA.
