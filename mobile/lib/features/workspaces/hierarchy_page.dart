@@ -15,6 +15,7 @@ import '../profile/profile_page.dart';
 import '../teams/team_board_page.dart';
 import '../teams/team_documents_page.dart';
 import 'invitation_page.dart';
+import 'place_ui.dart';
 
 List<Map<String, dynamic>> rows(Object? value) => (value as List? ?? [])
     .map((row) => Map<String, dynamic>.from(row as Map))
@@ -31,6 +32,18 @@ typedef OpenInventory =
 
 enum HierarchyLevel { organizations, organization, workspace, inventory }
 
+enum HierarchyPanel { people, activity }
+
+class _HierarchySection extends StatelessWidget {
+  const _HierarchySection(this.title);
+  final String title;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+    child: Text(title.toUpperCase(), style: PlaceTokens.section),
+  );
+}
+
 /// Phone navigation uses focused lists; it does not reproduce the web sidebar.
 class HierarchyPage extends StatefulWidget {
   const HierarchyPage({
@@ -42,12 +55,18 @@ class HierarchyPage extends StatefulWidget {
     this.name,
     this.organizationId,
     this.onClose,
+    this.panel,
+    this.focusSearch = false,
+    this.onOpenWorkspace,
   });
   final ApiClient api;
   final VoidCallback? onClose;
   final OpenInventory onOpenInventory;
   final HierarchyLevel level;
   final String? id, name, organizationId;
+  final HierarchyPanel? panel;
+  final bool focusSearch;
+  final Future<void> Function(String id)? onOpenWorkspace;
   @override
   State<HierarchyPage> createState() => _HierarchyPageState();
 }
@@ -752,26 +771,40 @@ class _HierarchyPageState extends State<HierarchyPage>
     }
   }
 
-  Widget _heading(String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-    child: AppText(
-      text,
-      style: TextStyle(fontSize: 15, color: AppTheme.textSecondary(context)),
-    ),
-  );
+  Widget _heading(String text) => widget.level != HierarchyLevel.organizations
+      ? _HierarchySection(text)
+      : Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          child: AppText(
+            text,
+            style: TextStyle(
+              fontSize: 15,
+              color: AppTheme.textSecondary(context),
+            ),
+          ),
+        );
   Widget _row(
     String title, {
     String? detail,
     VoidCallback? onTap,
     Widget? trailing,
-  }) => ListTile(
-    title: AppText(title),
-    subtitle: detail == null ? null : AppText(detail),
-    onTap: _busy ? null : onTap,
-    trailing:
-        trailing ??
-        (onTap == null ? null : const Icon(Icons.chevron_right, size: 20)),
-  );
+  }) => widget.level != HierarchyLevel.organizations
+      ? PlaceRow(
+          title: title,
+          subtitle: detail,
+          trailing: trailing,
+          onTap: _busy ? null : onTap,
+        )
+      : ListTile(
+          title: AppText(title),
+          subtitle: detail == null ? null : AppText(detail),
+          onTap: _busy ? null : onTap,
+          trailing:
+              trailing ??
+              (onTap == null
+                  ? null
+                  : const Icon(Icons.chevron_right, size: 20)),
+        );
   bool _matches(Object? name) =>
       name.toString().toLowerCase().contains(_query.toLowerCase());
   Widget _menu(Map<String, VoidCallback> actions) => PopupMenuButton<String>(
@@ -783,8 +816,344 @@ class _HierarchyPageState extends State<HierarchyPage>
         .toList(),
   );
 
+  Future<void> _organizationMember(Map<String, dynamic> member) async {
+    if (!await _confirm(
+      'Remove member?',
+      'Remove this person from the organization? Workspace assignments must be removed first.',
+    )) {
+      return;
+    }
+    if (mounted) {
+      await _mutate('$_base/members/${member['user_id']}', method: 'DELETE');
+    }
+  }
+
+  Future<void> _attachWorkspace() async {
+    final id = await _choose('Choose your workspace', {
+      for (final row in rows(_data?['attachable']))
+        row['team_id'].toString(): row['name'].toString(),
+    });
+    if (mounted && id != null) await _mutate('$_base/workspaces/$id');
+  }
+
+  Widget _placeSection(String title) => Padding(
+    padding: const EdgeInsets.only(left: 4, bottom: 8),
+    child: Text(
+      title.toUpperCase(),
+      style: PlaceTokens.section.copyWith(
+        color: PlaceTokens.muted(context, PlaceTokens.label),
+      ),
+    ),
+  );
+
+  List<Widget> _organizationContents() {
+    final workspaces = rows(
+      _data?['workspaces'],
+    ).where((w) => _matches(w['name'])).toList();
+    final members = rows(
+      _data?['members'],
+    ).where((m) => m['role'] != 'none' && _matches(m['display_name'])).toList();
+    return [
+      _placeSection('Workspaces'),
+      PlaceCardList(
+        children: [
+          for (final ws in workspaces)
+            PlaceRow(
+              title: ws['name'].toString(),
+              leading: PlaceBadge(ws['name'].toString()),
+              onTap: _busy
+                  ? null
+                  : () async {
+                      if (widget.onOpenWorkspace != null) {
+                        await widget.onOpenWorkspace!(ws['team_id'].toString());
+                      } else {
+                        await _navigate(
+                          HierarchyLevel.workspace,
+                          ws['team_id'].toString(),
+                          ws['name'].toString(),
+                          org: widget.id,
+                        );
+                      }
+                    },
+            ),
+          if (workspaces.isEmpty)
+            PlaceRow(
+              title: _query.isEmpty
+                  ? 'No assigned workspaces yet'
+                  : 'No matching workspaces',
+            ),
+          if (_manager) ...[
+            PlaceRow(
+              title: 'New workspace',
+              onTap: _busy ? null : () => _create('workspace'),
+            ),
+            if (rows(_data?['attachable']).isNotEmpty)
+              PlaceRow(
+                title: 'Add existing workspace',
+                onTap: _busy ? null : _attachWorkspace,
+              ),
+          ],
+        ],
+      ),
+      const SizedBox(height: 20),
+      _placeSection('People'),
+      PlaceCardList(
+        children: [
+          for (final (index, member) in members.indexed)
+            PlaceRow(
+              title: member['display_name']?.toString() ?? 'Member',
+              leading: PlaceAvatar(
+                member['display_name']?.toString() ?? 'Member',
+                current: member['user_id'] == widget.api.accountId,
+                index: index,
+              ),
+              trailing: RoleTag(member['role']?.toString() ?? 'member'),
+              onTap:
+                  !_manager ||
+                      _busy ||
+                      member['role'] == 'owner' ||
+                      member['role'] == 'admin' && !_owner
+                  ? null
+                  : () => _organizationMember(member),
+            ),
+          if (members.isEmpty) const PlaceRow(title: 'No matching people'),
+          if (_manager)
+            PlaceRow(
+              title: 'Invite organization member',
+              onTap: _busy ? null : _inviteOrganization,
+            ),
+        ],
+      ),
+      if (_invitations.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        _placeSection('Pending invitations'),
+        PlaceCardList(children: _pending().skip(1).toList()),
+      ],
+    ];
+  }
+
+  List<Widget> _inventorySearchContents() {
+    final visible = _inventories.where((inv) => _matches(inv['name'])).toList();
+    return [
+      _placeSection('Inventories'),
+      PlaceCardList(
+        children: [
+          for (final inv in visible)
+            PlaceRow(
+              title: inv['name'].toString(),
+              subtitle: inv['can_open'] == true
+                  ? [
+                      if (inv['item_count'] is num)
+                        '${inv['item_count']} items',
+                      membershipRoleLabel(inv['role']?.toString() ?? ''),
+                    ].where((s) => s.isNotEmpty).join(' · ')
+                  : 'Access restricted',
+              onTap: () async {
+                if (inv['can_open'] == true) {
+                  await widget.onOpenInventory(
+                    inv['inventory_id'].toString(),
+                    widget.id!,
+                    _resource['organization_id']?.toString(),
+                  );
+                } else {
+                  await _push(
+                    RestrictedInventoryPage(
+                      api: widget.api,
+                      id: inv['inventory_id'].toString(),
+                      workspaceId: widget.id!,
+                      onOpenInventory: widget.onOpenInventory,
+                    ),
+                  );
+                }
+              },
+            ),
+          if (visible.isEmpty) const PlaceRow(title: 'No matching inventories'),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _managementContents() {
+    if (widget.panel != null) return _contents();
+    final result = <Widget>[];
+    var group = <Widget>[];
+    void flush() {
+      if (group.isNotEmpty) {
+        result.add(PlaceCardList(children: group));
+        group = [];
+      }
+    }
+
+    for (final child in _contents()) {
+      if (child is _HierarchySection) {
+        flush();
+        if (result.isNotEmpty) result.add(const SizedBox(height: 20));
+        result.add(_placeSection(child.title));
+      } else if (child is ExpansionTile) {
+        flush();
+        result.add(const SizedBox(height: 20));
+        result.add(child);
+      } else {
+        group.add(child);
+      }
+    }
+    flush();
+    return result;
+  }
+
+  Widget _placeDirectoryPage() => PlaceTheme(
+    child: Builder(
+      builder: (context) => Scaffold(
+        backgroundColor: PlaceTokens.background,
+        appBar: AppBar(
+          backgroundColor: PlaceTokens.background,
+          surfaceTintColor: Colors.transparent,
+          centerTitle: false,
+          toolbarHeight: 32 + MediaQuery.textScalerOf(context).scale(24) * 2,
+          title: Text(
+            widget.panel == HierarchyPanel.people
+                ? 'People'
+                : widget.panel == HierarchyPanel.activity
+                ? 'Activity'
+                : _title,
+            style: PlaceTokens.title,
+            maxLines: 2,
+          ),
+          actions: [
+            if (_data != null &&
+                !widget.focusSearch &&
+                (_org && _owner ||
+                    _workspace && _owner && !_personal ||
+                    _inventory && _resource['can_rename'] == true))
+              _menu({
+                'Rename': () => _rename(),
+                if (_org && _owner) 'Delete': _deleteOrganization,
+                if (_workspace && _owner && !_personal)
+                  'Delete workspace': _deleteWorkspace,
+              }),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+            children: [
+              if (_loading || _busy) const LinearProgressIndicator(),
+              if (_error != null) ...[
+                Text(describeError(_error!).$1, style: PlaceTokens.rowTitle),
+                TextButton(
+                  onPressed: _busy ? null : _load,
+                  child: const Text('Retry'),
+                ),
+              ],
+              if (_data != null) ...[
+                if (!_inventory && widget.panel == null) ...[
+                  TextField(
+                    autofocus: widget.focusSearch,
+                    style: PlaceTokens.rowTitle,
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      semanticCounterText: 'Search workspaces and people',
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: PlaceTokens.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: PlaceTokens.orange),
+                      ),
+                    ),
+                    onChanged: (value) => setState(() => _query = value),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                ...(_org
+                    ? _organizationContents()
+                    : widget.focusSearch
+                    ? _inventorySearchContents()
+                    : _managementContents()),
+              ],
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
   List<Widget> _contents() {
     if (_data == null) return [];
+    if (_workspace && widget.panel == HierarchyPanel.activity) {
+      return _history();
+    }
+    if (_workspace && widget.panel == HierarchyPanel.people) {
+      return [
+        Padding(
+          padding: EdgeInsets.zero,
+          child: PlaceCardList(
+            children: [
+              for (final (index, member) in rows(
+                _data?['members'],
+              ).where((m) => m['role'] != 'none').indexed)
+                PlaceRow(
+                  title: member['display_name']?.toString() ?? 'Member',
+                  leading: PlaceAvatar(
+                    member['display_name']?.toString() ?? 'Member',
+                    current: member['user_id'] == widget.api.accountId,
+                    index: index,
+                  ),
+                  trailing: RoleTag(
+                    membershipRoleLabel(member['role'].toString()),
+                  ),
+                  onTap:
+                      _manager &&
+                          member['role'] != 'owner' &&
+                          (!['admin', 'mentor'].contains(member['role']) ||
+                              _owner)
+                      ? () => _workspaceMember(member)
+                      : null,
+                ),
+            ],
+          ),
+        ),
+        if (_manager)
+          _row(
+            'Manage workspace',
+            onTap: () => _navigate(
+              HierarchyLevel.workspace,
+              widget.id!,
+              _title,
+              org: widget.organizationId,
+            ),
+          ),
+        ..._pending(),
+        if (!_owner)
+          Padding(
+            padding: const EdgeInsets.only(top: 24, bottom: 24),
+            child: TextButton(
+              onPressed: _leaveWorkspace,
+              style: TextButton.styleFrom(
+                foregroundColor: PlaceTokens.destructive,
+                minimumSize: const Size(44, 44),
+              ),
+              child: Text(
+                'Leave workspace',
+                style: PlaceTokens.text(
+                  16,
+                  weight: FontWeight.w500,
+                  color: PlaceTokens.destructive,
+                ),
+              ),
+            ),
+          ),
+      ];
+    }
     if (widget.level == HierarchyLevel.organizations) {
       final orgs = rows(
         _data?['organizations'],
@@ -862,45 +1231,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         ),
       ];
     }
-    if (_org) {
-      return [
-        _heading('Workspaces'),
-        for (final ws in rows(
-          _data?['workspaces'],
-        ).where((row) => _matches(row['name'])))
-          _row(
-            ws['name'].toString(),
-            onTap: () => _navigate(
-              HierarchyLevel.workspace,
-              ws['team_id'].toString(),
-              ws['name'].toString(),
-              org: widget.id,
-            ),
-          ),
-        if (rows(_data?['workspaces']).isEmpty)
-          const ListTile(title: AppText('No assigned workspaces yet')),
-        if (_manager) ...[
-          _row('New workspace', onTap: () => _create('workspace')),
-          if (rows(_data?['attachable']).isNotEmpty)
-            _row(
-              'Add existing workspace',
-              onTap: () async {
-                final id = await _choose('Choose your workspace', {
-                  for (final row in rows(_data?['attachable']))
-                    row['team_id'].toString(): row['name'].toString(),
-                });
-                if (mounted && id != null) {
-                  await _mutate('$_base/workspaces/$id');
-                }
-              },
-            ),
-        ],
-        ..._people(),
-        if (_manager)
-          _row('Invite organization member', onTap: _inviteOrganization),
-        ..._pending(),
-      ];
-    }
+    if (_org) return _organizationContents();
     if (_workspace) {
       return [
         _heading('Inventories'),
@@ -997,21 +1328,6 @@ class _HierarchyPageState extends State<HierarchyPage>
               const ListTile(title: AppText('No pending requests')),
           ],
           ..._history(),
-          if (!_owner)
-            _row(
-              'Leave workspace',
-              onTap: () async {
-                if (!await _confirm(
-                  'Leave workspace?',
-                  'You will lose this workspace access. Your own physical records remain yours.',
-                )) {
-                  return;
-                }
-                if (!mounted) return;
-                final ok = await _mutate('/teams/$_id/leave', method: 'DELETE');
-                if (mounted && ok) Navigator.pop(context);
-              },
-            ),
         ],
       ];
     }
@@ -1157,65 +1473,89 @@ class _HierarchyPageState extends State<HierarchyPage>
     ),
   ];
 
+  Future<void> _leaveWorkspace() async {
+    if (!await _confirm(
+      'Leave workspace?',
+      'You will lose this workspace access. Your own physical records remain yours.',
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    final ok = await _mutate('/teams/$_id/leave', method: 'DELETE');
+    if (mounted && ok) Navigator.pop(context);
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: widget.onClose == null
-          ? null
-          : CloseButton(onPressed: widget.onClose),
-      title: AppText(_title),
-      actions: [
-        if (_data != null &&
-            (_org && _owner ||
-                _workspace && _owner && !_personal ||
-                _inventory && _resource['can_rename'] == true))
-          _menu({
-            'Rename': () => _rename(),
-            if (_org && _owner) 'Delete': _deleteOrganization,
-            if (_workspace && _owner && !_personal)
-              'Delete workspace': _deleteWorkspace,
-          }),
-        IconButton(
-          tooltip: 'Refresh',
-          onPressed: _loading || _busy ? null : _load,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-    ),
-    body: RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          if (_loading || _busy) const LinearProgressIndicator(),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(describeError(_error!).$1),
-                  TextButton(
-                    onPressed: _busy ? null : _load,
-                    child: const AppText('Retry'),
+  Widget build(BuildContext context) =>
+      widget.level != HierarchyLevel.organizations
+      ? _placeDirectoryPage()
+      : Scaffold(
+          appBar: AppBar(
+            leading: widget.onClose == null
+                ? null
+                : CloseButton(onPressed: widget.onClose),
+            title: AppText(
+              widget.panel == HierarchyPanel.people
+                  ? 'People'
+                  : widget.panel == HierarchyPanel.activity
+                  ? 'Activity'
+                  : _title,
+            ),
+            actions: [
+              if (_data != null &&
+                  (_org && _owner ||
+                      _workspace && _owner && !_personal ||
+                      _inventory && _resource['can_rename'] == true))
+                _menu({
+                  'Rename': () => _rename(),
+                  if (_org && _owner) 'Delete': _deleteOrganization,
+                  if (_workspace && _owner && !_personal)
+                    'Delete workspace': _deleteWorkspace,
+                }),
+              IconButton(
+                tooltip: 'Refresh',
+                onPressed: _loading || _busy ? null : _load,
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                if (_loading || _busy) const LinearProgressIndicator(),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(describeError(_error!).$1),
+                        TextButton(
+                          onPressed: _busy ? null : _load,
+                          child: const AppText('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                if (_data != null && !_inventory && widget.panel == null)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      autofocus: widget.focusSearch,
+                      decoration: const InputDecoration(
+                        labelText: 'Search names',
+                      ),
+                      onChanged: (value) => setState(() => _query = value),
+                    ),
+                  ),
+                if (!_loading) ..._contents(),
+                const SizedBox(height: 32),
+              ],
             ),
-          if (_data != null && !_inventory)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                decoration: const InputDecoration(labelText: 'Search names'),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
-          if (!_loading) ..._contents(),
-          const SizedBox(height: 32),
-        ],
-      ),
-    ),
-  );
+          ),
+        );
 }
 
 class RestrictedInventoryPage extends StatefulWidget {

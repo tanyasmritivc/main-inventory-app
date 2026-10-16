@@ -22,6 +22,18 @@ or a signed-in cross-client round trip. Complete the disposable-account device
 plan in that document before publication. Run Flutter processes sequentially on
 low disk space; native builds require more free space than the current machine.
 
+For the mobile place switcher, run the full Flutter suite with coverage and the
+focused `organization_place_flow_test.dart`, `workspace_home_test.dart` and
+`hierarchy_page_test.dart`. The organization flow fixture checks authenticated
+organization to workspace selection, scoped Search and inventory opening,
+Tasks/Files/People/Activity navigation, creation refresh, failure/Retry, viewer
+restrictions and large text. `space_creation_navigation_test.dart` checks the
+nested Navigator with real scoped API requests; Cancel must leave the inventory
+mounted. The iPhone 16e production-connected simulator must open the same routes
+and Create/Cancel without blank navigation. Do not submit customer test writes
+from that account. See `design/workspace-switcher/IMPLEMENTATION.md` for the
+remaining disposable-account and physical-device checks.
+
 
 ## Organization actions menu and empty deletion
 
@@ -872,3 +884,16 @@ revocation and approval replay. Rehearse migration 046 against a network-isolate
 restored production copy and compare all original public rows and policies.
 Use fictional desktop/narrow light/dark UI fixtures. Live checks are read-only;
 do not submit real access requests or alter customer visibility for QA.
+
+## Mobile workspace home and place restore
+
+Run `flutter test --no-pub --concurrency=1 --coverage` and
+`flutter analyze --no-pub` from mobile. `last_place_test.dart` verifies account
+storage, server validation, stale response/write prevention, explicit link
+overrides and revoked versus offline handling. `workspace_home_test.dart` verifies
+grouping, counts, roles, callbacks, large text and People.
+`space_creation_navigation_test.dart` reproduces the production nested-navigator
+shape and checks actual inventory-scoped requests, Create, Cancel and viewer
+restrictions. Root-only widget tests cannot detect the old dialog/root pop bug.
+See `design/workspace-switcher/IMPLEMENTATION.md` for simulator evidence and
+physical-device acceptance. Fake API screenshots do not prove production sync.

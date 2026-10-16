@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/invitation.dart';
+import '../../core/last_place.dart';
 import '../workspaces/inventory_context_host.dart';
 import '../workspaces/invitation_page.dart';
 import 'invitation_dialog.dart';
@@ -44,6 +45,32 @@ class _InvitationHostState extends State<InvitationHost>
   DialogRoute<Map<String, dynamic>>? _dialog;
   bool _restored = false, _presenting = false;
   String? _dialogOwner;
+  LastPlace? _pendingPlace;
+  String? _placeOwner;
+
+  void _presentPlace() {
+    final place = _pendingPlace;
+    final owner = _auth.currentUser?.id;
+    if (place == null || owner == null || !widget.ready || !mounted) return;
+    if (_placeOwner != null && _placeOwner != owner) {
+      _pendingPlace = null;
+      return;
+    }
+    _pendingPlace = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _auth.currentUser?.id != owner) return;
+      unawaited(
+        widget.navigatorKey.currentState?.push<void>(
+          MaterialPageRoute(
+            builder: (_) => InventoryContextHost(
+              api: widget.api,
+              initialWorkspaceId: place.id,
+            ),
+          ),
+        ),
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -88,6 +115,13 @@ class _InvitationHostState extends State<InvitationHost>
   }
 
   Future<void> _queue(Uri uri) async {
+    final place = placeFromLink(uri);
+    if (place != null) {
+      _pendingPlace = place;
+      _placeOwner = _auth.currentUser?.id;
+      _presentPlace();
+      return;
+    }
     final invitation = Invitation.fromUri(uri);
     if (invitation == null) return;
     if (_presenting && _inbox.pending?.key == invitation.key) return;
@@ -130,6 +164,7 @@ class _InvitationHostState extends State<InvitationHost>
   }
 
   void _present() {
+    _presentPlace();
     if (!_restored || _presenting || !widget.ready || !mounted) return;
     final owner = _auth.currentUser?.id;
     if (owner == null || !_inbox.availableFor(owner)) return;
@@ -196,7 +231,11 @@ class _InvitationHostState extends State<InvitationHost>
           unawaited(
             navigator.push<void>(
               MaterialPageRoute(
-                builder: (_) => InventoryContextHost(api: widget.api),
+                builder: (_) => InventoryContextHost(
+                  api: widget.api,
+                  initialWorkspaceId:
+                      (result['workspace_id'] ?? result['team_id'])?.toString(),
+                ),
               ),
             ),
           );

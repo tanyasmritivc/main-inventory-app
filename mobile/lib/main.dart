@@ -480,11 +480,9 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: SafeArea(
-              child: InventoryContextHost(
-                key: ValueKey(session.user.id),
-                api: widget.api,
-              ),
+            child: InventoryContextHost(
+              key: ValueKey(session.user.id),
+              api: widget.api,
             ),
           );
         }

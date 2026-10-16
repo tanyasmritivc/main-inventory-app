@@ -6,6 +6,12 @@ import '../../core/inventory_session.dart';
 import '../../core/ui/app_text.dart';
 import '../shell/main_shell.dart';
 import 'hierarchy_page.dart';
+import '../../core/place_session.dart';
+import '../../core/last_place.dart';
+import '../../core/push_notifications.dart';
+import '../notifications/notifications_page.dart';
+import 'workspace_home.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A fresh Navigator disposes inventory routes, drafts and sheets when switching.
 class InventoryContextHost extends StatefulWidget {
@@ -13,9 +19,11 @@ class InventoryContextHost extends StatefulWidget {
     super.key,
     required this.api,
     this.pickOnly = false,
+    this.initialWorkspaceId,
   });
   final ApiClient api;
   final bool pickOnly;
+  final String? initialWorkspaceId;
   @override
   State<InventoryContextHost> createState() => _InventoryContextHostState();
 }
@@ -23,13 +31,83 @@ class InventoryContextHost extends StatefulWidget {
 class _InventoryContextHostState extends State<InventoryContextHost>
     with WidgetsBindingObserver {
   late final InventorySession _session;
+  late final PlaceSession _places;
+  StreamSubscription<AuthState>? _auth;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _session = InventorySession(widget.api, widget.api.accountId ?? '')
       ..addListener(_changed);
-    if (!widget.pickOnly) unawaited(_session.restore());
+    _places = PlaceSession(widget.api, widget.api.accountId ?? '');
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((event) {
+      if (event.event == AuthChangeEvent.signedOut) unawaited(_clearPlace());
+    });
+    if (!widget.pickOnly) {
+      unawaited(_startPlaces());
+    }
+  }
+
+  Future<void> _startPlaces() async {
+    LastPlace? target = widget.initialWorkspaceId == null
+        ? null
+        : LastPlace.workspace(widget.initialWorkspaceId!);
+    var starting = true;
+    Map<String, dynamic>? initialInbox;
+    try {
+      await PushNotifications.initialize(
+        onNotificationTap: (payload) async {
+          if (!mounted || widget.api.accountId != _places.accountId) return;
+          final place = placeFromNotification(payload, _places.accountId);
+          if (starting) {
+            target = place ?? target;
+            if (place == null) initialInbox = payload;
+            return;
+          }
+          await _notification(payload);
+        },
+      );
+    } catch (_) {
+      /* Optional phone alerts remain retryable in Notifications. */
+    }
+    if (!mounted) return;
+    await _places.restore(override: target);
+    starting = false;
+    if (initialInbox != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_notification(initialInbox!));
+      });
+    }
+  }
+
+  Future<void> _notification(Map<String, dynamic> payload) async {
+    if (!mounted || widget.api.accountId != _places.accountId) return;
+    final target = placeFromNotification(payload, _places.accountId);
+    if (target != null) {
+      final switching = _places.select(target);
+      await _session.chooseAnother();
+      await switching;
+    } else {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => NotificationsPage(api: _places.api),
+        ),
+      );
+    }
+  }
+
+  Future<void> _clearPlace() async {
+    try {
+      await _places.signOut();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This phone could not clear your saved place.'),
+          ),
+        );
+      }
+    }
   }
 
   void _changed() {
@@ -41,6 +119,8 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     WidgetsBinding.instance.removeObserver(this);
     _session.removeListener(_changed);
     _session.dispose();
+    _auth?.cancel();
+    _places.dispose();
     super.dispose();
   }
 
@@ -58,6 +138,14 @@ class _InventoryContextHostState extends State<InventoryContextHost>
   }
 
   Future<void> _open(String id, String workspace, String? organization) async {
+    if (!widget.pickOnly && _places.current.id != workspace) {
+      await _places.select(
+        workspace == 'personal'
+            ? const LastPlace.personal()
+            : LastPlace.workspace(workspace),
+      );
+      if (_places.error != null || _places.current.id != workspace) return;
+    }
     await _session.open(
       id,
       workspaceId: workspace,
@@ -113,6 +201,9 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       onGenerateRoute: (_) => MaterialPageRoute<void>(
         builder: (context) {
           if (selected == null || api == null) {
+            if (!widget.pickOnly) {
+              return WorkspaceHome(session: _places, onOpenInventory: _open);
+            }
             return HierarchyPage(
               api: _session.directoryApi,
               onOpenInventory: _open,
@@ -121,25 +212,28 @@ class _InventoryContextHostState extends State<InventoryContextHost>
                   : null,
             );
           }
-          return MainShell(
-            api: api,
-            onSwitchContext: _session.chooseAnother,
-            onManageContext: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => HierarchyPage(
-                    api: _session.directoryApi,
-                    onOpenInventory: _open,
-                    level: HierarchyLevel.inventory,
-                    id: selected.inventoryId,
-                    name: selected.name,
+          return SafeArea(
+            child: MainShell(
+              api: api,
+              onWorkspaceNotification: _notification,
+              onSwitchContext: _session.chooseAnother,
+              onManageContext: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => HierarchyPage(
+                      api: _session.directoryApi,
+                      onOpenInventory: _open,
+                      level: HierarchyLevel.inventory,
+                      id: selected.inventoryId,
+                      name: selected.name,
+                    ),
                   ),
-                ),
-              );
-              if (mounted && identical(selected, _session.selection)) {
-                await _revalidate();
-              }
-            },
+                );
+                if (mounted && identical(selected, _session.selection)) {
+                  await _revalidate();
+                }
+              },
+            ),
           );
         },
       ),

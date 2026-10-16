@@ -1,5 +1,31 @@
 # Active work
 
+## October 16 mobile workspace home and place switcher
+
+Lane `feat/mobile-place-switcher-20261016`, based on mobile build 66. Mobile only:
+replace root Your world with the supplied workspace home and grouped bottom-sheet
+place switcher, bundled Geist fonts, account-bound last-place storage and
+authorized restoration. Reuse current APIs, membership controls and inventory
+session boundaries; preserve inventory, Tasks and Files screens. Move leaving to
+People. Reference assets are in `design/workspace-switcher/`. Tests, iPhone 16e
+comparison screenshots and a subsequent checked TestFlight upload are required.
+430 full Flutter tests and analysis pass. The blank space-creation screen is
+reproduced and fixed at the nested dialog navigator. Native visual comparisons
+and cold restore pass with isolated data. Build 67 uploaded successfully after
+all five CI gates, clean signed native package verification and Apple validation;
+processing/group availability and physical acceptance remain pending.
+No web/backend/schema publication. Xcode regenerable caches were cleared with
+approval to recover native-build space; signed release artifacts are preserved.
+Follow-up for build 68: the first delivery left old organization, management
+and Search routes reachable. Those routes now use the place styling, and opening
+a workspace from an organization returns to the home. Search shows only scoped
+inventories. Production-connected iPhone 16e simulator navigation confirms the
+new flow, real Tasks/Files loading and Space Create/Cancel without a blank page.
+434 full Flutter tests and 29 focused tests pass; analysis and all five
+exact-runtime CI jobs are clean. Apple validated and acknowledged signed
+TestFlight build 68. Processing and tester availability are pending; no wait
+per Tanya's request. The public App Store version was unchanged.
+
 ## October 16 mobile hierarchy TestFlight delivery
 
 Apple acknowledged 1.0.8 (66), runtime `8dc9fdd`, on PR #85. All five exact-runtime

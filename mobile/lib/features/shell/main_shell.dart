@@ -45,10 +45,12 @@ class MainShell extends StatefulWidget {
     required this.api,
     this.onSwitchContext,
     this.onManageContext,
+    this.onWorkspaceNotification,
   });
 
   final ApiClient api;
   final Future<void> Function()? onSwitchContext, onManageContext;
+  final Future<void> Function(Map<String, dynamic>)? onWorkspaceNotification;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -462,7 +464,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _initializePushNotifications() async {
     try {
       await PushNotifications.initialize(
-        onNotificationTap: (_) async {
+        onNotificationTap: (payload) async {
+          if (widget.onWorkspaceNotification != null) {
+            await widget.onWorkspaceNotification!(payload);
+            return;
+          }
           WidgetsBinding.instance.addPostFrameCallback((_) {
             unawaited(_openNotifications());
           });

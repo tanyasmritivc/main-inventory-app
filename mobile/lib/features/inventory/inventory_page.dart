@@ -226,6 +226,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       return;
     }
     final ok = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
         title: const AppText('Delete item?'),
@@ -403,6 +404,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     _joinCodeCtrl.clear();
     String? error;
     await showDialog(
+      useRootNavigator: false,
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
@@ -1768,6 +1770,7 @@ class _InventoryPageState extends State<InventoryPage>
     required String name,
   }) async {
     final confirmed = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
         title: const AppText('Leave Space?'),
@@ -2546,6 +2549,7 @@ class _InventoryPageState extends State<InventoryPage>
       return;
     }
     final ok = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (context) => AlertDialog(
         title: const AppText('Delete item?'),
@@ -3240,6 +3244,7 @@ class _InventoryPageState extends State<InventoryPage>
   Future<void> _createSpace(BuildContext context) async {
     _createSpaceCtrl.clear();
     final name = await showDialog<String>(
+      useRootNavigator: false,
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
@@ -3320,6 +3325,7 @@ class _InventoryPageState extends State<InventoryPage>
     _joinCodeCtrl.clear();
     String? error;
     await showDialog(
+      useRootNavigator: false,
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => Dialog(
@@ -3579,6 +3585,7 @@ class _InventoryPageState extends State<InventoryPage>
   ) async {
     _renameSpaceCtrl.text = oldName;
     final newName = await showDialog<String>(
+      useRootNavigator: false,
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
@@ -3663,6 +3670,7 @@ class _InventoryPageState extends State<InventoryPage>
     );
     final itemCount = (spaceData['item_count'] as num?)?.toInt() ?? 0;
     final confirm = await showDialog<bool>(
+      useRootNavigator: false,
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
