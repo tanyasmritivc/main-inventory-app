@@ -109,3 +109,44 @@ test("personal inventory access stays private without workspace administration i
  await screen.findByText("Manage the locations in this inventory in Spaces.");
  expect(screen.queryByText(/Workspace owners/)).toBeNull();
 });
+
+test("organization owners rename from cards and failed saves retain the draft",async()=>{
+ let name="Acme";
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path,options)=>{
+  if(options?.method==="PATCH") {
+   if(name==="Acme") {name="retry";throw new Error("Try again.");}
+   name="Acme Company";return {organization:{name}} as never;
+  }
+  return {organizations:[{organization_id:"acme",name:name==="retry"?"Acme":name,role:"owner",owner_user_id:"owner"}]} as never;
+ });
+ render(<OrganizationDirectory/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Rename Acme"}));
+ const input=screen.getByRole("textbox",{name:"Name"});
+ expect((input as HTMLInputElement).value).toBe("Acme");
+ await userEvent.clear(input);await userEvent.type(input,"Acme Company");
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ await screen.findByRole("alert");expect((input as HTMLInputElement).value).toBe("Acme Company");
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).toBeNull());
+ expect(await screen.findByRole("link",{name:/Acme Company/})).toBeTruthy();
+ expect(accountRequest).toHaveBeenCalledWith("owner","/organizations/acme",{method:"PATCH",body:{name:"Acme Company"}});
+});
+test("organization admins do not get owner rename controls",async()=>{
+ jest.mocked(accountRequest).mockResolvedValue({organization:{organization_id:"acme",name:"Acme",role:"admin",owner_user_id:"someone"},workspaces:[{team_id:"tools",name:"Tools",owner_user_id:"someone"}],members:[]} as never);
+ render(<OrganizationDirectory organizationId="acme"/>);
+ await screen.findByRole("link",{name:/Tools/});
+ expect(screen.queryByRole("button",{name:/Rename/})).toBeNull();
+});
+test("workspace creator can rename an assigned workspace from its organization",async()=>{
+ let name="October";
+ jest.mocked(accountRequest).mockImplementation(async(_actor,_path,options)=>{
+  if(options?.method==="PATCH") {name="November";return {workspace:{name}} as never;}
+  return {organization:{organization_id:"acme",name:"Acme",role:"member",owner_user_id:"other"},workspaces:[{team_id:"client",name,owner_user_id:"owner"}],members:[]} as never;
+ });
+ render(<OrganizationDirectory organizationId="acme"/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Rename October"}));
+ await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"November");
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ expect(await screen.findByRole("link",{name:/November/})).toBeTruthy();
+ expect(accountRequest).toHaveBeenCalledWith("owner","/inventory-workspaces/client",{method:"PATCH",body:{name:"November"}});
+});

@@ -808,3 +808,15 @@ gates. Inspect review/delivery dialogs and notifications at desktop/390px in bot
 themes. Rehearse migration 045 against a restored production copy and compare all
 original public rows and policies before applying it. Preserve the consent guard
 if a runtime rollback is required. Do not send real invitation emails during QA.
+
+## Organization, workspace and inventory renames
+
+`test_creator_rename.py` exercises HTTP owner-only organization/workspace writes,
+inventory creator access and revocation, manager compatibility, invalid names,
+duplicate conflicts and unconfirmed writes. Names are the only changed fields;
+forged ownership payloads do not alter relationships. Web directory regressions
+cover creator-visible controls, confirmed refresh, failed drafts and account
+switches during pending saves. Run full backend/web suites, TypeScript, changed-file
+lint, production build and all five CI gates. Inspect cards/dialogs at desktop and
+390px in both themes. Live QA opens/cancels dialogs only; do not rename customer
+resources as probes. No schema or native behavior changes are required.

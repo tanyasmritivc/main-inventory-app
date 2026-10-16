@@ -4,7 +4,7 @@ import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.inventory_scope import InventoryScope, current_inventory
@@ -51,6 +51,7 @@ def _inventory(inventory_id, actor_id):
         raise HTTPException(403, 'You do not have access to this inventory.')
     return {**inventory, 'workspace': workspace, 'role': role,
             'can_edit': role in ('owner', 'admin', 'editor'),
+            'can_rename': inventory.get('created_by_user_id') == actor_id or role in ('owner', 'admin'),
             'can_manage': role in ('owner', 'admin')}
 
 
@@ -72,6 +73,11 @@ def inventory_role(inventory, workspace, actor_id, grants=None):
     return 'editor' if role == 'member' else 'viewer'
 
 
+def can_rename_inventory(inventory, workspace, actor_id, grants=()):
+    # Creation does not bypass current access: callers authorize the inventory first.
+    return inventory.get('created_by_user_id') == actor_id or inventory_role(inventory, workspace, actor_id, grants) in ('owner', 'admin')
+
+
 
 @router.get('/inventory-workspaces')
 def list_inventory_workspaces(user: AuthenticatedUser = Depends(get_current_user)):
@@ -86,6 +92,7 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
     client = get_supabase_raw()
     query = client.table('app_inventory_summaries').select('*', count='exact').eq('owner_user_id', workspace['owner_user_id'])
     query = query.eq('team_id', workspace['team_id']) if workspace['team_id'] else query.is_('team_id', 'null')
+    grants = []
     if workspace['role'] not in ('owner', 'mentor'):
         grants = client.table('app_inventory_members').select('inventory_id,role').eq('user_id', user.user_id).execute().data or []
         allowed = [row['inventory_id'] for row in grants if row['role'] != 'none']
@@ -98,11 +105,27 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
     result = query.order('created_at').order('inventory_id').range(offset, offset + 99).execute()
     inventories = result.data or []
     total = result.count if result.count is not None else len(inventories)
-    return {'workspace': workspace, 'inventories': inventories, 'total': total, 'next_offset': offset + len(inventories) if offset + len(inventories) < total else None}
+    return {'workspace': workspace, 'inventories': [{**inv, 'can_rename': can_rename_inventory(inv, workspace, user.user_id, grants)} for inv in inventories], 'total': total, 'next_offset': offset + len(inventories) if offset + len(inventories) < total else None}
 
 
 class NewInventory(BaseModel):
     name: str = Field(min_length=1, max_length=100)
+
+    @field_validator('name', mode='before')
+    @classmethod
+    def trim_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
+@router.patch('/inventory-workspaces/{workspace_id}')
+def rename_workspace(workspace_id: UUID, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
+    workspace = _workspace(str(workspace_id), user.user_id)
+    if workspace['owner_user_id'] != user.user_id:
+        raise HTTPException(403, 'Only the workspace owner can rename it.')
+    rows = get_supabase_raw().table('teams').update({'name': body.name}).eq('team_id', str(workspace_id)).eq('owner_user_id', user.user_id).execute().data or []
+    if not rows:
+        raise HTTPException(409, 'The workspace changed. Refresh before trying again.')
+    return {'workspace': {**workspace, 'name': rows[0]['name']}}
 
 
 @router.post('/inventory-workspaces/{workspace_id}/inventories')
@@ -137,8 +160,8 @@ def get_inventory(inventory_id: str, user: AuthenticatedUser = Depends(get_curre
 @router.patch('/inventories/{inventory_id}')
 def rename_inventory(inventory_id: str, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
     inventory = _inventory(inventory_id,user.user_id)
-    if not inventory['can_manage']:
-        raise HTTPException(403,'Only a workspace owner or manager can rename inventories.')
+    if not inventory['can_rename']:
+        raise HTTPException(403,'Only the inventory creator or an inventory manager can rename it.')
     if not body.name.strip():
         raise HTTPException(422,'Enter an inventory name.')
     try:

@@ -1,5 +1,14 @@
 # Active work
 
+## October 15 creator rename
+
+Active lane `feat/creator-rename-20261015` adds owner-controlled organization and
+workspace rename, and creator-aware inventory rename, through existing IDs. Web
+selection cards and selected-context headers expose quiet Rename dialogs. Backend
+checks current access and ownership; existing inventory management rights remain.
+No schema migration, production data change or mobile change is planned. Validation
+and publication are in progress.
+
 ## October 15 recipient-approved membership
 
 Completed and published PR #79 (`8592a4d`), migration 045, on lane

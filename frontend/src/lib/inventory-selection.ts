@@ -1,5 +1,6 @@
 export type InventoryWorkspace = {
   workspace_id: string;
+  owner_user_id?: string;
   organization_id?: string | null;
   organization_name?: string;
   name: string;
@@ -13,6 +14,7 @@ export type AppInventory = {
   owner_user_id: string;
   team_id: string | null;
   is_default: boolean;
+  can_rename?: boolean;
   item_count?: number;
 };
 export type InventorySelection = AppInventory & {

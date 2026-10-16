@@ -1,5 +1,16 @@
 # Current state
 
+## October 15 creator rename prepared
+
+Lane `feat/creator-rename-20261015` adds organization/workspace owner Rename
+actions on choice cards and selected-context pages, and creator-aware inventory
+Rename. Existing inventory manager rights remain. Backend authorizes current
+access before permitting name-only writes; IDs, memberships and stored records
+are preserved. The built-in Personal workspace remains a fixed context. No
+migration or mobile change. 537 backend tests plus six subtests, 268 web tests,
+TypeScript and changed-file lint pass. Actual-component Safari desktop/390px
+light/dark checks pass. Publication is pending.
+
 ## October 15 recipient consent published
 
 PR #79 runtime `8592a4d556352155cee7c619dd6c592a7cc6c7c9` replaces immediate new organization and
