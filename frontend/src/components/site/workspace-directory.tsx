@@ -16,7 +16,10 @@ import { userFacingError } from "@/lib/user-facing-error";
 
 import { RenameResourceDialog, type RenameTarget } from "@/components/site/rename-resource-dialog";
 
-type InventoryPage = { workspace: InventoryWorkspace; inventories: AppInventory[]; total: number; next_offset: number | null };
+import { WorkspaceOverview, AccessRequests } from "@/components/site/workspace-overview";
+import { directoryInventoryHref, type DirectoryInventory } from "@/lib/workspace-directory";
+
+type InventoryPage = { workspace: InventoryWorkspace; inventories: DirectoryInventory[]; total: number; next_offset: number | null };
 type SharedSpace = { share_id: string; share_name: string; team_shares?: SharedSpace | SharedSpace[] };
 
 export function WorkspaceDirectory({ workspaceId, view = "inventories" }: { workspaceId?: string; view?: WorkspaceView }) {
@@ -33,7 +36,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const [reload, setReload] = useState(0), [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"inventory" | "workspace" | "join" | "rename" | null>(null);
   const [renameWorkspace, setRenameWorkspace] = useState<RenameTarget | null>(null);
-  const [renaming, setRenaming] = useState<AppInventory | null>(null);
+  const [renaming, setRenaming] = useState<DirectoryInventory | null>(null);
   const [joinKind, setJoinKind] = useState("workspace");
   const [name, setName] = useState(""), [category, setCategory] = useState(""), [customCategory, setCustomCategory] = useState(""), [code, setCode] = useState("");
   const actor = useRef(accountId);
@@ -46,7 +49,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
     setLoading(true); setError("");
     const timer = setTimeout(() => {
       const request = workspaceId
-        ? accountRequest<InventoryPage>(accountId, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/inventories?q=${encodeURIComponent(query)}&offset=${offset}`).then((result) => { if (live) setPage(result); })
+        ? accountRequest<InventoryPage>(accountId, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/directory?q=${encodeURIComponent(query)}&offset=${offset}`).then((result) => { if (live) setPage(result); })
         : Promise.all([
           accountRequest<{ workspaces: InventoryWorkspace[] }>(accountId, "/inventory-workspaces"),
           accountRequest<{ shares: SharedSpace[] } | SharedSpace[]>(accountId, "/sharing/joined"),
@@ -58,7 +61,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
             return space?.share_id ? [space] : [];
           }));
         });
-      void request.catch((reason) => { if (live) setError(userFacingError(reason, "Could not load workspaces.")); }).finally(() => { if (live) setLoading(false); });
+      void request.catch((reason) => { if (live) { setPage(null); setWorkspaces([]); setShared([]); setError(userFacingError(reason, "Could not load workspaces.")); } }).finally(() => { if (live) setLoading(false); });
     }, query ? 180 : 0);
     return () => { live = false; clearTimeout(timer); };
   }, [accountId, workspaceId, query, offset, reload]);
@@ -98,7 +101,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const visible = workspaces.filter((workspace) => workspace.name.toLowerCase().includes(query.toLowerCase()));
   const canCreate = !workspaceId || page?.workspace.role === "owner" || page?.workspace.role === "mentor";
   const selectedWorkspace: InventoryWorkspace | null = workspaceId ? page?.workspace || { workspace_id: workspaceId, name: workspaceId === "personal" ? "Personal" : "Workspace", kind: workspaceId === "personal" ? "personal" : "team", team_id: workspaceId === "personal" ? null : workspaceId, role: "viewer" } : null;
-  const titles = { inventories: "Inventories", people: "People", locations: "Locations", board: "Board", files: "Documents", activity: "Activity" };
+  const titles = { overview: "Overview", settings: "Workspace settings", inventories: "Inventories", people: "People", locations: "Locations", board: "Tasks", files: "Files", activity: "Activity" };
   const choosing = !workspaceId || view === "inventories";
   return <AppShell context={selectedWorkspace ? workspaceNavigation(selectedWorkspace, view) : undefined}>
     <section className="product-page context-directory">
@@ -106,7 +109,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         <div className="product-actions">
           {accountId && selectedWorkspace?.kind === "team" && selectedWorkspace.owner_user_id === accountId && <button className="directory-rename" onClick={() => setRenameWorkspace({kind:"workspace",id:selectedWorkspace.workspace_id,name:selectedWorkspace.name})}>Rename workspace</button>}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
-          {choosing && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
+          {(choosing || view === "overview") && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
       </header>
       {choosing && <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />}
@@ -114,7 +117,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
       {loading ? <p className="workspace-muted" role="status">Loading...</p> : choosing ? <>
         <div className="context-card-grid">
           {workspaceId ? page?.inventories.map((inventory) => <div className="context-card context-inventory-card" key={inventory.inventory_id}>
-            <Link className="context-card-link" href={`/home?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><span>{(inventory.item_count ?? 0).toLocaleString()} items</span></Link>
+            <Link className="context-card-link" href={directoryInventoryHref(inventory)}><strong>{inventory.name}</strong>{inventory.description && <span className="directory-description">{inventory.description}</span>}<span>{inventory.can_open === false ? "Access restricted" : typeof inventory.item_count === "number" ? `${inventory.item_count.toLocaleString()} items` : "Open inventory"}</span></Link>
             {(inventory.can_rename ?? canCreate) && <button className="directory-rename" aria-label={`Rename ${inventory.name}`} onClick={() => { open("rename"); setRenaming(inventory); setName(inventory.name); }}>Rename</button>}
           </div>) : visible.map((workspace) => <div className="context-card context-inventory-card" key={workspace.workspace_id}><Link className="context-card-link" href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
             <strong>{workspace.name}</strong><span>{workspace.kind === "personal" ? "Private" : workspace.organization_name || (workspace.role === "viewer" ? "View only" : "Workspace")}</span>
@@ -131,7 +134,10 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
           {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="context-card" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
         </div></section>}
       </> : workspaceId && page && <>
+        {view === "overview" ? <WorkspaceOverview workspace={page.workspace} inventories={page.inventories} /> : view === "settings" ? <section className="workspace-settings"><dl className="directory-rows"><div className="directory-row"><dt>Name</dt><dd>{page.workspace.name}</dd></div><div className="directory-row"><dt>Your role</dt><dd>{page.workspace.role === "mentor" ? "Admin" : page.workspace.role.charAt(0).toUpperCase() + page.workspace.role.slice(1)}</dd></div></dl><Link className="workspace-return" href={`/workspaces/${encodeURIComponent(workspaceId)}?view=people`}>Members, invitations and access requests</Link></section> : <>
         {(view === "board" || view === "files" || (view === "people" && !page.workspace.organization_id)) ? <TeamsClient selectedTeamId={workspaceId} panel={view === "people" ? "people" : view === "files" ? "files" : "board"} /> : <CollaborationPanel workspaceId={workspaceId} section={view === "people" ? "people" : view === "locations" ? "locations" : "activity"} />}
+        {view === "people" && <AccessRequests workspaceId={workspaceId} />}
+        </>}
       </>}
     </section>
     {accountId && renameWorkspace && <RenameResourceDialog key={renameWorkspace.id} accountId={accountId} target={renameWorkspace} onClose={() => setRenameWorkspace(null)} onSaved={(savedName) => {

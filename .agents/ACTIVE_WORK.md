@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 workspace hub and discoverable inventory directory
+
+Completed and published PR #81 runtime `5a2bc55`, migration 046. Workspace
+Overview, separate inventory navigation, approved directory metadata, hidden
+inventories and recipient-initiated viewer requests are live. 550 backend/276 web
+tests, TypeScript/lint, SQL/concurrent decisions, restored-copy preservation,
+production build and all five CI gates pass. Live signed-in chooser/context flow
+verified; no customer QA writes. Later collaboration phases remain planned.
+See CURRENT_STATE.md for validation limits and rollback receipts.
+
 ## October 15 creator rename
 
 Completed and published PR #80 runtime `905923a`, lane

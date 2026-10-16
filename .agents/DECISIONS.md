@@ -1,5 +1,17 @@
 # Decisions
 
+## October 15 workspace discovery versus inventory access
+
+Workspace members may discover inventory names and explicitly approved directory
+descriptions by default. Hidden inventories remain absent without current access.
+This is an independent directory projection, not a broader content grant: counts,
+items, documents, locations, AI and exports still require the current inventory
+role. Pending requests are explicit recipient consent for viewer access only; a
+current administrator must approve transactionally. Decisions cannot be replayed
+to restore revoked access. Organization/workspace invitations keep their separate
+acceptance flow. Personal stays simple; workspace Overview reuses existing tasks,
+files and audited activity without inventing future discussions or workspace AI.
+
 ## October 15 resource rename ownership
 
 Organization/workspace names can be changed by their existing `owner_user_id`
