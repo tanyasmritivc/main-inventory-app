@@ -83,7 +83,17 @@ for (const vp of VIEWPORTS) {
     if (tag === "new") {
       assert.equal(errors.length, 0, "Browser console must be clean");
       assert.equal(metrics.scrollWidth, vp.width, "No horizontal page overflow");
-      assert.equal(await page.getByRole("link", { name: "Log in", exact: true }).getAttribute("href"), "/signin");
+      const mainNav = page.getByRole("navigation", { name: "Main navigation" });
+      if (await mainNav.count()) {
+        assert.equal(await mainNav.getByRole("link").count(), 3);
+        assert.equal(await mainNav.getByRole("link", { name: "Developers", exact: true }).getAttribute("href"), "/docs/api");
+        assert.equal(await mainNav.getByRole("link", { name: "iOS App", exact: true }).getAttribute("href"), "https://apps.apple.com/us/app/findez-ai/id6760401697");
+        const footerNav = page.getByRole("navigation", { name: "Footer navigation" });
+        const links = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
+        for (const [name, href] of Object.entries(links)) assert.equal(await footerNav.getByRole("link", { name, exact: true }).getAttribute("href"), href);
+      } else {
+        assert.equal(await page.getByRole("link", { name: "Log in", exact: true }).getAttribute("href"), "/signin");
+      }
       for (const link of await page.getByRole("link", { name: "Get started", exact: true }).all()) {
         assert.equal(await link.getAttribute("href"), "/signup");
       }

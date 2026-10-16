@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 approved Lab homepage publication
+
+Tanya approved publishing the Lab design at `/`, retaining only Developers,
+iOS App and session-aware Get started/Dashboard in the header, and all six
+existing footer destinations at the bottom. Lane
+`feat/publish-landing-lab-20261015` based on preview `5b639e0`. Candidate build
+`oLRGWGqakvdAKUWCPLDZ5`, 288 web tests, TypeScript and changed-file lint pass.
+Production switch and responsive/live checks are in progress. `/lab` retains the
+original prototype header/footer and noindex. Backend/mobile unchanged.
+
 ## October 15 isolated Lab landing preview
 
 Completed on `feat/landing-lab-20261015`, based on `2d8d3f7`. Approved ZIP
