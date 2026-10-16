@@ -41,6 +41,7 @@
 .fzLab #em { width:auto; font:inherit; border:0; background:none; outline:0; border-radius:0; box-shadow:none; letter-spacing:normal; transition:none; }
 .fzLab #em::placeholder { color:revert; opacity:revert; }
 .fzLab button { box-sizing:border-box; }
+.fzLab .fzl-scroll-header { will-change:transform,opacity; }
 .fzLab .fzl-site-actions { display:flex; align-items:center; gap:24px; font-size:14px; white-space:nowrap; }
 .fzLab .fzl-site-actions a { color:#111112; text-decoration:none; }
 .fzLab .fzl-site-actions .fzl-site-cta { display:inline-flex; align-items:center; gap:20px; background:#EAEAEA; color:#111112; padding:10px 16px; font-size:14px; }

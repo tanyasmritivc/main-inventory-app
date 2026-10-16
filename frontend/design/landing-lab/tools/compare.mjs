@@ -83,12 +83,33 @@ for (const vp of VIEWPORTS) {
     if (tag === "new") {
       assert.equal(errors.length, 0, "Browser console must be clean");
       assert.equal(metrics.scrollWidth, vp.width, "No horizontal page overflow");
-      const mainNav = page.getByRole("navigation", { name: "Main navigation" });
+      const mainNav = page.getByRole("navigation", { name: "Main navigation", includeHidden: true });
       if (await mainNav.count()) {
         const header = await mainNav.evaluate(nav => ({ bottom: nav.closest("header").getBoundingClientRect().bottom, position: getComputedStyle(nav.closest("header").parentElement).position }));
         assert.equal(header.position, "relative", "Published header scrolls with the page");
         assert.ok(header.bottom < 0, "Published header has scrolled out of the viewport");
         assert.equal(await page.getByText("FindEZ for iPhone is coming soon.", { exact: false }).count(), 0);
+        const fade = [];
+        for (const fraction of [0, .5, 1, 0]) {
+          await mainNav.evaluate((nav, fraction) => window.scrollTo(0, nav.closest("header").parentElement.offsetHeight * fraction), fraction);
+          await page.waitForTimeout(100);
+          const state = await mainNav.evaluate(nav => {
+            const header = nav.closest("header").parentElement;
+            return { height: header.offsetHeight, top: header.getBoundingClientRect().top, opacity: Number(getComputedStyle(header).opacity), inert: header.inert };
+          });
+          fade.push(state);
+          if (fraction === .5) await page.screenshot({ path: path.join(dir, "header-half-new.png") });
+          if (fraction === 1) await page.screenshot({ path: path.join(dir, "header-faded-new.png") });
+        }
+        assert.equal(fade[0].opacity, 1);
+        assert.ok(Math.abs(fade[1].opacity - .5) < .03, "Header is half faded at half scroll progress");
+        assert.ok(Math.abs(fade[1].top + fade[1].height * .25) < 1, "Header moves at half the page scroll speed");
+        assert.equal(fade[2].opacity, 0);
+        assert.ok(Math.abs(fade[2].top + fade[2].height * .5) < 1, "Header disappears after moving half its height");
+        assert.equal(fade[2].inert, true, "Invisible navigation cannot receive focus");
+        assert.equal(fade[3].opacity, 1);
+        assert.equal(fade[3].inert, false);
+        fs.writeFileSync(path.join(dir, "header-fade-checks.json"), JSON.stringify(fade, null, 2));
         assert.equal(await mainNav.getByRole("link").count(), 3);
         assert.equal(await mainNav.getByRole("link", { name: "Developers", exact: true }).getAttribute("href"), "/docs/api");
         assert.equal(await mainNav.getByRole("link", { name: "iOS App", exact: true }).getAttribute("href"), "https://apps.apple.com/us/app/findez-ai/id6760401697");
