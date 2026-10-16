@@ -1,5 +1,19 @@
 # Active work
 
+## October 15 approved Lab homepage publication
+
+Published at `/` on PR #83, runtime `4caa38c`, build
+`nGSlTwykEqoUG8MlgI06u`. Retains only Developers, iOS App and session-aware
+Get started/Dashboard in the header, and all six footer destinations at the
+bottom. The header moves at half scroll speed and smoothly fades out after
+moving half its height, restoring on return to the top. Hidden links are inert;
+reduced motion uses normal page scrolling. The announcement banner is removed.
+288 web tests, TypeScript, changed-file lint and production build pass. Desktop
+and 390px checks verify retained links, no overflow/errors, scrolling header,
+waitlist confirmation-only behavior and reduced motion. Live public/protected
+routes, assets and backend health pass. `/lab` remains the original noindex
+preview. Backend/mobile/database unchanged. See CURRENT_STATE.md for rollback.
+
 ## October 15 isolated Lab landing preview
 
 Completed on `feat/landing-lab-20261015`, based on `2d8d3f7`. Approved ZIP
@@ -11,7 +25,7 @@ confirmation-only with no API request. Production build, TypeScript, lint and
 geometry and only hero drift plus a few phone-frame raster edge pixels remaining.
 No console errors or horizontal overflow. See
 `frontend/design/landing-lab/VERIFICATION.md` for files, receipts and preview details.
-Homepage replacement awaits Tanya's review. Backend/mobile unchanged.
+Tanya subsequently approved homepage publication as recorded above.
 
 ## October 15 workspace hub and discoverable inventory directory
 

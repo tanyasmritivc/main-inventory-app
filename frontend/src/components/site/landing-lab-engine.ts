@@ -227,7 +227,9 @@ class LabEngine {
   gliding = false;
   cleanups: (() => void)[] = [];
   bindings: Binding[] = [];
+  header: HTMLElement | null;
   constructor(private root: HTMLElement) {
+    this.header = root.querySelector<HTMLElement>(".fzl-scroll-header");
     this.onScroll = this.onScroll.bind(this);
     this.onWheel = this.onWheel.bind(this);
     this.glide = this.glide.bind(this);
@@ -430,6 +432,15 @@ class LabEngine {
       this.raf = 0;
       const H = window.innerHeight || 900, W = window.innerWidth || 1440;
       const c = (v: number) => Math.max(0, Math.min(1, v));
+      if (this.header) {
+        const distance = Math.min(Math.max(0, window.scrollY), this.header.offsetHeight);
+        const progress = c(distance / Math.max(1, this.header.offsetHeight));
+        // Counter half the normal scroll distance, fading before the header leaves.
+        this.header.style.transform = this.reduce ? "" : `translate3d(0,${distance * .5}px,0)`;
+        this.header.style.opacity = this.reduce ? "" : String(1 - progress * progress * (3 - 2 * progress));
+        this.header.inert = !this.reduce && progress === 1;
+        this.header.style.pointerEvents = this.header.inert ? "none" : "";
+      }
       const r = (id: string) => { const el = this.root.querySelector<HTMLElement>(`#${id}`); return el ? el.getBoundingClientRect() : null; };
       // Reduced motion uses the prototype finished state without pinned travel.
       if (this.reduce) { this.setState({ W, H, still: true, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 1, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1, askOn: true, phase: "hold", qn: 999, an: 999, mk: {}, gx: 0 }); return; }

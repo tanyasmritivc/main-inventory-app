@@ -4,6 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
 import { initLandingLab, landingLabValues } from "./landing-lab-engine";
+import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
 
 // Convert the prototype's static style declarations for the initial React render.
@@ -15,17 +16,25 @@ function css(text: string): CSSProperties {
   })) as CSSProperties;
 }
 const v = landingLabValues();
-export function LandingLab({ className = "" }: { className?: string }) {
+function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
+  const signedIn = useMarketingSession(initialSignedIn);
+  return <nav className="fzl-site-actions" aria-label="Main navigation">
+    <a href="/docs/api">Developers</a>
+    <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
+    <a href={signedIn ? "/home" : "/signup"} className="btn fzl-site-cta"><span>{signedIn ? "Dashboard" : "Get started"}</span><span aria-hidden="true">&#8599;</span></a>
+  </nav>;
+}
+export function LandingLab({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
   }, []);
   return (<><div style={css("background:#FFF;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${className}`} ref={rootRef}>
-<div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>
-<div style={css("position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)")}>
-<header className="wrap" style={css("height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
+{!siteNavigation && <div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>}
+<div className={siteNavigation ? "fzl-scroll-header" : undefined} style={css(`${siteNavigation ? "position:relative" : "position:sticky;top:0"};z-index:50;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)`)}>
+<header className={`wrap${siteNavigation ? " fzl-site-header" : ""}`} style={css("height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>
 <a href="#" aria-label="FindEZ home" style={css("display:flex;align-items:center;text-decoration:none;margin-left:-8px")}><svg viewBox="0 0 291.67 96" role="img" aria-label="FindEZ" style={css("height:34px;width:auto;display:block")}><path d="M25.25 40.75H55.25V70.75" stroke="#111112" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><path d="M50.25 30.75H65.25V45.75" stroke="#E8590C" strokeWidth="11.0" fill="none" strokeLinejoin="miter" strokeLinecap="butt"></path><g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)"><path d="M579.0 -647.0V-729.0H90.0V0.0H183.0V-332.0H531.0V-414.0H183.0V-647.0Z" fill="#111112"></path><path d="M719.0 0.0V-524.0H636.0V0.0ZM730.0 -603.0V-707.0H626.0V-603.0Z" fill="#111112"></path><path d="M1230.0 0.0V-396.0C1230.0 -483.0 1165.0 -539.0 1064.0 -539.0C986.0 -539.0 936.0 -509.0 890.0 -436.0V-524.0H813.0V0.0H896.0V-289.0C896.0 -396.0 954.0 -466.0 1039.0 -466.0C1105.0 -466.0 1147.0 -426.0 1147.0 -363.0V0.0Z" fill="#111112"></path><path d="M1749.0 0.0V-729.0H1666.0V-458.0C1631.0 -511.0 1575.0 -539.0 1505.0 -539.0C1369.0 -539.0 1280.0 -434.0 1280.0 -267.0C1280.0 -90.0 1367.0 15.0 1508.0 15.0C1580.0 15.0 1630.0 -12.0 1675.0 -77.0V0.0ZM1666.0 -260.0C1666.0 -139.0 1608.0 -63.0 1520.0 -63.0C1428.0 -63.0 1367.0 -140.0 1367.0 -262.0C1367.0 -384.0 1428.0 -461.0 1519.0 -461.0C1609.0 -461.0 1666.0 -381.0 1666.0 -260.0Z" fill="#111112"></path><path d="M2378.0 0.0V-82.0H1948.0V-332.0H2345.0V-414.0H1948.0V-647.0H2360.0V-729.0H1855.0V0.0Z" fill="#E8590C"></path><path d="M2970.0 0.0V-82.0H2532.0L2968.0 -645.0V-729.0H2443.0V-647.0H2853.0L2415.0 -82.0V0.0Z" fill="#E8590C"></path></g></svg></a>
-<div style={css("display:flex;gap:8px;align-items:center")}><a href="/signin" style={css("font-size:14px;color:#8C8C8C;text-decoration:none;padding:8px 14px;border:1px solid #E5E5E5;border-radius:8px")}>{"Log in"}</a><a href="/signup" className="btn" style={css("background:#000;color:#FFF;padding:9px 14px;font-size:14px")}>{"Get started"}</a></div>
+{siteNavigation ? <SiteActions initialSignedIn={initialSignedIn} /> : <div style={css("display:flex;gap:8px;align-items:center")}><a href="/signin" style={css("font-size:14px;color:#8C8C8C;text-decoration:none;padding:8px 14px;border:1px solid #E5E5E5;border-radius:8px")}>{"Log in"}</a><a href="/signup" className="btn" style={css("background:#000;color:#FFF;padding:9px 14px;font-size:14px")}>{"Get started"}</a></div>}
 </header>
 <div style={css(v.progBar)} data-lab-style="progBar"></div>
 </div>
@@ -283,7 +292,14 @@ export function LandingLab({ className = "" }: { className?: string }) {
 {v.letters.map((L, i) => <Fragment key={i}><path d={L.d} data-lab-d={`letters.${i}.d`} fill={L.fill} data-lab-fill={`letters.${i}.fill`} style={css(L.style)} data-lab-style={`letters.${i}.style`} data-lab-row={`letters.${i}`}></path></Fragment>)}
 </g>
 </svg>
-<div className="mono" style={css("display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E5E5E5;padding-top:16px;color:#8C8C8C")}><span>{"\u00a9 2026 AI Robots Inc."}</span><span>{"info@findez.ai"}</span></div>
+{siteNavigation ? <div className="fzl-site-footer">
+  <span>{"\u00a9 2026 AI Robots Inc."}</span>
+  <nav aria-label="Footer navigation">
+    <a href="/pricing">Plans</a><a href="/docs/api">Developers</a>
+    <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
+    <a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:info@findez.ai">Contact</a>
+  </nav>
+</div> : <div className="mono" style={css("display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E5E5E5;padding-top:16px;color:#8C8C8C")}><span>{"\u00a9 2026 AI Robots Inc."}</span><span>{"info@findez.ai"}</span></div>}
 </div>
 </footer>
 </div>
