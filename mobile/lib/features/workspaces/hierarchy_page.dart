@@ -15,6 +15,7 @@ import '../profile/profile_page.dart';
 import '../teams/team_board_page.dart';
 import '../teams/team_documents_page.dart';
 import 'invitation_page.dart';
+import 'place_ui.dart';
 
 List<Map<String, dynamic>> rows(Object? value) => (value as List? ?? [])
     .map((row) => Map<String, dynamic>.from(row as Map))
@@ -31,6 +32,8 @@ typedef OpenInventory =
 
 enum HierarchyLevel { organizations, organization, workspace, inventory }
 
+enum HierarchyPanel { people, activity }
+
 /// Phone navigation uses focused lists; it does not reproduce the web sidebar.
 class HierarchyPage extends StatefulWidget {
   const HierarchyPage({
@@ -42,12 +45,16 @@ class HierarchyPage extends StatefulWidget {
     this.name,
     this.organizationId,
     this.onClose,
+    this.panel,
+    this.focusSearch = false,
   });
   final ApiClient api;
   final VoidCallback? onClose;
   final OpenInventory onOpenInventory;
   final HierarchyLevel level;
   final String? id, name, organizationId;
+  final HierarchyPanel? panel;
+  final bool focusSearch;
   @override
   State<HierarchyPage> createState() => _HierarchyPageState();
 }
@@ -785,6 +792,71 @@ class _HierarchyPageState extends State<HierarchyPage>
 
   List<Widget> _contents() {
     if (_data == null) return [];
+    if (_workspace && widget.panel == HierarchyPanel.activity) {
+      return _history();
+    }
+    if (_workspace && widget.panel == HierarchyPanel.people) {
+      return [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: PlaceCardList(
+            children: [
+              for (final (index, member) in rows(
+                _data?['members'],
+              ).where((m) => m['role'] != 'none').indexed)
+                PlaceRow(
+                  title: member['display_name']?.toString() ?? 'Member',
+                  leading: PlaceAvatar(
+                    member['display_name']?.toString() ?? 'Member',
+                    current: member['user_id'] == widget.api.accountId,
+                    index: index,
+                  ),
+                  trailing: RoleTag(
+                    membershipRoleLabel(member['role'].toString()),
+                  ),
+                  onTap:
+                      _manager &&
+                          member['role'] != 'owner' &&
+                          (!['admin', 'mentor'].contains(member['role']) ||
+                              _owner)
+                      ? () => _workspaceMember(member)
+                      : null,
+                ),
+            ],
+          ),
+        ),
+        if (_manager)
+          _row(
+            'Manage workspace',
+            onTap: () => _navigate(
+              HierarchyLevel.workspace,
+              widget.id!,
+              _title,
+              org: widget.organizationId,
+            ),
+          ),
+        ..._pending(),
+        if (!_owner)
+          Padding(
+            padding: const EdgeInsets.only(top: 24, bottom: 24),
+            child: TextButton(
+              onPressed: _leaveWorkspace,
+              style: TextButton.styleFrom(
+                foregroundColor: PlaceTokens.destructive,
+                minimumSize: const Size(44, 44),
+              ),
+              child: Text(
+                'Leave workspace',
+                style: PlaceTokens.text(
+                  16,
+                  weight: FontWeight.w500,
+                  color: PlaceTokens.destructive,
+                ),
+              ),
+            ),
+          ),
+      ];
+    }
     if (widget.level == HierarchyLevel.organizations) {
       final orgs = rows(
         _data?['organizations'],
@@ -997,21 +1069,6 @@ class _HierarchyPageState extends State<HierarchyPage>
               const ListTile(title: AppText('No pending requests')),
           ],
           ..._history(),
-          if (!_owner)
-            _row(
-              'Leave workspace',
-              onTap: () async {
-                if (!await _confirm(
-                  'Leave workspace?',
-                  'You will lose this workspace access. Your own physical records remain yours.',
-                )) {
-                  return;
-                }
-                if (!mounted) return;
-                final ok = await _mutate('/teams/$_id/leave', method: 'DELETE');
-                if (mounted && ok) Navigator.pop(context);
-              },
-            ),
         ],
       ];
     }
@@ -1157,13 +1214,31 @@ class _HierarchyPageState extends State<HierarchyPage>
     ),
   ];
 
+  Future<void> _leaveWorkspace() async {
+    if (!await _confirm(
+      'Leave workspace?',
+      'You will lose this workspace access. Your own physical records remain yours.',
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    final ok = await _mutate('/teams/$_id/leave', method: 'DELETE');
+    if (mounted && ok) Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       leading: widget.onClose == null
           ? null
           : CloseButton(onPressed: widget.onClose),
-      title: AppText(_title),
+      title: AppText(
+        widget.panel == HierarchyPanel.people
+            ? 'People'
+            : widget.panel == HierarchyPanel.activity
+            ? 'Activity'
+            : _title,
+      ),
       actions: [
         if (_data != null &&
             (_org && _owner ||
@@ -1202,10 +1277,11 @@ class _HierarchyPageState extends State<HierarchyPage>
                 ],
               ),
             ),
-          if (_data != null && !_inventory)
+          if (_data != null && !_inventory && widget.panel == null)
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
+                autofocus: widget.focusSearch,
                 decoration: const InputDecoration(labelText: 'Search names'),
                 onChanged: (value) => setState(() => _query = value),
               ),

@@ -1,3 +1,18 @@
+# October 16 mobile place home candidate
+
+Lane `feat/mobile-place-switcher-20261016`, based on mobile build 66. Workspace
+home and grouped place switcher replace the root Your world drilldown. Account
+preferences restore an authorized Personal/workspace context before showing home;
+API inventory sessions remain independent and unchanged. People contains Leave.
+The user-reported space-creation blank screen is reproduced and fixed by making
+inventory dialogs use their nearest navigator. 430 full Flutter tests pass;
+static analysis is clean. Four iPhone 16e fake-data screenshots and two reference
+pairs are in `design/workspace-switcher/out/`. Native preference restore survived
+terminate/relaunch. Version 1.0.8 (67) is prepared, not yet uploaded. Exact-runtime
+CI, signed package verification and TestFlight submission are the remaining
+release steps. Live auth/cross-client/email/camera/APNs acceptance remains separate.
+No web/backend/schema changes. See `design/workspace-switcher/IMPLEMENTATION.md`.
+
 # Current state
 
 ## October 16 mobile hierarchy beta uploaded

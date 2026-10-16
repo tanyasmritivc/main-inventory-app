@@ -1,3 +1,13 @@
+# October 16 mobile place versus inventory context
+
+The phone reopens on the last authorized Personal/workspace home, scoped per
+signed-in user. Opening an inventory does not replace that place preference.
+Workspace grouping derives from authorized server overviews, never names or
+client guesses. Offline restore is retryable; explicit lost access falls back to
+Personal. Keep the reference visual theme local to place home/switcher/People.
+Inventory dialogs must share their action navigator under the inventory host;
+otherwise an outer dialog can accidentally pop the inner inventory root.
+
 # Decisions
 
 ## October 16 TestFlight delivery preference

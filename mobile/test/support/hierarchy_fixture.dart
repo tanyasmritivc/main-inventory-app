@@ -14,8 +14,10 @@ class HierarchyFixture implements dio.HttpClientAdapter {
   int status = 200;
   late ApiClient api;
   String account = 'actor-a';
-  Future<void> initialize() async {
-    SharedPreferences.setMockInitialValues({});
+  Future<void> initialize({bool mockPreferences = true}) async {
+    if (mockPreferences) {
+      SharedPreferences.setMockInitialValues({});
+    }
     await Supabase.initialize(
       url: 'https://auth.test',
       anonKey: 'test',

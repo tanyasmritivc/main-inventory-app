@@ -872,3 +872,16 @@ revocation and approval replay. Rehearse migration 046 against a network-isolate
 restored production copy and compare all original public rows and policies.
 Use fictional desktop/narrow light/dark UI fixtures. Live checks are read-only;
 do not submit real access requests or alter customer visibility for QA.
+
+## Mobile workspace home and place restore
+
+Run `flutter test --no-pub --concurrency=1 --coverage` and
+`flutter analyze --no-pub` from mobile. `last_place_test.dart` verifies account
+storage, server validation, stale response/write prevention, explicit link
+overrides and revoked versus offline handling. `workspace_home_test.dart` verifies
+grouping, counts, roles, callbacks, large text and People.
+`space_creation_navigation_test.dart` reproduces the production nested-navigator
+shape and checks actual inventory-scoped requests, Create, Cancel and viewer
+restrictions. Root-only widget tests cannot detect the old dialog/root pop bug.
+See `design/workspace-switcher/IMPLEMENTATION.md` for simulator evidence and
+physical-device acceptance. Fake API screenshots do not prove production sync.

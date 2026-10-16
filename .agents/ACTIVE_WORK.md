@@ -9,6 +9,9 @@ authorized restoration. Reuse current APIs, membership controls and inventory
 session boundaries; preserve inventory, Tasks and Files screens. Move leaving to
 People. Reference assets are in `design/workspace-switcher/`. Tests, iPhone 16e
 comparison screenshots and a subsequent checked TestFlight upload are required.
+430 full Flutter tests and analysis pass. The blank space-creation screen is
+reproduced and fixed at the nested dialog navigator. Native visual comparisons
+and cold restore pass with isolated data. Build 67 awaits CI/package/upload.
 No web/backend/schema publication. Xcode regenerable caches were cleared with
 approval to recover native-build space; signed release artifacts are preserved.
 

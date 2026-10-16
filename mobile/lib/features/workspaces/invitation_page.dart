@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_text.dart';
+import 'inventory_context_host.dart';
 
 /// Preview is read-only. Only the explicit Accept button grants membership.
 class AccessInvitationPage extends StatefulWidget {
@@ -106,6 +107,34 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
     }
   }
 
+  void _done() {
+    final accepted = _invitation!['status'] == 'accepted';
+    final workspace =
+        (_invitation!['team_id'] ??
+                (_invitation!['scope'] == 'workspace'
+                    ? _invitation!['resource_id']
+                    : null))
+            ?.toString();
+    if (widget.returnDecision) {
+      Navigator.pop(context, <String, dynamic>{
+        'accepted': accepted,
+        if (accepted && workspace != null) 'workspace_id': workspace,
+      });
+    } else if (accepted && workspace != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => InventoryContextHost(
+            api: widget.api,
+            initialWorkspaceId: workspace,
+          ),
+        ),
+      );
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const AppText('Invitation')),
@@ -146,14 +175,7 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
             ),
           ] else ...[
             const SizedBox(height: 20),
-            TextButton(
-              onPressed: () => widget.returnDecision
-                  ? Navigator.pop(context, <String, dynamic>{
-                      'accepted': _invitation!['status'] == 'accepted',
-                    })
-                  : Navigator.pop(context),
-              child: const AppText('Done'),
-            ),
+            TextButton(onPressed: _done, child: const AppText('Done')),
           ],
         ],
       ],

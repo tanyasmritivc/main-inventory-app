@@ -58,7 +58,9 @@ class LastPlaceStore {
     final previous = _writes[userId] ?? Future<void>.value();
     final next = previous.then((_) => action(), onError: (_) => action());
     _writes[userId] = next;
-    return next;
+    return next.whenComplete(() {
+      if (identical(_writes[userId], next)) _writes.remove(userId);
+    });
   }
 
   Future<LastPlace> read() async {

@@ -20,7 +20,7 @@ import 'package:mobile/features/sharing/invitation_host.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/features/workspaces/inventory_context_host.dart';
-import 'package:mobile/features/workspaces/hierarchy_page.dart';
+import 'package:mobile/features/workspaces/workspace_home.dart';
 
 class _LaunchAdapter implements dio.HttpClientAdapter {
   @override
@@ -46,6 +46,21 @@ class _LaunchAdapter implements dio.HttpClientAdapter {
                 'role': 'owner',
               },
             },
+          }
+        : path == '/inventory-workspaces/personal/directory'
+        ? {
+            'inventories': [
+              {
+                'inventory_id': 'personal-inventory',
+                'workspace_id': 'personal',
+                'name': 'My inventory',
+                'role': 'owner',
+                'can_open': true,
+                'can_edit': true,
+                'item_count': 0,
+              },
+            ],
+            'next_offset': null,
           }
         : path.endsWith('/conversations') || path == '/sharing/joined'
         ? []
@@ -115,6 +130,15 @@ Widget _gate(_Api api, {Key? key}) => MaterialApp(
 );
 
 void main() {
+  Future<void> settleHome(WidgetTester tester) async {
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 2)),
+      );
+    }
+  }
+
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -228,16 +252,16 @@ void main() {
   });
 
   testWidgets(
-    'returning authenticated users keep their session and choose an inventory',
+    'returning authenticated users keep their session and open their place home',
     (tester) async {
       await Supabase.instance.client.auth.signInWithPassword(
         email: 'test@example.test',
         password: 'test-password',
       );
       await tester.pumpWidget(_gate(_Api()));
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       expect(find.byType(InventoryContextHost), findsOneWidget);
-      expect(find.byType(HierarchyPage), findsOneWidget);
+      expect(find.byType(WorkspaceHome), findsOneWidget);
       expect(find.byType(MainShell), findsNothing);
       expect(find.byType(OnboardingPage), findsNothing);
       expect(find.byType(AuthPage), findsNothing);
@@ -265,7 +289,9 @@ void main() {
         'personal-inventory',
       );
       await tester.pumpWidget(_gate(_Api()));
-      await tester.pumpAndSettle();
+      await settleHome(tester);
+      await tester.tap(find.text('Open'));
+      await settleHome(tester);
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
@@ -294,7 +320,10 @@ void main() {
       OnboardingPrefs.justSignedUp = true;
       await OnboardingPrefs.setPostSignupPending(true);
       await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
-      await tester.pumpAndSettle();
+      await settleHome(tester);
+      expect(find.byType(WorkspaceHome), findsOneWidget);
+      await tester.tap(find.text('Open'));
+      await settleHome(tester);
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }

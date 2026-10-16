@@ -11,6 +11,33 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final fixture = HierarchyFixture();
   setUpAll(fixture.initialize);
+  test(
+    'workspace links accept only registered FindEZ origins and notifications bind recipient',
+    () {
+      expect(
+        placeFromLink(Uri.parse('https://www.findez.ai/workspaces/a')),
+        const LastPlace.workspace('a'),
+      );
+      expect(
+        placeFromLink(Uri.parse('https://findez.ai.evil.test/workspaces/a')),
+        null,
+      );
+      expect(placeFromLink(Uri.parse('http://findez.ai/workspaces/a')), null);
+      expect(
+        placeFromNotification({
+          'workspace_id': 'a',
+          'recipient_user_id': 'other',
+        }, 'actor-a'),
+        null,
+      );
+      expect(
+        placeFromNotification({
+          'metadata': {'team_id': 'a'},
+        }, 'actor-a'),
+        const LastPlace.workspace('a'),
+      );
+    },
+  );
   tearDownAll(() => Supabase.instance.dispose());
   final sessions = <PlaceSession>[];
   PlaceSession session() {
