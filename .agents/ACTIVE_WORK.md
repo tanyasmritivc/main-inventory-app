@@ -21,8 +21,10 @@ and Search routes reachable. Those routes now use the place styling, and opening
 a workspace from an organization returns to the home. Search shows only scoped
 inventories. Production-connected iPhone 16e simulator navigation confirms the
 new flow, real Tasks/Files loading and Space Create/Cancel without a blank page.
-434 full Flutter tests and 29 focused tests pass; analysis is clean. Build 68
-archive, exact-runtime CI and TestFlight delivery remain in progress.
+434 full Flutter tests and 29 focused tests pass; analysis and all five
+exact-runtime CI jobs are clean. Apple validated and acknowledged signed
+TestFlight build 68. Processing and tester availability are pending; no wait
+per Tanya's request. The public App Store version was unchanged.
 
 ## October 16 mobile hierarchy TestFlight delivery
 

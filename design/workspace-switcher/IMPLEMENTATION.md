@@ -131,3 +131,27 @@ callback. Its Tasks/Files error screen is not a production API result. Functiona
 acceptance must use `lib/main.dart` with the authenticated production client, not
 `tool/place_preview.dart`. The signed IPA was explicitly built and verified with
 `lib/main.dart` and contains neither fake API origin nor preview route markers.
+
+## Organization and workspace follow-up
+
+Runtime `1345ba7` in the same PR corrects the old organization, workspace
+management and Search routes left in build 67. Organization and workspace
+settings use the place cards and typography; Search shows only the selected
+workspace's inventories. Selecting a workspace from its organization opens the
+workspace home. The switcher organization heading is a semantic button with a
+44-point touch target. The production-connected iPhone 16e simulator confirmed
+the new screens, real Tasks/Files responses and Space Create/Cancel without a
+blank page. No customer data was written for QA.
+
+All 434 Flutter tests and analysis pass. Exact-runtime CI run `38981201657`
+passes all five jobs, including 434 Flutter, 565 backend and 296 web tests.
+The signed 1.0.8 (68) IPA passed strict package checks for both signatures,
+production configuration, bundled fonts and 31 iOS-device executables. Apple
+validated it and acknowledged upload
+`72770f34-21ab-4514-bcc8-7b22ac97b299`. Processing and tester availability
+remain pending without a wait. IPA SHA-256:
+`a63e0a051220bf305a3813f8e45a87242478cc3a2b029c9c63cffed506471e4d`.
+Archive, IPA and receipts are preserved in
+`Documents/FindEZ/AppStore/1.0.8-build68/`. Physical iPhone checks, real email,
+APNs and cross-client record creation/refresh remain the device acceptance plan
+above.

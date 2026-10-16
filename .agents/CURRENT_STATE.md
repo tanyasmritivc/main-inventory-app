@@ -8,8 +8,16 @@ confirmed the new organization and Search screens, workspace selection, real
 Tasks/Files responses, and Space Create/Cancel without blank navigation. No
 customer data was written for QA. 434 Flutter tests pass with coverage; 29
 focused organization/home/hierarchy tests pass after the final accessibility
-change; static analysis is clean. Exact-runtime CI and signed TestFlight delivery
-are pending. Version is 1.0.8 (68).
+change; static analysis is clean. All five exact-runtime CI jobs pass on
+`1345ba7` (run `38981201657`), including 434 Flutter, 565 backend and 296 web
+tests. The signed 1.0.8 (68) IPA passed Apple validation and Apple acknowledged
+upload `72770f34-21ab-4514-bcc8-7b22ac97b299`. Strict package checks verified
+the production entry/configuration, both signatures, fonts and 31 iOS-device
+executables. IPA SHA-256:
+`a63e0a051220bf305a3813f8e45a87242478cc3a2b029c9c63cffed506471e4d`.
+Receipts, IPA and archive are in `Documents/FindEZ/AppStore/1.0.8-build68`.
+Apple processing and tester availability are pending; no wait per Tanya's request.
+No public App Store submission or backend/web/schema change.
 
 # October 16 mobile place home delivered to TestFlight
 
