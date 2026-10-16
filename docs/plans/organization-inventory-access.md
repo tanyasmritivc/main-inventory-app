@@ -56,3 +56,30 @@ Client reviewers cannot discover internal inventories, metrics, documents or
 activity. A robotics member can edit Components but only view Tools. Revocation
 applies to direct IDs, old Team/Space paths, cached searches and database access.
 Move and quantity changes retain actor/timestamp; private chats remain private.
+
+## Delivered and verified
+
+Released in PR #77, runtime `5462d87`, migration 044. All six execution steps
+completed. Existing independent workspaces can be deliberately attached to an
+organization only when their assigned members already belong to it. Physical
+locations retain one identity even when attached to several inventory Spaces.
+
+516 backend tests plus six subtests, 243 web tests, all five CI checks, production
+build, responsive Safari previews and live signed-in navigation pass. The Acme
+and FTC fixtures exercise actual PostgreSQL policies, forged identities, legacy
+writes and revocation. A restored production copy and the locked live migration
+both preserve every original public-table value and existing policy. Read-only
+checks verify 25 existing inventory scopes without modifying customer records.
+
+## Remaining boundaries
+
+- Membership assignment requires an existing FindEZ account; automatic invitation
+  email delivery is not implemented here.
+- Organization billing and physical-tree reparenting remain separate workflows.
+  Item moves continue to record location evidence without claiming confirmation.
+- Existing workspaces stay independent until explicitly attached; no automatic
+  organization inference or access tightening was performed.
+- Mobile retains its current navigation; these administration pages are web-only.
+- Large deployments with thousands of restricted inventories need separate load
+  testing. Legacy-route exclusion filters currently grow with inventory policies;
+  large item collections are a different scale dimension.

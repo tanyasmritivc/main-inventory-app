@@ -1,15 +1,35 @@
 # Current state
 
-## October 15 organization/access candidate
+## October 15 organization and inventory access published
 
-Branch `feat/organization-inventory-access-20261015` implements organizations,
-workspace overviews, independent inventory roles, shared physical locations and
-scoped audit history. Existing data remains in its current inventories with legacy
-access. Restored-copy migration rehearsal preserves original public-table values,
-original policies and all legacy access. Production is not changed yet.
-515 backend tests plus six subtests, 243 web tests and real PostgreSQL Acme/FTC
-scenarios pass. Additional queued-notification regression and final responsive
-layout checks are in progress. Release receipts will supersede this candidate note.
+PR #77 runtime `5462d87010f4bc62baf57c5adc21bd8fc8574e15` and migration 044
+are live on backend and web. Website build `9OGfGZwNlW6RtjMWJf1ee` runs from
+`/home/ubuntu/findez-web-releases/web-organization-access-20261015/frontend`.
+Entry: `/organizations`; Personal and independent existing workspaces remain
+available. Organizations contain assigned project workspaces; inventories have
+explicit inherited/restricted access, member overrides, shared physical-location
+attachments and scoped audit history. Existing workspace roles remain `legacy`
+until an administrator explicitly saves a new access policy. No demo rows or
+inferred organization associations were added to production.
+
+Validation: 516 backend tests plus six subtests, 243 web tests, TypeScript,
+changed-file ESLint, production webpack build and all five CI jobs
+(`38828116889`) pass. PostgreSQL fixtures cover Acme's 12/6-member client project,
+25-member FTC robotics, differing inventory roles, direct DB/legacy-route denial,
+revocation, shared locations and recorded-location audit evidence. Restored-copy
+rehearsal and locked production migration compare all original public-table values
+and policies; all preserved. Live checks: 11 public pages, 20 protected routes,
+seven API authentication guards and read-only queries across 25 existing inventories.
+Signed-in Safari verified Organizations → existing FTC workspace → its 60-item
+inventory → Access and history. Actual-component light/dark 390px previews pass.
+
+Receipts/backups: `/home/ubuntu/findez-organization-access-20261015/` and local
+`Documents/FindEZ/Releases/organization-access-2026-10-15/`. Runtime rollback uses
+`runtime-backup`; web rollback uses `previous-web-rebuild.conf`. Additive schema
+can remain during a runtime rollback because original access is preserved.
+Existing-account member assignment works; invitation email delivery, organization
+billing and physical-tree reparenting are not part of this release. Mobile keeps
+its existing navigation, with server-side restrictions also protecting old routes.
 
 ## October 15 centered Ask page published
 

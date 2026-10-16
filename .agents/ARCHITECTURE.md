@@ -2,7 +2,7 @@
 
 This describes the current release foundation. Planned systems are labeled.
 
-## Organization and inventory access (candidate, October 15)
+## Organization and inventory access (released October 15)
 
 Migration 044 adds optional organizations above existing Teams/workspaces, explicit
 inventory access and a shared physical-location tree. See

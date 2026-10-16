@@ -2,11 +2,12 @@
 
 ## October 15 organization and inventory access
 
-Active lane `feat/organization-inventory-access-20261015` owns backend/schema/web
-implementation of the user-authorized hierarchy. Plan: `docs/plans/organization-inventory-access.md`.
-Reuse Teams as workspaces, add optional organizations, explicit inventory roles,
-scoped overviews and shared physical-location references. Preserve existing data
-and access; validate migration and legacy bypasses before production changes.
+Completed and published PR #77, runtime `5462d87`, migration 044. Organizations,
+workspace overviews, inventory-specific roles, physical-location attachments and
+audit history are live. Original data and legacy permissions preserved. All five
+CI gates, 516 backend tests, 243 web tests, restored-copy migration rehearsal,
+production build and signed-in Safari checks pass. See CURRENT_STATE.md and
+`docs/plans/organization-inventory-access.md` for scope and remaining limitations.
 
 ## October 15 centered Ask FindEZ
 
