@@ -76,7 +76,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
         </form>
         <p className="workspace-muted">{data.inventory?.access_mode === "legacy" ? "Existing workspace roles are currently inherited. Saving applies the selected default." : "Workspace owners and admins retain administration. Individual assignments override the default."}</p>
       </section>}
-      {show("policy") && inventoryId && !manager && <p className="workspace-muted">{data.inventory?.access_mode === "restricted" ? "Access is assigned individually." : "Access follows this workspace's permissions."}</p>}
+      {show("policy") && inventoryId && !manager && <p className="workspace-muted">{!data.inventory?.team_id ? "This inventory is private to you." : data.inventory.access_mode === "restricted" ? "Access is assigned individually." : "Access follows this workspace's permissions."}</p>}
       {show("people") && <section>{section === "all" && <h2>{inventoryId ? "People with access" : "Workspace members"}</h2>}
         <div className="directory-rows">{data.members.filter((m) => m.role !== "none").map((member) => <div className="directory-row" key={member.user_id}>
           <span>{member.display_name === "Member" ? `Member ${member.user_id.slice(0, 8)}` : member.display_name}</span><span>{roleName(member.role)}{inventoryId && member.source === "workspace" ? " · inherited" : ""}</span>
@@ -99,7 +99,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
           <button className="product-button" disabled={busy || !name.trim()}>Add location</button>
         </form>}
       </section>}
-      {show("locations") && !manager && <p className="workspace-muted">Workspace owners and admins manage shared locations. Open Spaces to view the locations in this inventory.</p>}
+      {show("locations") && !manager && <p className="workspace-muted">{inventoryId && !data.inventory?.team_id ? "Manage the locations in this inventory in Spaces." : "Workspace owners and admins manage shared locations."}</p>}
       {show("activity") && <section>{section === "all" && <h2>History</h2>}{activity.length ? <div className="directory-rows">{activity.map((entry) => <div className="collaboration-event" key={entry.audit_id}>
         <span>{entry.action.replaceAll("_", " ")}</span><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time>
         <small className="workspace-muted">By {data.members.find((m) => m.user_id === entry.actor_id)?.display_name || entry.actor_id?.slice(0, 8) || "Unknown"}</small>

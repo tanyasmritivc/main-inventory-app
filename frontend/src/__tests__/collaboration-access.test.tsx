@@ -98,3 +98,13 @@ test("individual workspace sections avoid loading unrelated history",async()=>{
  expect(screen.queryByRole("heading",{name:"History"})).toBeNull();
  expect(jest.mocked(accountRequest).mock.calls.some((call)=>call[1].endsWith("/audit"))).toBe(false);
 });
+
+test("personal inventory access stays private without workspace administration instructions",async()=>{
+ jest.mocked(accountRequest).mockResolvedValue({inventory:{name:"Personal",team_id:null,can_manage:true,access_mode:"legacy"},members:[{user_id:"owner",display_name:"You",role:"owner"}],locations:[]});
+ const view=render(<CollaborationPanel inventoryId="personal" section="policy"/>);
+ await screen.findByText("This inventory is private to you.");
+ expect(screen.queryByRole("button",{name:"Save access"})).toBeNull();
+ view.rerender(<CollaborationPanel inventoryId="personal" section="locations"/>);
+ await screen.findByText("Manage the locations in this inventory in Spaces.");
+ expect(screen.queryByText(/Workspace owners/)).toBeNull();
+});

@@ -11,7 +11,7 @@ open the selected dashboard. Existing team board/files are reused as scoped pane
 Inventory access settings are separated into People, Permissions, Locations and
 History. Original backend authorization and APIs are unchanged.
 
-252 web tests, TypeScript and changed-file lint pass. Desktop and 390px actual-
+253 web tests, TypeScript and changed-file lint pass. Desktop and 390px actual-
 component Safari previews show the context navigation and choice pages in both
 themes. Production build and all-five CI gates are pending before publication.
 
