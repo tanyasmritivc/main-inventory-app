@@ -1,6 +1,8 @@
 /** @jest-environment jsdom */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { mockBrowserTopLayer } from "./mock-browser-top-layer";
+mockBrowserTopLayer();
 import { CollaborationPanel, locationPath } from "@/components/site/collaboration-panel";
 import { OrganizationDirectory } from "@/components/site/organization-directory";
 import { accountRequest } from "@/lib/account-request";
@@ -120,7 +122,9 @@ test("organization owners rename from cards and failed saves retain the draft",a
   return {organizations:[{organization_id:"acme",name:name==="retry"?"Acme":name,role:"owner",owner_user_id:"owner"}]} as never;
  });
  render(<OrganizationDirectory/>);
- await userEvent.click(await screen.findByRole("button",{name:"Rename Acme"}));
+ const orgTrigger=await screen.findByRole("button",{name:"Organization actions for Acme"});
+ await userEvent.click(orgTrigger);
+ await userEvent.click(await screen.findByRole("menuitem",{name:"Rename"}));
  const input=screen.getByRole("textbox",{name:"Name"});
  expect((input as HTMLInputElement).value).toBe("Acme");
  await userEvent.clear(input);await userEvent.type(input,"Acme Company");

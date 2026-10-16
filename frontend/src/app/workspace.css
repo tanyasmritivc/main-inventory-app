@@ -1826,6 +1826,13 @@ html.dark .app-frame .ask-workspace {
 .app-frame .context-card-link { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 10px; text-decoration: none; padding: 24px; }
 .app-frame .context-inventory-card { padding: 0; }
 .app-frame .context-inventory-card .directory-rename { align-self: flex-end; margin: -8px 18px 12px; padding: 4px 6px; }
+.app-frame .organization-actions-trigger { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; padding:0; border:0; border-radius:8px; background:transparent; color:var(--app-muted); cursor:pointer; }
+.app-frame .organization-actions-trigger:hover, .app-frame .organization-actions-trigger[data-state="open"] { background:var(--app-surface-2); color:var(--app-text); }
+.app-frame .organization-actions-trigger:focus-visible { outline:2px solid var(--app-text); outline-offset:2px; }
+.app-frame .context-organization-card .organization-actions { position:absolute; top:12px; right:12px; }
+.app-frame .context-organization-card .context-card-link { padding-right:64px; }
+.workspace-dialog .organization-delete-submit { color:var(--danger-ink,#b42318)!important; }
+.organization-actions-menu [data-variant="destructive"] { color:var(--danger-ink,#b42318); }
 .app-frame .context-people-list { border-top: 1px solid var(--app-border); }
 .app-frame .context-person { display: flex; align-items: center; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--app-border); }
 .app-frame .context-person strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }

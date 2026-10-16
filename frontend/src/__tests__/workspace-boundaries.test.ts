@@ -102,6 +102,6 @@ test("new visual rules stay scoped to the app or interior-only overlays", () => 
   for (const selectors of rules)
     for (const selector of selectors.split(/,(?![^()]*\))/))
       expect(selector.trim()).toMatch(
-        /(?:app-frame|workspace-dialog|command-panel|interior-loading|invitation-review)/,
+        /(?:app-frame|workspace-dialog|command-panel|interior-loading|invitation-review|organization-actions-menu)/,
       );
 });

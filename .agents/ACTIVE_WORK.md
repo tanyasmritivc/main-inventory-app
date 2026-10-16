@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 organization actions menu
+
+Implementing on `feat/organization-actions-menu-20261015`, based on `34c11d4`.
+Tanya requested a compact three-dot organization menu and explicitly chose Delete
+only for organizations with no workspaces. Owner-only menus replace Rename on
+cards and selected organization pages. Rename remains unchanged; deletion needs
+the exact current name and audited transactional migration 047, with all attached
+workspaces protected. Production schema constraints verified read-only. Backend,
+web and isolated SQL tests are in progress; no customer records changed for QA.
+
 ## October 15 approved Lab homepage publication
 
 Published at `/` on PR #83, runtime `4caa38c`, build
