@@ -29,7 +29,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
   }, []);
-  return (<><div style={css("background:#FFF;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${className}`} ref={rootRef}>
+  return (<><div style={css("background:#FFF;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${siteNavigation ? "fzl-site-page " : ""}${className}`} ref={rootRef}>
 {!siteNavigation && <div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>}
 <div className={siteNavigation ? "fzl-scroll-header" : undefined} style={css(`${siteNavigation ? "position:relative" : "position:sticky;top:0"};z-index:50;background:rgba(255,255,255,.96);box-shadow:0 1px 0 rgba(0,0,0,.06)`)}>
 <header className={`wrap${siteNavigation ? " fzl-site-header" : ""}`} style={css("height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px")}>

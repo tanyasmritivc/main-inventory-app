@@ -18,6 +18,8 @@
 .fzLab .lede{color:#6B6B6B;font-size:17px;line-height:1.6;margin:18px 0 0;max-width:520px}
 .fzLab .split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:56px;align-items:center}
 .fzLab .float{animation:fzl-fl 6s ease-in-out infinite}
+.fzLab.fzl-site-page{animation:fzl-page-enter .7s ease-out both}
+@keyframes fzl-page-enter{from{opacity:0}to{opacity:1}}
 @keyframes fzl-fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes fzl-mq{to{transform:translateX(-50%)}}
 @keyframes fzl-mqr{from{transform:translateX(-50%)}to{transform:translateX(0)}}
@@ -33,7 +35,7 @@
 .fzLab .fz-screen{position:relative;aspect-ratio:460/999;border-radius:11.5cqw;overflow:hidden;background:#F4F1EE}
 .fzLab .fz-screen img{position:absolute;top:0;left:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:50% 0;display:block;margin:0;padding:0;border:0}
 .fzLab .inp{flex:1;min-width:0;background:none;border:0;outline:0;font:inherit}
-@media (prefers-reduced-motion:reduce){.fzLab .marq,.fzLab .float,.fzLab .caret{animation:none}}
+@media (prefers-reduced-motion:reduce){.fzLab.fzl-site-page,.fzLab .marq,.fzLab .float,.fzLab .caret{animation:none}}
 @media (max-width:860px){.fzLab .navl{display:none!important}.fzLab .split{grid-template-columns:minmax(0,1fr)!important;gap:32px}.fzLab .cols3{grid-template-columns:minmax(0,1fr)!important}.fzLab .hide-s{display:none!important}.fzLab .cols5{grid-template-columns:minmax(0,1fr)!important;gap:44px!important}}
 
 @media (prefers-reduced-motion:reduce) { .fzLab *, .fzLab *::before, .fzLab *::after { animation:none!important; transition:none!important; } }
