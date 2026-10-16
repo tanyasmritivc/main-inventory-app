@@ -1,5 +1,14 @@
 # Active work
 
+## October 16 mobile hierarchy parity
+
+Active on `feat/mobile-inventory-context-20261016` in this worktree. Mobile-only
+organization/workspace/inventory navigation, consent and membership management,
+physical locations and immutable scoped API clients. Replaces the old Teams
+shell entry while preserving backend records and personal inventory. No backend,
+web, schema, native lifecycle or production changes authorized in this lane.
+
+
 ## October 15 organization actions menu
 
 Completed and published PR #84, runtime `a21ea8d`, migration 047, build

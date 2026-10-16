@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ask_answer.dart';
+import 'inventory_context.dart';
 
 class SessionExpiredException implements Exception {
   @override
@@ -46,21 +47,49 @@ dio.MultipartFile profilePhotoMultipartFile({
 }
 
 class ApiClient {
-  ApiClient({required String baseUrl, dio.Dio? httpClient})
-    : _dio =
-          httpClient ??
-          dio.Dio(
-            dio.BaseOptions(
-              baseUrl: baseUrl,
-              connectTimeout: const Duration(seconds: 20),
-              receiveTimeout: const Duration(seconds: 30),
-            ),
-          ),
-      _teamId = null,
-      _teamSpaceId = null {
+  ApiClient({
+    required String baseUrl,
+    dio.Dio? httpClient,
+    this.inventoryContext,
+    String? boundAccount,
+    bool Function()? isCurrent,
+  }) : _dio =
+           httpClient ??
+           dio.Dio(
+             dio.BaseOptions(
+               baseUrl: baseUrl,
+               connectTimeout: const Duration(seconds: 20),
+               receiveTimeout: const Duration(seconds: 30),
+             ),
+           ),
+       _boundAccount = boundAccount ?? inventoryContext?.accountId,
+       _isCurrent = isCurrent,
+       _teamId = null,
+       _teamSpaceId = null {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
         onRequest: (options, handler) {
+          try {
+            assertCurrentContext();
+            final path = options.path;
+            if (inventoryContext != null && _inventoryRoutes.hasMatch(path)) {
+              if (!canEdit && !_readOperation(options.method, path)) {
+                throw const AskRequestException(
+                  'You have view-only access to this inventory.',
+                );
+              }
+              options.path = inventoryPath(path);
+            }
+          } catch (error) {
+            handler.reject(
+              dio.DioException(
+                requestOptions: options,
+                error: error,
+                message: error.toString(),
+              ),
+            );
+            return;
+          }
           final token =
               Supabase.instance.client.auth.currentSession?.accessToken;
           // Explicit auth options capture the account that initiated a request.
@@ -73,6 +102,20 @@ class ApiClient {
           }
           handler.next(options);
         },
+        onResponse: (response, handler) {
+          try {
+            assertCurrentContext();
+            handler.next(response);
+          } catch (error) {
+            handler.reject(
+              dio.DioException(
+                requestOptions: response.requestOptions,
+                error: error,
+                message: error.toString(),
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -83,7 +126,87 @@ class ApiClient {
     required String spaceId,
   }) : _dio = source._dio,
        _teamId = teamId,
-       _teamSpaceId = spaceId;
+       _teamSpaceId = spaceId,
+       inventoryContext = source.inventoryContext,
+       _boundAccount = source._boundAccount,
+       _isCurrent = source._isCurrent;
+
+  /// Separate interceptors keep an old upload bound to its original inventory.
+  factory ApiClient.forInventory(
+    ApiClient source,
+    InventoryContext context, {
+    required bool Function() isCurrent,
+  }) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    inventoryContext: context,
+    isCurrent: isCurrent,
+  );
+
+  factory ApiClient.forAccount(ApiClient source, String account) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    boundAccount: account,
+  );
+
+  final InventoryContext? inventoryContext;
+  final String? _boundAccount;
+  final bool Function()? _isCurrent;
+  bool get canEdit => inventoryContext?.canEdit ?? true;
+  String get cacheKey => inventoryContext == null
+      ? 'legacy'
+      : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
+  static final _inventoryRoutes = RegExp(
+    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)',
+  );
+  static bool _readOperation(String method, String path) =>
+      ['GET', 'HEAD', 'OPTIONS'].contains(method) ||
+      path.startsWith('/conversations') ||
+      [
+        '/search_items',
+        '/ai_command',
+        '/ai_photo_question',
+        '/ai_upload',
+        '/process_barcode',
+        '/barcode_lookup',
+        '/inventory/bom/analyze',
+        '/eezy/chat',
+      ].contains(path.split('?').first);
+
+  void assertCurrentContext() {
+    if ((_boundAccount != null && accountId != _boundAccount) ||
+        (_isCurrent != null && !_isCurrent())) {
+      throw const AskRequestException(
+        'The account or inventory changed. Reopen this page and try again.',
+      );
+    }
+  }
+
+  String inventoryPath(String path) {
+    assertCurrentContext();
+    return inventoryContext != null && _inventoryRoutes.hasMatch(path)
+        ? '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}$path'
+        : path;
+  }
+
+  /// Account-bound hierarchy APIs use the same JWT and server permissions as web.
+  Future<Map<String, dynamic>> collaboration(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? query,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.request<Map<String, dynamic>>(
+      path,
+      data: data,
+      queryParameters: query,
+      options: _authOptions().copyWith(method: method),
+    );
+    return response.data ?? {};
+  }
 
   final dio.Dio _dio;
   final String? _teamId;
@@ -92,6 +215,7 @@ class ApiClient {
   String? get teamId => _teamId;
 
   String _requireToken() {
+    assertCurrentContext();
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token == null || token.isEmpty) throw SessionExpiredException();
     return token;
@@ -805,7 +929,9 @@ class ApiClient {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token == null) throw StateError('Not authenticated');
 
-    final uri = Uri.parse('$baseUrl/ai_command?stream=true');
+    final uri = Uri.parse(
+      '$baseUrl${inventoryPath('/ai_command?stream=true')}',
+    );
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
     request.headers['Accept'] = 'text/event-stream';
@@ -824,7 +950,10 @@ class ApiClient {
         throw StateError('HTTP ${response.statusCode}');
       }
 
-      yield* decodeAiCommandEvents(response.stream);
+      await for (final event in decodeAiCommandEvents(response.stream)) {
+        assertCurrentContext();
+        yield event;
+      }
     } finally {
       client.close();
     }
@@ -842,7 +971,9 @@ class ApiClient {
     }
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${baseUrl.replaceFirst(RegExp(r"/$"), "")}/ai_photo_question'),
+      Uri.parse(
+        '${baseUrl.replaceFirst(RegExp(r"/$"), "")}${inventoryPath('/ai_photo_question')}',
+      ),
     );
     request.headers['Accept'] = 'text/event-stream';
     request.headers['Authorization'] = 'Bearer ${_requireToken()}';
@@ -869,7 +1000,10 @@ class ApiClient {
           _ => 'Your photo question could not be completed. Please try again.',
         });
       }
-      yield* decodeAiCommandEvents(response.stream);
+      await for (final event in decodeAiCommandEvents(response.stream)) {
+        assertCurrentContext();
+        yield event;
+      }
     } finally {
       client.close();
     }
