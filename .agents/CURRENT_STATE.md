@@ -1,17 +1,42 @@
-# October 16 mobile place home candidate
+# October 16 mobile place flow follow-up
 
-Lane `feat/mobile-place-switcher-20261016`, based on mobile build 66. Workspace
-home and grouped place switcher replace the root Your world drilldown. Account
-preferences restore an authorized Personal/workspace context before showing home;
-API inventory sessions remain independent and unchanged. People contains Leave.
-The user-reported space-creation blank screen is reproduced and fixed by making
-inventory dialogs use their nearest navigator. 430 full Flutter tests pass;
-static analysis is clean. Four iPhone 16e fake-data screenshots and two reference
-pairs are in `design/workspace-switcher/out/`. Native preference restore survived
-terminate/relaunch. Version 1.0.8 (67) is prepared, not yet uploaded. Exact-runtime
-CI, signed package verification and TestFlight submission are the remaining
-release steps. Live auth/cross-client/email/camera/APNs acceptance remains separate.
-No web/backend/schema changes. See `design/workspace-switcher/IMPLEMENTATION.md`.
+Build 67 retained old organization, workspace management and Search routes. The
+build 68 source updates organization/workspace/settings styling, returns to the
+workspace home on organization workspace selection and limits Search to the
+selected workspace's inventories. A production-connected iPhone 16e simulator
+confirmed the new organization and Search screens, workspace selection, real
+Tasks/Files responses, and Space Create/Cancel without blank navigation. No
+customer data was written for QA. 434 Flutter tests pass with coverage; 29
+focused organization/home/hierarchy tests pass after the final accessibility
+change; static analysis is clean. Exact-runtime CI and signed TestFlight delivery
+are pending. Version is 1.0.8 (68).
+
+# October 16 mobile place home delivered to TestFlight
+
+PR #87 on `feat/mobile-place-switcher-20261016`, runtime `9b66023`. Apple
+acknowledged FindEZ 1.0.8 (67), delivery
+`8b0f89b7-a938-47fd-804a-c525d6bb7964`. Apple validation passes. All five exact-runtime
+CI jobs pass: 430 mobile, 565 backend and 296 web tests, PostgreSQL permissions and
+AI connectors. Local full Flutter coverage and static analysis pass. Strict app
+and Share Extension signatures, production origins, bundled fonts, fixture
+exclusion and all 31 device-platform native executables pass. The first cached
+simulator-library package was rejected locally and never uploaded; clean rebuild
+passed. Receipts, archive, IPA, checksums and verifier are preserved in
+`Documents/FindEZ/AppStore/1.0.8-build67`. IPA SHA-256:
+`633886e4d737f8b25fe55b8364f88c4e74e48beba7e413b3e9037ea959645ffb`.
+Processing/group availability is pending; no processing wait per Tanya's request.
+No public App Store selection/submission, web/backend/schema publication or
+customer QA writes. Physical acceptance remains separate.
+
+Workspace home and grouped place switcher replace the root Your world drilldown.
+Account preferences restore authorized Personal/workspace context before home;
+API inventory sessions remain independent. People contains Leave. The reported
+blank space-creation screen is reproduced and fixed at the nested-dialog navigator.
+Four iPhone 16e fake-data screenshots and two reference pairs are in
+`design/workspace-switcher/out/`; native preference restore survived relaunch.
+The isolated simulator visual entry intentionally does not serve real Tasks,
+Files or inventory content; it must not be mistaken for functional acceptance.
+See `design/workspace-switcher/IMPLEMENTATION.md` for files, limitations and tests.
 
 # Current state
 

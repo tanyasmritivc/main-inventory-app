@@ -183,7 +183,7 @@ void main() {
     organizationRole = 'member';
     await pump(tester, page(level: HierarchyLevel.organization, id: 'org-0'));
     expect(find.text('Tanya'), findsOneWidget);
-    expect(find.text('member'), findsOneWidget);
+    expect(find.text('Member'), findsOneWidget);
     expect(find.text('New workspace'), findsNothing);
     expect(find.text('Invite organization member'), findsNothing);
     expect(find.byTooltip('Actions'), findsNothing);

@@ -26,8 +26,11 @@ authorized working context. Inventory tools themselves were retained.
   specified chevrons/check/search/close glyphs.
 - Personal and workspace home, grouped scrollable place switcher, selected card,
   roles, counts only where returned, existing create and management flows.
-- Pull to refresh replaces the home refresh button. Search opens the existing
-  hierarchy search. Tools are absent on Personal as requested.
+- Pull to refresh replaces the home refresh button. Search now lists only the
+  selected workspace's inventories. Tools are absent on Personal as requested.
+- The organization route uses the same compact cards, section labels, role tags
+  and spacing. Opening a workspace from it returns to the workspace home.
+  Workspace management and inventory settings use the same page styling.
 - `last_place_<userId>` stores only account/place identity. Writes are serialized,
   generation-checked and cleared on sign out. Home waits for authorized restoration.
 - Revoked/deleted saved workspaces fall back to Personal with the specified notice.
@@ -39,7 +42,9 @@ authorized working context. Inventory tools themselves were retained.
 
 ## Validation and limits
 
-- `flutter test --no-pub --concurrency=1 --coverage`: **430 passed**.
+- `flutter test --no-pub --concurrency=1 --coverage`: **434 passed** after
+  organization and workspace flow changes. The focused organization, workspace
+  home and hierarchy suite passed **29 tests** after the last accessibility edit.
 - `flutter analyze --no-pub`: **No issues found**.
 - New tests cover per-user restore/save/sign-out, revoked access, offline Retry,
   deep-link override, late writes/reads, forged parents, directory deduplication,
@@ -47,6 +52,12 @@ authorized working context. Inventory tools themselves were retained.
 - Space regression covers actual scoped API transport, Personal/shared inventory
   creation, Cancel and viewer denial. Original code fails three of these four tests;
   fixed code passes. Existing launch expectations were updated for workspace home.
+- Organization flow widget tests exercise real authenticated API shapes for
+  organization selection, workspace home, Tasks, Files, People, Activity, search,
+  creation refresh, Retry, viewer restrictions and large text. The production
+  connected simulator confirmed the FTC organization page, workspace selection,
+  focused Search, real Tasks/Files responses and Space Create/Cancel without a
+  blank page. No customer data was written during this review.
 - iPhone 16e iOS 26.2 simulator screenshots are in `out/`, using only isolated fake
   API data via `tool/place_preview.dart`. Production entry is `lib/main.dart`.
 - Selected FTC place survived terminate/relaunch using native SharedPreferences.
@@ -94,10 +105,29 @@ UI: `features/workspaces/workspace_home.dart`, `place_ui.dart`, `hierarchy_page.
 Space fix: `features/inventory/inventory_page.dart`.
 Assets/config: `mobile/pubspec.yaml`, five files in `mobile/assets/fonts/`.
 Tests: `last_place_test.dart`, `workspace_home_test.dart`,
-`space_creation_navigation_test.dart`, `onboarding_launch_test.dart`,
+`space_creation_navigation_test.dart`, `organization_place_flow_test.dart`,
+`hierarchy_page_test.dart`, `onboarding_launch_test.dart`,
 `support/hierarchy_fixture.dart` under `mobile/test/`.
 Simulator entry: `mobile/tool/place_preview.dart`.
 Design: supplied `PROMPT.md`, both `reference/` PNGs, four native screenshots and
 two comparison pairs in `out/`, and this implementation record.
 Project state: `.agents/ACTIVE_WORK.md`, `.agents/CURRENT_STATE.md`,
 `.agents/DECISIONS.md`, `TESTING.md`.
+
+## Delivery
+
+Runtime `9b66023`, draft PR #87. FindEZ 1.0.8 (67) uploaded successfully after
+Apple validation and exact-runtime CI run 38973815385: five jobs pass, including
+430 Flutter, 565 backend and 296 web tests. Strict native/package checks cover
+31 iOS device executables, both signatures, production configuration and bundled
+fonts. A cached simulator native library was rejected locally, then removed by
+a clean rebuild before validation/upload. Apple delivery:
+`8b0f89b7-a938-47fd-804a-c525d6bb7964`. Processing and tester availability remain
+pending; no wait or public App Store submission. Durable receipts and release
+artifacts are outside Git in `Documents/FindEZ/AppStore/1.0.8-build67/`.
+
+The visual fixture has intentionally limited routes and an inert inventory-open
+callback. Its Tasks/Files error screen is not a production API result. Functional
+acceptance must use `lib/main.dart` with the authenticated production client, not
+`tool/place_preview.dart`. The signed IPA was explicitly built and verified with
+`lib/main.dart` and contains neither fake API origin nor preview route markers.

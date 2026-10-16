@@ -11,9 +11,18 @@ People. Reference assets are in `design/workspace-switcher/`. Tests, iPhone 16e
 comparison screenshots and a subsequent checked TestFlight upload are required.
 430 full Flutter tests and analysis pass. The blank space-creation screen is
 reproduced and fixed at the nested dialog navigator. Native visual comparisons
-and cold restore pass with isolated data. Build 67 awaits CI/package/upload.
+and cold restore pass with isolated data. Build 67 uploaded successfully after
+all five CI gates, clean signed native package verification and Apple validation;
+processing/group availability and physical acceptance remain pending.
 No web/backend/schema publication. Xcode regenerable caches were cleared with
 approval to recover native-build space; signed release artifacts are preserved.
+Follow-up for build 68: the first delivery left old organization, management
+and Search routes reachable. Those routes now use the place styling, and opening
+a workspace from an organization returns to the home. Search shows only scoped
+inventories. Production-connected iPhone 16e simulator navigation confirms the
+new flow, real Tasks/Files loading and Space Create/Cancel without a blank page.
+434 full Flutter tests and 29 focused tests pass; analysis is clean. Build 68
+archive, exact-runtime CI and TestFlight delivery remain in progress.
 
 ## October 16 mobile hierarchy TestFlight delivery
 

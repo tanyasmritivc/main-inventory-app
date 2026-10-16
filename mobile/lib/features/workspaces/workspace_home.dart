@@ -94,6 +94,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
   Future<void> _switcher() async {
     setState(() => _switcherOpen = true);
     LastPlace? selected;
+    Map<String, dynamic>? organization;
     try {
       selected = await showModalBottomSheet<LastPlace>(
         context: context,
@@ -111,21 +112,40 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         builder: (_) => PlaceSwitcher(
           session: session,
           onCreate: _create,
-          onManageOrganization: (org) => _push(
-            HierarchyPage(
-              api: session.api,
-              onOpenInventory: widget.onOpenInventory,
-              level: HierarchyLevel.organization,
-              id: org['organization_id'].toString(),
-              name: org['name'].toString(),
-            ),
-          ),
+          onManageOrganization: (org) async {
+            organization = org;
+            Navigator.of(context).pop();
+          },
         ),
       );
     } finally {
       if (mounted) setState(() => _switcherOpen = false);
     }
-    if (mounted && selected != null) await session.select(selected);
+    if (!mounted) return;
+    if (organization != null) {
+      final org = organization!;
+      final place = await Navigator.of(context).push<LastPlace>(
+        MaterialPageRoute(
+          builder: (pageContext) => HierarchyPage(
+            api: session.api,
+            onOpenInventory: widget.onOpenInventory,
+            level: HierarchyLevel.organization,
+            id: org['organization_id'].toString(),
+            name: org['name'].toString(),
+            onOpenWorkspace: (id) async =>
+                Navigator.of(pageContext).pop(LastPlace.workspace(id)),
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (place != null) {
+        await session.select(place);
+      } else {
+        await session.refresh();
+      }
+    } else if (selected != null) {
+      await session.select(selected);
+    }
   }
 
   Future<bool> _create(String kind) async {
@@ -803,36 +823,49 @@ class _PlaceSwitcherState extends State<PlaceSwitcher> {
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: InkWell(
-                        onTap: () async {
-                          await widget.onManageOrganization(org);
-                          if (mounted) await _load();
-                        },
-                        child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              (org['name'] ?? '').toString().toUpperCase(),
-                              style: PlaceTokens.section.copyWith(
-                                color: PlaceTokens.muted(
-                                  context,
-                                  PlaceTokens.label,
-                                ),
+                      child: Semantics(
+                        button: true,
+                        label:
+                            'Open organization ${(org['name'] ?? '').toString()}',
+                        child: InkWell(
+                          onTap: () async {
+                            await widget.onManageOrganization(org);
+                            if (mounted) await _load();
+                          },
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  Text(
+                                    (org['name'] ?? '')
+                                        .toString()
+                                        .toUpperCase(),
+                                    style: PlaceTokens.section.copyWith(
+                                      color: PlaceTokens.muted(
+                                        context,
+                                        PlaceTokens.label,
+                                      ),
+                                    ),
+                                  ),
+                                  if (org['role'] != null)
+                                    Text(
+                                      'Organization · ${placeRole(org['role'].toString())}',
+                                      style: PlaceTokens.subtitle.copyWith(
+                                        color: PlaceTokens.muted(
+                                          context,
+                                          PlaceTokens.secondary,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            if (org['role'] != null)
-                              Text(
-                                'Organization · ${placeRole(org['role'].toString())}',
-                                style: PlaceTokens.subtitle.copyWith(
-                                  color: PlaceTokens.muted(
-                                    context,
-                                    PlaceTokens.secondary,
-                                  ),
-                                ),
-                              ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
