@@ -1,5 +1,14 @@
 # Active work
 
+## October 16 mobile hierarchy TestFlight delivery
+
+Tanya authorized ongoing TestFlight delivery after completed mobile changes.
+Preparing 1.0.8 (66) on the existing mobile parity branch. Apple preflight confirms
+65 is the latest build and the two intended internal groups exist. Preserves
+public 1.0.7/build 59 and the unselected 1.0.8 App Store draft. Existing production
+defines/signing are reused; no backend/schema deployment. Source tests already
+pass; exact release CI and native packaging checks will precede upload.
+
 ## October 16 mobile hierarchy parity
 
 Source implementation complete on `feat/mobile-inventory-context-20261016`.

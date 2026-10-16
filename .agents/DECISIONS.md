@@ -1,5 +1,15 @@
 # Decisions
 
+## October 16 TestFlight delivery preference
+
+Tanya requests a new TestFlight build after each completed mobile change. Treat
+this as standing authorization to increment, check, archive, validate, upload and
+assign to the existing internal groups. Keep public App Store version/build
+selection and submission held. Distinguish Apple upload, processing, internal
+availability, external beta review and physical acceptance. Never claim an upload
+alone means testers can install. Keep credentials and durable release receipts
+outside source control. Documentation-only follow-ups do not produce another IPA.
+
 ## October 16 mobile working context
 
 Mobile now follows the existing optional organization -> workspace -> inventory
