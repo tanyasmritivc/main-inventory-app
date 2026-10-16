@@ -2,10 +2,13 @@
 
 ## October 15 contextual website navigation
 
-Active lane `fix/web-context-navigation-20261015` adapts the user's Supabase
-reference to FindEZ. Web only: separate context selection from management, use
-organization/workspace/inventory navigation, move creation forms into dialogs,
-and preserve existing routes, APIs, memberships and data.
+Completed and published PR #78, runtime `5d9906f`, on lane
+`fix/web-context-navigation-20261015`. Context selection and management are
+separate; organization/workspace/inventory navigation and creation dialogs adapt
+the user's reference to FindEZ. 253 web tests, TypeScript, changed-file lint,
+production build, all five CI gates and signed-in Safari checks pass. Existing
+routes, APIs, memberships and data are preserved. Backend/database/mobile are
+unchanged. Release and rollback details are recorded in CURRENT_STATE.md.
 
 ## October 15 organization and inventory access
 
