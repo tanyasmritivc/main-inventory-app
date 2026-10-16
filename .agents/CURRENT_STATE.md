@@ -1,5 +1,40 @@
 # Current state
 
+## October 15 organization actions published
+
+PR #84 runtime `a21ea8d05c77d7328340000271a106d2d8d5a85e` is live on backend
+and website with additive migration 047. Organization owners have a compact
+three-dot menu with Rename and Delete on directory cards and selected
+Workspaces/People pages. Deletion requires the exact current name, current owner
+membership and no attached workspaces, including unassigned workspaces. The
+service-only database function serializes concurrent workspace creation and
+records a durable audit before removing the empty organization, its memberships
+and invitations. It never cascades through workspaces or inventories. Personal,
+workspace/inventory Rename and the approved homepage remain unchanged.
+
+565 backend tests plus six subtests, 296 web tests, TypeScript, lint (zero errors;
+existing warnings remain), production build and all five CI gates
+(`38856358205`) pass. Isolated PostgreSQL fixtures check owner permissions, stale
+names, blocked nonempty deletion, membership/invitation cleanup and audit/replay.
+Three concurrency cases verify both workspace-creation race orders and duplicate
+deletes. The live migration transaction preserves all existing public-table rows,
+policies, table permissions and existing routine definitions/ACLs. No customer
+records were renamed or deleted for QA. Real-component desktop/390px light/dark
+checks pass. Signed-in live Safari verifies directory and selected-context menus,
+prefilled Rename and disabled-until-confirmed Delete dialogs, using Cancel only.
+
+Build `3hd1z4zQK8kaRdhzoIf3X` runs from
+`/home/ubuntu/findez-web-releases/web-org-actions-20261015/frontend`.
+Twelve public routes, 23 protected routes, 12 API authentication guards, 57 assets
+and backend/database health pass. Original environment and 1,993 previous static
+assets are preserved. Private preview and isolated QA database are stopped after
+verification. Release receipts and runtime rollback backups are in
+`/home/ubuntu/findez-org-actions-20261015/`; non-sensitive copies are in
+`Documents/FindEZ/Releases/organization-actions-2026-10-15/`. Roll back the web to
+`web-landing-lab-fade-20261015/frontend` and restore the prior collaboration.py
+from runtime-backup if needed; keep additive migration 047. No main-branch merge,
+mobile update or dependency change is implied by this selective release.
+
 ## October 15 approved Lab homepage published
 
 PR #83 runtime `4caa38c32db198555436dd449d521b12eb6cfd43` publishes the
@@ -22,7 +57,7 @@ routes, 17 protected routes, 23 homepage assets and backend health. Chrome
 confirms the published homepage and navigation. Original production source,
 environment and prior static chunks are preserved.
 
-Build `nGSlTwykEqoUG8MlgI06u` runs from
+The prior homepage-only build `nGSlTwykEqoUG8MlgI06u` is retained at
 `/home/ubuntu/findez-web-releases/web-landing-lab-fade-20261015/frontend`.
 Receipts and rollback configuration are in
 `/home/ubuntu/findez-landing-lab-fade-20261015/`. Immediate rollback target:

@@ -2,13 +2,15 @@
 
 ## October 15 organization actions menu
 
-Implementing on `feat/organization-actions-menu-20261015`, based on `34c11d4`.
-Tanya requested a compact three-dot organization menu and explicitly chose Delete
-only for organizations with no workspaces. Owner-only menus replace Rename on
-cards and selected organization pages. Rename remains unchanged; deletion needs
-the exact current name and audited transactional migration 047, with all attached
-workspaces protected. Production schema constraints verified read-only. Backend,
-web and isolated SQL tests are in progress; no customer records changed for QA.
+Completed and published PR #84, runtime `a21ea8d`, migration 047, build
+`3hd1z4zQK8kaRdhzoIf3X`. Owner-only three-dot menus offer Rename and Delete on
+organization cards and selected Workspaces/People pages. Delete requires the
+exact current name and no attached workspaces, enforced transactionally with a
+durable audit. Existing workspace/inventory controls remain unchanged. 565
+backend tests plus six subtests, 296 web tests, TypeScript, lint with zero errors,
+production build, isolated SQL/concurrency checks and all five CI gates pass.
+Live signed-in Safari opens/cancels both dialogs and verifies context menus;
+no customer QA writes. See CURRENT_STATE.md for release and rollback receipts.
 
 ## October 15 approved Lab homepage publication
 
