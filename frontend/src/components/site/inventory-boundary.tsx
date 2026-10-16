@@ -28,7 +28,7 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
       return;
     }
     selectInventory(null);
-    if (!inventoryId) { router.replace("/workspaces"); return; }
+    if (!inventoryId) { router.replace("/organizations"); return; }
     void accountRequest<{ inventory: Omit<InventorySelection, "accountId"> }>(accountId, `/inventories/${encodeURIComponent(inventoryId)}`)
       .then(({ inventory }) => {
         if (!live) return;

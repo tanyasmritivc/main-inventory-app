@@ -64,6 +64,8 @@ api_router.include_router(onboarding_router)
 # Account, collaboration administration and public integration APIs stay outside.
 from app.api.routes.inventory_workspaces import router as workspace_selection_router, scoped_router
 api_router.include_router(workspace_selection_router)
+from app.api.routes.collaboration import router as collaboration_router
+api_router.include_router(collaboration_router)
 for scoped_feature_router in (
     items_router, inventory_router, ai_router, imports_router, documents_router,
     activity_router, checkouts_router, spaces_router, bins_router,

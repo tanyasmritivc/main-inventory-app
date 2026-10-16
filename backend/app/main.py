@@ -130,7 +130,12 @@ def create_app() -> FastAPI:
         request_id = request_id[:64]
         request.state.correlation_id = request_id
         start = time.time()
-        response = await call_next(request)
+        from app.services.resource_access import request_actor
+        actor_token = request_actor.set(None)
+        try:
+            response = await call_next(request)
+        finally:
+            request_actor.reset(actor_token)
         response.headers["x-correlation-id"] = request_id
         duration_ms = round((time.time() - start) * 1000)
         logger.info(

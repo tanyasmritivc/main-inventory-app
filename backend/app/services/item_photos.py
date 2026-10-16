@@ -6,6 +6,7 @@ from uuid import uuid4
 from PIL import Image, ImageOps
 
 from app.core.config import get_settings
+from app.services.resource_access import require_inventory_write
 from app.services.item_events_repo import log_event
 from app.services.items_repo import update_item
 from app.services.storage import delete_image, upload_image
@@ -200,6 +201,7 @@ def add_item_photo(
     *, user_id: str, item_id: str, filename: str, content: bytes
 ) -> tuple[dict, list[dict]]:
     item = _get_item(user_id=user_id, item_id=item_id)
+    require_inventory_write(item.get('inventory_id'))
     events = _photo_events(user_id=user_id, item_id=item_id)
     photos = _photos_for_item(item=item, events=events)
     if len(photos) >= MAX_ITEM_PHOTOS:
@@ -251,6 +253,7 @@ def delete_item_photo(
     *, user_id: str, item_id: str, photo_id: str
 ) -> tuple[dict, list[dict]]:
     item = _get_item(user_id=user_id, item_id=item_id)
+    require_inventory_write(item.get('inventory_id'))
     events = _photo_events(user_id=user_id, item_id=item_id)
     photos = _photos_for_item(item=item, events=events)
     target = next((photo for photo in photos if photo["photo_id"] == photo_id), None)

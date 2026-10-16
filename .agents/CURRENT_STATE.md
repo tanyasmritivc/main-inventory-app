@@ -1,5 +1,36 @@
 # Current state
 
+## October 15 organization and inventory access published
+
+PR #77 runtime `5462d87010f4bc62baf57c5adc21bd8fc8574e15` and migration 044
+are live on backend and web. Website build `9OGfGZwNlW6RtjMWJf1ee` runs from
+`/home/ubuntu/findez-web-releases/web-organization-access-20261015/frontend`.
+Entry: `/organizations`; Personal and independent existing workspaces remain
+available. Organizations contain assigned project workspaces; inventories have
+explicit inherited/restricted access, member overrides, shared physical-location
+attachments and scoped audit history. Existing workspace roles remain `legacy`
+until an administrator explicitly saves a new access policy. No demo rows or
+inferred organization associations were added to production.
+
+Validation: 516 backend tests plus six subtests, 243 web tests, TypeScript,
+changed-file ESLint, production webpack build and all five CI jobs
+(`38828116889`) pass. PostgreSQL fixtures cover Acme's 12/6-member client project,
+25-member FTC robotics, differing inventory roles, direct DB/legacy-route denial,
+revocation, shared locations and recorded-location audit evidence. Restored-copy
+rehearsal and locked production migration compare all original public-table values
+and policies; all preserved. Live checks: 11 public pages, 20 protected routes,
+seven API authentication guards and read-only queries across 25 existing inventories.
+Signed-in Safari verified Organizations → existing FTC workspace → its 60-item
+inventory → Access and history. Actual-component light/dark 390px previews pass.
+
+Receipts/backups: `/home/ubuntu/findez-organization-access-20261015/` and local
+`Documents/FindEZ/Releases/organization-access-2026-10-15/`. Runtime rollback uses
+`runtime-backup`; web rollback uses `previous-web-rebuild.conf`. Additive schema
+can remain during a runtime rollback because original access is preserved.
+Existing-account member assignment works; invitation email delivery, organization
+billing and physical-tree reparenting are not part of this release. Mobile keeps
+its existing navigation, with server-side restrictions also protecting old routes.
+
 ## October 15 centered Ask page published
 
 PR #76 website runtime `80ba01b557dc38e5f24dc8d0472c39be2c56bb28` is live.

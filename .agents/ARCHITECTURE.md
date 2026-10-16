@@ -2,6 +2,17 @@
 
 This describes the current release foundation. Planned systems are labeled.
 
+## Organization and inventory access (released October 15)
+
+Migration 044 adds optional organizations above existing Teams/workspaces, explicit
+inventory access and a shared physical-location tree. See
+`docs/plans/organization-inventory-access.md`. Independent workspaces and Personal
+remain supported. Scoped web routes use inventory IDs; legacy application routes
+also apply actor-local restrictions. Database policies and write triggers provide
+an additional boundary. Management RPCs and item changes record actor/time and
+recorded-location evidence. Existing rows and legacy access are preserved.
+Deployment status is maintained in CURRENT_STATE.md.
+
 ## Repository
 
 | Path | Current role |

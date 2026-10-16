@@ -25,7 +25,8 @@ def get_supabase_raw() -> Client:
 
 def get_supabase_admin() -> Client:
     from app.services.inventory_scope import scoped_client
-    return scoped_client(get_supabase_raw())
+    from app.services.resource_access import guarded_client
+    return scoped_client(guarded_client(get_supabase_raw()))
 
 
 _thread_local = threading.local()
@@ -47,7 +48,8 @@ def create_supabase_admin() -> Client:
         )
         _thread_local.admin_client = client
     from app.services.inventory_scope import scoped_client
-    return scoped_client(client)
+    from app.services.resource_access import guarded_client
+    return scoped_client(guarded_client(client))
 
 
 def supabase_execute_with_retry(fn: Callable[[], T], max_attempts: int = 3) -> T:

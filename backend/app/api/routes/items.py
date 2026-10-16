@@ -479,6 +479,8 @@ async def add_item_photo_route(
         raise HTTPException(404, "Item not found") from exc
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Could not add item photo")
         raise service_unavailable("Photo could not be saved. Try again.") from exc
@@ -502,6 +504,8 @@ def delete_item_photo_route(
         return ItemPhotoMutationResponse(item=item, photos=photos)
     except LookupError as exc:
         raise HTTPException(404, "Photo not found") from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Could not delete item photo")
         raise service_unavailable("Photo could not be deleted. Try again.") from exc

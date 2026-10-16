@@ -76,11 +76,14 @@ def _space_access(team_id: str, space_id: str, user_id: str, write: bool = False
     ).eq("space_id", space_id).limit(1).execute().data or []
     if not links:
         raise HTTPException(404, "This Space is not part of the team.")
-    spaces = get_supabase_admin().table("spaces").select("id,user_id,name,created_at").eq(
+    spaces = get_supabase_admin().table("spaces").select("id,user_id,name,created_at,inventory_id").eq(
         "id", space_id
     ).limit(1).execute().data or []
     if not spaces:
         raise HTTPException(404, "This Space no longer exists.")
+    if write:
+        from app.services.resource_access import require_inventory_write
+        require_inventory_write(spaces[0].get("inventory_id"))
     return spaces[0], membership
 
 
@@ -98,12 +101,24 @@ def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: di
             "team_id", team_id
         ).execute().data or []
         recipients = [row["user_id"] for row in members if row.get("user_id")]
+        inventory_id = None
+        if (metadata or {}).get("space_id"):
+            space_rows = client.table('spaces').select('inventory_id').eq('id', metadata['space_id']).limit(1).execute().data or []
+            if space_rows and space_rows[0].get('inventory_id'):
+                inventory_id = space_rows[0]['inventory_id']
+                recipients = [recipient for recipient in recipients if client.rpc(
+                    'findez_inventory_role', {'p_inventory': inventory_id, 'p_actor': recipient}
+                ).execute().data]
+
         if inserted and recipients:
             client.table("team_notification_recipients").insert([
                 {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
                 for user_id in recipients
             ]).execute()
-        enqueue_notifications(team_id, actor_id, summary, action, recipients)
+        if inventory_id:
+            enqueue_notifications(team_id, actor_id, summary, action, recipients, inventory_id=inventory_id)
+        else:
+            enqueue_notifications(team_id, actor_id, summary, action, recipients)
     except Exception:
         logger.exception(
             "Team activity recording failed without blocking %s for team %s",

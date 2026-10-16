@@ -27,9 +27,12 @@ class Query:
         self.filters,self.fields,self.operation,self.payload = [],'*','read',None
         self.start,self.end = 0,1000
         self.negated=False
+        self.headers={}
     def select(self, fields='*', **kwargs): self.fields=fields; return self
     def eq(self,key,value): self.filters.append(lambda row: row.get(key)==value); return self
-    def in_(self,key,values): self.filters.append(lambda row: row.get(key) in values); return self
+    def in_(self,key,values):
+        negated=self.negated; self.negated=False
+        self.filters.append(lambda row: (row.get(key) in values) != negated); return self
     @property
     def not_(self): self.negated=True; return self
     def is_(self,key,value):
@@ -87,6 +90,7 @@ def api():
     items_repo._INVENTORY_CACHE.clear()
     with patch('app.services.supabase_client.get_supabase_raw',return_value=db), \
          patch('app.api.routes.inventory_workspaces.get_supabase_raw',return_value=db), \
+         patch('app.api.routes.collaboration.get_supabase_raw',return_value=db), \
          patch('app.api.routes.items.parse_search_query_to_keywords',side_effect=lambda query:{'text':query}), \
          patch('app.services.catalog_service.save_to_catalog'), \
          patch('app.services.limits.resolve_effective_limits',return_value=({'spaces':None},None)):

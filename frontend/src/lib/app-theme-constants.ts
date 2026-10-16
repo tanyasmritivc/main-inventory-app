@@ -4,6 +4,8 @@ export const APP_THEME_STORAGE_KEY = "findez-app-theme";
 // from the router at runtime, because the inline theme script in
 // layout.tsx runs before React and cannot import route metadata.
 export const INTERIOR_PATH_PREFIXES = [
+  "/organizations",
+  "/inventory-access",
   "/workspaces",
   "/home",
   "/spaces",

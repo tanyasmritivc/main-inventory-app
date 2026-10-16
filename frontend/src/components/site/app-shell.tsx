@@ -236,9 +236,12 @@ export function AppShell({ children, inventory }: { children: React.ReactNode; i
             <Menu size={19} />
           </button>
           {inventory && <nav className="app-inventory-switcher" aria-label="Current inventory">
-            <Link href="/workspaces">{inventory.workspace.name}</Link>
+            <Link href={inventory.workspace.organization_id ? `/organizations/${inventory.workspace.organization_id}` : "/workspaces"}>{inventory.workspace.organization_name || "Workspaces"}</Link>
+            <span aria-hidden="true">/</span>
+            <Link href={`/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`}>{inventory.workspace.name}</Link>
             <span aria-hidden="true">/</span>
             <Link href={`/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`}>{inventory.name}</Link>{!inventory.can_edit && <small>View only</small>}
+            <Link href={`/inventory-access?inventory=${encodeURIComponent(inventory.inventory_id)}`}>Access</Link>
           </nav>}
           <div className="app-topbar-spacer" />
           <button

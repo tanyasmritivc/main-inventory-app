@@ -69,3 +69,16 @@ def test_team_event_persists_deduplicated_recipients_before_enqueuing_push():
     assert len(query.insert.call_args_list[1].args[0]) == 2
     enqueue.assert_called_once()
     assert set(enqueue.call_args.args[-1]) == {"owner", "member"}
+
+
+def test_queued_inventory_push_rechecks_access_before_delivery():
+    from app.services import push_notifications
+    client, _ = database([
+        [{'name':'Workshop'}], [{'display_name':'Alex'}],
+        [{'user_id':'revoked','device_token':'test-device','environment':'sandbox'}], [],
+    ])
+    client.rpc.return_value.execute.return_value.data = None
+    with patch.object(push_notifications,'get_supabase_admin',return_value=client), patch.object(push_notifications,'_send') as send:
+        push_notifications._deliver_to_recipients('workspace','actor','Moved private equipment','item_moved',['revoked'],inventory_id='private-inventory')
+    client.rpc.assert_called_once_with('findez_inventory_role',{'p_inventory':'private-inventory','p_actor':'revoked'})
+    send.assert_not_called()

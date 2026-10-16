@@ -23,6 +23,8 @@ beforeEach(()=>{
     if(path==="/inventory-workspaces") return {workspaces:[personal,{...personal,workspace_id:"team",name:"Shared workshop",kind:"team",team_id:"team"}]} as never;
     if(path==="/sharing/joined") return [] as never;
     if(path.startsWith("/inventory-workspaces/personal/inventories") && options?.method==="POST") return {inventory:{...inventory,inventory_id:"created"}} as never;
+    if(path.endsWith("/audit")) return {activity:[]} as never;
+    if(path.endsWith("/overview")) return {workspace:personal,members:[],candidates:[],locations:[]} as never;
     if(path.startsWith("/inventory-workspaces/")) return {workspace:personal,inventories:[inventory],total:1,next_offset:null} as never;
     if(path==="/inventories/a") return {inventory:{...inventory,workspace:personal,can_edit:true}} as never;
     throw new Error(`Unexpected fixture request ${path}`);
@@ -54,7 +56,7 @@ test("creating an inventory opens its dashboard only after a saved server respon
 });
 
 test("viewer workspaces can be opened without showing inventory creation or renaming",async()=>{
-  jest.mocked(accountRequest).mockResolvedValue({workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",role:"viewer"},inventories:[inventory],total:1,next_offset:null});
+  jest.mocked(accountRequest).mockResolvedValue({workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",role:"viewer"},activity:[],members:[],locations:[],candidates:[],inventories:[inventory],total:1,next_offset:null});
   render(<WorkspaceDirectory workspaceId="team"/>);
   await screen.findByRole("link",{name:/Workshop parts/});
   expect(screen.queryByRole("button",{name:"New inventory"})).toBeNull();
@@ -63,7 +65,7 @@ test("viewer workspaces can be opened without showing inventory creation or rena
 
 test("missing context returns to the chooser before an inventory page can load",async()=>{
   query="";render(<InventoryBoundary><p>Private page</p></InventoryBoundary>);
-  await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/workspaces"));
+  await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/organizations"));
   expect(screen.queryByText("Private page")).toBeNull();
   expect(accountRequest).not.toHaveBeenCalled();
 });

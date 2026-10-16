@@ -1789,3 +1789,29 @@ html.dark .app-frame .ask-workspace {
   .app-frame .ask-workspace { background: Canvas; }
   .app-frame .ask-composer-box { border-color: CanvasText; }
 }
+
+/* Collaboration hierarchy uses open sections, not nested dashboard cards. */
+.app-frame .collaboration-sections { display: grid; gap: 36px; margin-top: 36px; }
+.app-frame .collaboration-sections section { border-top: 1px solid var(--app-border); padding-top: 24px; }
+.app-frame .collaboration-sections h2 { font-size: 18px; margin-bottom: 16px; }
+.app-frame .collaboration-form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 24px 0 12px; }
+.app-frame .collaboration-form label { display: grid; gap: 8px; flex: 1 1 200px; max-width: 440px; font-size: 13px; }
+.app-frame .collaboration-form input, .app-frame .collaboration-form select { width: 100%; min-width: 0; }
+.app-frame .collaboration-event { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; padding: 18px 0; border-bottom: 1px solid var(--app-border); }
+.app-frame .collaboration-event small, .app-frame .collaboration-event > span:not(:first-child) { grid-column: 1 / -1; }
+.app-frame .collaboration-event time { color: var(--app-muted); font-size: 12px; }
+@media (max-width: 600px) {
+ .app-frame .collaboration-form { align-items: stretch; flex-direction: column; }
+ .app-frame .collaboration-form label { flex-basis: auto; max-width: none; }
+ .app-frame .collaboration-event { grid-template-columns: minmax(0,1fr); }
+}
+
+/* Keep the full hierarchy inside the mobile header, without stacking over content. */
+@media (max-width: 600px) {
+ .app-frame:has(.app-inventory-switcher) .app-topbar { height: 96px; flex-wrap: wrap; align-content: center; row-gap: 10px; }
+ .app-frame:has(.app-inventory-switcher) .app-main { padding-top: 96px; }
+ .app-frame .app-inventory-switcher { order: 5; flex: 0 0 100%; max-width: 100%; flex-direction: row; align-items: center; gap: 8px; }
+ .app-frame .app-inventory-switcher > span { display: inline; }
+ .app-frame .app-inventory-switcher a:last-child { flex-shrink: 0; }
+ .app-frame .collaboration-sections .directory-row > span:first-child { min-width: 0; flex-shrink: 1; overflow-wrap: anywhere; }
+}

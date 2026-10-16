@@ -271,7 +271,7 @@ def update_member_role(
 
     if target_row["role"] == "owner":
         raise PermissionError("CANNOT_CHANGE_OWNER")
-    if caller_role not in ("owner", "mentor"):
+    if caller_role not in ("owner", "mentor") or (target_row["role"] == "mentor" and caller_role != "owner"):
         raise PermissionError("INSUFFICIENT_ROLE")
     if new_role == "mentor" and caller_role != "owner":
         raise PermissionError("ONLY_OWNER_CAN_GRANT_MENTOR")
@@ -317,7 +317,7 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
     target_row = target_resp.data[0]
     if target_row["role"] == "owner":
         raise PermissionError("CANNOT_REMOVE_OWNER")
-    if caller_role not in ("owner", "mentor"):
+    if caller_role not in ("owner", "mentor") or (target_row["role"] == "mentor" and caller_role != "owner"):
         raise PermissionError("INSUFFICIENT_ROLE")
 
     supabase_execute_with_retry(

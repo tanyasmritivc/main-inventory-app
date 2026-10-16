@@ -108,6 +108,7 @@ def _deliver_to_recipients(
     summary: str,
     action: str,
     recipient_ids: list[str],
+    inventory_id: str | None = None,
 ) -> None:
     try:
         client = get_supabase_admin()
@@ -159,6 +160,11 @@ def _deliver_to_recipients(
             for user_id in user_ids
         }
         for device in devices:
+            # Recheck at delivery, since membership can change while queued.
+            if inventory_id and not client.rpc('findez_inventory_role', {
+                'p_inventory': inventory_id, 'p_actor': device.get('user_id'),
+            }).execute().data:
+                continue
             _send(
                 device,
                 title=title,
@@ -177,6 +183,7 @@ def enqueue_notifications(
     summary: str,
     action: str,
     recipient_ids: list[str],
+    inventory_id: str | None = None,
 ) -> None:
     if _credentials() is not None and recipient_ids:
         _executor.submit(
@@ -186,6 +193,7 @@ def enqueue_notifications(
             summary,
             action,
             recipient_ids,
+            inventory_id,
         )
 
 

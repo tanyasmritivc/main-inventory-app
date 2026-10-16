@@ -120,7 +120,18 @@ def get_joined_shares(*, user_id: str) -> list:
         .eq('member_user_id', user_id)
         .execute()
     )
-    return memberships.data or []
+    rows = memberships.data or []
+    from app.services.resource_access import request_actor, fences
+    from app.services.supabase_client import get_supabase_raw
+    if request_actor.get():
+        denied = {row['inventory_id'] for row in fences(get_supabase_raw()) if row['role'] is None}
+        def visible(row):
+            share = row.get('team_shares') or {}
+            if isinstance(share, list):
+                return all(entry.get('inventory_id') not in denied for entry in share)
+            return share.get('inventory_id') not in denied
+        rows = [row for row in rows if visible(row)]
+    return rows
 
 
 def revoke_share(*, user_id: str, share_id: str) -> bool:
@@ -180,8 +191,10 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
     result = share.data[0]
     if not invitation_is_current(result):
         raise ValueError('Share not found')
+    from app.services.resource_access import inventory_can_write
+    writable = inventory_can_write(result.get('inventory_id'))
     if result['owner_user_id'] == requesting_user_id:
-        return result, True
+        return result, writable
 
     membership = (
         client.table('team_members')
@@ -192,7 +205,7 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
     )
     if not membership.data:
         raise ValueError('Not authorized')
-    return result, result.get('permission') == 'edit'
+    return result, writable and result.get('permission') == 'edit'
 
 
 def _get_share_item(*, share: dict, item_id: str) -> dict:

@@ -1,5 +1,14 @@
 # Active work
 
+## October 15 organization and inventory access
+
+Completed and published PR #77, runtime `5462d87`, migration 044. Organizations,
+workspace overviews, inventory-specific roles, physical-location attachments and
+audit history are live. Original data and legacy permissions preserved. All five
+CI gates, 516 backend tests, 243 web tests, restored-copy migration rehearsal,
+production build and signed-in Safari checks pass. See CURRENT_STATE.md and
+`docs/plans/organization-inventory-access.md` for scope and remaining limitations.
+
 ## October 15 centered Ask FindEZ
 
 Completed and published PR #76, runtime `80ba01b`, with centered Ask content,

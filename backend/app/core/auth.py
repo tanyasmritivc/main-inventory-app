@@ -222,4 +222,6 @@ async def get_current_user(
             first_name = None
         _cache_first_name(user_id, first_name)
 
+    from app.services.resource_access import begin_actor
+    begin_actor(str(user_id))
     return AuthenticatedUser(user_id=str(user_id), first_name=first_name)
