@@ -5,7 +5,7 @@ import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Menu, Search, UserRound } from "lucide-react";
+import { Bell, Menu, Search, UserRound, Users } from "lucide-react";
 import {
   APP_NAV_ITEMS,
   AppSidebar,
@@ -18,12 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { AppThemeProvider } from "@/components/site/use-app-theme";
 import Link from "@/components/site/inventory-link";
+import { DIRECTORY_NAVIGATION, type NavigationContext } from "@/lib/context-navigation";
 import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
-export function AppShell({ children, inventory }: { children: React.ReactNode; inventory?: InventorySelection }) {
+export function AppShell({ children, inventory, context }: { children: React.ReactNode; inventory?: InventorySelection; context?: NavigationContext }) {
   const router = useInventoryRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -202,7 +203,16 @@ export function AppShell({ children, inventory }: { children: React.ReactNode; i
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const commandItems = APP_NAV_ITEMS.filter((item) => (inventory?.can_edit !== false || item.route !== "/scan") &&
+  const navigationItems = context?.items || (inventory ? [
+    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)),
+    { label: "People and access", route: "/inventory-access", icon: Users, section: "You" },
+  ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
+  const breadcrumbs = context?.breadcrumbs || (inventory ? [
+    inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },
+    { label: inventory.workspace.name, href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}` },
+    { label: inventory.name, href: `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` },
+  ] : []);
+  const commandItems = navigationItems.filter((item) => (inventory?.can_edit !== false || item.route !== "/scan") &&
     [item.label, item.section, ...(item.keywords ?? [])]
       .join(" ")
       .toLowerCase()
@@ -211,7 +221,7 @@ export function AppShell({ children, inventory }: { children: React.ReactNode; i
   return (
     <AppThemeProvider>
       <div
-        className={`app-frame ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${sidebarPinned ? "sidebar-pinned" : ""}`}
+        className={`app-frame ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">
           Skip to content
@@ -224,6 +234,9 @@ export function AppShell({ children, inventory }: { children: React.ReactNode; i
           avatarUrl={avatarUrl}
           pinned={sidebarPinned}
           onPin={togglePin}
+          items={navigationItems}
+          activeRoute={context?.activeRoute}
+          homeHref={context?.homeHref || (inventory ? `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` : "/organizations")}
         />
         <header className="app-topbar">
           <button
@@ -235,13 +248,9 @@ export function AppShell({ children, inventory }: { children: React.ReactNode; i
           >
             <Menu size={19} />
           </button>
-          {inventory && <nav className="app-inventory-switcher" aria-label="Current inventory">
-            <Link href={inventory.workspace.organization_id ? `/organizations/${inventory.workspace.organization_id}` : "/workspaces"}>{inventory.workspace.organization_name || "Workspaces"}</Link>
-            <span aria-hidden="true">/</span>
-            <Link href={`/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`}>{inventory.workspace.name}</Link>
-            <span aria-hidden="true">/</span>
-            <Link href={`/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`}>{inventory.name}</Link>{!inventory.can_edit && <small>View only</small>}
-            <Link href={`/inventory-access?inventory=${encodeURIComponent(inventory.inventory_id)}`}>Access</Link>
+          {breadcrumbs.length > 0 && <nav className="app-inventory-switcher" aria-label={inventory ? "Current inventory" : "Current workspace"}>
+            {breadcrumbs.map((crumb, index) => <span className="context-crumb" key={crumb.href}>{index > 0 && <span aria-hidden="true">/</span>}<Link href={crumb.href}>{crumb.label}</Link></span>)}
+            {inventory && !inventory.can_edit && <small>View only</small>}
           </nav>}
           <div className="app-topbar-spacer" />
           <button

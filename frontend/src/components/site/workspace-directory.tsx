@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { AppThemeProvider } from "@/components/site/use-app-theme";
-import { FindEZWordmark } from "@/components/site/findez-brand";
+import { AppShell } from "@/components/site/app-shell";
+import { workspaceNavigation, type WorkspaceView } from "@/lib/context-navigation";
+import { TeamsClient } from "@/components/site/teams-client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
@@ -16,11 +17,11 @@ import { userFacingError } from "@/lib/user-facing-error";
 type InventoryPage = { workspace: InventoryWorkspace; inventories: AppInventory[]; total: number; next_offset: number | null };
 type SharedSpace = { share_id: string; share_name: string; team_shares?: SharedSpace | SharedSpace[] };
 
-export function WorkspaceDirectory({ workspaceId }: { workspaceId?: string }) {
+export function WorkspaceDirectory({ workspaceId, view = "inventories" }: { workspaceId?: string; view?: WorkspaceView }) {
   const { accountId } = useApiSession();
-  return <WorkspaceDirectoryAccount key={accountId || "signed-out"} workspaceId={workspaceId} />;
+  return <WorkspaceDirectoryAccount key={`${accountId}:${workspaceId}:${view}`} workspaceId={workspaceId} view={workspaceId === "personal" ? "inventories" : view} />;
 }
-function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
+function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string; view: WorkspaceView }) {
   const { accountId, error: sessionError } = useApiSession(), router = useRouter();
   const [workspaces, setWorkspaces] = useState<InventoryWorkspace[]>([]);
   const [shared, setShared] = useState<SharedSpace[]>([]);
@@ -92,30 +93,26 @@ function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
 
   const visible = workspaces.filter((workspace) => workspace.name.toLowerCase().includes(query.toLowerCase()));
   const canCreate = !workspaceId || page?.workspace.role === "owner" || page?.workspace.role === "mentor";
-  return <AppThemeProvider><div className="app-frame workspace-directory">
-    <header className="workspace-directory-header">
-      <Link href="/workspaces" aria-label="FindEZ workspaces"><FindEZWordmark /></Link>
-      {workspaceId && <nav aria-label="Workspace"><Link href="/workspaces">Workspaces</Link><span aria-hidden="true">/</span><span>{page?.workspace.name || (workspaceId === "personal" ? "Personal" : "Workspace")}</span></nav>}
-      <Link href="/organizations">Organizations</Link><Link href="/settings" className="workspace-account">Account</Link>
-    </header>
-    <main className="workspace-directory-main">
-      <header className="product-page-header"><h1>{workspaceId ? page?.workspace.name || "Workspace" : "Workspaces"}</h1>
+  const selectedWorkspace: InventoryWorkspace | null = workspaceId ? page?.workspace || { workspace_id: workspaceId, name: workspaceId === "personal" ? "Personal" : "Workspace", kind: workspaceId === "personal" ? "personal" : "team", team_id: workspaceId === "personal" ? null : workspaceId, role: "viewer" } : null;
+  const titles = { inventories: "Inventories", people: "People", locations: "Locations", board: "Board", files: "Documents", activity: "Activity" };
+  const choosing = !workspaceId || view === "inventories";
+  return <AppShell context={selectedWorkspace ? workspaceNavigation(selectedWorkspace, view) : undefined}>
+    <section className="product-page context-directory">
+      <header className="product-page-header"><h1>{workspaceId ? titles[view] : "All workspaces"}</h1>
         <div className="product-actions">
-          {workspaceId && page?.workspace.kind === "team" && <Link className="product-button" href={`/teams?team=${encodeURIComponent(workspaceId)}`}>Manage workspace</Link>}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
-          {canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
+          {choosing && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
       </header>
-      {workspaceId && <h2>Inventories</h2>}
-      <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />
-      {(error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
-      {loading ? <p className="workspace-muted" role="status">Loading...</p> : <>
-        <div className="directory-rows">
-          {workspaceId ? page?.inventories.map((inventory) => <div className="directory-row" key={inventory.inventory_id}>
-            <Link className="directory-inventory-link" href={`/home?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><span>{(inventory.item_count ?? 0).toLocaleString()} items</span></Link>
+      {choosing && <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />}
+      {!mode && (error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
+      {loading ? <p className="workspace-muted" role="status">Loading...</p> : choosing ? <>
+        <div className="context-card-grid">
+          {workspaceId ? page?.inventories.map((inventory) => <div className="context-card context-inventory-card" key={inventory.inventory_id}>
+            <Link className="context-card-link" href={`/home?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><span>{(inventory.item_count ?? 0).toLocaleString()} items</span></Link>
             {canCreate && <button className="directory-rename" aria-label={`Rename ${inventory.name}`} onClick={() => { open("rename"); setRenaming(inventory); setName(inventory.name); }}>Rename</button>}
-          </div>) : visible.map((workspace) => <Link className="directory-row" key={workspace.workspace_id} href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
-            <strong>{workspace.name}</strong><span>{workspace.kind === "personal" ? "Private" : workspace.role === "viewer" ? "View only" : "Team"}</span>
+          </div>) : visible.map((workspace) => <Link className="context-card" key={workspace.workspace_id} href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
+            <strong>{workspace.name}</strong><span>{workspace.kind === "personal" ? "Private" : workspace.organization_name || (workspace.role === "viewer" ? "View only" : "Workspace")}</span>
           </Link>)}
         </div>
         {workspaceId && !page?.inventories.length && !error && <p className="workspace-muted">{query ? "No matching inventories." : "No inventories yet."}</p>}
@@ -125,12 +122,13 @@ function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
           <span className="workspace-muted">{offset + 1}-{offset + page.inventories.length} of {page.total}</span>
           <button className="product-button" disabled={page.next_offset === null} onClick={() => setOffset(page.next_offset!)}>Next</button>
         </nav>}
-        {!workspaceId && shared.length > 0 && <section className="directory-shared"><h2>Shared with me</h2><div className="directory-rows">
-          {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="directory-row" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
+        {!workspaceId && shared.length > 0 && <section className="directory-shared"><h2>Shared with me</h2><div className="context-card-grid">
+          {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="context-card" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
         </div></section>}
+      </> : workspaceId && page && <>
+        {(view === "board" || view === "files" || (view === "people" && !page.workspace.organization_id)) ? <TeamsClient selectedTeamId={workspaceId} panel={view === "people" ? "people" : view === "files" ? "files" : "board"} /> : <CollaborationPanel workspaceId={workspaceId} section={view === "people" ? "people" : view === "locations" ? "locations" : "activity"} />}
       </>}
-      {workspaceId && workspaceId !== "personal" && <CollaborationPanel workspaceId={workspaceId} />}
-    </main>
+    </section>
     <Dialog open={mode !== null} onOpenChange={(value) => { if (!value && !busy) setMode(null); }}><DialogContent className="workspace-dialog inventory-creation-dialog" aria-describedby={undefined}>
       <DialogTitle>{mode === "join" ? "Join workspace" : mode === "inventory" ? "New inventory" : mode === "rename" ? "Rename inventory" : "New workspace"}</DialogTitle>
       <form onSubmit={submit}>
@@ -140,8 +138,8 @@ function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
           {mode === "workspace" && category === "custom" && <label>Custom category<input className="product-input" required maxLength={60} value={customCategory} onChange={(event) => setCustomCategory(event.target.value)} /></label>}
         </>}
         {error && <p role="alert" className="notice-error">{error}</p>}
-        <button className="product-button" disabled={busy || (mode === "join" ? !code.trim() : !name.trim())}>{busy ? "Saving..." : mode === "join" ? "Join" : mode === "rename" ? "Save" : "Create"}</button>
+        <div className="product-actions"><button type="button" className="product-button" disabled={busy} onClick={() => setMode(null)}>Cancel</button><button className="product-button" disabled={busy || (mode === "join" ? !code.trim() : !name.trim())}>{busy ? "Saving..." : mode === "join" ? "Join" : mode === "rename" ? "Save" : "Create"}</button></div>
       </form>
     </DialogContent></Dialog>
-  </div></AppThemeProvider>;
+  </AppShell>;
 }

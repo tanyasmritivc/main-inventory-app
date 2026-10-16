@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 contextual website navigation
+
+Completed and published PR #78, runtime `5d9906f`, on lane
+`fix/web-context-navigation-20261015`. Context selection and management are
+separate; organization/workspace/inventory navigation and creation dialogs adapt
+the user's reference to FindEZ. 253 web tests, TypeScript, changed-file lint,
+production build, all five CI gates and signed-in Safari checks pass. Existing
+routes, APIs, memberships and data are preserved. Backend/database/mobile are
+unchanged. Release and rollback details are recorded in CURRENT_STATE.md.
+
 ## October 15 organization and inventory access
 
 Completed and published PR #77, runtime `5462d87`, migration 044. Organizations,

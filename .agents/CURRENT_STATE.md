@@ -1,5 +1,34 @@
 # Current state
 
+## October 15 contextual navigation published
+
+`fix/web-context-navigation-20261015` separates context selection from management.
+Organizations expose Workspaces/People; selected workspaces expose inventories,
+people, locations, board, documents and activity. Inventory navigation contains
+inventory workflows; account navigation no longer offers unscoped inventory tools.
+Selection uses quiet cards and creation dialogs, and inventory-name breadcrumbs
+open the selected dashboard. Existing team board/files are reused as scoped panels.
+Inventory access settings are separated into People, Permissions, Locations and
+History. Original backend authorization and APIs are unchanged.
+
+PR #78 website runtime `5d9906f71e3dcc1eb0aadb98890876a33b1c0c15` is live.
+Build `Xcfmg3hf5pyC4pQjI61SC` runs from
+`/home/ubuntu/findez-web-releases/web-context-navigation-20261015/frontend`.
+253 web tests, TypeScript, changed-file lint, production webpack build and all
+five CI gates (`38832789463`) pass. Desktop and 390px actual-component Safari
+previews verify both themes and creation dialogs. Signed-in live Safari verifies
+organization/workspace choice, separate People/Locations/Board/Documents/Activity,
+the existing 60-item inventory, inventory access tabs, contextual command menu,
+inventory-name breadcrumb, browser Back and refresh. No customer records or
+permissions were changed during verification.
+
+11 public routes, 27 authentication guards and three CSS assets pass. Production
+configuration and 1,431 prior static assets are preserved; backend/database/mobile
+are unchanged. Receipts: `Documents/FindEZ/Releases/context-navigation-2026-10-15/`
+and `/home/ubuntu/findez-context-navigation-20261015/`. Web rollback uses that
+remote directory's `previous-web-rebuild.conf`. Existing-account membership tools
+remain; automatic invitation emails and organization billing are still unfinished.
+
 ## October 15 organization and inventory access published
 
 PR #77 runtime `5462d87010f4bc62baf57c5adc21bd8fc8574e15` and migration 044

@@ -776,3 +776,16 @@ Use fictional component fixtures for desktop/narrow light/dark visual checks.
 After release, verify signed-in chooser/navigation/refresh without writing to
 customer inventory. Back up the live database and affected files, verify source
 hashes, apply the additive migration before runtime, and retain rollback files.
+
+## Contextual website navigation (October 15)
+
+Run the full web coverage suite, TypeScript, changed-file ESLint and production
+webpack build. `workspace-profile`, `inventory-navigation`, `collaboration-access`
+and `team-categories` verify organization/workspace/inventory navigation, explicit
+selection, creation dialogs, separate management destinations, failed drafts,
+account changes, selected board/files panels and view-only document access. Keep
+all five CI gates green before publication. Inspect organization and workspace
+choice cards, People, Locations, inventory settings tabs and dialogs on desktop
+and at 390px in both themes. Verify signed-in context switching, browser Back and
+refresh, existing board/files and scoped inventory links without modifying
+customer data or permissions. This release has no database or mobile changes.

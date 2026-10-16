@@ -1,11 +1,14 @@
 /** @jest-environment jsdom */
 import { render, screen, waitFor, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { selectInventory } from "@/lib/inventory-selection";
+import { organizationNavigation, workspaceNavigation } from "@/lib/context-navigation";
 import { AppShell } from "@/components/site/app-shell";
 import { SettingsClient } from "@/components/site/settings-client";
 import { accountRequest } from "@/lib/account-request";
 import { publishNotificationSnapshot } from "@/lib/notification-state";
 
+afterEach(()=>selectInventory(null));
 const session = {
   user: { id: "a", email: "tester@example.test", user_metadata: {} },
   access_token: "test-token",
@@ -54,6 +57,7 @@ const profile = {
 };
 beforeEach(() => {
   localStorage.clear();
+  selectInventory(null);
   window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
   jest.clearAllMocks();
   jest
@@ -64,7 +68,9 @@ beforeEach(() => {
 });
 test("page search opens with its input focused, filters destinations and closes after navigation or Escape", async () => {
   const user = userEvent.setup();
-  render(<AppShell><p>Workspace</p></AppShell>);
+  const inventory = {accountId:"a",inventory_id:"tools",name:"Tools",owner_user_id:"a",team_id:null,is_default:true,can_edit:true,workspace:{workspace_id:"personal",name:"Personal",kind:"personal" as const,team_id:null,role:"owner" as const}};
+  selectInventory(inventory);
+  render(<AppShell inventory={inventory}><p>Workspace</p></AppShell>);
   const trigger = screen.getByRole("button", { name: "Go to a page" });
   await user.click(trigger);
   const dialog = screen.getByRole("dialog", { name: "Navigate FindEZ" });
@@ -72,7 +78,7 @@ test("page search opens with its input focused, filters destinations and closes 
   expect(document.activeElement).toBe(input);
   await user.type(input, "documents");
   await user.click(within(dialog).getByRole("button", { name: "Documents and notes" }));
-  expect(mockNavigate).toHaveBeenCalledWith("/documents");
+  expect(mockNavigate).toHaveBeenCalledWith("/documents?inventory=tools");
   expect(screen.queryByRole("dialog")).toBeNull();
   await user.click(trigger);
   expect(screen.getByRole("textbox", { name: "Search features and pages" })).toHaveProperty("value", "");
@@ -206,4 +212,29 @@ test("uploads the photo under the field required by the current backend", async 
     expect((call?.[2]?.body as FormData).get("photo")).toBe(photo);
     expect((call?.[2]?.body as FormData).has("file")).toBe(false);
   });
+});
+
+test("organization navigation contains only its management destinations",async()=>{
+ render(<AppShell context={organizationNavigation("acme","Acme","people")}><h1>People</h1></AppShell>);
+ await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
+ expect(screen.getByRole("link",{name:"People"}).getAttribute("aria-current")).toBe("page");
+ expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
+ expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
+ expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/organizations/acme");
+});
+test("workspace navigation selects only the current section and retains its parent organization",async()=>{
+ const workspace={workspace_id:"ftc",name:"Robotics",kind:"team" as const,team_id:"ftc",role:"owner" as const,organization_id:"acme",organization_name:"Acme"};
+ render(<AppShell context={workspaceNavigation(workspace,"locations")}><h1>Locations</h1></AppShell>);
+ await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
+ expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
+ expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
+ expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
+ expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
+});
+test("account navigation requires a context before offering inventory actions",async()=>{
+ render(<AppShell><h1>Account</h1></AppShell>);
+ await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
+ expect(screen.getByRole("link",{name:"Organizations"})).toBeTruthy();
+ expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
+ expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
 });
