@@ -9,6 +9,7 @@ from postgrest.exceptions import APIError
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_raw
 from app.api.routes.inventory_workspaces import _workspace, _inventory, inventory_role
+from app.services.access_invitations import invite_or_change
 
 router = APIRouter(tags=['collaboration'])
 
@@ -107,7 +108,7 @@ def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depen
 
 @router.post('/organizations/{organization_id}/members')
 def add_organization_member(organization_id: UUID, body: OrganizationMember, user: AuthenticatedUser = Depends(get_current_user)):
-    return manage(user.user_id, 'organization_member', {**body.model_dump(), 'organization_id': str(organization_id)})
+    return invite_or_change(user.user_id, 'organization', str(organization_id), body.role, email=body.email)
 
 
 @router.delete('/organizations/{organization_id}/members/{member_id}')
@@ -122,7 +123,7 @@ def create_project(organization_id: UUID, body: Name, user: AuthenticatedUser = 
 
 @router.put('/inventory-workspaces/{workspace_id}/members/{member_id}')
 def assign_workspace_member(workspace_id: UUID, member_id: UUID, body: Role, user: AuthenticatedUser = Depends(get_current_user)):
-    return manage(user.user_id, 'workspace_member', {'team_id': str(workspace_id), 'user_id': str(member_id), 'role': body.role})
+    return invite_or_change(user.user_id, 'workspace', str(workspace_id), body.role, member_id=str(member_id))
 
 
 @router.get('/inventory-workspaces/{workspace_id}/overview')
@@ -165,7 +166,7 @@ def change_policy(inventory_id: UUID, body: Policy, user: AuthenticatedUser = De
 
 @router.put('/inventories/{inventory_id}/access/{member_id}')
 def change_inventory_member(inventory_id: UUID, member_id: UUID, body: Role, user: AuthenticatedUser = Depends(get_current_user)):
-    return manage(user.user_id, 'inventory_member', {'inventory_id': str(inventory_id), 'user_id': str(member_id), 'role': body.role})
+    return invite_or_change(user.user_id, 'inventory', str(inventory_id), body.role, member_id=str(member_id))
 
 
 @router.get('/inventories/{inventory_id}/audit')

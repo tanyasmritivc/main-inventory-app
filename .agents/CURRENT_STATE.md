@@ -1,5 +1,40 @@
 # Current state
 
+## October 15 recipient consent published
+
+PR #79 runtime `8592a4d556352155cee7c619dd6c592a7cc6c7c9` replaces immediate new organization and
+workspace membership, and newly granted inventory access, with recipient-bound
+pending invitations. Email links, 12-character codes and Notifications open an
+explicit Accept/Decline review. Sender cancellation, seven-day expiry, verified
+email matching and acceptance-time authority/parent checks are enforced in new
+migration 045. Existing memberships/role edits remain. The old immediate-grant RPC
+is private and its replacement rejects new membership without consent. Existing
+Space/Team code joins still require their established explicit Join action.
+
+528 backend tests, 262 web tests, TypeScript and changed-file lint (zero errors,
+one existing warning) pass. Disposable PostgreSQL verifies consent, wrong and
+unverified recipients, signup after invitation, email changes, cancellation,
+expiry, decline, replay after revocation, sender revocation and changed parents.
+Concurrent acceptance/decline/cancellation produces one consistent decision and
+at most one membership/audit. All five CI gates (`38837898405`), production build,
+restored-copy migration rehearsal and live migration 045 pass. Original public
+rows/policies and all existing memberships are preserved. Web build
+`zS9LXpYxW5C_txX1tIPK5` runs from
+`/home/ubuntu/findez-web-releases/web-invitation-consent-20261015/frontend`.
+12 public routes, 27 protected web routes, 11 API auth guards and four CSS assets
+pass. Signed-in Safari verifies Invite/Cancel, Notifications and invalid-code
+handling; desktop/390px actual-component light/dark review/delivery previews pass.
+Production email configuration is verified; actual customer email delivery was
+not used as a probe. No customer invitations or membership changes were made for QA.
+
+Receipts: `Documents/FindEZ/Releases/invitation-consent-2026-10-15/` and
+`/home/ubuntu/findez-invitation-consent-20261015/`. That remote directory retains
+`runtime-backup` and `previous-web-rebuild.conf`. Runtime rollback must retain the
+consent schema/guard; the old runtime then cannot add new members immediately.
+An initial runtime rollback caused by the legacy Teams redirect check was resolved;
+the corrected publication passed without reapplying migration 045. Mobile source
+and binary are unchanged; new organization/access invitations use web review links.
+
 ## October 15 contextual navigation published
 
 `fix/web-context-navigation-20261015` separates context selection from management.

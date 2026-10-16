@@ -1,5 +1,20 @@
 # Active work
 
+## October 15 recipient-approved membership
+
+Completed and published PR #79 (`8592a4d`), migration 045, on lane
+`feat/member-invitation-consent-20261015`. It replaces immediate new
+organization/workspace membership and newly granted inventory access with pending
+recipient-approved invitations, email review links, recipient-bound codes,
+Notifications, Accept/Decline, expiry and sender cancellation. Consent is enforced
+in the database-backed API, with existing memberships preserved and sender/parent
+authorization rechecked on acceptance. No real invitations or
+customer access changes during QA. All 528 backend/262 web tests, TypeScript,
+lint, all five CI gates, production build, isolated/concurrent SQL checks,
+restored-copy migration rehearsal and live signed-in Safari checks pass. Existing
+memberships and public-table values/policies are preserved. See CURRENT_STATE.md
+for runtime/rollback records and web-only invitation review behavior.
+
 ## October 15 contextual website navigation
 
 Completed and published PR #78, runtime `5d9906f`, on lane

@@ -1,6 +1,7 @@
 import type { TeamCategory } from "./team-categories";
 import { getAccessToken, getAccessSession } from "@/lib/session";
 import { activeInventory, assertInventory, inventoryApiPath } from "@/lib/inventory-selection";
+import type { AccessInvitation } from "./access-invitation";
 
 export type InventoryItem = {
   /** Original imported values, independent of current stock and location. */
@@ -735,6 +736,7 @@ export async function deleteSpace({ token, spaceId }: { token: string; spaceId: 
 // ── Activity and notifications ───────────────────────────────────────────────
 
 export type ActivityEntry = {
+  invitation?: AccessInvitation;
   id?: string;
   activity_id?: string;
   action?: string;
