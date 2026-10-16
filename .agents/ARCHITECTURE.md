@@ -13,6 +13,15 @@ an additional boundary. Management RPCs and item changes record actor/time and
 recorded-location evidence. Existing rows and legacy access are preserved.
 Deployment status is maintained in CURRENT_STATE.md.
 
+Migration 045 requires recipient consent for new organization/workspace membership
+and newly granted inventory access. Pending invitations contain a hashed code,
+recipient email, scope, role, expiry and decision history. Verified-email preview
+and Notifications do not grant access. Acceptance rechecks current sender and
+parent permissions transactionally. The old immediate-grant function is private;
+the public management RPC supports existing-role changes and revocation only.
+Existing Space/Team self-join links remain compatible. New access invitations
+use `/join/access` web review; mobile navigation/binary are unchanged.
+
 ## Repository
 
 | Path | Current role |

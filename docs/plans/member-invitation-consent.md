@@ -1,5 +1,8 @@
 # Recipient-approved membership
 
+Released October 15 in PR #79, runtime `8592a4d`, migration 045. Backend and web
+are live; validation and rollback receipts are recorded in CURRENT_STATE.md.
+
 New organization and workspace members, and workspace members newly granted a
 restricted inventory, must accept an invitation before access exists. Existing
 memberships remain intact. Existing member role changes and revocation retain
