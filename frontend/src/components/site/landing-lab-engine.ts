@@ -194,7 +194,8 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
     return {
       phoneA, benchBox, phoneB, fanBox, fan, markA, markB,
       segDim, heroSec, heroBox, heroCopy, progBar, pinTop, zoomBox, askCard, whoSec, scanCount, words, seg, segCount, segReview, scanBar,
-      graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs, memoryLetters,
+      graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs,
+      ...(containedHero ? { memoryLetters } : {}),
       chatQ, chatA, chatCtx, typingQ: S.phase === 'q', typingA: S.phase === 'a', thinking: S.phase === 'think',
       ownProd, ownBox, ownRing, ownPct, ownLabel, ownCard, rowA, rowB, pipeNodes, flow, stages, roadFill, roadDot, visHead, seeSec, askSec, visSec, wlCard, findSec, letters,
       email: S.email,
