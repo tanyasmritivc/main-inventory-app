@@ -2,10 +2,12 @@
 
 ## October 15 approved Lab homepage publication
 
-Published at `/` on PR #83, runtime `2e4b2ca`, build
-`JmfJ7pLKgby6LCYTjV_e3`. Retains only Developers, iOS App and session-aware
+Published at `/` on PR #83, runtime `4caa38c`, build
+`nGSlTwykEqoUG8MlgI06u`. Retains only Developers, iOS App and session-aware
 Get started/Dashboard in the header, and all six footer destinations at the
-bottom. The header scrolls with the page; the announcement banner is removed.
+bottom. The header moves at half scroll speed and smoothly fades out after
+moving half its height, restoring on return to the top. Hidden links are inert;
+reduced motion uses normal page scrolling. The announcement banner is removed.
 288 web tests, TypeScript, changed-file lint and production build pass. Desktop
 and 390px checks verify retained links, no overflow/errors, scrolling header,
 waitlist confirmation-only behavior and reduced motion. Live public/protected
