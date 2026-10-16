@@ -3,7 +3,7 @@
 /* Native image sizing is part of the approved prototype. */
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
-import { initLandingLab, landingLabValues } from "./landing-lab-engine";
+import { initLandingLab, landingLabValues, memoryHeadline } from "./landing-lab-engine";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
 
@@ -98,7 +98,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 <div style={css(v.pinStyle)} data-lab-style="pinStyle">
 <div className="wrap split" style={css("height:100%;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:40px")}>
 <div>
-<h2 className="h2" style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{"Knowing what it is is useful. Knowing everything around it is memory."}</h2>
+<h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
 <p className="lede hide-s" style={css("color:#A3A3A3")}>{"The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen."}</p>
 </div>
 <div className="float" style={css("position:relative;container-type:inline-size")}>

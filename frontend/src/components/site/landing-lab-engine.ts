@@ -2,6 +2,7 @@
 export const initialLabState = { W: 1440, H: 900, still: false, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 0, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1,
       ci: 0, qn: 999, an: 999, phase: 'hold' as 'hold' | 'q' | 'think' | 'a', askOn: false, seen: 3, email: '', joined: false, err: false, mk: {} as Record<string, number>, gx: 0 };
 export type LabState = typeof initialLabState;
+export const memoryHeadline = "Knowing what it is is useful. Knowing everything around it is memory.";
 export function landingLabValues(state: LabState = initialLabState, containedHero = false) {
 
     const S = state, W = S.W || 1440, H = S.H || 900, narrow = W < 860;
@@ -73,6 +74,9 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
     const scanBar = 'x:' + (S.seg * 820).toFixed(0) + 'px;opacity:' + (S.seg > .02 && S.seg < .98 ? 1 : 0);
 
     /* memory graph */
+    const memoryLetters = Array.from(memoryHeadline).map((t, i) => ({
+      t, style: 'opacity:' + (S.still ? 1 : ss(c((S.ge - .25 - i / (memoryHeadline.length - 1) * .45) / .25))).toFixed(3),
+    }));
     const gm = 1 - Math.min(ss(S.ge), 1 - ss(S.gx || 0));
     const graphSec = 'position:relative;background:#000;margin:0 ' + (gm * (narrow ? 16 : 72)).toFixed(1) + 'px;border-radius:' + (gm * 40).toFixed(1) + 'px;height:' + (S.still ? pinH : pinH + 2300) + 'px';
     const pinStyle = (S.still ? 'position:relative' : 'position:sticky;top:0') + ';height:' + pinH + 'px;display:flex;flex-direction:column;justify-content:center;overflow:hidden';
@@ -190,7 +194,7 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
     return {
       phoneA, benchBox, phoneB, fanBox, fan, markA, markB,
       segDim, heroSec, heroBox, heroCopy, progBar, pinTop, zoomBox, askCard, whoSec, scanCount, words, seg, segCount, segReview, scanBar,
-      graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs,
+      graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs, memoryLetters,
       chatQ, chatA, chatCtx, typingQ: S.phase === 'q', typingA: S.phase === 'a', thinking: S.phase === 'think',
       ownProd, ownBox, ownRing, ownPct, ownLabel, ownCard, rowA, rowB, pipeNodes, flow, stages, roadFill, roadDot, visHead, seeSec, askSec, visSec, wlCard, findSec, letters,
       email: S.email,
