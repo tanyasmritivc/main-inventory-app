@@ -2,14 +2,15 @@
 
 ## October 16 homepage section removal
 
-Same homepage lane and PR #86, based on `428ab8c`. Tanya requests removing the
-duplicate-purchase demo (`own`) and roadmap (`vision`) from the published
-homepage. Omit their markup so no reserved section space remains. Preserve the
-original `/lab` reference, contained single-line hero, remaining sections and
-header/footer. Tanya additionally requests a letter-by-letter fade on the memory
-graph heading as its section enters view. Reuse the direct DOM scroll bindings
-and show all letters with reduced motion. Web-only checks and selective
-publication are in progress.
+Completed and published on the same homepage lane, PR #86, runtime `d8dc962`,
+build `khZ3cniHwmhtRfQQ72I4J`. The duplicate-purchase demo (`own`) and roadmap
+(`vision`) are omitted from the homepage without reserved gaps. The memory graph
+heading reveals its letters from left to right as the section enters; reduced
+motion shows all letters. Original `/lab`, contained single-line hero, remaining
+sections and header/footer remain. 296 web tests, TypeScript/lint, production
+build, desktop/390px browser checks and all five CI gates pass. Public
+routes/assets/auth guards and backend health pass. Web-only; rollback preserved.
+See CURRENT_STATE.md for receipts.
 
 ## October 16 contained homepage hero
 
