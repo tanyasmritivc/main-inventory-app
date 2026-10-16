@@ -3,7 +3,7 @@
 ## October 16 contained homepage hero
 
 Active on `fix/landing-contained-hero-20261016`. Homepage-only permanent inset and
-rounded hero frame, vertically centered wider headline and no duplicate hero
+rounded hero frame, vertically centered single-line desktop headline and no duplicate hero
 buttons. Retain header/footer and original `/lab` reference. Web checks, responsive
 browser acceptance and selective publication follow. Tanya authorizes future web
 changes to be published after checking, without a separate prototype/approval.
