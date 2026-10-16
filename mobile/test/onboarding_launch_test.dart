@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:dio/dio.dart' as dio;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,9 +19,74 @@ import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/sharing/invitation_host.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/main.dart';
+import 'package:mobile/features/workspaces/inventory_context_host.dart';
+import 'package:mobile/features/workspaces/hierarchy_page.dart';
+
+class _LaunchAdapter implements dio.HttpClientAdapter {
+  @override
+  Future<dio.ResponseBody> fetch(
+    dio.RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final path = options.path;
+    final Object result = path == '/inventories/personal-inventory'
+        ? {
+            'inventory': {
+              'inventory_id': 'personal-inventory',
+              'name': 'My inventory',
+              'team_id': null,
+              'role': 'owner',
+              'can_edit': true,
+              'can_manage': true,
+              'can_rename': true,
+              'workspace': {
+                'workspace_id': 'personal',
+                'name': 'Personal',
+                'role': 'owner',
+              },
+            },
+          }
+        : path.endsWith('/conversations') || path == '/sharing/joined'
+        ? []
+        : {
+            'organizations': [],
+            'workspaces': [
+              {
+                'workspace_id': 'personal',
+                'name': 'Personal',
+                'kind': 'personal',
+                'role': 'owner',
+              },
+            ],
+            'items': [],
+            'spaces': [],
+            'checkouts': [],
+            'pending_count': 0,
+            'notifications': [],
+            'unread_count': 0,
+            'display_name': 'Test',
+          };
+    return dio.ResponseBody.fromString(
+      jsonEncode(result),
+      200,
+      headers: {
+        dio.Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
 
 class _Api extends ApiClient {
-  _Api() : super(baseUrl: 'https://api.test');
+  _Api()
+    : super(
+        baseUrl: 'https://api.test',
+        httpClient: dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+          ..httpClientAdapter = _LaunchAdapter(),
+      );
   int reads = 0;
   @override
   Future<SearchItemsResult> searchItems({required String query}) async {
@@ -161,24 +227,27 @@ void main() {
     expect(find.byType(OnboardingPage), findsNothing);
   });
 
-  testWidgets('returning authenticated users keep their session and Home', (
-    tester,
-  ) async {
-    await Supabase.instance.client.auth.signInWithPassword(
-      email: 'test@example.test',
-      password: 'test-password',
-    );
-    await tester.pumpWidget(_gate(_Api()));
-    await tester.pumpAndSettle();
-    expect(find.byType(MainShell), findsOneWidget);
-    expect(find.byType(OnboardingPage), findsNothing);
-    expect(find.byType(AuthPage), findsNothing);
-    expect(
-      Supabase.instance.client.auth.currentUser?.id,
-      'onboarding-test-account',
-    );
-    await tester.pumpWidget(const SizedBox());
-  });
+  testWidgets(
+    'returning authenticated users keep their session and choose an inventory',
+    (tester) async {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: 'test@example.test',
+        password: 'test-password',
+      );
+      await tester.pumpWidget(_gate(_Api()));
+      await tester.pumpAndSettle();
+      expect(find.byType(InventoryContextHost), findsOneWidget);
+      expect(find.byType(HierarchyPage), findsOneWidget);
+      expect(find.byType(MainShell), findsNothing);
+      expect(find.byType(OnboardingPage), findsNothing);
+      expect(find.byType(AuthPage), findsNothing);
+      expect(
+        Supabase.instance.client.auth.currentUser?.id,
+        'onboarding-test-account',
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets(
     'fresh-install Home tour is not replayed after interrupted restart',
@@ -189,6 +258,11 @@ void main() {
       await Supabase.instance.client.auth.signInWithPassword(
         email: 'test@example.test',
         password: 'test-password',
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'findez.active-inventory:onboarding-test-account',
+        'personal-inventory',
       );
       await tester.pumpWidget(_gate(_Api()));
       await tester.pumpAndSettle();

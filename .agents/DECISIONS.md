@@ -1,5 +1,18 @@
 # Decisions
 
+## October 16 mobile working context
+
+Mobile now follows the existing optional organization -> workspace -> inventory
+relationships. Replace the old Teams shell segment with a collection chooser and
+keep Home/Capture/Ask/Find inside one authorized inventory. Workspaces remain the
+existing Team records; do not duplicate or migrate them for mobile. Account-bound
+immutable API clients and Navigator lifetimes prevent retargeting in-flight saves
+or carrying drafts/caches across selections. Restore only a previously chosen ID,
+reauthorized by the backend. Incoming spreadsheet shares require an explicit
+inventory destination. Keep personal collections and existing explicit shared-code
+Join flows compatible. This is source implementation, not a native release.
+
+
 ## October 15 organization actions and deletion scope
 
 Use one owner-only three-dot menu for organization actions on cards and inside an

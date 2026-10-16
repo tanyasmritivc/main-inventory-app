@@ -868,27 +868,29 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 },
                 itemBuilder: (_) => [
                   const PopupMenuItem(value: 'open', child: AppText('Open')),
-                  const PopupMenuItem(
-                    value: 'rename',
-                    child: AppText('Rename'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'summarize',
-                    child: AppText('Summarize'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'link',
-                    child: AppText('Link to item'),
-                  ),
-                  if ((linked?['item_id'] ?? '').isNotEmpty)
+                  if (widget.api.canEdit) ...[
                     const PopupMenuItem(
-                      value: 'unlink',
-                      child: AppText('Remove link'),
+                      value: 'rename',
+                      child: AppText('Rename'),
                     ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: AppText('Delete'),
-                  ),
+                    const PopupMenuItem(
+                      value: 'summarize',
+                      child: AppText('Summarize'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'link',
+                      child: AppText('Link to item'),
+                    ),
+                    if ((linked?['item_id'] ?? '').isNotEmpty)
+                      const PopupMenuItem(
+                        value: 'unlink',
+                        child: AppText('Remove link'),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: AppText('Delete'),
+                    ),
+                  ],
                 ],
               ),
       ),
@@ -1002,29 +1004,33 @@ class _DocumentsPageState extends State<DocumentsPage> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
         ),
         actions: [
-          PopupMenuButton<String>(
-            enabled: !_uploading,
-            tooltip: 'Add document',
-            onSelected: (value) {
-              if (value == 'note') unawaited(_newNote());
-              if (value == 'upload') unawaited(_uploadDocument());
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'note', child: AppText('New note')),
-              PopupMenuItem(value: 'upload', child: AppText('Upload file')),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              child: AppText(
-                _uploading ? 'Uploading...' : 'Add',
-                style: TextStyle(
-                  color: AppTheme.foreground(context, HomeColors.text),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
+          if (widget.api.canEdit)
+            PopupMenuButton<String>(
+              enabled: !_uploading,
+              tooltip: 'Add document',
+              onSelected: (value) {
+                if (value == 'note') unawaited(_newNote());
+                if (value == 'upload') unawaited(_uploadDocument());
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'note', child: AppText('New note')),
+                PopupMenuItem(value: 'upload', child: AppText('Upload file')),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
+                child: AppText(
+                  _uploading ? 'Uploading...' : 'Add',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, HomeColors.text),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
       body: RefreshIndicator(

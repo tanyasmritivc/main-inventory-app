@@ -346,4 +346,51 @@ void main() {
     expect(InventoryCache.forContext(a.cacheKey).single.itemId, 'a-item');
     expect(InventoryCache.items, isEmpty);
   });
+  test(
+    'transient permission refresh preserves the active draft client and can retry',
+    () async {
+      final session = InventorySession(fixture.api, 'actor-a');
+      addTearDown(session.dispose);
+      await session.open('a');
+      final client = session.inventoryApi;
+      fixture.respond = (r) => throw dio.DioException(
+        requestOptions: r,
+        type: dio.DioExceptionType.connectionError,
+      );
+      await session.revalidate();
+      expect(session.inventoryApi, same(client));
+      expect(session.selection?.inventoryId, 'a');
+      expect(session.refreshError, isNotNull);
+      expect(session.error, isNull);
+      fixture.respond = (_) => {'inventory': inventory('a')};
+      await session.revalidate();
+      expect(session.refreshError, isNull);
+      expect(session.inventoryApi, same(client));
+      fixture.respond = (r) => throw dio.DioException(
+        requestOptions: r,
+        type: dio.DioExceptionType.connectionError,
+      );
+      await session.revalidate();
+      await session.chooseAnother();
+      expect(session.refreshError, isNull);
+    },
+  );
+  test(
+    'retrying an import destination never replaces the remembered inventory',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('findez.active-inventory:actor-a', 'normal');
+      final session = InventorySession(fixture.api, 'actor-a');
+      addTearDown(session.dispose);
+      fixture.status = 503;
+      fixture.respond = (_) => {'detail': 'Try again'};
+      await session.open('import', remember: false);
+      expect(session.selection, isNull);
+      fixture.status = 200;
+      fixture.respond = (_) => {'inventory': inventory('import')};
+      await session.retry();
+      expect(session.selection?.inventoryId, 'import');
+      expect(prefs.getString('findez.active-inventory:actor-a'), 'normal');
+    },
+  );
 }

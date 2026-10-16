@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import 'confirm_scan_sheet.dart';
 import 'upload_photo_flow.dart';
@@ -119,8 +120,11 @@ Future<void> runSpaceBarcodeFlow({
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) =>
-        ConfirmScanSheet(items: items, defaultLocation: preselectedSpace),
+    builder: (_) => ConfirmScanSheet(
+      items: items,
+      defaultLocation: preselectedSpace,
+      existingItems: InventoryCache.forContext(api.cacheKey),
+    ),
   );
   if (confirmed == null || confirmed.isEmpty || !context.mounted) return;
 

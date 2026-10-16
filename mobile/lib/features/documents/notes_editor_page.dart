@@ -81,7 +81,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
   }
 
   Future<bool> _save({required bool popOnSuccess}) async {
-    if (_saving) return false;
+    if (_saving || !widget.api.canEdit) return false;
     if (_owner != _currentOwner) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -232,7 +232,9 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
           ),
           actions: [
             TextButton(
-              onPressed: _saving ? null : () => _save(popOnSuccess: true),
+              onPressed: _saving || !widget.api.canEdit
+                  ? null
+                  : () => _save(popOnSuccess: true),
               child: AppText(
                 _saving ? 'Saving...' : 'Save',
                 style: TextStyle(
@@ -249,6 +251,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _controller,
+              readOnly: !widget.api.canEdit,
               onChanged: (_) => setState(() {}),
               style: AppTypography.bodyStyleOf(
                 context,

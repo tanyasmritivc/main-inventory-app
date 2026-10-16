@@ -23,6 +23,7 @@ class ConfirmScanSheet extends StatefulWidget {
     super.key,
     required this.items,
     required this.defaultLocation,
+    this.existingItems,
   });
 
   final List<ExtractedInventoryItem> items;
@@ -31,6 +32,7 @@ class ConfirmScanSheet extends StatefulWidget {
   /// initial value for each item's Location field so the user sees their
   /// chosen space rather than the AI-extracted default ("Unsorted").
   final String defaultLocation;
+  final List<InventoryItem>? existingItems;
 
   @override
   State<ConfirmScanSheet> createState() => _ConfirmScanSheetState();
@@ -44,7 +46,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
-  final List<InventoryItem> _existing = InventoryCache.items;
+  late final List<InventoryItem> _existing =
+      widget.existingItems ?? InventoryCache.items;
 
   @override
   void initState() {

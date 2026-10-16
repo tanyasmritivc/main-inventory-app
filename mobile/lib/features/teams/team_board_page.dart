@@ -46,16 +46,20 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     try {
       final teams = await widget.api.listTeams();
       Map<String, dynamic>? selected;
-      if (teams.isNotEmpty) {
-        selected = teams.firstWhere(
-          (team) => team['team_id'].toString() == teamId,
-          orElse: () => _team == null
-              ? teams.first
-              : teams.firstWhere(
-                  (team) => team['team_id'] == _team?['team_id'],
-                  orElse: () => teams.first,
-                ),
+      final requested =
+          teamId ?? _team?['team_id']?.toString() ?? widget.initialTeamId;
+      if (requested != null) {
+        final matches = teams.where(
+          (team) => team['team_id'].toString() == requested,
         );
+        if (matches.isEmpty) {
+          throw const AskRequestException(
+            'You no longer have access to this workspace.',
+          );
+        }
+        selected = matches.first;
+      } else if (teams.isNotEmpty) {
+        selected = teams.first;
       }
       var tasks = <Map<String, dynamic>>[];
       var role = 'viewer';
@@ -109,7 +113,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const AppText(
-                  'New team item',
+                  'New task',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
@@ -176,7 +180,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                             MemberAvatar(
                               name:
                                   member['display_name']?.toString() ??
-                                  'Team member',
+                                  'Workspace member',
                               photoUrl: member['avatar_url']?.toString(),
                               colorHex: member['avatar_color']?.toString(),
                               size: 24,
@@ -184,7 +188,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                             const SizedBox(width: 8),
                             AppText(
                               member['display_name']?.toString() ??
-                                  'Team member',
+                                  'Workspace member',
                             ),
                           ],
                         ),
@@ -234,7 +238,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: AppText(task['title']?.toString() ?? 'Team item'),
+              title: AppText(task['title']?.toString() ?? 'Task'),
               subtitle: AppText(task['description']?.toString() ?? ''),
             ),
             if (_canEdit && status != 'doing')
@@ -297,7 +301,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const AppText('Team Board'),
+        title: const AppText('Tasks'),
         actions: [
           IconButton(
             onPressed: _load,
@@ -313,14 +317,14 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? _MessageState(
-              title: 'Couldn’t load Team Board',
+              title: 'Couldn’t load tasks',
               message: _error!,
               action: () => _load(),
             )
           : _team == null
           ? const _MessageState(
-              title: 'Team unavailable',
-              message: 'Return to Teams and choose another team.',
+              title: 'Workspace unavailable',
+              message: 'Return to Workspaces and choose another workspace.',
               actionLabel: null,
             )
           : _buildBoard(),
@@ -450,7 +454,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      task['title']?.toString() ?? 'Team item',
+                      task['title']?.toString() ?? 'Task',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         decoration: done ? TextDecoration.lineThrough : null,
@@ -590,7 +594,7 @@ class _BoardEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           AppText(
-            completed ? 'Nothing completed yet' : 'Your team is clear',
+            completed ? 'Nothing completed yet' : 'No open tasks',
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 7),

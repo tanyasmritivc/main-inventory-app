@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _items = InventoryCache.items;
+    _items = InventoryCache.forContext(widget.api.cacheKey);
     unawaited(_load());
   }
 
@@ -85,7 +85,9 @@ class _HomePageState extends State<HomePage> {
     ]);
     if (!mounted || generation != _loadGeneration) return;
     final inventory = results[0] as SearchItemsResult?;
-    if (inventory != null) InventoryCache.setItems(inventory.items);
+    if (inventory != null) {
+      InventoryCache.setItems(inventory.items, contextKey: widget.api.cacheKey);
+    }
     setState(() {
       _items = inventory?.items ?? _items;
       if (inventory != null) _inventoryAvailable = true;
@@ -203,6 +205,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) => RefreshIndicator(
     onRefresh: _load,
     child: HomeOverview(
+      title:
+          widget.api.inventoryContext == null ||
+              widget.api.inventoryContext!.isPersonal
+          ? 'My home'
+          : 'Overview',
       accountControl: widget.accountControl,
       items: _items,
       spaces: _spaces,

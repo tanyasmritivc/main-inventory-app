@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
@@ -14,9 +15,10 @@ class InventorySession extends ChangeNotifier {
   InventoryContext? selection;
   ApiClient? inventoryApi;
   bool loading = false;
-  Object? error;
+  Object? error, refreshError;
   int _generation = 0;
   String? _requestedId, _requestedWorkspace, _requestedOrganization;
+  bool _requestedRemember = true;
   bool _disposed = false;
   String get _key => 'findez.active-inventory:$accountId';
 
@@ -52,7 +54,11 @@ class InventorySession extends ChangeNotifier {
     String? organizationId,
   }) async {
     final generation = ++_generation;
-    _requestedId = inventoryId; _requestedWorkspace = workspaceId; _requestedOrganization = organizationId;
+    refreshError = null;
+    _requestedId = inventoryId;
+    _requestedRemember = remember;
+    _requestedWorkspace = workspaceId;
+    _requestedOrganization = organizationId;
     // Immediately retire old clients, including capture previews and chat streams.
     selection = null;
     inventoryApi = null;
@@ -115,6 +121,8 @@ class InventorySession extends ChangeNotifier {
         expectedWorkspace: previous.workspaceId,
       );
       if (!_current(generation)) return;
+      refreshError = null;
+      notifyListeners();
       if (next.role != previous.role ||
           next.canEdit != previous.canEdit ||
           next.canManage != previous.canManage ||
@@ -127,6 +135,21 @@ class InventorySession extends ChangeNotifier {
       }
     } catch (reason) {
       if (!_current(generation)) return;
+      if (reason is DioException &&
+          ([
+                DioExceptionType.connectionError,
+                DioExceptionType.connectionTimeout,
+                DioExceptionType.receiveTimeout,
+                DioExceptionType.sendTimeout,
+              ].contains(reason.type) ||
+              (reason.response?.statusCode ?? 0) >= 500 ||
+              reason.response?.statusCode == 429)) {
+        // A transient refresh must not discard a camera/chat draft. Every later
+        // operation still goes through the server's current authorization.
+        refreshError = reason;
+        notifyListeners();
+        return;
+      }
       // A denied or unavailable inventory must retire all of its open routes.
       selection = null;
       inventoryApi = null;
@@ -138,15 +161,30 @@ class InventorySession extends ChangeNotifier {
     }
   }
 
-  Future<void> retry() => _requestedId == null ? restore() : open(_requestedId!, workspaceId: _requestedWorkspace, organizationId: _requestedOrganization);
+  void dismissRefreshError() {
+    refreshError = null;
+    notifyListeners();
+  }
+
+  Future<void> retry() => _requestedId == null
+      ? restore()
+      : open(
+          _requestedId!,
+          remember: _requestedRemember,
+          workspaceId: _requestedWorkspace,
+          organizationId: _requestedOrganization,
+        );
 
   Future<void> chooseAnother() async {
-    _requestedId = null; _requestedWorkspace = null; _requestedOrganization = null;
+    _requestedId = null;
+    _requestedWorkspace = null;
+    _requestedOrganization = null;
     ++_generation;
     selection = null;
     inventoryApi = null;
     loading = false;
     error = null;
+    refreshError = null;
     InventoryCache.clear();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();

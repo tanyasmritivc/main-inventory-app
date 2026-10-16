@@ -1,5 +1,30 @@
 # Current state
 
+## October 16 mobile hierarchy source implementation
+
+Branch `feat/mobile-inventory-context-20261016` adds the existing web hierarchy to
+Flutter without changing backend, database, website, dependencies or native
+configuration. Your world -> Personal or organization -> workspace -> inventory
+replaces the old Teams shell entry. Existing Team records remain workspaces.
+Inventory-scoped Home/Capture/Ask/Find, documents, item/Space edits, imports,
+membership/recipient consent, restricted-directory access requests, permitted
+rename/delete/leave and shared physical locations use current authenticated APIs.
+Account-bound immutable clients, Navigator disposal, partitioned caches and late
+response guards keep selections separate. Stored selection IDs are reauthorized;
+transient permission-refresh failures preserve drafts with Retry, while confirmed
+denial retires the inventory views. Import destination retries do not change the
+normal remembered inventory.
+
+409 Flutter tests pass (1m46s) and `flutter analyze --no-pub` reports no issues.
+75 targeted backend route/service tests and 59 web compatibility tests pass;
+their external I/O is stubbed. The full parity/file matrix is recorded in
+`docs/plans/mobile-hierarchy-parity.md`. This is source implementation only, with
+no native publication or production changes. Device camera/universal links,
+actual invitation delivery and signed-in web/mobile round trips remain acceptance
+gates using disposable accounts. Native builds need additional free disk space;
+the machine has under 0.5 GiB free. Do not claim production security or a native
+release from adapter/widget tests.
+
 ## October 15 organization actions published
 
 PR #84 runtime `a21ea8d05c77d7328340000271a106d2d8d5a85e` is live on backend

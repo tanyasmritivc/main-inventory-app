@@ -2,11 +2,15 @@
 
 ## October 16 mobile hierarchy parity
 
-Active on `feat/mobile-inventory-context-20261016` in this worktree. Mobile-only
-organization/workspace/inventory navigation, consent and membership management,
-physical locations and immutable scoped API clients. Replaces the old Teams
-shell entry while preserving backend records and personal inventory. No backend,
-web, schema, native lifecycle or production changes authorized in this lane.
+Source implementation complete on `feat/mobile-inventory-context-20261016`.
+Mobile-only organization/workspace/inventory navigation, consent and membership
+management, physical locations and immutable scoped API clients replace the old
+Teams shell entry while preserving backend records and personal inventory.
+409 Flutter tests, clean static analysis, 75 targeted backend tests and 59 web
+compatibility tests pass. No backend, web, schema, native configuration or
+production changes. Native/device, real email and two-client acceptance remain
+release gates. See `docs/plans/mobile-hierarchy-parity.md` for matrix, files and
+the disposable-account test plan.
 
 
 ## October 15 organization actions menu

@@ -11,6 +11,7 @@ import '../../core/notification_snapshot.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/app_text.dart';
+import '../workspaces/invitation_page.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
@@ -290,13 +291,10 @@ class _NotificationsPageState extends State<NotificationsPage>
         children: _items!.isEmpty
             ? [
                 const SizedBox(height: 80),
-                const AppText(
-                  'No team updates yet',
-                  textAlign: TextAlign.center,
-                ),
+                const AppText('No updates yet', textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 AppText(
-                  'Updates from your teams appear here.',
+                  'Workspace updates and invitations appear here.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppTheme.foreground(context, AppColors.muted),
@@ -330,6 +328,25 @@ class _NotificationsPageState extends State<NotificationsPage>
                       ),
                     ),
                     subtitle: details.isEmpty ? null : AppText(details),
+                    onTap: action != 'access_invitation'
+                        ? null
+                        : () async {
+                            final id =
+                                (item['invitation'] as Map?)?['invitation_id']
+                                    ?.toString() ??
+                                (item['metadata'] as Map?)?['invitation_id']
+                                    ?.toString();
+                            if (id == null) return;
+                            await Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => AccessInvitationPage(
+                                  api: widget.api,
+                                  invitationId: id,
+                                ),
+                              ),
+                            );
+                            if (mounted) await _load();
+                          },
                     trailing: unread
                         ? const Icon(
                             CupertinoIcons.circle_fill,

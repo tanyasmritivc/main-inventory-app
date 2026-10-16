@@ -441,9 +441,9 @@ class _ScanPageState extends State<ScanPage> {
     );
     if (uuidRegex.hasMatch(trimmedBarcode)) {
       debugPrint('[Scan] FindEZ QR detected, looking up item: $trimmedBarcode');
-      final match = InventoryCache.items
-          .where((i) => i.itemId == trimmedBarcode)
-          .firstOrNull;
+      final match = InventoryCache.forContext(
+        widget.api.cacheKey,
+      ).where((i) => i.itemId == trimmedBarcode).firstOrNull;
       if (!mounted) return;
       if (match != null) {
         showModalBottomSheet<void>(
@@ -1631,7 +1631,11 @@ class _ScanPageState extends State<ScanPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => ConfirmScanSheet(items: items, defaultLocation: space),
+      builder: (_) => ConfirmScanSheet(
+        items: items,
+        defaultLocation: space,
+        existingItems: InventoryCache.forContext(widget.api.cacheKey),
+      ),
     );
     if (edited == null || !mounted) return;
     setState(() {
@@ -1861,7 +1865,12 @@ class _ScanPageState extends State<ScanPage> {
         // Refresh inventory cache before notifying parent so the tab rebuilds with fresh data.
         try {
           final refreshed = await widget.api.searchItems(query: '');
-          if (mounted) InventoryCache.setItems(refreshed.items);
+          if (mounted) {
+            InventoryCache.setItems(
+              refreshed.items,
+              contextKey: widget.api.cacheKey,
+            );
+          }
         } catch (_) {
           // acceptable: the save succeeded; this is a background cache refresh.
           // The inventory page will fetch fresh data when it mounts.

@@ -6,7 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/invitation.dart';
-import '../teams/team_workspace_page.dart';
+import '../workspaces/inventory_context_host.dart';
+import '../workspaces/invitation_page.dart';
 import 'invitation_dialog.dart';
 import 'shared_inventory_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -151,11 +152,17 @@ class _InvitationHostState extends State<InvitationHost>
         final route = DialogRoute<Map<String, dynamic>>(
           context: navigator.context,
           barrierDismissible: false,
-          builder: (_) => InvitationDialog(
-            api: widget.api,
-            invitation: invitation,
-            userId: owner,
-          ),
+          builder: (_) => invitation.kind == 'access'
+              ? AccessInvitationPage(
+                  api: widget.api,
+                  code: invitation.code,
+                  returnDecision: true,
+                )
+              : InvitationDialog(
+                  api: widget.api,
+                  invitation: invitation,
+                  userId: owner,
+                ),
         );
         _dialog = route;
         final result = await navigator.push(route);
@@ -185,14 +192,11 @@ class _InvitationHostState extends State<InvitationHost>
             result['accepted'] != true) {
           return;
         }
-        if (invitation.kind == 'team') {
-          final id = result['team_id']?.toString() ?? '';
-          if (id.isEmpty) return;
+        if (invitation.kind == 'access' || invitation.kind == 'team') {
           unawaited(
             navigator.push<void>(
               MaterialPageRoute(
-                builder: (_) =>
-                    TeamWorkspacePage(api: widget.api, initialTeamId: id),
+                builder: (_) => InventoryContextHost(api: widget.api),
               ),
             ),
           );

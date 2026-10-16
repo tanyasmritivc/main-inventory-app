@@ -15,8 +15,11 @@ class Invitation {
   static const metadataKey = 'findez_pending_invitation';
   static final _code = RegExp(r'^[A-Z0-9]{6}$');
   String get key => '$kind:$code';
-  String get url =>
-      'https://www.findez.ai/join/${kind == 'team' ? 'team/' : ''}$code';
+  static bool validCode(String kind, String value) =>
+      (kind == 'access' ? RegExp(r'^[A-Z2-9]{12}$') : _code).hasMatch(value);
+  String get url => kind == 'access'
+      ? 'https://www.findez.ai/join/access?code=$code'
+      : 'https://www.findez.ai/join/${kind == 'team' ? 'team/' : ''}$code';
 
   static Invitation? fromUri(Uri uri) {
     if (uri.userInfo.isNotEmpty || uri.hasPort && uri.port != 443) return null;
@@ -25,6 +28,7 @@ class Invitation {
       kind = switch (uri.host) {
         'space-invite' => 'space',
         'team-invite' => 'team',
+        'access-invite' => 'access',
         _ => null,
       };
       code = uri.queryParameters['code'];
@@ -34,6 +38,11 @@ class Invitation {
       if (parts.length == 3 && parts[0] == 'join' && parts[1] == 'team') {
         kind = 'team';
         code = parts[2];
+      } else if (parts.length == 2 &&
+          parts[0] == 'join' &&
+          parts[1] == 'access') {
+        kind = 'access';
+        code = uri.queryParameters['code'];
       } else if (parts.length == 2 && parts[0] == 'join') {
         kind = 'space';
         code = parts[1];
@@ -43,7 +52,7 @@ class Invitation {
       }
     }
     code = code?.toUpperCase();
-    if (kind == null || code == null || !_code.hasMatch(code)) return null;
+    if (kind == null || code == null || !validCode(kind, code)) return null;
     return Invitation(
       kind: kind,
       code: code,
@@ -55,9 +64,9 @@ class Invitation {
     if (data is! Map || data['v'] != 1) return null;
     final kind = data['kind'], code = data['code'], date = data['created_at'];
     final current = now ?? DateTime.now().millisecondsSinceEpoch;
-    if (!const ['space', 'team'].contains(kind) ||
+    if (!const ['space', 'team', 'access'].contains(kind) ||
         code is! String ||
-        !_code.hasMatch(code) ||
+        !validCode(kind, code) ||
         date is! int ||
         date > current + 300000 ||
         current - date > const Duration(days: 30).inMilliseconds) {

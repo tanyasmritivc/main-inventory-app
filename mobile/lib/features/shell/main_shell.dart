@@ -40,9 +40,15 @@ import 'home_navigation.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.api});
+  const MainShell({
+    super.key,
+    required this.api,
+    this.onSwitchContext,
+    this.onManageContext,
+  });
 
   final ApiClient api;
+  final Future<void> Function()? onSwitchContext, onManageContext;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -83,7 +89,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           account != widget.api.accountId) {
         return;
       }
-      InventoryCache.setItems(result.items);
+      InventoryCache.setItems(result.items, contextKey: widget.api.cacheKey);
     } catch (_) {
       // acceptable: read-only background cache warmup; silently skip if
       // the API is unreachable at launch. The inventory page fetches fresh
@@ -127,7 +133,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       }
     });
     unawaited(_syncSetupAnswers());
-    unawaited(_createPendingFirstSpace());
+    if (widget.api.inventoryContext == null ||
+        widget.api.inventoryContext!.isPersonal) {
+      unawaited(_createPendingFirstSpace());
+    }
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -225,6 +234,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       unawaited(_loadNotificationCount());
       unawaited(_initializePushNotifications());
+      setState(() => _inventoryRefreshToken++);
+      unawaited(_prefetchInventoryCache());
     }
   }
 
@@ -497,6 +508,60 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   }
 
   PreferredSizeWidget? _buildAppBar() {
+    final selected = widget.api.inventoryContext;
+    if (selected != null) {
+      final scaler = MediaQuery.textScalerOf(context);
+      return AppBar(
+        toolbarHeight: (scaler.scale(14) * 1.2 + scaler.scale(11) * 1.1 + 20)
+            .clamp(56, double.infinity),
+        title: TextButton(
+          key: TutorialController.teamsSegmentKey,
+          onPressed: widget.onSwitchContext,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppText(
+                [
+                  selected.organizationName,
+                  selected.workspaceName,
+                ].whereType<String>().join(' / '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.1,
+                  color: AppTheme.textSecondary(context),
+                ),
+              ),
+              Row(
+                children: [
+                  Flexible(
+                    child: AppText(
+                      selected.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.2,
+                        color: AppTheme.textPrimary(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(Icons.expand_more, size: 18),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Inventory settings',
+            onPressed: widget.onManageContext,
+            icon: const Icon(Icons.more_horiz),
+          ),
+        ],
+      );
+    }
     switch (_currentPage) {
       case 3:
         return AppBar(
@@ -572,7 +637,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     final navigation = keyboardVisible || chatFocused
         ? const SizedBox.shrink()
         : HomeNavigation(
-            monochrome: _currentPage == 3 && _inventorySection == 1,
+            monochrome:
+                widget.api.inventoryContext == null &&
+                _currentPage == 3 &&
+                _inventorySection == 1,
             selectedIndex: _navigationIndex,
             onSelected: _onNavigationTap,
             destinationKeys: {
@@ -640,20 +708,27 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 await _openAssistDestination?.call(hint);
               },
             ),
-            ScanPage(
-              api: widget.api,
-              isActive: _currentPage == 2,
-              showAppBar: false,
-              onSaved: () {
-                setState(() => _inventoryRefreshToken++);
-                unawaited(_prefetchInventoryCache());
-              },
-              onSpaceScanned: (spaceName) {
-                setState(() => _inventoryRefreshToken++);
-                _animateTo(3);
-              },
-              onSkipCoachmark: () {},
-            ),
+            if (!widget.api.canEdit)
+              const Center(
+                child: AppText(
+                  'You have view-only access. Ask or Find items in this inventory.',
+                ),
+              )
+            else
+              ScanPage(
+                api: widget.api,
+                isActive: _currentPage == 2,
+                showAppBar: false,
+                onSaved: () {
+                  setState(() => _inventoryRefreshToken++);
+                  unawaited(_prefetchInventoryCache());
+                },
+                onSpaceScanned: (spaceName) {
+                  setState(() => _inventoryRefreshToken++);
+                  _animateTo(3);
+                },
+                onSkipCoachmark: () {},
+              ),
             IndexedStack(
               index: _inventorySection,
               children: [
@@ -662,7 +737,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   refreshToken: _inventoryRefreshToken,
                   onSpaceDeleted: (spaceId) {
                     _inventoryCacheGeneration++;
-                    InventoryCache.removeSpace(spaceId);
+                    InventoryCache.removeSpace(
+                      spaceId,
+                      contextKey: widget.api.cacheKey,
+                    );
                     setState(() {
                       _deletedSpaceId = spaceId;
                       _inventoryRefreshToken++;
@@ -676,7 +754,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   onRegisterOpenAssistDestination: (fn) =>
                       _openAssistDestination = fn,
                 ),
-                TeamsPage(api: widget.api),
+                if (widget.api.inventoryContext == null)
+                  TeamsPage(api: widget.api),
               ],
             ),
           ],
