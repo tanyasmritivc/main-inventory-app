@@ -22,7 +22,7 @@ class InventoryScope:
 
     @property
     def can_edit(self):
-        return self.role in ('owner', 'mentor', 'member')
+        return self.role in ('owner', 'admin', 'editor', 'mentor', 'member')
 
 
 current_inventory: ContextVar[InventoryScope | None] = ContextVar('findez_inventory', default=None)
@@ -30,7 +30,10 @@ current_inventory: ContextVar[InventoryScope | None] = ContextVar('findez_invent
 
 def inventory_cache_key(user_id: str) -> str:
     scope = current_inventory.get()
-    return f'{scope.inventory_id}:{scope.actor_id}:{user_id}' if scope else user_id
+    from app.services.resource_access import access_cache_key, request_actor
+    from app.services.supabase_client import get_supabase_raw
+    prefix = access_cache_key(get_supabase_raw()) if request_actor.get() else ""
+    return prefix + (f'{scope.inventory_id}:{scope.actor_id}:{user_id}' if scope else user_id)
 
 
 TABLES = frozenset((

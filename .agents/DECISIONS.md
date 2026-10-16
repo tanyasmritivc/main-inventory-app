@@ -1,10 +1,23 @@
 # Decisions
 
+## 2026-10-15: Explicit organizations and inventory permissions
+
+Organizations administer membership; existing Teams remain workspaces/projects.
+Organization membership never grants workspace data. Workspaces are collaboration
+boundaries; inventories are collections; physical locations are independent trees
+attached explicitly to inventories. Preserve existing access as `legacy`; new
+inventories default to viewer access. Workspace owner/admin retain administration;
+other members can receive narrower inventory admin/editor/viewer/none overrides.
+Revocation invalidates grants, cached reads and older routes. Enforce permissions
+in the backend and restrictive database policies, with audited transactional
+management. Existing records and organization relationships must not be guessed
+or rewritten. The migration is additive and must pass a restored-copy rehearsal.
+
 ## 2026-10-15: Choose workspace and inventory before the website dashboard
 
 The user selected a two-level entry flow using Supabase organization/project
 pickers as the reference. A workspace is Personal or an existing Team; an
-inventory is an isolated project within it; a Space is a physical location.
+inventory is an isolated collection within it; a Space is a physical location.
 Use explicit URL inventory context and an authorized server boundary for every
 inventory data journey. Keep account/billing administration global, membership
 and roles authoritative, private conversations actor-specific, and legacy private

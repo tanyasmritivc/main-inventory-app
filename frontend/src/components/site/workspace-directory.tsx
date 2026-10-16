@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
 import { requireInventoryContext, selectInventory, type AppInventory, type InventoryWorkspace } from "@/lib/inventory-selection";
+import { CollaborationPanel } from "@/components/site/collaboration-panel";
 import { teamCategories } from "@/lib/team-categories";
 import { userFacingError } from "@/lib/user-facing-error";
 
@@ -95,16 +96,17 @@ function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
     <header className="workspace-directory-header">
       <Link href="/workspaces" aria-label="FindEZ workspaces"><FindEZWordmark /></Link>
       {workspaceId && <nav aria-label="Workspace"><Link href="/workspaces">Workspaces</Link><span aria-hidden="true">/</span><span>{page?.workspace.name || (workspaceId === "personal" ? "Personal" : "Workspace")}</span></nav>}
-      <Link href="/settings" className="workspace-account">Account</Link>
+      <Link href="/organizations">Organizations</Link><Link href="/settings" className="workspace-account">Account</Link>
     </header>
     <main className="workspace-directory-main">
-      <header className="product-page-header"><h1>{workspaceId ? "Inventories" : "Workspaces"}</h1>
+      <header className="product-page-header"><h1>{workspaceId ? page?.workspace.name || "Workspace" : "Workspaces"}</h1>
         <div className="product-actions">
           {workspaceId && page?.workspace.kind === "team" && <Link className="product-button" href={`/teams?team=${encodeURIComponent(workspaceId)}`}>Manage workspace</Link>}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
           {canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
       </header>
+      {workspaceId && <h2>Inventories</h2>}
       <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />
       {(error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
       {loading ? <p className="workspace-muted" role="status">Loading...</p> : <>
@@ -127,6 +129,7 @@ function WorkspaceDirectoryAccount({ workspaceId }: { workspaceId?: string }) {
           {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="directory-row" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
         </div></section>}
       </>}
+      {workspaceId && workspaceId !== "personal" && <CollaborationPanel workspaceId={workspaceId} />}
     </main>
     <Dialog open={mode !== null} onOpenChange={(value) => { if (!value && !busy) setMode(null); }}><DialogContent className="workspace-dialog inventory-creation-dialog" aria-describedby={undefined}>
       <DialogTitle>{mode === "join" ? "Join workspace" : mode === "inventory" ? "New inventory" : mode === "rename" ? "Rename inventory" : "New workspace"}</DialogTitle>

@@ -27,10 +27,11 @@ def _workspace(workspace_id, actor_id):
     members = client.table('team_memberships').select('role').eq('team_id', workspace_id).eq('user_id', actor_id).limit(1).execute().data or []
     if not members:
         raise HTTPException(403, 'You do not have access to this workspace.')
-    teams = client.table('teams').select('team_id,name,owner_user_id').eq('team_id', workspace_id).limit(1).execute().data or []
+    teams = client.table('teams').select('team_id,name,owner_user_id,organization_id').eq('team_id', workspace_id).limit(1).execute().data or []
     if not teams:
         raise HTTPException(404, 'Workspace not found.')
-    return {'workspace_id': workspace_id, 'kind': 'team', 'team_id': workspace_id, 'name': teams[0]['name'], 'owner_user_id': teams[0]['owner_user_id'], 'role': members[0]['role']}
+    orgs = client.table('app_organizations').select('name').eq('organization_id', teams[0]['organization_id']).execute().data if teams[0].get('organization_id') else []
+    return {'workspace_id': workspace_id, 'kind': 'team', 'team_id': workspace_id, 'name': teams[0]['name'], 'owner_user_id': teams[0]['owner_user_id'], 'role': members[0]['role'], 'organization_id': teams[0].get('organization_id'), 'organization_name': orgs[0]['name'] if orgs else None}
 
 
 def _inventory(inventory_id, actor_id):
@@ -45,7 +46,31 @@ def _inventory(inventory_id, actor_id):
     workspace = _workspace(inventory.get('team_id') or 'personal', actor_id)
     if inventory['owner_user_id'] != workspace['owner_user_id']:
         raise HTTPException(403, 'You do not have access to this inventory.')
-    return {**inventory, 'workspace': workspace, 'can_edit': workspace['role'] in ('owner', 'mentor', 'member')}
+    role = inventory_role(inventory, workspace, actor_id)
+    if role is None:
+        raise HTTPException(403, 'You do not have access to this inventory.')
+    return {**inventory, 'workspace': workspace, 'role': role,
+            'can_edit': role in ('owner', 'admin', 'editor'),
+            'can_manage': role in ('owner', 'admin')}
+
+
+def inventory_role(inventory, workspace, actor_id, grants=None):
+    role = workspace['role']
+    if role in ('owner', 'mentor'):
+        return 'owner' if role == 'owner' else 'admin'
+    if grants is None:
+        grants = get_supabase_raw().table('app_inventory_members').select('inventory_id,role').eq('inventory_id', inventory['inventory_id']).eq('user_id', actor_id).execute().data or []
+    grant = next((row['role'] for row in grants if row['inventory_id'] == inventory['inventory_id']), None)
+    if grant == 'none':
+        return None
+    if grant:
+        return grant
+    if inventory.get('access_mode', 'legacy') == 'restricted':
+        return None
+    if inventory.get('access_mode', 'legacy') == 'workspace':
+        return inventory.get('default_role', 'viewer')
+    return 'editor' if role == 'member' else 'viewer'
+
 
 
 @router.get('/inventory-workspaces')
@@ -61,6 +86,13 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
     client = get_supabase_raw()
     query = client.table('app_inventory_summaries').select('*', count='exact').eq('owner_user_id', workspace['owner_user_id'])
     query = query.eq('team_id', workspace['team_id']) if workspace['team_id'] else query.is_('team_id', 'null')
+    if workspace['role'] not in ('owner', 'mentor'):
+        grants = client.table('app_inventory_members').select('inventory_id,role').eq('user_id', user.user_id).execute().data or []
+        allowed = [row['inventory_id'] for row in grants if row['role'] != 'none']
+        denied = [row['inventory_id'] for row in grants if row['role'] == 'none']
+        query = query.or_('access_mode.neq.restricted' + (',inventory_id.in.(' + ','.join(allowed) + ')' if allowed else ''))
+        if denied:
+            query = query.not_.in_('inventory_id', denied)
     if q.strip():
         query = query.ilike('name', f'%{q.strip()}%')
     result = query.order('created_at').order('inventory_id').range(offset, offset + 99).execute()
@@ -85,7 +117,7 @@ def create_workspace_inventory(workspace_id: str, body: NewInventory, user: Auth
     query = client.table('app_inventories').select('inventory_id').eq('owner_user_id',workspace['owner_user_id'])
     query = query.eq('team_id',workspace['team_id']) if workspace['team_id'] else query.is_('team_id','null')
     first = not (query.limit(1).execute().data or [])
-    row = {'name': name, 'owner_user_id': workspace['owner_user_id'], 'team_id': workspace['team_id'], 'created_by_user_id': user.user_id, 'is_default': first}
+    row = {'name': name, 'owner_user_id': workspace['owner_user_id'], 'team_id': workspace['team_id'], 'created_by_user_id': user.user_id, 'is_default': first, 'access_mode': 'workspace', 'default_role': 'viewer'}
     try:
         saved = client.table('app_inventories').insert(row).execute().data or []
     except APIError as exc:
@@ -105,7 +137,7 @@ def get_inventory(inventory_id: str, user: AuthenticatedUser = Depends(get_curre
 @router.patch('/inventories/{inventory_id}')
 def rename_inventory(inventory_id: str, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
     inventory = _inventory(inventory_id,user.user_id)
-    if inventory['workspace']['role'] not in ('owner','mentor'):
+    if not inventory['can_manage']:
         raise HTTPException(403,'Only a workspace owner or manager can rename inventories.')
     if not body.name.strip():
         raise HTTPException(422,'Enter an inventory name.')
@@ -153,7 +185,7 @@ async def inventory_session(request: Request, inventory_id: str, user: Authentic
     previous_actor = user.actor_id
     inventory = await asyncio.to_thread(_inventory, inventory_id, actor)
     workspace = inventory['workspace']
-    scope = InventoryScope(inventory['inventory_id'], actor, inventory['owner_user_id'], inventory.get('team_id'), workspace['role'])
+    scope = InventoryScope(inventory['inventory_id'], actor, inventory['owner_user_id'], inventory.get('team_id'), inventory['role'])
     suffix = request.url.path.split(f'/inventories/{inventory_id}', 1)[-1]
     if scope.team_id and suffix.startswith('/sharing'):
         raise HTTPException(403,'Invite people through workspace settings to share team inventory.')

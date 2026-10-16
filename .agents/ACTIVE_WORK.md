@@ -1,5 +1,13 @@
 # Active work
 
+## October 15 organization and inventory access
+
+Active lane `feat/organization-inventory-access-20261015` owns backend/schema/web
+implementation of the user-authorized hierarchy. Plan: `docs/plans/organization-inventory-access.md`.
+Reuse Teams as workspaces, add optional organizations, explicit inventory roles,
+scoped overviews and shared physical-location references. Preserve existing data
+and access; validate migration and legacy bypasses before production changes.
+
 ## October 15 centered Ask FindEZ
 
 Completed and published PR #76, runtime `80ba01b`, with centered Ask content,

@@ -20,6 +20,7 @@ from app.services.documents_repo import (
 from app.services.ai_service import summarize_activity
 from app.services.storage import create_document_signed_url, document_path_in_scope, upload_document
 from app.services.supabase_client import get_supabase_admin
+from app.services.resource_access import require_inventory_write
 
 router = APIRouter(tags=["inventory"])
 
@@ -46,6 +47,7 @@ def update_note(payload: NoteRequest, user: AuthenticatedUser = Depends(get_curr
     doc = get_document(user_id=user.user_id,storage_path=payload.storage_path)
     if not doc:
         raise HTTPException(404,'Note not found.')
+    require_inventory_write(doc.get('inventory_id'))
     if doc.get('mime_type') != 'text/plain' and not str(doc.get('filename','')).lower().endswith('.txt'):
         raise HTTPException(422,'Choose a text note.')
     client = get_supabase_admin()
@@ -204,6 +206,7 @@ def delete_document_route(
     if not doc or not document_path_in_scope(storage_path,f"{doc.get('user_id') or user.user_id}/"):
         raise HTTPException(404, "Document not found.")
 
+    require_inventory_write(doc.get('inventory_id'))
     try:
         supabase = get_supabase_admin()
         from app.services.inventory_scope import current_inventory

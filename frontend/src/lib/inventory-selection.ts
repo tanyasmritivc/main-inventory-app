@@ -1,5 +1,7 @@
 export type InventoryWorkspace = {
   workspace_id: string;
+  organization_id?: string | null;
+  organization_name?: string;
   name: string;
   kind: "personal" | "team";
   team_id: string | null;
@@ -37,7 +39,7 @@ export function inventoryApiPath(path: string, selected = selection) {
   return selected && dataRoutes.test(path) ? `/inventories/${selected.inventory_id}${path}` : path;
 }
 export function isInventoryPage(path: string) {
-  return /^\/(?:home|scan|assist|inventory|spaces|documents|activity|review|restock|checkout|project-kits|collections|labels)(?:\/|$)/.test(path.split("?")[0]);
+  return /^\/(?:home|scan|assist|inventory|inventory-access|spaces|documents|activity|review|restock|checkout|project-kits|collections|labels)(?:\/|$)/.test(path.split("?")[0]);
 }
 export function inventoryHref(href: string, selected = selection): string {
   if (!selected || !href.startsWith("/") || href.startsWith("//")) return href;

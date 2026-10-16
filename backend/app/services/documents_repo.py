@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 _DOC_SELECT_FIELDS_PRIMARY = (
-    "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
+    "inventory_id,user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
 )
-_DOC_SELECT_FIELDS_FALLBACK = "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at"
+_DOC_SELECT_FIELDS_FALLBACK = "inventory_id,user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at"
 
 
 def _is_missing_display_name_column_error(exc: Exception) -> bool:

@@ -1,5 +1,16 @@
 # Current state
 
+## October 15 organization/access candidate
+
+Branch `feat/organization-inventory-access-20261015` implements organizations,
+workspace overviews, independent inventory roles, shared physical locations and
+scoped audit history. Existing data remains in its current inventories with legacy
+access. Restored-copy migration rehearsal preserves original public-table values,
+original policies and all legacy access. Production is not changed yet.
+515 backend tests plus six subtests, 243 web tests and real PostgreSQL Acme/FTC
+scenarios pass. Additional queued-notification regression and final responsive
+layout checks are in progress. Release receipts will supersede this candidate note.
+
 ## October 15 centered Ask page published
 
 PR #76 website runtime `80ba01b557dc38e5f24dc8d0472c39be2c56bb28` is live.

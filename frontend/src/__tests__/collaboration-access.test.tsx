@@ -1,0 +1,65 @@
+/** @jest-environment jsdom */
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { CollaborationPanel, locationPath } from "@/components/site/collaboration-panel";
+import { OrganizationDirectory } from "@/components/site/organization-directory";
+import { accountRequest } from "@/lib/account-request";
+import { useApiSession } from "@/lib/use-api-session";
+const router = {push:jest.fn()};
+jest.mock("next/navigation",()=>({useRouter:()=>router}));
+jest.mock("@/lib/account-request",()=>({accountRequest:jest.fn()}));
+jest.mock("@/lib/use-api-session",()=>({useApiSession:jest.fn()}));
+jest.mock("@/components/site/use-app-theme",()=>({AppThemeProvider:({children}:{children:React.ReactNode})=><>{children}</>}));
+const member={user_id:"student-1",display_name:"Alex",role:"viewer",workspace_role:"member",source:"workspace"};
+const data={inventory:{name:"Tools",team_id:"team",can_manage:true,access_mode:"workspace",default_role:"viewer"},members:[member],locations:[]};
+beforeEach(()=>{
+ jest.clearAllMocks();
+ jest.mocked(useApiSession).mockReturnValue({accountId:"owner",loading:false,error:null} as ReturnType<typeof useApiSession>);
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> (path.endsWith("/audit") ? {activity:[]} : data) as never);
+});
+test("inventory permissions are explicit saved actions with viewer defaults",async()=>{
+ render(<CollaborationPanel inventoryId="tools"/>);
+ await screen.findByRole("heading",{name:"Inventory access"});
+ expect(screen.getByText("Viewer · inherited")).toBeTruthy();
+ await userEvent.selectOptions(screen.getByRole("combobox",{name:"Access"}),"restricted");
+ expect(jest.mocked(accountRequest).mock.calls.filter((c)=>c[2]?.method)).toHaveLength(0);
+ await userEvent.click(screen.getByRole("button",{name:"Save access"}));
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith("owner","/inventories/tools/access",{method:"PATCH",body:{access_mode:"restricted",default_role:"viewer"}}));
+ await userEvent.selectOptions(screen.getByRole("combobox",{name:"Member"}),"student-1");
+ await userEvent.selectOptions(screen.getByRole("combobox",{name:"Role"}),"editor");
+ await userEvent.click(screen.getByRole("button",{name:"Save role"}));
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith("owner","/inventories/tools/access/student-1",{method:"PUT",body:{role:"editor"}}));
+});
+test("a viewer sees permitted people and history but no policy or role writes",async()=>{
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> (path.endsWith("/audit") ? {activity:[]} : {...data,inventory:{...data.inventory,can_manage:false}}) as never);
+ render(<CollaborationPanel inventoryId="tools"/>);
+ await screen.findByText("Alex");
+ expect(screen.queryByRole("button",{name:"Save access"})).toBeNull();
+ expect(screen.queryByRole("button",{name:"Save role"})).toBeNull();
+ expect(screen.queryByRole("button",{name:"Add to inventory"})).toBeNull();
+});
+test("failed role changes retain the selected member and do not report success",async()=>{
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path,options)=>{
+  if(options?.method) throw new Error("Permission changed. Refresh and try again.");
+  return (path.endsWith("/audit")?{activity:[]}:data) as never;
+ });
+ render(<CollaborationPanel inventoryId="tools"/>);
+ await screen.findByText("Alex");
+ await userEvent.selectOptions(screen.getByRole("combobox",{name:"Member"}),"student-1");
+ await userEvent.click(screen.getByRole("button",{name:"Save role"}));
+ expect(await screen.findByRole("alert")).toBeTruthy();
+ expect((screen.getByRole("combobox",{name:"Member"}) as HTMLSelectElement).value).toBe("student-1");
+});
+test("organization overview exposes only server-assigned workspaces and creates in its organization",async()=>{
+ jest.mocked(accountRequest).mockImplementation(async(_actor,_path,options)=> options?.method ? {workspace:{team_id:"created"}} as never : {organization:{organization_id:"acme",name:"Acme Company",role:"owner"},workspaces:[{team_id:"october",name:"2026 OCTOBER CLIENT"}],members:[]} as never);
+ render(<OrganizationDirectory organizationId="acme"/>);
+ expect((await screen.findByRole("link",{name:/2026 OCTOBER CLIENT/})).getAttribute("href")).toBe("/workspaces/october");
+ await userEvent.type(screen.getByRole("textbox",{name:"Workspace name"}),"November client");
+ await userEvent.click(screen.getByRole("button",{name:"Create workspace"}));
+ await waitFor(()=>expect(router.push).toHaveBeenCalledWith("/workspaces/created"));
+ expect(accountRequest).toHaveBeenCalledWith("owner","/organizations/acme/workspaces",{method:"POST",body:{name:"November client"}});
+});
+test("nested physical paths retain one stable identity",()=>{
+ const locations=[{location_id:"workshop",name:"FTC workshop",parent_id:null},{location_id:"cabinet",name:"Cabinet",parent_id:"workshop"},{location_id:"drawer",name:"Drawer 3",parent_id:"cabinet"}];
+ expect(locationPath(locations[2],locations)).toBe("FTC workshop / Cabinet / Drawer 3");
+});
