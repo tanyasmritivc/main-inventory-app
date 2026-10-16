@@ -85,6 +85,10 @@ for (const vp of VIEWPORTS) {
       assert.equal(metrics.scrollWidth, vp.width, "No horizontal page overflow");
       const mainNav = page.getByRole("navigation", { name: "Main navigation" });
       if (await mainNav.count()) {
+        const header = await mainNav.evaluate(nav => ({ bottom: nav.closest("header").getBoundingClientRect().bottom, position: getComputedStyle(nav.closest("header").parentElement).position }));
+        assert.equal(header.position, "relative", "Published header scrolls with the page");
+        assert.ok(header.bottom < 0, "Published header has scrolled out of the viewport");
+        assert.equal(await page.getByText("FindEZ for iPhone is coming soon.", { exact: false }).count(), 0);
         assert.equal(await mainNav.getByRole("link").count(), 3);
         assert.equal(await mainNav.getByRole("link", { name: "Developers", exact: true }).getAttribute("href"), "/docs/api");
         assert.equal(await mainNav.getByRole("link", { name: "iOS App", exact: true }).getAttribute("href"), "https://apps.apple.com/us/app/findez-ai/id6760401697");
