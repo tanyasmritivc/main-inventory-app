@@ -2,13 +2,13 @@
 
 ## October 15 workspace hub and discoverable inventory directory
 
-Active lane `feat/workspace-hub-directory-20261015` owns the Phase 1 workspace
-overview, distinct inventory navigation, approved directory names/descriptions,
-visible-vs-open access, hidden inventories and recipient-initiated access requests.
-Reuse existing tasks, workspace files, physical locations and scoped audit history.
-No Slack-style discussions, workspace AI, calendar, group permissions or integrations
-in this phase. Inventory content authorization and invitation consent remain.
-Inspect/rehearse an additive migration before publication; no customer QA writes.
+Completed and published PR #81 runtime `5a2bc55`, migration 046. Workspace
+Overview, separate inventory navigation, approved directory metadata, hidden
+inventories and recipient-initiated viewer requests are live. 550 backend/276 web
+tests, TypeScript/lint, SQL/concurrent decisions, restored-copy preservation,
+production build and all five CI gates pass. Live signed-in chooser/context flow
+verified; no customer QA writes. Later collaboration phases remain planned.
+See CURRENT_STATE.md for validation limits and rollback receipts.
 
 ## October 15 creator rename
 

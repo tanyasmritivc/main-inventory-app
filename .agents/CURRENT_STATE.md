@@ -1,5 +1,50 @@
 # Current state
 
+## October 15 workspace hub and directory published
+
+PR #81 runtime `5a2bc5540cc87f9cb43b5e60bd7b7f6be0fa204b` is live with
+migration 046. Team workspaces open an Overview with the directory, assigned open
+tasks, permission-filtered inventory activity and current administrator access
+requests. Workspace navigation distinguishes Overview, Inventories, People,
+Locations, Tasks, Files, Activity and Settings. Personal remains a direct chooser.
+Inventory navigation shows Dashboard, Capture, Ask, Items, Locations, Documents,
+existing utilities, Activity and Inventory settings within the selected scope.
+
+Directory visibility is separate from inventory access. Current members discover
+names and approved descriptions by default; counts require content access. Managers
+can hide inventories from members without access. Restricted visible entries lead
+to viewer-access requests, with explicit administrator approval, cancellation,
+seven-day expiry, membership/authority checks, audited decisions and replay
+protection. A request grants nothing. Existing recipient invitation consent and
+content authorization remain. Workspace physical hierarchy administration remains
+owner/admin-only; ordinary members use permitted inventory locations.
+
+550 backend tests plus six subtests, 276 web tests, TypeScript, changed-file lint,
+production build and all five CI gates (`38845755335`) pass. Isolated SQL and
+simultaneous approve/approve, approve/cancel, approve/decline tests pass. Restored
+copy rehearsal and live migration transaction preserve all original public-table
+values and policies, creating no requests or grants. Desktop/390px light/dark
+actual-component previews pass. Live signed-in Safari confirms Overview →
+Inventories → scoped dashboard/navigation and existing count. A further settings
+UI inspection was interrupted by CUA `failedToCreateImageDestination`; settings
+behavior is covered by component/API tests. No customer records, memberships,
+visibility settings or requests were changed for QA.
+
+Web build `hcDimgZUPWFa_3Kt4HoD6` runs from
+`/home/ubuntu/findez-web-releases/web-workspace-hub-20261015/frontend`.
+Twelve public routes, 29 protected web routes, 17 API authentication guards and
+four CSS assets pass; API/database health are good. Receipts and runtime rollback
+backups are in `/home/ubuntu/findez-workspace-hub-20261015/`; non-sensitive receipts
+are mirrored at `Documents/FindEZ/Releases/workspace-hub-2026-10-15/`. Rollback web
+target is `web-creator-rename-20261015/frontend`; retain additive migration 046 if
+rolling back runtime. Temporary VM preview and isolated restored-copy database
+have been removed. No native app change or upload in this lane.
+
+Remaining planned work: discussions/threads/mentions, richer task-resource links,
+workspace AI, calendar/check scheduling, group permissions and enterprise features.
+Access-request decisions are currently managed in Overview/People, without new
+email/push notifications; the separate member invitation email/code/inbox remains.
+
 ## October 15 creator rename published
 
 PR #80 runtime `905923aabaed03d402f73646236a7323b3485151` is live on backend
