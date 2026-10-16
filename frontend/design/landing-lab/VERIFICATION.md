@@ -1,5 +1,21 @@
 # Lab preview verification
 
+## Approved homepage publication
+
+Tanya approved publication after preview review. Runtime `2e4b2ca` on PR #83 is
+live at `https://www.findez.ai/`, build `JmfJ7pLKgby6LCYTjV_e3`. The homepage
+retains the existing header destinations and session-aware Get started/Dashboard,
+plus all six existing footer links at the bottom. Requested follow-ups make the
+header scroll with the page and remove the announcement banner. The original
+`/lab` preview remains noindex with its original header and footer.
+
+The publication passes 288 web tests, TypeScript, changed-file ESLint and
+production build. Desktop and 390px checks verify header/footer links, header
+scrolling, removed banner, no console errors or overflow, waitlist and reduced
+motion. Live route/asset and health checks pass. The waitlist still sends no data.
+Release and rollback receipts are recorded in `.agents/CURRENT_STATE.md`.
+The original preview-only verification below is historical.
+
 October 15, 2026. Branch `feat/landing-lab-20261015`, based on `2d8d3f7`.
 
 The supplied prototype is implemented at `/lab` with noindex metadata. The

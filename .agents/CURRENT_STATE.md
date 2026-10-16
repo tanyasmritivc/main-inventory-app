@@ -1,5 +1,33 @@
 # Current state
 
+## October 15 approved Lab homepage published
+
+PR #83 runtime `2e4b2cae559b9214e2a5eab018c8e7a3b633c493` publishes the
+approved Lab design at `/`. Developers, iOS App and session-aware Get
+started/Dashboard are the only header actions. Plans, Developers, iOS App,
+Privacy, Terms and Contact remain at the very bottom with the copyright.
+The main header scrolls away with the page; the top iPhone announcement banner
+is removed. `/lab` preserves the original prototype layout and noindex.
+The supplied waitlist remains explicitly confirmation-only, without persistence
+or an API request. No backend, mobile, database or dependency changes.
+
+288 web tests, TypeScript, changed-file lint and production webpack build pass.
+Desktop/390px browser checks verify all retained links, no horizontal overflow or
+console errors, scrolling header, absent announcement, waitlist and reduced
+motion. Initial runtime `74999aa` passed all five CI jobs (`38851403105`);
+the final follow-up is tracked on PR #83. Live verification passes 12 public
+routes, 17 protected routes, 23 homepage assets and backend health. Chrome
+confirms the published homepage and navigation. Original production source,
+environment and prior static chunks are preserved.
+
+Build `JmfJ7pLKgby6LCYTjV_e3` runs from
+`/home/ubuntu/findez-web-releases/web-landing-lab-scroll-20261015/frontend`.
+Receipts and rollback configuration are in
+`/home/ubuntu/findez-landing-lab-scroll-20261015/`. Immediate rollback target:
+`web-landing-lab-20261015/frontend`, build `oLRGWGqakvdAKUWCPLDZ5`.
+The pre-Lab homepage is retained at `web-workspace-hub-20261015/frontend`, build
+`hcDimgZUPWFa_3Kt4HoD6`. No merge into main is implied by this selective release.
+
 ## October 15 workspace hub and directory published
 
 PR #81 runtime `5a2bc5540cc87f9cb43b5e60bd7b7f6be0fa204b` is live with
