@@ -1,5 +1,18 @@
 # Active work
 
+## October 15 isolated Lab landing preview
+
+Completed on `feat/landing-lab-20261015`, based on `2d8d3f7`. Approved ZIP
+prototype ported to `/lab` with noindex, scoped fonts/CSS, direct DOM animation,
+hero canvas and reduced-motion support. Homepage and live production unchanged;
+private production preview forwarded to localhost:3000. Waitlist is deliberately
+confirmation-only with no API request. Production build, TypeScript, lint and
+287 web tests pass. All 46 desktop/mobile comparison pairs verified, with matching
+geometry and only hero drift plus a few phone-frame raster edge pixels remaining.
+No console errors or horizontal overflow. See
+`frontend/design/landing-lab/VERIFICATION.md` for files, receipts and preview details.
+Homepage replacement awaits Tanya's review. Backend/mobile unchanged.
+
 ## October 15 workspace hub and discoverable inventory directory
 
 Completed and published PR #81 runtime `5a2bc55`, migration 046. Workspace
