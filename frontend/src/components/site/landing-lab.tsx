@@ -3,7 +3,7 @@
 /* Native image sizing is part of the approved prototype. */
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
-import { initLandingLab, landingLabValues } from "./landing-lab-engine";
+import { initLandingLab, landingLabValues, memoryHeadline } from "./landing-lab-engine";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
 
@@ -15,7 +15,6 @@ function css(text: string): CSSProperties {
     return [key, declaration.slice(colon + 1).trim()];
   })) as CSSProperties;
 }
-const v = landingLabValues();
 function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
   const signedIn = useMarketingSession(initialSignedIn);
   return <nav className="fzl-site-actions" aria-label="Main navigation">
@@ -25,6 +24,7 @@ function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
   </nav>;
 }
 export function LandingLab({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
+  const v = landingLabValues(undefined, siteNavigation);
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
@@ -42,13 +42,13 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 <section id="hero" style={css(v.heroSec)} data-lab-style="heroSec">
 <div style={css(v.heroBox)} data-lab-style="heroBox">
 <canvas id="fzField" aria-label="A real workbench photo; a scanning lens names the parts it passes over" style={css("position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair")}></canvas>
-<div style={css("position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
+<div style={css(siteNavigation ? "position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,11,11,.25),rgba(11,11,11,.15) 50%,rgba(11,11,11,.25));pointer-events:none" : "position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
 <div style={css(v.heroCopy)} data-lab-style="heroCopy">
-<h1 style={css("font-weight:400;font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-.03em;margin:18px auto 0;max-width:15ch;color:#FFF")}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
-<div style={css("display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto")}>
+<h1 className={siteNavigation ? "fzl-hero-headline" : undefined} style={css(`font-weight:400;${siteNavigation ? "" : "font-size:clamp(40px,5.4vw,76px);"}line-height:1.02;letter-spacing:-.03em;margin:${siteNavigation ? "0 auto" : "18px auto 0"};max-width:${siteNavigation ? "none" : "15ch"};color:#FFF`)}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
+{!siteNavigation && <div style={css("display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto")}>
 <a href="/signup" className="btn" style={css("background:#FFF;color:#000")}>{"Get started"}</a>
 <a href="#waitlist" className="btn" style={css("border:1px solid rgba(255,255,255,.25);color:#FFF")}>{"Join the iPhone waitlist"}</a>
-</div>
+</div>}
 </div>
 <span className="mono hide-s" style={css("position:absolute;left:20px;bottom:20px;color:#6B6B6B")}>{"Move your cursor to scan"}</span>
 <span className="mono" style={css("position:absolute;right:20px;bottom:20px;color:#6B6B6B")}><span data-lab-text="scanCount">{v.scanCount}</span></span>
@@ -98,7 +98,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 <div style={css(v.pinStyle)} data-lab-style="pinStyle">
 <div className="wrap split" style={css("height:100%;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:40px")}>
 <div>
-<h2 className="h2" style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{"Knowing what it is is useful. Knowing everything around it is memory."}</h2>
+<h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
 <p className="lede hide-s" style={css("color:#A3A3A3")}>{"The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen."}</p>
 </div>
 <div className="float" style={css("position:relative;container-type:inline-size")}>
@@ -160,7 +160,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </section>
 
-<section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
+{!siteNavigation && <section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
 <div className="split">
 <div style={css("position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size")}>
 <svg viewBox="0 0 800 550" role="img" aria-label="A camera recognizing a USB-C hub and finding two similar ones you already own" style={css("position:absolute;inset:0;width:100%;height:100%")}>
@@ -182,7 +182,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="who" style={css(v.whoSec)} data-lab-style="whoSec">
 <div className="wrap" style={css("text-align:center")}>
@@ -230,7 +230,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </section>
 
-<section id="vision" style={css(v.visSec)} data-lab-style="visSec">
+{!siteNavigation && <section id="vision" style={css(v.visSec)} data-lab-style="visSec">
 <div style={css("max-width:1200px;margin:0 auto;padding:0 24px")}>
 <div style={css(v.visHead)} data-lab-style="visHead">
 <h2 className="h2" style={css("margin-top:16px;max-width:16ch")}>{"From inventory to action."}</h2>
@@ -250,7 +250,7 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="app" style={css("padding:140px 0 120px;overflow:hidden")}>
 <div className="wrap" style={css("text-align:center")}>

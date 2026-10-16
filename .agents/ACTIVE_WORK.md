@@ -1,5 +1,35 @@
 # Active work
 
+## October 16 homepage section removal
+
+Completed and published on the same homepage lane, PR #86, runtime `d8dc962`,
+build `khZ3cniHwmhtRfQQ72I4J`. The duplicate-purchase demo (`own`) and roadmap
+(`vision`) are omitted from the homepage without reserved gaps. The memory graph
+heading reveals its letters from left to right as the section enters; reduced
+motion shows all letters. Original `/lab`, contained single-line hero, remaining
+sections and header/footer remain. 296 web tests, TypeScript/lint, production
+build, desktop/390px browser checks and all five CI gates pass. Public
+routes/assets/auth guards and backend health pass. Web-only; rollback preserved.
+See CURRENT_STATE.md for receipts.
+
+## October 16 contained homepage hero
+
+The additional 700ms entrance fade was rejected and rolled back to this verified
+single-line release at Tanya's request. The page is immediately visible on load
+and refresh; the existing header scroll fade remains. Source revert `2199675`
+matches the restored runtime. All 296 web tests, TypeScript/lint and live
+desktop/390px browser checks pass after rollback.
+
+Completed and published on `fix/landing-contained-hero-20261016`, PR #86, runtime
+`558832d`, build `WHx0_Dq0xSlkEnn5Gvbv6`. Permanent inset/rounded frame,
+viewport-fitting hero, centered single-line desktop headline and no duplicate
+hero buttons. Header/footer and original `/lab` remain. 296 web tests,
+TypeScript/lint, production build, all five CI gates and seven-width browser
+checks pass. Public routes/assets/auth guards/backend health pass; rollback and
+unrelated source/environment/static assets are preserved. No mobile/backend/DB
+change. Tanya authorizes future web publication after checks, without a separate
+prototype approval. See CURRENT_STATE.md for release receipts.
+
 ## October 16 mobile hierarchy TestFlight delivery
 
 Apple acknowledged 1.0.8 (66), runtime `8dc9fdd`, on PR #85. All five exact-runtime

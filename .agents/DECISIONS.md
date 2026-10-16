@@ -1,5 +1,12 @@
 # Decisions
 
+## October 16 web publication preference
+
+Tanya authorizes direct publication of web changes after checks. Do not require
+a separate prototype or another permission round. Retain rollback and preserve
+unrelated production source/configuration. Existing `/lab` remains a reference,
+not a required preview gate for new homepage changes.
+
 ## October 16 TestFlight delivery preference
 
 Tanya requests a new TestFlight build after each completed mobile change. Treat

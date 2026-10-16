@@ -45,7 +45,10 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "stmt", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
+  expect(within(document.getElementById("hero")!).queryAllByRole("link")).toHaveLength(0);
+  expect(document.getElementById("own")).toBeNull();
+  expect(document.getElementById("vision")).toBeNull();
+  for (const id of ["hero", "stmt", "see", "graph", "zoom", "ask", "who", "find", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
