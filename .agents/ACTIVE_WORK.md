@@ -1,5 +1,17 @@
 # Active work
 
+## October 16 mobile workspace home and place switcher
+
+Lane `feat/mobile-place-switcher-20261016`, based on mobile build 66. Mobile only:
+replace root Your world with the supplied workspace home and grouped bottom-sheet
+place switcher, bundled Geist fonts, account-bound last-place storage and
+authorized restoration. Reuse current APIs, membership controls and inventory
+session boundaries; preserve inventory, Tasks and Files screens. Move leaving to
+People. Reference assets are in `design/workspace-switcher/`. Tests, iPhone 16e
+comparison screenshots and a subsequent checked TestFlight upload are required.
+No web/backend/schema publication. Xcode regenerable caches were cleared with
+approval to recover native-build space; signed release artifacts are preserved.
+
 ## October 16 mobile hierarchy TestFlight delivery
 
 Apple acknowledged 1.0.8 (66), runtime `8dc9fdd`, on PR #85. All five exact-runtime
