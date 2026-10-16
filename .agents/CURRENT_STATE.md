@@ -1,5 +1,33 @@
 # Current state
 
+## October 16 contained homepage hero published
+
+PR #86 runtime `558832d56bbfe936d5823a3318a4d091d3259213` is live. The hero
+has permanent responsive side insets, 16px corners and a viewport-fitting height.
+The headline is centered on both axes and stays on one line at desktop widths;
+phones wrap it for readability. Duplicate hero buttons are removed. The three
+header actions, half-speed fade, six footer destinations, photo/scanning behavior
+and original `/lab` reference remain.
+
+296 web tests, TypeScript, changed-file lint, production webpack build and all five
+exact-runtime CI gates (`38877220358`) pass. Production-font browser checks at
+1920/1440/1280/1024/860/390/320px confirm the sentence fits, desktop line count,
+centering, no horizontal overflow or console errors, reduced motion and header
+fade. Public checks pass 12 routes, 17 auth-protected routes, 23 homepage assets
+and backend health. No customer writes, mobile, backend, database or dependency
+changes. TestFlight remains build 66.
+
+Build `WHx0_Dq0xSlkEnn5Gvbv6` runs from
+`/home/ubuntu/findez-web-releases/web-contained-line-20261016/frontend`.
+All 381 unrelated source files and environment bytes are preserved; 2,041 prior
+static files are retained for open tabs. Rollback and receipts:
+`/home/ubuntu/findez-contained-line-20261016/`; immediate rollback target:
+`web-contained-hero-20261016/frontend`. The earlier full-width release remains
+`web-org-actions-20261015/frontend`. Non-sensitive local receipts are in
+`Documents/FindEZ/Releases/contained-hero-2026-10-16/`. No main merge is implied by
+this selective web publication. Future web changes may be published after checks
+without a separate prototype approval, per Tanya.
+
 ## October 16 mobile hierarchy beta uploaded
 
 Apple accepted TestFlight upload 1.0.8 (66), runtime

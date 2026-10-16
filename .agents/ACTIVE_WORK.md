@@ -2,12 +2,15 @@
 
 ## October 16 contained homepage hero
 
-Active on `fix/landing-contained-hero-20261016`. Homepage-only permanent inset and
-rounded hero frame, vertically centered single-line desktop headline and no duplicate hero
-buttons. Retain header/footer and original `/lab` reference. Web checks, responsive
-browser acceptance and selective publication follow. Tanya authorizes future web
-changes to be published after checking, without a separate prototype/approval.
-No mobile build is required for this web-only change.
+Completed and published on `fix/landing-contained-hero-20261016`, PR #86, runtime
+`558832d`, build `WHx0_Dq0xSlkEnn5Gvbv6`. Permanent inset/rounded frame,
+viewport-fitting hero, centered single-line desktop headline and no duplicate
+hero buttons. Header/footer and original `/lab` remain. 296 web tests,
+TypeScript/lint, production build, all five CI gates and seven-width browser
+checks pass. Public routes/assets/auth guards/backend health pass; rollback and
+unrelated source/environment/static assets are preserved. No mobile/backend/DB
+change. Tanya authorizes future web publication after checks, without a separate
+prototype approval. See CURRENT_STATE.md for release receipts.
 
 ## October 16 mobile hierarchy TestFlight delivery
 
