@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from postgrest.exceptions import APIError
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -55,6 +55,11 @@ def members_with_names(rows):
 class Name(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 
+    @field_validator('name', mode='before')
+    @classmethod
+    def trim_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
 
 class OrganizationMember(BaseModel):
     email: str = Field(min_length=3, max_length=254)
@@ -100,10 +105,21 @@ def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depen
     # Even organization owners see workspace data only when explicitly assigned.
     memberships = raw.table('team_memberships').select('team_id,role').eq('user_id', user.user_id).execute().data or []
     ids = [m['team_id'] for m in memberships]
-    workspaces = raw.table('teams').select('team_id,name,organization_id').eq('organization_id', str(organization_id)).in_('team_id', ids).order('name').execute().data if ids else []
+    workspaces = raw.table('teams').select('team_id,name,organization_id,owner_user_id').eq('organization_id', str(organization_id)).in_('team_id', ids).order('name').execute().data if ids else []
     members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', str(organization_id)).execute().data or []
     attachable = raw.table('teams').select('team_id,name').eq('owner_user_id', user.user_id).is_('organization_id', 'null').execute().data if org['role'] in ('owner', 'admin') else []
     return {'organization': org, 'workspaces': workspaces or [], 'members': members_with_names(members), 'attachable': attachable or []}
+
+
+@router.patch('/organizations/{organization_id}')
+def rename_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    org = organization(organization_id, user.user_id)
+    if org['owner_user_id'] != user.user_id:
+        raise HTTPException(403, 'Only the organization owner can rename it.')
+    rows = get_supabase_raw().table('app_organizations').update({'name': body.name}).eq('organization_id', str(organization_id)).eq('owner_user_id', user.user_id).execute().data or []
+    if not rows:
+        raise HTTPException(409, 'The organization changed. Refresh before trying again.')
+    return {'organization': {**rows[0], 'role': org['role']}}
 
 
 @router.post('/organizations/{organization_id}/members')

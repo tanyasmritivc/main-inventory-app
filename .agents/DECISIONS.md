@@ -1,5 +1,14 @@
 # Decisions
 
+## October 15 resource rename ownership
+
+Organization/workspace names can be changed by their existing `owner_user_id`
+(the creating account); no separate creator column or migration is introduced.
+Inventory creators use `created_by_user_id` and must retain current access. Existing
+inventory owner/admin rename rights remain compatible. Rename changes only the
+name, preserving resource IDs, parent scope, memberships and contents. Personal is
+a fixed navigation context rather than a renameable workspace record.
+
 ## New collaboration members must consent (October 15)
 
 An administrator's Add/Assign action creates an invitation when it would introduce

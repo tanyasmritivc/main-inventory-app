@@ -1,5 +1,27 @@
 # Current state
 
+## October 15 creator rename published
+
+PR #80 runtime `905923aabaed03d402f73646236a7323b3485151` is live on backend
+and website. Organization/workspace owners have Rename on choice cards and
+selected-context pages; inventory creators can rename while retaining current
+access, alongside existing inventory manager rights. Backend checks ownership
+and current access before name-only writes. Stable IDs, scope, memberships and
+contents are preserved; Personal remains a fixed context. No migration or mobile
+change.
+
+537 backend tests plus six subtests, 268 web tests, TypeScript, changed-file lint,
+production webpack build and all five CI gates (`38841525417`) pass. Safari
+actual-component desktop/390px light/dark checks pass. Signed-in live Safari
+opens/cancels all three Rename dialogs with prefilled current names; no customer
+records changed. Twelve public routes, 27 protected web routes, 14 API auth guards
+and four CSS assets pass; backend/database health are good. Web build
+`zWHbnBwBtqr3dslkvsMpa` runs from
+`/home/ubuntu/findez-web-releases/web-creator-rename-20261015/frontend`.
+Receipts: `Documents/FindEZ/Releases/creator-rename-2026-10-15/` and
+`/home/ubuntu/findez-creator-rename-20261015/`. Backend runtime backups and previous
+web drop-in are retained there; temporary release preview is stopped.
+
 ## October 15 recipient consent published
 
 PR #79 runtime `8592a4d556352155cee7c619dd6c592a7cc6c7c9` replaces immediate new organization and

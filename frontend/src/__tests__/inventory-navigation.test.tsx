@@ -101,3 +101,49 @@ test("choosing an inventory does not mix in people, locations or audit administr
  expect(screen.queryByRole("combobox",{name:"Member"})).toBeNull();
  expect(screen.queryByRole("button",{name:"Add location"})).toBeNull();
 });
+
+test("workspace owner can rename from the selected workspace and Personal has no rename",async()=>{
+ let name="Workshop";
+ jest.mocked(accountRequest).mockImplementation(async(_actor,_path,options)=>{
+  if(options?.method==="PATCH") {name="Robotics";return {workspace:{name}} as never;}
+  return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",owner_user_id:"actor",name},inventories:[],total:0,next_offset:null} as never;
+ });
+ const view=render(<WorkspaceDirectory workspaceId="team"/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Rename workspace"}));
+ await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"Robotics");
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).toBeNull());
+ expect(accountRequest).toHaveBeenCalledWith("actor","/inventory-workspaces/team",{method:"PATCH",body:{name:"Robotics"}});
+ view.unmount();jest.mocked(accountRequest).mockResolvedValue({workspace:personal,inventories:[],total:0,next_offset:null} as never);
+ render(<WorkspaceDirectory workspaceId="personal"/>);
+ await screen.findByText("No inventories yet.");expect(screen.queryByRole("button",{name:"Rename workspace"})).toBeNull();
+});
+test("inventory creator gets Rename without workspace administration",async()=>{
+ let name="Workshop parts";
+ jest.mocked(accountRequest).mockImplementation(async(_actor,_path,options)=>{
+  if(options?.method==="PATCH") {name="Fasteners";return {inventory:{...inventory,name}} as never;}
+  return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",role:"member"},inventories:[{...inventory,name,can_rename:true}],total:1,next_offset:null} as never;
+ });
+ render(<WorkspaceDirectory workspaceId="team"/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Rename Workshop parts"}));
+ expect(screen.queryByRole("button",{name:"New inventory"})).toBeNull();
+ await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"Fasteners");
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ expect(await screen.findByRole("link",{name:/Fasteners/})).toBeTruthy();
+ expect(accountRequest).toHaveBeenCalledWith("actor","/inventories/a",{method:"PATCH",body:{name:"Fasteners"}});
+});
+test("account change discards a rename dialog and ignores its late saved name",async()=>{
+ let finish!:(value:unknown)=>void;
+ jest.mocked(accountRequest).mockImplementation(async(_actor,_path,options)=>{
+  if(options?.method==="PATCH") return new Promise(resolve=>{finish=resolve;}) as never;
+  return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",name:"Private workspace",owner_user_id:"actor"},inventories:[],total:0,next_offset:null} as never;
+ });
+ const view=render(<WorkspaceDirectory workspaceId="team"/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Rename workspace"}));
+ await userEvent.click(screen.getByRole("button",{name:"Save"}));
+ jest.mocked(useApiSession).mockReturnValue({accountId:"other",loading:false,error:null} as ReturnType<typeof useApiSession>);
+ jest.mocked(accountRequest).mockReturnValue(new Promise(()=>{}));
+ view.rerender(<WorkspaceDirectory workspaceId="team"/>);
+ await act(async()=>finish({workspace:{name:"Private renamed"}}));
+ expect(screen.queryByRole("dialog")).toBeNull();expect(screen.queryByText("Private renamed")).toBeNull();
+});

@@ -1,5 +1,15 @@
 # Active work
 
+## October 15 creator rename
+
+Completed and published PR #80 runtime `905923a`, lane
+`feat/creator-rename-20261015`. Organization/workspace owners and inventory creators
+have name-only Rename controls with backend access checks; existing inventory
+manager rights and all stable resource relationships remain. 537 backend/268 web
+tests, TypeScript, lint, production build, all five CI gates and signed-in live
+Safari dialog/cancel checks pass. No customer data changed for QA. No migration or
+mobile change. See CURRENT_STATE.md for runtime and rollback receipts.
+
 ## October 15 recipient-approved membership
 
 Completed and published PR #79 (`8592a4d`), migration 045, on lane

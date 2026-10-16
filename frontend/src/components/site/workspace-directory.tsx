@@ -14,6 +14,8 @@ import { CollaborationPanel } from "@/components/site/collaboration-panel";
 import { teamCategories } from "@/lib/team-categories";
 import { userFacingError } from "@/lib/user-facing-error";
 
+import { RenameResourceDialog, type RenameTarget } from "@/components/site/rename-resource-dialog";
+
 type InventoryPage = { workspace: InventoryWorkspace; inventories: AppInventory[]; total: number; next_offset: number | null };
 type SharedSpace = { share_id: string; share_name: string; team_shares?: SharedSpace | SharedSpace[] };
 
@@ -30,6 +32,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
   const [reload, setReload] = useState(0), [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"inventory" | "workspace" | "join" | "rename" | null>(null);
+  const [renameWorkspace, setRenameWorkspace] = useState<RenameTarget | null>(null);
   const [renaming, setRenaming] = useState<AppInventory | null>(null);
   const [joinKind, setJoinKind] = useState("workspace");
   const [name, setName] = useState(""), [category, setCategory] = useState(""), [customCategory, setCustomCategory] = useState(""), [code, setCode] = useState("");
@@ -66,12 +69,13 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!accountId || !mode) return;
+    if (!accountId || !mode || busy) return;
     const account = accountId;
     setBusy(true); setError("");
     try {
       if (mode === "rename" && renaming) {
-        await accountRequest(account, `/inventories/${encodeURIComponent(renaming.inventory_id)}`, { method: "PATCH", body: { name } });
+        const result = await accountRequest<{ inventory?: AppInventory }>(account, `/inventories/${encodeURIComponent(renaming.inventory_id)}`, { method: "PATCH", body: { name: name.trim() } });
+        if (!result.inventory?.name || result.inventory.inventory_id !== renaming.inventory_id) throw new Error("The name could not be confirmed saved. Refresh before retrying.");
         if (actor.current === account) setReload((value) => value + 1);
       } else if (mode === "inventory" && workspaceId) {
         const result = await accountRequest<{ inventory: AppInventory }>(account, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/inventories`, { method: "POST", body: { name } });
@@ -100,6 +104,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
     <section className="product-page context-directory">
       <header className="product-page-header"><h1>{workspaceId ? titles[view] : "All workspaces"}</h1>
         <div className="product-actions">
+          {accountId && selectedWorkspace?.kind === "team" && selectedWorkspace.owner_user_id === accountId && <button className="directory-rename" onClick={() => setRenameWorkspace({kind:"workspace",id:selectedWorkspace.workspace_id,name:selectedWorkspace.name})}>Rename workspace</button>}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
           {choosing && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
@@ -110,10 +115,10 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         <div className="context-card-grid">
           {workspaceId ? page?.inventories.map((inventory) => <div className="context-card context-inventory-card" key={inventory.inventory_id}>
             <Link className="context-card-link" href={`/home?inventory=${encodeURIComponent(inventory.inventory_id)}`}><strong>{inventory.name}</strong><span>{(inventory.item_count ?? 0).toLocaleString()} items</span></Link>
-            {canCreate && <button className="directory-rename" aria-label={`Rename ${inventory.name}`} onClick={() => { open("rename"); setRenaming(inventory); setName(inventory.name); }}>Rename</button>}
-          </div>) : visible.map((workspace) => <Link className="context-card" key={workspace.workspace_id} href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
+            {(inventory.can_rename ?? canCreate) && <button className="directory-rename" aria-label={`Rename ${inventory.name}`} onClick={() => { open("rename"); setRenaming(inventory); setName(inventory.name); }}>Rename</button>}
+          </div>) : visible.map((workspace) => <div className="context-card context-inventory-card" key={workspace.workspace_id}><Link className="context-card-link" href={`/workspaces/${encodeURIComponent(workspace.workspace_id)}`}>
             <strong>{workspace.name}</strong><span>{workspace.kind === "personal" ? "Private" : workspace.organization_name || (workspace.role === "viewer" ? "View only" : "Workspace")}</span>
-          </Link>)}
+          </Link>{accountId && workspace.kind === "team" && workspace.owner_user_id === accountId && <button className="directory-rename" aria-label={`Rename ${workspace.name}`} onClick={() => setRenameWorkspace({kind:"workspace",id:workspace.workspace_id,name:workspace.name})}>Rename</button>}</div>)}
         </div>
         {workspaceId && !page?.inventories.length && !error && <p className="workspace-muted">{query ? "No matching inventories." : "No inventories yet."}</p>}
         {!workspaceId && !visible.length && !error && <p className="workspace-muted">No matching workspaces.</p>}
@@ -129,6 +134,11 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         {(view === "board" || view === "files" || (view === "people" && !page.workspace.organization_id)) ? <TeamsClient selectedTeamId={workspaceId} panel={view === "people" ? "people" : view === "files" ? "files" : "board"} /> : <CollaborationPanel workspaceId={workspaceId} section={view === "people" ? "people" : view === "locations" ? "locations" : "activity"} />}
       </>}
     </section>
+    {accountId && renameWorkspace && <RenameResourceDialog key={renameWorkspace.id} accountId={accountId} target={renameWorkspace} onClose={() => setRenameWorkspace(null)} onSaved={(savedName) => {
+      setWorkspaces((rows) => rows.map((ws) => ws.workspace_id === renameWorkspace.id ? {...ws,name:savedName} : ws));
+      setPage((current) => current ? {...current,workspace:{...current.workspace,name:savedName}} : current);
+      setRenameWorkspace(null); setReload((value) => value + 1);
+    }} />}
     <Dialog open={mode !== null} onOpenChange={(value) => { if (!value && !busy) setMode(null); }}><DialogContent className="workspace-dialog inventory-creation-dialog" aria-describedby={undefined}>
       <DialogTitle>{mode === "join" ? "Join workspace" : mode === "inventory" ? "New inventory" : mode === "rename" ? "Rename inventory" : "New workspace"}</DialogTitle>
       <form onSubmit={submit}>
