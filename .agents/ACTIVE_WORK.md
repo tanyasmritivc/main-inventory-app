@@ -7,7 +7,8 @@ Mobile-only organization/workspace/inventory navigation, consent and membership
 management, physical locations and immutable scoped API clients replace the old
 Teams shell entry while preserving backend records and personal inventory.
 409 Flutter tests, clean static analysis, 75 targeted backend tests and 59 web
-compatibility tests pass. No backend, web, schema, native configuration or
+compatibility tests pass. All five CI gates pass for `a49f03d` on draft PR #85
+(run `38872280350`). No backend, web, schema, native configuration or
 production changes. Native/device, real email and two-client acceptance remain
 release gates. See `docs/plans/mobile-hierarchy-parity.md` for matrix, files and
 the disposable-account test plan.

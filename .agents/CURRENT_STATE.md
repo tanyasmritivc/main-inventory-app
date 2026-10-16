@@ -17,7 +17,8 @@ normal remembered inventory.
 
 409 Flutter tests pass (1m46s) and `flutter analyze --no-pub` reports no issues.
 75 targeted backend route/service tests and 59 web compatibility tests pass;
-their external I/O is stubbed. The full parity/file matrix is recorded in
+their external I/O is stubbed. All five CI gates pass on implementation `a49f03d`
+(run `38872280350`), tracked in draft PR #85. The full parity/file matrix is recorded in
 `docs/plans/mobile-hierarchy-parity.md`. This is source implementation only, with
 no native publication or production changes. Device camera/universal links,
 actual invitation delivery and signed-in web/mobile round trips remain acceptance
