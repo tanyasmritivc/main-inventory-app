@@ -1,5 +1,25 @@
 # Current state
 
+## October 16 mobile hierarchy beta uploaded
+
+Apple accepted TestFlight upload 1.0.8 (66), runtime
+`8dc9fdd4ad505e0e60f926e1510d1ae4573e143f`, PR #85. Validation and upload
+both report no errors. All five exact-runtime CI gates pass (`38873503994`).
+Signed app and ShareExtension are 1.0.8 (66); all 31 native executables target iOS
+devices, signatures/profiles, production origins/anon key and supplied brand
+assets are verified. Durable IPA, archive, checksums and receipts are in
+`Documents/FindEZ/AppStore/1.0.8-build66`. IPA SHA-256:
+`cf4a48231f5e83e46a7aa1931a07b0abb4680eb5abed3c8b98542963635a2e62`.
+
+Tanya requests TestFlight uploads after completed mobile changes and explicitly
+does not want to wait once Apple acknowledges upload. Processing, internal group
+assignment and installability have not been verified for 66; the saved
+`testflight-delivery.rb status`/`assign` helper can check/assign later. Physical
+camera, real email and two-client acceptance remain pending. No public App Store
+selection/submission or backend/database deployment. Approved updater-cache
+cleanup freed about 3 GB and the native build completed; the earlier disk-space
+build blocker below is resolved.
+
 ## October 16 mobile hierarchy source implementation
 
 Branch `feat/mobile-inventory-context-20261016` adds the existing web hierarchy to
@@ -19,12 +39,11 @@ normal remembered inventory.
 75 targeted backend route/service tests and 59 web compatibility tests pass;
 their external I/O is stubbed. All five CI gates pass on implementation `a49f03d`
 (run `38872280350`), tracked in draft PR #85. The full parity/file matrix is recorded in
-`docs/plans/mobile-hierarchy-parity.md`. This is source implementation only, with
-no native publication or production changes. Device camera/universal links,
+`docs/plans/mobile-hierarchy-parity.md`. The later beta upload is recorded above.
+Device camera/universal links,
 actual invitation delivery and signed-in web/mobile round trips remain acceptance
-gates using disposable accounts. Native builds need additional free disk space;
-the machine has under 0.5 GiB free. Do not claim production security or a native
-release from adapter/widget tests.
+gates using disposable accounts. Do not claim production security or physical
+acceptance from adapter/widget tests or a successful TestFlight upload.
 
 ## October 15 organization actions published
 

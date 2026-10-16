@@ -4,6 +4,10 @@ Implementation lane: `feat/mobile-inventory-context-20261016`.
 Audit baseline: `897def7f64cd26c21cea680a0f9a6150a751de5c`, clean tracked tree,
 `/Users/tanyasmritivictorcharles/dev/findez-mobile-color-accents`.
 No backend, web, database, dependencies, signing or production changes.
+Later TestFlight delivery advances only the app/extension build number to 66.
+Apple acknowledged the validated 1.0.8 (66) upload from runtime `8dc9fdd`.
+Processing and group assignment are pending/unverified per Tanya's instruction
+to stop after upload acknowledgement. No public App Store submission was made.
 
 ## Verified relationships and authorization
 
@@ -136,6 +140,9 @@ Final local results on October 16:
 | Targeted backend suites listed below | 75 passed, 5.09s; 69 deprecation warnings | Existing inventory boundaries, permissions, consent, directory and creator actions with external I/O stubbed |
 | Web suites listed below | 59 passed across seven suites, 5.606s | Existing web transport/navigation/access compatibility; web source unchanged |
 | CI run `38872280350` on implementation `a49f03d` | All five gates passed | Full Flutter/analyzer, web, backend, isolated PostgreSQL API permissions and AI connectors on CI |
+| Release CI `38873503994` on runtime `8dc9fdd` | All five gates passed | Exact signed build-66 source tested on CI |
+| Signed 1.0.8 (66) IPA | Passed; 31 device-only native executables | Production configuration, app/extension versions, provisioning, signatures and brand assets |
+| Apple validation and upload | Both acknowledged with no errors | Upload accepted; processing, group availability and physical acceptance are unverified |
 
 Review: [draft PR #85](https://github.com/tanyasmritivc/main-inventory-app/pull/85).
 CI: [verified implementation run](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/38872280350).
@@ -144,11 +151,13 @@ Widget and HTTP-adapter tests use synthetic records. Backend route tests stub ex
 I/O. They verify transport and authorization behavior locally; they do not prove
 camera hardware, email delivery, Apple universal-link dispatch, FIND recognition
 or a signed-in two-client production round trip. Phone renders use test fixtures
-and the local system font. No native binary or TestFlight build is published.
+and the local system font. The later signed IPA was accepted for TestFlight upload;
+Apple processing and tester availability have not been checked.
 
-Run Flutter checks sequentially on this machine: the available disk was below
-0.5 GiB and simultaneous Flutter compilation briefly exhausted temporary space.
-A native build needs additional free disk space. No unrelated files were deleted.
+Run Flutter checks sequentially on this machine: simultaneous compilation earlier
+exhausted temporary space. For the later beta delivery, Tanya approved clearing
+about 3 GB of regenerable VS Code/Codex updater caches. The signed native build
+then completed. Source, credentials and prior release packages were preserved.
 
 Commands from the repository:
 
@@ -226,5 +235,7 @@ never put service-role/FIND/gateway keys in it.
 
 Outstanding human verification: native binary/device acceptance, actual invitation
 email delivery and authenticated web/mobile round trips on disposable data.
-Production publication requires separate explicit approval. No new product or
-schema decision is required for the implemented hierarchy.
+Public App Store publication requires separate explicit approval. TestFlight
+upload now has standing authorization; stop after upload acknowledgement and
+report processing/assignment as pending. No new product or schema decision is
+required for the implemented hierarchy.

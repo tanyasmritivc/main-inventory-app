@@ -2,12 +2,13 @@
 
 ## October 16 mobile hierarchy TestFlight delivery
 
-Tanya authorized ongoing TestFlight delivery after completed mobile changes.
-Preparing 1.0.8 (66) on the existing mobile parity branch. Apple preflight confirms
-65 is the latest build and the two intended internal groups exist. Preserves
-public 1.0.7/build 59 and the unselected 1.0.8 App Store draft. Existing production
-defines/signing are reused; no backend/schema deployment. Source tests already
-pass; exact release CI and native packaging checks will precede upload.
+Apple acknowledged 1.0.8 (66), runtime `8dc9fdd`, on PR #85. All five exact-runtime
+CI gates, signed package/production configuration/31 native executable checks and
+Apple validation pass. Tanya requests uploads after completed mobile changes and
+said not to wait after submission. Processing, group assignment and physical
+acceptance remain unverified. Public App Store version selection and submission
+were not changed; no backend/schema deployment. Receipts and the later
+status/assign helper are in `Documents/FindEZ/AppStore/1.0.8-build66`.
 
 ## October 16 mobile hierarchy parity
 
@@ -18,7 +19,8 @@ Teams shell entry while preserving backend records and personal inventory.
 409 Flutter tests, clean static analysis, 75 targeted backend tests and 59 web
 compatibility tests pass. All five CI gates pass for `a49f03d` on draft PR #85
 (run `38872280350`). No backend, web, schema, native configuration or
-production changes. Native/device, real email and two-client acceptance remain
+production backend changes. The later build-66 upload is recorded above.
+Native/device, real email and two-client acceptance remain
 release gates. See `docs/plans/mobile-hierarchy-parity.md` for matrix, files and
 the disposable-account test plan.
 
