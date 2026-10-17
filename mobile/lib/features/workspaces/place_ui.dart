@@ -71,6 +71,25 @@ class PlaceTheme extends StatelessWidget {
         brightness: Brightness.light,
         surface: PlaceTokens.background,
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: PlaceTokens.darkOrange,
+          foregroundColor: Colors.white,
+          textStyle: PlaceTokens.text(14, weight: FontWeight.w500),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: PlaceTokens.primary,
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: PlaceTokens.outline),
+          textStyle: PlaceTokens.text(14, weight: FontWeight.w500),
+        ),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: PlaceTokens.background,
         foregroundColor: PlaceTokens.primary,

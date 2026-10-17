@@ -1,3 +1,4 @@
+import '../notifications/notification_bell.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -303,6 +304,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       appBar: AppBar(
         title: const AppText('Tasks'),
         actions: [
+          NotificationBell(api: widget.api),
           IconButton(
             onPressed: _load,
             icon: const Icon(CupertinoIcons.refresh),

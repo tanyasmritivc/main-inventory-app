@@ -1,3 +1,55 @@
+# October 16 capture progress owns its route
+
+Never dismiss an upload's root dialog by popping the caller's nested navigator.
+Own the DialogRoute and remove exactly it in finally on success/error. Preserve
+the source Space and unrelated modals. Check the originating route is still
+current before showing results; mounted alone is insufficient during a suspended
+pop animation. No automatic re-extraction or implicit inventory write is added.
+
+# October 16 preserve per-item scan images independently of certainty
+
+FIND result bbox is x/y/width/height, not opposite corners. Crop URLs can be absent;
+use the documented item-ID crop endpoint and persist the decoded image before
+job cleanup. If unavailable, crop the original using the stored-frame dimensions.
+Keep the original source separately, and preserve uncertain Review behavior.
+Do not guess geometry or rewrite existing customer images lacking persisted boxes.
+No model, provider, schema or transport configuration changes are required.
+
+# October 16 mobile alerts preserve identity and access boundaries
+
+A visible bell opens the existing authenticated inbox independently of inventory.
+Request OS permission only from the user's phone-alert action; restore previously
+authorized registration after launch/resume. Clear registration and native alerts
+on signout. Push payloads carry recipient identity and never invitation secrets;
+invitation delivery rechecks pending state, verified email and sender permission.
+In-app activity also rechecks current workspace/inventory access. APNs acceptance
+is not proof of device display; keep actual phone delivery as manual acceptance.
+Migration 052 is additive and service-only. Keep it on runtime rollback. Planning
+questions require advice/clarification rather than a literal no-match response;
+current authorized context is the authority for owned-item claims.
+
+# October 16 explicit deletion and category settings
+
+The user explicitly extended 049 empty-only deletion to an optional contents
+purge, approved in 050. Empty-only stays the default; name/role checks are atomic,
+cross-inventory dependencies fail closed, files use private durable cleanup and
+shared reference checks. Account Auth deletion precedes destructive cleanup;
+ownership blocks are actionable and borrower history is retained. Deleted Auth
+identities cannot use private Storage with stale JWTs. Preserve safeguards on
+rollback. Web settings categories are real protected pages, not scroll anchors;
+reuse existing fields/actions and keep inventory dashboard/Spaces unchanged.
+
+# October 16 inventory-first workspace navigation
+
+Keep dashboard, Spaces and opened-inventory flows intact. Workspace entry opens
+its inventory directory with creation available at every inventory count;
+organization and workspace management remain outside the inventory. Scope
+professional directory typography/theme to these routes only. Organization IDs,
+not duplicate display names, determine grouping. Deletion requires a current
+owner/admin, exact name and no content foreign keys, all checked under database
+locks through a service-only RPC. Do not add cascading content deletion to make
+this convenient. On rollback keep migration 049; the prior runtime has no DELETE.
+
 # October 16: approved account-memory activation preserves server work
 
 After explicit user approval, apply reviewed migration 048 before the dependent

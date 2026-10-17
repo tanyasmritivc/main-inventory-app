@@ -25,6 +25,8 @@ def manage(actor, action, data):
                     '23505': (409, 'This name or assignment already exists.'),
                     '23514': (422, 'Check the member, role and parent workspace. Remove workspace assignments before removing organization membership.'),
                     '23503': (422, 'Choose an existing member or location.')}
+        if action == 'workspace_create' and exc.code in ('23505', '23514'):
+            raise HTTPException(409, 'The workspace could not be created. Refresh the organization and try again.')
         if exc.code in messages:
             status, message = messages[exc.code]
             raise HTTPException(status, message)

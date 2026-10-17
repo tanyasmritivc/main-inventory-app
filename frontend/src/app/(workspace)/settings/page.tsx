@@ -8,7 +8,7 @@ export default async function SettingsPage() {
 
   return (
       <section className="product-page settings-page">
-        <header className="product-page-header"><h1>Settings</h1></header>
+        <header className="product-page-header"><h1>Profile</h1></header>
         <SettingsClient email={user.email || null} />
       </section>
   );

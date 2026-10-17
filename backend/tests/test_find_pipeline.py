@@ -46,6 +46,12 @@ def _item(**overrides):
     return item
 
 
+def _jpeg():
+    output = BytesIO()
+    Image.new("RGB", (30, 50), "red").save(output, format="JPEG")
+    return output.getvalue()
+
+
 class FindResultMappingTests(unittest.TestCase):
     def test_maps_find_identity_barcode_ocr_and_measurement(self):
         mapped = map_find_result({
@@ -173,7 +179,7 @@ class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
                 return httpx.Response(200, json={"items": [_item(crop_url="/v1/jobs/job_crop/crops/it_0002") ]})
             if request.url.path == "/v1/jobs/job_crop/crops/it_0002":
                 order.append("fetch crop")
-                return httpx.Response(200, content=b"crop-bytes")
+                return httpx.Response(200, content=_jpeg())
             if request.method == "DELETE":
                 order.append("delete job")
                 return httpx.Response(204)
@@ -181,7 +187,7 @@ class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
 
         def store_crop(**kwargs):
             order.append("store crop")
-            self.assertEqual(kwargs["content"], b"crop-bytes")
+            self.assertEqual(Image.open(BytesIO(kwargs["content"])).size, (30, 50))
             return StoredImage(path="u/crop.jpg", url="https://images.test/crop.jpg")
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
@@ -208,7 +214,7 @@ class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
             if request.method == "POST":
                 return httpx.Response(202, json={})
             if request.url.path == "/v1/jobs/job_box/result":
-                return httpx.Response(200, json={"items": [_item(bbox=[10, 10, 50, 50], confidence=0.81)]})
+                return httpx.Response(200, json={"items": [_item(bbox=[10, 10, 40, 40], confidence=0.81)]})
             if request.method == "DELETE":
                 return httpx.Response(204)
             return httpx.Response(200, json={"done": True})

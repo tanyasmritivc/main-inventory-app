@@ -36,6 +36,8 @@ class _NotificationsPageState extends State<NotificationsPage>
   String _permission = 'notDetermined';
   bool _pushReady = false;
   bool _checkingPush = false;
+  bool _testingPush = false;
+  String? _testNotice;
   bool _loading = false;
   bool _reading = false;
   int _unreadCount = 0;
@@ -126,6 +128,32 @@ class _NotificationsPageState extends State<NotificationsPage>
       }
     } finally {
       if (mounted) setState(() => _checkingPush = false);
+    }
+  }
+
+  Future<void> _testPhoneAlert() async {
+    if (_testingPush || widget.api.accountId != _account) return;
+    setState(() {
+      _testingPush = true;
+      _testNotice = null;
+    });
+    try {
+      await widget.api.sendTestPush();
+      if (mounted && widget.api.accountId == _account) {
+        setState(
+          () => _testNotice =
+              'Apple accepted the test alert. Check your iPhone notifications.',
+        );
+      }
+    } catch (_) {
+      if (mounted && widget.api.accountId == _account) {
+        setState(
+          () => _testNotice =
+              'The test alert could not be sent. Check phone permissions and try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _testingPush = false);
     }
   }
 
@@ -236,6 +264,18 @@ class _NotificationsPageState extends State<NotificationsPage>
     ),
     body: Column(
       children: [
+        if (_pushReady)
+          TextButton(
+            onPressed: _testingPush ? null : _testPhoneAlert,
+            child: AppText(
+              _testingPush ? 'Sending test...' : 'Send test notification',
+            ),
+          ),
+        if (_testNotice != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            child: AppText(_testNotice!),
+          ),
         if (PushNotifications.supported && !_pushReady)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),

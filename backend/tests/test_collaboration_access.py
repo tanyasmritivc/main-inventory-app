@@ -100,3 +100,20 @@ def test_legacy_viewer_cannot_modify_owned_files_or_photos(api):
         assert result.status_code==403,result.text
     db.storage.from_.assert_not_called()
     assert db.writes==[]
+
+
+def test_workspace_creation_constraint_failure_is_not_reported_as_membership_removal(monkeypatch):
+    import pytest
+    from fastapi import HTTPException
+    from postgrest.exceptions import APIError
+    from app.api.routes import collaboration
+    class Broken:
+        def rpc(self, name, data):
+            assert data['p_action'] == 'workspace_create'
+            raise APIError({'code':'23514','message':'synthetic constraint failure','details':'','hint':''})
+    monkeypatch.setattr(collaboration,'get_supabase_raw',lambda:Broken())
+    with pytest.raises(HTTPException) as error:
+        collaboration.manage(OWNER,'workspace_create',{'name':'Synthetic'})
+    assert error.value.status_code == 409
+    assert 'workspace could not be created' in error.value.detail
+    assert 'Remove workspace assignments' not in error.value.detail

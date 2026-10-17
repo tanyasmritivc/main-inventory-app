@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -6,10 +7,14 @@ import 'api_client.dart';
 class PushNotifications {
   static const _channel = MethodChannel('com.findez.app/push');
   static Future<void> Function(Map<String, dynamic>)? _onNotificationTap;
+  static final _received = StreamController<void>.broadcast();
+  static Stream<void> get received => _received.stream;
   static bool _initialized = false;
   static Future<bool>? _registration;
   static String? _registrationAccount;
   static int _generation = 0;
+  static ApiClient? _registeredApi;
+  static String? _registeredToken, _registeredAccount;
 
   static bool get supported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
@@ -37,6 +42,10 @@ class PushNotifications {
     if (!_initialized) {
       _initialized = true;
       _channel.setMethodCallHandler((call) async {
+        if (call.method == 'notificationReceived') {
+          _received.add(null);
+          return;
+        }
         if (call.method != 'notificationTapped') return;
         final arguments = call.arguments;
         if (arguments is Map) {
@@ -92,16 +101,35 @@ class PushNotifications {
     final environment = result?['environment']?.toString() ?? 'production';
     if (token.isEmpty) return false;
     await api.registerPushDevice(token: token, environment: environment);
-    return api.accountId == account && generation == _generation;
+    if (api.accountId != account || generation != _generation) return false;
+    _registeredApi = api;
+    _registeredToken = token;
+    _registeredAccount = account;
+    return true;
   }
 
   /// Stop OS delivery and clear displayed alerts before leaving an account.
   /// The server token is reassigned to the authenticated user on the next registration.
   static Future<void> stop() async {
+    final api = _registeredApi,
+        token = _registeredToken,
+        account = _registeredAccount;
+    _registeredApi = null;
+    _registeredToken = null;
+    _registeredAccount = null;
     _generation++;
     _onNotificationTap = null;
     if (!supported) return;
     await _channel.invokeMethod<void>('unregister');
+    if (api != null && token != null && api.accountId == account) {
+      try {
+        await api
+            .unregisterPushDevice(token)
+            .timeout(const Duration(seconds: 5));
+      } catch (_) {
+        /* OS delivery is stopped; the next account registration rebinds the token. */
+      }
+    }
   }
 
   static Future<void> setBadgeCount(int count) async {

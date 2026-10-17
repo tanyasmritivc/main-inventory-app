@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/account_deletion.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
@@ -335,15 +336,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (confirmed != true) return;
     try {
-      final response = await Supabase.instance.client.functions.invoke(
-        'delete-user',
-      );
-      final data = response.data;
-      if (data == null || (data is Map && data['error'] != null)) {
-        throw Exception(
-          data is Map ? data['error'] : 'Failed to delete account',
-        );
-      }
+      await requestAccountDeletion();
       InventoryCache.clear();
       await PushNotifications.stop();
       await Supabase.instance.client.auth.signOut();

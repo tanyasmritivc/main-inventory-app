@@ -1,3 +1,4 @@
+import '../../core/account_deletion.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -25,6 +26,7 @@ import '../home/home_page.dart';
 import '../home/home_overview.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
+import '../notifications/notification_bell.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
@@ -72,6 +74,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   bool _openingAccount = false;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
+  StreamSubscription<void>? _foregroundPush;
   int _notificationGeneration = 0;
   late final String? _notificationAccount;
   double _pageOpacity = 1;
@@ -127,6 +130,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     unawaited(_profileStore.load());
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
+    _foregroundPush = PushNotifications.received.listen(
+      (_) => unawaited(_loadNotificationCount()),
+    );
     unawaited(_initializePushNotifications());
     _notificationTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       final lifecycle = WidgetsBinding.instance.lifecycleState;
@@ -220,6 +226,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _authSub?.cancel();
     _notificationTimer?.cancel();
+    _foregroundPush?.cancel();
     TutorialController.instance.dismiss();
     _pageController.dispose();
     _profileStore.dispose();
@@ -319,7 +326,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 context,
                 HomeColors.background,
               ),
-              appBar: AppBar(title: const AppText('Account')),
+              appBar: AppBar(
+                title: const AppText('Account'),
+                actions: [
+                  NotificationBell(
+                    api: widget.api,
+                    count: _notificationCount,
+                    onOpen: _openNotifications,
+                  ),
+                ],
+              ),
               body: ProfileHubPage(
                 api: widget.api,
                 store: _profileStore,
@@ -560,6 +576,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
         ),
         actions: [
+          NotificationBell(
+            api: widget.api,
+            count: _notificationCount,
+            onOpen: _openNotifications,
+          ),
           IconButton(
             tooltip: 'Inventory settings',
             onPressed: widget.onManageContext,
@@ -1159,24 +1180,7 @@ class _ProfilePage extends StatelessWidget {
                           if (confirmed != true) return;
 
                           try {
-                            final response = await Supabase
-                                .instance
-                                .client
-                                .functions
-                                .invoke('delete-user');
-
-                            if (response.data == null) {
-                              throw Exception('Failed to delete account');
-                            }
-
-                            final responseData =
-                                response.data as Map<String, dynamic>;
-                            if (responseData['error'] != null) {
-                              throw Exception(
-                                responseData['error'] ??
-                                    'Failed to delete account',
-                              );
-                            }
+                            await requestAccountDeletion();
 
                             InventoryCache.clear();
                             await PushNotifications.stop();

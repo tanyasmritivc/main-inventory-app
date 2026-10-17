@@ -290,7 +290,7 @@ void main() {
       );
       await tester.pumpWidget(_gate(_Api()));
       await settleHome(tester);
-      await tester.tap(find.text('Open'));
+      await tester.tap(find.text('My inventory'));
       await settleHome(tester);
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
@@ -322,7 +322,7 @@ void main() {
       await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
-      await tester.tap(find.text('Open'));
+      await tester.tap(find.text('My inventory'));
       await settleHome(tester);
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));

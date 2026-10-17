@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/notification_snapshot.dart';
+import 'package:mobile/core/push_notifications.dart';
 import 'package:mobile/features/notifications/notifications_page.dart';
 
 class _InboxApi extends ApiClient {
@@ -12,6 +13,21 @@ class _InboxApi extends ApiClient {
   String user = 'account-a';
   bool failRead = false;
   bool failFetch = false;
+  bool failTest = false;
+  int tests = 0;
+  @override
+  Future<void> registerPushDevice({
+    required String token,
+    required String environment,
+  }) async {}
+  @override
+  Future<void> unregisterPushDevice(String token) async {}
+  @override
+  Future<void> sendTestPush() async {
+    tests++;
+    if (failTest) throw StateError('synthetic delivery failure');
+  }
+
   int writes = 0;
   int reads = 0;
   Completer<Map<String, dynamic>>? pending;
@@ -63,6 +79,30 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
+  testWidgets(
+    'authorized phone alerts expose a test with honest acceptance feedback',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'authorizationStatus') return 'authorized';
+            if (call.method == 'register') {
+              return {'deviceToken': 'a' * 64, 'environment': 'sandbox'};
+            }
+            return null;
+          });
+      final api = _InboxApi();
+      await tester.pumpWidget(MaterialApp(home: NotificationsPage(api: api)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send test notification'));
+      await tester.pumpAndSettle();
+      expect(api.tests, 1);
+      expect(find.textContaining('Apple accepted'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await PushNotifications.stop();
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
   test('malformed inbox counts and rows never become a false empty feed', () {
     for (final result in [
       {'unread_count': -1, 'notifications': []},

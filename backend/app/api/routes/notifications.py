@@ -21,6 +21,32 @@ def _team_ids(user_id: str) -> list[str]:
     return [row["team_id"] for row in rows]
 
 
+def _visible_activity(client, user_id: str, activity: list[dict]) -> list[dict]:
+    teams = set(_team_ids(user_id))
+    inventory_access, spaces = {}, {}
+    visible = []
+    for row in activity:
+        if row.get('team_id') not in teams:
+            continue
+        metadata = row.get('metadata') or {}
+        inventory = metadata.get('inventory_id')
+        space = metadata.get('space_id')
+        if space and not inventory:
+            if space not in spaces:
+                rows = client.table('spaces').select('inventory_id').eq('id', space).limit(1).execute().data or []
+                spaces[space] = rows[0].get('inventory_id') if rows else None
+            inventory = spaces[space]
+            if not inventory:
+                continue
+        if inventory:
+            if inventory not in inventory_access:
+                inventory_access[inventory] = bool(client.rpc('findez_inventory_role', {'p_inventory':inventory,'p_actor':user_id}).execute().data)
+            if not inventory_access[inventory]:
+                continue
+        visible.append(row)
+    return visible
+
+
 def _task_title_from_summary(summary: str) -> str:
     for prefix, suffix in (
         ("Added ", " to the Team Board"),
@@ -88,6 +114,9 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     ).gte("created_at", _history_cutoff()).order(
         "created_at", desc=True
     ).limit(100).execute().data or []
+    activity = _visible_activity(client, user.user_id, activity)
+    if not activity:
+        return {"notifications":invitations,"unread_count":sum(not row['is_read'] for row in invitations)}
     team_ids = list({row["team_id"] for row in activity if row.get("team_id")})
     teams = client.table("teams").select("team_id,name").in_(
         "team_id", team_ids

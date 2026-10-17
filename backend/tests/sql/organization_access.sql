@@ -6,6 +6,11 @@ select pg_temp.check(not exists(select value from access_before except select to
 -- Match the relevant production defaults/columns omitted by the minimal fixture.
 alter table public.teams alter column team_id set default gen_random_uuid();
 alter table public.teams add column join_code char(6) unique;
+-- The production alphabet constraint was missing from the original fixture.
+alter table public.teams add constraint teams_join_code_check check(join_code ~ '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$');
+-- Apply against the original function before consent later renames it. The live
+-- rehearsal also verifies the existing consent-wrapped legacy function target.
+\ir ../../supabase/migrations/051_workspace_creation_codes.sql
 alter table public.team_memberships add constraint access_fixture_members_unique unique(team_id,user_id);
 alter table public.spaces alter column id set default gen_random_uuid();
 alter table auth.users add column if not exists email text;
@@ -110,7 +115,7 @@ select set_config('request.jwt.claims','{}',false);
 -- Existing independent workspaces are attached deliberately, without moving data.
 do $$ declare ws uuid:=gen_random_uuid(); owner_id uuid:=(select id from access_demo where key='owner');
 begin
- insert into public.teams(team_id,owner_user_id,name,program,custom_category,join_code) values(ws,owner_id,'Existing project','custom','Project','EXIST1');
+ insert into public.teams(team_id,owner_user_id,name,program,custom_category,join_code) values(ws,owner_id,'Existing project','custom','Project','EXHST2');
  insert into public.team_memberships(team_id,user_id,role) values(ws,owner_id,'owner'),(ws,'b0000000-0000-0000-0000-000000000038','member');
  begin
   perform public.findez_manage_collaboration(owner_id,'workspace_attach',jsonb_build_object('organization_id',(select id from access_demo where key='acme'),'team_id',ws));

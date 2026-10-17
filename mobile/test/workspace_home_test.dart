@@ -61,6 +61,12 @@ void main() {
           ],
         };
       }
+      if (r.path.endsWith('/inventories') && r.method == 'POST') {
+        count++;
+        return {
+          'inventory': {'inventory_id': 'inv-${count - 1}'},
+        };
+      }
       if (r.path.endsWith('/directory')) {
         return {
           'inventories': [
@@ -126,13 +132,34 @@ void main() {
       );
       await pump(tester);
       expect(find.text('FTC ROBOTICS 2026'), findsOneWidget);
-      expect(find.text('View only'), findsOneWidget);
-      expect(find.text('60 items'), findsOneWidget);
+      expect(find.text('60 items · Viewer'), findsOneWidget);
+      expect(find.text('New inventory'), findsNothing);
       expect(find.text('Tasks'), findsOneWidget);
       expect(find.text('People'), findsOneWidget);
       expect(find.byTooltip('Refresh'), findsNothing);
-      await tester.tap(find.text('Open'));
+      await tester.tap(find.text('Inventory 0'));
       expect(opened, ['org/ftc/inv-0']);
+    },
+  );
+  testWidgets(
+    'create remains visible after the first inventory and refreshes the selected workspace',
+    (tester) async {
+      await tester.runAsync(session.restore);
+      await pump(tester);
+      expect(find.text('Inventory 0'), findsOneWidget);
+      await tester.tap(find.text('New inventory'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), 'Materials');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Create'));
+      await settle(tester);
+      expect(
+        fixture.requests.where((r) => r.method == 'POST').last.path,
+        '/inventory-workspaces/personal/inventories',
+      );
+      expect(find.text('Inventory 1'), findsOneWidget);
+      expect(find.text('New inventory'), findsOneWidget);
+      expect(opened, isEmpty);
     },
   );
   testWidgets('Personal contains inventories and no workspace tools', (
@@ -176,7 +203,7 @@ void main() {
     canOpen = false;
     await tester.runAsync(session.restore);
     await pump(tester);
-    expect(find.text('INVENTORIES'), findsOneWidget);
+    expect(find.text('Inventories'), findsOneWidget);
     expect(find.text('Access restricted'), findsNWidgets(2));
     expect(find.text('items'), findsNothing);
     expect(find.text('0'), findsNothing);
@@ -217,4 +244,57 @@ void main() {
       expect(find.byType(HierarchyPage), findsOneWidget);
     },
   );
+  testWidgets(
+    'owner deletes from workspace menu and returns to Personal with no stale context',
+    (tester) async {
+      final original = fixture.respond;
+      fixture.respond = (r) async {
+        if (r.path == '/teams/ftc' && r.method == 'DELETE') {
+          return {'deleted': true};
+        }
+        final result = await original(r) as Map<String, dynamic>;
+        if (r.path == '/inventory-workspaces/ftc/overview') {
+          result['workspace'] = Map<String, dynamic>.from(
+            result['workspace'] as Map,
+          )..addAll({'role': 'owner', 'owner_user_id': 'actor-a'});
+        }
+        return result;
+      };
+      await tester.runAsync(
+        () => session.select(const LastPlace.workspace('ftc')),
+      );
+      await pump(tester);
+      expect(session.error, isNull);
+      expect(session.data?.resource['owner_user_id'], 'actor-a');
+      await tester.scrollUntilVisible(
+        find.byTooltip('Manage workspace'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byTooltip('Manage workspace'));
+      await settle(tester);
+      await tester.tap(find.text('Delete workspace'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete workspace'));
+      await settle(tester);
+      expect(
+        fixture.requests.where((r) => r.method == 'DELETE').single.path,
+        '/teams/ftc',
+      );
+      expect(session.current.isPersonal, true);
+      expect((await session.store.read()).isPersonal, true);
+      expect(opened, isEmpty);
+    },
+  );
+
+  testWidgets('workspace member has no deletion menu', (tester) async {
+    await tester.runAsync(
+      () => session.select(const LastPlace.workspace('ftc')),
+    );
+    await pump(tester);
+    expect(find.byTooltip('Manage workspace'), findsNothing);
+    expect(find.text('Delete workspace'), findsNothing);
+  });
 }

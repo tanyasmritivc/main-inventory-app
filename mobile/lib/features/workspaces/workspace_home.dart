@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../notifications/notification_bell.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,8 @@ import '../teams/team_board_page.dart';
 import '../teams/team_documents_page.dart';
 import 'hierarchy_page.dart';
 import 'place_ui.dart';
+import 'inventory_actions.dart';
+import 'workspace_actions.dart';
 
 class WorkspaceHome extends StatefulWidget {
   const WorkspaceHome({
@@ -26,7 +29,8 @@ class WorkspaceHome extends StatefulWidget {
 class _WorkspaceHomeState extends State<WorkspaceHome>
     with WidgetsBindingObserver {
   PlaceSession get session => widget.session;
-  bool _switcherOpen = false;
+  bool _switcherOpen = false, _creating = false;
+  Map<String, dynamic>? _createdOrganization;
   @override
   void initState() {
     super.initState();
@@ -122,6 +126,8 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
       if (mounted) setState(() => _switcherOpen = false);
     }
     if (!mounted) return;
+    organization ??= _createdOrganization;
+    _createdOrganization = null;
     if (organization != null) {
       final org = organization!;
       final place = await Navigator.of(context).push<LastPlace>(
@@ -148,12 +154,27 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
     }
   }
 
+  Future<void> _deleteWorkspace(PlaceData data) async {
+    final deleted = await confirmWorkspaceDeletion(
+      context,
+      session.api,
+      id: data.place.id,
+      name: data.name,
+    );
+    if (mounted && deleted) {
+      await session.restore(override: const LastPlace.personal());
+    }
+  }
+
   Future<bool> _create(String kind) async {
+    if (_creating) return false;
+    final place = session.current;
     final name = await showDialog<String>(
       context: context,
       builder: (context) => _CreatePlaceDialog(kind: kind),
     );
-    if (!mounted || name == null) return false;
+    if (!mounted || name == null || session.current != place) return false;
+    setState(() => _creating = true);
     try {
       final data = kind == 'workspace'
           ? {'name': name, 'program': 'other', 'custom_category': 'Workspace'}
@@ -162,18 +183,35 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
           ? '/teams'
           : kind == 'organization'
           ? '/organizations'
-          : '/inventory-workspaces/${Uri.encodeComponent(session.current.id)}/inventories';
+          : '/inventory-workspaces/${Uri.encodeComponent(place.id)}/inventories';
       final saved = await session.api.collaboration(
         path,
         method: 'POST',
         data: data,
       );
-      if (saved.isEmpty) {
+      if ((kind == 'inventory' &&
+              (saved['inventory'] as Map?)?['inventory_id'] == null) ||
+          (kind == 'workspace' &&
+              (saved['team'] as Map?)?['team_id'] == null) ||
+          (kind == 'organization' &&
+              (saved['organization'] as Map?)?['organization_id'] == null)) {
         throw const FormatException(
           'The change could not be confirmed. Refresh before retrying.',
         );
       }
-      if (mounted) await session.refresh();
+      if (!mounted) return true;
+      if (kind == 'workspace') {
+        await session.select(
+          LastPlace.workspace((saved['team'] as Map)['team_id'].toString()),
+        );
+      } else {
+        if (kind == 'organization') {
+          _createdOrganization = Map<String, dynamic>.from(
+            saved['organization'] as Map,
+          );
+        }
+        await session.refresh();
+      }
       return true;
     } catch (e) {
       if (mounted) {
@@ -182,6 +220,8 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
       }
       return false;
+    } finally {
+      if (mounted) setState(() => _creating = false);
     }
   }
 
@@ -201,171 +241,71 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
     );
   }
 
-  Widget _inventoryBlock(PlaceData data) {
-    final inventories = data.inventories;
-    if (inventories.isEmpty) {
-      return PlaceCardList(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('No inventory yet', style: PlaceTokens.rowTitle),
-                if (data.canCreate) ...[
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => _create('inventory'),
-                    child: const Text('Create inventory'),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-    if (inventories.length == 1) {
-      final inv = inventories.single;
-      final editable =
-          inv['can_open'] == true &&
-          (inv['can_edit'] == true ||
-              ['owner', 'admin', 'editor'].contains(inv['role']));
-      final status = inv['can_open'] != true
-          ? 'Access restricted'
-          : editable
-          ? 'You can edit'
-          : 'View only';
-      return Semantics(
-        button: true,
-        label: '${inv['name']}. $status. Open inventory',
-        onTap: () => _open(inv),
-        child: ExcludeSemantics(
-          child: Material(
-            color: PlaceTokens.darkOrange,
-            borderRadius: BorderRadius.circular(18),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => _open(inv),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        spacing: 16,
-                        runSpacing: 6,
-                        children: [
-                          Text(
-                            'Inventory',
-                            style: PlaceTokens.text(
-                              13,
-                              weight: FontWeight.w600,
-                              color: const Color(0xFFFCD9C4),
-                            ),
-                          ),
-                          Text(
-                            status,
-                            style: PlaceTokens.text(
-                              13,
-                              color: const Color(0xFFFCD9C4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      inv['name'].toString(),
-                      style: PlaceTokens.text(
-                        22,
-                        weight: FontWeight.w600,
-                        color: Colors.white,
-                      ).copyWith(height: 1.2),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: inv['item_count'] == null
-                              ? const SizedBox.shrink()
-                              : Text(
-                                  '${inv['item_count']} items',
-                                  style: PlaceTokens.text(
-                                    15,
-                                    color: const Color(0xFFFFF1E8),
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(40),
-                          ),
-                          child: Text(
-                            'Open',
-                            style: PlaceTokens.text(
-                              15,
-                              weight: FontWeight.w600,
-                              color: PlaceTokens.ownerText,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('INVENTORIES', style: PlaceTokens.section),
-        const SizedBox(height: 10),
-        PlaceCardList(
+  Widget _inventoryBlock(PlaceData data) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 8,
           children: [
-            for (final inv in inventories)
-              PlaceRow(
-                title: inv['name'].toString(),
-                subtitle: inv['can_open'] == true ? null : 'Access restricted',
-                onTap: () => _open(inv),
-                trailing: inv['item_count'] == null
-                    ? null
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${inv['item_count']}',
-                            style: PlaceTokens.text(
-                              16,
-                              weight: FontWeight.w600,
-                              color: PlaceTokens.darkOrange,
-                            ),
-                          ),
-                          Text(
-                            'items',
-                            style: PlaceTokens.text(12, color: PlaceTokens.dim),
-                          ),
-                        ],
-                      ),
+            Text(
+              'Inventories',
+              style: PlaceTokens.text(18, weight: FontWeight.w600),
+            ),
+            if (data.canCreate)
+              FilledButton.icon(
+                onPressed: _creating ? null : () => _create('inventory'),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New inventory'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: PlaceTokens.darkOrange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
           ],
         ),
-      ],
-    );
-  }
+      ),
+      const SizedBox(height: 14),
+      if (data.inventories.isEmpty)
+        PlaceCardList(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('No inventories yet', style: PlaceTokens.rowTitle),
+                  const SizedBox(height: 8),
+                  Text(
+                    data.canCreate
+                        ? 'Create a collection for this workspace.'
+                        : 'Inventories shared with you will appear here.',
+                    style: PlaceTokens.text(13, color: PlaceTokens.dim),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        )
+      else
+        for (final inv in data.inventories) ...[
+          InventoryDirectoryRow(
+            inventory: inv,
+            api: session.api,
+            onOpen: () => _open(inv),
+            refresh: session.refresh,
+          ),
+          const SizedBox(height: 10),
+        ],
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -382,6 +322,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
+                  if (session.loading || session.error != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: NotificationBell(api: session.api),
+                    ),
                   if (session.loading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
@@ -472,7 +417,8 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 4),
+                          NotificationBell(api: session.api),
                           Visibility(
                             visible: !_switcherOpen,
                             maintainSize: true,
@@ -495,13 +441,63 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 23),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        TextButton(
+                          onPressed: _switcher,
+                          child: const Text('Switch workspace'),
+                        ),
+                        if (data.organizationId != null)
+                          TextButton(
+                            onPressed: () => _push(
+                              HierarchyPage(
+                                api: session.api,
+                                onOpenInventory: widget.onOpenInventory,
+                                level: HierarchyLevel.organization,
+                                id: data.organizationId,
+                                name: data.organizationName,
+                                onOpenWorkspace: (id) async {
+                                  Navigator.of(context).pop();
+                                  await session.select(LastPlace.workspace(id));
+                                },
+                              ),
+                            ),
+                            child: const Text('Organization'),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
                     Opacity(
                       opacity: _switcherOpen ? 0 : 1,
                       child: _inventoryBlock(data),
                     ),
                     if (!data.place.isPersonal) ...[
                       const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Workspace',
+                              style: PlaceTokens.section,
+                            ),
+                          ),
+                          if (data.resource['owner_user_id'] ==
+                              session.accountId)
+                            PopupMenuButton<String>(
+                              tooltip: 'Manage workspace',
+                              onSelected: (_) => _deleteWorkspace(data),
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete workspace'),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
                       PlaceCardList(
                         children: [
                           PlaceRow(
@@ -566,6 +562,18 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                                 name: data.name,
                                 organizationId: data.organizationId,
                                 panel: HierarchyPanel.activity,
+                              ),
+                            ),
+                          ),
+                          PlaceRow(
+                            title: 'Workspace settings',
+                            onTap: () => _push(
+                              HierarchyPage(
+                                api: session.api,
+                                onOpenInventory: widget.onOpenInventory,
+                                level: HierarchyLevel.workspace,
+                                id: data.place.id,
+                                name: data.name,
                               ),
                             ),
                           ),
@@ -713,8 +721,13 @@ class _PlaceSwitcherState extends State<PlaceSwitcher> {
   Future<void> _create(String kind) async {
     if (_busy) return;
     setState(() => _busy = true);
-    await widget.onCreate(kind);
-    if (mounted) await _load();
+    final saved = await widget.onCreate(kind);
+    if (!mounted) return;
+    if (saved) {
+      Navigator.pop(context);
+    } else {
+      await _load();
+    }
   }
 
   @override
@@ -819,59 +832,36 @@ class _PlaceSwitcherState extends State<PlaceSwitcher> {
                     ),
                     TextButton(onPressed: _load, child: const Text('Retry')),
                   ],
+                  if (organizations.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      'Organizations',
+                      style: PlaceTokens.text(16, weight: FontWeight.w600),
+                    ),
+                  ],
                   for (final org in organizations) ...[
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Semantics(
-                        button: true,
-                        label:
-                            'Open organization ${(org['name'] ?? '').toString()}',
-                        child: InkWell(
+                    const SizedBox(height: 12),
+                    PlaceCardList(
+                      children: [
+                        PlaceRow(
+                          title: (org['name'] ?? 'Organization').toString(),
+                          leading: PlaceBadge(
+                            (org['name'] ?? 'O').toString(),
+                            type: 'organization',
+                          ),
+                          subtitle: org['role'] == null
+                              ? 'Organization'
+                              : 'Organization · ${placeRole(org['role'].toString())}',
                           onTap: () async {
                             await widget.onManageOrganization(org);
-                            if (mounted) await _load();
                           },
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 44),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Wrap(
-                                alignment: WrapAlignment.spaceBetween,
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  Text(
-                                    (org['name'] ?? '')
-                                        .toString()
-                                        .toUpperCase(),
-                                    style: PlaceTokens.section.copyWith(
-                                      color: PlaceTokens.muted(
-                                        context,
-                                        PlaceTokens.label,
-                                      ),
-                                    ),
-                                  ),
-                                  if (org['role'] != null)
-                                    Text(
-                                      'Organization · ${placeRole(org['role'].toString())}',
-                                      style: PlaceTokens.subtitle.copyWith(
-                                        color: PlaceTokens.muted(
-                                          context,
-                                          PlaceTokens.secondary,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    if ((groups[org['organization_id']] ?? []).isNotEmpty)
+                    if ((groups[org['organization_id']] ?? []).isNotEmpty) ...[
+                      const SizedBox(height: 8),
                       _places(groups[org['organization_id']]!),
+                    ],
                   ],
                   if (workspaces.any((w) => w.organizationId == null)) ...[
                     const SizedBox(height: 17),

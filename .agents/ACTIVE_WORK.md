@@ -1,3 +1,124 @@
+# October 16 simplified web inventory sidebar
+
+Apple acknowledged TestFlight 1.0.8 (76), source d3109b3, delivery f8d15676-774f-4d88-9468-d0044da2db33. Native UI unchanged; processing/tester availability not checked. Web sidebar is published and visually verified.
+
+Review is grouped under Your world. Restock, Lent items, Project kits, Smart
+collections and Labels are removed from the shared web navigation and command
+list; the empty Organize group disappears. Existing routes/data are preserved.
+324 web tests, TypeScript, changed-file lint and a normal production webpack build
+pass. Five old route-selection cases disappear with the removed entries; the
+existing sidebar assertion now checks Review's group and absent links. Live
+signed-in Safari visually confirms the exact sidebar. Self-hosted web release:
+/home/ubuntu/findez-web-releases/web-sidebar-simplify-20261016/frontend. Its one-file
+overlay preserves 285 unrelated source files, including the homepage. Public/auth
+checks pass, no schema/backend/customer-data change. Mobile UI is unchanged;
+beta76 is a standing-instruction delivery increment, reusing the prior 466 Flutter
+passes. No checks repeated after push/build; stop at Apple upload acknowledgment.
+
+# October 16 web sidebar simplification
+
+Same lane, clean starting 22a0e27. Move Review into Your world and remove Restock,
+Lent items, Project kits, Smart collections and Labels from the shared web
+navigation list. Remove the now-empty Organize group. Preserve routes/data and
+inventory dashboard behavior. Publish a checked one-file web overlay on the
+self-hosted server. Follow standing push/release instructions with beta76 only
+as a delivery-number increment; no mobile UI/backend/schema changes.
+
+# October 16 extraction overlay fix
+
+Owned root-dialog cleanup replaces the mismatched local pop in in-Space photo
+upload. Success/error removes exactly the progress route; departing Space routes
+cannot receive stale confirmation. Four nested-navigation regressions and the full
+466 Flutter tests pass; analysis is clean. No backend/web/schema changes in this
+stage. Beta74 was acknowledged (0ebf355, 9106117d-0272-4d90-a140-687db472ee06);
+Apple acknowledged TestFlight 1.0.8 (75), runtime 7ec84bb, delivery 2b18a905-cc65-4659-a391-20737ab6ed7e. Processing and tester availability remain unverified; no polling. Existing crop/notification changes remain.
+No processing polling or post-push/build regression reruns. Manual iPhone camera,
+background push and fresh email acceptance remain pending. Details and all files:
+docs/plans/capture-progress-fix.md.
+
+# October 16 extraction dialog ownership
+
+Same lane, starting 0ebf355 while beta74 upload is pending. User screenshot shows
+Confirm Items behind an Extracting items modal. The in-Space upload flow opens a
+root dialog but pops the local nested navigator. Replace unscoped pops with owned
+route cleanup in finally; keep the Space and confirmation routes intact. Test
+nested navigation, failures and interruption; deliver checked beta75. No backend,
+schema, confidence or inventory-layout changes in this stage.
+
+# October 16 per-item scan crop fix
+
+The reviewed adapter now uses the documented item-ID crop endpoint when no URL
+is supplied, and reads bbox as x/y/width/height in the stored image frame. Crops
+remain independent of confidence and are persisted before job deletion; source
+images and Review safeguards are retained. Missing crops fall back to scaled
+boxes without discarding detections. The Review and Space toolbars also expose
+the notification bell. 814 backend tests plus six subtests, 462 Flutter tests and
+clean analysis pass. One-file backend overlay is live with 91 unrelated files
+preserved, health 200 and missing-auth scan 401. No schema or customer-data writes.
+Apple acknowledged TestFlight 1.0.8 (74), runtime 0ebf355, delivery 9106117d-0272-4d90-a140-687db472ee06. Processing/tester availability remain unverified and were not polled. Real new-camera/device acceptance is pending. Existing
+records with missing geometry require a fresh scan. See docs/plans/capture-crop-fix.md.
+
+# October 16 per-item scan close-ups
+
+Same hierarchy lane, starting 258e39e. User reports full-scene thumbnails for
+unknown/low-confidence detections. Verify against the existing FIND integration
+contract: item crops use the item-ID endpoint and bbox is x/y/width/height in the
+stored frame. Fix adapter persistence/fallback only, preserve confidence/review
+rules, inventory UI, transport configuration and source image. No production
+record backfill or customer photo scan for QA. Deliver checked backend and beta74.
+
+# October 16 notification and reliability follow-up
+
+Approved migration 051 fixed intermittent workspace creation (legacy UUID codes
+violated the existing alphabet check); 052 adds a service-only confirmed invitation
+recipient lookup with current sender permission. Both restored-schema rehearsals
+and composed SQL pass. Reviewed backend overlay is live; 87 unrelated backend
+files preserved. No customer mutations or notifications performed for QA.
+Mobile now has a direct inbox bell on primary authenticated routes, badge refresh,
+explicit phone-alert setup/test, account-bound registration cleanup and cold-tap
+retention. Physical background delivery remains unverified. Ask planning no longer
+becomes a literal saved-item search; provider selection and authorization unchanged.
+Web auth recovery/resend is published; a fresh real email-link success remains
+unverified. 802 backend tests plus six subtests, 329 web and 462 Flutter tests pass; analysis
+is clean. Apple acknowledged TestFlight 1.0.8 (73), runtime d212f95, delivery cc0229a0-325c-42f4-90e2-04deec6a302d. Processing and tester availability remain unverified; no polling. Actual iPhone background delivery and fresh email-link success remain manual acceptance. See docs/plans/notification-reliability.md.
+
+# October 16 deletion completion and account pages
+
+Same hierarchy lane, includes workspace controls from 5d5f530. Approved migration
+050, reviewed API/cleanup worker and Auth-first Edge handler are live. Explicit
+purge preserves empty-only default and shared references; account ownership is
+checked before deletion; borrower history remains. Web settings now have separate
+category pages, compact layout/menu and persistent visible account navigation.
+786 backend tests plus six subtests, 322 web tests, 457 Flutter tests, static
+analysis, composed SQL, restored-schema rehearsal and normal production builds
+pass. Public/auth/schema/hash rollout passes; no customer deletions for QA.
+Final signed-in visual review and beta72 delivery are being completed.
+See docs/plans/deletion-completion.md for files, receipts, limits and rollback.
+
+# Workspace deletion visibility follow-up (October 16)
+
+Same hierarchy lane, clean starting f6e492b. User reports missing workspace delete.
+Reuse existing owner-only DELETE /teams/{id}; no backend/schema changes. Expose
+workspace management on mobile home/settings and web header/directory cards.
+Exact-name confirmation describes collaboration removal and physical inventory
+retention. Preserve inventory dashboard/Spaces. Deliver checked web and beta72.
+
+# Hierarchy navigation repair (October 16)
+
+Active lane feat/hierarchy-navigation-20261016, based on dec9cf9. Replaces mobile/
+web organization and workspace directories only; working inventory/dashboard/
+Spaces remain unchanged. Always-visible creation, explicit organization cards,
+focused workspace lists and authorized rename/delete menus are implemented.
+Deletion uses reviewed migration 049, which rejects nonempty inventories and
+requires current owner/admin plus typed name. Source checks: 780 backend, 305 web,
+448 Flutter full suite; clean static checks and passing composed SQL. Native
+visual/accessibility review is isolated. Web candidate build passes with real
+production fonts/config. Tanya approved 049 and publishing; migration/backend and
+web-hierarchy-20261016 are live with private backups and rollout health/auth checks.
+Authenticated Safari confirms the new directory/menu without writes. Apple
+acknowledged signed TestFlight 71 from runtime 9bec964 (PR #90). Processing,
+tester availability and physical acceptance are pending; no processing poll. See docs/plans/hierarchy-navigation.md.
+
 # Account memory production activation receipt (October 16)
 
 Approved migration 048 and reviewed backend 967ab48 are live on the self-hosted

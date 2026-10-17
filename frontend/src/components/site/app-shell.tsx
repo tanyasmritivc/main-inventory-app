@@ -5,9 +5,10 @@ import { subscribeNotifications } from "@/lib/notification-state";
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Menu, Search, UserRound, Users } from "lucide-react";
+import { Bell, Menu, Search, Users, UserRound, ArrowLeft, Palette, Sparkles, KeyRound, BookOpen, Settings, CreditCard } from "lucide-react";
 import {
   APP_NAV_ITEMS,
+  type AppNavItem,
   AppSidebar,
 } from "@/components/site/app-sidebar";
 import {
@@ -21,6 +22,9 @@ import Link from "@/components/site/inventory-link";
 import { DIRECTORY_NAVIGATION, type NavigationContext } from "@/lib/context-navigation";
 import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+
+import { AccountMenu } from "./account-menu";
+import accountStyles from "./account-layout.module.css";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -46,6 +50,8 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [userInitial, setUserInitial] = useState("");
+  const [userEmail,setUserEmail]=useState("");
+  const accountPage=pathname==="/settings"||pathname.startsWith("/settings/");
   const [userName, setUserName] = useState("Your account");
   const [avatarUrl, setAvatarUrl] = useState<string>();
   const [unread, setUnread] = useState<number | null>(null);
@@ -71,6 +77,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
         user?.user_metadata?.display_name ?? user?.email ?? "",
       );
       setUserInitial(name.slice(0, 1).toUpperCase());
+      setUserEmail(user?.email||"");
       setUserName(name || "Your account");
       setAvatarUrl(undefined);
       const { data: sessionData } = await supabase.auth.getSession();
@@ -203,11 +210,21 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const navigationItems = context?.items || (inventory ? [
+  const accountItems: AppNavItem[] = [
+    {label:"Back to workspaces",route:"/workspaces",icon:ArrowLeft,section:"Account"},
+    {label:"Profile",route:"/settings/profile",icon:UserRound,section:"Account settings"},
+    {label:"Appearance",route:"/settings/appearance",icon:Palette,section:"Account settings"},
+    {label:"AI memory",route:"/settings/memory",icon:Sparkles,section:"Account settings"},
+    {label:"Plans",route:"/settings/plans",icon:CreditCard,section:"Account settings"},
+    {label:"Developer",route:"/settings/developer",icon:KeyRound,section:"Account settings"},
+    {label:"Help and information",route:"/settings/help",icon:BookOpen,section:"Account settings"},
+    {label:"Account",route:"/settings/account",icon:Settings,section:"Account settings"},
+  ];
+  const navigationItems = accountPage ? accountItems : context?.items || (inventory ? [
     ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Dashboard","/inventory":"Items","/spaces":"Locations","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
     { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
   ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
-  const breadcrumbs = context?.breadcrumbs || (inventory ? [
+  const breadcrumbs = accountPage ? [{label:"Account",href:"/settings"}] : context?.breadcrumbs || (inventory ? [
     inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },
     { label: inventory.workspace.name, href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}` },
     { label: inventory.name, href: `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` },
@@ -221,7 +238,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   return (
     <AppThemeProvider>
       <div
-        className={`app-frame ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${sidebarPinned ? "sidebar-pinned" : ""}`}
+        className={`app-frame ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">
           Skip to content
@@ -232,10 +249,10 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
           userName={userName}
           userInitial={userInitial}
           avatarUrl={avatarUrl}
-          pinned={sidebarPinned}
-          onPin={togglePin}
+          pinned={accountPage || sidebarPinned}
+          onPin={accountPage ? undefined : togglePin}
           items={navigationItems}
-          activeRoute={context?.activeRoute}
+          activeRoute={accountPage ? pathname.startsWith("/settings/api-keys") ? "/settings/developer" : pathname === "/settings" ? "/settings/profile" : pathname : context?.activeRoute}
           homeHref={context?.homeHref || (inventory ? `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` : "/organizations")}
         />
         <header className="app-topbar">
@@ -272,22 +289,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
             <Bell size={18} />
             {unread !== null && unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
           </button>
-          <button
-            className="app-avatar"
-            onClick={() => router.push("/settings")}
-            aria-label="Open profile"
-            style={
-              avatarUrl
-                ? {
-                    backgroundImage: `url(${avatarUrl})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }
-                : undefined
-            }
-          >
-            {!avatarUrl && (userInitial || <UserRound size={16} />)}
-          </button>
+          <AccountMenu name={userName} email={userEmail} initial={userInitial} avatarUrl={avatarUrl}/>
         </header>
         <main id="app-main" className="app-main" tabIndex={-1}>
           <div className="app-content">{children}</div>

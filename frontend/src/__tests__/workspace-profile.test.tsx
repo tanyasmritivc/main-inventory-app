@@ -25,6 +25,7 @@ const client = {
   },
 };
 const mockNavigate = jest.fn();
+let mockPathname="/settings";
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => client,
 }));
@@ -33,7 +34,7 @@ jest.mock("@/lib/use-api-session", () => ({
   useApiSession: () => ({ accountId: "a" }),
 }));
 jest.mock("next/navigation", () => ({
-  usePathname: () => "/settings",
+  usePathname: () => mockPathname,
   useRouter: () => ({
     push: mockNavigate,
     replace: jest.fn(),
@@ -56,6 +57,7 @@ const profile = {
   avatar_color: "#3A1230",
 };
 beforeEach(() => {
+  mockPathname="/settings";
   localStorage.clear();
   selectInventory(null);
   window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
@@ -67,6 +69,7 @@ beforeEach(() => {
     );
 });
 test("page search opens with its input focused, filters destinations and closes after navigation or Escape", async () => {
+  mockPathname="/home";
   const user = userEvent.setup();
   const inventory = {accountId:"a",inventory_id:"tools",name:"Tools",owner_user_id:"a",team_id:null,is_default:true,can_edit:true,workspace:{workspace_id:"personal",name:"Personal",kind:"personal" as const,team_id:null,role:"owner" as const}};
   selectInventory(inventory);
@@ -105,6 +108,7 @@ test("loads identity and the saved avatar without waiting on a network getUser r
 });
 
 test("navigation pin preference persists and moves the frame into its pinned layout", async () => {
+  mockPathname="/workspaces";
   localStorage.setItem("findez-navigation-pinned", "true");
   const view = render(<AppShell><p>Workspace</p></AppShell>);
   const unpin = await screen.findByRole("button", { name: "Unpin navigation" });
@@ -215,6 +219,7 @@ test("uploads the photo under the field required by the current backend", async 
 });
 
 test("organization navigation contains only its management destinations",async()=>{
+ mockPathname="/organizations/acme";
  render(<AppShell context={organizationNavigation("acme","Acme","people")}><h1>People</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"People"}).getAttribute("aria-current")).toBe("page");
@@ -224,17 +229,39 @@ test("organization navigation contains only its management destinations",async()
 });
 test("workspace navigation selects only the current section and retains its parent organization",async()=>{
  const workspace={workspace_id:"ftc",name:"Robotics",kind:"team" as const,team_id:"ftc",role:"owner" as const,organization_id:"acme",organization_name:"Acme"};
+ mockPathname="/workspaces/team";
  render(<AppShell context={workspaceNavigation(workspace,"locations")}><h1>Locations</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
  expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
- expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc?view=inventories");
+ expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
 });
 test("account navigation requires a context before offering inventory actions",async()=>{
  render(<AppShell><h1>Account</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
- expect(screen.getByRole("link",{name:"Organizations"})).toBeTruthy();
+ expect(screen.getByRole("link",{name:"Profile"}).getAttribute("href")).toBe("/settings/profile");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
  expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
+});
+
+test.each(["appearance", "developer", "help", "account"] as const)("settings %s page contains only its category", async section => {
+ render(<SettingsClient email="tester@example.test" section={section} />);
+ expect(screen.queryByLabelText("Display name")).toBeNull();
+ expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+ expect(screen.queryByRole("button", { name: "Refresh memory" })).toBeNull();
+ expect(screen.queryByRole("button", { name: "Delete…" }) !== null).toBe(section === "account");
+ expect(screen.queryByRole("button", { name: "Dark" }) !== null).toBe(section === "appearance");
+ expect(screen.queryByRole("link", { name: "API keys" }) !== null).toBe(section === "developer");
+ expect(accountRequest).not.toHaveBeenCalled();
+});
+test("settings categories use distinct page routes and keep their labels visible", async () => {
+ mockPathname="/settings/appearance";
+ const view=render(<AppShell><p>Appearance page</p></AppShell>);
+ await screen.findByRole("link", { name: /Local tester.*Profile and settings/ });
+ expect(screen.getByRole("link", { name: "Appearance" }).getAttribute("href")).toBe("/settings/appearance");
+ expect(screen.getByRole("link", { name: "Appearance" }).getAttribute("aria-current")).toBe("page");
+ expect(within(screen.getByLabelText("Primary navigation")).getByRole("link", { name: "Account" }).getAttribute("href")).toBe("/settings/account");
+ expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(true);
+ expect(screen.queryByRole("button", { name: "Unpin navigation" })).toBeNull();
 });

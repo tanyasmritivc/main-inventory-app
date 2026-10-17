@@ -58,6 +58,8 @@ def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email:
     saved = invitation_rpc(actor, 'change' if member_id else 'create', data)
     if 'invitation_id' not in saved:
         return saved
+    from app.services.push_notifications import enqueue_invitation
+    enqueue_invitation(saved['invitation_id'])
     invitation = decorate(saved)
     base = str(get_settings().frontend_url).rstrip('/')
     url = f'{base}/join/access?code={code}'

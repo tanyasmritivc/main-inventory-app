@@ -67,6 +67,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [loading, setLoading] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [resetSending, setResetSending] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [continueHref, setContinueHref] = useState<string | null>(null);
@@ -142,7 +143,27 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     }
   };
 
+  async function resendConfirmation() {
+    if (loading || resetSending || resendingConfirmation) return;
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setResendingConfirmation(true); setError(null); setNotice(null);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup", email: cleanEmail, options: { emailRedirectTo: authCallbackUrl() },
+      });
+      if (resendError) throw resendError;
+      setNotice("If this account still needs confirmation, a new link is on its way. Use the latest email and open it in this browser. If you already confirmed, sign in with your password.");
+    } catch (reason) {
+      setError(userFacingError(reason, "A new confirmation email could not be requested. Please try again."));
+    } finally { setResendingConfirmation(false); }
+  }
+
   async function sendPasswordReset() {
+    if (loading || resetSending || resendingConfirmation) return;
     const cleanEmail = email.trim();
     if (!cleanEmail || !cleanEmail.includes("@")) {
       setError("Enter your email address first.");
@@ -432,7 +453,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="button"
-              disabled={loading || resetSending}
+              disabled={loading || resetSending || resendingConfirmation}
               onClick={sendPasswordReset}
               style={{ padding: 0, border: 0, background: "transparent", color: "var(--copper)", fontSize: 11, cursor: loading || resetSending ? "not-allowed" : "pointer", opacity: resetSending ? 0.55 : 1 }}
             >
@@ -495,6 +516,11 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       >
         {loading ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create account" : "Sign in")}
       </Button>
+      {(mode === "signin" || notice) && <button
+        type="button" disabled={loading || resetSending || resendingConfirmation}
+        onClick={() => void resendConfirmation()}
+        style={{padding:8,border:0,background:"transparent",color:"var(--copper)",fontSize:12,cursor:"pointer"}}
+      >{resendingConfirmation ? "Requesting confirmation..." : "Resend confirmation email"}</button>}
         </form>
         {mode === "signin" && <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>By continuing, you accept the <Link href="/terms">Terms of Service</Link> and confirm you meet the account eligibility requirements, including age 13 or older. See the <Link href="/privacy">Privacy Policy</Link> for data handling.</p>}
 

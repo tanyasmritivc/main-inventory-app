@@ -1,5 +1,19 @@
 # FindEZ test suite
 
+## Confirmed deletion and account categories
+
+Run the full backend, web and Flutter suites before release. Focus on
+`test_inventory_delete.py`, `test_deletion_cleanup.py`,
+`account-deletion-service.test.ts`, `workspace-profile.test.tsx`,
+`account-menu.test.tsx`, `inventory_directory_actions_test.dart`,
+`workspace_deletion_test.dart` and `account_deletion_test.dart`.
+The disposable SQL bootstrap `backend/tests/sql/api_key_rls.sql` includes
+`inventory_content_delete.sql` and `account_deletion.sql`; never run its synthetic
+setup on production. Test actual foreign-key/Auth failure, no pre-Auth erasure,
+shared file references, retry and revoked ownership. Category pages must render
+only their own controls; profile, memory and deletion retain the existing API.
+See `docs/plans/deletion-completion.md` for release results and manual gates.
+
 ## Grounded physical-memory questions
 
 Run root `python -m pytest -q` and focus on
@@ -942,3 +956,32 @@ New controller/widget tests cover account switches, pending write retries,
 offline loads, controls, confirmation, large text and dark mode. Manual cross-client
 acceptance must follow approved migration/backend publication; TestFlight alone
 does not deploy /memory. See docs/plans/account-memory-implementation.md.
+
+### October 16 notification reliability and workspace-code follow-up
+
+Run full Python, web and Flutter suites plus Flutter analysis before the next
+release. New tests cover real bell navigation/count errors/account isolation, phone
+test acceptance feedback, registration cleanup, bounded APNs retries without token
+logging, revoked feed/delivery access and invitation secret exclusion. Composed
+SQL includes workspace_creation_codes.sql and invitation_push_target.sql through
+052. Rehearse migrations on restored schema, never customer writes for QA.
+Actual background iPhone delivery, cold notification taps, fresh email links and
+provider planning quality require manual acceptance; see notification-reliability.md.
+
+### October 16 per-item crop regression
+
+`python -m pytest -q backend/tests/test_capture_crops.py backend/tests/test_find_pipeline.py`
+exercises the documented item-ID endpoint, real decoded image dimensions/pixels,
+low-confidence Review preservation, x/y/width/height and downscaled coordinates,
+invalid boxes, missing/invalid crops, transport timeout fallback and persistence
+before job cleanup. Existing capture preview/Review/save suites verify the image
+reference contract. Fresh camera-photo visual acceptance remains a real-device
+check; old records with only a source image are not retroactively rewritten.
+
+### October 16 extraction modal navigation
+
+`flutter test test/capture_progress_test.dart` covers nested Space/root-dialog
+ownership, actual confirmation after completion, timeout/retry cleanup, another
+root modal staying open, and leaving the caller while a request is pending. Run
+full Flutter tests and analysis before beta75. Backend/web are unchanged in this
+stage. Real camera/shared-Space acceptance remains manual; see capture-progress-fix.md.

@@ -1,3 +1,4 @@
+import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -877,6 +878,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
+            NotificationBell(api: widget.api),
             PopupMenuButton<String>(
               icon: Icon(
                 Icons.more_horiz,

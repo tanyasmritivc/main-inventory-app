@@ -8,14 +8,15 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_context.dart';
 import '../../core/ui/app_text.dart';
 import '../notifications/notifications_page.dart';
+import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/invitation_dialog.dart';
 import '../../core/invitation.dart';
 import '../profile/profile_page.dart';
-import '../teams/team_board_page.dart';
-import '../teams/team_documents_page.dart';
 import 'invitation_page.dart';
 import 'place_ui.dart';
+import 'inventory_actions.dart';
+import 'workspace_actions.dart';
 
 List<Map<String, dynamic>> rows(Object? value) => (value as List? ?? [])
     .map((row) => Map<String, dynamic>.from(row as Map))
@@ -83,6 +84,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   bool _loading = true, _busy = false;
   int _generation = 0;
   String _query = '';
+  bool _organizationPeople = false;
   String get _id => Uri.encodeComponent(widget.id ?? '');
   bool get _org => widget.level == HierarchyLevel.organization;
   bool get _workspace => widget.level == HierarchyLevel.workspace;
@@ -567,24 +569,14 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _deleteWorkspace() async {
-    if (!await _confirm(
-      'Delete workspace?',
-      'This removes collaboration, tasks and workspace files. Physical inventories are retained for their owners as personal inventories. This cannot be undone.',
-    )) {
-      return;
-    }
-    if (!mounted) return;
-    final name = await _text(
-      'Confirm deletion',
-      label: 'Type the exact name: ${_resource['name']}',
+    if (!_owner || _busy) return;
+    final deleted = await confirmWorkspaceDeletion(
+      context,
+      widget.api,
+      id: widget.id!,
+      name: _resource['name'].toString(),
     );
-    if (!mounted || name == null) return;
-    if (name != _resource['name']) {
-      _notice('The name does not match.');
-      return;
-    }
-    final ok = await _mutate('/teams/$_id', method: 'DELETE');
-    if (mounted && ok) Navigator.pop(context);
+    if (mounted && deleted) Navigator.pop(context);
   }
 
   Future<void> _moveSpace(Map<String, dynamic> space) async {
@@ -854,80 +846,131 @@ class _HierarchyPageState extends State<HierarchyPage>
       _data?['members'],
     ).where((m) => m['role'] != 'none' && _matches(m['display_name'])).toList();
     return [
-      _placeSection('Workspaces'),
-      PlaceCardList(
-        children: [
-          for (final ws in workspaces)
-            PlaceRow(
-              title: ws['name'].toString(),
-              leading: PlaceBadge(ws['name'].toString()),
-              onTap: _busy
-                  ? null
-                  : () async {
-                      if (widget.onOpenWorkspace != null) {
-                        await widget.onOpenWorkspace!(ws['team_id'].toString());
-                      } else {
-                        await _navigate(
-                          HierarchyLevel.workspace,
-                          ws['team_id'].toString(),
-                          ws['name'].toString(),
-                          org: widget.id,
-                        );
-                      }
-                    },
-            ),
-          if (workspaces.isEmpty)
-            PlaceRow(
-              title: _query.isEmpty
-                  ? 'No assigned workspaces yet'
-                  : 'No matching workspaces',
-            ),
-          if (_manager) ...[
-            PlaceRow(
-              title: 'New workspace',
-              onTap: _busy ? null : () => _create('workspace'),
-            ),
-            if (rows(_data?['attachable']).isNotEmpty)
-              PlaceRow(
-                title: 'Add existing workspace',
-                onTap: _busy ? null : _attachWorkspace,
-              ),
-          ],
+      SegmentedButton<bool>(
+        segments: const [
+          ButtonSegment(value: false, label: Text('Workspaces')),
+          ButtonSegment(value: true, label: Text('People')),
         ],
+        selected: {_organizationPeople},
+        showSelectedIcon: false,
+        onSelectionChanged: (value) => setState(() {
+          _organizationPeople = value.single;
+          _query = '';
+        }),
       ),
       const SizedBox(height: 20),
-      _placeSection('People'),
-      PlaceCardList(
-        children: [
-          for (final (index, member) in members.indexed)
-            PlaceRow(
-              title: member['display_name']?.toString() ?? 'Member',
-              leading: PlaceAvatar(
-                member['display_name']?.toString() ?? 'Member',
-                current: member['user_id'] == widget.api.accountId,
-                index: index,
+      if (!_organizationPeople) ...[
+        if (_manager) ...[
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _busy ? null : () => _create('workspace'),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('New workspace'),
+              style: FilledButton.styleFrom(
+                backgroundColor: PlaceTokens.darkOrange,
               ),
-              trailing: RoleTag(member['role']?.toString() ?? 'member'),
-              onTap:
-                  !_manager ||
-                      _busy ||
-                      member['role'] == 'owner' ||
-                      member['role'] == 'admin' && !_owner
-                  ? null
-                  : () => _organizationMember(member),
             ),
-          if (members.isEmpty) const PlaceRow(title: 'No matching people'),
-          if (_manager)
-            PlaceRow(
-              title: 'Invite organization member',
-              onTap: _busy ? null : _inviteOrganization,
-            ),
+          ),
+          const SizedBox(height: 14),
         ],
-      ),
-      if (_invitations.isNotEmpty) ...[
-        const SizedBox(height: 20),
-        _placeSection('Pending invitations'),
-        PlaceCardList(children: _pending().skip(1).toList()),
+        if (workspaces.isEmpty)
+          PlaceCardList(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _query.isNotEmpty
+                          ? 'No matching workspaces'
+                          : 'No workspaces yet',
+                      style: PlaceTokens.rowTitle,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _manager
+                          ? 'Create a workspace for your team or project.'
+                          : 'Workspaces shared with you will appear here.',
+                      style: PlaceTokens.text(13, color: PlaceTokens.dim),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        for (final ws in workspaces) ...[
+          PlaceCardList(
+            children: [
+              PlaceRow(
+                title: ws['name'].toString(),
+                leading: PlaceBadge(ws['name'].toString()),
+                subtitle: 'Workspace',
+                onTap: _busy
+                    ? null
+                    : () async {
+                        if (widget.onOpenWorkspace != null) {
+                          await widget.onOpenWorkspace!(
+                            ws['team_id'].toString(),
+                          );
+                        } else {
+                          await _navigate(
+                            HierarchyLevel.workspace,
+                            ws['team_id'].toString(),
+                            ws['name'].toString(),
+                            org: widget.id,
+                          );
+                        }
+                      },
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (_manager && rows(_data?['attachable']).isNotEmpty)
+          TextButton(
+            onPressed: _busy ? null : _attachWorkspace,
+            child: const Text('Add existing workspace'),
+          ),
+      ] else ...[
+        if (_manager) ...[
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              onPressed: _busy ? null : _inviteOrganization,
+              child: const Text('Invite member'),
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        PlaceCardList(
+          children: [
+            for (final (index, member) in members.indexed)
+              PlaceRow(
+                title: member['display_name']?.toString() ?? 'Member',
+                leading: PlaceAvatar(
+                  member['display_name']?.toString() ?? 'Member',
+                  current: member['user_id'] == widget.api.accountId,
+                  index: index,
+                ),
+                trailing: RoleTag(member['role']?.toString() ?? 'member'),
+                onTap:
+                    !_manager ||
+                        _busy ||
+                        member['role'] == 'owner' ||
+                        member['role'] == 'admin' && !_owner
+                    ? null
+                    : () => _organizationMember(member),
+              ),
+            if (members.isEmpty) const PlaceRow(title: 'No matching people'),
+          ],
+        ),
+        if (_invitations.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _placeSection('Pending invitations'),
+          PlaceCardList(children: _pending().skip(1).toList()),
+        ],
       ],
     ];
   }
@@ -1020,6 +1063,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             maxLines: 2,
           ),
           actions: [
+            NotificationBell(api: widget.api),
             if (_data != null &&
                 !widget.focusSearch &&
                 (_org && _owner ||
@@ -1053,7 +1097,11 @@ class _HierarchyPageState extends State<HierarchyPage>
                     autofocus: widget.focusSearch,
                     style: PlaceTokens.rowTitle,
                     decoration: InputDecoration(
-                      hintText: 'Search',
+                      hintText: _org
+                          ? (_organizationPeople
+                                ? 'Search people'
+                                : 'Search workspaces')
+                          : 'Search inventories',
                       semanticCounterText: 'Search workspaces and people',
                       filled: true,
                       fillColor: Colors.white,
@@ -1132,7 +1180,43 @@ class _HierarchyPageState extends State<HierarchyPage>
               org: widget.organizationId,
             ),
           ),
+        if (_manager && _resource['organization_id'] != null)
+          _row('Assign organization member', onTap: _assign),
+        if (_manager && _resource['organization_id'] == null)
+          _row(
+            'Invite workspace member',
+            onTap: () async {
+              final email = await _text(
+                'Invite member',
+                label: 'Email',
+                limit: 254,
+              );
+              if (mounted && email != null) {
+                await _mutate('/teams/$_id/invite', data: {'email': email});
+              }
+            },
+          ),
         ..._pending(),
+        if (_requests.isNotEmpty) ...[
+          _heading('Access requests'),
+          for (final request in _requests)
+            _row(
+              request['inventory_name'].toString(),
+              detail: request['requester_name']?.toString(),
+              onTap: () async {
+                final action = await _choose('Access request', {
+                  'approve': 'Approve viewer access',
+                  'decline': 'Decline',
+                });
+                if (mounted && action != null) {
+                  await _mutate(
+                    '/inventory-access-requests/${request['request_id']}/decision',
+                    data: {'action': action},
+                  );
+                }
+              },
+            ),
+        ],
         if (!_owner)
           Padding(
             padding: const EdgeInsets.only(top: 24, bottom: 24),
@@ -1235,23 +1319,21 @@ class _HierarchyPageState extends State<HierarchyPage>
     if (_workspace) {
       return [
         _heading('Inventories'),
+        if (_manager)
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _busy ? null : () => _create('inventory'),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('New inventory'),
+            ),
+          ),
         for (final inv in _inventories.where((row) => _matches(row['name'])))
-          _row(
-            inv['name'].toString(),
-            detail: inv['can_open'] == true
-                ? '${inv['item_count'] ?? 0} items | ${membershipRoleLabel(inv['role']?.toString() ?? '')}'
-                : 'Access restricted',
-            trailing: inv['can_rename'] == true
-                ? _menu({
-                    'Rename': () => _rename(inv),
-                    'Settings': () => _navigate(
-                      HierarchyLevel.inventory,
-                      inv['inventory_id'].toString(),
-                      inv['name'].toString(),
-                    ),
-                  })
-                : null,
-            onTap: () async {
+          InventoryDirectoryRow(
+            inventory: inv,
+            api: widget.api,
+            refresh: _load,
+            onOpen: () async {
               if (inv['can_open'] == true) {
                 await widget.onOpenInventory(
                   inv['inventory_id'].toString(),
@@ -1270,64 +1352,40 @@ class _HierarchyPageState extends State<HierarchyPage>
               }
             },
           ),
-        if (_inventories.isEmpty)
-          const ListTile(title: AppText('No inventories yet')),
-        if (_manager) _row('New inventory', onTap: () => _create('inventory')),
+        if (_inventories.isEmpty) const PlaceRow(title: 'No inventories yet'),
         if (!_personal) ...[
-          _heading('Workspace'),
+          _heading('Settings'),
           _row(
-            'Tasks',
-            onTap: () =>
-                _push(TeamBoardPage(api: widget.api, initialTeamId: widget.id)),
+            'Workspace name',
+            detail: _resource['name']?.toString(),
+            onTap: _owner ? () => _rename() : null,
           ),
           _row(
-            'Files',
-            onTap: () =>
-                _push(TeamDocumentsPage(api: widget.api, teamId: widget.id!)),
+            'Your role',
+            detail: membershipRoleLabel(_resource['role']?.toString() ?? ''),
           ),
-          ..._people(),
-          if (_manager && _resource['organization_id'] != null)
-            _row('Assign organization member', onTap: _assign),
-          if (_manager && _resource['organization_id'] == null)
-            _row(
-              'Invite workspace member',
-              onTap: () async {
-                final email = await _text(
-                  'Invite member',
-                  label: 'Email',
-                  limit: 254,
-                );
-                if (mounted && email != null) {
-                  await _mutate('/teams/$_id/invite', data: {'email': email});
-                }
-              },
+          if (_owner)
+            TextButton(
+              onPressed: _busy ? null : _deleteWorkspace,
+              style: TextButton.styleFrom(
+                foregroundColor: PlaceTokens.destructive,
+              ),
+              child: const Text('Delete workspace'),
             ),
           if (_manager) ..._locations(),
-          ..._pending(),
-          if (_manager || _requests.isNotEmpty) ...[
-            _heading('Access requests'),
-            for (final request in _requests)
-              _row(
-                request['inventory_name'].toString(),
-                detail:
-                    '${request['requester_name'] ?? request['requester_user_id']} | Viewer requested',
-                onTap: () async {
-                  final action = await _choose('Access request', {
-                    'approve': 'Approve viewer access',
-                    'decline': 'Decline',
-                  });
-                  if (mounted && action != null) {
-                    await _mutate(
-                      '/inventory-access-requests/${request['request_id']}/decision',
-                      data: {'action': action},
-                    );
-                  }
-                },
+          _row(
+            'People and access',
+            onTap: () => _push(
+              HierarchyPage(
+                api: widget.api,
+                onOpenInventory: widget.onOpenInventory,
+                level: HierarchyLevel.workspace,
+                id: widget.id,
+                name: _resource['name']?.toString(),
+                panel: HierarchyPanel.people,
               ),
-            if (_requests.isEmpty)
-              const ListTile(title: AppText('No pending requests')),
-          ],
-          ..._history(),
+            ),
+          ),
         ],
       ];
     }
@@ -1502,6 +1560,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                   : _title,
             ),
             actions: [
+              NotificationBell(api: widget.api),
               if (_data != null &&
                   (_org && _owner ||
                       _workspace && _owner && !_personal ||
