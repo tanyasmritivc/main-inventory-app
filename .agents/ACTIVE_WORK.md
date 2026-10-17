@@ -1,5 +1,17 @@
 # Active work
 
+## October 16 account memory discovery
+
+Lane `feat/account-memory-foundation-20261016`, based on `5ca4e97`. Read
+`docs/plans/account-memory-foundation.md`. The new source specification explicitly
+requires architecture/gap/schema/plan delivery before approved implementation.
+Discovery/proposal only; no runtime or SQL changes. Self-hosted VM/Supabase is
+authoritative, not Render/Vercel. Proposed first slice is explicit opt-in
+preferences, private inventory aliases, provenance/receipts, shared retrieval and
+web/mobile memory controls. Await scope approval before application changes.
+Prior assistant source is pushed on PR #88; Apple acknowledged build 69, without
+backend deployment or processing wait.
+
 ## October 16 assistant grounded retrieval
 
 Active lane `feat/assistant-grounded-retrieval-20261016`, clean starting commit
