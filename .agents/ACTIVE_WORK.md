@@ -10,7 +10,9 @@ motion durations, inventory interiors and the light default. Deliver beta79 unde
 the standing push/TestFlight instruction; no production schema changes.
 Implementation complete: 545 Flutter tests pass and analysis is clean. Ten size
 profiles and actual production safe areas/keyboard are covered; iPhone 16e team
-path is visually reviewed. Signed beta79 delivery pending. Web dashboard and
+path is visually reviewed. Apple acknowledged TestFlight 1.0.8 (79), source
+2897788, delivery 527fb98f-8feb-48d9-ad3b-f47a85c28e77; processing unpolled.
+Web dashboard and
 shared Ask first-answer fixes use separate lanes after this mobile patch.
 
 # October 17 interactive mobile setup

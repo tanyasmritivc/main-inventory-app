@@ -7,7 +7,9 @@ The previous QA entry omitted that wrapper and missed the device overlap.
 safe areas, keyboard and large text. iPhone 16e native keyboard/team path visually
 reviewed in a disposable app. Auth/data and motion durations are unchanged;
 physical-device acceptance and the existing 16 ms performance limit remain open.
-Signed beta79 delivery pending. See design/onboarding-a/IMPLEMENTATION.md.
+Apple acknowledged TestFlight 1.0.8 (79), source 2897788, delivery
+527fb98f-8feb-48d9-ad3b-f47a85c28e77. Processing/tester availability unverified;
+no polling or post-push/build regressions. See design/onboarding-a/IMPLEMENTATION.md.
 Web dashboard cleanup and shared Ask first-answer quality are separate queued
 lanes, not part of this mobile patch. Production migration 053 remains pending.
 

@@ -27,7 +27,12 @@ Changed runtime files: mobile/lib/features/onboarding/onboarding_page.dart,
 mobile/lib/features/onboarding/world_scene.dart and mobile/pubspec.yaml.
 Validation changes: mobile/test/world_responsive_test.dart,
 mobile/test/world_onboarding_test.dart and mobile/tool/onboarding_visual.dart.
-Delivery is pending the signed production beta79 archive and Apple acknowledgment.
+Apple acknowledged the signed production TestFlight 1.0.8 (79), source 2897788,
+delivery 527fb98f-8feb-48d9-ad3b-f47a85c28e77. IPA SHA256:
+62aa05c0fa6c31ca61fbcd0ca428f9ad283f09fbd71c5654f2ca37aa19addbdb.
+The IPA, zipped archive and acknowledgment are preserved privately in
+Documents/FindEZ/AppStore/1.0.8-build79. Processing/tester availability were not
+polled. No regression checks repeated after push/build.
 
 ## Result and scope
 
