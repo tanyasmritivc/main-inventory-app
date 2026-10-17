@@ -129,10 +129,11 @@ void main() {
     tester.view.viewInsets = const FakeViewPadding(bottom: 60);
     addTearDown(tester.view.resetViewInsets);
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(field).dy, initial);
+    expect(tester.getTopLeft(field).dy, lessThanOrEqualTo(initial));
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(field).dy, 442);
+    expect(tester.getBottomLeft(field).dy, lessThan(844 - 300));
+    expect(tester.getBottomLeft(find.text('Done')).dy, lessThan(844 - 300));
   });
   testWidgets(
     'native keyboard keeps the live organization tag above its field',

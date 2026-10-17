@@ -57,81 +57,114 @@ class _WorldSceneState extends State<WorldScene> with TickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    image: true,
-    hidden: !_model.shown,
-    label:
-        'Your world. ${_model.personal ? 'Personal' : 'Organization: ${_model.organization}'}. '
-        '${_model.hasBlock ? 'Workspace: ${widget.setup.workspacePurpose}. ' : ''}'
-        '${_model.hasTray ? 'Inventory: ${widget.setup.inventoryName}.' : ''}',
-    child: ExcludeSemantics(
-      child: RepaintBoundary(
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(child: CustomPaint(painter: WorldPainter(_model))),
-            if (!widget.mini) ...[
-              _tag(
-                0,
-                _model.organization,
-                _model.personal
-                    ? const Color(0xFF3E9B63)
-                    : const Color(0xFFE8590C),
-              ),
-              _tag(1, widget.setup.workspacePurpose, const Color(0xFF9FB3DD)),
-              _tag(2, widget.setup.inventoryName, const Color(0xFFFDBA8C)),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
-  Widget _tag(int level, String label, Color dot) => AnimatedBuilder(
-    animation: _model,
-    child: level == 0
-        ? _TagContents(label: label, dot: dot)
-        : AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: _TagContents(key: ValueKey(label), label: label, dot: dot),
-          ),
-    builder: (context, child) {
-      final opacity =
-          _model.opacity *
-          switch (level) {
-            0 => _model.organizationTagOpacity,
-            1 => _model.hasTray ? 0.0 : _model.blockTagOpacity,
-            _ => _model.trayTagOpacity,
-          };
-      final at = switch (level) {
-        0 => _model.camera.project(100, 100, -6),
-        1 => _model.camera.project(-20, -20, 110),
-        _ => _model.camera.project(-20, -20, 150),
-      };
-      return Positioned(
-        left: at.dx,
-        top: at.dy,
-        child: FractionalTranslation(
-          translation: const Offset(-.5, -.5),
-          child: Offstage(
-            offstage: opacity <= 0 || label.isEmpty,
-            child: Opacity(
-              opacity: label.isEmpty ? 0 : opacity.clamp(0.0, 1.0),
-              child: child,
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final tagWidth = math.max(
+        44.0,
+        math.min(300.0, constraints.maxWidth - 48),
+      );
+      return Semantics(
+        image: true,
+        hidden: !_model.shown,
+        label:
+            'Your world. ${_model.personal ? 'Personal' : 'Organization: ${_model.organization}'}. '
+            '${_model.hasBlock ? 'Workspace: ${widget.setup.workspacePurpose}. ' : ''}'
+            '${_model.hasTray ? 'Inventory: ${widget.setup.inventoryName}.' : ''}',
+        child: ExcludeSemantics(
+          child: RepaintBoundary(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(painter: WorldPainter(_model)),
+                ),
+                if (!widget.mini) ...[
+                  _tag(
+                    0,
+                    _model.organization,
+                    _model.personal
+                        ? const Color(0xFF3E9B63)
+                        : const Color(0xFFE8590C),
+                    tagWidth,
+                  ),
+                  _tag(
+                    1,
+                    widget.setup.workspacePurpose,
+                    const Color(0xFF9FB3DD),
+                    tagWidth,
+                  ),
+                  _tag(
+                    2,
+                    widget.setup.inventoryName,
+                    const Color(0xFFFDBA8C),
+                    tagWidth,
+                  ),
+                ],
+              ],
             ),
           ),
         ),
       );
     },
   );
+  Widget _tag(int level, String label, Color dot, double maxWidth) =>
+      AnimatedBuilder(
+        animation: _model,
+        child: level == 0
+            ? _TagContents(label: label, dot: dot, maxWidth: maxWidth)
+            : AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: _TagContents(
+                  key: ValueKey(label),
+                  label: label,
+                  dot: dot,
+                  maxWidth: maxWidth,
+                ),
+              ),
+        builder: (context, child) {
+          final opacity =
+              _model.opacity *
+              switch (level) {
+                0 => _model.organizationTagOpacity,
+                1 => _model.hasTray ? 0.0 : _model.blockTagOpacity,
+                _ => _model.trayTagOpacity,
+              };
+          final at = switch (level) {
+            0 => _model.camera.project(100, 100, -6),
+            1 => _model.camera.project(-20, -20, 110),
+            _ => _model.camera.project(-20, -20, 150),
+          };
+          return Positioned(
+            left: at.dx,
+            top: at.dy,
+            child: FractionalTranslation(
+              translation: const Offset(-.5, -.5),
+              child: Offstage(
+                offstage: opacity <= 0 || label.isEmpty,
+                child: Opacity(
+                  opacity: label.isEmpty ? 0 : opacity.clamp(0.0, 1.0),
+                  child: child,
+                ),
+              ),
+            ),
+          );
+        },
+      );
 }
 
 class _TagContents extends StatelessWidget {
-  const _TagContents({super.key, required this.label, required this.dot});
+  const _TagContents({
+    super.key,
+    required this.label,
+    required this.dot,
+    required this.maxWidth,
+  });
   final String label;
   final Color dot;
+  final double maxWidth;
   @override
   Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minHeight: 30, maxWidth: 300),
+    constraints: BoxConstraints(minHeight: 30, maxWidth: maxWidth),
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: .96),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'dart:convert';
 import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/core/ui/app_gradient_background.dart';
 import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
@@ -35,7 +36,7 @@ void main() {
       theme: AppTheme.create(
         Brightness.light,
       ).copyWith(platform: TargetPlatform.iOS),
-      home: const _VisualEntry(),
+      home: const AppGradientBackground(child: _VisualEntry()),
     ),
   );
 }

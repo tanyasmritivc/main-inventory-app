@@ -1,3 +1,16 @@
+# October 17 responsive onboarding follow-up
+
+Beta79 fits the persistent world between actual heading/control bounds through
+the production SafeArea wrapper, including keyboard, long tags and wide screens.
+The previous QA entry omitted that wrapper and missed the device overlap.
+545 Flutter tests pass, analysis is clean; 39 new cases cover ten size profiles,
+safe areas, keyboard and large text. iPhone 16e native keyboard/team path visually
+reviewed in a disposable app. Auth/data and motion durations are unchanged;
+physical-device acceptance and the existing 16 ms performance limit remain open.
+Signed beta79 delivery pending. See design/onboarding-a/IMPLEMENTATION.md.
+Web dashboard cleanup and shared Ask first-answer quality are separate queued
+lanes, not part of this mobile patch. Production migration 053 remains pending.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal

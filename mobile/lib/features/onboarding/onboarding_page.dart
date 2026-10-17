@@ -338,66 +338,79 @@ class _OnboardingPageState extends State<OnboardingPage>
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
           },
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onHorizontalDragStart: (details) {
-              _edge = details.globalPosition.dx <= 24;
-              _edgeDistance = 0;
-            },
-            onHorizontalDragUpdate: (details) {
-              if (_edge) _edgeDistance += details.delta.dx;
-            },
-            onHorizontalDragEnd: (details) {
-              if (_edge &&
-                  (_edgeDistance > 60 ||
-                      (details.primaryVelocity ?? 0) > 300)) {
-                _back();
-              }
-              _edge = false;
-            },
-            child: !_loaded
-                ? Center(
-                    child: _error == null
-                        ? const CircularProgressIndicator(color: worldInk)
-                        : TextButton(onPressed: _restore, child: Text(_error!)),
-                  )
-                : _setup.step == WorldStep.intro
-                ? _introView(context)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final reduced = MediaQuery.disableAnimationsOf(context);
-                      final scaledText =
-                          MediaQuery.textScalerOf(context).scale(15) / 15;
-                      final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-                      if (scaledText > 1.35 ||
-                          constraints.maxHeight < 700 ||
-                          constraints.maxWidth < 350) {
-                        return _flowLayout(
+          child: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: (details) {
+                _edge = details.globalPosition.dx <= 24;
+                _edgeDistance = 0;
+              },
+              onHorizontalDragUpdate: (details) {
+                if (_edge) _edgeDistance += details.delta.dx;
+              },
+              onHorizontalDragEnd: (details) {
+                if (_edge &&
+                    (_edgeDistance > 60 ||
+                        (details.primaryVelocity ?? 0) > 300)) {
+                  _back();
+                }
+                _edge = false;
+              },
+              child: !_loaded
+                  ? Center(
+                      child: _error == null
+                          ? const CircularProgressIndicator(color: worldInk)
+                          : TextButton(
+                              onPressed: _restore,
+                              child: Text(_error!),
+                            ),
+                    )
+                  : _setup.step == WorldStep.intro
+                  ? _introView(context)
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final reduced = MediaQuery.disableAnimationsOf(context);
+                        final scaledText =
+                            MediaQuery.textScalerOf(context).scale(15) / 15;
+                        final keyboard = MediaQuery.viewInsetsOf(
                           context,
-                          constraints.maxWidth,
-                          reduced,
-                          keyboard,
-                        );
-                      }
-                      final scale = constraints.maxWidth / 390;
-                      return FittedBox(
-                        alignment: Alignment.topLeft,
-                        fit: BoxFit.fill,
-                        child: SizedBox(
-                          key: _canvasKey,
-                          width: 390,
-                          height: constraints.maxHeight / scale,
-                          child: _referenceLayout(
+                        ).bottom;
+                        if (scaledText > 1.35 ||
+                            constraints.maxHeight < 700 ||
+                            constraints.maxWidth < 350) {
+                          return _flowLayout(
                             context,
-                            390,
-                            constraints.maxHeight / scale,
+                            constraints.maxWidth,
                             reduced,
-                            keyboard / scale,
+                            keyboard,
+                          );
+                        }
+                        final scale = math.min(constraints.maxWidth, 460) / 390;
+                        return Center(
+                          child: SizedBox(
+                            width: 390 * scale,
+                            height: constraints.maxHeight,
+                            child: FittedBox(
+                              alignment: Alignment.topLeft,
+                              fit: BoxFit.fill,
+                              child: SizedBox(
+                                key: _canvasKey,
+                                width: 390,
+                                height: constraints.maxHeight / scale,
+                                child: _referenceLayout(
+                                  context,
+                                  390,
+                                  constraints.maxHeight / scale,
+                                  reduced,
+                                  keyboard / scale,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+            ),
           ),
         ),
       ),
@@ -501,6 +514,125 @@ class _OnboardingPageState extends State<OnboardingPage>
       ),
     ],
   );
+
+  double _textHeight(
+    BuildContext context,
+    String text,
+    TextStyle style,
+    double width,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: math.max(1, width));
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  double _tagHeight(BuildContext context, double width) =>
+      [
+        _setup.isTeam ? _setup.orgName : 'Personal',
+        _setup.workspacePurpose,
+        _setup.inventoryName,
+      ].fold(
+        30.0,
+        (height, label) => math.max(
+          height,
+          12 +
+              _textHeight(
+                context,
+                label,
+                const TextStyle(
+                  fontFamily: 'PlaceGeist',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                math.min(300, width - 48) - 38,
+              ),
+        ),
+      );
+
+  double _chipsHeight(BuildContext context, double width) {
+    var rows = 1;
+    var used = 0.0;
+    for (final label in _choices) {
+      final text = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final chip = math.min(width, math.max(44.0, text.width + 40));
+      text.dispose();
+      if (used > 0 && used + 8 + chip > width) {
+        rows++;
+        used = 0;
+      }
+      used += (used == 0 ? 0 : 8) + chip;
+    }
+    return rows * 44 + (rows - 1) * 2.0;
+  }
+
+  double _legendHeight(BuildContext context, double width) =>
+      [
+        _setup.isTeam ? _setup.orgName : 'Only you',
+        _setup.workspacePurpose,
+        _setup.inventoryName,
+      ].fold(
+        0.0,
+        (height, label) =>
+            height +
+            17 +
+            44 +
+            _textHeight(
+              context,
+              label,
+              const TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.24,
+              ),
+              width,
+            ),
+      );
+
+  // Reserve the platform's front label and the highest falling cube before
+  // choosing a scale. Safe-area and keyboard space are already excluded.
+  WorldCamera _fitCamera(
+    WorldCamera preferred,
+    Rect area, {
+    required double modelTop,
+    required double tagHalf,
+  }) {
+    final scale = math.max(
+      .02,
+      math.min(
+        preferred.scale,
+        math.min(
+          area.width / 346.5,
+          (area.height - 2 * tagHalf) / (106 - modelTop),
+        ),
+      ),
+    );
+    final low = area.top - modelTop * scale + tagHalf;
+    final high = area.bottom - 106 * scale - tagHalf;
+    return WorldCamera(
+      preferred.x,
+      high < low ? (low + high) / 2 : preferred.y.clamp(low, high),
+      scale,
+    );
+  }
+
   Widget _referenceLayout(
     BuildContext context,
     double width,
@@ -510,19 +642,96 @@ class _OnboardingPageState extends State<OnboardingPage>
   ) {
     final naming = _setup.step == WorldStep.organization || _customizing;
     final focused = naming && _focus.hasFocus;
-    final inputTop = math.min(height - 219, height - keyboard - 102);
+    const headingTop = 32.0;
+    final headingBottom =
+        headingTop +
+        _textHeight(
+          context,
+          _title,
+          const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 34,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -1.19,
+            height: 1.04,
+          ),
+          width - 48,
+        ) +
+        12 +
+        _textHeight(
+          context,
+          _subtitle,
+          const TextStyle(fontFamily: 'PlaceGeist', fontSize: 15, height: 1.45),
+          width - 48,
+        );
+    final inputHeight =
+        64 +
+        48 +
+        (_setup.step == WorldStep.organization
+            ? 8 +
+                  _textHeight(
+                    context,
+                    'Your team will see this. You can change it later.',
+                    const TextStyle(
+                      fontFamily: 'PlaceGeist',
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                    width - 56,
+                  )
+            : 0);
+    final inputTop = math.min(
+      height - 219,
+      height - keyboard - inputHeight - 12,
+    );
+    final chipsBottom = math.min(96.0, height * .12);
+    final controlsTop = naming
+        ? inputTop
+        : height - chipsBottom - _chipsHeight(context, width - 48);
+    final desired = switch (_setup.step) {
+      WorldStep.organization => const WorldCamera(195, 500, .8),
+      WorldStep.workspace => const WorldCamera(195, 490, .9),
+      WorldStep.inventory => const WorldCamera(195, 480, 1),
+      _ => const WorldCamera(112, 520, .62),
+    };
+    final tagHalf = _tagHeight(context, width) / 2;
+    final modelTop = switch (_setup.step) {
+      WorldStep.organization => -122.0,
+      WorldStep.workspace => -145.0,
+      _ => -230.0,
+    };
+    final area = Rect.fromLTRB(
+      24,
+      headingBottom + 24,
+      width - 24,
+      controlsTop - 24,
+    );
+    final fitted = _fitCamera(
+      WorldCamera(
+        desired.x,
+        desired.y + height - 844,
+        focused ? .6 : desired.scale,
+      ),
+      area,
+      modelTop: modelTop,
+      tagHalf: tagHalf,
+    );
+    final legendHeight = _legendHeight(context, 126);
+    final legendTop = math.max(
+      headingBottom + 36,
+      math.min(330.0, height - 136 - legendHeight),
+    );
+    if (_setup.step == WorldStep.world &&
+        legendTop + legendHeight > height - 136) {
+      return _flowLayout(context, width, reduced, keyboard);
+    }
     final camera = _exiting
         ? const WorldCamera(150, 120, .12)
-        : focused
-        ? WorldCamera(195, math.min(360, inputTop - 90), .6)
-        : switch (_setup.step) {
-            WorldStep.choose =>
-              _morphOrigin ?? const WorldCamera(292, 474, .36),
-            WorldStep.organization => const WorldCamera(195, 500, .8),
-            WorldStep.workspace => const WorldCamera(195, 490, .9),
-            WorldStep.inventory => const WorldCamera(195, 480, 1),
-            _ => const WorldCamera(112, 520, .62),
-          };
+        : _setup.step == WorldStep.choose
+        ? _morphOrigin ?? const WorldCamera(292, 474, .36)
+        : _setup.step == WorldStep.world
+        ? WorldCamera(112, legendTop + legendHeight / 2, .62)
+        : fitted;
     return Stack(
       children: [
         Positioned.fill(
@@ -565,7 +774,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     key: ValueKey(_setup.step),
                     children: [
                       Positioned(
-                        top: 100,
+                        top: headingTop,
                         left: 24,
                         right: 24,
                         child: WorldEntrance(
@@ -650,7 +859,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                         Positioned(
                           left: 24,
                           right: 24,
-                          bottom: 136,
+                          bottom: chipsBottom,
                           child: WorldEntrance(
                             key: ValueKey('${_setup.step}-chips'),
                             delay: 300,
@@ -662,7 +871,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                         Positioned(
                           left: 240,
                           right: 24,
-                          top: 330,
+                          top: legendTop,
                           child: _legend(),
                         ),
                       if (keyboard == 0 && _setup.step == WorldStep.world)
@@ -725,59 +934,64 @@ class _OnboardingPageState extends State<OnboardingPage>
     double width,
     bool reduced,
     double keyboard,
-  ) => SingleChildScrollView(
-    padding: EdgeInsets.fromLTRB(
-      24,
-      math.max(MediaQuery.paddingOf(context).top, 24),
-      24,
-      keyboard + 36,
-    ),
-    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _heading(reduced),
-        const SizedBox(height: 28),
-        if (_setup.step == WorldStep.choose) ...[
-          _tile('personal', flow: true),
-          const SizedBox(height: 14),
-          _tile('team', flow: true),
-          const SizedBox(height: 20),
-          const Text(
-            'Starting solo? You can add an organization anytime.',
-            style: TextStyle(color: worldSecondary, fontSize: 13.5),
-          ),
-        ],
-        SizedBox(
-          height: _setup.step == WorldStep.choose ? 0 : 320,
-          child: WorldScene(
-            key: _worldKey,
-            setup: _setup,
-            camera: WorldCamera((width - 48) / 2, 220, .68),
-            reduced: reduced,
-          ),
-        ),
-        if (_setup.step != WorldStep.choose) ...[
-          if (_setup.step == WorldStep.world) _legend(),
-          if (_setup.step == WorldStep.organization || _customizing)
-            _input()
-          else if (_setup.step != WorldStep.world)
-            _chips(),
-        ],
-        const SizedBox(height: 24),
-        if (_error != null)
-          Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
-        if (_setup.step == WorldStep.world) _continue(),
-        if (_setup.step == WorldStep.choose)
-          TextButton(
-            key: const Key('onboarding-skip'),
-            onPressed: _busy ? null : _existing,
-            child: const Text(
-              'I already have an account',
-              style: TextStyle(color: worldSecondary),
+  ) => Padding(
+    padding: EdgeInsets.only(bottom: keyboard),
+    child: SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        math.max(MediaQuery.paddingOf(context).top, 24),
+        24,
+        36,
+      ),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _heading(reduced),
+          const SizedBox(height: 28),
+          if (_setup.step == WorldStep.choose) ...[
+            _tile('personal', flow: true),
+            const SizedBox(height: 14),
+            _tile('team', flow: true),
+            const SizedBox(height: 20),
+            const Text(
+              'Starting solo? You can add an organization anytime.',
+              style: TextStyle(color: worldSecondary, fontSize: 13.5),
+            ),
+          ],
+          SizedBox(
+            height: _setup.step == WorldStep.choose
+                ? 0
+                : 320 + math.max(0, _tagHeight(context, width - 48) - 30),
+            child: WorldScene(
+              key: _worldKey,
+              setup: _setup,
+              camera: WorldCamera((width - 48) / 2, 220, .68),
+              reduced: reduced,
             ),
           ),
-      ],
+          if (_setup.step != WorldStep.choose) ...[
+            if (_setup.step == WorldStep.world) _legend(),
+            if (_setup.step == WorldStep.organization || _customizing)
+              _input()
+            else if (_setup.step != WorldStep.world)
+              _chips(),
+          ],
+          const SizedBox(height: 24),
+          if (_error != null)
+            Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+          if (_setup.step == WorldStep.world) _continue(),
+          if (_setup.step == WorldStep.choose)
+            TextButton(
+              key: const Key('onboarding-skip'),
+              onPressed: _busy ? null : _existing,
+              child: const Text(
+                'I already have an account',
+                style: TextStyle(color: worldSecondary),
+              ),
+            ),
+        ],
+      ),
     ),
   );
   Widget _tile(String path, {bool flow = false}) {
@@ -994,7 +1208,7 @@ class _OnboardingPageState extends State<OnboardingPage>
     unawaited(_next());
   }
 
-  Widget _chips() {
+  List<String> get _choices {
     final workspace = _setup.step == WorldStep.workspace;
     final choices = workspace
         ? (_setup.isTeam
@@ -1007,11 +1221,17 @@ class _OnboardingPageState extends State<OnboardingPage>
     if (selected.isNotEmpty && !choices.contains(selected)) {
       choices.add(selected);
     }
+    return [...choices, '+ Custom'];
+  }
+
+  Widget _chips() {
+    final workspace = _setup.step == WorldStep.workspace;
+    final selected = workspace ? _setup.workspacePurpose : _setup.inventoryName;
     return Wrap(
       spacing: 8,
       runSpacing: 2,
       children: [
-        for (final label in [...choices, '+ Custom'])
+        for (final label in _choices)
           Semantics(
             button: true,
             selected: label == selected,
@@ -1057,10 +1277,13 @@ class _OnboardingPageState extends State<OnboardingPage>
                     ),
                     child: Text(
                       label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'PlaceGeist',
                         fontSize: 14.5,
                         fontWeight: FontWeight.w500,
+                        letterSpacing: 0,
                       ),
                     ),
                   ),

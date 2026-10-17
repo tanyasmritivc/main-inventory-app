@@ -4,6 +4,31 @@ Implemented October 17, 2026 on `feat/build-your-world-onboarding-20261017`.
 Clean starting commit: `7cb8459853816382d8c9bde8681b4c60eb795c03`.
 Apple acknowledged TestFlight 1.0.8 (78). Processing and tester availability are unverified.
 
+## Responsive follow-up, beta79
+
+The beta78 preview omitted the production AppGradientBackground/SafeArea wrapper.
+On a device, that wrapper shortened the canvas while the camera retained its
+fixed prototype position; the field and chips then overlapped the platform.
+The preview now uses the production wrapper. The scene fits between measured
+heading and control bounds, accounts for keyboard height and wrapped tags, and
+caps wide layouts. The persistent painter, motion timings, copy, creation and
+auth logic are unchanged. The mobile default remains light.
+
+All 545 Flutter tests pass and static analysis is clean. The 39 added responsive
+cases cover ten phone/tablet/landscape profiles from 320 x 568 to 768 x 1024,
+native safe areas, organization/workspace/inventory clearances, keyboard height,
+long labels, large text and scrollable recap. The original production-wrapper
+regressions failed before the fix. A disposable iPhone 16e simulator app was
+reviewed with the native keyboard through the team path; screenshots are in
+out/responsive. No customer accounts or records were created. This does not
+replace physical-device acceptance or establish the previously unmet 16 ms gate.
+
+Changed runtime files: mobile/lib/features/onboarding/onboarding_page.dart,
+mobile/lib/features/onboarding/world_scene.dart and mobile/pubspec.yaml.
+Validation changes: mobile/test/world_responsive_test.dart,
+mobile/test/world_onboarding_test.dart and mobile/tool/onboarding_visual.dart.
+Delivery is pending the signed production beta79 archive and Apple acknowledgment.
+
 ## Result and scope
 
 The first-run mobile introduction is a native, interactive canvas. Team setup

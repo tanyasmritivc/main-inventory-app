@@ -1,5 +1,14 @@
 # FindEZ test suite
 
+## Responsive onboarding
+
+Run the full Flutter suite and analysis before release. world_responsive_test.dart
+mounts through the production AppGradientBackground/SafeArea wrapper and checks
+world/label/control clearance across ten screen profiles, keyboard insets and
+large text. The debug-only onboarding_visual.dart must use that same wrapper.
+Release builds always target lib/main.dart. See design/onboarding-a/IMPLEMENTATION.md
+for simulator evidence and the remaining physical/performance acceptance limits.
+
 ## Shared catalog write permissions
 
 Run the backend suite and the PostgreSQL fixture before publishing migration 053.

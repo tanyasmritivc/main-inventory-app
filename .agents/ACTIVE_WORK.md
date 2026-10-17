@@ -1,3 +1,18 @@
+# October 17 responsive onboarding follow-up
+
+Same mobile lane feat/build-your-world-onboarding-20261017, clean start eab8962.
+User device screenshots show platform/input/chip overlap. Production wraps the
+onboarding in AppGradientBackground/SafeArea, reducing height; QA previously
+mounted the page without that wrapper. Fit the canvas model and live tags between
+actual heading/control bounds, include native safe areas, and verify a phone-size,
+keyboard and text-size matrix through the production wrapper. Preserve data/auth,
+motion durations, inventory interiors and the light default. Deliver beta79 under
+the standing push/TestFlight instruction; no production schema changes.
+Implementation complete: 545 Flutter tests pass and analysis is clean. Ten size
+profiles and actual production safe areas/keyboard are covered; iPhone 16e team
+path is visually reviewed. Signed beta79 delivery pending. Web dashboard and
+shared Ask first-answer fixes use separate lanes after this mobile patch.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal
