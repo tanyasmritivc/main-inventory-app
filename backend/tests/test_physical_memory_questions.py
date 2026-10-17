@@ -452,8 +452,24 @@ def test_purpose_browse_is_bounded_and_discloses_partial_results(memory):
     assert result['answer_context']['rows_truncated']
     assert len(result['answer_context']['rows']) == 100
     assert 'partial' in result['assistant_message']
-    assert 'Showing 20 of 500' in result['assistant_message']
+    assert '500 saved item records' in result['assistant_message']
     assert max(limit for _, _, limit in memory.reads) <= 501
+
+
+def test_purpose_overview_uses_saved_categories_and_varied_examples(memory):
+    memory.rows['items'] += [
+        {**DATA['items'][5], 'item_id': f'variant-{n}', 'name': f'M{n} screw'}
+        for n in range(4, 30)
+    ]
+    result = inventory_questions.answer_question(user_id='owner', message='What items do I have for robotics?')
+    answer = result['assistant_message']
+    assert '- **Electronics**: 3 saved records.' in answer
+    assert '- **Hardware**: 27 saved records.' in answer
+    assert '- **Tools**: 2 saved records.' in answer
+    assert len(answer) < 1200
+    assert '4242' not in answer and '999' not in answer
+    direct = inventory_questions.answer_question(user_id='owner', message='Find HDMI adapter')
+    assert direct['assistant_message'].startswith('- HDMI adapter:')
 
 
 def test_failed_empty_inventory_probe_does_not_claim_absence(memory):

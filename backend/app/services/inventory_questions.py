@@ -408,18 +408,52 @@ def _answer(question: Question, items: list[dict], user_id: str, truncated: bool
             if question.capability == 'item.evidence':
                 fields = ', '.join(f'{key}: {_text(item[key])}' for key in _FIELDS if item.get(key))
                 detail += '; saved fields: ' + fields
-            lines.append(detail)
+            lines.append('- ' + detail)
         answer = '\n'.join(lines)
         if len(items) > 20:
-            answer += f'\nShowing 20 of {len(items)} matching records checked.'
-        answer += '\nThese are saved records, not a live physical sighting.'
+            answer += f'\n\nShowing 20 of {len(items)} matching records checked.'
+        answer += '\n\nThese are saved records, not a live physical sighting.'
     if question.purpose:
-        answer = ('Here are the saved items in the current inventory that match your item and location filters. '
-                  if question.terms or question.filters else 'Here are the saved items in the current inventory. ') + \
-                 f'I haven\'t verified which are suitable for {_text(question.purpose)}.\n\n' + answer
+        if not question.terms and not question.filters and question.capability == 'item.find':
+            answer = _purpose_overview(question, items)
+        else:
+            answer = ('Here are the saved items in the current inventory that match your item and location filters. '
+                      f'I haven\'t verified which are suitable for {_text(question.purpose)}.\n\n' + answer)
     if truncated:
         answer += '\nThe search limit was reached. These results and totals are partial; narrow the name or location.'
     incomplete = truncated or any(recorded_quantity(i.get('quantity')) is None for i in items)
     if question.capability in ('item.find', 'item.evidence'):
         incomplete = incomplete or any(not str(i.get('location') or '').strip() for i in items)
     return answer, 'incomplete' if incomplete else 'supported', sources
+
+
+def _purpose_overview(question: Question, items: list[dict]) -> str:
+    groups = {}
+    for item in items:
+        category = str(item.get('category') or '').strip() or 'Uncategorized'
+        groups.setdefault(category, []).append(item)
+    lines = []
+    ordered = sorted(groups, key=str.casefold)
+    for category in ordered[:8]:
+        examples, seen = [], set()
+        for item in groups[category]:
+            name = _text(item.get('name')) or 'Unnamed item'
+            # Show different saved names instead of three sizes of one screw.
+            # This is display diversity, not inferred identity or compatibility.
+            family = ' '.join(_word(token) for token in _tokens(name)
+                              if token.isalpha()) or name.casefold()
+            if family in seen:
+                continue
+            seen.add(family)
+            examples.append(name)
+            if len(examples) == 3:
+                break
+        count = len(groups[category])
+        lines.append(f'- **{_text(category)}**: {count} saved {"record" if count == 1 else "records"}. '
+                     f'Examples: {"; ".join(examples)}.')
+    if len(ordered) > 8:
+        remaining = sum(len(groups[c]) for c in ordered[8:])
+        lines.append(f'- {remaining} more saved records across {len(ordered) - 8} other categories.')
+    return (f'I found {len(items)} saved item records in the current inventory:\n\n' + '\n'.join(lines) +
+            f'\n\nI haven\'t verified which are suitable for {_text(question.purpose)}. '
+            'Tell me a part type or name to check its saved quantities and locations.')
