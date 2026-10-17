@@ -46,6 +46,16 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
           await tester.pumpWidget(auth(brightness, scale));
           await tester.pumpAndSettle();
+          await tester.ensureVisible(
+            find.byKey(const Key('auth-more-options')),
+          );
+          await tester.tap(find.byKey(const Key('auth-more-options')));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(
+            find.byKey(const Key('auth-email-option')),
+          );
+          await tester.tap(find.byKey(const Key('auth-email-option')));
+          await tester.pumpAndSettle();
           for (final label in [
             'Forgot password?',
             'Continue with Apple',

@@ -2,6 +2,19 @@
 
 This describes the current release foundation. Planned systems are labeled.
 
+## Interactive mobile setup (October 17)
+
+OnboardingPage keeps intro/choice/name/purpose/inventory/recap on one route.
+WorldModel directly repaints WorldPainter inside RepaintBoundary; small entrance
+and tag widgets animate independently. No HTML/WebView or new rendering package.
+WorldSetupStore serializes versioned local drafts and per-account creation
+receipts. WorldSetupGate claims after auth, requests one existing-account Add/Skip
+choice, then calls the existing organization/workspace/inventory APIs in order.
+InventoryContextHost validates and opens the resulting inventory. Unknown POST
+outcomes reconcile against authorized actor-owned records and never blindly
+repeat. Existing auth provider/email/recovery handlers retain ownership. Optional
+questionnaire is SetupQuestionsPage. See design/onboarding-a/IMPLEMENTATION.md.
+
 ## Account memory (backend activated October 16)
 
 Migration 048 extends user_memory and inventory_user_memory with typed explicit

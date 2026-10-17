@@ -1,4 +1,3 @@
-import '../../core/app_theme.dart';
 import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
 
@@ -15,9 +14,16 @@ import '../onboarding/onboarding_prefs.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, this.onAuthChanged});
+  const AuthPage({
+    super.key,
+    this.onAuthChanged,
+    this.fromOnboarding = false,
+    this.onBackToSetup,
+  });
 
   final VoidCallback? onAuthChanged;
+  final bool fromOnboarding;
+  final VoidCallback? onBackToSetup;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -32,6 +38,9 @@ class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _password;
 
   bool _isLogin = true;
+  bool _showEmail = false, _moreOptions = false;
+  bool _edge = false;
+  double _edgeDistance = 0;
   bool _legalAccepted = false;
   Map<String, dynamic> get _legalAcceptance => {
     'terms_url': legalDocumentUrl(LegalDocumentKind.terms).toString(),
@@ -711,7 +720,11 @@ class _AuthPageState extends State<AuthPage> {
         : null,
     style: AppTypography.bodyStyleOf(
       context,
-      TextStyle(fontSize: 16, color: AppTheme.textPrimary(context)),
+      const TextStyle(
+        fontFamily: 'PlaceGeist',
+        fontSize: 16,
+        color: Color(0xFF302D38),
+      ),
     ),
     decoration: InputDecoration(
       labelText: label,
@@ -719,7 +732,7 @@ class _AuthPageState extends State<AuthPage> {
       prefixIcon: icon == null ? null : Icon(icon, size: 21),
       errorText: controller == _email ? _emailError : null,
       filled: true,
-      fillColor: AppTheme.surface(context),
+      fillColor: Colors.white,
     ),
   );
 
@@ -739,14 +752,21 @@ class _AuthPageState extends State<AuthPage> {
         : icon,
     label: AppText(label, textAlign: TextAlign.center),
     style: OutlinedButton.styleFrom(
-      foregroundColor: AppTheme.textPrimary(context),
-      backgroundColor: AppTheme.surface(context),
-      minimumSize: const Size(double.infinity, 52),
+      foregroundColor: provider == OAuthProvider.apple
+          ? Colors.white
+          : const Color(0xFF302D38),
+      backgroundColor: provider == OAuthProvider.apple
+          ? const Color(0xFF302D38)
+          : Colors.white,
+      minimumSize: const Size(double.infinity, 56),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      side: BorderSide(
-        color: AppTheme.textPrimary(context).withValues(alpha: .18),
+      side: BorderSide(color: const Color(0xFF302D38), width: 1.8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      textStyle: const TextStyle(
+        fontFamily: 'PlaceGeist',
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   );
 
@@ -754,6 +774,7 @@ class _AuthPageState extends State<AuthPage> {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _isLogin = !_isLogin;
+      _showEmail = true;
       _needsEmailVerification = false;
       _verificationEmail = null;
       _error = null;
@@ -761,266 +782,502 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
+  String get _headline => widget.fromOnboarding
+      ? 'Your dashboard is ready'
+      : _isLogin
+      ? 'Welcome back'
+      : 'Create your account';
+  String get _subtitle => widget.fromOnboarding
+      ? 'Create an account or sign in to open it.'
+      : _isLogin
+      ? 'Sign in to your inventory.'
+      : 'Keep your inventory in one place.';
+
+  Widget _heading() => Column(
+    children: [
+      Semantics(
+        header: true,
+        child: Text(
+          _headline,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 30,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -.75,
+            height: 1.12,
+            color: Color(0xFF302D38),
+          ),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        _subtitle,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 15,
+          height: 1.45,
+          color: Color(0xFF6B6965),
+        ),
+      ),
+    ],
+  );
+  List<Widget> _providers() => [
+    _social(
+      OAuthProvider.google,
+      'Continue with Google',
+      const _GoogleLogo(size: 22),
+      _signInWithGoogle,
+    ),
+    if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+      const SizedBox(height: 14),
+      _social(
+        OAuthProvider.apple,
+        'Continue with Apple',
+        const Icon(Icons.apple, size: 25),
+        _signInWithApple,
+      ),
+    ],
+  ];
+  Widget _legalFooter() => Column(
+    children: [
+      const Text(
+        'By continuing, you acknowledge that you have read and agreed to our',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 12.5,
+          height: 1.45,
+          color: Color(0xFF6B6965),
+        ),
+      ),
+      Wrap(
+        alignment: WrapAlignment.center,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const TermsOfServicePage(),
+              ),
+            ),
+            child: const Text(
+              'Terms of Service',
+              style: TextStyle(
+                decoration: TextDecoration.underline,
+                color: Color(0xFF302D38),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PrivacyPolicyPage(),
+              ),
+            ),
+            child: const Text(
+              'Privacy Policy',
+              style: TextStyle(
+                decoration: TextDecoration.underline,
+                color: Color(0xFF302D38),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+  Widget _emailForm() => AutofillGroup(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ..._providers(),
+        const SizedBox(height: 24),
+        const Row(
+          children: [
+            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+            Flexible(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  'or use email',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PlaceGeist',
+                    fontSize: 13,
+                    color: Color(0xFF6B6965),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+          ],
+        ),
+        const SizedBox(height: 24),
+        if (!_isLogin) ...[
+          _field(
+            _firstName,
+            'First name',
+            maxLength: 50,
+            hints: const [AutofillHints.givenName],
+          ),
+          const SizedBox(height: 12),
+          _field(
+            _lastName,
+            'Last name',
+            maxLength: 50,
+            hints: const [AutofillHints.familyName],
+          ),
+          const SizedBox(height: 12),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 16),
+            title: const AppText(
+              'Work details (optional)',
+              style: TextStyle(fontSize: 14),
+            ),
+            children: [
+              _field(
+                _profileRole,
+                'Role (optional)',
+                maxLength: 120,
+                hints: const [AutofillHints.jobTitle],
+              ),
+              const SizedBox(height: 12),
+              _field(
+                _organization,
+                'Organization (optional)',
+                maxLength: 120,
+                hints: const [AutofillHints.organizationName],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        _field(
+          _email,
+          'Email',
+          icon: Icons.alternate_email_rounded,
+          keyboard: TextInputType.emailAddress,
+          hints: const [AutofillHints.email],
+        ),
+        const SizedBox(height: 12),
+        _field(
+          _password,
+          'Password',
+          icon: Icons.lock_outline_rounded,
+          password: true,
+          hints: [
+            _isLogin ? AutofillHints.password : AutofillHints.newPassword,
+          ],
+        ),
+        if (_isLogin)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _loading ? null : _sendPasswordReset,
+              child: const AppText(
+                'Forgot password?',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            value: _legalAccepted,
+            onChanged: _loading
+                ? null
+                : (value) => setState(() => _legalAccepted = value ?? false),
+            title: const AppText(
+              "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ),
+        ],
+        if (_error != null) ...[
+          Semantics(
+            liveRegion: true,
+            child: AppText(
+              _error!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        FilledButton(
+          onPressed: _loading ? null : _submit,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(double.infinity, 54),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          child: _loading && _oauthProviderLoading == null
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : AppText(_isLogin ? 'Sign in' : 'Create account'),
+        ),
+
+        const SizedBox(height: 16),
+        if (_needsEmailVerification) ...[
+          Semantics(
+            liveRegion: true,
+            child: AppText(
+              'Check your email to confirm your account.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: const Color(0xFF6B6965)),
+            ),
+          ),
+          TextButton(
+            onPressed: _resending || _loading ? null : _resendVerificationEmail,
+            child: AppText(
+              _resending ? 'Resending…' : 'Resend verification email',
+            ),
+          ),
+        ],
+        TextButton(
+          onPressed: _loading ? null : _switchMode,
+          child: AppText(
+            _isLogin
+                ? 'New here? Create account'
+                : 'Already have an account? Sign in',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_isLogin)
+          AppText(
+            'By signing in, you accept our Terms and confirm you’re eligible (13+).',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: const Color(0xFF6B6965),
+            ),
+          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TermsOfServicePage(),
+                ),
+              ),
+              child: const AppText(
+                'Terms of Service',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PrivacyPolicyPage(),
+                ),
+              ),
+              child: const AppText(
+                'Privacy Policy',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: AutofillGroup(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(child: FindEZWordmark(width: 144)),
-                  const SizedBox(height: 28),
-                  Semantics(
-                    header: true,
-                    child: AppText(
-                      _isLogin ? 'Welcome back' : 'Create your account',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -.4,
-                        color: AppTheme.textPrimary(context),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    _isLogin
-                        ? 'Sign in to your inventory.'
-                        : 'Keep your inventory in one place.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppTheme.textSecondary(context),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  if (!_isLogin) ...[
-                    _field(
-                      _firstName,
-                      'First name',
-                      maxLength: 50,
-                      hints: const [AutofillHints.givenName],
-                    ),
-                    const SizedBox(height: 12),
-                    _field(
-                      _lastName,
-                      'Last name',
-                      maxLength: 50,
-                      hints: const [AutofillHints.familyName],
-                    ),
-                    const SizedBox(height: 12),
-                    ExpansionTile(
-                      tilePadding: EdgeInsets.zero,
-                      childrenPadding: const EdgeInsets.only(bottom: 16),
-                      title: const AppText(
-                        'Work details (optional)',
-                        style: TextStyle(fontSize: 14),
-                      ),
+  Widget build(BuildContext context) => Theme(
+    data: Theme.of(context).copyWith(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF7F7F6),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFE8590C),
+        brightness: Brightness.light,
+      ),
+      textTheme: Theme.of(context).textTheme.apply(
+        fontFamily: 'PlaceGeist',
+        bodyColor: const Color(0xFF302D38),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        labelStyle: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 16,
+          color: Color(0xFF6B6965),
+        ),
+        hintStyle: const TextStyle(color: Color(0xFF8A8782)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 18,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE3E0DA)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE8590C), width: 1.5),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF302D38),
+          foregroundColor: Colors.white,
+          textStyle: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: const OutlinedButtonThemeData(),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF302D38),
+          minimumSize: const Size(44, 44),
+        ),
+      ),
+    ),
+    child: Builder(
+      builder: (context) => Scaffold(
+        backgroundColor: const Color(0xFFF7F7F6),
+        body: SafeArea(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (details) {
+              _edge = details.globalPosition.dx <= 24;
+              _edgeDistance = 0;
+            },
+            onHorizontalDragUpdate: (details) {
+              if (_edge) _edgeDistance += details.delta.dx;
+            },
+            onHorizontalDragEnd: (details) {
+              if (!_loading &&
+                  _edge &&
+                  (_edgeDistance > 60 ||
+                      (details.primaryVelocity ?? 0) > 300)) {
+                widget.onBackToSetup?.call();
+              }
+              _edge = false;
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(20, _showEmail ? 12 : 42, 20, 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _field(
-                          _profileRole,
-                          'Role (optional)',
-                          maxLength: 120,
-                          hints: const [AutofillHints.jobTitle],
+                        if (_showEmail)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              tooltip: 'All sign-in options',
+                              onPressed: _loading
+                                  ? null
+                                  : () => setState(() => _showEmail = false),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        const Center(child: FindEZWordmark(width: 144)),
+                        SizedBox(
+                          height: _showEmail
+                              ? 28
+                              : constraints.maxHeight *
+                                    (_moreOptions ? .115 : .20),
                         ),
-                        const SizedBox(height: 12),
-                        _field(
-                          _organization,
-                          'Organization (optional)',
-                          maxLength: 120,
-                          hints: const [AutofillHints.organizationName],
+                        _heading(),
+                        SizedBox(
+                          height: _showEmail
+                              ? 28
+                              : constraints.maxHeight * .055,
                         ),
+                        if (_showEmail)
+                          _emailForm()
+                        else ...[
+                          ..._providers(),
+                          if (_moreOptions) ...[
+                            const SizedBox(height: 14),
+                            OutlinedButton(
+                              key: const Key('auth-email-option'),
+                              onPressed: _loading
+                                  ? null
+                                  : () => setState(() => _showEmail = true),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 56),
+                                foregroundColor: const Color(0xFF302D38),
+                                backgroundColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Color(0xFF302D38),
+                                  width: 1.8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Continue with Email',
+                                style: TextStyle(
+                                  fontFamily: 'PlaceGeist',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 18),
+                          TextButton(
+                            key: const Key('auth-more-options'),
+                            onPressed: _loading
+                                ? null
+                                : () => setState(
+                                    () => _moreOptions = !_moreOptions,
+                                  ),
+                            child: Text(
+                              _moreOptions ? 'Fewer options' : 'More options',
+                              style: const TextStyle(
+                                fontFamily: 'PlaceGeist',
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF302D38),
+                              ),
+                            ),
+                          ),
+                          if (_error != null)
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                _error!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          const SizedBox(height: 26),
+                          _legalFooter(),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  _field(
-                    _email,
-                    'Email',
-                    icon: Icons.alternate_email_rounded,
-                    keyboard: TextInputType.emailAddress,
-                    hints: const [AutofillHints.email],
                   ),
-                  const SizedBox(height: 12),
-                  _field(
-                    _password,
-                    'Password',
-                    icon: Icons.lock_outline_rounded,
-                    password: true,
-                    hints: [
-                      _isLogin
-                          ? AutofillHints.password
-                          : AutofillHints.newPassword,
-                    ],
-                  ),
-                  if (_isLogin)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _loading ? null : _sendPasswordReset,
-                        child: const AppText(
-                          'Forgot password?',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    )
-                  else ...[
-                    const SizedBox(height: 12),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      value: _legalAccepted,
-                      onChanged: _loading
-                          ? null
-                          : (value) =>
-                                setState(() => _legalAccepted = value ?? false),
-                      title: const AppText(
-                        "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
-                        style: TextStyle(fontSize: 13, height: 1.4),
-                      ),
-                    ),
-                  ],
-                  if (_error != null) ...[
-                    Semantics(
-                      liveRegion: true,
-                      child: AppText(
-                        _error!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  FilledButton(
-                    onPressed: _loading ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 54),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: _loading && _oauthProviderLoading == null
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : AppText(_isLogin ? 'Sign in' : 'Create account'),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: AppText(
-                          'or',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary(context),
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
-                    _social(
-                      OAuthProvider.apple,
-                      'Continue with Apple',
-                      const Icon(Icons.apple, size: 22),
-                      _signInWithApple,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  _social(
-                    OAuthProvider.google,
-                    'Continue with Google',
-                    const _GoogleLogo(size: 20),
-                    _signInWithGoogle,
-                  ),
-                  const SizedBox(height: 16),
-                  if (_needsEmailVerification) ...[
-                    Semantics(
-                      liveRegion: true,
-                      child: AppText(
-                        'Check your email to confirm your account.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary(context),
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _resending || _loading
-                          ? null
-                          : _resendVerificationEmail,
-                      child: AppText(
-                        _resending ? 'Resending…' : 'Resend verification email',
-                      ),
-                    ),
-                  ],
-                  TextButton(
-                    onPressed: _loading ? null : _switchMode,
-                    child: AppText(
-                      _isLogin
-                          ? 'New here? Create account'
-                          : 'Already have an account? Sign in',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_isLogin)
-                    AppText(
-                      'By signing in, you accept our Terms and confirm you’re eligible (13+).',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: AppTheme.textSecondary(context),
-                      ),
-                    ),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const TermsOfServicePage(),
-                          ),
-                        ),
-                        child: const AppText(
-                          'Terms of Service',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const PrivacyPolicyPage(),
-                          ),
-                        ),
-                        child: const AppText(
-                          'Privacy Policy',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),

@@ -1,3 +1,42 @@
+# October 17 responsive onboarding follow-up
+
+Same mobile lane feat/build-your-world-onboarding-20261017, clean start eab8962.
+User device screenshots show platform/input/chip overlap. Production wraps the
+onboarding in AppGradientBackground/SafeArea, reducing height; QA previously
+mounted the page without that wrapper. Fit the canvas model and live tags between
+actual heading/control bounds, include native safe areas, and verify a phone-size,
+keyboard and text-size matrix through the production wrapper. Preserve data/auth,
+motion durations, inventory interiors and the light default. Deliver beta79 under
+the standing push/TestFlight instruction; no production schema changes.
+Implementation complete: 545 Flutter tests pass and analysis is clean. Ten size
+profiles and actual production safe areas/keyboard are covered; iPhone 16e team
+path is visually reviewed. Apple acknowledged TestFlight 1.0.8 (79), source
+2897788, delivery 527fb98f-8feb-48d9-ad3b-f47a85c28e77; processing unpolled.
+Separate follow-ups are published: dashboard aafcbd5 in PR 93 and shared Ask
+f54517a in PR 94. Their checked overlays preserve unrelated live sources; no
+schema changes. See each lane's docs/plans report for checks and rollback.
+
+# October 17 interactive mobile setup
+
+First-run onboarding now builds a persistent native canvas world. Team/personal
+choices are local until auth, then an account-bound provisioner reuses existing
+create APIs and opens the new inventory dashboard. Selection steps advance on
+tap; typed names use Done; the empty organization hint is e.g. FindEZ AI.
+Personal recap remains Personal / Only you. Provider-first auth follows the
+user's later Wispr reference; existing auth handlers are unchanged. Optional
+settings questionnaire is preserved separately. Default appearance is already
+light and explicit stored choices remain honored. No backend/web/schema or
+inventory-dashboard/Space interior changes. Migration 053 remains separately
+pending. Baseline 466 tests; final full Flutter suite 506 pass, final focused
+motion/onboarding 20 pass after a palette-only correction; analysis clean.
+Both iPhone 16e paths recorded at normal speed, keyboard/restart/back/custom and
+auth variants visually reviewed. Debug overlay worst UI 59.89 ms / raster 28.804 ms;
+strict 16 ms and physical OAuth/email/VoiceOver acceptance are not claimed.
+Apple acknowledged TestFlight 1.0.8 (78), source 269f1f0, delivery
+5f203ae7-9cdd-437f-b149-eb9383f5241b. Processing/tester availability unverified;
+no polling or post-push/build regressions. Full file list, motion audit,
+API retry limits and comparison artifacts: design/onboarding-a/IMPLEMENTATION.md.
+
 # October 17 catalog permission hardening
 
 Active lane: fix/catalog-write-permissions-20261017, starting clean 16eb6a1.

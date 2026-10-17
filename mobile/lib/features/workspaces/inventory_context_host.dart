@@ -20,10 +20,15 @@ class InventoryContextHost extends StatefulWidget {
     required this.api,
     this.pickOnly = false,
     this.initialWorkspaceId,
+    this.initialInventoryId,
+    this.initialOrganizationId,
+    this.onInitialInventoryOpened,
   });
   final ApiClient api;
   final bool pickOnly;
   final String? initialWorkspaceId;
+  final String? initialInventoryId, initialOrganizationId;
+  final Future<void> Function()? onInitialInventoryOpened;
   @override
   State<InventoryContextHost> createState() => _InventoryContextHostState();
 }
@@ -33,19 +38,40 @@ class _InventoryContextHostState extends State<InventoryContextHost>
   late final InventorySession _session;
   late final PlaceSession _places;
   StreamSubscription<AuthState>? _auth;
+  bool _initialAttempted = false, _initialOpened = false;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _session = InventorySession(widget.api, widget.api.accountId ?? '')
       ..addListener(_changed);
-    _places = PlaceSession(widget.api, widget.api.accountId ?? '');
+    _places = PlaceSession(widget.api, widget.api.accountId ?? '')
+      ..addListener(_initialPlaceReady);
     _auth = Supabase.instance.client.auth.onAuthStateChange.listen((event) {
       if (event.event == AuthChangeEvent.signedOut) unawaited(_clearPlace());
     });
     if (!widget.pickOnly) {
       unawaited(_startPlaces());
     }
+  }
+
+  void _initialPlaceReady() {
+    if (!mounted ||
+        _initialAttempted ||
+        widget.initialInventoryId == null ||
+        _places.loading ||
+        _places.error != null ||
+        _places.current.id != widget.initialWorkspaceId) {
+      return;
+    }
+    _initialAttempted = true;
+    unawaited(
+      _open(
+        widget.initialInventoryId!,
+        widget.initialWorkspaceId!,
+        widget.initialOrganizationId,
+      ),
+    );
   }
 
   Future<void> _startPlaces() async {
@@ -132,6 +158,20 @@ class _InventoryContextHostState extends State<InventoryContextHost>
 
   void _changed() {
     if (mounted) setState(() {});
+    if (!_initialOpened &&
+        _session.selection?.inventoryId == widget.initialInventoryId &&
+        widget.initialInventoryId != null) {
+      _initialOpened = true;
+      unawaited(_acknowledgeInitial());
+    }
+  }
+
+  Future<void> _acknowledgeInitial() async {
+    try {
+      await widget.onInitialInventoryOpened?.call();
+    } catch (_) {
+      // Keep the landing receipt for the next launch if local removal fails.
+    }
   }
 
   @override
@@ -140,6 +180,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     _session.removeListener(_changed);
     _session.dispose();
     _auth?.cancel();
+    _places.removeListener(_initialPlaceReady);
     _places.dispose();
     super.dispose();
   }

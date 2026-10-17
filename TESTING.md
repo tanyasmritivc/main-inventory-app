@@ -1,5 +1,14 @@
 # FindEZ test suite
 
+## Responsive onboarding
+
+Run the full Flutter suite and analysis before release. world_responsive_test.dart
+mounts through the production AppGradientBackground/SafeArea wrapper and checks
+world/label/control clearance across ten screen profiles, keyboard insets and
+large text. The debug-only onboarding_visual.dart must use that same wrapper.
+Release builds always target lib/main.dart. See design/onboarding-a/IMPLEMENTATION.md
+for simulator evidence and the remaining physical/performance acceptance limits.
+
 ## Shared catalog write permissions
 
 Run the backend suite and the PostgreSQL fixture before publishing migration 053.
@@ -1006,3 +1015,20 @@ ownership, actual confirmation after completion, timeout/retry cleanup, another
 root modal staying open, and leaving the caller while a request is pending. Run
 full Flutter tests and analysis before beta75. Backend/web are unchanged in this
 stage. Real camera/shared-Space acceptance remains manual; see capture-progress-fix.md.
+
+### October 17 interactive mobile setup
+
+Baseline 466/full final 506 Flutter tests pass; final palette-only correction has
+20 focused motion/onboarding passes and clean analysis. Run the full mobile suite
+and analysis for later runtime changes. New pending_world tests cover checkpoints,
+uncertain writes, duplicate prevention, local storage and account switching.
+world_auth_handoff uses real AuthPage/Supabase Auth HTTP parsing and API widgets
+against synthetic peers to verify sign-in/signup/verification/Add/Skip and direct
+inventory dashboard landing. No real email or customer writes are used. Existing
+eligibility, recovery, invitation and appearance suites remain relevant. Default
+Light and saved explicit appearance choices are covered by existing tests.
+Native simulator recordings/PNG pairs and actual overlay frame maxima are in
+design/onboarding-a/out. Debug worst UI 59.89 ms/raster 28.804 ms exceeds 16 ms;
+device profile acceptance, real OAuth/email links, OS Reduce Motion and spoken
+VoiceOver still require physical verification. Do not repeat completed checks
+after push/build; stop beta release at Apple's upload acknowledgment.

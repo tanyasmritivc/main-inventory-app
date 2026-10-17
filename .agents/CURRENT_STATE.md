@@ -1,3 +1,44 @@
+# October 17 responsive onboarding follow-up
+
+Beta79 fits the persistent world between actual heading/control bounds through
+the production SafeArea wrapper, including keyboard, long tags and wide screens.
+The previous QA entry omitted that wrapper and missed the device overlap.
+545 Flutter tests pass, analysis is clean; 39 new cases cover ten size profiles,
+safe areas, keyboard and large text. iPhone 16e native keyboard/team path visually
+reviewed in a disposable app. Auth/data and motion durations are unchanged;
+physical-device acceptance and the existing 16 ms performance limit remain open.
+Apple acknowledged TestFlight 1.0.8 (79), source 2897788, delivery
+527fb98f-8feb-48d9-ad3b-f47a85c28e77. Processing/tester availability unverified;
+no polling or post-push/build regressions. See design/onboarding-a/IMPLEMENTATION.md.
+Separate follow-ups are complete: web dashboard panels are published as aafcbd5
+(PR 93), and the shared Ask first-answer fix is live as f54517a (PR 94). Web has
+327 full tests, 16 final focused passes, TypeScript/lint/production build and live
+populated/empty Safari review. Ask has 831 full Python tests plus 10 subtests,
+165 final focused passes, live populated/empty reads and health/auth checks.
+Those lanes preserve 285 unrelated web sources and 91 unrelated backend sources.
+No database changes; production migration 053 remains pending separately.
+
+# October 17 interactive mobile setup
+
+First-run onboarding now builds a persistent native canvas world. Team/personal
+choices are local until auth, then an account-bound provisioner reuses existing
+create APIs and opens the new inventory dashboard. Selection steps advance on
+tap; typed names use Done; the empty organization hint is e.g. FindEZ AI.
+Personal recap remains Personal / Only you. Provider-first auth follows the
+user's later Wispr reference; existing auth handlers are unchanged. Optional
+settings questionnaire is preserved separately. Default appearance is already
+light and explicit stored choices remain honored. No backend/web/schema or
+inventory-dashboard/Space interior changes. Migration 053 remains separately
+pending. Baseline 466 tests; final full Flutter suite 506 pass, final focused
+motion/onboarding 20 pass after a palette-only correction; analysis clean.
+Both iPhone 16e paths recorded at normal speed, keyboard/restart/back/custom and
+auth variants visually reviewed. Debug overlay worst UI 59.89 ms / raster 28.804 ms;
+strict 16 ms and physical OAuth/email/VoiceOver acceptance are not claimed.
+Apple acknowledged TestFlight 1.0.8 (78), source 269f1f0, delivery
+5f203ae7-9cdd-437f-b149-eb9383f5241b. Processing/tester availability unverified;
+no polling or post-push/build regressions. Full file list, motion audit,
+API retry limits and comparison artifacts: design/onboarding-a/IMPLEMENTATION.md.
+
 # October 17 catalog write permissions candidate
 
 Branch fix/catalog-write-permissions-20261017, clean start 16eb6a1. Audit F01/F07
