@@ -106,6 +106,41 @@ class PlaceRepository {
     }
     return PlaceDirectory(placeRows(lists[0]['organizations']), workspaces);
   }
+
+  Future<List<Map<String, dynamic>>> independentWorkspaces() async {
+    final result = await api.collaboration('/inventory-workspaces');
+    final ids = placeRows(result['workspaces'])
+        .map((row) => row['workspace_id'].toString())
+        .where((id) => id != 'personal')
+        .toSet()
+        .toList();
+    final choices = <Map<String, dynamic>>[];
+    for (var i = 0; i < ids.length; i += 4) {
+      final batch = await Future.wait(
+        ids.skip(i).take(4).map((id) async {
+          try {
+            final result = await api.collaboration(
+              '/inventory-workspaces/${Uri.encodeComponent(id)}/overview',
+            );
+            final workspace = Map<String, dynamic>.from(
+              result['workspace'] as Map,
+            );
+            if (workspace['workspace_id'] != id) {
+              throw const FormatException(
+                'Workspace changed. Refresh and choose again.',
+              );
+            }
+            return workspace['organization_id'] == null ? workspace : null;
+          } on DioException catch (e) {
+            if ([403, 404, 410].contains(e.response?.statusCode)) return null;
+            rethrow;
+          }
+        }),
+      );
+      choices.addAll(batch.whereType<Map<String, dynamic>>());
+    }
+    return choices;
+  }
 }
 
 /// The working place is independent of a temporarily opened inventory.
@@ -125,6 +160,18 @@ class PlaceSession extends ChangeNotifier {
   Object? error;
   String? notice;
   bool loading = true, _disposed = false;
+  // Navigation scope is independent of a child workspace, including empty orgs.
+  String? organizationId;
+  Map<String, dynamic>? organization;
+  List<Map<String, dynamic>> workspaces = [];
+  bool navigationReady = false;
+  String get organizationName =>
+      organization?['name']?.toString() ??
+      data?.organizationName ??
+      (organizationId == null ? 'Personal' : 'Organization');
+  bool get canCreateWorkspace =>
+      organizationId == null ||
+      ['owner', 'admin'].contains(organization?['role']);
   int _generation = 0;
   bool _current(int generation) =>
       !_disposed && generation == _generation && _source.accountId == accountId;
@@ -149,6 +196,7 @@ class PlaceSession extends ChangeNotifier {
   Future<void> select(LastPlace place) async {
     final generation = ++_generation;
     current = place;
+    navigationReady = false;
     data = null;
     loading = true;
     error = null;
@@ -170,7 +218,18 @@ class PlaceSession extends ChangeNotifier {
       if (!_current(generation)) return;
       current = next.place;
       data = next;
-      await store.save(current, isCurrent: () => _current(generation));
+      organizationId = next.organizationId;
+      organization = next.organizationId == null
+          ? null
+          : {
+              'organization_id': next.organizationId,
+              'name': next.organizationName,
+            };
+      await store.save(
+        current,
+        organizationId: organizationId,
+        isCurrent: () => _current(generation),
+      );
       if (!_current(generation)) return;
       loading = false;
       notifyListeners();
@@ -183,7 +242,152 @@ class PlaceSession extends ChangeNotifier {
     }
   }
 
-  Future<void> refresh() => select(current);
+  /// Explicit links/onboarding may establish a new scope; workspace controls may not.
+  Future<void> restoreNavigation({LastPlace? override}) async {
+    if (override != null) {
+      await select(override);
+      if (error == null && !_disposed) await initializeNavigation();
+      return;
+    }
+    final generation = ++_generation;
+    try {
+      final savedOrganization = await store.readOrganization();
+      final place = await store.read();
+      if (!_current(generation)) return;
+      if (savedOrganization != null) {
+        await selectOrganization(savedOrganization, preferred: place);
+      } else {
+        await select(place);
+        if (error == null && !_disposed) await initializeNavigation();
+      }
+    } catch (reason) {
+      if (_current(generation)) {
+        data = null;
+        error = reason;
+        loading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> initializeNavigation() async {
+    if (navigationReady || loading || error != null) return;
+    await selectOrganization(data?.organizationId, preferred: current);
+  }
+
+  Future<void> selectOrganization(String? id, {LastPlace? preferred}) async {
+    final generation = ++_generation;
+    final oldOrganization = organizationId;
+    final candidate = preferred ?? (oldOrganization == id ? current : null);
+    organizationId = id;
+    if (oldOrganization != id) organization = null;
+    navigationReady = true;
+    workspaces = [];
+    data = null;
+    error = null;
+    loading = true;
+    notifyListeners();
+    try {
+      Map<String, dynamic>? nextOrganization;
+      List<Map<String, dynamic>> choices;
+      if (id != null) {
+        final result = await api.collaboration(
+          '/organizations/${Uri.encodeComponent(id)}',
+        );
+        nextOrganization = Map<String, dynamic>.from(
+          result['organization'] as Map,
+        );
+        if (nextOrganization['organization_id'] != id) {
+          throw const FormatException('Organization changed. Choose again.');
+        }
+        choices = placeRows(result['workspaces'])
+            .map(
+              (row) => {
+                ...row,
+                'workspace_id': row['team_id'] ?? row['workspace_id'],
+              },
+            )
+            .toList();
+      } else {
+        // Existing independent workspaces stay in the private Personal scope.
+        choices = [
+          {'workspace_id': 'personal', 'name': 'Personal'},
+          ...await repository.independentWorkspaces(),
+        ];
+      }
+      final seen = <String>{};
+      for (final row in choices) {
+        final childId = row['workspace_id'];
+        if (childId is! String ||
+            childId.isEmpty ||
+            !seen.add(childId) ||
+            (id != null && childId == 'personal') ||
+            (row['organization_id'] != null && row['organization_id'] != id)) {
+          throw const FormatException(
+            'This organization directory changed. Refresh and choose again.',
+          );
+        }
+      }
+      choices.sort(
+        (a, b) => a['name'].toString().toLowerCase().compareTo(
+          b['name'].toString().toLowerCase(),
+        ),
+      );
+      final chosen =
+          choices
+              .where((row) => row['workspace_id'] == candidate?.id)
+              .firstOrNull ??
+          choices.firstOrNull;
+      PlaceData? next;
+      if (chosen != null) {
+        final childId = chosen['workspace_id'] as String;
+        next = await repository.load(
+          childId == 'personal'
+              ? const LastPlace.personal()
+              : LastPlace.workspace(childId),
+        );
+        if (next.organizationId != id) {
+          throw const FormatException(
+            'This workspace belongs to another organization. Refresh and choose again.',
+          );
+        }
+      }
+      if (!_current(generation)) return;
+      organization = nextOrganization;
+      workspaces = choices;
+      data = next;
+      current = next?.place ?? const LastPlace.personal();
+      await store.save(
+        current,
+        organizationId: id,
+        isCurrent: () => _current(generation),
+      );
+      if (!_current(generation)) return;
+      loading = false;
+      notifyListeners();
+    } catch (reason) {
+      if (!_current(generation)) return;
+      error = reason;
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> selectWorkspace(String id) async {
+    if (!navigationReady || !workspaces.any((w) => w['workspace_id'] == id)) {
+      throw const FormatException('Choose a workspace in this organization.');
+    }
+    await selectOrganization(
+      organizationId,
+      preferred: id == 'personal'
+          ? const LastPlace.personal()
+          : LastPlace.workspace(id),
+    );
+  }
+
+  Future<void> refresh() => navigationReady
+      ? selectOrganization(organizationId, preferred: current)
+      : select(current);
   String? takeNotice() {
     final value = notice;
     notice = null;
@@ -193,6 +397,9 @@ class PlaceSession extends ChangeNotifier {
   Future<void> signOut() {
     ++_generation;
     data = null;
+    organization = null;
+    organizationId = null;
+    workspaces = [];
     return store.clear();
   }
 

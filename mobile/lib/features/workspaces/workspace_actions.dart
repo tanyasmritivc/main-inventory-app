@@ -76,7 +76,9 @@ Future<bool> _confirmDeletion(
                       const SizedBox(height: 12),
                       Text(
                         error!,
-                        style: const TextStyle(color: PlaceTokens.destructive),
+                        style: TextStyle(
+                          color: PlacePalette.of(context).destructive,
+                        ),
                       ),
                     ],
                   ],
@@ -89,7 +91,7 @@ Future<bool> _confirmDeletion(
                 ),
                 TextButton(
                   style: TextButton.styleFrom(
-                    foregroundColor: PlaceTokens.destructive,
+                    foregroundColor: PlacePalette.of(context).destructive,
                   ),
                   onPressed: busy || entered != name
                       ? null

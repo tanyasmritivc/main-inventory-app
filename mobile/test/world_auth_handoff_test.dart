@@ -257,7 +257,11 @@ void main() {
     }
   }
 
-  Future<SetupTransport> launch(WidgetTester tester, {bool team = true}) async {
+  Future<SetupTransport> launch(
+    WidgetTester tester, {
+    bool team = true,
+    Brightness brightness = Brightness.light,
+  }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -278,7 +282,7 @@ void main() {
     await OnboardingPrefs.setCompleted(true);
     await tester.pumpWidget(
       MaterialApp(
-        theme: AppTheme.create(Brightness.light),
+        theme: AppTheme.create(brightness),
         home: LaunchAuthGate(api: api),
       ),
     );
@@ -314,7 +318,11 @@ void main() {
     testWidgets(
       '${signup ? 'signup' : 'sign-in'} provisions through existing HTTP routes and opens the inventory dashboard',
       (tester) async {
-        final transport = await launch(tester, team: !signup);
+        final transport = await launch(
+          tester,
+          team: !signup,
+          brightness: signup ? Brightness.dark : Brightness.light,
+        );
         if (signup) {
           await tester.ensureVisible(find.text('New here? Create account'));
           await tester.tap(find.text('New here? Create account'));
@@ -346,6 +354,35 @@ void main() {
             'findez.active-inventory:$actor',
           ),
           inventoryId,
+        );
+        tester.platformDispatcher.textScaleFactorTestValue = 3.2;
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        tester.platformDispatcher.clearTextScaleFactorTestValue();
+        await tester.pump();
+        await tester.tap(
+          find.widgetWithText(TextButton, signup ? 'Tools' : 'Hardware'),
+        );
+        await settle(tester);
+        expect(find.byType(WorkspaceHome), findsOneWidget);
+        await tester.tap(find.text(signup ? 'Tools' : 'Hardware'));
+        await settle(tester);
+        expect(find.byType(MainShell), findsOneWidget);
+        // Switching from the actual dashboard retires its nested inventory
+        // navigator and leaves the new organization boundary selected.
+        await tester.tap(
+          find.bySemanticsLabel(
+            'Switch organization. Current: ${signup ? 'Personal' : 'Kestrel Labs'}',
+          ),
+        );
+        await settle(tester);
+        await tester.tap(find.text('Personal').last);
+        await settle(tester);
+        expect(find.byType(MainShell), findsNothing);
+        expect(find.byType(WorkspaceHome), findsOneWidget);
+        expect(
+          find.bySemanticsLabel('Switch organization. Current: Personal'),
+          findsOneWidget,
         );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

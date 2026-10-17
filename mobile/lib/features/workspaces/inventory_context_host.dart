@@ -11,6 +11,7 @@ import '../../core/last_place.dart';
 import '../../core/push_notifications.dart';
 import '../notifications/notifications_page.dart';
 import 'workspace_home.dart';
+import 'organization_pill.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A fresh Navigator disposes inventory routes, drafts and sheets when switching.
@@ -61,6 +62,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
         widget.initialInventoryId == null ||
         _places.loading ||
         _places.error != null ||
+        !_places.navigationReady ||
         _places.current.id != widget.initialWorkspaceId) {
       return;
     }
@@ -102,7 +104,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       /* Optional phone alerts remain retryable in Notifications. */
     }
     if (!mounted) return;
-    await _places.restore(override: target);
+    await _places.restoreNavigation(override: target);
     unawaited(_connectPhoneAlerts());
     starting = false;
     if (initialInbox != null && mounted) {
@@ -130,7 +132,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     }
     final target = placeFromNotification(payload, _places.accountId);
     if (target != null) {
-      final switching = _places.select(target);
+      final switching = _places.restoreNavigation(override: target);
       await _session.chooseAnother();
       await switching;
     } else {
@@ -197,16 +199,27 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     final previous = _session.selection;
     if (previous == null) return;
     await _session.revalidate();
+    final next = _session.selection;
+    if (next != null &&
+        (next.organizationId != _places.organizationId ||
+            next.workspaceId != _places.current.id)) {
+      await _directory();
+    }
+  }
+
+  Future<void> _directory() async {
+    final refreshing = _places.refresh();
+    await _session.chooseAnother();
+    await refreshing;
   }
 
   Future<void> _open(String id, String workspace, String? organization) async {
-    if (!widget.pickOnly && _places.current.id != workspace) {
-      await _places.select(
-        workspace == 'personal'
-            ? const LastPlace.personal()
-            : LastPlace.workspace(workspace),
-      );
-      if (_places.error != null || _places.current.id != workspace) return;
+    if (!widget.pickOnly &&
+        (_places.current.id != workspace ||
+            _places.organizationId != organization ||
+            _places.loading ||
+            _places.error != null)) {
+      return;
     }
     await _session.open(
       id,
@@ -249,7 +262,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
                 child: const AppText('Retry'),
               ),
               TextButton(
-                onPressed: _session.chooseAnother,
+                onPressed: _directory,
                 child: const AppText('Choose another inventory'),
               ),
             ],
@@ -277,8 +290,18 @@ class _InventoryContextHostState extends State<InventoryContextHost>
           return SafeArea(
             child: MainShell(
               api: api,
+              organizationSelector: OrganizationPill(
+                api: _places.api,
+                id: selected.organizationId,
+                name: selected.organizationName ?? 'Personal',
+                onSelected: (id) async {
+                  final switching = _places.selectOrganization(id);
+                  await _session.chooseAnother();
+                  await switching;
+                },
+              ),
               onWorkspaceNotification: _notification,
-              onSwitchContext: _session.chooseAnother,
+              onSwitchContext: _directory,
               onManageContext: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute<void>(

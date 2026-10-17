@@ -6,17 +6,18 @@ inventory/Space and save-confirmation flows. Do not start this Space entry point
 in an empty manual item editor. Keep manual correction of scan results and
 editing existing items. Other entry points and the dashboard are unchanged.
 
-# October 17 mobile keeps collaboration behind focused directories
+# October 17 organization is the mobile navigation boundary
 
-The supporting entry screen is a compact inventory list with one workspace picker.
-Do not mix organization and workspace rows in that picker. Organization management
-is a separate directory; team utilities live in Workspace options. The working
-inventory dashboard, Scan, Ask and Spaces retain their existing routes and UI.
-Keep failed deletion confirmations mounted with the exact name and explicit purge
-choice intact. Never retry destructive writes automatically or report success
-without the server receipt. After removing the current context, return to its
-parent instead of reloading the deleted resource. Existing owner permissions,
-empty-organization guard and workspace inventory retention remain authoritative.
+The top-left organization pill is the cross-organization selector. Workspace
+choices and inventories are contained in its selected organization, validated
+with authoritative parent IDs. Empty organizations remain selected on restart;
+slow responses, failed refreshes and deleted workspaces cannot reveal another
+organization's directory. Existing private/independent workspaces remain in the
+separate Personal scope without moving records. People, Tasks and Files are
+visible workspace controls, with settings/activity/deletion secondary. The
+inventory context header hosts the pill; dashboard content, Scan, Ask and Spaces
+stay unchanged. This supersedes the earlier global workspace picker and hidden
+collaboration menu. Keep existing deletion guards and confirmed receipts.
 
 # October 17 setup keeps the existing auth and collaboration owners
 

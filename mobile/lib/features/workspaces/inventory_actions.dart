@@ -20,7 +20,7 @@ Future<void> manageDirectoryInventory(
         children: [
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(name, style: PlaceTokens.rowTitle),
+            child: Text(name, style: PlacePalette.of(context).rowTitle),
           ),
           if (inventory['can_rename'] == true)
             ListTile(
@@ -31,7 +31,9 @@ Future<void> manageDirectoryInventory(
             ListTile(
               title: Text(
                 'Delete inventory',
-                style: PlaceTokens.text(16, color: PlaceTokens.destructive),
+                style: PlacePalette.of(
+                  context,
+                ).text(16, color: PlacePalette.of(context).destructive),
               ),
               onTap: () => Navigator.pop(sheet, 'delete'),
             ),
@@ -96,7 +98,9 @@ Future<void> manageDirectoryInventory(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
                       error!,
-                      style: const TextStyle(color: PlaceTokens.destructive),
+                      style: TextStyle(
+                        color: PlacePalette.of(context).destructive,
+                      ),
                     ),
                   ),
               ],
@@ -153,7 +157,7 @@ Future<void> manageDirectoryInventory(
                     },
               style: action == 'delete'
                   ? TextButton.styleFrom(
-                      foregroundColor: PlaceTokens.destructive,
+                      foregroundColor: PlacePalette.of(context).destructive,
                     )
                   : null,
               child: Text(
@@ -213,10 +217,10 @@ class InventoryDirectoryRow extends StatelessWidget {
         Expanded(
           child: PlaceRow(
             title: inventory['name'].toString(),
-            leading: const Icon(
+            leading: Icon(
               Icons.inventory_2_outlined,
               size: 20,
-              color: PlaceTokens.dim,
+              color: PlacePalette.of(context).dim,
             ),
             subtitle: inventory['can_open'] != true
                 ? 'Access restricted'
