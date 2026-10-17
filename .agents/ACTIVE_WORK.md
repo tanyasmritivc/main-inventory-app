@@ -1,5 +1,7 @@
 # October 16 simplified web inventory sidebar
 
+Apple acknowledged TestFlight 1.0.8 (76), source d3109b3, delivery f8d15676-774f-4d88-9468-d0044da2db33. Native UI unchanged; processing/tester availability not checked. Web sidebar is published and visually verified.
+
 Review is grouped under Your world. Restock, Lent items, Project kits, Smart
 collections and Labels are removed from the shared web navigation and command
 list; the empty Organize group disappears. Existing routes/data are preserved.
