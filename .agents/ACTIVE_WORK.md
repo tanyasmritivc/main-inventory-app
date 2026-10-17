@@ -1,3 +1,30 @@
+# October 17 simpler mobile context directories and deletion audit
+
+Active mobile lane fix/mobile-context-directory-20261017, clean start 75db5c5.
+Replace mixed organization/workspace switcher with focused workspace selection
+and separate organization management. Compact inventory directory and hide
+collaboration utilities behind management. Dashboard, Scan, Ask and Spaces remain
+untouched. Trace reported deletion errors, retain confirmations/explicit purge,
+keep failed confirmations usable and remove stale resources after success.
+Audit real constraints only in a network-isolated restored copy; never delete
+customer records for QA. Backend/schema work, if needed, uses a separate lane.
+Migration 053 remains pending separately. Implementation complete: 549 Flutter
+tests pass, final analysis clean, 29 backend deletion tests pass. A network-none
+restored production copy passes 21 deletion cases including expected guard
+blocks. No customer records changed; no backend/schema change required. Native
+iPhone 16e fixture review complete; physical acceptance remains pending. Deliver
+checked beta80. Apple acknowledged 1.0.8 (80), runtime fed141e, delivery
+30ec26e0-4246-4085-b0cc-42b22bceeb1b. Processing/tester availability remain
+unverified; no polling. See design/mobile-context-directory/IMPLEMENTATION.md.
+CI follow-up: separate test-only parent ae81586 (PR 96) uses installed AnyIO for
+crop tests, full 817 Python plus 10 subtests pass. Newer Flutter CI also flags a
+settings Memory-row ink layer; transparent Material fixes it, with 32 profile
+tests/analysis passing. No dashboard change. First beta80 export was rejected
+for a cached simulator framework; the clean rebuild verifies 31 device binaries
+in both archive/export with strict signatures and is acknowledged by Apple.
+All five CI jobs pass on runtime fed141e and compatibility parent bac43eb.
+Mobile PR 95 is stacked on compatibility PR 96; no production schema changes.
+
 # October 17 responsive onboarding follow-up
 
 Same mobile lane feat/build-your-world-onboarding-20261017, clean start eab8962.

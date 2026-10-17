@@ -1,3 +1,15 @@
+# October 17 mobile keeps collaboration behind focused directories
+
+The supporting entry screen is a compact inventory list with one workspace picker.
+Do not mix organization and workspace rows in that picker. Organization management
+is a separate directory; team utilities live in Workspace options. The working
+inventory dashboard, Scan, Ask and Spaces retain their existing routes and UI.
+Keep failed deletion confirmations mounted with the exact name and explicit purge
+choice intact. Never retry destructive writes automatically or report success
+without the server receipt. After removing the current context, return to its
+parent instead of reloading the deleted resource. Existing owner permissions,
+empty-organization guard and workspace inventory retention remain authoritative.
+
 # October 17 setup keeps the existing auth and collaboration owners
 
 The interactive mobile world is one route with stateful steps and a persistent

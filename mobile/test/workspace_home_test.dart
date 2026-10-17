@@ -134,8 +134,9 @@ void main() {
       expect(find.text('FTC ROBOTICS 2026'), findsOneWidget);
       expect(find.text('60 items · Viewer'), findsOneWidget);
       expect(find.text('New inventory'), findsNothing);
-      expect(find.text('Tasks'), findsOneWidget);
-      expect(find.text('People'), findsOneWidget);
+      expect(find.text('Tasks'), findsNothing);
+      expect(find.text('People'), findsNothing);
+      expect(find.byTooltip('Workspace options'), findsOneWidget);
       expect(find.byTooltip('Refresh'), findsNothing);
       await tester.tap(find.text('Inventory 0'));
       expect(opened, ['org/ftc/inv-0']);
@@ -180,13 +181,14 @@ void main() {
       await pump(tester);
       await tester.tap(
         find.bySemanticsLabel(
-          'Switch place. Current: FTC ROBOTS in FTC ROBOTICS 2026',
+          'Switch workspace. Current: FTC ROBOTS in FTC ROBOTICS 2026',
         ),
       );
       await settle(tester);
       expect(find.text('FTC ROBOTS'), findsNWidgets(2));
       expect(find.text('My Team'), findsOneWidget);
-      expect(find.text('Editor · 1 inventory'), findsOneWidget);
+      expect(find.text('FTC ROBOTICS 2026 · 1 inventory'), findsOneWidget);
+      expect(find.text('Organization · Member'), findsNothing);
       await tester.tap(find.text('Personal'));
       await settle(tester);
       expect(session.current.isPersonal, true);
@@ -218,7 +220,7 @@ void main() {
     expect(tester.takeException(), null);
     await tester.tap(
       find.bySemanticsLabel(
-        'Switch place. Current: FTC ROBOTS in FTC ROBOTICS 2026',
+        'Switch workspace. Current: FTC ROBOTS in FTC ROBOTICS 2026',
       ),
     );
     await settle(tester);
@@ -231,6 +233,8 @@ void main() {
         () => session.select(const LastPlace.workspace('ftc')),
       );
       await pump(tester);
+      await tester.tap(find.byTooltip('Workspace options'));
+      await settle(tester);
       await tester.tap(find.text('People'));
       await settle(tester);
       expect(find.byType(PlaceAvatar), findsNWidgets(2));
@@ -267,11 +271,11 @@ void main() {
       expect(session.error, isNull);
       expect(session.data?.resource['owner_user_id'], 'actor-a');
       await tester.scrollUntilVisible(
-        find.byTooltip('Manage workspace'),
+        find.byTooltip('Workspace options'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.byTooltip('Manage workspace'));
+      await tester.tap(find.byTooltip('Workspace options'));
       await settle(tester);
       await tester.tap(find.text('Delete workspace'));
       await settle(tester);
@@ -294,7 +298,8 @@ void main() {
       () => session.select(const LastPlace.workspace('ftc')),
     );
     await pump(tester);
-    expect(find.byTooltip('Manage workspace'), findsNothing);
+    await tester.tap(find.byTooltip('Workspace options'));
+    await settle(tester);
     expect(find.text('Delete workspace'), findsNothing);
   });
 }

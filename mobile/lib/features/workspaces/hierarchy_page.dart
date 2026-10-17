@@ -59,6 +59,7 @@ class HierarchyPage extends StatefulWidget {
     this.panel,
     this.focusSearch = false,
     this.onOpenWorkspace,
+    this.organizationsOnly = false,
   });
   final ApiClient api;
   final VoidCallback? onClose;
@@ -68,6 +69,7 @@ class HierarchyPage extends StatefulWidget {
   final HierarchyPanel? panel;
   final bool focusSearch;
   final Future<void> Function(String id)? onOpenWorkspace;
+  final bool organizationsOnly;
   @override
   State<HierarchyPage> createState() => _HierarchyPageState();
 }
@@ -89,6 +91,8 @@ class _HierarchyPageState extends State<HierarchyPage>
   bool get _org => widget.level == HierarchyLevel.organization;
   bool get _workspace => widget.level == HierarchyLevel.workspace;
   bool get _inventory => widget.level == HierarchyLevel.inventory;
+  bool get _organizationsOnly =>
+      widget.level == HierarchyLevel.organizations && widget.organizationsOnly;
   Map<String, dynamic> get _resource => record(
     _data?[_org
         ? 'organization'
@@ -114,7 +118,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       ? '/inventories/$_id'
       : '/inventory-workspaces/$_id';
   String get _title => widget.level == HierarchyLevel.organizations
-      ? 'Your world'
+      ? (_organizationsOnly ? 'Organizations' : 'Your world')
       : (_resource['name'] ?? widget.name ?? 'Loading...').toString();
 
   @override
@@ -179,6 +183,10 @@ class _HierarchyPageState extends State<HierarchyPage>
           spaces = <Map<String, dynamic>>[];
       switch (widget.level) {
         case HierarchyLevel.organizations:
+          if (_organizationsOnly) {
+            data = await widget.api.collaboration('/organizations');
+            break;
+          }
           final results = await Future.wait([
             widget.api.collaboration('/organizations'),
             widget.api.collaboration('/inventory-workspaces'),
@@ -408,7 +416,10 @@ class _HierarchyPageState extends State<HierarchyPage>
           ),
         );
       }
-      if (mounted) await _load();
+      final removedCurrent =
+          method == 'DELETE' &&
+          (path == _base || path == '/teams/$_id' || path.endsWith('/leave'));
+      if (mounted && !removedCurrent) await _load();
       return true;
     } catch (error) {
       if (mounted) setState(() => _error = error);
@@ -555,17 +566,13 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _deleteOrganization() async {
-    final name = await _text(
-      'Delete organization',
-      label: 'Type the exact name: ${_resource['name']}',
+    final deleted = await confirmOrganizationDeletion(
+      context,
+      widget.api,
+      id: widget.id!,
+      name: _resource['name'].toString(),
     );
-    if (!mounted || name == null) return;
-    if (name != _resource['name']) {
-      _notice('The name does not match.');
-      return;
-    }
-    final ok = await _mutate(_base, method: 'DELETE', data: {'name': name});
-    if (mounted && ok) Navigator.pop(context);
+    if (mounted && deleted) Navigator.pop(context);
   }
 
   Future<void> _deleteWorkspace() async {
@@ -838,6 +845,65 @@ class _HierarchyPageState extends State<HierarchyPage>
     ),
   );
 
+  Future<void> _openOrganization(Map<String, dynamic> org) async {
+    final selected = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (page) => HierarchyPage(
+          api: widget.api,
+          onOpenInventory: widget.onOpenInventory,
+          level: HierarchyLevel.organization,
+          id: org['organization_id'].toString(),
+          name: org['name'].toString(),
+          onOpenWorkspace: (id) async => Navigator.of(page).pop(id),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (selected != null && widget.onOpenWorkspace != null) {
+      await widget.onOpenWorkspace!(selected);
+    } else {
+      await _load();
+    }
+  }
+
+  List<Widget> _organizationDirectory() {
+    final organizations = rows(
+      _data?['organizations'],
+    ).where((row) => _matches(row['name'])).toList();
+    return [
+      Align(
+        alignment: Alignment.centerRight,
+        child: OutlinedButton.icon(
+          onPressed: _busy ? null : () => _create('organization'),
+          icon: const Icon(Icons.add, size: 18),
+          label: const Text('New organization'),
+        ),
+      ),
+      const SizedBox(height: 16),
+      PlaceCardList(
+        children: [
+          for (final org in organizations)
+            PlaceRow(
+              title: org['name'].toString(),
+              subtitle: placeRole(org['role'].toString()),
+              leading: const Icon(
+                Icons.business_outlined,
+                size: 20,
+                color: PlaceTokens.dim,
+              ),
+              onTap: () => _openOrganization(org),
+            ),
+          if (organizations.isEmpty)
+            PlaceRow(
+              title: _query.isEmpty
+                  ? 'No organizations yet'
+                  : 'No matching organizations',
+            ),
+        ],
+      ),
+    ];
+  }
+
   List<Widget> _organizationContents() {
     final workspaces = rows(
       _data?['workspaces'],
@@ -1052,7 +1118,9 @@ class _HierarchyPageState extends State<HierarchyPage>
           backgroundColor: PlaceTokens.background,
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          toolbarHeight: 32 + MediaQuery.textScalerOf(context).scale(24) * 2,
+          toolbarHeight: MediaQuery.textScalerOf(context).scale(24) > 36
+              ? 96
+              : 64,
           title: Text(
             widget.panel == HierarchyPanel.people
                 ? 'People'
@@ -1071,7 +1139,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                     _inventory && _resource['can_rename'] == true))
               _menu({
                 'Rename': () => _rename(),
-                if (_org && _owner) 'Delete': _deleteOrganization,
+                if (_org && _owner) 'Delete organization': _deleteOrganization,
                 if (_workspace && _owner && !_personal)
                   'Delete workspace': _deleteWorkspace,
               }),
@@ -1097,7 +1165,9 @@ class _HierarchyPageState extends State<HierarchyPage>
                     autofocus: widget.focusSearch,
                     style: PlaceTokens.rowTitle,
                     decoration: InputDecoration(
-                      hintText: _org
+                      hintText: _organizationsOnly
+                          ? 'Search organizations'
+                          : _org
                           ? (_organizationPeople
                                 ? 'Search people'
                                 : 'Search workspaces')
@@ -1124,6 +1194,8 @@ class _HierarchyPageState extends State<HierarchyPage>
                 ],
                 ...(_org
                     ? _organizationContents()
+                    : _organizationsOnly
+                    ? _organizationDirectory()
                     : widget.focusSearch
                     ? _inventorySearchContents()
                     : _managementContents()),
@@ -1545,7 +1617,7 @@ class _HierarchyPageState extends State<HierarchyPage>
 
   @override
   Widget build(BuildContext context) =>
-      widget.level != HierarchyLevel.organizations
+      widget.level != HierarchyLevel.organizations || _organizationsOnly
       ? _placeDirectoryPage()
       : Scaffold(
           appBar: AppBar(

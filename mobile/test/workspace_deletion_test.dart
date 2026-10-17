@@ -101,4 +101,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(deleted, false);
   });
+  testWidgets(
+    'organization needs its exact name and a matching deletion receipt',
+    (tester) async {
+      fixture.respond = (_) => {'deleted': true, 'organization_id': 'org'};
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  deleted = await confirmOrganizationDeletion(
+                    context,
+                    fixture.api,
+                    id: 'org',
+                    name: 'My organization',
+                  );
+                },
+                child: const Text('Manage organization'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Manage organization'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Remove its workspaces first'),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextFormField), 'My organization');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete organization'));
+      await tester.pumpAndSettle();
+      expect(fixture.requests.single.path, '/organizations/org');
+      expect(fixture.requests.single.data, {'name': 'My organization'});
+      expect(deleted, true);
+    },
+  );
 }

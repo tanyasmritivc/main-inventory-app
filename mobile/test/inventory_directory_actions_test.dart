@@ -90,6 +90,73 @@ void main() {
     expect(fixture.requests, isEmpty);
   });
   testWidgets(
+    'content blocker keeps the name and permits explicit purge without restarting',
+    (tester) async {
+      fixture.status = 409;
+      fixture.respond = (_) => {
+        'detail': 'This inventory contains saved records.',
+      };
+      await mount(tester);
+      await tester.tap(find.text('Delete inventory'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Hardware');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete inventory'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'Hardware',
+      );
+      expect(refreshed, 0);
+      fixture.status = 200;
+      fixture.respond = (_) => {'deleted': true, 'inventory_id': 'hardware'};
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete inventory'));
+      await tester.pumpAndSettle();
+      expect(fixture.requests.last.data, {
+        'name': 'Hardware',
+        'delete_contents': true,
+      });
+      expect(refreshed, 1);
+      expect(find.byType(AlertDialog), findsNothing);
+    },
+  );
+  for (final status in [501, 502]) {
+    testWidgets(
+      '$status keeps deletion choices and never reports success or retries',
+      (tester) async {
+        fixture.status = status;
+        fixture.respond = (_) => {
+          'detail': 'Could not confirm deletion. Refresh before retrying.',
+        };
+        await mount(tester);
+        await tester.tap(find.text('Delete inventory'));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextFormField), 'Hardware');
+        await tester.tap(find.byType(CheckboxListTile));
+        await tester.pump();
+        await tester.tap(find.widgetWithText(TextButton, 'Delete inventory'));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          'Hardware',
+        );
+        expect(
+          tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+          true,
+        );
+        expect(fixture.requests, hasLength(1));
+        expect(refreshed, 0);
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+      },
+    );
+  }
+  testWidgets(
     'content deletion is explicitly selected and sent with confirmation',
     (tester) async {
       await mount(tester);

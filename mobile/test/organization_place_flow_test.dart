@@ -143,7 +143,12 @@ void main() {
   }
 
   Future<void> organization(WidgetTester tester) async {
-    await tester.tap(find.bySemanticsLabel('Switch place. Current: Personal'));
+    await tester.tap(
+      find.bySemanticsLabel('Switch workspace. Current: Personal'),
+    );
+    await settle(tester);
+    expect(find.text('Acme'), findsNothing);
+    await tester.tap(find.text('Organizations'));
     await settle(tester);
     await tester.tap(find.text('Acme'));
     await settle(tester);
@@ -165,6 +170,8 @@ void main() {
       expect(session.current, const LastPlace.workspace('ws'));
       expect(await session.store.read(), const LastPlace.workspace('ws'));
       for (final tool in ['Tasks', 'Files', 'People', 'Activity']) {
+        await tester.tap(find.byTooltip('Workspace options'));
+        await settle(tester);
         await tester.tap(find.text(tool));
         await settle(tester);
         expect(find.text('Retry'), findsNothing);
