@@ -62,6 +62,7 @@ USAGE_RPCS = frozenset((
     'increment_usage_count', 'increment_chat_usage', 'increment_scan_usage',
     'increment_team_chat_usage', 'increment_team_scan_usage', 'increment_team_import_usage',
 ))
+CATALOG_RPCS = frozenset(('findez_save_community_catalog', 'findez_link_verified_barcode_alias'))
 
 
 class InventoryClient:
@@ -93,7 +94,9 @@ class InventoryClient:
 
     def rpc(self, name, params):
         params = dict(params)
-        if name in USAGE_RPCS:
+        if name in USAGE_RPCS or name in CATALOG_RPCS:
+            # Catalog transactions own global provenance checks, independently
+            # of the selected inventory. No other global RPC is permitted here.
             return self.raw.rpc(name, params)
         self.require_editor('items')
         if name == 'resolve_capture_review':

@@ -1,3 +1,14 @@
+# October 17 shared catalog writes are server-owned
+
+Client JWTs cannot insert, update, delete or truncate the shared catalog or barcode
+aliases, even when signed in. Retain signed-in catalog reads. Ordinary backend
+learning may only create/correct community records through the service-only
+transaction; it cannot promote verification or overwrite verified manufacturer
+data. Confirmed aliases require an existing verified target and cannot steal a
+canonical or alias code, including UPC/EAN/GTIN equivalents. Both transactions
+take the same normalized barcode lock. Trusted manufacturer maintenance remains
+an explicit server/admin operation. Never restore public write grants on rollback.
+
 # October 16 capture progress owns its route
 
 Never dismiss an upload's root dialog by popping the caller's nested navigator.
