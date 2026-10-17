@@ -1,3 +1,18 @@
+# October 17 setup keeps the existing auth and collaboration owners
+
+The interactive mobile world is one route with stateful steps and a persistent
+canvas model. It replaces first-run setup; optional questionnaire and inventory
+tutorials remain separate. Follow the user's later provider-first auth reference,
+not the older package's auth-layout freeze. Never put a placeholder into the
+organization controller. Selection advances without Continue. Team and personal
+setup create real records only after auth, through the existing authorized APIs.
+Bind drafts/receipts to one account before writes, save each returned ID before
+continuing, and reconcile unknown outcomes rather than blindly repeating POSTs.
+The existing APIs do not support server-level idempotency. Preserve an honest
+unresolved state instead of creating duplicates. Keep the original auth gate
+and composite its handoff, avoiding a second auth navigation owner. Do not reset
+saved appearance choices; first-launch fallback remains light.
+
 # October 17 shared catalog writes are server-owned
 
 Client JWTs cannot insert, update, delete or truncate the shared catalog or barcode

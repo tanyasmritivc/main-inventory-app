@@ -32,7 +32,7 @@ import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/profile_hub_page.dart';
-import '../onboarding/onboarding_page.dart';
+import '../onboarding/setup_questions_page.dart';
 import '../onboarding/onboarding_answers.dart';
 import '../profile/terms_of_service_page.dart';
 import '../review/review_queue_page.dart';
@@ -448,7 +448,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _openTour() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (tourContext) => OnboardingPage(
+        builder: (tourContext) => SetupQuestionsPage(
           api: widget.api,
           isReplay: true,
           onFinished: () => Navigator.of(tourContext).pop(),

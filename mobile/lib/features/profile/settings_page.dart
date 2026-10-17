@@ -13,7 +13,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/app_gradient_background.dart';
-import '../onboarding/onboarding_page.dart';
+import '../onboarding/setup_questions_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -339,7 +339,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     context,
                     MaterialPageRoute(
                       builder: (tourContext) => AppGradientBackground(
-                        child: OnboardingPage(
+                        child: SetupQuestionsPage(
                           api: widget.api,
                           isReplay: true,
                           onFinished: () => Navigator.of(tourContext).pop(),

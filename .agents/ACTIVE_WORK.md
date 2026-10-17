@@ -1,3 +1,22 @@
+# October 17 interactive mobile setup
+
+First-run onboarding now builds a persistent native canvas world. Team/personal
+choices are local until auth, then an account-bound provisioner reuses existing
+create APIs and opens the new inventory dashboard. Selection steps advance on
+tap; typed names use Done; the empty organization hint is e.g. FindEZ AI.
+Personal recap remains Personal / Only you. Provider-first auth follows the
+user's later Wispr reference; existing auth handlers are unchanged. Optional
+settings questionnaire is preserved separately. Default appearance is already
+light and explicit stored choices remain honored. No backend/web/schema or
+inventory-dashboard/Space interior changes. Migration 053 remains separately
+pending. Baseline 466 tests; final full Flutter suite 506 pass, final focused
+motion/onboarding 20 pass after a palette-only correction; analysis clean.
+Both iPhone 16e paths recorded at normal speed, keyboard/restart/back/custom and
+auth variants visually reviewed. Debug overlay worst UI 59.89 ms / raster 28.804 ms;
+strict 16 ms and physical OAuth/email/VoiceOver acceptance are not claimed.
+Release 78 is prepared for signed production upload. Full file list, motion audit,
+API retry limits and comparison artifacts: design/onboarding-a/IMPLEMENTATION.md.
+
 # October 17 catalog permission hardening
 
 Active lane: fix/catalog-write-permissions-20261017, starting clean 16eb6a1.

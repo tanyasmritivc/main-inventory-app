@@ -16,11 +16,11 @@ import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
 import 'core/ui/findez_wordmark.dart';
-import 'features/auth/auth_page.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
+import 'features/onboarding/world_setup_gate.dart';
 import 'features/workspaces/inventory_context_host.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
 import 'features/sharing/invitation_host.dart';
@@ -480,7 +480,7 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: InventoryContextHost(
+            child: WorldSetupGate(
               key: ValueKey(session.user.id),
               api: widget.api,
             ),
@@ -531,7 +531,7 @@ class _AuthGateState extends State<LaunchAuthGate> {
               if (!completed) {
                 return OnboardingPage(onFinished: _bump);
               }
-              return AuthPage(onAuthChanged: _bump);
+              return WorldAuthEntry(onAuthChanged: _bump);
             },
           ),
         );

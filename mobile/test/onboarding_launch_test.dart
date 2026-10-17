@@ -16,6 +16,7 @@ import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
+import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/sharing/invitation_host.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/main.dart';
@@ -203,23 +204,26 @@ void main() {
     expect(find.byType(MainShell), findsNothing);
     expect(api.reads, 0);
     final choices = [
-      'setup-use-household',
-      'setup-inventory-tools',
-      'setup-goal-find_items',
-      'setup-collaboration-solo',
+      'world-path-personal',
+      'world-chip-Home',
+      'world-chip-Tools',
     ];
-    for (var step = 0; step < 4; step++) {
-      await tester.ensureVisible(find.byKey(Key(choices[step])));
-      await tester.tap(find.byKey(Key(choices[step])));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onboarding-next')));
+    for (final choice in choices) {
+      await tester.ensureVisible(find.byKey(Key(choice)));
+      await tester.tap(find.byKey(Key(choice)));
       await tester.pumpAndSettle();
     }
+    expect(find.text('This is your world.'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('onboarding-next')));
+    await tester.tap(find.byKey(const Key('onboarding-next')));
+    await tester.pumpAndSettle();
     expect(find.byType(OnboardingPage), findsNothing);
     expect(find.byType(AuthPage), findsOneWidget);
     expect(find.byType(MainShell), findsNothing);
     expect(api.reads, 0);
     expect(await OnboardingPrefs.isCompleted(), isTrue);
+    expect((await WorldSetupStore.draft())!.ready, isTrue);
+    expect(find.text('Your dashboard is ready'), findsOneWidget);
     expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
   });
 

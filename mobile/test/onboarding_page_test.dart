@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/ui/frosted_surface.dart';
-import 'package:mobile/features/onboarding/onboarding_page.dart';
+import 'package:mobile/features/onboarding/setup_questions_page.dart';
 import 'package:mobile/features/onboarding/onboarding_answers.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 
@@ -90,7 +90,7 @@ Widget setup({
       ),
       child: child!,
     ),
-    home: OnboardingPage(
+    home: SetupQuestionsPage(
       api: api,
       isReplay: replay,
       onFinished: done,

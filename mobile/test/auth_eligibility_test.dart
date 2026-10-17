@@ -12,6 +12,12 @@ void main() {
           home: const AuthPage(),
         ),
       );
+      await tester.ensureVisible(find.byKey(const Key('auth-more-options')));
+      await tester.tap(find.byKey(const Key('auth-more-options')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('auth-email-option')));
+      await tester.tap(find.byKey(const Key('auth-email-option')));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('New here? Create account'));
       await tester.tap(find.text('New here? Create account'));
       await tester.pumpAndSettle();

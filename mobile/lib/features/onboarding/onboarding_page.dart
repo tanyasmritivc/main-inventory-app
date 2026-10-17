@@ -1,617 +1,1066 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../core/api_client.dart';
-import '../../core/app_theme.dart';
-import '../../core/ui/app_text.dart';
-import 'onboarding_answers.dart';
-import 'onboarding_prefs.dart';
-import 'onboarding_visuals.dart';
 
-/// Optional four-question setup. No sample inventory or automatic Team writes.
+import '../../core/ui/findez_wordmark.dart';
+import '../auth/auth_page.dart';
+import 'onboarding_prefs.dart';
+import 'pending_world.dart';
+import 'world_scene.dart';
+import 'world_transitions.dart';
+import 'world_motion.dart' show phase;
+
+const worldBackground = Color(0xFFF7F7F6);
+const worldInk = Color(0xFF111112);
+const worldSecondary = Color(0xFF6B6965);
+const worldHint = Color(0xFF8A8782);
+const worldOrange = Color(0xFFE8590C);
+const worldBorder = Color(0xFFE3E0DA);
+
+ThemeData worldTheme(BuildContext context) => Theme.of(context).copyWith(
+  brightness: Brightness.light,
+  scaffoldBackgroundColor: worldBackground,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: worldOrange,
+    brightness: Brightness.light,
+  ),
+  textTheme: Theme.of(
+    context,
+  ).textTheme.apply(fontFamily: 'PlaceGeist', bodyColor: worldInk),
+  textSelectionTheme: const TextSelectionThemeData(
+    cursorColor: worldOrange,
+    selectionColor: Color(0x44E8590C),
+    selectionHandleColor: worldOrange,
+  ),
+  filledButtonTheme: const FilledButtonThemeData(),
+  textButtonTheme: const TextButtonThemeData(),
+  outlinedButtonTheme: const OutlinedButtonThemeData(),
+);
+
+/// First-run setup advances from real selections and keyboard Done actions.
+/// Local progress is saved before leaving each step.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
     this.onFinished,
+    this.onExistingAccount,
     this.isReplay = false,
-    this.completionWriter,
-    this.api,
+    this.initialSetup,
   });
-  final VoidCallback? onFinished;
+  final VoidCallback? onFinished, onExistingAccount;
   final bool isReplay;
-  final ApiClient? api;
   @visibleForTesting
-  final Future<void> Function()? completionWriter;
+  final PendingWorld? initialSetup;
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
-  final _pages = PageController();
-  final _useOther = TextEditingController();
-  final _inventoryOther = TextEditingController();
-  int _step = 0;
-  String? _useCase, _goal, _collaboration;
-  final Set<String> _types = {};
-  bool _finishing = false,
-      _loading = false,
-      _completed = false,
-      _moving = false;
+class _OnboardingPageState extends State<OnboardingPage>
+    with TickerProviderStateMixin {
+  PendingWorld _setup = const PendingWorld();
+  final _organization = TextEditingController();
+  final _custom = TextEditingController();
+  final _focus = FocusNode();
+  late final AnimationController _intro, _introFade, _exit;
+  final _canvasKey = GlobalKey();
+  final _worldKey = GlobalKey();
+  GlobalKey _personalMiniKey = GlobalKey(), _teamMiniKey = GlobalKey();
+  final _hiddenMini = ValueNotifier<String?>(null);
+  WorldCamera? _morphOrigin;
+  bool _goingBack = false, _leavingIntro = false;
+  Timer? _introTimer;
+  bool _loaded = false, _busy = false, _customizing = false, _exiting = false;
   String? _error;
-  String? _owner;
-
-  static const _uses = {
-    'household': 'Home',
-    'business': 'Business',
-    'laboratory': 'Lab or research',
-    'education': 'School or education',
-    'robotics': 'Robotics',
-    'manufacturing': 'Manufacturing',
-    'warehouse': 'Warehouse or logistics',
-    'other': 'Other',
-  };
-  static const _inventory = {
-    'tools': 'Tools',
-    'equipment': 'Equipment',
-    'parts': 'Parts and components',
-    'supplies': 'Supplies',
-    'products': 'Products or stock',
-    'household_items': 'Household items',
-    'other': 'Other',
-  };
-  static const _goals = {
-    'find_items': 'Find things faster',
-    'identify_items': 'Identify items from photos',
-    'track_stock': 'Keep track of quantities',
-    'organize_spaces': 'Organize my Spaces',
-    'share_inventory': 'Share inventory with others',
-  };
-
-  bool get _valid => switch (_step) {
-    0 =>
-      _useCase != null &&
-          (_useCase != 'other' || _useOther.text.trim().isNotEmpty),
-    1 =>
-      _types.isNotEmpty &&
-          (!_types.contains('other') || _inventoryOther.text.trim().isNotEmpty),
-    2 => _goal != null,
-    _ => _collaboration != null,
-  };
-  bool get _reduceMotion =>
-      MediaQuery.disableAnimationsOf(context) ||
-      MediaQuery.accessibleNavigationOf(context);
+  double _edgeDistance = 0;
+  bool _edge = false;
+  late ThemeData _theme;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _theme = worldTheme(context);
+  }
 
   @override
   void initState() {
     super.initState();
-    _owner = widget.api?.accountId;
-    if (widget.isReplay && _owner != null) _loadAnswers();
+    _intro = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _introFade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+      value: 1,
+    );
+    _exit = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _focus.addListener(() {
+      if (mounted) setState(() {});
+    });
+    unawaited(_restore());
   }
 
-  Future<void> _loadAnswers() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _restore() async {
     try {
-      final cached = await OnboardingAnswerStore.cachedFor(_owner!);
-      if (cached != null && mounted && widget.api!.accountId == _owner) {
-        _apply(cached);
+      final saved =
+          widget.initialSetup ??
+          (widget.isReplay ? null : await WorldSetupStore.draft()) ??
+          const PendingWorld();
+      if (!mounted) return;
+      _setup = saved.step == WorldStep.auth
+          ? saved.copyWith(step: WorldStep.world)
+          : saved;
+      _organization.text = _setup.orgName;
+      setState(() => _loaded = true);
+      if (_setup.step == WorldStep.intro) {
+        _intro.forward();
+        _introTimer = Timer(
+          const Duration(seconds: 3),
+          () => unawaited(_leaveIntro()),
+        );
       }
-      final json = await widget.api!.getOnboardingAnswers();
-      if (!mounted || widget.api!.accountId != _owner) return;
-      if (json != null) _apply(OnboardingAnswers.fromJson(json));
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _error =
-              'Could not load your saved answers. You can retry or enter them again.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  void _apply(OnboardingAnswers a) => setState(() {
-    _useCase = a.useCase;
-    _useOther.text = a.useCaseOther ?? '';
-    _types
-      ..clear()
-      ..addAll(a.inventoryTypes);
-    _inventoryOther.text = a.inventoryOther ?? '';
-    _goal = a.primaryGoal;
-    _collaboration = a.collaboration;
-  });
-  Future<void> _go(int index) async {
-    if (_finishing || _moving || index < 0 || index > 3) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    if (_reduceMotion) {
-      _pages.jumpToPage(index);
-    } else {
-      setState(() => _moving = true);
-      try {
-        await _pages.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeInOutCubic,
-        );
-      } finally {
-        if (mounted) setState(() => _moving = false);
+        setState(() => _error = 'Your setup could not be loaded. Try again.');
       }
     }
   }
 
-  Future<void> _finish({bool skip = false}) async {
-    if (_finishing || (!skip && !_valid)) return;
-    setState(() {
-      _finishing = true;
-      _error = null;
-    });
-    FocusManager.instance.primaryFocus?.unfocus();
+  Future<bool> _persist(PendingWorld value) async {
     try {
-      if (!skip) {
-        final answers = OnboardingAnswers(
-          useCase: _useCase!,
-          inventoryTypes: _types.toList(),
-          primaryGoal: _goal!,
-          collaboration: _collaboration!,
-          useCaseOther: _useCase == 'other' ? _useOther.text.trim() : null,
-          inventoryOther: _types.contains('other')
-              ? _inventoryOther.text.trim()
-              : null,
-        );
-        if (widget.api != null && _owner != null) {
-          if (widget.api!.accountId != _owner) {
-            throw StateError('Account changed');
-          }
-          await OnboardingAnswerStore.saveDraft(answers, accountId: _owner);
-          final synced = await OnboardingAnswerStore.sync(widget.api!);
-          if (!synced || widget.api!.accountId != _owner) {
-            throw StateError('Setup was not saved');
-          }
-        } else if (!widget.isReplay) {
-          await OnboardingAnswerStore.saveDraft(answers);
-        }
-      }
-      if (!widget.isReplay) {
-        await (widget.completionWriter?.call() ??
-            OnboardingPrefs.setCompleted(true));
-      }
+      if (!widget.isReplay) await WorldSetupStore.saveDraft(value);
+      if (mounted && _error != null) setState(() => _error = null);
+      return true;
+    } catch (_) {
       if (mounted) {
-        setState(() => _completed = true);
-        widget.onFinished?.call();
+        setState(() => _error = 'Your setup could not be saved. Try again.');
       }
+      return false;
+    }
+  }
+
+  void _answer(PendingWorld value) {
+    setState(() => _setup = value);
+    unawaited(_persist(value));
+  }
+
+  Future<void> _select(PendingWorld value) async {
+    if (_busy) return;
+    _goingBack = false;
+    if (_setup.step == WorldStep.choose) {
+      final icon =
+          (value.isTeam ? _teamMiniKey : _personalMiniKey).currentContext
+                  ?.findRenderObject()
+              as RenderBox?;
+      final canvas =
+          _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+      if (icon != null && canvas != null) {
+        final origin = canvas.globalToLocal(
+          icon.localToGlobal(icon.size.center(Offset.zero)),
+        );
+        _morphOrigin = WorldCamera(origin.dx, origin.dy, .36);
+      }
+    }
+    _answer(value);
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _busy = true);
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+      if (!mounted) return;
+      setState(() => _busy = false);
+    }
+    await _next();
+  }
+
+  Future<void> _go(WorldStep next) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final value = _setup.copyWith(step: next);
+    if (await _persist(value) && mounted) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() {
+        if (_setup.step == WorldStep.choose && next != WorldStep.choose) {
+          _hiddenMini.value = _setup.path;
+        } else if (next == WorldStep.choose) {
+          _hiddenMini.value = null;
+        }
+        _setup = value;
+        _customizing = false;
+      });
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _leaveIntro() async {
+    if (!_loaded || _setup.step != WorldStep.intro || _leavingIntro) return;
+    _leavingIntro = true;
+    _introTimer?.cancel();
+    if (!MediaQuery.disableAnimationsOf(context)) await _introFade.reverse();
+    if (!mounted) return;
+    await _go(WorldStep.choose);
+  }
+
+  Future<void> _next() async {
+    if (_busy || !_valid) return;
+    _goingBack = false;
+    final next = switch (_setup.step) {
+      WorldStep.choose =>
+        _setup.isTeam ? WorldStep.organization : WorldStep.workspace,
+      WorldStep.organization => WorldStep.workspace,
+      WorldStep.workspace => WorldStep.inventory,
+      WorldStep.inventory => WorldStep.world,
+      _ => WorldStep.auth,
+    };
+    if (next != WorldStep.auth) {
+      await _go(next);
+      return;
+    }
+    setState(() => _busy = true);
+    final value = _setup.copyWith(step: WorldStep.auth);
+    if (!await _persist(value) || !mounted) {
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    try {
+      if (!widget.isReplay) await OnboardingPrefs.setCompleted(true);
+      if (!mounted) return;
+      if (widget.isReplay) {
+        widget.onFinished?.call();
+        return;
+      }
+      setState(() => _exiting = true);
+      if (!MediaQuery.disableAnimationsOf(context)) await _exit.forward();
+      if (mounted) widget.onFinished?.call();
     } catch (_) {
       if (mounted) {
         setState(() {
-          _finishing = false;
-          _error =
-              'Could not save your setup. Please try again. Your answers are still here.';
+          _busy = false;
+          _error = 'Your setup could not be saved. Try again.';
         });
       }
     }
   }
 
+  Future<void> _existing() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      if (!widget.isReplay) {
+        await WorldSetupStore.skipDraft();
+        await OnboardingPrefs.setCompleted(true);
+      }
+      if (mounted) (widget.onExistingAccount ?? widget.onFinished)?.call();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = 'Your setup could not be saved. Try again.';
+        });
+      }
+    }
+  }
+
+  void _back() {
+    if (_busy || _exiting) return;
+    if (_customizing) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _customizing = false);
+      return;
+    }
+    final previous = switch (_setup.step) {
+      WorldStep.organization => WorldStep.choose,
+      WorldStep.workspace =>
+        _setup.isTeam ? WorldStep.organization : WorldStep.choose,
+      WorldStep.inventory => WorldStep.workspace,
+      WorldStep.world => WorldStep.inventory,
+      _ => null,
+    };
+    if (previous != null) {
+      _goingBack = true;
+      unawaited(_go(previous));
+    }
+  }
+
+  bool get _valid => switch (_setup.step) {
+    WorldStep.choose => _setup.path != null,
+    WorldStep.organization => PendingWorld.validName(_setup.orgName, 60),
+    WorldStep.workspace =>
+      !_customizing && PendingWorld.validName(_setup.workspacePurpose, 40),
+    WorldStep.inventory =>
+      !_customizing && PendingWorld.validName(_setup.inventoryName, 40),
+    WorldStep.world => true,
+    _ => false,
+  };
+  String get _title => switch (_setup.step) {
+    WorldStep.choose => "Who's FindEZ for?",
+    WorldStep.organization => 'Name your\norganization',
+    WorldStep.workspace => "What's this\nworkspace for?",
+    WorldStep.inventory => 'Create your first\ninventory',
+    _ => 'This is your world.',
+  };
+  String get _subtitle => switch (_setup.step) {
+    WorldStep.choose => 'Pick one to start. You can change it later.',
+    WorldStep.organization => 'Use the name of your company, lab or team.',
+    WorldStep.workspace =>
+      _setup.isTeam
+          ? 'Each purpose gets its own dashboard.'
+          : 'Your personal space. Only you can see it.',
+    WorldStep.inventory =>
+      _setup.isTeam
+          ? 'Group your things by team, like hardware or software.'
+          : 'Group your things, like tools or electronics.',
+    _ =>
+      'Add more workspaces and inventories anytime. Spaces like a parts wall go inside each inventory.',
+  };
   @override
   void dispose() {
-    _pages.dispose();
-    _useOther.dispose();
-    _inventoryOther.dispose();
+    _introTimer?.cancel();
+    _intro.dispose();
+    _introFade.dispose();
+    _hiddenMini.dispose();
+    _exit.dispose();
+    _organization.dispose();
+    _custom.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_finishing && (widget.isReplay || _step == 0),
-    onPopInvokedWithResult: (didPop, _) {
-      if (!didPop) _go(_step - 1);
-    },
-    child: Scaffold(
-      body: SetupBackdrop(
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                    child: Row(
-                      children: [
-                        if (_step > 0)
-                          IconButton(
-                            tooltip: 'Previous step',
-                            onPressed: _finishing || _moving
-                                ? null
-                                : () => _go(_step - 1),
-                            icon: const Icon(Icons.arrow_back_rounded),
+  Widget build(BuildContext context) => Theme(
+    data: _theme,
+    child: Builder(
+      builder: (context) => Scaffold(
+        backgroundColor: worldBackground,
+        resizeToAvoidBottomInset: false,
+        body: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _back();
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (details) {
+              _edge = details.globalPosition.dx <= 24;
+              _edgeDistance = 0;
+            },
+            onHorizontalDragUpdate: (details) {
+              if (_edge) _edgeDistance += details.delta.dx;
+            },
+            onHorizontalDragEnd: (details) {
+              if (_edge &&
+                  (_edgeDistance > 60 ||
+                      (details.primaryVelocity ?? 0) > 300)) {
+                _back();
+              }
+              _edge = false;
+            },
+            child: !_loaded
+                ? Center(
+                    child: _error == null
+                        ? const CircularProgressIndicator(color: worldInk)
+                        : TextButton(onPressed: _restore, child: Text(_error!)),
+                  )
+                : _setup.step == WorldStep.intro
+                ? _introView(context)
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final reduced = MediaQuery.disableAnimationsOf(context);
+                      final scaledText =
+                          MediaQuery.textScalerOf(context).scale(15) / 15;
+                      final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+                      if (scaledText > 1.35 ||
+                          constraints.maxHeight < 700 ||
+                          constraints.maxWidth < 350) {
+                        return _flowLayout(
+                          context,
+                          constraints.maxWidth,
+                          reduced,
+                          keyboard,
+                        );
+                      }
+                      final scale = constraints.maxWidth / 390;
+                      return FittedBox(
+                        alignment: Alignment.topLeft,
+                        fit: BoxFit.fill,
+                        child: SizedBox(
+                          key: _canvasKey,
+                          width: 390,
+                          height: constraints.maxHeight / scale,
+                          child: _referenceLayout(
+                            context,
+                            390,
+                            constraints.maxHeight / scale,
+                            reduced,
+                            keyboard / scale,
                           ),
-                        const Spacer(),
-                        IconButton(
-                          key: const Key('onboarding-skip'),
-                          tooltip: widget.isReplay
-                              ? 'Close setup'
-                              : 'Skip setup',
-                          onPressed: _finishing
-                              ? null
-                              : () => _finish(skip: true),
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(44, 44),
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ),
+    ),
+  );
+  Widget _introView(BuildContext context) {
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      button: true,
+      label: 'FindEZ. Everything you own, remembered. Continue to setup.',
+      child: GestureDetector(
+        onTap: _leaveIntro,
+        behavior: HitTestBehavior.opaque,
+        child: FadeTransition(
+          opacity: _introFade,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _IntroPainter(_intro, reduced)),
+                ),
+              ),
+              Align(
+                alignment: const Alignment(0, -.04),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _intro,
+                      child: const FindEZWordmark(width: 208),
+                      builder: (context, child) {
+                        final progress = reduced
+                            ? 1.0
+                            : Curves.easeOutCubic.transform(
+                                phase(_intro.value * 3000, 300, 800),
+                              );
+                        return Opacity(
+                          opacity: progress,
+                          child: Transform.translate(
+                            offset: Offset(0, 18 * (1 - progress)),
+                            child: child,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    AnimatedBuilder(
+                      animation: _intro,
+                      child: const Text(
+                        'Everything you own, remembered.',
+                        style: TextStyle(
+                          fontFamily: 'PlaceGeist',
+                          fontSize: 16,
+                          color: worldSecondary,
+                        ),
+                      ),
+                      builder: (context, child) => Opacity(
+                        opacity: reduced
+                            ? 1
+                            : phase(_intro.value * 3000, 1000, 600),
+                        child: child,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _heading(bool reduced) => Column(
+    key: ValueKey(_setup.step),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Semantics(
+        header: true,
+        child: Text(
+          _title,
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 34,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -1.19,
+            height: 1.04,
+            color: worldInk,
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Text(
+        _subtitle,
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 15,
+          height: 1.45,
+          color: worldSecondary,
+        ),
+      ),
+    ],
+  );
+  Widget _referenceLayout(
+    BuildContext context,
+    double width,
+    double height,
+    bool reduced,
+    double keyboard,
+  ) {
+    final naming = _setup.step == WorldStep.organization || _customizing;
+    final focused = naming && _focus.hasFocus;
+    final inputTop = math.min(height - 219, height - keyboard - 102);
+    final camera = _exiting
+        ? const WorldCamera(150, 120, .12)
+        : focused
+        ? WorldCamera(195, math.min(360, inputTop - 90), .6)
+        : switch (_setup.step) {
+            WorldStep.choose =>
+              _morphOrigin ?? const WorldCamera(292, 474, .36),
+            WorldStep.organization => const WorldCamera(195, 500, .8),
+            WorldStep.workspace => const WorldCamera(195, 490, .9),
+            WorldStep.inventory => const WorldCamera(195, 480, 1),
+            _ => const WorldCamera(112, 520, .62),
+          };
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: WorldScene(
+              key: _worldKey,
+              setup: _exiting ? _setup.copyWith(step: WorldStep.auth) : _setup,
+              camera: camera,
+              morphFrom: _morphOrigin,
+              reduced: reduced,
+              focused: focused,
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: Duration(milliseconds: reduced ? 200 : 350),
+            reverseDuration: Duration(milliseconds: reduced ? 200 : 350),
+            layoutBuilder: (current, previous) => Stack(
+              fit: StackFit.expand,
+              children: [
+                ...previous.map((child) => IgnorePointer(child: child)),
+                if (current != null) current,
+              ],
+            ),
+            transitionBuilder: (child, animation) => AnimatedBuilder(
+              animation: animation,
+              child: child,
+              builder: (context, child) =>
+                  animation.status == AnimationStatus.reverse
+                  ? Opacity(
+                      opacity: Curves.easeInOutCubic.transform(animation.value),
+                      child: child,
+                    )
+                  : child!,
+            ),
+            child: _exiting
+                ? const SizedBox.shrink(key: ValueKey('exiting'))
+                : Stack(
+                    key: ValueKey(_setup.step),
+                    children: [
+                      Positioned(
+                        top: 100,
+                        left: 24,
+                        right: 24,
+                        child: WorldEntrance(
+                          key: ValueKey('${_setup.step}-heading'),
+                          duration: _setup.step == WorldStep.choose ? 600 : 500,
+                          backwards: _goingBack,
+                          child: _heading(reduced),
+                        ),
+                      ),
+                      if (_setup.step == WorldStep.choose) ...[
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 250,
+                          child: WorldEntrance(
+                            delay: 250,
+                            duration: 600,
+                            distance: 26,
+                            child: _tile('personal'),
+                          ),
+                        ),
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 396,
+                          child: WorldEntrance(
+                            delay: 400,
+                            duration: 600,
+                            distance: 26,
+                            child: _tile('team'),
+                          ),
+                        ),
+                        const Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 548,
+                          child: WorldEntrance(
+                            delay: 700,
+                            child: Text(
+                              'Starting solo? You can add an organization anytime.',
+                              style: TextStyle(
+                                fontFamily: 'PlaceGeist',
+                                fontSize: 13.5,
+                                height: 1.4,
+                                color: worldHint,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: 28,
+                          child: WorldPress(
+                            child: TextButton(
+                              key: const Key('onboarding-skip'),
+                              onPressed: _busy ? null : _existing,
+                              child: const Text(
+                                'I already have an account',
+                                style: TextStyle(
+                                  fontFamily: 'PlaceGeist',
+                                  fontSize: 15,
+                                  color: worldSecondary,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
-                    child: Semantics(
-                      label: 'Question ${_step + 1} of 4',
-                      child: ExcludeSemantics(
-                        child: Row(
-                          children: List.generate(
-                            4,
-                            (index) => Expanded(
-                              child: AnimatedContainer(
-                                duration: Duration(
-                                  milliseconds: _reduceMotion ? 0 : 320,
-                                ),
-                                curve: Curves.easeInOutCubic,
-                                height: 4,
-                                margin: EdgeInsets.only(
-                                  right: index == 3 ? 0 : 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: index <= _step
-                                      ? AppTheme.accentForeground(context)
-                                      : AppTheme.textMuted(
-                                          context,
-                                        ).withValues(alpha: .22),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                      if (naming)
+                        Positioned(
+                          top: inputTop,
+                          left: 24,
+                          right: 24,
+                          child: _input(),
+                        ),
+                      if (!naming &&
+                          [
+                            WorldStep.workspace,
+                            WorldStep.inventory,
+                          ].contains(_setup.step))
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: 136,
+                          child: WorldEntrance(
+                            key: ValueKey('${_setup.step}-chips'),
+                            delay: 300,
+                            backwards: _goingBack,
+                            child: _chips(),
+                          ),
+                        ),
+                      if (_setup.step == WorldStep.world)
+                        Positioned(
+                          left: 240,
+                          right: 24,
+                          top: 330,
+                          child: _legend(),
+                        ),
+                      if (keyboard == 0 && _setup.step == WorldStep.world)
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: 56,
+                          child: WorldEntrance(child: _continue()),
+                        ),
+                      if (_error != null)
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 54,
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: Color(0xFFB42318),
+                                fontFamily: 'PlaceGeist',
+                                fontSize: 13,
                               ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+        if (_exiting)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _exit,
+                child: const AuthPage(fromOnboarding: true),
+                builder: (context, child) {
+                  final progress = reduced
+                      ? 1.0
+                      : Curves.easeOutCubic.transform(
+                          phase(_exit.value * 900, 200, 600),
+                        );
+                  return Opacity(
+                    opacity: progress,
+                    child: Transform.translate(
+                      offset: Offset(0, 16 * (1 - progress)),
+                      child: child,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _flowLayout(
+    BuildContext context,
+    double width,
+    bool reduced,
+    double keyboard,
+  ) => SingleChildScrollView(
+    padding: EdgeInsets.fromLTRB(
+      24,
+      math.max(MediaQuery.paddingOf(context).top, 24),
+      24,
+      keyboard + 36,
+    ),
+    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _heading(reduced),
+        const SizedBox(height: 28),
+        if (_setup.step == WorldStep.choose) ...[
+          _tile('personal', flow: true),
+          const SizedBox(height: 14),
+          _tile('team', flow: true),
+          const SizedBox(height: 20),
+          const Text(
+            'Starting solo? You can add an organization anytime.',
+            style: TextStyle(color: worldSecondary, fontSize: 13.5),
+          ),
+        ],
+        SizedBox(
+          height: _setup.step == WorldStep.choose ? 0 : 320,
+          child: WorldScene(
+            key: _worldKey,
+            setup: _setup,
+            camera: WorldCamera((width - 48) / 2, 220, .68),
+            reduced: reduced,
+          ),
+        ),
+        if (_setup.step != WorldStep.choose) ...[
+          if (_setup.step == WorldStep.world) _legend(),
+          if (_setup.step == WorldStep.organization || _customizing)
+            _input()
+          else if (_setup.step != WorldStep.world)
+            _chips(),
+        ],
+        const SizedBox(height: 24),
+        if (_error != null)
+          Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+        if (_setup.step == WorldStep.world) _continue(),
+        if (_setup.step == WorldStep.choose)
+          TextButton(
+            key: const Key('onboarding-skip'),
+            onPressed: _busy ? null : _existing,
+            child: const Text(
+              'I already have an account',
+              style: TextStyle(color: worldSecondary),
+            ),
+          ),
+      ],
+    ),
+  );
+  Widget _tile(String path, {bool flow = false}) {
+    final selected = _setup.path == path;
+    final personal = path == 'personal';
+    final miniKey = GlobalKey();
+    if (personal) {
+      _personalMiniKey = miniKey;
+    } else {
+      _teamMiniKey = miniKey;
+    }
+    return WorldPress(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: personal
+            ? 'Just me. Home, garage, desk or dorm.'
+            : 'My team. A company, lab or team.',
+        excludeSemantics: true,
+        onTap: _busy
+            ? null
+            : () => unawaited(_select(_setup.copyWith(path: path))),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: Key('world-path-$path'),
+            onTap: _busy
+                ? null
+                : () => unawaited(_select(_setup.copyWith(path: path))),
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFFFF8F3) : Colors.white,
+                border: Border.all(
+                  color: selected ? worldOrange : worldBorder,
+                  width: selected ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              height: flow ? null : 132,
+              child: Stack(
+                children: [
+                  if (!flow)
+                    Positioned(
+                      right: 0,
+                      top: 14,
+                      width: 148,
+                      height: 128,
+                      child: SizedBox(
+                        key: miniKey,
+                        child: ValueListenableBuilder<String?>(
+                          valueListenable: _hiddenMini,
+                          builder: (context, hidden, _) => Opacity(
+                            opacity: hidden == path ? 0 : 1,
+                            child: WorldScene(
+                              setup: PendingWorld(path: path),
+                              camera: const WorldCamera(74, 64, .36),
+                              mini: true,
+                              personalMini: personal,
+                              reduced: true,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (_loading) const LinearProgressIndicator(),
-                  Expanded(
-                    child: PageView(
-                      key: const Key('onboarding-pages'),
-                      controller: _pages,
-                      physics: const NeverScrollableScrollPhysics(),
-                      onPageChanged: (i) => setState(() => _step = i),
-                      children: [
-                        _question(
-                          0,
-                          'What will you use FindEZ for?',
-                          'Choose one. Your answers help us improve FindEZ.',
-                          [
-                            _choices(
-                              _uses,
-                              _useCase,
-                              (key) => setState(() => _useCase = key),
-                              group: 'use',
-                            ),
-                            if (_useCase == 'other')
-                              _otherField(
-                                _useOther,
-                                'Your use',
-                                'e.g. Costume department',
-                              ),
-                          ],
-                        ),
-                        _question(
-                          1,
-                          'What do you manage?',
-                          'Select all that apply.',
-                          [
-                            _choices(
-                              _inventory,
-                              null,
-                              (key) => setState(() {
-                                if (!_types.add(key)) _types.remove(key);
-                              }),
-                              multiple: true,
-                              group: 'inventory',
-                            ),
-                            if (_types.contains('other'))
-                              _otherField(
-                                _inventoryOther,
-                                'Other inventory',
-                                'e.g. Fabric and props',
-                              ),
-                          ],
-                        ),
-                        _question(
-                          2,
-                          'What would help you most?',
-                          'Choose your main goal.',
-                          [
-                            _choices(
-                              _goals,
-                              _goal,
-                              (key) => setState(() => _goal = key),
-                              group: 'goal',
-                            ),
-                          ],
-                        ),
-                        _question(
-                          3,
-                          'Who will use this inventory?',
-                          'Sharing is always your choice.',
-                          [
-                            _choices(
-                              const {
-                                'solo': 'Just me',
-                                'others': 'With others',
-                              },
-                              _collaboration,
-                              (key) => setState(() => _collaboration = key),
-                              group: 'collaboration',
-                            ),
-                            const SizedBox(height: 24),
-                            AppText(
-                              'A good place to start',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            AppText(
-                              switch (_goal) {
-                                'identify_items' =>
-                                  'Take a photo, review the suggestions, and save an item to a Space.',
-                                'track_stock' =>
-                                  'Add an item and its quantity. Set a low-stock threshold when you need a reminder.',
-                                'organize_spaces' =>
-                                  'Create a Space for a room, shelf, or work area, then add your items.',
-                                'share_inventory' =>
-                                  'Start with a Space, then choose who can view or edit it.',
-                                _ =>
-                                  'Add an item to a Space, then search its name or ask where it is.',
-                              },
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.4,
-                                color: AppTheme.textSecondary(context),
-                              ),
-                            ),
-                            if (_owner == null && !widget.isReplay) ...[
-                              const SizedBox(height: 16),
-                              AppText(
-                                'Your answers will be saved after you sign in.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.textSecondary(context),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                  if (flow)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
+                      child: _tileText(personal),
+                    )
+                  else
+                    Positioned(
+                      left: 22,
+                      right: 22,
+                      bottom: 20,
+                      child: _tileText(personal),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Semantics(
-                              liveRegion: true,
-                              child: Column(
-                                children: [
-                                  AppText(
-                                    _error!,
-                                    style: TextStyle(
-                                      color: AppTheme.danger,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  if (_step == 0 &&
-                                      widget.isReplay &&
-                                      _owner != null)
-                                    TextButton(
-                                      onPressed: _loadAnswers,
-                                      child: const AppText('Retry'),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            key: const Key('onboarding-next'),
-                            onPressed:
-                                _finishing || _loading || _moving || !_valid
-                                ? null
-                                : () {
-                                    if (_step < 3) {
-                                      _go(_step + 1);
-                                    } else {
-                                      _finish();
-                                    }
-                                  },
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 52),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 16,
-                              ),
-                            ),
-                            child: _finishing && !_completed
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : AppText(
-                                    _step == 3 && _owner != null
-                                        ? 'Save'
-                                        : 'Continue',
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
-    ),
+    );
+  }
+
+  Widget _tileText(bool personal) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        personal ? 'Just me' : 'My team',
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -.44,
+          height: 1.2,
+          color: worldInk,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        personal ? 'Home, garage, desk or dorm.' : 'A company, lab or team.',
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 14,
+          height: 1.25,
+          color: worldSecondary,
+        ),
+      ),
+    ],
   );
 
-  Widget _question(
-    int index,
-    String title,
-    String subtitle,
-    List<Widget> children,
-  ) => SingleChildScrollView(
-    key: ValueKey('onboarding-slide-$index'),
-    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-    child: Column(
+  Widget _input() {
+    final organization = _setup.step == WorldStep.organization;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: AppText(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              height: 1.12,
-              letterSpacing: -.4,
-              color: AppTheme.textPrimary(context),
+        TextField(
+          key: Key(organization ? 'world-organization' : 'world-custom'),
+          controller: organization ? _organization : _custom,
+          focusNode: _focus,
+          enabled: !_busy,
+          maxLength: organization ? 60 : 40,
+          textInputAction: TextInputAction.done,
+          textCapitalization: TextCapitalization.words,
+          onChanged: (text) {
+            if (organization) {
+              _answer(_setup.copyWith(orgName: text));
+            } else {
+              setState(() {});
+            }
+          },
+          onSubmitted: (_) {
+            if (organization) {
+              if (_valid) unawaited(_next());
+            } else {
+              _confirmCustom();
+            }
+          },
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            color: worldInk,
+          ),
+          cursorColor: worldOrange,
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: organization
+                ? 'e.g. FindEZ AI'
+                : _setup.step == WorldStep.workspace
+                ? 'e.g. Field service'
+                : 'e.g. Lab supplies',
+            hintStyle: const TextStyle(color: Color(0xFFB3B0A9)),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 18,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: worldBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: worldOrange, width: 2),
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        AppText(
-          subtitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            height: 1.4,
-            color: AppTheme.textSecondary(context),
+        if (organization)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'Your team will see this. You can change it later.',
+              style: TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 13,
+                height: 1.35,
+                color: worldHint,
+              ),
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: _busy
+                ? null
+                : organization
+                ? (_valid ? _next : null)
+                : (PendingWorld.validName(_custom.text, 40)
+                      ? _confirmCustom
+                      : null),
+            child: const Text('Done', style: TextStyle(color: worldSecondary)),
           ),
         ),
-        const SizedBox(height: 20),
-        ...children,
       ],
-    ),
-  );
-  static IconData _choiceIcon(String key) => switch (key) {
-    'household' || 'household_items' => Icons.home_outlined,
-    'business' => Icons.storefront_outlined,
-    'laboratory' => Icons.science_outlined,
-    'education' => Icons.school_outlined,
-    'robotics' => Icons.smart_toy_outlined,
-    'manufacturing' => Icons.precision_manufacturing_outlined,
-    'warehouse' => Icons.warehouse_outlined,
-    'tools' => Icons.handyman_outlined,
-    'equipment' => Icons.settings_outlined,
-    'parts' => Icons.memory_outlined,
-    'supplies' => Icons.layers_outlined,
-    'products' => Icons.inventory_2_outlined,
-    'find_items' => Icons.search_rounded,
-    'identify_items' => Icons.photo_camera_outlined,
-    'track_stock' => Icons.bar_chart_rounded,
-    'organize_spaces' => Icons.grid_view_outlined,
-    'share_inventory' || 'others' => Icons.group_outlined,
-    'solo' => Icons.person_outline_rounded,
-    _ => Icons.edit_outlined,
-  };
+    );
+  }
 
-  Widget _choices(
-    Map<String, String> options,
-    String? chosen,
-    ValueChanged<String> onChoose, {
-    required String group,
-    bool multiple = false,
-  }) => BackdropGroup(
-    child: Column(
-      children: options.entries.map((entry) {
-        final selected = multiple
-            ? _types.contains(entry.key)
-            : chosen == entry.key;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: MergeSemantics(
-            child: Semantics(
-              key: Key('setup-$group-${entry.key}'),
-              label: entry.value,
-              button: true,
-              selected: selected,
-              enabled: !_finishing && !_moving,
-              onTap: _finishing || _moving ? null : () => onChoose(entry.key),
-              inMutuallyExclusiveGroup: !multiple,
-              child: ExcludeSemantics(
-                child: SetupGlassPanel(
-                  selected: selected,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: _finishing || _moving
-                          ? null
-                          : () => onChoose(entry.key),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 66),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 18,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                _choiceIcon(entry.key),
-                                size: 26,
-                                color: selected
-                                    ? AppTheme.accentForeground(context)
-                                    : AppTheme.textSecondary(context),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: AppText(
-                                  entry.value,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.35,
-                                    color: AppTheme.textPrimary(context),
-                                  ),
+  void _confirmCustom() {
+    if (!PendingWorld.validName(_custom.text, 40)) return;
+    final name = _custom.text.trim();
+    _focus.unfocus();
+    _answer(
+      _setup.step == WorldStep.workspace
+          ? _setup.copyWith(workspacePurpose: name)
+          : _setup.copyWith(inventoryName: name),
+    );
+    setState(() => _customizing = false);
+    unawaited(_next());
+  }
+
+  Widget _chips() {
+    final workspace = _setup.step == WorldStep.workspace;
+    final choices = workspace
+        ? (_setup.isTeam
+              ? ['R&D', 'Production', 'Competition']
+              : ['Home', 'Workshop', 'Studio'])
+        : (_setup.isTeam
+              ? ['Hardware', 'Electronics', 'Software']
+              : ['Tools', 'Electronics', 'Household']);
+    final selected = workspace ? _setup.workspacePurpose : _setup.inventoryName;
+    if (selected.isNotEmpty && !choices.contains(selected)) {
+      choices.add(selected);
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 2,
+      children: [
+        for (final label in [...choices, '+ Custom'])
+          Semantics(
+            button: true,
+            selected: label == selected,
+            child: WorldPress(
+              child: SizedBox(
+                height: 44,
+                child: Center(
+                  widthFactor: 1,
+                  child: TextButton(
+                    key: ValueKey('world-chip-$label'),
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            if (label == '+ Custom') {
+                              _custom.text = selected;
+                              setState(() => _customizing = true);
+                              _focus.requestFocus();
+                            } else {
+                              unawaited(
+                                _select(
+                                  workspace
+                                      ? _setup.copyWith(workspacePurpose: label)
+                                      : _setup.copyWith(inventoryName: label),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              ExcludeSemantics(
-                                child: AnimatedOpacity(
-                                  opacity: selected ? 1 : 0,
-                                  duration: Duration(
-                                    milliseconds: _reduceMotion ? 0 : 160,
-                                  ),
-                                  child: Icon(
-                                    Icons.check_rounded,
-                                    size: 18,
-                                    color: AppTheme.accentForeground(context),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                              );
+                            }
+                          },
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(44, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      tapTargetSize: MaterialTapTargetSize.padded,
+                      backgroundColor: label == selected
+                          ? worldOrange
+                          : Colors.white,
+                      foregroundColor: label == selected
+                          ? Colors.white
+                          : const Color(0xFF3F3D39),
+                      shape: StadiumBorder(
+                        side: label == selected
+                            ? BorderSide.none
+                            : const BorderSide(color: worldBorder),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontFamily: 'PlaceGeist',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -619,22 +1068,164 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _legend() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final entry in [
+        (
+          _setup.isTeam ? 'ORGANIZATION' : 'PERSONAL',
+          _setup.isTeam ? _setup.orgName : 'Only you',
+        ),
+        ('WORKSPACE', _setup.workspacePurpose),
+        ('INVENTORY', _setup.inventoryName),
+      ]) ...[
+        WorldEntrance(
+          delay:
+              800 +
+              300 *
+                  (_setup.isTeam
+                          ? ['ORGANIZATION', 'WORKSPACE', 'INVENTORY']
+                          : ['PERSONAL', 'WORKSPACE', 'INVENTORY'])
+                      .indexOf(entry.$1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                entry.$1,
+                style: const TextStyle(
+                  fontFamily: 'PlaceGeistMono',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: .84,
+                  color: Color(0xFF9A978F),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                entry.$2,
+                style: const TextStyle(
+                  fontFamily: 'PlaceGeist',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -.24,
+                  color: worldInk,
+                ),
+              ),
+              const SizedBox(height: 44),
+            ],
+          ),
+        ),
+      ],
+    ],
+  );
+  Widget _continue() => WorldPress(
+    child: FilledButton(
+      key: const Key('onboarding-next'),
+      onPressed: _valid && !_busy ? _next : null,
+      style: FilledButton.styleFrom(
+        backgroundColor: worldInk,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: worldBorder,
+        disabledForegroundColor: const Color(0xFF9A978F),
+        minimumSize: const Size(double.infinity, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      child: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : Text(
+              'Open my dashboard',
+              style: const TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.17,
+              ),
+            ),
+    ),
+  );
+}
+
+class _IntroPainter extends CustomPainter {
+  _IntroPainter(this.animation, this.reduced) : super(repaint: animation);
+  final Animation<double> animation;
+  final bool reduced;
+  @override
+  void paint(Canvas canvas, Size size) {
+    const dots = [
+      Offset(.18, .21),
+      Offset(.77, .18),
+      Offset(.54, .26),
+      Offset(.87, .47),
+      Offset(.13, .56),
+      Offset(.82, .71),
+      Offset(.31, .76),
+      Offset(.49, .83),
+    ];
+    final time = reduced ? 3000.0 : animation.value * 3000;
+    final sweep = Curves.easeInOutCubic.transform(phase(time, 300, 1300));
+    final scanY = size.height * sweep;
+    for (var index = 0; index < dots.length; index++) {
+      final point = dots[index];
+      final at = Offset(point.dx * size.width, point.dy * size.height);
+      final fade = Curves.easeOutCubic.transform(phase(time, index * 80, 500));
+      // Invert the sweep curve to get the exact time this dot is passed.
+      double low = 0, high = 1;
+      for (var i = 0; i < 16; i++) {
+        final middle = (low + high) / 2;
+        if (Curves.easeInOutCubic.transform(middle) < point.dy) {
+          low = middle;
+        } else {
+          high = middle;
+        }
+      }
+      final detection = Curves.easeOutCubic.transform(
+        phase(time, 300 + high * 1300, 250),
+      );
+      canvas.drawCircle(
+        at,
+        3,
+        Paint()
+          ..color = (detection > 0 ? worldOrange : const Color(0xFFC8C5BE))
+              .withValues(alpha: fade),
+      );
+      if (detection > 0) {
+        final edge = 18 * (1.4 - .4 * detection);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: at, width: edge, height: edge),
+            const Radius.circular(3),
+          ),
+          Paint()
+            ..color = worldOrange.withValues(alpha: detection)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4,
         );
-      }).toList(),
-    ),
-  );
-  Widget _otherField(
-    TextEditingController controller,
-    String label,
-    String hint,
-  ) => Padding(
-    padding: const EdgeInsets.only(top: 8),
-    child: TextField(
-      controller: controller,
-      maxLength: 80,
-      textInputAction: TextInputAction.done,
-      onChanged: (_) => setState(() {}),
-      decoration: InputDecoration(labelText: label, hintText: hint),
-    ),
-  );
+      }
+    }
+    if (!reduced && time >= 300 && time <= 1600) {
+      canvas.drawLine(
+        Offset(0, scanY),
+        Offset(size.width, scanY),
+        Paint()
+          ..color = worldOrange.withValues(alpha: .8)
+          ..strokeWidth = 1.4,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _IntroPainter old) =>
+      old.animation != animation || old.reduced != reduced;
 }
