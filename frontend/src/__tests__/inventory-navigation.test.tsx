@@ -113,7 +113,8 @@ test("workspace owner can rename from the selected workspace and Personal has no
   return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",owner_user_id:"actor",name},inventories:[],total:0,next_offset:null} as never;
  });
  const view=render(<WorkspaceDirectory workspaceId="team"/>);
- await userEvent.click(await screen.findByRole("button",{name:"Rename workspace"}));
+ await userEvent.click(await screen.findByRole("button",{name:/Manage workspace/}));
+ await userEvent.click(await screen.findByRole("menuitem",{name:"Rename workspace"}));
  await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"Robotics");
  await userEvent.click(screen.getByRole("button",{name:"Save"}));
  await waitFor(()=>expect(screen.queryByRole("dialog")).toBeNull());
@@ -144,7 +145,8 @@ test("account change discards a rename dialog and ignores its late saved name",a
   return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",name:"Private workspace",owner_user_id:"actor"},inventories:[],total:0,next_offset:null} as never;
  });
  const view=render(<WorkspaceDirectory workspaceId="team"/>);
- await userEvent.click(await screen.findByRole("button",{name:"Rename workspace"}));
+ await userEvent.click(await screen.findByRole("button",{name:/Manage workspace/}));
+ await userEvent.click(await screen.findByRole("menuitem",{name:"Rename workspace"}));
  await userEvent.click(screen.getByRole("button",{name:"Save"}));
  jest.mocked(useApiSession).mockReturnValue({accountId:"other",loading:false,error:null} as ReturnType<typeof useApiSession>);
  jest.mocked(accountRequest).mockReturnValue(new Promise(()=>{}));

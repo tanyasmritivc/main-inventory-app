@@ -129,3 +129,19 @@ push or signing. Public App Store submission was unchanged.
 PR: https://github.com/tanyasmritivc/main-inventory-app/pull/90. Branch:
 feat/hierarchy-navigation-20261016. Runtime commit: 9bec964. The following
 documentation receipt does not change the uploaded binary.
+
+## Workspace deletion follow-up
+
+User reported that workspace removal was still unavailable. Existing owner-only
+DELETE /teams/{id} is reused, with its current transaction retaining physical
+inventories as Personal and removing collaboration/tasks/workspace files. No
+backend/schema changes for this part. Mobile home Workspace menu and Workspace
+settings expose the action; web workspace headers/cards and settings expose it.
+Typed-name confirmation, real success receipt, busy/cancel/error and account
+unmount guards are tested. Successful mobile removal resets saved place to
+Personal; web returns to the workspace directory. Web release
+web-workspace-delete-20261016 is live after real production build, route/auth
+checks and 309 web tests. Twelve focused mobile tests pass; complete suite had
+a synthetic map typing/owner-fixture issue corrected by that focused run.
+Final full regression and beta72 are pending the additional inventory purge and
+account deletion reports. No real deletion was attempted for verification.

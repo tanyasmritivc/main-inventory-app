@@ -11,6 +11,7 @@ import '../teams/team_documents_page.dart';
 import 'hierarchy_page.dart';
 import 'place_ui.dart';
 import 'inventory_actions.dart';
+import 'workspace_actions.dart';
 
 class WorkspaceHome extends StatefulWidget {
   const WorkspaceHome({
@@ -149,6 +150,18 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
       }
     } else if (selected != null) {
       await session.select(selected);
+    }
+  }
+
+  Future<void> _deleteWorkspace(PlaceData data) async {
+    final deleted = await confirmWorkspaceDeletion(
+      context,
+      session.api,
+      id: data.place.id,
+      name: data.name,
+    );
+    if (mounted && deleted) {
+      await session.restore(override: const LastPlace.personal());
     }
   }
 
@@ -455,7 +468,28 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                     ),
                     if (!data.place.isPersonal) ...[
                       const SizedBox(height: 20),
-                      Text('Workspace', style: PlaceTokens.section),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Workspace',
+                              style: PlaceTokens.section,
+                            ),
+                          ),
+                          if (data.resource['owner_user_id'] ==
+                              session.accountId)
+                            PopupMenuButton<String>(
+                              tooltip: 'Manage workspace',
+                              onSelected: (_) => _deleteWorkspace(data),
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete workspace'),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
                       const SizedBox(height: 10),
                       PlaceCardList(
                         children: [

@@ -244,4 +244,51 @@ void main() {
       expect(find.byType(HierarchyPage), findsOneWidget);
     },
   );
+  testWidgets(
+    'owner deletes from workspace menu and returns to Personal with no stale context',
+    (tester) async {
+      final original = fixture.respond;
+      fixture.respond = (r) async {
+        if (r.path == '/teams/ftc' && r.method == 'DELETE') {
+          return {'deleted': true};
+        }
+        final result = await original(r) as Map<String, dynamic>;
+        if (r.path == '/inventory-workspaces/ftc/overview') {
+          result['workspace'] = Map<String,dynamic>.from(result['workspace'] as Map)..addAll({'role':'owner','owner_user_id':'actor-a'});
+        }
+        return result;
+      };
+      await tester.runAsync(
+        () => session.select(const LastPlace.workspace('ftc')),
+      );
+      await pump(tester);
+      expect(session.error, isNull);
+      expect(session.data?.resource['owner_user_id'], 'actor-a');
+      await tester.scrollUntilVisible(find.byTooltip('Manage workspace'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.byTooltip('Manage workspace'));
+      await settle(tester);
+      await tester.tap(find.text('Delete workspace'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete workspace'));
+      await settle(tester);
+      expect(
+        fixture.requests.where((r) => r.method == 'DELETE').single.path,
+        '/teams/ftc',
+      );
+      expect(session.current.isPersonal, true);
+      expect((await session.store.read()).isPersonal, true);
+      expect(opened, isEmpty);
+    },
+  );
+
+  testWidgets('workspace member has no deletion menu', (tester) async {
+    await tester.runAsync(
+      () => session.select(const LastPlace.workspace('ftc')),
+    );
+    await pump(tester);
+    expect(find.byTooltip('Manage workspace'), findsNothing);
+    expect(find.text('Delete workspace'), findsNothing);
+  });
 }

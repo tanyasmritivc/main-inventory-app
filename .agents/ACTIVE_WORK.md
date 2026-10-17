@@ -1,3 +1,11 @@
+# Workspace deletion visibility follow-up (October 16)
+
+Same hierarchy lane, clean starting f6e492b. User reports missing workspace delete.
+Reuse existing owner-only DELETE /teams/{id}; no backend/schema changes. Expose
+workspace management on mobile home/settings and web header/directory cards.
+Exact-name confirmation describes collaboration removal and physical inventory
+retention. Preserve inventory dashboard/Spaces. Deliver checked web and beta72.
+
 # Hierarchy navigation repair (October 16)
 
 Active lane feat/hierarchy-navigation-20261016, based on dec9cf9. Replaces mobile/

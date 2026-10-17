@@ -15,6 +15,7 @@ import '../profile/profile_page.dart';
 import 'invitation_page.dart';
 import 'place_ui.dart';
 import 'inventory_actions.dart';
+import 'workspace_actions.dart';
 
 List<Map<String, dynamic>> rows(Object? value) => (value as List? ?? [])
     .map((row) => Map<String, dynamic>.from(row as Map))
@@ -567,24 +568,14 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _deleteWorkspace() async {
-    if (!await _confirm(
-      'Delete workspace?',
-      'This removes collaboration, tasks and workspace files. Physical inventories are retained for their owners as personal inventories. This cannot be undone.',
-    )) {
-      return;
-    }
-    if (!mounted) return;
-    final name = await _text(
-      'Confirm deletion',
-      label: 'Type the exact name: ${_resource['name']}',
+    if (!_owner || _busy) return;
+    final deleted = await confirmWorkspaceDeletion(
+      context,
+      widget.api,
+      id: widget.id!,
+      name: _resource['name'].toString(),
     );
-    if (!mounted || name == null) return;
-    if (name != _resource['name']) {
-      _notice('The name does not match.');
-      return;
-    }
-    final ok = await _mutate('/teams/$_id', method: 'DELETE');
-    if (mounted && ok) Navigator.pop(context);
+    if (mounted && deleted) Navigator.pop(context);
   }
 
   Future<void> _moveSpace(Map<String, dynamic> space) async {
@@ -1371,6 +1362,14 @@ class _HierarchyPageState extends State<HierarchyPage>
             'Your role',
             detail: membershipRoleLabel(_resource['role']?.toString() ?? ''),
           ),
+          if (_owner)
+            TextButton(
+              onPressed: _busy ? null : _deleteWorkspace,
+              style: TextButton.styleFrom(
+                foregroundColor: PlaceTokens.destructive,
+              ),
+              child: const Text('Delete workspace'),
+            ),
           if (_manager) ..._locations(),
           _row(
             'People and access',

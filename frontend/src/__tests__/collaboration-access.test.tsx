@@ -148,7 +148,8 @@ test("workspace creator can rename an assigned workspace from its organization",
   return {organization:{organization_id:"acme",name:"Acme",role:"member",owner_user_id:"other"},workspaces:[{team_id:"client",name,owner_user_id:"owner"}],members:[]} as never;
  });
  render(<OrganizationDirectory organizationId="acme"/>);
- await userEvent.click(await screen.findByRole("button",{name:"Rename October"}));
+ await userEvent.click(await screen.findByRole("button",{name:"Manage workspace October"}));
+ await userEvent.click(await screen.findByRole("menuitem",{name:"Rename workspace"}));
  await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"November");
  await userEvent.click(screen.getByRole("button",{name:"Save"}));
  expect(await screen.findByRole("link",{name:/November/})).toBeTruthy();
