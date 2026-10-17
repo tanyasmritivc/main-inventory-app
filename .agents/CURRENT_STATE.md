@@ -10,8 +10,13 @@ physical-device acceptance and the existing 16 ms performance limit remain open.
 Apple acknowledged TestFlight 1.0.8 (79), source 2897788, delivery
 527fb98f-8feb-48d9-ad3b-f47a85c28e77. Processing/tester availability unverified;
 no polling or post-push/build regressions. See design/onboarding-a/IMPLEMENTATION.md.
-Web dashboard cleanup and shared Ask first-answer quality are separate queued
-lanes, not part of this mobile patch. Production migration 053 remains pending.
+Separate follow-ups are complete: web dashboard panels are published as aafcbd5
+(PR 93), and the shared Ask first-answer fix is live as f54517a (PR 94). Web has
+327 full tests, 16 final focused passes, TypeScript/lint/production build and live
+populated/empty Safari review. Ask has 831 full Python tests plus 10 subtests,
+165 final focused passes, live populated/empty reads and health/auth checks.
+Those lanes preserve 285 unrelated web sources and 91 unrelated backend sources.
+No database changes; production migration 053 remains pending separately.
 
 # October 17 interactive mobile setup
 

@@ -12,8 +12,9 @@ Implementation complete: 545 Flutter tests pass and analysis is clean. Ten size
 profiles and actual production safe areas/keyboard are covered; iPhone 16e team
 path is visually reviewed. Apple acknowledged TestFlight 1.0.8 (79), source
 2897788, delivery 527fb98f-8feb-48d9-ad3b-f47a85c28e77; processing unpolled.
-Web dashboard and
-shared Ask first-answer fixes use separate lanes after this mobile patch.
+Separate follow-ups are published: dashboard aafcbd5 in PR 93 and shared Ask
+f54517a in PR 94. Their checked overlays preserve unrelated live sources; no
+schema changes. See each lane's docs/plans report for checks and rollback.
 
 # October 17 interactive mobile setup
 
