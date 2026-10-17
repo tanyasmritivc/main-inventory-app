@@ -7,7 +7,8 @@ actions, and disclose unchecked suitability/partial results. Broad questions sho
 saved-category summaries; specific item lines use Markdown bullets. All 831 Python tests
 and 10 subtests pass. Only inventory_questions.py changes at runtime; production
 first/grouped overlays passed health/auth checks and fresh live populated/empty
-queries. Final category-order activation pending. No provider/schema/item-data/client changes. Migration 053
+queries. Final source f54517a is live, with 165 focused order/refinement passes
+and 91 unrelated Python files preserved. No provider/schema/item-data/client changes. Migration 053
 remains pending separately. Details: docs/plans/ask-first-answer.md.
 
 # October 17 interactive mobile setup

@@ -35,7 +35,11 @@ The one-file overlay passed live health/db/anonymous-access checks and preserved
 all 91 unrelated Python files. Live Safari verified a fresh question against the
 317-record team inventory and the clear empty Personal response. The grouped
 reply uses actual saved categories and names, without claiming that all items
-are for robotics. The final category-order refinement has focused regression
-coverage; its activation is pending. No inventory records were edited during QA.
+are for robotics. The final category-order refinement has 165 focused regression
+passes. Source f54517a is live; final health/db and anonymous-access checks pass,
+with all 91 unrelated Python sources preserved. Release evidence and the old file
+are retained in /home/ubuntu/findez-ask-first-answer-release-20261017-ranked.
+No inventory records were edited during QA. Normal Ask requests saved conversation
+messages; existing conversations were preserved. No post-push regression reruns.
 The previously reviewed migration 053
 is not part of this release and remains separately awaiting production approval.
