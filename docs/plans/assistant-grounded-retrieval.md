@@ -242,8 +242,10 @@ No user changes existed initially; existing files and unrelated work were
 preserved. No frontend/mobile runtime source, provider settings, dependencies,
 schema or API contract changed. Mobile version is bumped to 1.0.8+69 for the
 requested delivery. Work is on `feat/assistant-grounded-retrieval-20261016`.
-Commit/push and Apple upload receipts are recorded in CURRENT_STATE.md after
-completion. Backend changes require a separate deployment to become live; a
+Implementation `1c44e5e` is pushed on PR #88. Apple acknowledged signed
+1.0.8 (69), delivery `dce3e75e-aaba-4994-b609-5953086d88b6`. No post-push/build
+checks or processing wait per user instruction; availability remains unverified.
+Durable artifacts and receipts: `Documents/FindEZ/AppStore/1.0.8-build69`. Backend changes require a separate deployment to become live; a
 TestFlight binary does not deploy them. There are no migration rollback
 requirements; rollback is a code rollback, not a data rewrite.
 

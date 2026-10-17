@@ -1,7 +1,7 @@
 # October 16 assistant retrieval beta delivery
 
-Active lane `feat/assistant-grounded-retrieval-20261016`, starting/current
-HEAD `3e3e095`. The latest user instruction authorizes commit/push and a new
+Active lane `feat/assistant-grounded-retrieval-20261016`, starting
+HEAD `3e3e095`, implementation `1c44e5e`. The latest user instruction authorizes commit/push and a new
 TestFlight build using completed checks, with no post-push/build reruns.
 Adds bounded selected-inventory read capabilities, recorded-field answers,
 conversation-bound follow-ups, linked document metadata/current notes/events,
@@ -14,8 +14,11 @@ change. 127 synthetic dataset cases; 727 full Python tests plus six subtests,
 tests and the bundle check/test pass. Live providers, storage/RLS, two-client and
 physical-device acceptance remain unverified. See
 `docs/plans/assistant-grounded-retrieval.md` for mapping, evidence, changed files,
-security gates and ordered next steps. TestFlight build 69 is being prepared.
-No backend deployment or production schema changes are included.
+security gates and ordered next steps. Apple acknowledged signed TestFlight 1.0.8 (69), delivery
+`dce3e75e-aaba-4994-b609-5953086d88b6`. Production archive/export succeeded;
+no post-push/build checks or processing wait per user instruction. Artifacts and
+receipts: `Documents/FindEZ/AppStore/1.0.8-build69`. PR #88. Processing and tester
+availability are unverified. No backend deployment or schema changes.
 
 # October 16 mobile place flow follow-up
 

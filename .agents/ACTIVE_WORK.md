@@ -11,8 +11,8 @@ FIND transport. Local implementation adds scoped natural-language reads,
 evidence/follow-ups, retained HTTP stream scope and caller-tool safety. 127
 synthetic cases, 727 Python tests plus six subtests, 296 web tests, 434 Flutter
 tests, static checks and connector/bundle checks pass. Review and live acceptance
-remain separate; backend deployment is not part of the beta upload. Build 69
-delivery is in progress. Full files, security limits
+remain separate; backend deployment is not part of the beta upload. Apple acknowledged build 69
+(`dce3e75e-aaba-4994-b609-5953086d88b6`), PR #88; no processing wait. Full files, security limits
 and remaining work are in the plan/report above.
 
 ## October 16 mobile workspace home and place switcher
