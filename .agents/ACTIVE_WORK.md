@@ -1,3 +1,12 @@
+# October 17 web dashboard cleanup
+
+Active lane fix/web-dashboard-empty-state-20261017, clean base eab8962. User now
+explicitly requests organizing the web inventory dashboard. Scope is contained
+Recently added/Spaces panels, responsive spacing and permission-aware empty
+actions; data, navigation and public homepage stay intact. 327 Jest tests pass,
+TypeScript passes and changed-file lint has no errors. Production webpack build
+and visual acceptance pending. See docs/plans/web-dashboard-cleanup.md.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal

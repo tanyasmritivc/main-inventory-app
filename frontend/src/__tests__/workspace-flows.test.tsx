@@ -18,6 +18,7 @@ import { askQuestion } from "@/lib/ask-stream";
 import { useApiSession } from "@/lib/use-api-session";
 import { restockKey } from "@/lib/restock-plan";
 import type { InventoryItem } from "@/lib/api";
+import { selectInventory } from "@/lib/inventory-selection";
 jest.mock("@/lib/account-request", () => ({
   accountRequest: jest.fn(),
   accountToken: jest.fn(async () => "token-a"),
@@ -48,6 +49,7 @@ const doc = {
 beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
+  selectInventory(null);
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://store.example";
   process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example";
   jest.mocked(useApiSession).mockReturnValue({
@@ -225,6 +227,38 @@ test.each([0, 3])("Home shows attention only for actual pending work (%i capture
   expect(screen.queryByText("overdue lent items")).toBeNull();
   expect(screen.queryByRole("button", { name: "Where is my soldering iron?" })).toBeNull();
   expect(screen.getByText("1 item across 1 Space.")).toBeTruthy();
+});
+test.each([true, false])("empty Home provides only permitted creation actions (editor=%s)", async (canEdit) => {
+  selectInventory({ inventory_id: "fixture", can_edit: canEdit } as never);
+  jest.mocked(accountRequest).mockImplementation(async (_account, path) => {
+    if (path === "/search_items") return { items: [] };
+    if (path === "/spaces") return [];
+    if (path === "/review-items?limit=1") return { pending_count: 0 };
+    if (path === "/checkouts/active") return { checkouts: [] };
+    if (path === "/profile/me") return { display_name: "QA" };
+    throw new Error("Unexpected path");
+  });
+  render(<HomeOverview />);
+  await screen.findByText("Hello, QA.");
+  expect(screen.getByRole("region", { name: "Recently added" })).toBeTruthy();
+  expect(screen.getByRole("region", { name: "Your Spaces" })).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Capture your first items" }) !== null).toBe(canEdit);
+  expect(screen.queryByRole("link", { name: "Create a Space" }) !== null).toBe(canEdit);
+  expect(screen.queryByRole("link", { name: "Capture" }) !== null).toBe(canEdit);
+  expect(screen.getByRole("heading", { name: "No Spaces yet" })).toBeTruthy();
+  selectInventory(null);
+});
+test("failed inventory loading does not show a false empty inventory", async () => {
+  const original = jest.mocked(accountRequest).getMockImplementation()!;
+  jest.mocked(accountRequest).mockImplementation(async (account, path, options) => {
+    if (path === "/search_items") throw new Error("unavailable");
+    return original(account, path, options);
+  });
+  render(<HomeOverview />);
+  await screen.findByText(/Could not load inventory/);
+  expect(screen.queryByRole("heading", { name: "Start with a photo" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "No items yet" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
 });
 test("a failed note upload keeps the unsaved text available", async () => {
   const user = userEvent.setup();

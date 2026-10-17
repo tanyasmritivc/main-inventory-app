@@ -3,7 +3,8 @@ import { canEditInventory } from "@/lib/inventory-selection";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Camera, MapPin, RefreshCw, Search } from "lucide-react";
+import { ArrowUpRight, Box, Camera, ChevronRight, MapPin, RefreshCw, Search } from "lucide-react";
+import styles from "./home-overview.module.css";
 
 import { accountRequest } from "@/lib/account-request";
 import { itemDisplayName, type InventoryItem, type Space } from "@/lib/api";
@@ -141,7 +142,7 @@ function HomeOverviewWorkspace() {
       router.push(`/assist?q=${encodeURIComponent(query.trim())}`);
   }
   return (
-    <section>
+    <section className={styles.overview}>
       <header className="workspace-heading">
         <div>
           <h1>
@@ -225,21 +226,22 @@ function HomeOverviewWorkspace() {
             {restock.error}
           </p>
       )}
-      <section className="workspace-section">
-        <div className="workspace-section-heading">
-          <h2>Recently added</h2>
-          <Link href="/inventory">Find all items</Link>
+      <div className={styles.panels}>
+      <section className={styles.panel} aria-labelledby="home-recent-heading">
+        <div className={styles.panelHeading}>
+          <h2 id="home-recent-heading">Recently added</h2>
+          <Link href="/inventory" aria-label="View all items">View all <ArrowUpRight size={14} /></Link>
         </div>
-        <div className="home-recent">
+        <div className={styles.recent}>
           {recent.map((item) => (
             <Link
               key={item.item_id}
               href={`/inventory?item=${encodeURIComponent(item.item_id)}`}
             >
-              {item.image_url && (
-                <img src={item.image_url} alt={itemDisplayName(item)} />
-              )}
-              <span className="home-recent-copy">
+              {item.image_url ? (
+                <img src={item.image_url} alt="" />
+              ) : <span className={styles.itemPlaceholder}><Box size={20} aria-hidden="true" /></span>}
+              <span className={styles.itemCopy}>
                 <strong>{itemDisplayName(item)}</strong>
                 <small>{item.quantity} · {item.location || "Unsorted"}</small>
               </span>
@@ -247,43 +249,51 @@ function HomeOverviewWorkspace() {
           ))}
         </div>
         {data.items?.length === 0 && (
-          <div className="workspace-card">
-            <h2>Start with a photo</h2>
-            <p className="workspace-muted">
-              Capture what you have, then give it a Space.
+          <div className={styles.empty}>
+            <span className={styles.emptyIcon}><Camera size={24} aria-hidden="true" /></span>
+            <h3>{canEditInventory() ? "Start with a photo" : "No items yet"}</h3>
+            <p>
+              {canEditInventory() ? "Capture what you have, then give it a Space." : "Items will appear here when they are added to this inventory."}
             </p>
-            <Link aria-disabled={!canEditInventory()} href={canEditInventory() ? "/scan" : "/inventory"} className="workspace-button">
+            {canEditInventory() && <Link href="/scan" className="workspace-button">
               Capture your first items
-            </Link>
+            </Link>}
           </div>
         )}
       </section>
-      <section className="workspace-section">
-        <div className="workspace-section-heading">
-          <h2>Your Spaces</h2>
-          <Link href="/spaces">Open Spaces</Link>
+      <section className={styles.panel} aria-labelledby="home-spaces-heading">
+        <div className={styles.panelHeading}>
+          <h2 id="home-spaces-heading">Your Spaces</h2>
+          <Link href="/spaces" aria-label="View all Spaces">View all <ArrowUpRight size={14} /></Link>
         </div>
+        <div className={styles.spaces}>
         {spaces.map((name) => (
           <Link
-            className="workspace-list-row"
+            className={styles.spaceRow}
             key={name}
             href={`/inventory?space=${encodeURIComponent(name)}`}
           >
-            <span className="workspace-actions">
-              <MapPin size={16} />
+            <MapPin size={18} aria-hidden="true" />
+            <span className={styles.itemCopy}>
               <strong>{name}</strong>
+              <small>{data.items ? (groups[name]?.length ?? 0) : "…"} items</small>
             </span>
-            <span className="workspace-muted">
-              {data.items ? (groups[name]?.length ?? 0) : "…"} items
-            </span>
+            <ChevronRight size={15} aria-hidden="true" />
           </Link>
         ))}
-        {data.spaces?.length === 0 && (
-          <Link href="/spaces" className="workspace-button">
-            Create a Space
-          </Link>
+        </div>
+        {data.spaces && spaces.length === 0 && (
+          <div className={`${styles.empty} ${styles.spaceEmpty}`}>
+            <span className={styles.emptyIcon}><MapPin size={24} aria-hidden="true" /></span>
+            <h3>No Spaces yet</h3>
+            <p>Group items by where you keep them.</p>
+            {canEditInventory() && <Link href="/spaces" className="workspace-button">
+              Create a Space
+            </Link>}
+          </div>
         )}
       </section>
+      </div>
     </section>
   );
 }

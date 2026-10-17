@@ -1,3 +1,11 @@
+# October 17 web dashboard cleanup
+
+Recently added and Spaces use contained responsive panels with consistent rows
+and empty states. Existing scoped data/search/actions remain; viewers receive no
+create prompts. 327 Jest tests, TypeScript and error-free changed-file lint pass.
+Production build and self-hosted publication pending. Mobile/backend unchanged.
+See docs/plans/web-dashboard-cleanup.md.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal
