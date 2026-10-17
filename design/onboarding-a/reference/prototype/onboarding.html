@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FindEZ onboarding: build your world</title>
+<style>
+@font-face{font-family:Geist;src:url(fonts/Geist-Regular.woff2) format('woff2');font-weight:400}
+@font-face{font-family:Geist;src:url(fonts/Geist-Medium.woff2) format('woff2');font-weight:500}
+@font-face{font-family:Geist;src:url(fonts/Geist-SemiBold.woff2) format('woff2');font-weight:600}
+@font-face{font-family:'Geist Mono';src:url(fonts/GeistMono-Medium.woff2) format('woff2');font-weight:500}
+*{box-sizing:border-box}
+html,body{margin:0;background:#F7F7F6}
+#stage{position:relative;width:390px;height:844px;overflow:hidden;background:#F7F7F6;color:#111112;font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.abs{position:absolute}
+.ttl{position:absolute;left:24px;right:24px;top:100px}
+.h1{font-size:34px;line-height:1.04;font-weight:600;letter-spacing:-.035em;margin:0}
+.sub{font-size:15px;line-height:1.45;color:#6B6965;margin:12px 0 0}
+.mono{font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#9A978F}
+.btn{position:absolute;left:24px;right:24px;height:56px;border-radius:18px;background:#111112;color:#FFF;font-size:17px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn.off{background:#E3E0DA;color:#9A978F}
+.chips{position:absolute;left:24px;right:24px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{height:38px;padding:0 16px;border-radius:999px;background:#FFF;box-shadow:inset 0 0 0 1px #E3E0DA;display:flex;align-items:center;font-size:14.5px;font-weight:500;color:#3F3D39}
+.chip.on{background:#E8590C;box-shadow:none;color:#FFF}
+.field{position:absolute;left:24px;right:24px;height:58px;border-radius:18px;background:#FFF;box-shadow:inset 0 0 0 1px #E3E0DA;display:flex;align-items:center;padding:0 18px;font-size:18px;letter-spacing:-.01em}
+.field.focus{box-shadow:inset 0 0 0 2px #E8590C}
+.ph{color:#B3B0A9}
+.caret{display:inline-block;width:2px;height:24px;background:#E8590C;margin-left:1px;vertical-align:middle}
+.tile{position:absolute;left:24px;right:24px;height:132px;border-radius:24px;background:#FFF;box-shadow:inset 0 0 0 1px #E3E0DA;overflow:hidden}
+.tile.on{box-shadow:inset 0 0 0 2px #E8590C;background:#FFF8F3}
+.tile .t{position:absolute;left:22px;bottom:20px}
+.tile .n{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.tile .d{font-size:14px;color:#6B6965;margin-top:4px}
+.tile svg{position:absolute;right:14px;top:14px}
+.tag{position:absolute;display:flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 10px;border-radius:999px;background:rgba(255,255,255,.96);box-shadow:inset 0 0 0 1px #E3E0DA,0 4px 12px rgba(17,17,18,.06);font-size:13px;font-weight:500;white-space:nowrap;transform:translate(-50%,-50%)}
+.tag i{width:8px;height:8px;border-radius:50%;display:block}
+#kb{position:absolute;left:0;right:0;bottom:0;height:291px;background:#D2D4DA;padding:8px 3px 0;z-index:40;transform:translateY(100%)}
+.kr{display:flex;justify-content:center;gap:6px;margin-bottom:11px}
+.k{height:43px;flex:0 0 32.6px;border-radius:5px;background:#FFF;box-shadow:0 1px 0 rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#111112}
+.k.g{background:#ABB0BC;font-size:15px}
+#touch{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(17,17,18,.22);box-shadow:0 0 0 2px rgba(255,255,255,.85);pointer-events:none;opacity:0;z-index:60}
+.leg{position:absolute;left:240px;width:130px}
+.leg .v{font-size:16px;font-weight:600;letter-spacing:-.015em;margin-top:3px}
+#sheet{position:absolute;left:0;right:0;bottom:0;height:386px;background:#FFF;border-radius:28px 28px 0 0;box-shadow:0 -1px 0 #ECEAE6,0 -12px 40px rgba(17,17,18,.08);z-index:30}
+.spin{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#FFF}
+/* light dashboard */
+#dash{position:absolute;inset:0;background:#F7F7F6;color:#111112;z-index:45}
+.card{background:#FFF;border-radius:14px;box-shadow:0 0 0 1px #ECEAE6}
+.lm{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#9A978F}
+.tab{position:absolute;left:16px;right:16px;bottom:22px;height:62px;border-radius:31px;background:#FFF;box-shadow:0 0 0 1px #ECEAE6,0 6px 18px rgba(17,17,18,.06);display:flex;align-items:center;justify-content:space-around}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<svg id="world" class="abs" width="390" height="844" viewBox="0 0 390 844" style="left:0;top:0"></svg>
+<div id="tags"></div>
+
+<!-- intro -->
+<div id="intro" class="abs" style="inset:0">
+  <svg id="scan" class="abs" width="390" height="844" style="left:0;top:0"></svg>
+  <div id="wm" class="abs" style="left:0;right:0;top:360px;text-align:center">
+    <img src="logo.png" style="width:207px;height:44.5px;display:block;margin:0 auto">
+    <div id="tag0" style="font-size:16px;color:#6B6965;margin-top:10px">Everything you own, remembered.</div>
+  </div>
+</div>
+<img id="wmTop" class="abs" src="logo.png" style="display:none">
+
+<!-- choose -->
+<div id="g1">
+  <div class="ttl" id="t1"><h1 class="h1">Who's FindEZ for?</h1><p class="sub">Pick one to start. You can change it later.</p></div>
+  <div class="tile" id="tileP" style="top:250px">
+    <svg width="120" height="96" viewBox="-60 -64 120 96" id="icoP"></svg>
+    <div class="t"><div class="n">Just me</div><div class="d">Home, garage, desk or dorm.</div></div>
+  </div>
+  <div class="tile" id="tileO" style="top:396px">
+    <svg width="120" height="96" viewBox="-60 -64 120 96" id="icoO"></svg>
+    <div class="t"><div class="n">My team</div><div class="d">A company, lab or team.</div></div>
+  </div>
+  <div id="n1" class="abs" style="left:24px;right:24px;top:548px;font-size:13.5px;color:#8A8782;line-height:1.4">Starting solo? You can add an organization anytime.</div>
+  <div class="btn off" id="c1" style="bottom:96px">Continue</div>
+  <div id="have" class="abs" style="left:0;right:0;bottom:40px;text-align:center;font-size:15px;color:#6B6965">I already have an account</div>
+</div>
+
+<!-- org name -->
+<div id="g2">
+  <div class="ttl" id="t2"><h1 class="h1">Name your organization</h1><p class="sub">Use the name of your company, lab or team.</p></div>
+  <div class="field" id="f1"><span id="f1t"></span><span class="caret" id="f1c"></span><span class="ph" id="f1p">e.g. Kestrel Labs</span></div>
+  <div id="f1h" class="abs" style="left:28px;right:28px;font-size:13px;line-height:1.35;color:#8A8782;z-index:41">Your team will see this. You can change it later.</div>
+  <div class="btn off" id="c2" style="bottom:56px">Continue</div>
+</div>
+
+<!-- workspace -->
+<div id="g3">
+  <div class="ttl" id="t3"><h1 class="h1">What's this workspace for?</h1><p class="sub">Each purpose gets its own dashboard.</p></div>
+  <div class="chips" id="ch3" style="bottom:136px"><span class="chip" id="chWs">R&amp;D</span><span class="chip">Production</span><span class="chip">Competition</span><span class="chip">+ Custom</span></div>
+  <div class="btn off" id="c3" style="bottom:56px">Continue</div>
+</div>
+
+<!-- inventory -->
+<div id="g4">
+  <div class="ttl" id="t4"><h1 class="h1">Create your first inventory</h1><p class="sub">Group your things by team, like hardware or software.</p></div>
+  <div class="chips" id="ch4" style="bottom:136px"><span class="chip" id="chInv">Hardware</span><span class="chip">Electronics</span><span class="chip">Software</span><span class="chip">+ Custom</span></div>
+  <div class="btn off" id="c4" style="bottom:56px">Create inventory</div>
+</div>
+
+<!-- recap -->
+<div id="g5">
+  <div class="ttl" id="t5"><h1 class="h1">This is your world.</h1><p class="sub">Add more workspaces and inventories anytime. Spaces like a parts wall go inside each inventory.</p></div>
+  <div class="leg" id="lg1" style="top:330px"><div class="mono">Organization</div><div class="v">Kestrel Labs</div></div>
+  <div class="leg" id="lg2" style="top:410px"><div class="mono">Workspace</div><div class="v">R&amp;D</div></div>
+  <div class="leg" id="lg3" style="top:490px"><div class="mono">Inventory</div><div class="v">Hardware</div></div>
+  <div class="btn" id="c5" style="bottom:56px">Continue</div>
+</div>
+
+<!-- save -->
+<div id="dash" class="abs" style="inset:0;z-index:45;display:none"><img src="auth.png" style="width:390px;height:844px;display:block">
+  <div class="abs" style="left:0;top:138px;width:390px;height:80px;background:#F7F7F6"></div>
+  <div class="abs" style="left:0;right:0;top:142px;text-align:center;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.025em;color:#111112">Your dashboard is ready</div>
+  <div class="abs" style="left:0;right:0;top:186px;text-align:center;font-size:16.5px;line-height:22px;color:#5B5B5F">Create an account or sign in to open it.</div>
+</div>
+<div id="sheet" style="display:none"><span id="c6"></span><span id="c6t"></span><span id="c6s"></span></div>
+<div id="coach" style="display:none"></div><div id="dInv" style="display:none"></div>
+<div id="kb">
+  <div class="kr"><span class="k">q</span><span class="k">w</span><span class="k">e</span><span class="k">r</span><span class="k">t</span><span class="k">y</span><span class="k">u</span><span class="k">i</span><span class="k">o</span><span class="k">p</span></div>
+  <div class="kr"><span class="k">a</span><span class="k">s</span><span class="k">d</span><span class="k">f</span><span class="k">g</span><span class="k">h</span><span class="k">j</span><span class="k">k</span><span class="k">l</span></div>
+  <div class="kr"><span class="k g" style="flex-basis:44px">&#8679;</span><span class="k">z</span><span class="k">x</span><span class="k">c</span><span class="k">v</span><span class="k">b</span><span class="k">n</span><span class="k">m</span><span class="k g" style="flex-basis:44px">&#9003;</span></div>
+  <div class="kr"><span class="k g" style="flex-basis:88px">123</span><span class="k" style="flex-basis:186px;font-size:16px">space</span><span class="k g" id="kret" style="flex-basis:88px;background:#E8590C">done</span></div>
+</div>
+
+<div id="touch"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const io = x => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eo = x => { x = cl(x); return 1 - Math.pow(1 - x, 3); };
+const back = x => { x = cl(x); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, d) => cl((t - a) / d);
+const PERS = /personal/.test(location.hash);
+const END = PERS ? 26.3 : 31;
+const CUT = 4.7; // personal skips the organization naming step (team time 8.6 to 13.3)
+
+/* ---------- iso ---------- */
+const CS = Math.cos(Math.PI / 6);
+const P = (x, y, z) => [(x - y) * CS, (x + y) * 0.5 - z];
+let CAM = { x: 195, y: 500, s: 1 };
+const S = (x, y, z) => { const p = P(x, y, z); return [CAM.x + p[0] * CAM.s, CAM.y + p[1] * CAM.s]; };
+const poly = (pts, fill, extra = '') => '<path d="M' + pts.map(p => S(...p).map(v => v.toFixed(1)).join(' ')).join('L') + 'Z" fill="' + fill + '" ' + extra + '/>';
+function box(x, y, z, w, d, h, c, extra = '') {
+  const a = x - w / 2, b = x + w / 2, e = y - d / 2, f = y + d / 2, z1 = z + h;
+  return poly([[a, f, z], [b, f, z], [b, f, z1], [a, f, z1]], c[1], extra) +
+         poly([[b, e, z], [b, f, z], [b, f, z1], [b, e, z1]], c[2], extra) +
+         poly([[a, e, z1], [b, e, z1], [b, f, z1], [a, f, z1]], c[0], extra);
+}
+const C_ORG = PERS ? ['#FFFFFF', '#CFE0D4', '#E2EEE6'] : ['#FFFFFF', '#D6D1C9', '#E7E3DC'];
+const OUTLINE = PERS ? '#3E9B63' : '#E8590C';
+const C_WS = ['#DDE7FB', '#A3B8E2', '#C2D2F1'];
+const C_INV = ['#FCE3D3', '#D99A76', '#EDBB9C'];
+const CUBES = [[-36, -38, '#F7F7F6'], [-14, -40, '#E8590C'], [-38, -14, '#FDBA8C'], [-12, -16, '#9FB3DD'], [-24, -2, '#D4D1CB'], [0, -26, '#F7F7F6'], [-2, -2, '#FDBA8C']];
+
+/* ---------- timeline ---------- */
+const TAPS = PERS ? [[5.4, 'tileP'], [7.6, 'c1'], [14.6, 'chWs'], [17.2, 'c3'], [18.8, 'chInv'], [20.9, 'c4'], [26.4, 'c5']] : [[5.4, 'tileP'], [6.4, 'tileO'], [7.6, 'c1'], [9.2, 'f1'], [11.8, 'kret'], [12.9, 'c2'], [14.6, 'chWs'], [17.2, 'c3'], [18.8, 'chInv'], [20.9, 'c4'], [26.4, 'c5']];
+const ORG = 'Kestrel Labs';
+// group visibility windows [in, out]
+const G = { g1: [3.6, 7.8], g2: [8.6, 13.1], g3: [13.3, 17.4], g4: [17.6, 22.0], g5: [22.4, 26.6] };
+
+function fadeGroup(id, t, a, b) {
+  const el = $(id), pin = eo((t - a) / 0.5), pout = 1 - io((t - b) / 0.35);
+  const o = Math.min(pin, pout);
+  el.style.display = o > 0.001 ? 'block' : 'none';
+  el.style.opacity = o;
+  return o;
+}
+function rise(el, p, dy = 14) { el.style.opacity = p; el.dataset.rt = 'translateY(' + (dy * (1 - p)).toFixed(2) + 'px)'; el.style.transform = el.dataset.rt; }
+function press(el, t, tt) { const p = t - tt; el.style.transform = (el.dataset.rt || '') + ((p >= 0 && p < 0.16) ? ' scale(0.975)' : ''); }
+
+function miniIcons() {
+  const save = CAM;
+  CAM = { x: 0, y: 0, s: 0.36 };
+  $('icoP').innerHTML = box(0, 0, 0, 90, 90, 40, C_WS);
+  $('icoO').innerHTML = box(0, 0, 0, 200, 200, 22, C_ORG) + poly([[-100, -100, 22], [100, -100, 22], [100, 100, 22], [-100, 100, 22]], 'none', 'stroke="#E8590C" stroke-width="1.4"') + box(-20, -20, 22, 110, 110, 46, C_WS) + box(-20, -20, 68, 70, 70, 12, C_INV);
+  CAM = save;
+}
+
+function render(tIn) {
+  const t = PERS && tIn >= 8.6 ? tIn + CUT : tIn;
+  /* intro */
+  const introOut = 1 - io((t - 3.0) / 0.6);
+  $('intro').style.display = introOut > 0 ? 'block' : 'none';
+  $('intro').style.opacity = introOut;
+  rise($('wm'), eo((t - 0.3) / 0.8), 18);
+  $('tag0').style.opacity = eo((t - 1.0) / 0.6);
+  // scan: object dots get bracketed as a line passes
+  const dots = [[70, 180], [300, 150], [120, 640], [320, 600], [52, 470], [340, 400], [210, 220], [190, 700]];
+  const ly = lerp(80, 780, io((t - 1.4) / 1.3));
+  let sv = '';
+  if (t > 1.3 && t < 3.0) sv += '<rect x="0" y="' + (ly - 1).toFixed(1) + '" width="390" height="2" fill="#E8590C" opacity="' + (0.8 * (1 - seg(t, 2.5, 0.3))) + '"/>';
+  dots.forEach(([x, y], i) => {
+    const appear = eo((t - 0.2 - i * 0.08) / 0.5);
+    const hit = ly > y && t > 1.4;
+    sv += '<circle cx="' + x + '" cy="' + y + '" r="3" fill="' + (hit ? '#E8590C' : '#C4C1BA') + '" opacity="' + appear + '"/>';
+    if (hit) { const k = eo((t - (1.4 + 1.3 * (y - 80) / 700)) / 0.25); const r = 9 + 4 * (1 - k);
+      sv += '<rect x="' + (x - r) + '" y="' + (y - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" fill="none" stroke="#E8590C" stroke-width="1.5" opacity="' + k + '"/>'; }
+  });
+  $('scan').innerHTML = sv;
+
+
+  /* groups */
+  const o1 = fadeGroup('g1', t, G.g1[0], G.g1[1]);
+  rise($('t1'), eo((t - 3.7) / 0.6));
+  rise($('tileP'), eo((t - 3.95) / 0.6), 26);
+  rise($('tileO'), eo((t - 4.1) / 0.6), 26);
+  rise($('n1'), eo((t - 4.4) / 0.5));
+  $('tileP').classList.toggle('on', PERS ? t >= 5.4 : (t >= 5.4 && t < 6.4));
+  $('tileO').classList.toggle('on', !PERS && t >= 6.4);
+  $('c1').classList.toggle('off', t < 5.4);
+  press($('tileP'), t, 5.4); if (!PERS) press($('tileO'), t, 6.4); press($('c1'), t, 7.6);
+  // fade the "just me" tile and controls first when morphing
+  const other = PERS ? 'tileO' : 'tileP', mine = PERS ? 'icoP' : 'icoO';
+  if (t > 7.6) { $(other).style.opacity = 1 - eo((t - 7.65) / 0.3); $(mine).style.opacity = t >= 7.8 ? 0 : 1; } else $(mine).style.opacity = 1;
+
+  fadeGroup('g2', t, G.g2[0], G.g2[1]);
+  rise($('t2'), eo((t - 8.6) / 0.6));
+  const focus = t >= 9.2 && t < 11.8;
+  $('f1').classList.toggle('focus', focus);
+  const n = t >= 9.6 ? cl(Math.floor((t - 9.6) / 0.085), 0, ORG.length) : 0;
+  const typed = ORG.slice(0, n);
+  $('f1t').textContent = typed;
+  $('f1p').style.display = typed ? 'none' : 'inline';
+  $('f1c').style.display = focus && Math.floor(t * 2.2) % 2 === 0 ? 'inline-block' : 'none';
+  let kb = 0;
+  if (t >= 9.25 && t < 11.8) kb = eo((t - 9.25) / 0.3); else if (t >= 11.8) kb = 1 - eo((t - 11.8) / 0.3);
+  $('kb').style.transform = 'translateY(' + ((1 - kb) * 100) + '%)';
+  $('kb').style.display = kb > 0.001 ? 'block' : 'none';
+  $('f1').style.bottom = lerp(162, 291 + 44, kb) + 'px'; $('f1h').style.bottom = lerp(136, 291 + 18, kb) + 'px';
+  $('c2').classList.toggle('off', n < ORG.length);
+  press($('c2'), t, 12.9);
+
+  fadeGroup('g3', t, G.g3[0], G.g3[1]);
+  rise($('t3'), eo((t - 13.3) / 0.6));
+  rise($('ch3'), eo((t - 13.6) / 0.5));
+  const wsOn = t >= 14.6;
+  $('chWs').classList.toggle('on', wsOn);
+  $('c3').classList.toggle('off', !wsOn);
+  press($('chWs'), t, 14.6); press($('c3'), t, 17.2);
+
+  fadeGroup('g4', t, G.g4[0], G.g4[1]);
+  rise($('t4'), eo((t - 17.6) / 0.6));
+  rise($('ch4'), eo((t - 17.9) / 0.5));
+  const invOn = t >= 18.8;
+  $('chInv').classList.toggle('on', invOn);
+  $('c4').classList.toggle('off', !invOn);
+  press($('chInv'), t, 18.8); press($('c4'), t, 20.9);
+
+  fadeGroup('g5', t, G.g5[0], G.g5[1]);
+  rise($('t5'), eo((t - 22.5) / 0.6));
+  rise($('lg1'), eo((t - 23.2) / 0.5)); rise($('lg2'), eo((t - 23.5) / 0.5)); rise($('lg3'), eo((t - 23.8) / 0.5));
+  press($('c5'), t, 26.4);
+
+  /* camera */
+  // tile icon position for the morph start
+  const sr = $('stage').getBoundingClientRect();
+  const tileCam = PERS ? { x: 292, y: 328, s: 0.36 } : { x: 292, y: 474, s: 0.36 };
+  const keys = [
+    [7.8, tileCam], [8.6, { x: 195, y: 500, s: 0.8 }], [9.25, { x: 195, y: 500, s: 0.8 }], [9.6, { x: 195, y: 360, s: 0.6 }],
+    [11.8, { x: 195, y: 360, s: 0.6 }], [12.3, { x: 195, y: 500, s: 0.8 }], [13.3, { x: 195, y: 500, s: 0.8 }], [14.0, { x: 195, y: 490, s: 0.9 }],
+    [17.6, { x: 195, y: 490, s: 0.9 }], [18.4, { x: 195, y: 480, s: 1.0 }], [22.4, { x: 195, y: 480, s: 1.0 }], [23.2, { x: 112, y: 520, s: 0.62 }],
+    [26.8, { x: 112, y: 520, s: 0.62 }], [27.7, { x: 150, y: 120, s: 0.12 }]
+  ];
+  let cam = keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [ta, a] = keys[i], [tb, b] = keys[i + 1];
+    if (t >= ta && t <= tb) { const k = io((t - ta) / (tb - ta)); cam = { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), s: lerp(a.s, b.s, k) }; break; }
+    if (t > tb) cam = b;
+  }
+  CAM = cam;
+
+  /* world */
+  let w = '';
+  const worldOn = t >= 7.8;
+  if (worldOn) {
+    // floor glow
+    const fg = eo((t - 8.2) / 0.8);
+    w += '<ellipse cx="' + S(0, 0, 0)[0] + '" cy="' + (S(0, 0, 0)[1] + 18 * CAM.s) + '" rx="' + 240 * CAM.s + '" ry="' + 120 * CAM.s + '" fill="url(#glow)" opacity="' + fg + '"/>';
+    w += box(0, 0, 0, 200, 200, 22, C_ORG);
+    w += poly([[-100, -100, 22], [100, -100, 22], [100, 100, 22], [-100, 100, 22]], 'none', 'stroke="' + OUTLINE + '" stroke-width="1.4" stroke-linejoin="round"');
+    w += poly([[-100, 100, 0], [100, 100, 0], [100, -100, 0]], 'none', 'stroke="' + OUTLINE + '" stroke-opacity=".35" stroke-width="1" fill="none"');
+    // ghost workspace spots
+    const gh = eo((t - 15.6) / 0.6);
+    if (gh > 0) ['62,-50', '-50,62'].forEach(s => { const [x, y] = s.split(',').map(Number);
+      w += poly([[x - 28, y - 28, 22.5], [x + 28, y - 28, 22.5], [x + 28, y + 28, 22.5], [x - 28, y + 28, 22.5]], 'none', 'stroke="#8A8782" stroke-opacity="' + (0.6 * gh) + '" stroke-dasharray="4 4" stroke-width="1.2"'); });
+    // workspace block rises
+    const wh = back((t - 14.6) / 0.7);
+    if (t >= 14.6) w += box(-20, -20, 22, 110, 110, 46 * Math.max(0.02, wh), C_WS);
+    const wsTop = 22 + 46 * (t >= 14.6 ? Math.max(0.02, wh) : 0);
+    // inventory tray
+    const ih = back((t - 18.8) / 0.6);
+    if (t >= 18.8) w += box(-20, -20, wsTop, 70, 70, 12 * Math.max(0.05, ih), C_INV);
+    const invTop = wsTop + 12 * (t >= 18.8 ? Math.max(0.05, ih) : 0);
+    // cubes drop
+    CUBES.slice().sort((a, b) => (a[0] + a[1]) - (b[0] + b[1])).forEach(([x, y, c]) => {
+      const i = CUBES.findIndex(q => q[0] === x && q[1] === y);
+      const st = 19.6 + i * 0.12; if (t < st) return;
+      const k = cl((t - st) / 0.45);
+      const bounce = k < 1 ? (1 - eo(k)) * 70 - Math.sin(k * Math.PI) * 0 : 0;
+      const dz = k < 0.75 ? (1 - k / 0.75) * 80 : Math.sin((k - 0.75) / 0.25 * Math.PI) * 6;
+      const sz = 12 + (i % 3) * 2;
+      const shade = c === '#E8590C' ? ['#E8590C', '#9C3A07', '#C24A0A'] : c === '#9FB3DD' ? ['#B9CAEE', '#7F95C4', '#9DB1DD'] : c === '#FDBA8C' ? ['#FDBA8C', '#C98458', '#E39E70'] : c === '#D4D1CB' ? ['#D4D1CB', '#8F8B84', '#B3AFA8'] : ['#FFFFFF', '#BDB8B0', '#DDD9D2'];
+      w += box(x, y, invTop + dz, sz, sz, sz, shade, 'opacity="' + cl(k * 3) + '"');
+    });
+  }
+  // reveal circle for dashboard
+  const rv = io((t - 30.7) / 0.8);
+  $('world').innerHTML = '<defs><radialGradient id="glow"><stop offset="0" stop-color="#111112" stop-opacity=".10"/><stop offset="1" stop-color="#111112" stop-opacity="0"/></radialGradient></defs>' + w;
+
+  /* tags on world */
+  let tg = '';
+  const tagAt = (x, y, z, label, dot, a) => { if (a <= 0) return; const [sx, sy] = S(x, y, z); tg += '<div class="tag" style="left:' + sx.toFixed(1) + 'px;top:' + sy.toFixed(1) + 'px;opacity:' + a + '"><i style="background:' + dot + '"></i>' + label + '</div>'; };
+  const tagFade = (a, b) => eo((t - a) / 0.4) * (1 - cl((t - b) / 0.3));
+  if (PERS) tagAt(100, 100, -6, 'Personal', '#3E9B63', tagFade(13.3, 22.4)); else if (n > 0) tagAt(100, 100, -6, typed, '#E8590C', tagFade(9.6, 22.4));
+  tagAt(-20, -20, 110, PERS ? 'Home' : 'R&amp;D', '#9FB3DD', tagFade(15.0, 18.6));
+  tagAt(-20, -20, 150, PERS ? 'Tools' : 'Hardware', '#FDBA8C', tagFade(19.2, 22.4));
+  $('tags').innerHTML = tg;
+
+  /* legend leader lines handled by layout; dashboard reveal */
+  const dash = $('dash');
+  const av = eo((t - 27.0) / 0.6);
+  dash.style.display = t >= 27.0 ? 'block' : 'none';
+  dash.style.opacity = av; dash.style.transform = 'translateY(' + (16 * (1 - av)).toFixed(2) + 'px)';
+  $('world').style.opacity = 1 - cl((t - 27.1) / 0.5);
+  $('tags').style.opacity = 1 - cl((t - 26.9) / 0.3);
+
+  /* touch */
+  const tc = $('touch'); let shown = false;
+  for (const [tt, id] of TAPS) {
+    const p = t - tt;
+    if (p > -0.14 && p < 0.34) {
+      const r = $(id).getBoundingClientRect();
+      tc.style.left = (r.left - sr.left + r.width / 2) + 'px';
+      tc.style.top = (r.top - sr.top + r.height / 2) + 'px';
+      tc.style.opacity = cl(p < 0 ? (p + 0.14) / 0.14 : 1 - Math.max(0, (p - 0.12) / 0.22));
+      tc.style.transform = 'scale(' + (p < 0 ? 0.85 : 0.85 + 0.25 * Math.min(1, p / 0.3)) + ')';
+      shown = true; break;
+    }
+  }
+  if (!shown) tc.style.opacity = 0;
+}
+miniIcons();
+if (PERS) {
+  $('t3').innerHTML = '<h1 class="h1">What\'s this workspace for?</h1><p class="sub">Your personal space. Only you can see it.</p>';
+  $('ch3').innerHTML = '<span class="chip" id="chWs">Home</span><span class="chip">Workshop</span><span class="chip">Studio</span><span class="chip">+ Custom</span>';
+  $('t4').innerHTML = '<h1 class="h1">Create your first inventory</h1><p class="sub">Group your things, like tools or electronics.</p>';
+  $('ch4').innerHTML = '<span class="chip" id="chInv">Tools</span><span class="chip">Electronics</span><span class="chip">Household</span><span class="chip">+ Custom</span>';
+  $('lg1').innerHTML = '<div class="mono">Personal</div><div class="v">Only you</div>';
+  $('lg2').innerHTML = '<div class="mono">Workspace</div><div class="v">Home</div>';
+  $('lg3').innerHTML = '<div class="mono">Inventory</div><div class="v">Tools</div>';
+}
+window.render = render; window.END = END;
+if (!/record/.test(location.hash)) {
+  const t0 = performance.now();
+  (function loop() { const t = ((performance.now() - t0) / 1000) % (END + 1.5); render(Math.min(t, END)); requestAnimationFrame(loop); })();
+} else render(0);
+</script>
+</body>
+</html>
