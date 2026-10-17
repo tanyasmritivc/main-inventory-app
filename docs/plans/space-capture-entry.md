@@ -18,7 +18,15 @@ The full local coverage suite passes 557 tests and static analysis is clean.
 iPhone 16e/iOS 26.2 native fixture review confirms both entry controls, all three
 choices, photo camera/library selection and import with Garage preselected,
 including cancellation. Screenshot: design/space-capture-entry/out/options.png.
-Signed TestFlight 1.0.8 (81) delivery is being completed.
+Apple acknowledged signed TestFlight 1.0.8 (81), runtime
+257bb3e850bb5c258ff1ae5417380db71142acd2, delivery
+0ada0dcc-7654-425e-870a-15607fdeb248. All 31 native executables in both archive
+and exported IPA verify as iOS device binaries, with strict archive signatures.
+Final IPA SHA-256: bf5e356844d099415dbac2080a8d5d864d84f581dbc414f3a41deb63b0f01a07.
+Archive, IPA, verification and Apple receipt are preserved privately in
+Documents/FindEZ/AppStore/1.0.8-build81. Processing and tester availability are
+unverified and were not polled. Automatic checks are tracked in PR 97; no
+manual regressions were repeated after the successful release build.
 Real camera/barcode/file selection on the final phone binary remains manual
 acceptance; fixture tests do not claim physical hardware or production writes.
 
@@ -28,7 +36,7 @@ mobile/test/space_capture_entry_test.dart,
 mobile/tool/space_capture_preview.dart, mobile/pubspec.yaml and project docs.
 The preview uses a network-free disposable bundle and is excluded from lib/main.dart.
 
-Branch: fix/space-add-capture-20261017, clean start be4ab48. No deployment or
+Branch: fix/space-add-capture-20261017, clean start be4ab48. No backend deployment or
 migration is needed. The production archive must use lib/main.dart, existing
 production defines, a clean native cache after tests/simulator, and verification
 of every archive/export executable's iOS device platform before upload. Stop at

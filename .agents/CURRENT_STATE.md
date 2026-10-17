@@ -5,7 +5,10 @@ Scan Photo, Scan Barcode and Import Spreadsheet choices. Existing scoped capture
 flows and corrections are preserved; direct manual creation is removed only from
 this Space entry point. Eight focused cases and the full 557-test coverage suite
 pass; analysis is clean. Native iPhone 16e review confirms the chooser, camera
-choice and spreadsheet with the current Space. Beta81 delivery is being completed.
+choice and spreadsheet with the current Space. Apple acknowledged TestFlight
+1.0.8 (81), runtime 257bb3e, delivery 0ada0dcc-7654-425e-870a-15607fdeb248.
+All 31 archive/export executables verify as iOS device code. Processing/tester
+availability unverified; no polling. Automatic checks are tracked in PR 97.
 No dashboard, backend, web or schema change. The later deletion follow-up was
 canceled when the user confirmed it worked; no memory/chat change was made.
 See docs/plans/space-capture-entry.md.
