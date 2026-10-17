@@ -50,10 +50,10 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
           >
             <div style={{ fontSize: 28, color: "var(--light-muted)", lineHeight: 1 }}>↑</div>
             <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 12 }}>Drop spreadsheet here or click to browse</div>
-            <div style={{ fontSize: 12, color: "var(--light-muted)", marginTop: 6 }}>Excel (.xlsx, .xls) or CSV</div>
+            <div style={{ fontSize: 12, color: "var(--light-muted)", marginTop: 6 }}>Excel (.xlsx, .xls), CSV, or JSON</div>
             <input
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xls,.csv,.json"
               style={{ display: "none" }}
               onChange={(e) => {
                 const file = e.target.files?.[0];

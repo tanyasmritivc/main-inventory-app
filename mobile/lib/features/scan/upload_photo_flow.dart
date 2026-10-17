@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -7,11 +8,14 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
+import 'review_capture.dart';
 import 'qr_sheet.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 List<int> _compressImageBytes(Uint8List bytes) {
   try {
@@ -162,12 +166,12 @@ void _showSaveFailureSummary({
   showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      title: Text(
+      title: AppText(
         '$inserted of $total item${total == 1 ? '' : 's'} saved',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: AppTheme.foreground(ctx, Colors.white),
           fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
@@ -176,33 +180,44 @@ void _showSaveFailureSummary({
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText(
             'Some items could not be saved:',
-            style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0x99FFFFFF)),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 10),
           ...lines.map(
             (line) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
+              child: AppText(
                 line,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: TextStyle(
+                  color: AppTheme.foreground(ctx, Colors.white),
+                  fontSize: 13,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          AppText(
             'Fix the highlighted rows and tap Save All to retry.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text(
+          child: AppText(
             'Dismiss',
-            style: TextStyle(color: Color(0xFF6997DD)),
+            style: TextStyle(
+              color: AppTheme.foreground(ctx, Color(0xFF6997DD)),
+            ),
           ),
         ),
       ],
@@ -237,28 +252,35 @@ Future<void> runUploadPhotoFlow({
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
+            color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.photo_camera_outlined,
-                  color: Colors.white,
+                  color: AppTheme.foreground(ctx, Colors.white),
                 ),
-                title: const Text(
+                title: AppText(
                   'Take Photo',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                  ),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_outlined, color: Colors.white),
-                title: const Text(
+                leading: Icon(
+                  Icons.photo_outlined,
+                  color: AppTheme.foreground(ctx, Colors.white),
+                ),
+                title: AppText(
                   'Choose from Library',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: AppTheme.foreground(ctx, Colors.white),
+                  ),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
               ),
@@ -296,17 +318,22 @@ Future<void> runUploadPhotoFlow({
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
+              color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.white),
+                CircularProgressIndicator(
+                  color: AppTheme.adaptive(context, Colors.white),
+                ),
                 SizedBox(height: 16),
-                Text(
+                AppText(
                   'Extracting items…',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),
@@ -346,13 +373,13 @@ Future<void> runUploadPhotoFlow({
         unawaited(ProStatus.refresh(api));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Something went wrong. Please try again.'),
+            content: AppText('Something went wrong. Please try again.'),
           ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to extract items. Try again.')),
+        const SnackBar(content: AppText('Failed to extract items. Try again.')),
       );
     }
     return;
@@ -360,7 +387,7 @@ Future<void> runUploadPhotoFlow({
     if (context.mounted) Navigator.of(context).pop();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to extract items. Try again.')),
+      const SnackBar(content: AppText('Failed to extract items. Try again.')),
     );
     return;
   }
@@ -369,9 +396,9 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
 
   if (extracted.items.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('No items found in image.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: AppText('No items found in image.')),
+    );
     return;
   }
 
@@ -393,6 +420,7 @@ Future<void> runUploadPhotoFlow({
     builder: (_) => ConfirmScanSheet(
       items: extracted.items,
       defaultLocation: preselectedSpace,
+      existingItems: InventoryCache.forContext(api.cacheKey),
     ),
   );
   if (confirmed == null || !context.mounted) return;
@@ -435,43 +463,71 @@ Future<void> runUploadPhotoFlow({
         notes: it.notes,
         location: itemLocation,
         catalogMatch: it.catalogMatch,
+        scanEvidence: it.scanEvidence,
+        reviewId: it.reviewId,
+        reviewStatus: it.reviewStatus,
+        reviewToken: it.reviewToken,
       ),
     );
-    indexMap.add(name);
+    // The backend failure index is relative to the confident-only bulk
+    // payload. Uncertain objects stay in Review and never occupy an index in
+    // that request.
+    if (!it.needsReview) indexMap.add(name);
   }
 
   if (normalized.isEmpty) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Fix the highlighted rows and try again.'),
+          content: AppText('Fix the highlighted rows and try again.'),
         ),
       );
     }
     return;
   }
 
+  ReviewCapturePlan plan;
+  try {
+    plan = await prepareCaptureForSave(api: api, items: normalized);
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
+    return;
+  }
+  final inventoryItems = plan.inventoryItems;
+  if (inventoryItems.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: AppText(
+          '${plan.reviewCount} uncertain ${plan.reviewCount == 1 ? 'item is' : 'items are'} saved in Review.',
+        ),
+      ),
+    );
+    await onItemsSaved();
+    return;
+  }
+
   debugPrint('FINDEZ bulkCreate: saving to space "$preselectedSpace"');
-  debugPrint(
-    'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
-    '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
-  );
+  debugPrint('FINDEZ bulkCreate: sending ${inventoryItems.length} item(s)');
 
   // Step 7: save
   BulkCreateResult res;
   try {
-    res = await api.bulkCreateInventory(items: normalized);
+    res = await api.bulkCreateInventory(items: inventoryItems);
   } on dio.DioException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   }
   if (!context.mounted) return;
@@ -500,12 +556,13 @@ Future<void> runUploadPhotoFlow({
     ...backendFailures,
   };
   final insertedCount = res.inserted.length;
-  final silentDrops = normalized.length - insertedCount - res.failures.length;
+  final silentDrops =
+      inventoryItems.length - insertedCount - res.failures.length;
 
   if (silentDrops > 0) {
     debugPrint(
       'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
-      '(server name deduplication). Sent=${normalized.length}, '
+      '(server name deduplication). Sent=${inventoryItems.length}, '
       'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
     );
   }
@@ -514,14 +571,16 @@ Future<void> runUploadPhotoFlow({
   final allSucceeded =
       allFailures.isEmpty &&
       silentDrops == 0 &&
-      insertedCount == normalized.length;
+      insertedCount == inventoryItems.length;
 
   if (insertedCount > 0) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           allSucceeded
-              ? 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $preselectedSpace'
+              ? plan.reviewCount > 0
+                    ? 'Saved $insertedCount and kept ${plan.reviewCount} in Review'
+                    : 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $preselectedSpace'
               : 'Saved $insertedCount of $totalExpected items to $preselectedSpace',
         ),
       ),
@@ -568,7 +627,7 @@ Future<void> runUploadPhotoFlow({
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
+        content: AppText(
           'Couldn\'t save those items. Fix the highlighted rows and try again.',
         ),
       ),

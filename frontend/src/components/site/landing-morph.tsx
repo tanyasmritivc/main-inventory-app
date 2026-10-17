@@ -10,6 +10,8 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { FindEZWordmark } from "./findez-brand";
+import { useMarketingSession } from "@/lib/use-marketing-session";
 
 import { initLanding } from "./landing-morph-engine";
 import "./landing-morph.css";
@@ -27,8 +29,9 @@ const box = (left: string, top: string, width: string, height: string) =>
 
 const arrow = <em className="arw" style={{ fontStyle: "normal" }}>&#8599;</em>;
 
-export function LandingMorph() {
+export function LandingMorph({ initialSignedIn = false }: { initialSignedIn?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const signedIn = useMarketingSession(initialSignedIn);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -44,17 +47,15 @@ export function LandingMorph() {
 
       <header id="hdr">
         <Link className="mark" href="/" aria-label="FindEZ, home">
-          <svg className="logo" viewBox="0 0 96 96" fill="none" aria-hidden="true">
-            <path d="M28 38H58V68" stroke="currentColor" strokeWidth="11" strokeLinejoin="miter" />
-            <path d="M53 28H68V43" stroke="#E8590C" strokeWidth="11" strokeLinejoin="miter" />
-          </svg>
-          <span>FindEZ</span>
+          <FindEZWordmark className="logo" width={108} height={29} />
         </Link>
         <nav className="top-links" aria-label="Main navigation">
           <Link href="/docs/api">Developers</Link>
           <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
         </nav>
-        <Link className="cta sm" href="/signup"><span>Get started</span>{arrow}</Link>
+        <Link className="cta sm" href={signedIn ? "/home" : "/signup"}>
+          <span>{signedIn ? "Dashboard" : "Get started"}</span>{arrow}
+        </Link>
       </header>
 
       <main id="top">
@@ -69,11 +70,6 @@ export function LandingMorph() {
                 <span className="ln heroline"><i style={d(80)}>Turn physical objects into</i></span>
                 <span className="ln heroline"><i className="g" style={d(240)}>searchable inventory.</i></span>
               </h1>
-              <div className="hero-foot">
-                <p className="kicker ln heroline">
-                  <i style={d(560)}>Not a chatbot on top of a database. A pipeline that understands what is actually in the room.</i>
-                </p>
-              </div>
             </div>
 
             <div className="a1-layer" id="a1Statements">
@@ -241,7 +237,7 @@ export function LandingMorph() {
             <span className="ln"><i className="g" style={d(130)}>a memory.</i></span>
           </h2>
           <div className="close-foot fade" style={d(260)}>
-            <span className="mark">FindEZ</span>
+            <span className="mark"><FindEZWordmark width={142} height={38}/></span>
           </div>
         </section>
       </main>

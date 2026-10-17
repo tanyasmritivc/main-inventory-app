@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/site/auth-form";
 
@@ -10,10 +10,11 @@ const signUp = jest.fn();
 const signInWithPassword = jest.fn();
 const upsert = jest.fn();
 const from = jest.fn(() => ({ upsert }));
+let mockRedirect = "/inventory";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh, replace: jest.fn() }),
-  useSearchParams: () => new URLSearchParams("redirect=/inventory"),
+  useSearchParams: () => new URLSearchParams({ redirect: mockRedirect }),
 }));
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithPassword }, from }),
@@ -28,11 +29,13 @@ async function submitSignup() {
   await userEvent.type(screen.getByLabelText("Last name"), "Lovelace");
   await userEvent.type(screen.getByLabelText("Email"), "  ada@example.com ");
   await userEvent.type(screen.getByLabelText("Password"), "correct horse battery");
+  await userEvent.click(screen.getByRole("checkbox", { name: /at least 13/ }));
   await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRedirect = "/inventory";
   window.localStorage.clear();
 });
 
@@ -48,6 +51,15 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   expect(redirect.pathname).toBe("/auth/callback");
   expect(redirect.searchParams.get("next")).toBe("/inventory");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
+  expect(args.options.data.terms_version).toBe("2026-10-11");
+  expect(args.options.data.eligibility_attested).toBe(true);
+  expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(false);
+});
+test("signup cannot send account data before eligibility and Terms are affirmed", async () => {
+  const { container } = render(<AuthForm mode="signup" />);
+  fireEvent.submit(container.querySelector("form")!);
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Confirm your eligibility and accept the Terms of Service to create an account.");
+  expect(signUp).not.toHaveBeenCalled();
 });
 
 test("when confirmation is required (no session) the user is told to check their email", async () => {
@@ -102,4 +114,14 @@ test("sign-in trims the email and keeps the existing redirect", async () => {
 
   await waitFor(() => expect(push).toHaveBeenCalledWith("/inventory"));
   expect(signInWithPassword).toHaveBeenCalledWith({ email: "ada@example.com", password: "secret-password" });
+});
+
+test("signup preserves an install invitation in account metadata before email confirmation", async () => {
+  mockRedirect = "/join/team/TEAM23?download=1";
+  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  await submitSignup();
+  await screen.findByRole("status");
+  expect(signUp.mock.calls[0][0].options.data.findez_pending_invitation).toEqual({ v: 1, kind: "team", code: "TEAM23", created_at: expect.any(Number) });
+  expect(new URL(signUp.mock.calls[0][0].options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
+  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin?redirect=%2Fjoin%2Fteam%2FTEAM23%3Fdownload%3D1");
 });

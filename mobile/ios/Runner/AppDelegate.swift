@@ -7,6 +7,8 @@ import UserNotifications
   private var pushResult: FlutterResult?
   private var pushChannel: FlutterMethodChannel?
   private var pendingNotification: [AnyHashable: Any]?
+  private var pushGeneration = 0
+  private var pushTimeout: DispatchWorkItem?
 
   override func application(
     _ application: UIApplication,
@@ -19,15 +21,38 @@ import UserNotifications
         switch call.method {
         case "register":
           self?.registerForPush(result: result)
+        case "authorizationStatus":
+          UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status: String
+            switch settings.authorizationStatus {
+            case .authorized: status = "authorized"
+            case .denied: status = "denied"
+            case .provisional: status = "provisional"
+            case .ephemeral: status = "ephemeral"
+            case .notDetermined: status = "notDetermined"
+            @unknown default: status = "notDetermined"
+            }
+            DispatchQueue.main.async { result(status) }
+          }
+        case "unregister":
+          self?.pushGeneration += 1
+          self?.pushTimeout?.cancel()
+          self?.pushTimeout = nil
+          self?.pushResult?(FlutterError(code: "registration_cancelled", message: "Registration was cancelled.", details: nil))
+          self?.pushResult = nil
+          self?.pendingNotification = nil
+          UIApplication.shared.unregisterForRemoteNotifications()
+          UIApplication.shared.applicationIconBadgeNumber = 0
+          UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+          UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+          result(nil)
         case "getInitialNotification":
           result(self?.pendingNotification)
           self?.pendingNotification = nil
         case "setBadgeCount":
           let arguments = call.arguments as? [String: Any]
           let count = arguments?["count"] as? Int ?? 0
-          DispatchQueue.main.async {
-            UIApplication.shared.applicationIconBadgeNumber = max(0, count)
-          }
+          UIApplication.shared.applicationIconBadgeNumber = max(0, count)
           result(nil)
         default:
           result(FlutterMethodNotImplemented)
@@ -42,23 +67,40 @@ import UserNotifications
   }
 
   private func registerForPush(result: @escaping FlutterResult) {
+    guard pushResult == nil else {
+      result(FlutterError(code: "registration_busy", message: "Registration is already in progress.", details: nil))
+      return
+    }
+    pushGeneration += 1
+    let generation = pushGeneration
     pushResult = result
+    let timeout = DispatchWorkItem { [weak self] in
+      guard let self = self, self.pushGeneration == generation else { return }
+      self.pushGeneration += 1
+      self.finishPushRegistration(FlutterError(code: "registration_timeout", message: "Phone alerts could not connect. Try again.", details: nil))
+    }
+    pushTimeout = timeout
+    DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: timeout)
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-      if let error = error {
-        self.finishPushRegistration(FlutterError(code: "permission_error", message: error.localizedDescription, details: nil))
-      } else if !granted {
-        self.finishPushRegistration(FlutterError(code: "permission_denied", message: "Notifications are disabled.", details: nil))
-      } else {
-        DispatchQueue.main.async { UIApplication.shared.registerForRemoteNotifications() }
+      DispatchQueue.main.async {
+        guard self.pushGeneration == generation else { return }
+        if let error = error {
+          self.finishPushRegistration(FlutterError(code: "permission_error", message: error.localizedDescription, details: nil))
+        } else if !granted {
+          self.finishPushRegistration(FlutterError(code: "permission_denied", message: "Notifications are disabled.", details: nil))
+        } else {
+          UIApplication.shared.registerForRemoteNotifications()
+        }
       }
     }
   }
 
   private func finishPushRegistration(_ value: Any?) {
-    DispatchQueue.main.async {
-      self.pushResult?(value)
-      self.pushResult = nil
-    }
+    pushTimeout?.cancel()
+    pushTimeout = nil
+    let result = pushResult
+    pushResult = nil
+    result?(value)
   }
 
   private func apnsEnvironment() -> String {

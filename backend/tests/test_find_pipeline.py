@@ -78,6 +78,8 @@ class FindResultMappingTests(unittest.TestCase):
         self.assertEqual(evidence.barcode_symbology, "CODE_128")
         self.assertEqual(evidence.ocr_text, "2000-0025-0502")
         self.assertEqual(evidence.detection_confidence, 0.97)
+        self.assertEqual(evidence.identity_confidence, 0.94)
+        self.assertEqual(evidence.review_reasons, [])
         self.assertFalse(evidence.needs_review)
         self.assertEqual(parsed.summary.identified_count, 1)
         self.assertEqual(parsed.summary.measured_count, 1)
@@ -106,6 +108,40 @@ class FindResultMappingTests(unittest.TestCase):
         self.assertEqual(parsed.items[0].confidence, 0.2)
         self.assertIn("review this item", parsed.items[0].notes or "")
         self.assertTrue(parsed.items[0].scan_evidence.needs_review)
+        self.assertIn(
+            "could not be identified reliably",
+            parsed.items[0].scan_evidence.review_reasons[0],
+        )
+
+    def test_public_scan_evidence_never_exposes_pipeline_implementation_names(self):
+        raw = _item(
+            identity={
+                "name": "servo",
+                "category": "motor",
+                "vendor": "Acme",
+                "sku": "S-1",
+                "confidence": 0.9,
+                "unknown": False,
+                "reasoning": "qwen3vl and SAM2 agreed; model endpoint /v1/jobs/secret",
+            },
+            dimensions={
+                "method": "internal_model_v4",
+                "obb_mm": [10, 20],
+                "confidence": "medium",
+            },
+            errors=["private_service: gpu address 10.0.0.2"],
+        )
+
+        mapped = map_find_result({"items": [raw]})
+        public_text = json.dumps(mapped).lower()
+
+        for private_term in ("qwen", "sam2", "model_v4", "gpu address", "/v1/jobs"):
+            self.assertNotIn(private_term, public_text)
+        evidence = mapped["items"][0]["scan_evidence"]
+        self.assertEqual(evidence["measurement_method"], "visual estimate")
+        self.assertEqual(
+            evidence["warnings"], ["Only part of the photo analysis completed."]
+        )
 
     def test_reference_items_are_excluded(self):
         reference = _item(reference={"kind": "ruler"})

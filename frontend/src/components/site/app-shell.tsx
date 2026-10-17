@@ -1,33 +1,116 @@
 "use client";
+import { useInventoryRouter } from "@/components/site/inventory-link";
+import { accountRequest } from "@/lib/account-request";
+import { subscribeNotifications } from "@/lib/notification-state";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { Bell, Menu, Search, UserRound } from "lucide-react";
-import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Bell, Menu, Search, UserRound, Users } from "lucide-react";
+import {
+  APP_NAV_ITEMS,
+  AppSidebar,
+} from "@/components/site/app-sidebar";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { AppThemeProvider } from "@/components/site/use-app-theme";
+import Link from "@/components/site/inventory-link";
+import { DIRECTORY_NAVIGATION, type NavigationContext } from "@/lib/context-navigation";
+import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { getNotifications } from "@/lib/api";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+export function AppShell({ children, inventory, context }: { children: React.ReactNode; inventory?: InventorySelection; context?: NavigationContext }) {
+  const router = useInventoryRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  useEffect(() => {
+    try { setSidebarPinned(localStorage.getItem("findez-navigation-pinned") === "true"); } catch { /* Session preference still works. */ }
+  }, []);
+  const togglePin = useCallback(() => {
+    const next = !sidebarPinned;
+    setSidebarPinned(next);
+    try { localStorage.setItem("findez-navigation-pinned", String(next)); } catch { /* Session preference still works. */ }
+  }, [sidebarPinned]);
+  const toggleSidebar = useCallback(
+    () => setSidebarOpen((value) => !value),
+    [],
+  );
   const [commandOpen, setCommandOpen] = useState(false);
+  const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [userInitial, setUserInitial] = useState("");
-  const [unread, setUnread] = useState(0);
+  const [userName, setUserName] = useState("Your account");
+  const [avatarUrl, setAvatarUrl] = useState<string>();
+  const [unread, setUnread] = useState<number | null>(null);
 
   useEffect(() => {
-    let active = true;
+    let active = true,
+      generation = 0,
+      notificationGeneration = 0;
+    let notificationAccount: string | undefined;
+    const signupAttempts = new Set<string>();
     async function loadIdentity() {
-      const { data } = await supabase.auth.getUser();
-      if (!active) return;
-      const user = data.user;
-      const pendingValue = window.localStorage.getItem(PENDING_SIGNUP_PROFILE_KEY);
-      if (user && pendingValue) {
+      const ticket = ++generation;
+      const current = () => active && ticket === generation;
+      const { data } = await supabase.auth.getSession();
+      if (!current()) return;
+      const user = data.session?.user;
+      if (notificationAccount !== user?.id) {
+        notificationAccount = user?.id;
+        notificationGeneration++;
+        setUnread(null);
+      }
+      const name = String(
+        user?.user_metadata?.display_name ?? user?.email ?? "",
+      );
+      setUserInitial(name.slice(0, 1).toUpperCase());
+      setUserName(name || "Your account");
+      setAvatarUrl(undefined);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (current() && user && sessionData.session?.user.id === user.id) {
+        const profileRequest = accountRequest<{
+          display_name?: string;
+          avatar_url?: string;
+        }>(user.id, "/profile/me")
+          .then((profile) => {
+            if (current()) {
+              setUserName(profile.display_name || name || "Your account");
+              setUserInitial(
+                (profile.display_name || name).slice(0, 1).toUpperCase(),
+              );
+              setAvatarUrl(profile.avatar_url || undefined);
+            }
+          })
+          .catch(() => {});
+        const notificationTicket = ++notificationGeneration;
+        const notificationsRequest = accountRequest<{ unread_count: number }>(
+          user.id,
+          "/notifications",
+        )
+          .then((result) => {
+            if (current() && notificationTicket === notificationGeneration)
+              setUnread(Number.isSafeInteger(result.unread_count) && result.unread_count >= 0 ? result.unread_count : null);
+          })
+          .catch(() => {
+            if (current() && notificationTicket === notificationGeneration) setUnread(null);
+          });
+        await Promise.allSettled([profileRequest, notificationsRequest]);
+      }
+      if (!current()) return;
+      // Legacy signup completion must not delay the current account's identity.
+      const pendingValue = window.localStorage.getItem(
+        PENDING_SIGNUP_PROFILE_KEY,
+      );
+      if (user && pendingValue && !signupAttempts.has(user.id)) {
+        // updateUser emits USER_UPDATED. Do not reenter an unfinished attempt.
+        signupAttempts.add(user.id);
         try {
           const pending = JSON.parse(pendingValue) as Record<string, unknown>;
           const displayName = String(pending.displayName ?? "").trim();
@@ -36,46 +119,83 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           const profileRole = String(pending.cleanProfileRole ?? "").trim();
           const organization = String(pending.cleanOrganization ?? "").trim();
           if (displayName) {
-            const { error: metadataError } = await supabase.auth.updateUser({ data: {
-              display_name: displayName,
-              full_name: displayName,
-              given_name: firstName,
-              family_name: lastName,
-              profile_role: profileRole,
-              organization,
-            } });
-            const { error: profileError } = await supabase.from("profiles").upsert({
-              id: user.id,
-              display_name: displayName,
-              first_name: firstName,
-              last_name: lastName,
-              profile_role: profileRole,
-              organization,
+            const { error: metadataError } = await supabase.auth.updateUser({
+              data: {
+                display_name: displayName,
+                full_name: displayName,
+                given_name: firstName,
+                family_name: lastName,
+                profile_role: profileRole,
+                organization,
+                ...(typeof pending.termsVersion === "string" && typeof pending.termsAcceptedAt === "string" && pending.eligibilityAttested === true ? {
+                  terms_version: pending.termsVersion,
+                  terms_accepted_at: pending.termsAcceptedAt,
+                  eligibility_attested: true,
+                } : {}),
+              },
             });
-            if (!metadataError && !profileError) window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .upsert({
+                id: user.id,
+                display_name: displayName,
+                first_name: firstName,
+                last_name: lastName,
+                profile_role: profileRole,
+                organization,
+              });
+            if (!metadataError && !profileError)
+              window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
           }
         } catch {
           window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
         }
       }
-      const name = String(user?.user_metadata?.display_name ?? user?.email ?? "");
-      setUserInitial(name.slice(0, 1).toUpperCase());
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session) {
-        getNotifications({ token: sessionData.session.access_token }).then((result) => {
-          if (active) setUnread(result.unread_count ?? 0);
-        }).catch(() => {});
-      }
     }
     void loadIdentity();
-    const timer = window.setInterval(loadIdentity, 60_000);
-    return () => { active = false; window.clearInterval(timer); };
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) return;
+      generation++;
+      setUserName("Your account");
+      setUserInitial("");
+      setAvatarUrl(undefined);
+      notificationAccount = undefined;
+      notificationGeneration++;
+      setUnread(null);
+      if (event !== "SIGNED_OUT") void Promise.resolve().then(loadIdentity);
+    });
+    const onProfileChange = () => {
+      void loadIdentity();
+    };
+    window.addEventListener("findez-profile-changed", onProfileChange);
+    const stopNotifications = subscribeNotifications((value) => {
+      if (!active || value.accountId !== notificationAccount) return;
+      notificationGeneration++;
+      setUnread(value.unread);
+      if (value.unread === null) void loadIdentity();
+    });
+    const onFocus = () => { if (document.visibilityState === "visible") void loadIdentity(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const timer = window.setInterval(onFocus, 60_000);
+    return () => {
+      active = false;
+      generation++;
+      authListener.subscription.unsubscribe();
+      window.clearInterval(timer);
+      window.removeEventListener("findez-profile-changed", onProfileChange);
+      stopNotifications();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [supabase]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault(); setCommandOpen((value) => !value);
+        event.preventDefault();
+        setSidebarOpen(false);
+        setCommandOpen((value) => !value);
       }
       if (event.key === "Escape") setCommandOpen(false);
     };
@@ -83,45 +203,141 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const commandItems = APP_NAV_ITEMS.filter((item) => [item.label, item.section, ...(item.keywords ?? [])].join(" ").toLowerCase().includes(commandQuery.trim().toLowerCase()));
-  const activeItem = APP_NAV_ITEMS.find((item) => pathname === item.route || pathname.startsWith(`${item.route}/`));
-  const pageLabel = pathname.startsWith("/settings/api-keys")
-    ? "API keys"
-    : pathname.startsWith("/settings")
-    ? "Settings"
-    : pathname.startsWith("/notifications")
-      ? "Notifications"
-      : pathname.startsWith("/docs/api")
-        ? "API documentation"
-        : activeItem?.label ?? "Workspace";
-
+  const navigationItems = context?.items || (inventory ? [
+    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Dashboard","/inventory":"Items","/spaces":"Locations","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
+    { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
+  ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
+  const breadcrumbs = context?.breadcrumbs || (inventory ? [
+    inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },
+    { label: inventory.workspace.name, href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}` },
+    { label: inventory.name, href: `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` },
+  ] : []);
+  const commandItems = navigationItems.filter((item) => (inventory?.can_edit !== false || item.route !== "/scan") &&
+    [item.label, item.section, ...(item.keywords ?? [])]
+      .join(" ")
+      .toLowerCase()
+      .includes(commandQuery.trim().toLowerCase()),
+  );
   return (
     <AppThemeProvider>
-    <div className={`app-frame ${sidebarOpen ? "sidebar-open" : ""}`}>
-      <AppSidebar onToggle={() => setSidebarOpen((value) => !value)} sidebarOpen={sidebarOpen} />
-      <header className="app-topbar">
-        {!sidebarOpen && <button className="app-icon-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>}
-        <div className="app-breadcrumbs" aria-label="Current location"><span>{pageLabel}</span></div>
-        <div className="app-topbar-spacer" />
-        <button className="app-command-trigger" onClick={() => setCommandOpen(true)}><Search size={15} /><span>Go to…</span><kbd>⌘K</kbd></button>
-        <button className="app-icon-button app-notification-button" onClick={() => router.push("/notifications")} aria-label={`${unread} unread notifications`}>
-          <Bell size={18} />{unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
-        </button>
-        <button className="app-avatar" onClick={() => router.push("/settings")} aria-label="Open profile">{userInitial || <UserRound size={16} />}</button>
-      </header>
-      <main className="app-main"><div className="app-content">{children}</div></main>
-      {commandOpen && (
-        <div className="command-backdrop" role="presentation" onMouseDown={() => setCommandOpen(false)}>
-          <div className="command-panel" role="dialog" aria-modal="true" aria-label="Navigate FindEZ" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="command-input-row"><Search size={18} /><input autoFocus value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} placeholder="Search features and pages" /><kbd>esc</kbd></div>
+      <div
+        className={`app-frame ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${sidebarPinned ? "sidebar-pinned" : ""}`}
+      >
+        <a className="app-skip-link" href="#app-main">
+          Skip to content
+        </a>
+        <AppSidebar
+          onToggle={toggleSidebar}
+          sidebarOpen={sidebarOpen}
+          userName={userName}
+          userInitial={userInitial}
+          avatarUrl={avatarUrl}
+          pinned={sidebarPinned}
+          onPin={togglePin}
+          items={navigationItems}
+          activeRoute={context?.activeRoute}
+          homeHref={context?.homeHref || (inventory ? `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` : "/organizations")}
+        />
+        <header className="app-topbar">
+          <button
+            className="app-icon-button app-mobile-nav-button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation"
+            aria-controls="app-navigation"
+            aria-expanded={sidebarOpen}
+          >
+            <Menu size={19} />
+          </button>
+          {breadcrumbs.length > 0 && <nav className="app-inventory-switcher" aria-label={inventory ? "Current inventory" : "Current workspace"}>
+            {breadcrumbs.map((crumb, index) => <span className="context-crumb" key={crumb.href}>{index > 0 && <span aria-hidden="true">/</span>}<Link href={crumb.href}>{crumb.label}</Link></span>)}
+            {inventory && !inventory.can_edit && <small>View only</small>}
+          </nav>}
+          <div className="app-topbar-spacer" />
+          <button
+            className="app-command-trigger"
+            aria-label="Go to a page"
+            ref={commandTrigger}
+            onClick={() => setCommandOpen(true)}
+          >
+            <Search size={15} />
+            <span>Go to…</span>
+            <kbd>⌘K</kbd>
+          </button>
+          <button
+            className="app-icon-button app-notification-button"
+            onClick={() => router.push("/notifications")}
+            aria-label={unread === null ? "Notifications" : `${unread} unread notifications`}
+            title={unread === null ? "Open notifications to check for updates" : undefined}
+          >
+            <Bell size={18} />
+            {unread !== null && unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
+          </button>
+          <button
+            className="app-avatar"
+            onClick={() => router.push("/settings")}
+            aria-label="Open profile"
+            style={
+              avatarUrl
+                ? {
+                    backgroundImage: `url(${avatarUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
+          >
+            {!avatarUrl && (userInitial || <UserRound size={16} />)}
+          </button>
+        </header>
+        <main id="app-main" className="app-main" tabIndex={-1}>
+          <div className="app-content">{children}</div>
+        </main>
+        <Dialog open={commandOpen} onOpenChange={setCommandOpen}>
+          <DialogContent
+            className="command-panel"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              commandTrigger.current?.focus();
+            }}
+          >
+            <DialogTitle className="sr-only">Navigate FindEZ</DialogTitle>
+            <DialogDescription className="sr-only">
+              Search and open a feature.
+            </DialogDescription>
+            <div className="command-input-row">
+              <Search size={18} />
+              <input
+                autoFocus
+                aria-label="Search features and pages"
+                value={commandQuery}
+                onChange={(event) => setCommandQuery(event.target.value)}
+                placeholder="Search features and pages"
+              />
+            </div>
             <div className="command-results">
-              {commandItems.map((item) => { const Icon = item.icon; return <button key={item.route} onClick={() => { router.push(item.route); setCommandOpen(false); setCommandQuery(""); }}><Icon size={17} /><span><strong>{item.label}</strong><small>{item.section}</small></span></button>; })}
+              {commandItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.route}
+                    onClick={() => {
+                      router.push(item.route);
+                      setCommandOpen(false);
+                      setCommandQuery("");
+                    }}
+                  >
+                    <Icon size={17} />
+                    <span>
+                      <strong>{item.label}</strong>
+                    </span>
+                  </button>
+                );
+              })}
               {commandItems.length === 0 && <p>No matching FindEZ feature.</p>}
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AppThemeProvider>
   );
 }

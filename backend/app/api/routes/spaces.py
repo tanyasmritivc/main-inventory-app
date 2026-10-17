@@ -47,6 +47,8 @@ def create_space_route(
         return {"space": space}
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Failed to create space")
         raise service_unavailable("Could not create space. Please try again.")

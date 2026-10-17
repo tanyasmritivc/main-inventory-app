@@ -1,6 +1,26 @@
 # Current architecture
 
-This describes the code on `main` as of 2026-09-22. Planned systems are labeled.
+This describes the current release foundation. Planned systems are labeled.
+
+## Organization and inventory access (released October 15)
+
+Migration 044 adds optional organizations above existing Teams/workspaces, explicit
+inventory access and a shared physical-location tree. See
+`docs/plans/organization-inventory-access.md`. Independent workspaces and Personal
+remain supported. Scoped web routes use inventory IDs; legacy application routes
+also apply actor-local restrictions. Database policies and write triggers provide
+an additional boundary. Management RPCs and item changes record actor/time and
+recorded-location evidence. Existing rows and legacy access are preserved.
+Deployment status is maintained in CURRENT_STATE.md.
+
+Migration 045 requires recipient consent for new organization/workspace membership
+and newly granted inventory access. Pending invitations contain a hashed code,
+recipient email, scope, role, expiry and decision history. Verified-email preview
+and Notifications do not grant access. Acceptance rechecks current sender and
+parent permissions transactionally. The old immediate-grant function is private;
+the public management RPC supports existing-role changes and revocation only.
+Existing Space/Team self-join links remain compatible. New access invitations
+use `/join/access` web review; mobile navigation/binary are unchanged.
 
 ## Repository
 
@@ -16,9 +36,18 @@ This describes the code on `main` as of 2026-09-22. Planned systems are labeled.
 ## Client applications
 
 The Flutter app uses Supabase Auth directly, then sends the Supabase access token to
-FastAPI through `mobile/lib/core/api_client.dart`. Its main shell contains Profile,
-Ask FindEZ, Scan, and Inventory, with additional team, sharing, project, document,
-checkout, notification, and settings flows.
+FastAPI through `mobile/lib/core/api_client.dart`. Its main shell has Home, Capture,
+Ask and Find in the rounded four-icon pill. Profile and utilities open as an
+Account page from a small control at the top of Home, using the same owner-bound
+profile store and live unread notification count. Home surfaces recent items, places, natural-language recall, and
+pending Review items. Profile, team, sharing, project, document, checkout,
+notification, and settings flows remain.
+
+The app's shared typography keeps body/inputs regular (400) and emphasis at most
+medium (500), independently of OS Bold Text. Text scaling, VoiceOver, reduced
+motion and other accessibility settings remain supported. Active Ask conversations
+hide the pill within the existing shell; Back returns to the prior tab without
+discarding the chat or draft.
 
 The Next.js app serves the animated marketing homepage and authenticated product
 routes such as `/home`, `/scan`, `/review`, `/inventory`, `/assist`, `/checkout`,
@@ -54,7 +83,7 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `034`, but they do not contain
+related services. Numbered migrations exist through `037`, but they do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
@@ -63,6 +92,11 @@ Items use `item_id`, `user_id`, `space_id`, a legacy `location` string, identity
 catalog fields, quantity, notes, and an optional `image_url`. Storage uses the
 `item-images` and `documents` buckets. Public or signed item URLs are configuration
 dependent; protected document access is authorized before issuing a signed URL.
+
+`capture_reviews` stores uncertain photo results separately from inventory.
+Authenticated clients can read only their own records; the backend creates, edits,
+dismisses, and resolves them through service-role operations. The resolver inserts
+the item and marks its review resolved in one transaction.
 
 Two collaboration models coexist:
 
@@ -77,15 +111,21 @@ There is no OpenAI runtime dependency or fallback.
 Photo flow:
 
 1. Web or mobile uploads an authenticated image to FastAPI.
-2. `find_pipeline.py` creates a FIND job and runs segmentation with depth and
-   `qwen3vl` proposals, identification, OCR/barcode processing, and measurement.
-3. FastAPI polls the job, maps results into the existing inventory response, and
-   returns transient `scan_evidence`.
+2. `find_pipeline.py` runs detection, identification, OCR/barcode processing,
+   and measurement. Model and infrastructure details stay on the server.
+3. FastAPI maps identity, detection, text, barcode, measurement, assumptions,
+   warnings, and review reasons into public `scan_evidence`.
 4. The uploaded source image and available per-item crops are copied to the
    `item-images` bucket before the FIND job is deleted in `finally`. Masks and
    geometry are not stored.
-5. On confirmation, the selected crop or source image is saved as the item's
-   primary `image_url`; useful human-readable evidence can be copied into notes.
+5. New clients request preview-only extraction. Uncertain results carry an
+   account-bound signed preview and create no Review row until explicit Save.
+   Saved uncertainty lives in `capture_reviews` until confirmation or dismissal.
+   Older clients without the preview flag retain the previous queue-on-upload
+   contract during rollout. Photo Ask saves its conversation context, not Review
+   items.
+6. Review resolution saves the crop or source image as the item's primary
+   `image_url`. Lists render a thumbnail only when the item has an image.
 
 Item photo galleries keep `items.image_url` as the primary thumbnail and store
 additional image references as `photo` rows in the existing `item_events` table.
@@ -95,8 +135,8 @@ column or migration.
 Language flow:
 
 1. Ask FindEZ sends text and an authenticated user context to FastAPI.
-2. The backend calls the FTCTools agent gateway at its OpenAI-compatible chat
-   endpoint using `FINDEZ_AGENT_KEY` and the configured gateway model route.
+2. The backend calls the FTCTools agent gateway using `FINDEZ_AGENT_KEY` and
+   the configured private route.
 3. The gateway selects a tool call or response.
 4. FastAPI executes inventory tools in-process under the signed-in user's scope and
    streams the result to the client.
@@ -135,4 +175,5 @@ source and fallback copy.
   language tasks.
 - FIND and gateway credentials remain backend-only.
 - Team API access depends on migration `034` workspace synchronization and RLS.
+- Durable Review depends on migration `036` and its transactional resolver.
 - Next.js public environment values are fixed at build time.

@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -8,6 +9,7 @@ import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/ui/glass_fab.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class TeamBoardPage extends StatefulWidget {
   const TeamBoardPage({super.key, required this.api, this.initialTeamId});
@@ -44,16 +46,20 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     try {
       final teams = await widget.api.listTeams();
       Map<String, dynamic>? selected;
-      if (teams.isNotEmpty) {
-        selected = teams.firstWhere(
-          (team) => team['team_id'].toString() == teamId,
-          orElse: () => _team == null
-              ? teams.first
-              : teams.firstWhere(
-                  (team) => team['team_id'] == _team?['team_id'],
-                  orElse: () => teams.first,
-                ),
+      final requested =
+          teamId ?? _team?['team_id']?.toString() ?? widget.initialTeamId;
+      if (requested != null) {
+        final matches = teams.where(
+          (team) => team['team_id'].toString() == requested,
         );
+        if (matches.isEmpty) {
+          throw const AskRequestException(
+            'You no longer have access to this workspace.',
+          );
+        }
+        selected = matches.first;
+      } else if (teams.isNotEmpty) {
+        selected = teams.first;
       }
       var tasks = <Map<String, dynamic>>[];
       var role = 'viewer';
@@ -106,19 +112,22 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'New team item',
+                const AppText(
+                  'New task',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'task', label: Text('Task')),
+                    ButtonSegment(value: 'task', label: AppText('Task')),
                     ButtonSegment(
                       value: 'part_request',
-                      label: Text('Part request'),
+                      label: AppText('Part request'),
                     ),
-                    ButtonSegment(value: 'checklist', label: Text('Checklist')),
+                    ButtonSegment(
+                      value: 'checklist',
+                      label: AppText('Checklist'),
+                    ),
                   ],
                   selected: {type},
                   onSelectionChanged: (value) =>
@@ -130,6 +139,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(labelText: 'Title'),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -139,15 +149,16 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   decoration: const InputDecoration(
                     labelText: 'Details (optional)',
                   ),
+                  style: AppTypography.bodyStyleOf(context),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: priority,
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: const [
-                    DropdownMenuItem(value: 'normal', child: Text('Normal')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
+                    DropdownMenuItem(value: 'normal', child: AppText('Normal')),
+                    DropdownMenuItem(value: 'high', child: AppText('High')),
+                    DropdownMenuItem(value: 'urgent', child: AppText('Urgent')),
                   ],
                   onChanged: (value) => priority = value ?? 'normal',
                 ),
@@ -158,7 +169,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   items: [
                     const DropdownMenuItem(
                       value: '',
-                      child: Text('Unassigned'),
+                      child: AppText('Unassigned'),
                     ),
                     for (final member in _members)
                       DropdownMenuItem(
@@ -169,15 +180,15 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                             MemberAvatar(
                               name:
                                   member['display_name']?.toString() ??
-                                  'Team member',
+                                  'Workspace member',
                               photoUrl: member['avatar_url']?.toString(),
                               colorHex: member['avatar_color']?.toString(),
                               size: 24,
                             ),
                             const SizedBox(width: 8),
-                            Text(
+                            AppText(
                               member['display_name']?.toString() ??
-                                  'Team member',
+                                  'Workspace member',
                             ),
                           ],
                         ),
@@ -191,7 +202,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     if (title.text.trim().isEmpty) return;
                     Navigator.pop(context, true);
                   },
-                  child: const Text('Add to board'),
+                  child: const AppText('Add to board'),
                 ),
               ],
             ),
@@ -214,7 +225,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -227,36 +238,38 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(task['title']?.toString() ?? 'Team item'),
-              subtitle: Text(task['description']?.toString() ?? ''),
+              title: AppText(task['title']?.toString() ?? 'Task'),
+              subtitle: AppText(task['description']?.toString() ?? ''),
             ),
             if (_canEdit && status != 'doing')
               ListTile(
                 leading: const Icon(CupertinoIcons.hammer),
-                title: const Text('Mark in progress'),
+                title: const AppText('Mark in progress'),
                 onTap: () => Navigator.pop(context, 'doing'),
               ),
             if (_canEdit && status != 'done')
               ListTile(
                 leading: const Icon(CupertinoIcons.check_mark_circled),
-                title: const Text('Mark complete'),
+                title: const AppText('Mark complete'),
                 onTap: () => Navigator.pop(context, 'done'),
               ),
             if (_canEdit && status != 'todo')
               ListTile(
                 leading: const Icon(CupertinoIcons.arrow_counterclockwise),
-                title: const Text('Move to To do'),
+                title: const AppText('Move to To do'),
                 onTap: () => Navigator.pop(context, 'todo'),
               ),
             if (_canEdit)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   CupertinoIcons.delete,
-                  color: AppColors.danger,
+                  color: AppTheme.foreground(context, AppColors.danger),
                 ),
-                title: const Text(
+                title: AppText(
                   'Delete',
-                  style: TextStyle(color: AppColors.danger),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, AppColors.danger),
+                  ),
                 ),
                 onTap: () => Navigator.pop(context, 'delete'),
               ),
@@ -280,7 +293,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
   }
 
@@ -288,7 +301,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Team Board'),
+        title: const AppText('Tasks'),
         actions: [
           IconButton(
             onPressed: _load,
@@ -304,14 +317,14 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
           ? _MessageState(
-              title: 'Couldn’t load Team Board',
+              title: 'Couldn’t load tasks',
               message: _error!,
               action: () => _load(),
             )
           : _team == null
           ? const _MessageState(
-              title: 'Team unavailable',
-              message: 'Return to Teams and choose another team.',
+              title: 'Workspace unavailable',
+              message: 'Return to Workspaces and choose another workspace.',
               actionLabel: null,
             )
           : _buildBoard(),
@@ -340,7 +353,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       _team!['name']?.toString() ?? 'Team',
                       style: const TextStyle(
                         fontSize: 22,
@@ -348,9 +361,11 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       '${_tasks.where((task) => task['status'] != 'done').length} open · ${doing.length} in progress',
-                      style: const TextStyle(color: AppColors.muted),
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.muted),
+                      ),
                     ),
                   ],
                 ),
@@ -359,7 +374,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 FilledButton.icon(
                   onPressed: _createTask,
                   icon: const Icon(CupertinoIcons.add, size: 17),
-                  label: const Text('New'),
+                  label: const AppText('New'),
                 ),
             ],
           ),
@@ -369,11 +384,11 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
             children: const {
               'open': Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Open'),
+                child: AppText('Open'),
               ),
               'completed': Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Completed'),
+                child: AppText('Completed'),
               ),
             },
             onValueChanged: (value) {
@@ -409,7 +424,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     final type = task['task_type']?.toString() ?? 'task';
     final priority = task['priority']?.toString() ?? 'normal';
     return Material(
-      color: const Color(0xFF19191B),
+      color: AppTheme.adaptive(context, const Color(0xFF19191B)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _openTask(task),
@@ -427,10 +442,10 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     ? CupertinoIcons.list_bullet
                     : CupertinoIcons.circle,
                 color: done
-                    ? AppColors.success
+                    ? AppTheme.foreground(context, AppColors.success)
                     : task['status'] == 'doing'
-                    ? AppColors.info
-                    : AppColors.accent,
+                    ? AppTheme.foreground(context, AppColors.info)
+                    : AppTheme.foreground(context, AppColors.accent),
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -438,18 +453,18 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      task['title']?.toString() ?? 'Team item',
+                    AppText(
+                      task['title']?.toString() ?? 'Task',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         decoration: done ? TextDecoration.lineThrough : null,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppText(
                       _subtitle(task),
-                      style: const TextStyle(
-                        color: AppColors.muted,
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, AppColors.muted),
                         fontSize: 13,
                       ),
                     ),
@@ -465,26 +480,26 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   decoration: BoxDecoration(
                     color:
                         (priority == 'urgent'
-                                ? AppColors.danger
-                                : AppColors.warning)
+                                ? AppTheme.adaptive(context, AppColors.danger)
+                                : AppTheme.adaptive(context, AppColors.warning))
                             .withValues(alpha: .15),
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(
+                  child: AppText(
                     priority == 'urgent' ? 'Urgent' : 'High',
                     style: TextStyle(
                       color: priority == 'urgent'
-                          ? AppColors.danger
-                          : AppColors.warning,
+                          ? AppTheme.foreground(context, AppColors.danger)
+                          : AppTheme.foreground(context, AppColors.warning),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
-                color: AppColors.muted,
+                color: AppTheme.foreground(context, AppColors.muted),
                 size: 15,
               ),
             ],
@@ -524,16 +539,16 @@ class _TaskSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sectionColor = title == 'COMPLETED'
-        ? AppColors.success
+        ? AppTheme.adaptive(context, AppColors.success)
         : title == 'IN PROGRESS'
-        ? AppColors.info
-        : AppColors.muted;
+        ? AppTheme.adaptive(context, AppColors.info)
+        : AppTheme.adaptive(context, AppColors.muted);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             title,
             style: TextStyle(
               color: sectionColor,
@@ -574,27 +589,30 @@ class _BoardEmpty extends StatelessWidget {
             completed
                 ? CupertinoIcons.check_mark_circled
                 : CupertinoIcons.square_list,
-            color: AppColors.muted,
+            color: AppTheme.foreground(context, AppColors.muted),
             size: 40,
           ),
           const SizedBox(height: 14),
-          Text(
-            completed ? 'Nothing completed yet' : 'Your team is clear',
+          AppText(
+            completed ? 'Nothing completed yet' : 'No open tasks',
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 7),
-          Text(
+          AppText(
             completed
                 ? 'Completed work will stay here for reference.'
                 : 'Add a task, part request, or checklist item.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.muted),
+              height: 1.4,
+            ),
           ),
           if (!completed && canEdit) ...[
             const SizedBox(height: 18),
             FilledButton(
               onPressed: onCreate,
-              child: const Text('Add First Item'),
+              child: const AppText('Add First Item'),
             ),
           ],
         ],
@@ -624,22 +642,25 @@ class _MessageState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, height: 1.4),
+              style: TextStyle(
+                color: AppTheme.foreground(context, AppColors.muted),
+                height: 1.4,
+              ),
             ),
             if (action != null && actionLabel != null) ...[
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => action!(),
-                child: Text(actionLabel!),
+                child: AppText(actionLabel!),
               ),
             ],
           ],

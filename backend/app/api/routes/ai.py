@@ -1,9 +1,10 @@
 import asyncio
 import json as json_module
 import logging
+from contextvars import copy_context
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -24,13 +25,159 @@ from app.services.ai_memory import (
     save_conversation,
 )
 from app.services.documents_repo import create_activity
+from app.services.ask_photo_questions import answer_photo_question, remember_photo_answer
+from app.services.find_pipeline import FindPipelineError
+from app.services.item_photos import MAX_ITEM_PHOTO_BYTES, _jpeg_bytes
 from app.services.ai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
-from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat
+from app.services.limits import ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat, check_and_increment_scan
 
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+def _authorized_stream(iterator):
+    """Retain only server-validated scope after yield dependencies exit.
+
+    FastAPI versions can finish request dependencies before consuming the body.
+    Context is installed in the consuming task, not trusted from client IDs.
+    """
+    from app.services.inventory_scope import current_inventory
+    from app.services.resource_access import ActorAccess, request_actor
+    inventory = current_inventory.get()
+    actor = request_actor.get()
+    actor_id = actor.actor_id if actor else None
+
+    async def consume():
+        inventory_token = current_inventory.set(inventory)
+        actor_token = request_actor.set(ActorAccess(actor_id) if actor_id else None)
+        try:
+            async for chunk in iterator:
+                yield chunk
+        finally:
+            try:
+                await iterator.aclose()
+            finally:
+                request_actor.reset(actor_token)
+                current_inventory.reset(inventory_token)
+    return consume()
+
+
+def _authorized_background(function, *args):
+    context = copy_context()
+    async def run():
+        await asyncio.create_task(function(*args), context=context.copy())
+    return run
+
+
+def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: str | None) -> str:
+    client = get_supabase_admin()
+    if conversation_id:
+        rows = client.table('conversations').select('id').eq('id', conversation_id).eq('user_id', user_id).limit(1).execute().data
+        if not rows:
+            raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+    else:
+        rows = client.table('conversations').insert({'user_id': user_id, 'title': message[:60]}).execute().data
+        conversation_id = ((rows or [{}])[0]).get('id')
+        if not conversation_id:
+            raise RuntimeError('Conversation insert returned no identity')
+    client.table('messages').insert({'conversation_id': conversation_id, 'role': 'user', 'content': message}).execute()
+    return conversation_id
+
+
+def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
+    client = get_supabase_admin()
+    client.table('messages').insert({
+        'conversation_id': conversation_id, 'role': 'assistant',
+        'content': answer['assistant_message'], 'answer_context': answer.get('answer_context'),
+    }).execute()
+    client.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).execute()
+
+
+@router.post('/ai_photo_question', response_model=None)
+@limiter.limit('10/minute')
+async def ai_photo_question_route(
+    request: Request,
+    file: UploadFile = File(...),
+    message: str = Form('What is in this photo? Do I already have it?', max_length=2000),
+    conversation_id: str | None = Form(None, max_length=100),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> StreamingResponse:
+    raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
+    if len(raw) > MAX_ITEM_PHOTO_BYTES:
+        raise HTTPException(413, 'Choose a photo smaller than 10 MB.')
+    try:
+        jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
+    except ValueError:
+        raise bad_request('Choose a valid photo smaller than 10 MB and 25 megapixels.')
+    question = message.strip() or 'What is in this photo? Do I already have it?'
+    if conversation_id:
+        def check_owner():
+            rows = get_supabase_admin().table('conversations').select('id').eq('id', conversation_id).eq('user_id', user.user_id).limit(1).execute().data
+            if not rows:
+                raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+        try:
+            await asyncio.to_thread(check_owner)
+        except HTTPException:
+            raise
+        except Exception:
+            raise bad_gateway('Your conversation could not be checked. Please try again.')
+    try:
+        await asyncio.to_thread(check_and_increment_scan, user.user_id)
+        await asyncio.to_thread(check_and_increment_chat, user.user_id)
+    except (ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded):
+        raise HTTPException(403, 'Your account photo or chat limit has been reached.')
+    except Exception:
+        raise bad_gateway('Your account limits could not be checked. Please try again.')
+    try:
+        conv_id = await asyncio.to_thread(_prepare_ask_conversation, user_id=user.user_id, message=question, conversation_id=conversation_id)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Could not save the photo question')
+        raise bad_gateway('Your photo question could not be saved. Please try again.')
+
+    effective_user_id = user.user_id
+    async def generate():
+        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg))
+        try:
+            yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
+            while not task.done():
+                await asyncio.wait({task}, timeout=5)
+                if not task.done():
+                    yield b'data: {"type":"status","message":"Photo analysis is still running..."}\n\n'
+            answer = await task
+            yield f"data: {json_module.dumps({'type': 'delta', 'delta': answer['assistant_message']})}\n\n".encode()
+            try:
+                await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
+            except Exception:
+                logger.exception('Photo answer snapshot could not be saved')
+                yield b'data: {"type":"error","code":"history_save_failed"}\n\n'
+                yield b'data: [DONE]\n\n'
+                return
+            try:
+                await asyncio.to_thread(remember_photo_answer, user_id=effective_user_id, message=question, answer=answer['assistant_message'])
+            except Exception:
+                logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
+            yield f"data: {json_module.dumps({'type': 'done', 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except FindPipelineError as exc:
+            code = 'photo_timeout' if exc.status_code == 504 else 'photo_failed'
+            yield f"data: {json_module.dumps({'type': 'error', 'code': code})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except Exception:
+            logger.exception('Photo question could not be completed')
+            yield b'data: {"type":"error","code":"photo_failed"}\n\n'
+            yield b'data: [DONE]\n\n'
+        finally:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+    return StreamingResponse(_authorized_stream(generate()), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
 
 
 def _wrap_sse(gen):
@@ -280,7 +427,7 @@ async def ai_command_route(
 
     if wants_stream:
         try:
-            # Setup conversation persistence (best-effort — AI always works even if DB fails)
+            # Never silently claim an answer was saved if its history write fails.
             conv_id: str | None = payload.conversation_id
             try:
                 supabase = get_supabase_admin()
@@ -294,7 +441,7 @@ async def ai_command_route(
                         .execute()
                     )
                     if not check.data:
-                        conv_id = None
+                        raise HTTPException(404, 'This conversation no longer exists or is not accessible. Start a new chat.')
                 if not conv_id:
                     title = payload.message[:60]
                     res = (
@@ -303,15 +450,19 @@ async def ai_command_route(
                         .execute()
                     )
                     conv_id = ((res.data or [{}])[0]).get("id")
+                    if not conv_id:
+                        raise RuntimeError('Conversation insert returned no identity')
                 if conv_id:
                     supabase.table("messages").insert({
                         "conversation_id": conv_id,
                         "role": "user",
                         "content": payload.message,
                     }).execute()
+            except HTTPException:
+                raise
             except Exception:
-                logger.exception("Failed to setup conversation — continuing without persistence")
-                conv_id = None
+                logger.exception("Failed to set up conversation history")
+                raise bad_gateway("Your chat could not be saved. Please try again.")
 
             # Fetch memory context (best-effort — failures are silent)
             memory_context = ""
@@ -328,13 +479,14 @@ async def ai_command_route(
                 logger.exception("Memory context fetch failed — continuing without")
                 memory_context = ""
 
+            effective_user_id, first_name = user.user_id, user.first_name
             async def generate():
                 delta_buffer: list[str] = []
                 try:
                     async for item in iter_ai_command_events_async(
-                        user_id=user.user_id,
+                        user_id=effective_user_id,
                         message=payload.message,
-                        first_name=user.first_name,
+                        first_name=first_name,
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
                         conversation_id=conv_id,
@@ -347,34 +499,38 @@ async def ai_command_route(
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer)
+                            full_response = "".join(delta_buffer) or item.get("assistant_message") or "Something went wrong. Please try again."
+                            answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
                                     sb = get_supabase_admin()
                                     sb.table("messages").insert({
                                         "conversation_id": conv_id,
                                         "role": "assistant",
-                                        "content": full_response or "Let me think about that...",
+                                        "content": full_response,
+                                        "answer_context": answer_context,
                                     }).execute()
                                     sb.table("conversations").update({
                                         "updated_at": datetime.now(timezone.utc).isoformat(),
                                     }).eq("id", conv_id).execute()
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
-                            asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
-                            asyncio.create_task(log_query(user.user_id, payload.message))
-                            asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
+                                    yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
+                                    yield b"data: [DONE]\n\n"
+                                    return
+                            asyncio.create_task(extract_and_save_memory(effective_user_id, payload.message, full_response))
+                            asyncio.create_task(log_query(effective_user_id, payload.message))
+                            asyncio.create_task(save_conversation(effective_user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
-                            if nav_hint:
-                                yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
+                            yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
-                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    yield b'data: {"type":"error","error":"Ask is temporarily unavailable. Please try again."}\n\n'
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
-                generate(),
+                _authorized_stream(generate()),
                 media_type="text/event-stream",
                 headers={
                     "X-Accel-Buffering": "no",
@@ -382,6 +538,8 @@ async def ai_command_route(
                     "Connection": "keep-alive",
                 },
             )
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("AI command stream failed")
             raise bad_gateway("AI temporarily unavailable. Please try again.")
@@ -408,14 +566,15 @@ async def ai_command_route(
         logger.exception("Failed to write ai_chat activity")
 
     assistant_message = out.get("assistant_message") or ""
-    background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
-    background_tasks.add_task(log_query, user.user_id, payload.message)
-    background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
+    background_tasks.add_task(_authorized_background(extract_and_save_memory, user.user_id, payload.message, assistant_message))
+    background_tasks.add_task(_authorized_background(log_query, user.user_id, payload.message))
+    background_tasks.add_task(_authorized_background(save_conversation, user.user_id, payload.message, assistant_message))
 
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),
         assistant_message=assistant_message or "Let me think about that...",
+        answer_context=out.get("answer_context"),
     )
 
 

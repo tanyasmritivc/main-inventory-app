@@ -1,5 +1,7 @@
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/ui/findez_wordmark.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key, this.onFinished, this.duration});
@@ -41,22 +43,13 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       body: Center(
         child: FadeTransition(
           opacity: fade,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'FindEZ',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 30,
-                  letterSpacing: -0.8,
-                ),
-              ),
-            ],
+            children: [const FindEZWordmark()],
           ),
         ),
       ),

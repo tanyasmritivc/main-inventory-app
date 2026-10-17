@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
+from app.services.access_invitations import notification_rows, invitation_rpc
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 NOTIFICATION_HISTORY_DAYS = 14
@@ -73,6 +74,7 @@ def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, s
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    invitations = notification_rows(user.user_id)
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(
@@ -80,7 +82,7 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     ).execute().data or []
     activity_ids = [row["activity_id"] for row in recipient_rows]
     if not activity_ids:
-        return {"notifications": [], "unread_count": 0}
+        return {"notifications": invitations, "unread_count": sum(not row['is_read'] for row in invitations)}
     activity = client.table("team_activity").select("*").in_(
         "activity_id", activity_ids
     ).gte("created_at", _history_cutoff()).order(
@@ -142,12 +144,13 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
             "display_text": display_text,
             "is_read": is_read,
         })
-    return {"notifications": result, "unread_count": unread}
+    return {"notifications": invitations + result, "unread_count": unread + sum(not row['is_read'] for row in invitations)}
 
 
 @router.post("/read")
 def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    invitation_rpc(user.user_id, 'read')
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(

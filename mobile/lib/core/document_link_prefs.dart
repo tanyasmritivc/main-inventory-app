@@ -8,8 +8,14 @@ class DocumentLinkPrefs {
   static const _kKey = 'document_links';
 
   static Future<Map<String, Map<String, String>>> loadAll() async {
-    final prefs = await SharedPreferences.getInstance();
     final accountKey = accountPreferenceKey(_kKey);
+    return _loadForAccount(accountKey);
+  }
+
+  static Future<Map<String, Map<String, String>>> _loadForAccount(
+    String accountKey,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
     var raw = prefs.getString(accountKey);
     final legacy = prefs.getString(_kKey);
     if (raw == null && legacy != null && !accountKey.endsWith(':signed-out')) {
@@ -17,7 +23,9 @@ class DocumentLinkPrefs {
       await prefs.setString(accountKey, legacy);
       await prefs.remove(_kKey);
     }
-    if (raw == null || raw.trim().isEmpty) return <String, Map<String, String>>{};
+    if (raw == null || raw.trim().isEmpty) {
+      return <String, Map<String, String>>{};
+    }
 
     try {
       final obj = (json.decode(raw) as Map).cast<String, dynamic>();
@@ -25,7 +33,9 @@ class DocumentLinkPrefs {
       for (final e in obj.entries) {
         final v = e.value;
         if (v is Map) {
-          out[e.key] = v.cast<String, dynamic>().map((k, val) => MapEntry(k, val.toString()));
+          out[e.key] = v.cast<String, dynamic>().map(
+            (k, val) => MapEntry(k, val.toString()),
+          );
         }
       }
       return out;
@@ -34,9 +44,16 @@ class DocumentLinkPrefs {
     }
   }
 
-  static Future<void> setLink({required String documentId, String? itemId, String? itemName}) async {
+  static Future<void> setLink({
+    required String documentId,
+    String? itemId,
+    String? itemName,
+  }) async {
+    // Capture before any await: a switch must not write the old account's links
+    // into the newly signed-in account's preferences.
+    final accountKey = accountPreferenceKey(_kKey);
     final prefs = await SharedPreferences.getInstance();
-    final all = await loadAll();
+    final all = await _loadForAccount(accountKey);
 
     final cleanItemId = (itemId ?? '').trim();
     if (cleanItemId.isEmpty) {
@@ -44,10 +61,13 @@ class DocumentLinkPrefs {
     } else {
       all[documentId] = <String, String>{
         'item_id': cleanItemId,
-        if (itemName != null && itemName.trim().isNotEmpty) 'item_name': itemName.trim(),
+        if (itemName != null && itemName.trim().isNotEmpty)
+          'item_name': itemName.trim(),
       };
     }
 
-    await prefs.setString(accountPreferenceKey(_kKey), json.encode(all));
+    if (!await prefs.setString(accountKey, json.encode(all))) {
+      throw StateError('Document link cache was not saved');
+    }
   }
 }
