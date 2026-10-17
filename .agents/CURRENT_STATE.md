@@ -10,13 +10,18 @@ owner, empty-organization and workspace inventory-retention rules remain.
 and 21 copied-record cases pass in a network-isolated restored production copy.
 CI's newer Flutter exposed a settings Memory-row ink assertion: a transparent
 Material wrapper fixes it, with 32 profile tests/analysis passing. A separate
-test-only parent fixes crop-test collection via existing AnyIO; 817 Python tests
-plus 10 subtests pass without pytest-asyncio. Final automatic CI remains pending.
+compatibility parent fixes crop-test collection via existing AnyIO; 817 Python
+tests plus 10 subtests pass without pytest-asyncio. All five CI jobs pass on
+runtime fed141e and parent bac43eb (PR 96).
 No production records removed, backend deployment or new migration required.
 Historical deletion 501/502 was not reproduced; current routes/auth and today's
 successful/protected responses are checked. iPhone 16e fixture review is complete;
-real-account final-phone deletion acceptance remains open. Beta80 is prepared
-under the standing release instruction. See design/mobile-context-directory/IMPLEMENTATION.md.
+real-account final-phone deletion acceptance remains open. Apple acknowledged
+TestFlight 1.0.8 (80), runtime fed141e, delivery
+30ec26e0-4246-4085-b0cc-42b22bceeb1b. Processing/tester availability unverified;
+no polling. Clean archive/export verifies all 31 native binaries as iOS device
+code after the first cached-simulator package was rejected. Mobile PR 95 is
+stacked on compatibility PR 96. See design/mobile-context-directory/IMPLEMENTATION.md.
 
 # October 17 responsive onboarding follow-up
 

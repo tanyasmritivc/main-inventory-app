@@ -32,7 +32,9 @@ organization must have no remaining workspaces. Permissions are unchanged.
   Automatic CI used newer Flutter 3.47.7 and exposed an existing settings
   ListTile ink-layer assertion. The Memory row now has a transparent Material
   owner; its appearance/content are unchanged. All 32 profile tests and analysis
-  pass after that narrow compatibility change; final automatic CI is pending.
+  pass after that narrow compatibility change. All five automatic CI jobs pass
+  on runtime fed141e (39074361909) and compatibility parent bac43eb
+  (39074476105).
 - New regressions cover preserved name/purge state after 409, 501 and 502,
   no automatic retry or false success, and exact-name organization deletion.
   Existing workspace return, navigation, creation, roles and large-text cases pass.
@@ -59,8 +61,11 @@ organization must have no remaining workspaces. Permissions are unchanged.
 - The first beta80 archive was rejected by Apple because cached simulator
   objective_c.framework entered the device export. The required platform check
   was missed on that first attempt. The rejected package/receipt are preserved
-  privately; a clean Flutter rebuild and all-executable platform verification
-  are required before retrying. No successful upload is claimed at this stage.
+  privately. The clean rebuild verifies all 31 executables in both the archive
+  and exported IPA as iOS device binaries, with strict archive signatures. The
+  rejected simulator executable is a verified negative check. A disk-limited
+  preservation attempt was resumed using byte-identical IPA verification and
+  an atomically replaced, CRC-checked archive ZIP.
 
 Real-account deletion on the final phone binary remains manual acceptance; no
 customer records were deleted for QA. No new physical/performance claim is made.
@@ -78,13 +83,20 @@ entry point and is never included by lib/main.dart. pubspec.yaml increments to
 1.0.8+80. This report, review images and .agents state/decision files record QA.
 
 Branch: fix/mobile-context-directory-20261017, based on 75db5c5.
-Its separate test-only parent uses the installed AnyIO runner for crop tests,
+Its separate compatibility parent (PR 96) uses the installed AnyIO runner for crop tests,
 fixing clean-CI collection without adding a dependency. The full backend suite
 passes 817 tests and 10 subtests with pytest-asyncio disabled. See
 docs/plans/crop-test-runner.md and its separate PR.
 No backend deployment or production migration is needed. Candidate migration 053
 remains separately pending. The signed release must use lib/main.dart and the
-existing production defines. TestFlight upload and receipt will be recorded
-after Apple acknowledgment; processing and tester availability will not be polled.
+existing production defines. Apple acknowledged TestFlight 1.0.8 (80), runtime
+fed141eab744450c5af2ed97ab5018356517f8c8, delivery
+30ec26e0-4246-4085-b0cc-42b22bceeb1b. Final IPA SHA-256:
+dde1ebd97c5d1c812c5990aa2094b1de7b18a9189969c3614d7d21e00c38b97e.
+Private archive, IPA, native verification and Apple receipt are preserved in
+Documents/FindEZ/AppStore/1.0.8-build80. Processing and tester availability remain
+unverified and were not polled. Mobile review is PR 95; compatibility is PR 96.
+The post-runtime parent alignment changes documentation only; no manual
+regression checks were repeated after the successful release build.
 Rollback is a later mobile build reverting these scoped UI changes; server
 deletion safeguards stay in place.
