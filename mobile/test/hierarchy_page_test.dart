@@ -182,6 +182,8 @@ void main() {
   ) async {
     organizationRole = 'member';
     await pump(tester, page(level: HierarchyLevel.organization, id: 'org-0'));
+    await tester.tap(find.text('People'));
+    await tester.pumpAndSettle();
     expect(find.text('Tanya'), findsOneWidget);
     expect(find.text('Member'), findsOneWidget);
     expect(find.text('New workspace'), findsNothing);
@@ -197,7 +199,7 @@ void main() {
         tester,
         page(level: HierarchyLevel.workspace, id: 'workspace-a'),
       );
-      expect(find.text('42 items | Editor'), findsOneWidget);
+      expect(find.text('42 items · Editor'), findsOneWidget);
       expect(find.text('Access restricted'), findsOneWidget);
       expect(find.text('New inventory'), findsNothing);
       await tester.tap(find.text('Fasteners'));
@@ -819,17 +821,23 @@ void main() {
       };
       await pump(
         tester,
-        page(level: HierarchyLevel.workspace, id: 'workspace-a'),
+        HierarchyPage(
+          api: ApiClient.forAccount(fixture.api, 'actor-a'),
+          onOpenInventory: open,
+          level: HierarchyLevel.workspace,
+          id: 'workspace-a',
+          panel: HierarchyPanel.people,
+        ),
       );
       expect(find.text('New inventory'), findsNothing);
       await tester.scrollUntilVisible(
-        find.textContaining('Student | Viewer requested'),
+        find.text('Student'),
         300,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.drag(find.byType(ListView).first, const Offset(0, -100));
       await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('Student | Viewer requested'));
+      await tester.tap(find.text('Student'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Approve viewer access'));
       await tester.pumpAndSettle();

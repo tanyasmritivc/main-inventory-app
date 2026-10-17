@@ -18,9 +18,9 @@ export function organizationNavigation(id: string, name: string, view: Organizat
 }
 export function workspaceNavigation(workspace: InventoryWorkspace, view: WorkspaceView): NavigationContext {
   const home = `/workspaces/${encodeURIComponent(workspace.workspace_id)}`;
-  const items: AppNavItem[] = [{ label: "Inventories", route: workspace.kind === "personal" ? home : `${home}?view=inventories`, icon: Boxes, section: "Workspace" }];
+  const items: AppNavItem[] = [{ label: "Inventories", route: home, icon: Boxes, section: "Workspace" }];
   if (workspace.kind !== "personal") {
-    items.unshift({label:"Overview",route:home,icon:Home,section:"Workspace"});
+    items.push({label:"Overview",route:`${home}?view=overview`,icon:Home,section:"Workspace"});
     items.push({ label: "People", route: `${home}?view=people`, icon: Users, section: "Workspace" });
     if (["owner", "mentor"].includes(workspace.role)) items.push({ label: "Locations", route: `${home}?view=locations`, icon: MapPin, section: "Workspace" });
     items.push({ label: "Tasks", route: `${home}?view=board`, icon: FolderKanban, section: "Workspace" },
@@ -28,7 +28,7 @@ export function workspaceNavigation(workspace: InventoryWorkspace, view: Workspa
       { label: "Activity", route: `${home}?view=activity`, icon: History, section: "Workspace" },
       { label: "Settings", route: `${home}?view=settings`, icon: Settings, section: "Workspace" });
   }
-  return { homeHref: "/organizations", activeRoute: view === "overview" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items,
+  return { homeHref: "/organizations", activeRoute: view === "inventories" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items,
     breadcrumbs: [workspace.organization_id ? { label: workspace.organization_name || "Organization", href: `/organizations/${encodeURIComponent(workspace.organization_id)}` } : { label: "Workspaces", href: "/workspaces" }, { label: workspace.name, href: home }] };
 }
 export const DIRECTORY_NAVIGATION: AppNavItem[] = [

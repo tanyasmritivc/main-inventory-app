@@ -1,4 +1,6 @@
 /** @jest-environment jsdom */
+import { mockBrowserTopLayer } from "./mock-browser-top-layer";
+mockBrowserTopLayer();
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WorkspaceDirectory } from "@/components/site/workspace-directory";
@@ -45,13 +47,15 @@ test("the first screen chooses a workspace and the second opens an explicit inve
   expect(screen.getAllByRole("heading",{name:"Inventories"})).toHaveLength(1);
 });
 
-test("creating an inventory opens its dashboard only after a saved server response",async()=>{
+test("creating another inventory refreshes its workspace and keeps the creation action visible",async()=>{
   render(<WorkspaceDirectory workspaceId="personal"/>);
   await screen.findByRole("link",{name:/Workshop parts/});
   await userEvent.click(screen.getByRole("button",{name:"New inventory"}));
   await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"Repair project");
   await userEvent.click(screen.getByRole("button",{name:"Create"}));
-  await waitFor(()=>expect(router.push).toHaveBeenCalledWith("/home?inventory=created"));
+  await waitFor(()=>expect(screen.queryByRole("dialog")).toBeNull());
+  expect(router.push).not.toHaveBeenCalled();
+  expect(screen.getByRole("button",{name:"New inventory"})).toBeTruthy();
   expect(accountRequest).toHaveBeenCalledWith("actor","/inventory-workspaces/personal/inventories",{method:"POST",body:{name:"Repair project"}});
 });
 
@@ -116,7 +120,7 @@ test("workspace owner can rename from the selected workspace and Personal has no
  expect(accountRequest).toHaveBeenCalledWith("actor","/inventory-workspaces/team",{method:"PATCH",body:{name:"Robotics"}});
  view.unmount();jest.mocked(accountRequest).mockResolvedValue({workspace:personal,inventories:[],total:0,next_offset:null} as never);
  render(<WorkspaceDirectory workspaceId="personal"/>);
- await screen.findByText("No inventories yet.");expect(screen.queryByRole("button",{name:"Rename workspace"})).toBeNull();
+ await screen.findByText("No inventories yet");expect(screen.queryByRole("button",{name:"Rename workspace"})).toBeNull();
 });
 test("inventory creator gets Rename without workspace administration",async()=>{
  let name="Workshop parts";
@@ -125,7 +129,8 @@ test("inventory creator gets Rename without workspace administration",async()=>{
   return {workspace:{...personal,workspace_id:"team",kind:"team",team_id:"team",role:"member"},inventories:[{...inventory,name,can_rename:true}],total:1,next_offset:null} as never;
  });
  render(<WorkspaceDirectory workspaceId="team"/>);
- await userEvent.click(await screen.findByRole("button",{name:"Rename Workshop parts"}));
+ await userEvent.click(await screen.findByRole("button",{name:"Manage Workshop parts"}));
+ await userEvent.click(await screen.findByRole("menuitem",{name:"Rename"}));
  expect(screen.queryByRole("button",{name:"New inventory"})).toBeNull();
  await userEvent.clear(screen.getByRole("textbox",{name:"Name"}));await userEvent.type(screen.getByRole("textbox",{name:"Name"}),"Fasteners");
  await userEvent.click(screen.getByRole("button",{name:"Save"}));

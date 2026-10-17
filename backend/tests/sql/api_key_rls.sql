@@ -196,3 +196,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir organization_delete.sql
 
 \ir account_memory_integration.sql
+
+\ir inventory_delete.sql

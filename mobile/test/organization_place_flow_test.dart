@@ -145,12 +145,12 @@ void main() {
   Future<void> organization(WidgetTester tester) async {
     await tester.tap(find.bySemanticsLabel('Switch place. Current: Personal'));
     await settle(tester);
-    await tester.tap(find.text('ACME'));
+    await tester.tap(find.text('Acme'));
     await settle(tester);
     expect(find.byType(PlaceSwitcher), findsNothing);
     if (!failOrganization) {
-      expect(find.text('WORKSPACES'), findsOneWidget);
-      expect(find.byType(PlaceCardList), findsNWidgets(2));
+      expect(find.text('Workspaces'), findsOneWidget);
+      expect(find.byType(PlaceCardList), findsOneWidget);
     }
   }
 
@@ -184,7 +184,7 @@ void main() {
       expect(find.text('No matching inventories'), findsOneWidget);
       await tester.pageBack();
       await settle(tester);
-      await tester.tap(find.text('Open'));
+      await tester.tap(find.text('ws inventory'));
       await settle(tester);
       expect(opens, ['org/ws/inv-ws']);
       expect(tester.takeException(), isNull);
@@ -197,7 +197,7 @@ void main() {
       hasWorkspace = false;
       await mount(tester);
       await organization(tester);
-      expect(find.text('No assigned workspaces yet'), findsOneWidget);
+      expect(find.text('No workspaces yet'), findsOneWidget);
       await tester.tap(find.text('New workspace'));
       await settle(tester);
       await tester.enterText(
@@ -270,6 +270,8 @@ void main() {
       expect(find.text('New workspace'), findsNothing);
       expect(find.text('Invite organization member'), findsNothing);
       expect(find.byTooltip('Actions'), findsNothing);
+      await tester.tap(find.text('People'));
+      await settle(tester);
       expect(find.text('Viewer'), findsOneWidget);
       expect(tester.takeException(), isNull);
       expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);

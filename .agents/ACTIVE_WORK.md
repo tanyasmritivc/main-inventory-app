@@ -1,3 +1,18 @@
+# Hierarchy navigation repair (October 16)
+
+Active lane feat/hierarchy-navigation-20261016, based on dec9cf9. Replaces mobile/
+web organization and workspace directories only; working inventory/dashboard/
+Spaces remain unchanged. Always-visible creation, explicit organization cards,
+focused workspace lists and authorized rename/delete menus are implemented.
+Deletion uses reviewed migration 049, which rejects nonempty inventories and
+requires current owner/admin plus typed name. Source checks: 780 backend, 305 web,
+448 Flutter full suite; clean static checks and passing composed SQL. Native
+visual/accessibility review is isolated. Web candidate build passes with real
+production fonts/config. Tanya approved 049 and publishing; migration/backend and
+web-hierarchy-20261016 are live with private backups and rollout health/auth checks.
+Authenticated Safari confirms the new directory/menu without writes. Beta71
+signing/upload remains. See docs/plans/hierarchy-navigation.md.
+
 # Account memory production activation receipt (October 16)
 
 Approved migration 048 and reviewed backend 967ab48 are live on the self-hosted

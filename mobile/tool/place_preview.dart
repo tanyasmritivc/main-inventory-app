@@ -37,6 +37,14 @@ Future<void> main() async {
         ],
       };
     }
+    if (request.path == '/organizations/org') {
+      return {
+        'organization': {'organization_id':'org','name':'FTC ROBOTICS 2026','role':'owner','owner_user_id':'actor-a'},
+        'workspaces': [{'team_id':'ftc','name':'FTC ROBOTS'}],
+        'members': [{'user_id':'actor-a','display_name':'Tanya','role':'owner'},{'user_id':'other','display_name':'Alex','role':'member'}],
+        'attachable': [],
+      };
+    }
     if (request.path.endsWith('/overview')) {
       return {
         'workspace': {
@@ -44,15 +52,15 @@ Future<void> main() async {
           'name': names[id],
           'organization_id': id == 'ftc' ? 'org' : null,
           'organization_name': id == 'ftc' ? 'FTC ROBOTICS 2026' : null,
-          'role': id == 'ftc' ? 'member' : 'owner',
-          'owner_user_id': id == 'ftc' ? 'other' : 'actor-a',
+          'role': 'owner',
+          'owner_user_id': 'actor-a',
         },
         'members': [
           {'user_id': 'other', 'display_name': 'tantanalt', 'role': 'owner'},
           {
             'user_id': 'actor-a',
             'display_name': 'Tanya',
-            'role': id == 'ftc' ? 'member' : 'owner',
+            'role': 'owner',
           },
         ],
       };
@@ -70,7 +78,9 @@ Future<void> main() async {
                 : '${names[id]} inventory',
             'can_open': true,
             'can_edit': true,
-            'role': 'editor',
+            'role': 'owner',
+            'can_rename': true,
+            'can_manage': true,
             'item_count': id == 'ftc' ? 60 : 0,
           },
         ],

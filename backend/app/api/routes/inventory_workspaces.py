@@ -175,6 +175,42 @@ def rename_inventory(inventory_id: str, body: NewInventory, user: AuthenticatedU
     return {'inventory':rows[0]}
 
 
+class ConfirmInventoryDelete(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+    model_config = {'extra': 'forbid'}
+
+
+@router.delete('/inventories/{inventory_id}')
+def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete,
+                           user: AuthenticatedUser = Depends(get_current_user)):
+    inventory = _inventory(str(inventory_id), user.user_id)
+    if not inventory['can_manage']:
+        raise HTTPException(403, 'Only an inventory owner or admin can delete it.')
+    try:
+        result = get_supabase_raw().rpc('findez_delete_empty_inventory', {
+            'p_actor': user.user_id, 'p_inventory': str(inventory_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {
+            '42501': (403, 'Your inventory access changed. Refresh before trying again.'),
+            'P0002': (404, 'This inventory is no longer available.'),
+            '22023': (409, 'The inventory name changed. Refresh and type its current name.'),
+            '23514': (409, 'This inventory contains saved records. Move or remove them before deleting it.'),
+            '23503': (409, 'This inventory has linked records and cannot be deleted.'),
+            '23505': (409, 'The workspace changed. Refresh before trying again.'),
+            '40P01': (409, 'The workspace changed. Refresh before trying again.'),
+            'PGRST202': (503, 'Inventory deletion is not available yet. Please try again later.'),
+        }
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message) from None
+        raise
+    if not isinstance(result, dict) or result.get('deleted') is not True or result.get('inventory_id') != str(inventory_id):
+        raise HTTPException(503, 'Deletion could not be confirmed. Refresh before retrying.')
+    return result
+
+
 class MoveSpace(BaseModel):
     inventory_id: UUID
 

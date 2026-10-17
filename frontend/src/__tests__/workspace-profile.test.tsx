@@ -228,7 +228,7 @@ test("workspace navigation selects only the current section and retains its pare
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
  expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
- expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc?view=inventories");
+ expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
 });
 test("account navigation requires a context before offering inventory actions",async()=>{

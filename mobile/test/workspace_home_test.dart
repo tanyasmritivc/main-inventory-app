@@ -61,6 +61,12 @@ void main() {
           ],
         };
       }
+      if (r.path.endsWith('/inventories') && r.method == 'POST') {
+        count++;
+        return {
+          'inventory': {'inventory_id': 'inv-${count - 1}'},
+        };
+      }
       if (r.path.endsWith('/directory')) {
         return {
           'inventories': [
@@ -126,13 +132,34 @@ void main() {
       );
       await pump(tester);
       expect(find.text('FTC ROBOTICS 2026'), findsOneWidget);
-      expect(find.text('View only'), findsOneWidget);
-      expect(find.text('60 items'), findsOneWidget);
+      expect(find.text('60 items · Viewer'), findsOneWidget);
+      expect(find.text('New inventory'), findsNothing);
       expect(find.text('Tasks'), findsOneWidget);
       expect(find.text('People'), findsOneWidget);
       expect(find.byTooltip('Refresh'), findsNothing);
-      await tester.tap(find.text('Open'));
+      await tester.tap(find.text('Inventory 0'));
       expect(opened, ['org/ftc/inv-0']);
+    },
+  );
+  testWidgets(
+    'create remains visible after the first inventory and refreshes the selected workspace',
+    (tester) async {
+      await tester.runAsync(session.restore);
+      await pump(tester);
+      expect(find.text('Inventory 0'), findsOneWidget);
+      await tester.tap(find.text('New inventory'));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField), 'Materials');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Create'));
+      await settle(tester);
+      expect(
+        fixture.requests.where((r) => r.method == 'POST').last.path,
+        '/inventory-workspaces/personal/inventories',
+      );
+      expect(find.text('Inventory 1'), findsOneWidget);
+      expect(find.text('New inventory'), findsOneWidget);
+      expect(opened, isEmpty);
     },
   );
   testWidgets('Personal contains inventories and no workspace tools', (
@@ -176,7 +203,7 @@ void main() {
     canOpen = false;
     await tester.runAsync(session.restore);
     await pump(tester);
-    expect(find.text('INVENTORIES'), findsOneWidget);
+    expect(find.text('Inventories'), findsOneWidget);
     expect(find.text('Access restricted'), findsNWidgets(2));
     expect(find.text('items'), findsNothing);
     expect(find.text('0'), findsNothing);

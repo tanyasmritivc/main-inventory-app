@@ -1,3 +1,14 @@
+# October 16 inventory-first workspace navigation
+
+Keep dashboard, Spaces and opened-inventory flows intact. Workspace entry opens
+its inventory directory with creation available at every inventory count;
+organization and workspace management remain outside the inventory. Scope
+professional directory typography/theme to these routes only. Organization IDs,
+not duplicate display names, determine grouping. Deletion requires a current
+owner/admin, exact name and no content foreign keys, all checked under database
+locks through a service-only RPC. Do not add cascading content deletion to make
+this convenient. On rollback keep migration 049; the prior runtime has no DELETE.
+
 # October 16: approved account-memory activation preserves server work
 
 After explicit user approval, apply reviewed migration 048 before the dependent

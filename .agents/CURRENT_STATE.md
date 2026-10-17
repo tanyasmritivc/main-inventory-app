@@ -1,3 +1,25 @@
+# October 16 hierarchy flow production activation
+
+Lane feat/hierarchy-navigation-20261016 replaces organization/workspace navigation
+on both clients and preserves all inventory dashboard/Spaces code. New inventory
+is always visible for authorized users; organization switcher entries are real
+places; web workspace URLs open Inventories. Both clients add rename/delete menus.
+Deletion is owner/admin-only, exact-name, empty-content-only, transactional and
+audited. Tanya explicitly approved migration 049 and publication. Private backup
+and live-schema restore rehearsal passed; 049 and one reviewed backend runtime
+file are deployed. Public/local health/DB health pass, invalid/missing sessions
+are denied, direct anon/authenticated RPC execution is denied. No customer
+records changed for QA. Web runs web-hierarchy-20261016, preserving unrelated
+source and the homepage. Authenticated read-only Safari shows the actual new
+directory and Rename/Delete menu. Real writes/cross-client acceptance is pending.
+
+Checks before push: 780 backend, 305 web, 448 Flutter tests; final 33 focused
+mobile tests, composed SQL through 049, analysis, TypeScript and changed-file
+ESLint pass. Native visual evidence is synthetic, saved in
+design/hierarchy-navigation/out. TestFlight 71 signing/upload remains pending.
+Details, complete file list, rollback and manual acceptance:
+docs/plans/hierarchy-navigation.md.
+
 # October 16 account memory activated on self-hosted production
 
 Tanya explicitly approved migration 048 and the reviewed backend after the source

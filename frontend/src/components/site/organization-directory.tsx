@@ -15,6 +15,7 @@ import { InvitationDeliveryDetails, PendingInvitations } from "@/components/site
 import { RenameResourceDialog, type RenameTarget } from "@/components/site/rename-resource-dialog";
 import { OrganizationDeleteDialog, type OrganizationTarget } from "@/components/site/organization-delete-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import styles from "./directory-design.module.css";
 type Org = { organization_id: string; name: string; role: string; owner_user_id?: string };
 type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string }[]; members: { user_id: string; display_name: string; role: string }[] };
 export function OrganizationActions({ organization, onRename, onDelete, disabled }: {
@@ -79,13 +80,14 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  const people = !!organizationId && view === "people";
  const matches = (value: string) => value.toLowerCase().includes(query.trim().toLowerCase());
  const context = organizationId ? organizationNavigation(organizationId, overview?.organization.name || "Organization", view) : undefined;
- return <AppShell context={context}><section className="product-page context-directory">
-  <header className="product-page-header"><h1>{organizationId ? people ? "People" : "Workspaces" : "Organizations"}</h1><div className="product-actions">
+ return <div className={styles.shell}><AppShell context={context}><section className={`product-page context-directory ${styles.flow}`}>
+  <header className="product-page-header"><div><span className={styles.eyebrow}>{organizationId ? "Organization" : "Your places"}</span><h1>{organizationId ? people ? "People" : overview?.organization.name || "Organization" : "Organizations"}</h1></div><div className="product-actions">
    {accountId && overview?.organization.owner_user_id === accountId && <OrganizationActions organization={overview.organization} disabled={busy} onRename={() => setRename({ kind: "organization", id: overview.organization.organization_id, name: overview.organization.name })} onDelete={() => setDeleting(overview.organization)} />}
    {!organizationId && <button className="product-button" onClick={() => open("organization")}>New organization</button>}
    {manager && <>{!people && !!overview?.attachable?.length && <button className="product-button" onClick={() => open("attach")}>Add existing workspace</button>}<button className="product-button" onClick={() => open(people ? "member" : "workspace")}>{people ? "Invite member" : "New workspace"}</button></>}
   </div></header>
   {!mode && (error || sessionError) && <p role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setRevision((v) => v + 1)}>Retry</button></p>}
+  {organizationId && !people && <h2 style={{fontSize:15,fontWeight:500,marginBottom:16}}>Workspaces</h2>}
   <input className="product-input directory-search" type="search" aria-label={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} placeholder={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} value={query} onChange={(e) => setQuery(e.target.value)} />
   {loading ? <p role="status" className="workspace-muted">Loading...</p> : organizationId ? people ? <>
    <div className="context-people-list">{overview?.members.filter((m) => matches(m.display_name)).map((m) => <div className="context-person" key={m.user_id}><strong>{m.display_name === "Member" ? `Member ${m.user_id.slice(0,8)}` : m.display_name}</strong><span>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}</span>{manager && m.role !== "owner" && (m.role !== "admin" || overview?.organization.role === "owner") && <button className="directory-rename" disabled={busy} onClick={() => void removeMember(m.user_id)}>Remove</button>}</div>)}</div>
@@ -93,7 +95,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
    {manager && <PendingInvitations scope="organization" resourceId={organizationId} revision={revision} />}
   </> : <>
    <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}><Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><strong>{ws.name}</strong><span>Workspace</span></Link>{accountId && ws.owner_user_id === accountId && <button className="directory-rename" aria-label={`Rename ${ws.name}`} onClick={() => setRename({kind:"workspace",id:ws.team_id,name:ws.name})}>Rename</button>}</div>)}</div>
-   {!overview?.workspaces.some((ws) => matches(ws.name)) && <p className="workspace-muted">{query ? "No matching workspaces." : "No assigned workspaces yet."}</p>}
+   {!overview?.workspaces.some((ws) => matches(ws.name)) && <div className={styles.empty}><h2>{query ? "No matching workspaces" : "No workspaces yet"}</h2><p>{query ? "Try another name." : manager ? "Create a workspace for your team or project." : "You have not been assigned to a workspace."}</p>{manager && !query && <button className="product-button" onClick={()=>open("workspace")}>Create workspace</button>}</div>}
   </> : <>
    <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && org.owner_user_id === accountId && <OrganizationActions organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>
    {query && !matches("Personal") && !organizations.some((org) => matches(org.name)) && <p className="workspace-muted">No matching organizations.</p>}
@@ -119,5 +121,5 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
     <div className="product-actions"><button type="button" className="product-button" disabled={busy} onClick={() => setMode(null)}>Cancel</button><button className="product-button" disabled={busy || (mode === "member" ? !email.trim() : mode === "attach" ? !existingWorkspace : !name.trim())}>{busy ? "Saving..." : mode === "member" ? "Send invitation" : mode === "attach" ? "Add workspace" : mode === "workspace" ? "Create workspace" : "Create organization"}</button></div>
    </form>}
   </DialogContent></Dialog>
- </section></AppShell>;
+ </section></AppShell></div>;
 }
