@@ -18,6 +18,7 @@ from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat
 from app.services.ask_presentation import answer_context_from_reads, project_answer_text
 from app.services.project_kits_service import get_project_readiness
 from app.services.inventory_questions import answer_question
+from app.services.memory_context import load_preferences, style_instruction, personalize, present, preference_question
 from app.services.assistant_tool_safety import rejection, fingerprint, action_answer, provider_data, mutation_requested, READ_TOOLS
 
 from app.core.config import get_settings
@@ -518,15 +519,10 @@ _SYSTEM_PROMPT = (
     "anything outside of inventory.\n\n"
 
     "MEMORY & PERSONALIZATION:\n"
-    "Your system context may include a section starting with "
-    "'What I know about this user:' — if present, use this to "
-    "personalize your responses naturally. Do not announce that "
-    "you have memory or explain where the information came from. "
-    "Just use it as if you naturally know the user.\n"
-    "Your context may also include 'Relevant past conversations:' — "
-    "if present, use this to give more accurate and consistent answers. "
-    "If a user asks what you remember about them, summarize what is "
-    "in your memory context naturally and warmly.\n"
+    "Only the explicit style instructions supplied by the backend are approved durable preferences. "
+    "Conversation context is temporary and never proof of saved personalization. "
+    "Do not claim you permanently remembered, edited or forgot a preference from chat. "
+    "Direct preference changes to Settings > Memory. Never infer sensitive personal traits.\n"
     "The CONTEXT system message reflects the current live state of the user's inventory "
     "and always takes precedence over anything in memory or past conversations. "
     "If memory and CONTEXT disagree about an item's location, quantity, or existence, "
@@ -1423,14 +1419,18 @@ def _run_agent(
     if not user_id:
         return {'tool': None, 'result': None, 'assistant_message': 'Missing user session.'}
 
+    preferences = load_preferences(user_id)
+    preference_reply = preference_question(message, preferences)
+    if preference_reply is not None:
+        return preference_reply
     readiness = _project_readiness_for_question(user_id=user_id, message=message)
     if readiness is not None:
-        return _project_readiness_answer(user_id=user_id, message=message, detail=readiness)
+        return personalize(_project_readiness_answer(user_id=user_id, message=message, detail=readiness), preferences)
 
-    grounded = answer_question(user_id=user_id, message=message, conversation_id=conversation_id)
+    grounded = answer_question(user_id=user_id, message=message, conversation_id=conversation_id, aliases=preferences.get('aliases', []))
     if grounded is not None:
         grounded['assistant_message'] = format_chat_reply(grounded['assistant_message'])
-        return grounded
+        return personalize(grounded, preferences)
 
     provider = _get_chat_provider(conversation_id)
     client = provider.client
@@ -1450,7 +1450,7 @@ def _run_agent(
         history = history[-MAX_HISTORY:]
 
     messages: list[dict[str, Any]] = [
-        {'role': 'system', 'content': _SYSTEM_PROMPT},
+        {'role': 'system', 'content': _SYSTEM_PROMPT + '\n' + style_instruction(preferences)},
         {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(provider_data(context))}"},
         *history,
         {'role': 'user', 'content': message},
@@ -1536,7 +1536,7 @@ def _run_agent(
         if not assistant_message:
             assistant_message = 'Let me think about that...'
 
-        assistant_message = format_chat_reply(assistant_message)
+        assistant_message = present(format_chat_reply(assistant_message), preferences)
         st.conversation_history.append({'role': 'user', 'content': message})
         st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
         if len(st.conversation_history) > MAX_HISTORY:
@@ -1570,7 +1570,7 @@ def _run_agent(
     if not assistant_message:
         assistant_message = 'Let me think about that...'
 
-    assistant_message = format_chat_reply(action_answer(message, tool_trace) or assistant_message)
+    assistant_message = present(format_chat_reply(action_answer(message, tool_trace) or assistant_message), preferences)
     st.conversation_history.append({'role': 'user', 'content': message})
     st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
     if len(st.conversation_history) > MAX_HISTORY:
@@ -1628,15 +1628,22 @@ def _iter_agent_streaming(
     contract. FindEZ still emits response events to clients.
     Yields {'type':'delta','delta':str} for each token as it arrives, then
     {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
+    preferences = load_preferences(user_id)
+    preference_reply = preference_question(message, preferences)
+    if preference_reply is not None:
+        yield {'type': 'delta', 'delta': preference_reply['assistant_message']}
+        yield {'type': 'done', **preference_reply}
+        return
     readiness = _project_readiness_for_question(user_id=user_id, message=message)
     if readiness is not None:
-        answer = _project_readiness_answer(user_id=user_id, message=message, detail=readiness)
+        answer = personalize(_project_readiness_answer(user_id=user_id, message=message, detail=readiness), preferences)
         yield {'type': 'delta', 'delta': answer['assistant_message']}
         yield {'type': 'done', **answer}
         return
-    grounded = answer_question(user_id=user_id, message=message, conversation_id=conversation_id)
+    grounded = answer_question(user_id=user_id, message=message, conversation_id=conversation_id, aliases=preferences.get('aliases', []))
     if grounded is not None:
         grounded['assistant_message'] = format_chat_reply(grounded['assistant_message'])
+        grounded = personalize(grounded, preferences)
         yield {'type': 'delta', 'delta': grounded['assistant_message']}
         yield {'type': 'done', **grounded}
         return
@@ -1655,7 +1662,7 @@ def _iter_agent_streaming(
         history = history[-MAX_HISTORY:]
 
     messages: list[dict[str, Any]] = [
-        {'role': 'system', 'content': _SYSTEM_PROMPT},
+        {'role': 'system', 'content': _SYSTEM_PROMPT + '\n' + style_instruction(preferences)},
         {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(provider_data(context))}"},
     ]
     if memory_context:
@@ -1717,7 +1724,7 @@ def _iter_agent_streaming(
                 },
             }
         if not accumulated_tool_calls:
-            accumulated_content = format_chat_reply(action_answer(message, tool_trace) or accumulated_content)
+            accumulated_content = present(format_chat_reply(action_answer(message, tool_trace) or accumulated_content), preferences)
             if accumulated_content:
                 yield {'type': 'delta', 'delta': accumulated_content}
 

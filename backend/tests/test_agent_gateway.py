@@ -143,21 +143,8 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
     assert events[-1]["assistant_message"] == "M4 screws are in Cabinet."
 
 
-def test_memory_extraction_uses_gateway_when_configured():
-    completion = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="{}"))]
-    )
-    create = Mock(return_value=completion)
-    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
-
-    with patch("app.core.config.get_settings", return_value=_settings()), patch(
-        "app.services.agent_gateway_client.AgentGatewayClient", return_value=client
-    ) as gateway:
-        asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "In Cabinet."))
-
-    gateway.assert_called_once_with()
-    kwargs = create.call_args.kwargs
-    assert kwargs["model"] == "deepseek-v4-flash-agent"
-    assert kwargs["max_tokens"] == 200
-    assert "max_completion_tokens" not in kwargs
-    assert kwargs["extra_headers"]["X-Agent-Timezone"] == "America/Los_Angeles"
+def test_legacy_memory_extraction_does_not_promote_answers_or_call_gateway():
+    with patch("app.services.agent_gateway_client.AgentGatewayClient") as gateway, patch("app.services.supabase_client.create_supabase_admin") as database:
+        asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "Invented fact"))
+    gateway.assert_not_called()
+    database.assert_not_called()
