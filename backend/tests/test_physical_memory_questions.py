@@ -379,6 +379,115 @@ def test_planning_routing_preserves_grounded_lookup(memory,message):
     assert not inventory_questions.is_planning_question(message)
     assert inventory_questions.answer_question(user_id='owner',message=message) is not None
 
+
+@pytest.mark.parametrize('mode', ['sync', 'stream'])
+def test_first_purpose_question_browses_saved_items_without_requiring_purpose_in_name(memory, mode):
+    message = 'what items do I have for ftc robotics'
+    with patch.object(ai_agent, '_project_readiness_for_question', return_value=None), \
+         patch.object(ai_agent, '_get_chat_provider') as provider:
+        args = {'user_id': 'owner', 'message': message, 'first_name': None}
+        result = ai_agent.run_ai_command(**args) if mode == 'sync' else list(ai_agent._iter_agent_streaming(**args))[-1]
+    assert len(result['answer_context']['rows']) == 8
+    assert 'M3 screw' in result['assistant_message']
+    assert 'current inventory' in result['assistant_message']
+    assert "haven't verified" in result['assistant_message']
+    assert 'ftc robotics' in result['assistant_message']
+    assert 'FOREIGN_SECRET' not in json.dumps(result)
+    provider.assert_not_called()
+    assert memory.writes == 0
+
+
+def test_empty_selected_inventory_is_explained_on_first_question(memory):
+    memory.rows['items'] = [row for row in memory.rows['items'] if row['inventory_id'] != 'inventory-a']
+    result = inventory_questions.answer_question(user_id='owner', message='what items do I have for ftc robotics')
+    assert 'current inventory has no saved items' in result['assistant_message']
+    assert 'switch' in result['assistant_message'].lower()
+    assert 'Capture' in result['assistant_message']
+    assert not result['answer_context']['rows']
+    assert 'FOREIGN_SECRET' not in json.dumps(result)
+
+
+def test_purpose_does_not_erase_the_requested_item_or_location(memory):
+    result = inventory_questions.answer_question(user_id='owner', message='What screws do I have for robotics?')
+    assert [r['id'] for r in result['answer_context']['rows']] == [DATA['items'][5]['item_id']]
+    result = inventory_questions.answer_question(user_id='owner', message='What items do I have in Garage shelf for robotics?')
+    assert len(result['answer_context']['rows']) == 2
+    assert all(r['location'] == 'Garage shelf' for r in result['answer_context']['rows'])
+
+
+def test_no_match_explains_scope_and_next_step_without_claiming_inventory_empty(memory):
+    result = inventory_questions.answer_question(user_id='owner', message='Where is my soldering iron?')
+    assert 'soldering iron' in result['assistant_message']
+    assert 'current inventory' in result['assistant_message']
+    assert 'no saved items' not in result['assistant_message']
+    assert 'name' in result['assistant_message']
+    assert not result['answer_context']['rows']
+
+
+@pytest.mark.parametrize('message', [
+    'What parts do I have for FTC robotics?',
+    'Which equipment do we have for the workshop?',
+    'Show my inventory for a new build',
+    'What items do I have for this FTC season?',
+])
+def test_generic_purpose_browse_keeps_current_scope(memory, message):
+    result = inventory_questions.answer_question(user_id='owner', message=message)
+    assert len(result['answer_context']['rows']) == 8
+    assert "haven't verified" in result['assistant_message']
+    assert 'FOREIGN_SECRET' not in json.dumps(result)
+
+
+def test_exact_identifier_search_is_not_broadened_into_purpose_browse(memory):
+    question = inventory_questions.interpret('Find part number A-101 for robotics')
+    assert not question.purpose
+    result = inventory_questions.answer_question(user_id='owner', message='Find part number A-101')
+    assert not result['answer_context']['rows']
+    assert 'A-100' not in result['assistant_message']
+
+
+def test_purpose_browse_is_bounded_and_discloses_partial_results(memory):
+    memory.rows['items'] = [{**DATA['items'][0], 'item_id': f'row-{n}'} for n in range(510)]
+    result = inventory_questions.answer_question(user_id='owner', message='What items do I have for robotics?')
+    assert result['capability_state'] == 'incomplete'
+    assert result['answer_context']['rows_truncated']
+    assert len(result['answer_context']['rows']) == 100
+    assert 'partial' in result['assistant_message']
+    assert 'Showing 20 of 500' in result['assistant_message']
+    assert max(limit for _, _, limit in memory.reads) <= 501
+
+
+def test_failed_empty_inventory_probe_does_not_claim_absence(memory):
+    with patch.object(inventory_questions, 'search_memory_candidates', side_effect=[
+        {'items': [], 'truncated': False}, RuntimeError('PRIVATE DETAIL')
+    ]):
+        result = inventory_questions.answer_question(user_id='owner', message='Where is my soldering iron?')
+    assert result['capability_state'] == 'unavailable'
+    assert 'could not verify' in result['assistant_message']
+    assert 'PRIVATE DETAIL' not in json.dumps(result)
+
+
+def test_first_purpose_question_has_same_authorization_in_http_sse(http_api):
+    from unittest.mock import AsyncMock
+    client, db = http_api
+    with patch('app.api.routes.ai.check_and_increment_chat'), \
+         patch('app.api.routes.ai.fetch_user_memory', new=AsyncMock(return_value='')), \
+         patch('app.api.routes.ai.fetch_similar_history', new=AsyncMock(return_value='')), \
+         patch('app.api.routes.ai.extract_and_save_memory', new=AsyncMock()), \
+         patch('app.api.routes.ai.log_query', new=AsyncMock()), \
+         patch('app.api.routes.ai.save_conversation', new=AsyncMock()), \
+         patch.object(ai_agent, '_get_chat_provider') as provider:
+        response = client.post(f'/inventories/{TEAM_INV}/ai_command?stream=true',
+                               json={'message': 'what items do I have for ftc robotics'},
+                               headers={'x-test-actor': VIEWER})
+    assert response.status_code == 200
+    events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith('data: {')]
+    done = next(e for e in events if e.get('type') == 'done')
+    assert [row['id'] for row in done['answer_context']['rows']] == [TEAM_INV]
+    assert 'current inventory' in done['assistant_message']
+    assert "haven't verified" in done['assistant_message']
+    provider.assert_not_called()
+    assert all(table != 'items' for table, _, _ in db.writes)
+
 @pytest.mark.parametrize('mode',['sync','stream'])
 def test_season_planning_reaches_gateway_with_current_context_and_honest_requirements(memory,mode):
     create=Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='Which build or game requirements should we plan for?',tool_calls=[]))]))

@@ -1,3 +1,13 @@
+# October 17 shared Ask first-answer follow-up
+
+Active lane fix/ask-first-answer-20261017, clean base eab8962. Purpose phrases
+are no longer mandatory item-name tokens. First replies distinguish an empty
+selected inventory from an unsuccessful filtered search, explain scope and next
+actions, and disclose unchecked suitability/partial results. All 830 Python tests
+and 10 subtests pass. Only inventory_questions.py changes at runtime; production
+one-file deployment pending. No provider/schema/data/client changes. Migration 053
+remains pending separately. Details: docs/plans/ask-first-answer.md.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal

@@ -1,3 +1,11 @@
+# October 17 shared Ask first-answer follow-up
+
+Purpose questions browse the current authorized inventory while retaining real
+item/location filters and disclosing unchecked suitability. Empty replies now
+explain selected inventory and next actions; failed reads do not claim absence.
+830 Python tests plus 10 subtests pass; one-file self-hosted deployment pending.
+No provider/schema/client changes. See docs/plans/ask-first-answer.md.
+
 # October 17 interactive mobile setup
 
 First-run onboarding now builds a persistent native canvas world. Team/personal

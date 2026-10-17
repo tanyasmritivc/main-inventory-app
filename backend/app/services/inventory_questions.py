@@ -54,6 +54,7 @@ class Question:
     all_matches: bool = False
     reason: str = ''
     clarification: bool = False
+    purpose: str = ''
 
 
 def _tokens(text: str) -> list[str]:
@@ -116,8 +117,21 @@ def interpret(message: str) -> Question | None:
         kind = 'inventory.count'
     elif re.search(r'\b(why did you choose|why this result|evidence)\b', text):
         kind = 'item.evidence'
-    elif not re.search(r'^(where|find|locate|search|look for|show|list|do i|do we|does|is there|what.*(in|own|have)|tell me about|i can.t remember)', text):
+    elif not re.search(r'^(where|find|locate|search|look for|show|list|do i|do we|does|is there|(?:what|which).*(in|own|have)|tell me about|i can.t remember)', text):
         return None
+    # A purpose is not an item identifier. Requiring "FTC robotics" in every
+    # motor/fastener record silently turns an inventory browse into no matches.
+    # Keep real item/location filters, and disclose that suitability is unchecked.
+    purpose = ''
+    if kind in ('item.find', 'inventory.count') and re.search(
+        r'^(?:(?:what|which|how many)\b.*\b(?:have|own)|do (?:i|we) have\b|(?:show|list)\b)', text
+    ):
+        purpose_match = re.search(r'\s+for\s+(.+?)\s*[?.!]*$', text)
+        if purpose_match:
+            purpose = purpose_match.group(1).strip(' ?.!')[:160]
+            text = text[:purpose_match.start()]
+            text = re.sub(r'^((?:what|which) )\b(?:items?|parts?|belongings|equipment|supplies)\b', r'\1', text)
+            reference = bool(re.search(r'\b(it|this|that|one|those|these|all matching)\b', text))
     filters = {}
     date_filter = re.search(r'\b(?:added\s+)?(since|after|before)\s+(\d{4}-\d{2}-\d{2})\b', text)
     if date_filter:
@@ -159,11 +173,11 @@ def interpret(message: str) -> Question | None:
     text = re.sub(r"i can.t remember (?:its|the) name[, ]*(?:but)?", '', text)
     text = re.sub(r'\b(number of|total|count|inventory|brand|category|quantity|stock|below|above|under|over|at least|at most|exactly|barcode|identifier|part number)\b', '', text)
     terms = list(dict.fromkeys(_word(t) for t in _tokens(text) if t not in _STOP))
-    if not terms and not filters and not reference and not re.search(r'\b(inventory|items|records|everything|own)\b', message, re.I):
+    if not terms and not filters and not reference and not purpose and not re.search(r'\b(inventory|items|records|everything|own)\b', message, re.I):
         return Question(kind, reason='Which saved item or location do you mean? Please give its name or identifier.', clarification=True)
     if not terms and not filters and any(c.isalpha() and ord(c) > 127 for c in text):
         return Question(kind, reason='I could not interpret that saved name safely. Please give its saved identifier or recorded location.', clarification=True)
-    return Question(kind, terms[:12], filters, reference and not terms, 'all matching' in message.casefold())
+    return Question(kind, terms[:12], filters, reference and not terms, 'all matching' in message.casefold(), purpose=purpose)
 
 
 _FIELDS = ('name', 'part_number', 'barcode', 'brand', 'category', 'subcategory', 'notes', 'location')
@@ -306,8 +320,25 @@ def answer_question(*, user_id: str, message: str, conversation_id: str | None =
                         answer = 'That result is no longer accessible here. Please name an item in the current inventory.'
                 elif not items:
                     status = 'incomplete' if truncated else 'empty'
-                    answer = ('I could not find a matching saved record in the records checked. '
-                              'This does not establish that the physical item is absent.')
+                    # A filtered search returning nothing does not prove that
+                    # the selected inventory is empty. Recheck that separately
+                    # through the same scoped client, without fetching its rows.
+                    empty_inventory = not data['items'] and not truncated and not candidates and not ids and not alias_space
+                    if not empty_inventory and not truncated:
+                        probe = search_memory_candidates(user_id=user_id, terms=[], limit=2)
+                        empty_inventory = not probe['items'] and not probe['truncated']
+                    if empty_inventory:
+                        answer = ('The current inventory has no saved items yet. '
+                                  'If your items are in another inventory, switch to it and ask again. '
+                                  'Otherwise, add them with Capture to build your list.')
+                    else:
+                        target = _text(' '.join(question.terms))
+                        answer = (f'I did not find a saved match for "{target}" in the current inventory. '
+                                  if target else 'No saved items matched those filters in the current inventory. ')
+                        answer += ('Try the saved item name, category or location, or switch to the inventory where you saved it. '
+                                   'This does not mean the physical item is missing.')
+                        if truncated:
+                            answer += ' The search limit was reached; narrow the name or location to check more precisely.'
                 else:
                     answer, status, sources = _answer(question, items, user_id, truncated)
                     if len(items) > 1 and re.search(r'^where is\b', message, re.I):
@@ -382,6 +413,10 @@ def _answer(question: Question, items: list[dict], user_id: str, truncated: bool
         if len(items) > 20:
             answer += f'\nShowing 20 of {len(items)} matching records checked.'
         answer += '\nThese are saved records, not a live physical sighting.'
+    if question.purpose:
+        answer = ('Here are the saved items in the current inventory that match your item and location filters. '
+                  if question.terms or question.filters else 'Here are the saved items in the current inventory. ') + \
+                 f'I haven\'t verified which are suitable for {_text(question.purpose)}.\n\n' + answer
     if truncated:
         answer += '\nThe search limit was reached. These results and totals are partial; narrow the name or location.'
     incomplete = truncated or any(recorded_quantity(i.get('quantity')) is None for i in items)
