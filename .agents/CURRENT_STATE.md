@@ -14,7 +14,9 @@ motion/onboarding 20 pass after a palette-only correction; analysis clean.
 Both iPhone 16e paths recorded at normal speed, keyboard/restart/back/custom and
 auth variants visually reviewed. Debug overlay worst UI 59.89 ms / raster 28.804 ms;
 strict 16 ms and physical OAuth/email/VoiceOver acceptance are not claimed.
-Release 78 is prepared for signed production upload. Full file list, motion audit,
+Apple acknowledged TestFlight 1.0.8 (78), source 269f1f0, delivery
+5f203ae7-9cdd-437f-b149-eb9383f5241b. Processing/tester availability unverified;
+no polling or post-push/build regressions. Full file list, motion audit,
 API retry limits and comparison artifacts: design/onboarding-a/IMPLEMENTATION.md.
 
 # October 17 catalog write permissions candidate

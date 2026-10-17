@@ -2,7 +2,7 @@
 
 Implemented October 17, 2026 on `feat/build-your-world-onboarding-20261017`.
 Clean starting commit: `7cb8459853816382d8c9bde8681b4c60eb795c03`.
-Release target: TestFlight 1.0.8 (78). Upload receipt is recorded below when available.
+Apple acknowledged TestFlight 1.0.8 (78). Processing and tester availability are unverified.
 
 ## Result and scope
 
@@ -218,3 +218,23 @@ No new backend security issue is identified by this mobile-only change. Existing
 audit findings, including the pending barcode permission rollout, are not closed
 by this work. TestFlight processing and tester availability are not implied by
 upload acknowledgment. No public App Store submission is authorized or performed.
+
+## Delivery receipt
+
+- PR: https://github.com/tanyasmritivc/main-inventory-app/pull/92 (draft for device acceptance).
+- Source commit: `269f1f071477243a0d15c08ba5bbe261bea751ef`.
+- Branch: `feat/build-your-world-onboarding-20261017`.
+- Signed production target: `lib/main.dart`, bundle `com.findez.app`, version 1.0.8, build 78.
+- Existing private production defines and export configuration copied unchanged.
+- Archive/export succeeded. Flutter also reports the existing native launch-image
+  placeholder warning; native launch assets were not changed in this UI task.
+- IPA SHA-256: `c068f5e9218b331cbecce76a10c95f85678843ab4aec7ed49fcd480a9369002e`.
+- Apple delivery UUID: `5f203ae7-9cdd-437f-b149-eb9383f5241b`.
+- IPA, zipped archive, export configuration and private upload acknowledgment:
+  `/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.0.8-build78`.
+- Upload acknowledged October 17, 2026. Processing and tester availability remain
+  unverified. No processing polls, post-push/build regressions or public App Store
+  submission were performed. No production data or schema was changed.
+- Runtime commits are complete and pushed; this final receipt is documentation
+  only and does not require another binary. Physical acceptance items above
+  remain open. No remaining uncommitted changes are intended.
