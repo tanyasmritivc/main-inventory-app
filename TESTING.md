@@ -967,3 +967,13 @@ SQL includes workspace_creation_codes.sql and invitation_push_target.sql through
 052. Rehearse migrations on restored schema, never customer writes for QA.
 Actual background iPhone delivery, cold notification taps, fresh email links and
 provider planning quality require manual acceptance; see notification-reliability.md.
+
+### October 16 per-item crop regression
+
+`python -m pytest -q backend/tests/test_capture_crops.py backend/tests/test_find_pipeline.py`
+exercises the documented item-ID endpoint, real decoded image dimensions/pixels,
+low-confidence Review preservation, x/y/width/height and downscaled coordinates,
+invalid boxes, missing/invalid crops, transport timeout fallback and persistence
+before job cleanup. Existing capture preview/Review/save suites verify the image
+reference contract. Fresh camera-photo visual acceptance remains a real-device
+check; old records with only a source image are not retroactively rewritten.

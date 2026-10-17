@@ -131,8 +131,11 @@ Photo flow:
 3. FastAPI maps identity, detection, text, barcode, measurement, assumptions,
    warnings, and review reasons into public `scan_evidence`.
 4. The uploaded source image and available per-item crops are copied to the
-   `item-images` bucket before the FIND job is deleted in `finally`. Masks and
-   geometry are not stored.
+   `item-images` bucket before the FIND job is deleted in `finally`. Fetch the
+   documented item-ID crop endpoint even when result rows omit crop URLs. The
+   fallback bbox is x/y/width/height in the stored frame, scaled back to upload
+   dimensions. Low identification confidence never disables crop retrieval. Masks
+   and geometry are not stored.
 5. New clients request preview-only extraction. Uncertain results carry an
    account-bound signed preview and create no Review row until explicit Save.
    Saved uncertainty lives in `capture_reviews` until confirmation or dismissal.

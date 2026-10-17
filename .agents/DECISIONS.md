@@ -1,3 +1,12 @@
+# October 16 preserve per-item scan images independently of certainty
+
+FIND result bbox is x/y/width/height, not opposite corners. Crop URLs can be absent;
+use the documented item-ID crop endpoint and persist the decoded image before
+job cleanup. If unavailable, crop the original using the stored-frame dimensions.
+Keep the original source separately, and preserve uncertain Review behavior.
+Do not guess geometry or rewrite existing customer images lacking persisted boxes.
+No model, provider, schema or transport configuration changes are required.
+
 # October 16 mobile alerts preserve identity and access boundaries
 
 A visible bell opens the existing authenticated inbox independently of inventory.

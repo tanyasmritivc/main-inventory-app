@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../scan/scan_evidence_panel.dart';
+import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class ReviewQueuePage extends StatefulWidget {
@@ -84,6 +85,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
         title: const AppText('Review'),
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         actions: [
+          NotificationBell(api: widget.api),
           IconButton(
             tooltip: 'Refresh',
             onPressed: _loading ? null : _load,

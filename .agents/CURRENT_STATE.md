@@ -1,3 +1,16 @@
+# October 16 per-item scan crop fix
+
+The reviewed adapter now uses the documented item-ID crop endpoint when no URL
+is supplied, and reads bbox as x/y/width/height in the stored image frame. Crops
+remain independent of confidence and are persisted before job deletion; source
+images and Review safeguards are retained. Missing crops fall back to scaled
+boxes without discarding detections. The Review and Space toolbars also expose
+the notification bell. 814 backend tests plus six subtests, 462 Flutter tests and
+clean analysis pass. One-file backend overlay is live with 91 unrelated files
+preserved, health 200 and missing-auth scan 401. No schema or customer-data writes.
+Beta74 is being prepared; real new-camera/device acceptance is pending. Existing
+records with missing geometry require a fresh scan. See docs/plans/capture-crop-fix.md.
+
 # October 16 notification and reliability follow-up
 
 Approved migration 051 fixed intermittent workspace creation (legacy UUID codes
