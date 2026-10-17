@@ -1,3 +1,29 @@
+# October 16 account memory source implementation, deployment held
+
+Tanya approved the first four stages. Branch
+`feat/account-memory-foundation-20261016` adds opt-in explicit answer preferences,
+private per-inventory Space aliases, source receipts and revision serialization,
+shared text/photo personalization and web/mobile inspect/edit/forget/export.
+Legacy model-extracted facts are not active preferences. Automatic extraction and
+redundant raw Q&A copies stop; new query signals omit content. Migration 048 also
+blocks old in-flight extractors from recreating forgotten data.
+
+A read-only production metadata transaction confirmed PUBLIC true memory policies
+and anon/authenticated CRUD grants on user_memory. No user records were read.
+The tested local migration fixes those grants/policies and related private history
+and logs. It is NOT applied: this is an outstanding security issue, not a deployed
+fix. No backend/web deployment or production data changes for this task.
+
+772 Python tests plus six subtests, 302 web tests, 444 Flutter tests, Flutter
+analysis, TypeScript, changed-file ESLint and isolated SQL/concurrency/composed
+migration checks pass. Web compile passes with synthetic configuration and bundled
+font fixtures; normal local build fails due to symlinked dependencies and existing
+Google Fonts fetch/loader problems. Fixture output must never be deployed.
+TestFlight 1.0.8 (70) delivery is in progress using completed checks; no post-push
+or post-build reruns or processing wait. Detailed implementation, exact commands,
+file list, rollout/rollback and device acceptance:
+`docs/plans/account-memory-implementation.md`.
+
 # October 16 assistant retrieval beta delivery
 
 Active lane `feat/assistant-grounded-retrieval-20261016`, starting

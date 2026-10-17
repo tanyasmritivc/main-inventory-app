@@ -1,16 +1,20 @@
 # Active work
 
-## October 16 account memory discovery
+## October 16 account memory foundation
 
-Lane `feat/account-memory-foundation-20261016`, based on `5ca4e97`. Read
-`docs/plans/account-memory-foundation.md`. The new source specification explicitly
-requires architecture/gap/schema/plan delivery before approved implementation.
-Discovery/proposal only; no runtime or SQL changes. Self-hosted VM/Supabase is
-authoritative, not Render/Vercel. Proposed first slice is explicit opt-in
-preferences, private inventory aliases, provenance/receipts, shared retrieval and
-web/mobile memory controls. Await scope approval before application changes.
-Prior assistant source is pushed on PR #88; Apple acknowledged build 69, without
-backend deployment or processing wait.
+Lane `feat/account-memory-foundation-20261016`, based on `5ca4e97`. Tanya approved
+stages 1-4 of `docs/plans/account-memory-foundation.md`. Source now includes typed
+explicit preferences, private inventory location aliases, transactional receipts,
+RLS/legacy-collector guards, grounded personalization and web/mobile controls.
+772 Python tests plus six subtests, 302 web tests, 444 Flutter tests, static checks
+and standalone/composed SQL including concurrent edits pass. A read-only live
+metadata check confirms unsafe public legacy memory policy/grants. Migration 048
+closes them but is NOT applied. No production records were read or changed.
+Web compiles with the checked-in synthetic/font-fixture build helper; normal local
+build is blocked by existing font downloads/loader and symlinked node_modules.
+Never publish the fixture output. TestFlight 70 delivery is next; server activation
+and real two-client/device acceptance remain held. Full files/risks/commands:
+`docs/plans/account-memory-implementation.md`.
 
 ## October 16 assistant grounded retrieval
 

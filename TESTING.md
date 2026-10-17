@@ -915,3 +915,30 @@ shape and checks actual inventory-scoped requests, Create, Cancel and viewer
 restrictions. Root-only widget tests cannot detect the old dialog/root pop bug.
 See `design/workspace-switcher/IMPLEMENTATION.md` for simulator evidence and
 physical-device acceptance. Fake API screenshots do not prove production sync.
+
+## Explicit account memory regression checks
+
+Run Python from the repository root in the existing backend virtual environment:
+`python -m pytest -q`. Targeted files: `backend/tests/test_account_memory.py` and
+`backend/tests/test_memory_context.py`. They cover actor versus shared owner,
+private preferences, provider/deterministic/photo presentation, aliases, unknown
+writes, validation, export and disabled automatic extraction. The synthetic
+`backend/tests/fixtures/account_memory_cases.json` preserves factual evidence.
+
+The existing disposable SQL suite now includes account_memory_integration.sql
+and migration 048. Separately run `psql -X -v ON_ERROR_STOP=1 -f
+backend/tests/sql/account_memory.sql` against another EMPTY test database. It
+checks actual RLS/grants, private inventory roles, revisions, operation replay,
+forget, account cascade and old-extractor rejection. Never use a production DB.
+
+Web: `npm run test:ci -- --runInBand`, `npx tsc --noEmit`. The new Memory tests
+live in memory-settings.test.tsx. `node tools/build-memory-check.cjs` from
+frontend/ is a COMPILE-ONLY fallback with synthetic auth configuration and
+substituted bundled fonts. Its .next output MUST NOT be published. Normal
+production builds must use real deployment configuration and actual fonts.
+
+Mobile: `flutter analyze --no-pub`, `flutter test --no-pub --concurrency=1`.
+New controller/widget tests cover account switches, pending write retries,
+offline loads, controls, confirmation, large text and dark mode. Manual cross-client
+acceptance must follow approved migration/backend publication; TestFlight alone
+does not deploy /memory. See docs/plans/account-memory-implementation.md.

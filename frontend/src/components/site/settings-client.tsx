@@ -1,4 +1,5 @@
 "use client";
+import { MemorySettings } from "@/components/site/memory-settings";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
@@ -252,6 +253,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
 
   return (
     <div className="settings-content">
+      <MemorySettings accountId={accountId} />
       <section className="settings-panel">
         <header>
           <h2>Profile</h2>

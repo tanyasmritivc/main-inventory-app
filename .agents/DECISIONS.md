@@ -1,3 +1,19 @@
+# October 16 explicit account memory boundary
+
+Use authenticated actor identity for account preferences, independently of the
+inventory's effective owner. Keep aliases private to actor + authorized inventory
+and bind them to actual Space IDs. No inferred traits, arbitrary profile facts,
+model-generated key/value promotion or old Q&A as current inventory evidence.
+Keep style enum-based and factual records authoritative. Users must opt in and can
+inspect/edit/forget/export. Serialize writes and revisions in Postgres, deduplicate
+operation IDs per actor, reject changed-body reuse and keep receipts without raw
+content. Database guards block legacy extractors after migration, including after
+forget. Existing legacy rows stay unverified until explicitly replaced or erased.
+Keep migration 048's security boundaries on rollback; never restore public memory
+policies. No new model provider, queue, vector service or infrastructure is needed
+for synchronous explicit preferences. Inference, training, retention automation,
+complete account erasure and broader evidence ingestion require later review.
+
 # October 16 standing push and beta delivery instruction
 
 Tanya explicitly requests pushing all completed task changes and a new TestFlight
