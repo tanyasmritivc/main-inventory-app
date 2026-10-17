@@ -5,7 +5,7 @@ upload. Success/error removes exactly the progress route; departing Space routes
 cannot receive stale confirmation. Four nested-navigation regressions and the full
 466 Flutter tests pass; analysis is clean. No backend/web/schema changes in this
 stage. Beta74 was acknowledged (0ebf355, 9106117d-0272-4d90-a140-687db472ee06);
-beta75 is being prepared with this fix. Existing crop/notification changes remain.
+Apple acknowledged TestFlight 1.0.8 (75), runtime 7ec84bb, delivery 2b18a905-cc65-4659-a391-20737ab6ed7e. Processing and tester availability remain unverified; no polling. Existing crop/notification changes remain.
 No processing polling or post-push/build regression reruns. Manual iPhone camera,
 background push and fresh email acceptance remain pending. Details and all files:
 docs/plans/capture-progress-fix.md.

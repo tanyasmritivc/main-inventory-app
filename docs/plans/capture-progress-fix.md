@@ -26,7 +26,7 @@ preservation and leaving the source Space before completion. The first attempt
 at the departure test exposed that a popped route may remain mounted while its
 animation is suspended behind a root modal; current-route checks were added.
 Focused tests pass, the full Flutter suite passes 466 tests and analysis is clean.
-The signed beta75 delivery receipt will follow.
+Apple acknowledged TestFlight 1.0.8 (75), runtime 7ec84bb, delivery 2b18a905-cc65-4659-a391-20737ab6ed7e. Processing and tester availability remain unverified; no polling.
 This stage changes mobile only; reuse the preceding 814 backend/six subtest and
 329 web passes, with no repeated regression checks after push/build.
 
@@ -34,8 +34,7 @@ This stage changes mobile only; reuse the preceding 814 backend/six subtest and
 
 TestFlight 74 was acknowledged from 0ebf355, delivery
 9106117d-0272-4d90-a140-687db472ee06. It includes the earlier crop fix and Review/
-Space notification bells. Beta75 will add this dialog fix; processing is not
-polled. No backend/web/schema/production-data change is needed in this stage.
+Space notification bells. Beta75 includes this dialog fix; processing is not polled. No backend/web/schema/production-data change is needed in this stage.
 Physical iPhone acceptance, background push display and fresh email verification
 remain unverified. Signed IPA/archive/Apple receipts are preserved privately in
 Documents/FindEZ/AppStore/1.0.8-build74 and build75.
@@ -64,3 +63,9 @@ Documents/FindEZ/AppStore/1.0.8-build74 and build75.
 
 Rollback only this mobile helper/caller change if necessary; retain the crop,
 notification and authorization fixes. No migration or data rollback exists.
+
+Source branch: `feat/hierarchy-navigation-20261016`. Native runtime source is
+`7ec84bb`; subsequent delivery-receipt commits change documentation only. The
+release includes the earlier [notification](notification-reliability.md) and
+[per-item crop](capture-crop-fix.md) fixes. No remaining uncommitted implementation
+changes are intended. Physical acceptance remains pending.
