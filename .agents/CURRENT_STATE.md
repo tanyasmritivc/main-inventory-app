@@ -1,30 +1,31 @@
-# October 16 account memory source implementation, deployment held
+# October 16 account memory activated on self-hosted production
 
-Tanya approved the first four stages. Branch
-`feat/account-memory-foundation-20261016` adds opt-in explicit answer preferences,
-private per-inventory Space aliases, source receipts and revision serialization,
-shared text/photo personalization and web/mobile inspect/edit/forget/export.
-Legacy model-extracted facts are not active preferences. Automatic extraction and
-redundant raw Q&A copies stop; new query signals omit content. Migration 048 also
-blocks old in-flight extractors from recreating forgotten data.
+Tanya explicitly approved migration 048 and the reviewed backend after the source
+implementation and TestFlight 70 upload. Migration 048 committed and systemd
+findez restarted with the 12 reviewed backend files from runtime 967ab48,
+including the PR #88 retrieval dependency. The production Git checkout remains
+on main 98597c3 with selective overlays; it was not pulled, reset or cleaned.
+Unrelated backend files match their preserved predeployment copies.
 
-A read-only production metadata transaction confirmed PUBLIC true memory policies
-and anon/authenticated CRUD grants on user_memory. No user records were read.
-The tested local migration fixes those grants/policies and related private history
-and logs. It is NOT applied: this is an outstanding security issue, not a deployed
-fix. No backend/web deployment or production data changes for this task.
+Fresh database/runtime backups are private on the VM at
+/home/ubuntu/findez-memory-release-20261016. The actual public/auth/extensions
+backup restored in a network-isolated disposable container and migration 048
+passed there before live activation. Live read-only metadata confirms RLS,
+owner-read grants, no anonymous reads/client mutations, service-only RPC and old
+collector write guards. Real anonymous PostgREST requests to all five private
+memory/history/log tables are denied (42501); local/public health and database
+health are 200; memory GET/export/POST reject missing and invalid sessions (401).
+No customer records were output or changed for QA. Backup remains on the same
+server disk; off-host disaster recovery is not established by this deployment.
 
-772 Python tests plus six subtests, 302 web tests, 444 Flutter tests, Flutter
-analysis, TypeScript, changed-file ESLint and isolated SQL/concurrency/composed
-migration checks pass. Web compile passes with synthetic configuration and bundled
-font fixtures; normal local build fails due to symlinked dependencies and existing
-Google Fonts fetch/loader problems. Fixture output must never be deployed.
-Apple acknowledged signed TestFlight 1.0.8 (70), runtime `967ab48`, delivery
-`a4f9218f-38c5-405f-bb60-3de7c938bd3d`. PR #89 (stacked on #88). Artifacts and receipts:
-`Documents/FindEZ/AppStore/1.0.8-build70`. Processing and tester availability are
-unverified; no post-push/build reruns or processing wait. Detailed implementation, exact commands,
-file list, rollout/rollback and device acceptance:
-`docs/plans/account-memory-implementation.md`.
+The earlier unsafe PUBLIC true memory grants are fixed in production. This does
+not establish whole-product security or authenticated device acceptance. Build
+1.0.8 (70), runtime 967ab48, was already uploaded successfully; no new binary or
+Apple processing poll for this activation/documentation receipt. Web Memory
+controls remain unpublished: the normal production font build is still required.
+Source checks remain 772 Python, 302 web, 444 Flutter tests and clean static checks;
+no regression-suite reruns after push/build. Live rollout checks are separate.
+See docs/plans/account-memory-implementation.md for evidence, rollback and gaps.
 
 # October 16 assistant retrieval beta delivery
 

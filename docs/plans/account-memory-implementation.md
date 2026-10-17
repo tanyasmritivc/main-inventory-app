@@ -2,7 +2,7 @@
 
 October 16, 2026. Branch `feat/account-memory-foundation-20261016`, based on
 `5ca4e97`, approval proposal `d9fffec`. Existing assistant improvements on PR #88
-are included as a dependency, not redeployed by this work.
+are included as a dependency in the approved backend deployment below.
 
 ## Implemented behavior
 
@@ -47,7 +47,7 @@ raw Q&A copies stop; owned conversations/messages remain the user-visible chat
 history. Existing historical copies are not purged without approval. Forget
 personalization explicitly preserves chats and inventory records.
 
-## Verified production configuration issue, not yet fixed live
+## Verified production configuration issue and approved live fix
 
 A read-only transaction inspected table columns, policies and grants only. It
 confirmed the legacy user_memory policy named Service role full access applies to
@@ -60,8 +60,9 @@ Migration 048 removes those policies/grants, enables RLS explicitly and permits
 only private owner reads through authenticated clients. It also closes the legacy
 public policy path for conversation_history/query_logs while retaining existing
 inventory restrictions. SQL fixtures reproduce the unsafe starting configuration
-and verify denial afterward. **The migration is local/pushed only. The production
-issue remains open until an approved migration is applied and checked.**
+and verify denial afterward. **After separate explicit approval, migration 048 committed live and the
+reviewed backend restarted. Live grants/RLS and real anonymous PostgREST denials
+verify that this specific unsafe access path is closed.**
 
 ## Actual verification
 
@@ -151,14 +152,16 @@ and real font assets for a web release. No dependencies or secrets were changed.
 
 ## Activation, rollback and device acceptance
 
-No production migration, service restart, web publication or customer data change
-was performed. TestFlight delivery is recorded in CURRENT_STATE.md and private
-AppStore release receipts. A mobile upload does not install backend APIs.
+The source implementation and beta upload initially made no production changes.
+After separate explicit approval, migration 048 and the reviewed backend were
+activated as recorded below. Web publication is still pending. No customer records
+were changed for QA. TestFlight delivery alone did not install these backend APIs.
 
-After separate approval, inspect/preserve the self-hosted checkout, verify backup
-recovery and schema metadata, apply 048 transactionally, then publish the reviewed
-backend including its dependency on PR #88. Verify only with empty/disposable
-accounts. A web release additionally requires a normal, correctly configured font
+The approved activation preserved the self-hosted checkout, saved fresh backups,
+restored the public/auth/extensions data privately in a disposable network-isolated
+container, rehearsed 048, applied it transactionally live, then published the
+reviewed backend including its dependency on PR #88. Authenticated acceptance
+should use only empty/disposable accounts. A web release additionally requires a normal, correctly configured font
 build, not the compile fixture. No Render/Vercel service is needed.
 
 Migration 048 is additive except intentional permission/collector tightening.
@@ -215,6 +218,42 @@ build log and upload receipt are preserved in
 `Documents/FindEZ/AppStore/1.0.8-build70`. No post-push/build test reruns, CI
 polling or Apple processing wait per Tanya's instruction. Processing, group
 availability and physical acceptance are unverified. No public App Store action.
-No production migration, backend deployment or web publication occurred. Migration
-048 and backend activation still require approval; the unsafe live memory grants
-remain open. The normal web/font build must pass before web publication.
+The source/beta receipt above predates the separately approved production
+activation below. The normal web/font build must pass before web publication.
+
+## Approved production activation receipt
+
+User approval: explicit "yes" to the concrete migration 048 and self-hosted backend
+activation question after explaining production data. Activated at 2026-10-17T01:45:30.749381+00:00.
+No web deployment, provider/configuration change or FIND transport change.
+
+- Source: runtime 967ab48; all 12 reviewed backend files plus migration 048 match
+  the deployment manifest. All other backend source files match preserved copies.
+- VM Git remains main 98597c32bdfcdf10c32296083473048ca30f0575 with selective
+  overlays. No pull/reset, dependency change or unrelated file replacement.
+- Fresh private full database dump and runtime archive:
+  /home/ubuntu/findez-memory-release-20261016. Public/auth/extensions restored
+  successfully in a no-network disposable Postgres container; migration 048 passed
+  against that restored copy. Container removed afterward.
+- The rehearsal initially required Supabase schemas/extensions and corrected
+  container file permissions. These were isolated setup errors; live schema and
+  runtime remained unchanged until the rehearsal and staged import passed.
+- Migration 048 committed with lock/statement timeouts; FastAPI restarted.
+  Runtime rollback archive is retained. Keep the schema/security changes on rollback.
+- Public and loopback /health and /health/db return 200. Memory read/export/POST
+  with no token, and read with an invalid token, return 401.
+- Live read-only SQL assertions confirm five private tables have RLS, anonymous
+  reads and client writes revoked, owner reads retained, service-only change RPC
+  and both controlled-write guards. Real anonymous PostgREST requests to all five
+  return permission-denied code 42501 (HTTP 401 in this PostgREST configuration).
+- Private activation/verification receipts also reside in the build70 artifact
+  folder. No secret values or customer rows were printed; no account/record
+  mutations were performed for QA. Backups remain on the same server disk, so
+  this is not proof of off-host disaster recovery.
+- Logged-in mobile acceptance, actual preference save/forget via public API,
+  cross-device isolation and provider behavior remain unverified. Existing beta
+  70 can now reach the API. Apple processing was not polled; no new binary for a
+  deployment/documentation receipt. Web Memory controls are still unpublished.
+
+The source regression results above were reused. Only deployment-specific health,
+authentication, permission and hash checks ran, not the regression suites or CI.

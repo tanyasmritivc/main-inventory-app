@@ -5,7 +5,8 @@ Date: October 16, 2026. Review branch:
 Source specification: Tanya's `AI MEMORY - PERSONALISING EACH ACCOUNT` document.
 The first architecture review was delivered and pushed as d9fffec. Tanya then
 approved stages 1-4. Source implementation and verification are recorded in
-`account-memory-implementation.md`. Production migration and deployment are held.
+`account-memory-implementation.md`. Production migration 048 and reviewed backend were activated after separate
+explicit approval; web publication and authenticated device acceptance remain pending.
 
 ## Current architecture and authoritative sources
 

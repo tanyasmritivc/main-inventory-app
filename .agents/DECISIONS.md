@@ -1,3 +1,14 @@
+# October 16: approved account-memory activation preserves server work
+
+After explicit user approval, apply reviewed migration 048 before the dependent
+backend, with a fresh private backup and successful isolated restore/migration
+rehearsal. Deploy only the reviewed backend overlay including the retrieval
+prerequisite; preserve unrelated server modifications and production settings.
+On runtime rollback retain the schema and tightened permissions; never restore
+unsafe anonymous grants or automatic inferred-memory collection. Web fixture
+builds remain prohibited for publication. Existing uploaded beta 70 uses this
+backend; deployment documentation does not require another native binary.
+
 # October 16 explicit account memory boundary
 
 Use authenticated actor identity for account preferences, independently of the

@@ -1,3 +1,14 @@
+# Account memory production activation receipt (October 16)
+
+Approved migration 048 and reviewed backend 967ab48 are live on the self-hosted
+server, including the PR #88 dependency. Fresh backup restore/migration rehearsal,
+public/local health, authentication denial, anonymous PostgREST denial and live
+RLS/grant/trigger checks pass. Unrelated VM changes are preserved. Web controls
+remain unpublished and authenticated device/cross-client acceptance is pending.
+TestFlight 70 was already uploaded; no new binary for this activation receipt.
+See docs/plans/account-memory-implementation.md and CURRENT_STATE.md. Older
+entries below describe the source/beta state before this explicit approval.
+
 # Active work
 
 ## October 16 account memory foundation
