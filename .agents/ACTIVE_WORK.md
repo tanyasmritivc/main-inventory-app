@@ -1,3 +1,24 @@
+# October 16 extraction overlay fix
+
+Owned root-dialog cleanup replaces the mismatched local pop in in-Space photo
+upload. Success/error removes exactly the progress route; departing Space routes
+cannot receive stale confirmation. Four nested-navigation regressions and the full
+466 Flutter tests pass; analysis is clean. No backend/web/schema changes in this
+stage. Beta74 was acknowledged (0ebf355, 9106117d-0272-4d90-a140-687db472ee06);
+beta75 is being prepared with this fix. Existing crop/notification changes remain.
+No processing polling or post-push/build regression reruns. Manual iPhone camera,
+background push and fresh email acceptance remain pending. Details and all files:
+docs/plans/capture-progress-fix.md.
+
+# October 16 extraction dialog ownership
+
+Same lane, starting 0ebf355 while beta74 upload is pending. User screenshot shows
+Confirm Items behind an Extracting items modal. The in-Space upload flow opens a
+root dialog but pops the local nested navigator. Replace unscoped pops with owned
+route cleanup in finally; keep the Space and confirmation routes intact. Test
+nested navigation, failures and interruption; deliver checked beta75. No backend,
+schema, confidence or inventory-layout changes in this stage.
+
 # October 16 per-item scan crop fix
 
 The reviewed adapter now uses the documented item-ID crop endpoint when no URL
@@ -8,7 +29,7 @@ boxes without discarding detections. The Review and Space toolbars also expose
 the notification bell. 814 backend tests plus six subtests, 462 Flutter tests and
 clean analysis pass. One-file backend overlay is live with 91 unrelated files
 preserved, health 200 and missing-auth scan 401. No schema or customer-data writes.
-Beta74 is being prepared; real new-camera/device acceptance is pending. Existing
+Apple acknowledged TestFlight 1.0.8 (74), runtime 0ebf355, delivery 9106117d-0272-4d90-a140-687db472ee06. Processing/tester availability remain unverified and were not polled. Real new-camera/device acceptance is pending. Existing
 records with missing geometry require a fresh scan. See docs/plans/capture-crop-fix.md.
 
 # October 16 per-item scan close-ups

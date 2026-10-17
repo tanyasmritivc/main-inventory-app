@@ -31,7 +31,7 @@ pixel content/size, stored-frame scaling, invalid boxes and low-confidence crop
 persistence through successful, 404, invalid-image and timeout outcomes. Legacy
 crop tests now use actual image bytes and the documented bbox format.
 Flutter analysis is clean and the full Flutter suite passes all 462 tests.
-The signed beta74 release receipt will follow.
+Apple acknowledged TestFlight 1.0.8 (74), runtime 0ebf355, delivery 9106117d-0272-4d90-a140-687db472ee06. Processing/tester availability remain unverified and were not polled.
 The preceding web suite passed 329 tests; this stage changes no web code.
 No regression checks are repeated after pushing/building the checked source.
 

@@ -1,3 +1,11 @@
+# October 16 capture progress owns its route
+
+Never dismiss an upload's root dialog by popping the caller's nested navigator.
+Own the DialogRoute and remove exactly it in finally on success/error. Preserve
+the source Space and unrelated modals. Check the originating route is still
+current before showing results; mounted alone is insufficient during a suspended
+pop animation. No automatic re-extraction or implicit inventory write is added.
+
 # October 16 preserve per-item scan images independently of certainty
 
 FIND result bbox is x/y/width/height, not opposite corners. Crop URLs can be absent;

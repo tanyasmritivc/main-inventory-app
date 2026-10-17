@@ -13,6 +13,7 @@ import '../../core/api_error.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
+import 'capture_progress.dart';
 import 'review_capture.dart';
 import 'qr_sheet.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -306,57 +307,24 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
   final bytes = _compressImageBytes(rawBytes);
 
-  // Step 3: show loading dialog while extracting
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => PopScope(
-      canPop: false,
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  color: AppTheme.adaptive(context, Colors.white),
-                ),
-                SizedBox(height: 16),
-                AppText(
-                  'Extracting items…',
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white),
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
+  final sourceRoute = ModalRoute.of(context);
+  bool isCurrent() => sourceRoute?.isCurrent ?? true;
+  if (!context.mounted || !isCurrent()) return;
 
-  // Step 4: call AI extraction
+  // Step 3: extract with an owned loading dialog
   debugPrint(
     'FINDEZ bulkCreate: calling extractInventoryFromImage with '
     '${bytes.length} bytes, filename: ${x.name}',
   );
   MultiExtractResult extracted;
   try {
-    extracted = await api.extractInventoryFromImage(
-      bytes: bytes,
-      filename: x.name,
+    extracted = await runWithCaptureProgress(
+      context: context,
+      extract: () =>
+          api.extractInventoryFromImage(bytes: bytes, filename: x.name),
     );
   } on dio.DioException catch (e) {
-    if (context.mounted) Navigator.of(context).pop();
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     if (e.response?.statusCode == 429) {
       if (!ProStatus.isPro) {
         final detail = e.response?.data?['detail'];
@@ -384,16 +352,14 @@ Future<void> runUploadPhotoFlow({
     }
     return;
   } catch (_) {
-    if (context.mounted) Navigator.of(context).pop();
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: AppText('Failed to extract items. Try again.')),
     );
     return;
   }
 
-  if (context.mounted) Navigator.of(context).pop(); // close loading dialog
-  if (!context.mounted) return;
+  if (!context.mounted || !isCurrent()) return;
 
   if (extracted.items.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -412,7 +378,7 @@ Future<void> runUploadPhotoFlow({
     if (candidate != null) candidate.barcode = barcodeToAssociate;
   }
 
-  // Step 5: ConfirmScanSheet review — always shown (no pref gate in-space)
+  // Step 4: ConfirmScanSheet review — always shown (no pref gate in-space)
   final confirmed = await showModalBottomSheet<List<ExtractedInventoryItem>>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -423,9 +389,9 @@ Future<void> runUploadPhotoFlow({
       existingItems: InventoryCache.forContext(api.cacheKey),
     ),
   );
-  if (confirmed == null || !context.mounted) return;
+  if (confirmed == null || !context.mounted || !isCurrent()) return;
 
-  // Step 6: normalize and build payload
+  // Step 5: normalize and build payload
   final normalized = <ExtractedInventoryItem>[];
   final indexMap = <String>[]; // item name per index, for failure lookup
   final validationFailures = <String, String>{};
@@ -490,7 +456,7 @@ Future<void> runUploadPhotoFlow({
   try {
     plan = await prepareCaptureForSave(api: api, items: normalized);
   } catch (error) {
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
@@ -498,7 +464,7 @@ Future<void> runUploadPhotoFlow({
   }
   final inventoryItems = plan.inventoryItems;
   if (inventoryItems.isEmpty) {
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: AppText(
@@ -513,24 +479,24 @@ Future<void> runUploadPhotoFlow({
   debugPrint('FINDEZ bulkCreate: saving to space "$preselectedSpace"');
   debugPrint('FINDEZ bulkCreate: sending ${inventoryItems.length} item(s)');
 
-  // Step 7: save
+  // Step 6: save
   BulkCreateResult res;
   try {
     res = await api.bulkCreateInventory(items: inventoryItems);
   } on dio.DioException catch (e) {
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   } catch (e) {
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     return;
   }
-  if (!context.mounted) return;
+  if (!context.mounted || !isCurrent()) return;
 
   debugPrint(
     'FINDEZ bulkCreate: response — inserted=${res.inserted.length} '
@@ -587,7 +553,7 @@ Future<void> runUploadPhotoFlow({
     );
 
     await onItemsSaved();
-    if (!context.mounted) return;
+    if (!context.mounted || !isCurrent()) return;
 
     if (allSucceeded) {
       final noBarcodeItems = res.inserted
@@ -595,7 +561,7 @@ Future<void> runUploadPhotoFlow({
           .toList();
       if (noBarcodeItems.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
+          if (!context.mounted || !isCurrent()) return;
           if (noBarcodeItems.length == 1) {
             showModalBottomSheet<void>(
               context: context,
@@ -614,7 +580,7 @@ Future<void> runUploadPhotoFlow({
       }
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!context.mounted || !isCurrent()) return;
         _showSaveFailureSummary(
           context: context,
           total: totalExpected,

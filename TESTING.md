@@ -977,3 +977,11 @@ invalid boxes, missing/invalid crops, transport timeout fallback and persistence
 before job cleanup. Existing capture preview/Review/save suites verify the image
 reference contract. Fresh camera-photo visual acceptance remains a real-device
 check; old records with only a source image are not retroactively rewritten.
+
+### October 16 extraction modal navigation
+
+`flutter test test/capture_progress_test.dart` covers nested Space/root-dialog
+ownership, actual confirmation after completion, timeout/retry cleanup, another
+root modal staying open, and leaving the caller while a request is pending. Run
+full Flutter tests and analysis before beta75. Backend/web are unchanged in this
+stage. Real camera/shared-Space acceptance remains manual; see capture-progress-fix.md.
