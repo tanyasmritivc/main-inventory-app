@@ -10,8 +10,9 @@ requires current owner/admin plus typed name. Source checks: 780 backend, 305 we
 visual/accessibility review is isolated. Web candidate build passes with real
 production fonts/config. Tanya approved 049 and publishing; migration/backend and
 web-hierarchy-20261016 are live with private backups and rollout health/auth checks.
-Authenticated Safari confirms the new directory/menu without writes. Beta71
-signing/upload remains. See docs/plans/hierarchy-navigation.md.
+Authenticated Safari confirms the new directory/menu without writes. Apple
+acknowledged signed TestFlight 71 from runtime 9bec964 (PR #90). Processing,
+tester availability and physical acceptance are pending; no processing poll. See docs/plans/hierarchy-navigation.md.
 
 # Account memory production activation receipt (October 16)
 

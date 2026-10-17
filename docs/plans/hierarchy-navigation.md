@@ -121,4 +121,11 @@ New inventory button and independent Rename/Delete menu. This read-only check
 does not establish successful live creation/deletion or cross-client sync.
 Prior web override/runtime backups remain available for rollback.
 
-TestFlight 1.0.8 (71) signing/upload is the remaining delivery step.
+Apple acknowledged signed production TestFlight 1.0.8 (71), runtime 9bec964,
+delivery f40d86ad-2880-424d-8aa7-c5e2fb2d8e9b. Processing and tester
+availability are pending and were not polled. No tests/CI were repeated after
+push or signing. Public App Store submission was unchanged.
+
+PR: https://github.com/tanyasmritivc/main-inventory-app/pull/90. Branch:
+feat/hierarchy-navigation-20261016. Runtime commit: 9bec964. The following
+documentation receipt does not change the uploaded binary.

@@ -16,7 +16,10 @@ directory and Rename/Delete menu. Real writes/cross-client acceptance is pending
 Checks before push: 780 backend, 305 web, 448 Flutter tests; final 33 focused
 mobile tests, composed SQL through 049, analysis, TypeScript and changed-file
 ESLint pass. Native visual evidence is synthetic, saved in
-design/hierarchy-navigation/out. TestFlight 71 signing/upload remains pending.
+design/hierarchy-navigation/out. Apple acknowledged TestFlight 1.0.8 (71),
+runtime 9bec964, delivery f40d86ad-2880-424d-8aa7-c5e2fb2d8e9b.
+PR #90. Processing/tester availability and physical acceptance remain pending;
+no processing polling or post-push/build regression reruns.
 Details, complete file list, rollback and manual acceptance:
 docs/plans/hierarchy-navigation.md.
 
