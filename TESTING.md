@@ -1,5 +1,26 @@
 # FindEZ test suite
 
+## Shared catalog write permissions
+
+Run the backend suite and the PostgreSQL fixture before publishing migration 053.
+`test_catalog_barcode_alias.py` covers normalization, strict transaction receipts,
+field allowlisting, optional cache failure and scoped RPC isolation. The composed
+`backend/tests/sql/api_key_rls.sql` includes `catalog_write_permissions.sql`;
+`catalog_write_permissions_bootstrap.sql` can prepare just the catalog fixture.
+Both require an empty disposable database. Never run either on production.
+After the fixture, using the same test PostgreSQL environment, run:
+
+```bash
+FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/catalog_write_concurrency.py
+```
+
+These real connections exercise simultaneous confirmation counts, equivalent
+UPC/EAN alias assignment and community/alias collisions. CI runs the same runner.
+Before production approval, restore a fresh private dump into a network-isolated
+database, including existing grants, apply 053, compare all public/auth row hashes
+and unrelated database objects, and verify client table/column/RPC permissions.
+See `docs/plans/catalog-write-permissions.md` for results and activation boundaries.
+
 ## Confirmed deletion and account categories
 
 Run the full backend, web and Flutter suites before release. Focus on

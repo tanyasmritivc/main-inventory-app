@@ -98,10 +98,16 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `048` (048 is applied), but they do not contain
+related services. Migrations through `052` are applied; `053` is the reviewed
+catalog permission candidate awaiting separate production approval. They do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
+
+Catalog writes from ordinary application flows use service-only transactions
+that cannot overwrite verified identities or reassign equivalent barcodes.
+Migration 053 removes client write privileges and enables RLS on both catalog
+tables. Signed-in reads and trusted manufacturer maintenance remain available.
 
 Items use `item_id`, `user_id`, `space_id`, a legacy `location` string, identity and
 catalog fields, quantity, notes, and an optional `image_url`. Storage uses the

@@ -1,3 +1,19 @@
+# October 17 catalog permission hardening
+
+Active lane: fix/catalog-write-permissions-20261017, starting clean 16eb6a1.
+User approved implementing the barcode database/backend fix. Scope is audit F01
+and the related F07 verified-catalog overwrite, not other audit findings. Candidate
+053 and two service-only catalog transactions are complete. 817 backend tests,
+321 composed SQL PASS notices and real concurrent-write cases pass. Fresh private
+dump restored with existing grants; applying 053 twice preserves all public/auth
+row hashes and unrelated objects. Direct client table/column/RPC writes fail;
+signed-in reads/backend transactions remain available. Production activation
+awaits separate reviewed approval. Patch 07c6d62 is pushed in draft PR 91. Apple
+acknowledged TestFlight 1.0.8 (77), delivery cd2e3a2c-3ca2-4d2c-a2dd-cf6d8f1967ef.
+Processing/tester availability unverified; no polling or repeated regressions.
+Native runtime unchanged, prior 466 Flutter passes/clean analysis reused.
+Details/files/rollback: docs/plans/catalog-write-permissions.md.
+
 # October 16 simplified web inventory sidebar
 
 Apple acknowledged TestFlight 1.0.8 (76), source d3109b3, delivery f8d15676-774f-4d88-9468-d0044da2db33. Native UI unchanged; processing/tester availability not checked. Web sidebar is published and visually verified.
