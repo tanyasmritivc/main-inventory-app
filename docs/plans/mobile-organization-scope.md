@@ -43,7 +43,22 @@ The first simulator attempts hit local disk limits; only regenerable build cache
 were cleared. Final native build succeeded. An overlapping full test attempt was
 interrupted; the final sequential 588-test run completed successfully.
 
-Signed TestFlight 1.0.8 (82) packaging/upload is in progress. Native preview uses synthetic fixtures in
+Apple acknowledged TestFlight 1.0.8 (82), runtime 8e7ee6b, delivery
+10545da8-eadf-447d-be11-de5957dfbc98. All 31 archive/export executables verify as
+iOS device code, and strict archive signatures pass. All five automatic CI jobs
+pass on runtime source (run 39079363353). Processing/tester availability remains
+unverified; no Apple polling or post-push regression reruns. Physical acceptance
+remains open. PR 98: https://github.com/tanyasmritivc/main-inventory-app/pull/98.
+
+The clean Flutter archive wrapper hit the disk limit while writing temporary
+Xcode diagnostics. Direct Xcode archive/export succeeded with the same verified
+production defines, lib/main.dart target and build number, followed by the full
+platform/signature gates. Only regenerable compiler/download caches and the
+isolated QA app were removed. Installed dependencies, customer files, the signed-in
+app and prior private releases were preserved. No source change followed checks.
+Private signed IPA/archive, SHA256 and Apple receipt are preserved in the build82
+release folder. No public App Store submission or production database change.
+ Native preview uses synthetic fixtures in
 tool/place_preview.dart, excluded from lib/main.dart. Physical TestFlight account
 switching, notification handoff, permissions/revocation and capture acceptance are
 not established by these fixtures. No live customer writes are used for QA.
