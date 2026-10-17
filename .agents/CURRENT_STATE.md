@@ -7,8 +7,10 @@ barcode ownership are protected; lookup responses/private inventory edits stay
 compatible. 817 backend passes, 321 SQL PASS notices and real concurrent races
 pass. Fresh dump restored with grants in a network-isolated database; migration
 and replay preserve all public/auth rows and unrelated objects. Production 053
-activation awaits separate approval. Beta77 delivery is in progress; native code
-unchanged and prior 466 Flutter passes/analysis reused. GPU/FIND and web untouched.
+activation awaits separate approval. Patch 07c6d62 is pushed in draft PR 91. Apple
+acknowledged TestFlight 1.0.8 (77), delivery cd2e3a2c-3ca2-4d2c-a2dd-cf6d8f1967ef.
+Processing/tester availability unverified; no polling or repeated regressions.
+Native code unchanged; prior 466 Flutter passes/analysis reused. GPU/FIND/web untouched.
 See docs/plans/catalog-write-permissions.md for all files and rollout boundaries.
 
 # October 16 simplified web inventory sidebar

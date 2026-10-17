@@ -88,6 +88,16 @@ runtime behavior is unchanged. Activation depends on the database/backend rollou
 not installing the new binary. Stop at Apple's upload acknowledgment; processing
 and device acceptance are reported separately.
 
+Patch commit `07c6d626bcfffbbf5dce9bd36dadfb8b37db7fe7` is pushed in draft
+[PR 91](https://github.com/tanyasmritivc/main-inventory-app/pull/91). Apple
+acknowledged TestFlight 1.0.8 (77), delivery
+`cd2e3a2c-3ca2-4d2c-a2dd-cf6d8f1967ef`. Private signed IPA, archive, manifest
+and upload receipt are retained at
+`/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.0.8-build77`.
+Processing/tester availability and actual device acceptance remain unverified;
+no processing polling or repeated post-push/build regression checks occurred.
+Production database/backend activation remains pending the separate approval.
+
 ## Files
 
 - `backend/supabase/migrations/053_catalog_write_permissions.sql`: ACL/RLS and two

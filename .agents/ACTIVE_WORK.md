@@ -8,8 +8,10 @@ and the related F07 verified-catalog overwrite, not other audit findings. Candid
 dump restored with existing grants; applying 053 twice preserves all public/auth
 row hashes and unrelated objects. Direct client table/column/RPC writes fail;
 signed-in reads/backend transactions remain available. Production activation
-awaits separate reviewed approval. Standing push/beta77 delivery is in progress;
-native runtime unchanged, prior 466 Flutter passes/clean analysis reused.
+awaits separate reviewed approval. Patch 07c6d62 is pushed in draft PR 91. Apple
+acknowledged TestFlight 1.0.8 (77), delivery cd2e3a2c-3ca2-4d2c-a2dd-cf6d8f1967ef.
+Processing/tester availability unverified; no polling or repeated regressions.
+Native runtime unchanged, prior 466 Flutter passes/clean analysis reused.
 Details/files/rollback: docs/plans/catalog-write-permissions.md.
 
 # October 16 simplified web inventory sidebar
