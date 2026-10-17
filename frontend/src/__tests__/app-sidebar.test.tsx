@@ -15,7 +15,7 @@ beforeEach(() => {
   window.innerWidth = 1024;
   window.matchMedia = jest.fn(() => ({ matches: true } as MediaQueryList));
 });
-test("makes every current mobile capability and developer entry point directly reachable", () => {
+test("keeps the focused inventory and account navigation reachable", () => {
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
   for (const { label, route } of APP_NAV_ITEMS)
     expect(screen.getByRole("link", { name: label }).getAttribute("href")).toBe(
@@ -29,17 +29,16 @@ test("makes every current mobile capability and developer entry point directly r
     "/workspaces",
     "/documents",
     "/review",
-    "/restock",
-    "/checkout",
-    "/project-kits",
-    "/collections",
-    "/labels",
     "/activity",
     "/notifications",
     "/settings/api-keys",
     "/docs/api",
   ])
     expect(APP_NAV_ITEMS.some((item) => item.route === route)).toBe(true);
+  expect(screen.getByRole("link", { name: "Review" }).closest(".app-nav-section")?.querySelector("p")?.textContent).toBe("Your world");
+  expect(screen.queryByText("Organize")).toBeNull();
+  for (const name of ["Restock", "Lent items", "Project kits", "Smart collections", "Labels"])
+    expect(screen.queryByRole("link", { name })).toBeNull();
   expect(
     screen.getByRole("complementary").classList.contains("is-hover-expandable"),
   ).toBe(false);

@@ -1,3 +1,18 @@
+# October 16 simplified web inventory sidebar
+
+Review is grouped under Your world. Restock, Lent items, Project kits, Smart
+collections and Labels are removed from the shared web navigation and command
+list; the empty Organize group disappears. Existing routes/data are preserved.
+324 web tests, TypeScript, changed-file lint and a normal production webpack build
+pass. Five old route-selection cases disappear with the removed entries; the
+existing sidebar assertion now checks Review's group and absent links. Live
+signed-in Safari visually confirms the exact sidebar. Self-hosted web release:
+/home/ubuntu/findez-web-releases/web-sidebar-simplify-20261016/frontend. Its one-file
+overlay preserves 285 unrelated source files, including the homepage. Public/auth
+checks pass, no schema/backend/customer-data change. Mobile UI is unchanged;
+beta76 is a standing-instruction delivery increment, reusing the prior 466 Flutter
+passes. No checks repeated after push/build; stop at Apple upload acknowledgment.
+
 # October 16 extraction overlay fix
 
 Owned root-dialog cleanup replaces the mismatched local pop in in-Space photo
