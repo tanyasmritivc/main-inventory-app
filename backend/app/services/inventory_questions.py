@@ -433,7 +433,7 @@ def _purpose_overview(question: Question, items: list[dict]) -> str:
         category = str(item.get('category') or '').strip() or 'Uncategorized'
         groups.setdefault(category, []).append(item)
     lines = []
-    ordered = sorted(groups, key=str.casefold)
+    ordered = sorted(groups, key=lambda category: (-len(groups[category]), category.casefold()))
     for category in ordered[:8]:
         examples, seen = [], set()
         for item in groups[category]:

@@ -466,6 +466,7 @@ def test_purpose_overview_uses_saved_categories_and_varied_examples(memory):
     assert '- **Electronics**: 3 saved records.' in answer
     assert '- **Hardware**: 27 saved records.' in answer
     assert '- **Tools**: 2 saved records.' in answer
+    assert answer.index('- **Hardware**') < answer.index('- **Electronics**')
     assert len(answer) < 1200
     assert '4242' not in answer and '999' not in answer
     direct = inventory_questions.answer_question(user_id='owner', message='Find HDMI adapter')

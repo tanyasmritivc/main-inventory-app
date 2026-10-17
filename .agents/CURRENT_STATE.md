@@ -4,7 +4,8 @@ Purpose questions browse the current authorized inventory while retaining real
 item/location filters and disclosing unchecked suitability. Empty replies now
 explain selected inventory and next actions; failed reads do not claim absence.
 831 Python tests plus 10 subtests pass. First overlay passed health/auth checks
-and live Safari retrieval; grouped summaries/readable bullet polish pending activation.
+and live Safari fresh populated/empty questions. Largest-category ordering has
+focused regression coverage and is pending activation.
 No provider/schema/client changes. See docs/plans/ask-first-answer.md.
 
 # October 17 interactive mobile setup

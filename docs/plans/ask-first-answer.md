@@ -7,7 +7,8 @@ The same service handles mobile and web, including SSE.
 
 Purpose-based browsing now keeps item and location filters separate from the
 purpose. Broad replies group current records by saved category with varied saved
-examples, instead of listing twenty nearly identical fasteners. Specific item
+examples, largest saved categories first, instead of listing twenty nearly
+identical fasteners. Specific item
 replies use Markdown bullets so both clients preserve readable line breaks.
 It returns current authorized saved records and explicitly says that
 suitability for the purpose has not been verified. It does not infer compatibility,
@@ -30,8 +31,11 @@ Existing authorization, planning and unsafe-write regressions remain green.
 
 Runtime file: backend/app/services/inventory_questions.py.
 Regression file: backend/tests/test_physical_memory_questions.py.
-The first one-file overlay passed live health/db/anonymous-access checks and
-preserved all 91 unrelated Python files. Live Safari verified first-question
-retrieval in a populated authorized inventory. Final grouped-reply polish is
-pending activation. The previously reviewed migration 053
+The one-file overlay passed live health/db/anonymous-access checks and preserved
+all 91 unrelated Python files. Live Safari verified a fresh question against the
+317-record team inventory and the clear empty Personal response. The grouped
+reply uses actual saved categories and names, without claiming that all items
+are for robotics. The final category-order refinement has focused regression
+coverage; its activation is pending. No inventory records were edited during QA.
+The previously reviewed migration 053
 is not part of this release and remains separately awaiting production approval.
