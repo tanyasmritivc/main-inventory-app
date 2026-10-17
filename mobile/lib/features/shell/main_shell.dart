@@ -1,3 +1,4 @@
+import '../../core/account_deletion.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -1159,24 +1160,7 @@ class _ProfilePage extends StatelessWidget {
                           if (confirmed != true) return;
 
                           try {
-                            final response = await Supabase
-                                .instance
-                                .client
-                                .functions
-                                .invoke('delete-user');
-
-                            if (response.data == null) {
-                              throw Exception('Failed to delete account');
-                            }
-
-                            final responseData =
-                                response.data as Map<String, dynamic>;
-                            if (responseData['error'] != null) {
-                              throw Exception(
-                                responseData['error'] ??
-                                    'Failed to delete account',
-                              );
-                            }
+                            await requestAccountDeletion();
 
                             InventoryCache.clear();
                             await PushNotifications.stop();

@@ -1,3 +1,14 @@
+# October 16 explicit deletion and category settings
+
+The user explicitly extended 049 empty-only deletion to an optional contents
+purge, approved in 050. Empty-only stays the default; name/role checks are atomic,
+cross-inventory dependencies fail closed, files use private durable cleanup and
+shared reference checks. Account Auth deletion precedes destructive cleanup;
+ownership blocks are actionable and borrower history is retained. Deleted Auth
+identities cannot use private Storage with stale JWTs. Preserve safeguards on
+rollback. Web settings categories are real protected pages, not scroll anchors;
+reuse existing fields/actions and keep inventory dashboard/Spaces unchanged.
+
 # October 16 inventory-first workspace navigation
 
 Keep dashboard, Spaces and opened-inventory flows intact. Workspace entry opens

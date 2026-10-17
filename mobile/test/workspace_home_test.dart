@@ -254,7 +254,9 @@ void main() {
         }
         final result = await original(r) as Map<String, dynamic>;
         if (r.path == '/inventory-workspaces/ftc/overview') {
-          result['workspace'] = Map<String,dynamic>.from(result['workspace'] as Map)..addAll({'role':'owner','owner_user_id':'actor-a'});
+          result['workspace'] = Map<String, dynamic>.from(
+            result['workspace'] as Map,
+          )..addAll({'role': 'owner', 'owner_user_id': 'actor-a'});
         }
         return result;
       };
@@ -264,7 +266,11 @@ void main() {
       await pump(tester);
       expect(session.error, isNull);
       expect(session.data?.resource['owner_user_id'], 'actor-a');
-      await tester.scrollUntilVisible(find.byTooltip('Manage workspace'), 120, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        find.byTooltip('Manage workspace'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byTooltip('Manage workspace'));
       await settle(tester);
       await tester.tap(find.text('Delete workspace'));

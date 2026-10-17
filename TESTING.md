@@ -1,5 +1,19 @@
 # FindEZ test suite
 
+## Confirmed deletion and account categories
+
+Run the full backend, web and Flutter suites before release. Focus on
+`test_inventory_delete.py`, `test_deletion_cleanup.py`,
+`account-deletion-service.test.ts`, `workspace-profile.test.tsx`,
+`account-menu.test.tsx`, `inventory_directory_actions_test.dart`,
+`workspace_deletion_test.dart` and `account_deletion_test.dart`.
+The disposable SQL bootstrap `backend/tests/sql/api_key_rls.sql` includes
+`inventory_content_delete.sql` and `account_deletion.sql`; never run its synthetic
+setup on production. Test actual foreign-key/Auth failure, no pre-Auth erasure,
+shared file references, retry and revoked ownership. Category pages must render
+only their own controls; profile, memory and deletion retain the existing API.
+See `docs/plans/deletion-completion.md` for release results and manual gates.
+
 ## Grounded physical-memory questions
 
 Run root `python -m pytest -q` and focus on

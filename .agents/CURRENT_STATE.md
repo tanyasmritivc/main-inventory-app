@@ -1,3 +1,16 @@
+# October 16 deletion completion and account pages
+
+Same hierarchy lane, includes workspace controls from 5d5f530. Approved migration
+050, reviewed API/cleanup worker and Auth-first Edge handler are live. Explicit
+purge preserves empty-only default and shared references; account ownership is
+checked before deletion; borrower history remains. Web settings now have separate
+category pages, compact layout/menu and persistent visible account navigation.
+786 backend tests plus six subtests, 322 web tests, 457 Flutter tests, static
+analysis, composed SQL, restored-schema rehearsal and normal production builds
+pass. Public/auth/schema/hash rollout passes; no customer deletions for QA.
+Final signed-in visual review and beta72 delivery are being completed.
+See docs/plans/deletion-completion.md for files, receipts, limits and rollback.
+
 # October 16 hierarchy flow production activation
 
 Lane feat/hierarchy-navigation-20261016 replaces organization/workspace navigation

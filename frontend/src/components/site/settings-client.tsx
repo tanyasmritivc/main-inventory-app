@@ -1,4 +1,6 @@
 "use client";
+import type { SettingsSection } from "@/lib/settings-sections";
+import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
@@ -49,11 +51,11 @@ type Profile = {
   profile_role?: string;
 };
 
-export function SettingsClient({ email }: { email: string | null }) {
+export function SettingsClient({ email, section = "profile" }: { email: string | null; section?: SettingsSection }) {
   const { accountId } = useApiSession();
-  return <SettingsWorkspace key={accountId || "signed-out"} email={email} />;
+  return <SettingsWorkspace key={`${accountId || "signed-out"}:${section}`} email={email} section={section} />;
 }
-function SettingsWorkspace({ email }: { email: string | null }) {
+function SettingsWorkspace({ email, section }: { email: string | null; section: SettingsSection }) {
   const { accountId } = useApiSession();
   const owner = useRef(accountId);
   useEffect(() => {
@@ -75,9 +77,11 @@ function SettingsWorkspace({ email }: { email: string | null }) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [deletingAccount,setDeletingAccount]=useState(false);
+  const deleting=useRef(false);
 
   useEffect(() => {
-    if (!accountId) return;
+    if (!accountId || section !== "profile") return;
     let active = true;
     const account = accountId;
     accountRequest<Profile>(account, "/profile/me")
@@ -98,7 +102,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
     return () => {
       active = false;
     };
-  }, [accountId]);
+  }, [accountId, section]);
 
   async function saveProfile() {
     setSavingProfile(true);
@@ -227,6 +231,8 @@ function SettingsWorkspace({ email }: { email: string | null }) {
   }
 
   async function deleteAccount() {
+    const account=accountId;
+    if(!account||deleting.current)return;
     const confirmation = await promptValue({
       title: "Delete account?",
       message:
@@ -237,15 +243,19 @@ function SettingsWorkspace({ email }: { email: string | null }) {
       confirmLabel: "Delete account",
       danger: true,
     });
-    if (confirmation !== "DELETE") return;
-    const { error } = await supabase.functions.invoke("delete-user");
-    if (error) {
+    if (confirmation !== "DELETE"||owner.current!==account||deleting.current) return;
+    deleting.current=true;setDeletingAccount(true);
+    try { await requestAccountDeletion(supabase); }
+    catch (error) {
+      deleting.current=false;if(owner.current===account)setDeletingAccount(false);
+      if(owner.current!==account)return;
       await showNotice({
         title: "Account not deleted",
-        message: "Deletion did not finish. Some data may already have been removed. Try again or contact info@findez.ai.",
+        message: error instanceof AccountDeletionError ? error.message : "Account deletion did not finish. Try again or contact info@findez.ai.",
       });
       return;
     }
+    if(owner.current!==account)return;
     await supabase.auth.signOut();
     router.replace("/");
     router.refresh();
@@ -253,8 +263,7 @@ function SettingsWorkspace({ email }: { email: string | null }) {
 
   return (
     <div className="settings-content">
-      <MemorySettings accountId={accountId} />
-      <section className="settings-panel">
+      {section === "profile" && <section className="settings-panel" id="profile">
         <header>
           <h2>Profile</h2>
         </header>
@@ -380,60 +389,9 @@ function SettingsWorkspace({ email }: { email: string | null }) {
             {savingProfile ? "Saving…" : "Save changes"}
           </button>
         </footer>
-      </section>
+      </section>}
 
-      <section className="settings-panel">
-        <Link className="settings-link-row" href="/pricing">
-          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
-          <ChevronRight size={16} />
-        </Link>
-      </section>
-
-      <section className="settings-panel">
-        <header>
-          <h2>Developer</h2>
-        </header>
-        <Link className="settings-link-row" href="/settings/api-keys">
-          <span className="settings-link-label">
-            <span className="settings-row-icon"><KeyRound size={16} /></span>
-            <strong>API keys</strong>
-          </span>
-          <ChevronRight size={16} />
-        </Link>
-        <Link className="settings-link-row" href="/docs/api">
-          <span className="settings-link-label">
-            <span className="settings-row-icon"><BookOpen size={16} /></span>
-            <strong>API documentation</strong>
-          </span>
-          <ChevronRight size={16} />
-        </Link>
-      </section>
-
-      <section className="settings-panel">
-        <header>
-          <h2>Help and information</h2>
-        </header>
-        <Link className="settings-link-row" href="/privacy">
-          <span>Privacy policy</span>
-          <ChevronRight size={16} />
-        </Link>
-        <Link className="settings-link-row" href="/terms">
-          <span>Terms of service</span>
-          <ChevronRight size={16} />
-        </Link>
-        <a className="settings-link-row" href="mailto:info@findez.ai">
-          <span>Contact support</span>
-          <ChevronRight size={16} />
-        </a>
-      </section>
-      <section className="settings-panel">
-        <header>
-          <h2>Account</h2>
-        </header>
-        <div className="settings-static-row">
-          <span>Email</span>
-          <strong>{email || "Not available"}</strong>
-        </div>
+      {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Appearance</h2></header>
         <div className="settings-static-row">
           <span className="settings-appearance-label">
             Appearance<small>Follows your device unless you pick one.</small>
@@ -459,6 +417,60 @@ function SettingsWorkspace({ email }: { email: string | null }) {
             ))}
           </div>
         </div>
+      </section>}
+      {section === "memory" && <div id="memory"><MemorySettings accountId={accountId}/></div>}
+      {section === "plans" && <section className="settings-panel">
+        <Link className="settings-link-row" href="/pricing">
+          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
+          <ChevronRight size={16} />
+        </Link>
+      </section>}
+
+      {section === "developer" && <section className="settings-panel" id="developer">
+        <header>
+          <h2>Developer</h2>
+        </header>
+        <Link className="settings-link-row" href="/settings/api-keys">
+          <span className="settings-link-label">
+            <span className="settings-row-icon"><KeyRound size={16} /></span>
+            <strong>API keys</strong>
+          </span>
+          <ChevronRight size={16} />
+        </Link>
+        <Link className="settings-link-row" href="/docs/api">
+          <span className="settings-link-label">
+            <span className="settings-row-icon"><BookOpen size={16} /></span>
+            <strong>API documentation</strong>
+          </span>
+          <ChevronRight size={16} />
+        </Link>
+      </section>}
+
+      {section === "help" && <section className="settings-panel" id="help">
+        <header>
+          <h2>Help and information</h2>
+        </header>
+        <Link className="settings-link-row" href="/privacy">
+          <span>Privacy policy</span>
+          <ChevronRight size={16} />
+        </Link>
+        <Link className="settings-link-row" href="/terms">
+          <span>Terms of service</span>
+          <ChevronRight size={16} />
+        </Link>
+        <a className="settings-link-row" href="mailto:info@findez.ai">
+          <span>Contact support</span>
+          <ChevronRight size={16} />
+        </a>
+      </section>}
+      {section === "account" && <section className="settings-panel" id="account">
+        <header>
+          <h2>Account</h2>
+        </header>
+        <div className="settings-static-row">
+          <span>Email</span>
+          <strong>{email || "Not available"}</strong>
+        </div>
         <div className="settings-static-row">
           <span>
             <LogOut size={15} />
@@ -483,11 +495,13 @@ function SettingsWorkspace({ email }: { email: string | null }) {
             className="settings-text-button danger"
             type="button"
             onClick={() => void deleteAccount()}
+            disabled={deletingAccount}
           >
-            Delete…
+            {deletingAccount?"Deleting...":"Delete…"}
           </button>
         </div>
-      </section>
+      </section>}
+      {section !== "profile" && profileMessage && <p role="status">{profileMessage}</p>}
     </div>
   );
 }

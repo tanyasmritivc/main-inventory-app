@@ -32,3 +32,13 @@ test('cancel does not mutate and rename-only access never reveals deletion',asyn
  await userEvent.click(screen.getByRole('button',{name:'Manage Hardware'}));
  expect(await screen.findByRole('menuitem',{name:'Rename'})).toBeTruthy();expect(screen.queryByRole('menuitem',{name:'Delete inventory'})).toBeNull();
 });
+
+test('including contents is a separate explicit choice sent only after exact confirmation',async()=>{
+ const deleted=jest.fn();jest.mocked(accountRequest).mockResolvedValue({deleted:true,inventory_id:'hardware',file_cleanup_pending:true});
+ render(<DeleteInventoryDialog inventory={inventory} accountId="owner" onClose={jest.fn()} onDeleted={deleted}/>);
+ await userEvent.click(screen.getByRole('checkbox'));
+ expect(screen.getByRole('note')).toBeTruthy();
+ await userEvent.type(screen.getByRole('textbox'),'Hardware');await userEvent.click(screen.getByRole('button',{name:'Delete inventory'}));
+ await waitFor(()=>expect(deleted).toHaveBeenCalledWith(true));
+ expect(accountRequest).toHaveBeenCalledWith('owner','/inventories/hardware',{method:'DELETE',body:{name:'Hardware',delete_contents:true}});
+});

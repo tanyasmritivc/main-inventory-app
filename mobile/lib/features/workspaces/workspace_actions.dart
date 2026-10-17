@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import 'place_ui.dart';
 
@@ -74,6 +75,7 @@ Future<bool> confirmWorkspaceDeletion(
                                 'Deletion could not be confirmed. Refresh before retrying.',
                               );
                             }
+                            InventoryCache.clear();
                             if (dialog.mounted) {
                               Navigator.pop(dialog, true);
                             }

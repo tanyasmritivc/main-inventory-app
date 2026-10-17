@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_error.dart';
+import '../../core/account_deletion.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
@@ -145,14 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (confirmed != true) return;
     try {
-      final response = await Supabase.instance.client.functions.invoke(
-        'delete-user',
-      );
-      if (response.data == null) throw Exception('Failed to delete account');
-      final data = response.data as Map<String, dynamic>;
-      if (data['error'] != null) {
-        throw Exception(data['error'] ?? 'Failed to delete account');
-      }
+      await requestAccountDeletion();
       InventoryCache.clear();
       await PushNotifications.stop();
       await Supabase.instance.client.auth.signOut();

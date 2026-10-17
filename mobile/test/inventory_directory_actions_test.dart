@@ -89,4 +89,26 @@ void main() {
     expect(find.text('Delete inventory'), findsNothing);
     expect(fixture.requests, isEmpty);
   });
+  testWidgets(
+    'content deletion is explicitly selected and sent with confirmation',
+    (tester) async {
+      await mount(tester);
+      await tester.tap(find.text('Delete inventory'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pump();
+      await tester.enterText(find.byType(TextFormField), 'Hardware');
+      await tester.pump();
+      await tester.ensureVisible(
+        find.widgetWithText(TextButton, 'Delete inventory'),
+      );
+      await tester.tap(find.widgetWithText(TextButton, 'Delete inventory'));
+      await tester.pumpAndSettle();
+      expect(fixture.requests.single.data, {
+        'name': 'Hardware',
+        'delete_contents': true,
+      });
+      expect(refreshed, 1);
+    },
+  );
 }

@@ -39,6 +39,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const [reload, setReload] = useState(0), [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"inventory" | "workspace" | "join" | "rename" | null>(null);
   const [deleteWorkspace, setDeleteWorkspace] = useState(false);
+  const [deletionNotice,setDeletionNotice]=useState("");
   const [deleting, setDeleting] = useState<DirectoryInventory | null>(null);
   const [renaming, setRenaming] = useState<DirectoryInventory | null>(null);
   const [joinKind, setJoinKind] = useState("workspace");
@@ -118,6 +119,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         </div>
       </header>
       {workspaceId && choosing && <h2 style={{fontSize:15,fontWeight:500,marginBottom:16}}>Inventories</h2>}
+      {deletionNotice&&<p role="status">{deletionNotice}</p>}
       {choosing && <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />}
       {!mode && (error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
       {loading ? <p className="workspace-muted" role="status">Loading...</p> : choosing ? <>
@@ -146,7 +148,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         </>}
       </>}
     </section>
-    {accountId && deleting && <DeleteInventoryDialog key={deleting.inventory_id} inventory={deleting} accountId={accountId} onClose={()=>setDeleting(null)} onDeleted={()=>{setDeleting(null);setReload(value=>value+1);}} />}
+    {accountId && deleting && <DeleteInventoryDialog key={deleting.inventory_id} inventory={deleting} accountId={accountId} onClose={()=>setDeleting(null)} onDeleted={pending=>{setDeleting(null);setDeletionNotice(pending?"Inventory removed. File cleanup is pending and will retry automatically.":"Inventory removed.");setReload(value=>value+1);}} />}
     {accountId && selectedWorkspace && deleteWorkspace && <DeleteWorkspaceDialog id={selectedWorkspace.workspace_id} name={selectedWorkspace.name} accountId={accountId} onClose={()=>setDeleteWorkspace(false)} onDeleted={()=>router.replace("/workspaces")} />}
     <Dialog open={mode !== null} onOpenChange={(value) => { if (!value && !busy) setMode(null); }}><DialogContent className="workspace-dialog inventory-creation-dialog" aria-describedby={undefined}>
       <DialogTitle>{mode === "join" ? "Join workspace" : mode === "inventory" ? "New inventory" : mode === "rename" ? "Rename inventory" : "New workspace"}</DialogTitle>

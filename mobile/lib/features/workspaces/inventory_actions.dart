@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import 'place_ui.dart';
 
@@ -40,6 +41,7 @@ Future<void> manageDirectoryInventory(
   );
   if (!context.mounted || action == null) return;
   var entered = action == 'rename' ? name : '';
+  var deleteContents = false;
   final value = await showDialog<String>(
     context: context,
     builder: (dialog) => StatefulBuilder(
@@ -54,8 +56,21 @@ Future<void> manageDirectoryInventory(
             children: [
               if (action == 'delete') ...[
                 const Text(
-                  'Only empty inventories can be deleted. Move or remove saved items, Spaces, documents and conversations first.',
+                  'Delete an empty inventory, or explicitly include all its saved contents. Other inventories are preserved.',
                 ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Also permanently delete everything in this inventory',
+                  ),
+                  value: deleteContents,
+                  onChanged: (value) =>
+                      update(() => deleteContents = value == true),
+                ),
+                if (deleteContents)
+                  const Text(
+                    'Items, Spaces, documents, photos and inventory conversations will be removed. This cannot be undone. Files still referenced elsewhere are retained.',
+                  ),
                 const SizedBox(height: 16),
               ],
               TextFormField(
@@ -101,7 +116,10 @@ Future<void> manageDirectoryInventory(
     final result = await api.collaboration(
       '/inventories/${Uri.encodeComponent(inventory['inventory_id'].toString())}',
       method: action == 'delete' ? 'DELETE' : 'PATCH',
-      data: {'name': value},
+      data: {
+        'name': value,
+        if (action == 'delete' && deleteContents) 'delete_contents': true,
+      },
     );
     if (action == 'delete'
         ? result['deleted'] != true ||
@@ -111,7 +129,19 @@ Future<void> manageDirectoryInventory(
         'The change could not be confirmed. Refresh before retrying.',
       );
     }
-    if (context.mounted) await refresh();
+    InventoryCache.clear();
+    if (context.mounted) {
+      await refresh();
+      if (context.mounted && result['file_cleanup_pending'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Inventory removed. File cleanup is pending and will retry automatically.',
+            ),
+          ),
+        );
+      }
+    }
   } catch (error) {
     if (context.mounted) {
       ScaffoldMessenger.of(

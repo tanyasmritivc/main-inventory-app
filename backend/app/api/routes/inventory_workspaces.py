@@ -3,8 +3,8 @@
 import asyncio
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field, field_validator
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.inventory_scope import InventoryScope, current_inventory
@@ -177,18 +177,19 @@ def rename_inventory(inventory_id: str, body: NewInventory, user: AuthenticatedU
 
 class ConfirmInventoryDelete(BaseModel):
     name: str = Field(min_length=1, max_length=100)
+    delete_contents: StrictBool = False
 
     model_config = {'extra': 'forbid'}
 
 
 @router.delete('/inventories/{inventory_id}')
-def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete,
+def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete, background_tasks: BackgroundTasks,
                            user: AuthenticatedUser = Depends(get_current_user)):
     inventory = _inventory(str(inventory_id), user.user_id)
     if not inventory['can_manage']:
         raise HTTPException(403, 'Only an inventory owner or admin can delete it.')
     try:
-        result = get_supabase_raw().rpc('findez_delete_empty_inventory', {
+        result = get_supabase_raw().rpc('findez_delete_inventory_contents' if body.delete_contents else 'findez_delete_empty_inventory', {
             'p_actor': user.user_id, 'p_inventory': str(inventory_id), 'p_name': body.name,
         }).execute().data
     except APIError as exc:
@@ -196,7 +197,7 @@ def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete,
             '42501': (403, 'Your inventory access changed. Refresh before trying again.'),
             'P0002': (404, 'This inventory is no longer available.'),
             '22023': (409, 'The inventory name changed. Refresh and type its current name.'),
-            '23514': (409, 'This inventory contains saved records. Move or remove them before deleting it.'),
+            '23514': (409, 'This inventory has linked records in another inventory or an unsupported dependency. Resolve those links before deleting everything.' if body.delete_contents else 'This inventory contains saved records. Move or remove them before deleting it.'),
             '23503': (409, 'This inventory has linked records and cannot be deleted.'),
             '23505': (409, 'The workspace changed. Refresh before trying again.'),
             '40P01': (409, 'The workspace changed. Refresh before trying again.'),
@@ -208,6 +209,12 @@ def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete,
         raise
     if not isinstance(result, dict) or result.get('deleted') is not True or result.get('inventory_id') != str(inventory_id):
         raise HTTPException(503, 'Deletion could not be confirmed. Refresh before retrying.')
+    from app.services.items_repo import invalidate_inventory_cache
+    invalidate_inventory_cache(inventory['owner_user_id'])
+    if body.delete_contents:
+        from app.services.deletion_cleanup import clean_inventory_files
+        background_tasks.add_task(clean_inventory_files, str(inventory_id))
+        result['file_cleanup_pending'] = True
     return result
 
 
