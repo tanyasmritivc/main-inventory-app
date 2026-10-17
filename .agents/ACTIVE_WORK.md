@@ -5,7 +5,9 @@ explicitly requests organizing the web inventory dashboard. Scope is contained
 Recently added/Spaces panels, responsive spacing and permission-aware empty
 actions; data, navigation and public homepage stay intact. 327 Jest tests pass,
 TypeScript passes and changed-file lint has no errors. Production webpack build
-and visual acceptance pending. See docs/plans/web-dashboard-cleanup.md.
+passes; aafcbd5 is live, preserving 285 unrelated source files. Signed-in Safari
+confirms populated/empty dashboards; public/auth checks pass. No schema/data
+writes or post-push/build regression reruns. See docs/plans/web-dashboard-cleanup.md.
 
 # October 17 interactive mobile setup
 

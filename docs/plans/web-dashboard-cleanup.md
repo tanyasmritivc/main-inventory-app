@@ -16,4 +16,11 @@ Validation: 327 Jest tests across 45 suites pass with coverage; TypeScript passe
 changed-file lint has no errors (existing unused-variable/raw-image warnings).
 Three added behavioral cases cover owner/viewer empty actions and failed loading
 without a false empty state. A final focused run follows accessible View all
-labels. A production webpack build and self-hosted visual acceptance are pending.
+labels (16 focused passes). A normal production webpack build using the live
+configuration and fonts passes. Release aafcbd5 is active at
+/home/ubuntu/findez-web-releases/web-dashboard-cleanup-20261017/frontend.
+Candidate/public/auth redirect checks pass; 285 unrelated source files, including
+the public homepage, are hash-preserved. Live signed-in Safari visually confirms
+the populated team dashboard and the empty Personal dashboard. No inventory writes
+were performed during this visual review. The previous service override/release
+is retained for rollback. No post-push/build regression reruns.

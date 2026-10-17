@@ -3,7 +3,9 @@
 Recently added and Spaces use contained responsive panels with consistent rows
 and empty states. Existing scoped data/search/actions remain; viewers receive no
 create prompts. 327 Jest tests, TypeScript and error-free changed-file lint pass.
-Production build and self-hosted publication pending. Mobile/backend unchanged.
+Production webpack build passes; aafcbd5 is live on the self-hosted web service.
+285 unrelated sources are preserved; public/auth checks and signed-in Safari
+populated/empty visual review pass. Mobile/backend unchanged in this lane.
 See docs/plans/web-dashboard-cleanup.md.
 
 # October 17 interactive mobile setup
