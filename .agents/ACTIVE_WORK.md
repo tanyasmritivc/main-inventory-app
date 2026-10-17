@@ -11,8 +11,7 @@ retention. Physical background delivery remains unverified. Ask planning no long
 becomes a literal saved-item search; provider selection and authorization unchanged.
 Web auth recovery/resend is published; a fresh real email-link success remains
 unverified. 802 backend tests plus six subtests, 329 web and 462 Flutter tests pass; analysis
-is clean. Beta 72 upload was acknowledged; beta 73 is being prepared from this
-follow-up. Stop at Apple acknowledgment. See docs/plans/notification-reliability.md.
+is clean. Apple acknowledged TestFlight 1.0.8 (73), runtime d212f95, delivery cc0229a0-325c-42f4-90e2-04deec6a302d. Processing and tester availability remain unverified; no polling. Actual iPhone background delivery and fresh email-link success remain manual acceptance. See docs/plans/notification-reliability.md.
 
 # October 16 deletion completion and account pages
 

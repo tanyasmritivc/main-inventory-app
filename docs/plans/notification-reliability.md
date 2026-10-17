@@ -78,7 +78,7 @@ rolling back 051 to the invalid generator restores the intermittent bug. Applyin
 051/052 changes no records; there is no data rollback needed for installation.
 
 TestFlight 72 was acknowledged, delivery c3658bef-a8c9-4546-afef-09006dc96c1b.
-TestFlight 73 is being prepared; its final receipt will be recorded after upload.
+Apple acknowledged TestFlight 1.0.8 (73), runtime d212f95, delivery cc0229a0-325c-42f4-90e2-04deec6a302d. Processing and tester availability remain unverified; no polling. Actual iPhone background delivery and fresh email-link success remain manual acceptance.
 No App Store release or processing/group availability claim.
 
 ## Real iPhone acceptance
@@ -102,6 +102,8 @@ No App Store release or processing/group availability claim.
 
 ## Changed files
 
+- `TESTING.md`
+- `docs/plans/notification-reliability.md`
 - `.agents/ACTIVE_WORK.md`
 - `.agents/CURRENT_STATE.md`
 - `.agents/DECISIONS.md`
