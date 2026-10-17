@@ -522,119 +522,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     _listScrollController.jumpTo(0);
   }
 
-  Future<void> _addItem() async {
-    if (!widget.api.canEdit) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: AppText('You have view-only access to this inventory.'),
-        ),
-      );
-      return;
-    }
-    final created = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) => ItemEditorSheet(initialLocation: widget.location),
-    );
-    if (created == null) return;
-    try {
-      final out = await widget.api.addItem(item: created.add);
-      await LowStockPrefs.setThreshold(
-        itemId: out.itemId,
-        threshold: created.threshold,
-      );
-      _changed = true;
-      final result = await widget.api.searchItems(query: '');
-      if (!mounted) return;
-      final locationItems =
-          result.items.where((i) => i.spaceId == widget.spaceId).toList()..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          );
-      setState(() {
-        _items = locationItems;
-        _rebuildCategoryKeys();
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: AppText('Item added')));
-    } on SessionExpiredException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: AppText('Session expired. Please sign in again.'),
-        ),
-      );
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      if (e.response?.statusCode == 429) {
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 429 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: AppText('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-        return;
-      }
-      if (e.response?.statusCode == 403 &&
-          widget.api.inventoryContext != null &&
-          describeError(e).$2 != ErrorKind.planLimit) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
-        return;
-      }
-      if (e.response?.statusCode == 403) {
-        // Legacy unscoped item-limit behavior.
-        if (!ProStatus.isPro) {
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: 'You\'ve reached the free item limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 403 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: AppText('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: AppText(
-              e.message ?? 'Connection issue. Please try again.',
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: AppText('Something went wrong. Please try again.'),
-        ),
-      );
-    }
-  }
-
   void _showProductInfo(BuildContext context, InventoryItem item) {
     final existingThr = _thresholds[item.itemId];
     showItemDetailSheet(
@@ -1265,10 +1152,10 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            if (!widget.readOnly) ...[
+                            if (!widget.readOnly && widget.api.canEdit) ...[
                               const SizedBox(height: 24),
                               GestureDetector(
-                                onTap: () => _addItem(),
+                                onTap: _toggleFab,
                                 child: GlassControl(
                                   radius: 99,
                                   child: Container(
@@ -1326,7 +1213,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             ),
           ],
         ),
-        floatingActionButton: widget.readOnly ? null : _buildSpeedDial(),
+        floatingActionButton: widget.readOnly || !widget.api.canEdit
+            ? null
+            : _buildSpeedDial(),
       ),
     );
   }
@@ -1342,9 +1231,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   Widget _buildSpeedDial() {
     const items = [
-      _FabItem(icon: Icons.edit_outlined, label: 'Manual Add'),
-      _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+      _FabItem(icon: Icons.camera_alt_outlined, label: 'Scan Photo'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
+      _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
     ];
 
     return Column(
@@ -1423,12 +1312,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   size: 16,
                 ),
                 const SizedBox(width: 10),
-                AppText(
-                  item.label,
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: AppText(
+                    item.label,
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -1443,9 +1334,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     setState(() => _fabOpen = false);
     _fabController.reverse();
     switch (label) {
-      case 'Manual Add':
-        unawaited(_addItem());
-      case 'Upload Photo':
+      case 'Scan Photo':
         unawaited(_uploadImage());
       case 'Import Spreadsheet':
         unawaited(_importSpreadsheet());

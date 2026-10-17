@@ -1,3 +1,15 @@
+# October 17 Space Add Item starts with capture
+
+Mobile fix/space-add-capture-20261017 connects Space Add Item and plus to the same
+Scan Photo, Scan Barcode and Import Spreadsheet choices. Existing scoped capture
+flows and corrections are preserved; direct manual creation is removed only from
+this Space entry point. Eight focused cases and the full 557-test coverage suite
+pass; analysis is clean. Native iPhone 16e review confirms the chooser, camera
+choice and spreadsheet with the current Space. Beta81 delivery is being completed.
+No dashboard, backend, web or schema change. The later deletion follow-up was
+canceled when the user confirmed it worked; no memory/chat change was made.
+See docs/plans/space-capture-entry.md.
+
 # October 17 simpler mobile context directories
 
 Mobile fix/mobile-context-directory-20261017 replaces the mixed place switcher
