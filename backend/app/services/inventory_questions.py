@@ -184,6 +184,9 @@ def _filter(row: dict, filters: dict) -> bool:
             if not all(_word(token) in {_word(t) for t in _tokens(str(row.get(key) or ''))}
                        for token in _tokens(value)):
                 return False
+        elif key == 'space_id':
+            if str(row.get('space_id')) != value:
+                return False
         elif key == 'missing':
             field_name = 'image_url' if value == 'image' else value
             if (recorded_quantity(row.get(field_name)) is not None if value == 'quantity'
@@ -234,13 +237,29 @@ def _text(value: object, length: int = 160) -> str:
     return re.sub(r'[\x00-\x1f`*\[\]<>]', ' ', text).strip()[:length]
 
 
-def answer_question(*, user_id: str, message: str, conversation_id: str | None = None) -> dict | None:
+def answer_question(*, user_id: str, message: str, conversation_id: str | None = None, aliases: list | None = None) -> dict | None:
     scope = current_inventory.get()
     if scope is None:
         return None
     question = interpret(message)
     if question is None:
         return None
+    alias_space = None
+    location = question.filters.get('location', '').casefold().strip()
+    for alias in aliases or []:
+        if location and alias.get('alias') == location:
+            from uuid import UUID
+            try:
+                space_id = str(UUID(alias['space_id']))
+                spaces = get_supabase_admin().table('spaces').select('id,name').eq('id', space_id).limit(1).execute().data or []
+            except Exception:
+                spaces = []
+            if not spaces:
+                return {'tool': None, 'result': None, 'assistant_message': 'That saved location alias is no longer available. Review it in Memory settings.', 'answer_context': None}
+            alias_space = space_id
+            question.filters.pop('location', None)
+            question.filters['space_id'] = space_id
+            break
     started = time.perf_counter()
     status, items, sources = 'supported', [], []
     truncated = False
@@ -261,6 +280,9 @@ def answer_question(*, user_id: str, message: str, conversation_id: str | None =
                 if ids is not None:
                     result = get_supabase_admin().table('items').select('*').eq('user_id', user_id).in_('item_id', ids).limit(101).execute()
                     data = {'items': result.data or [], 'truncated': False}
+                elif alias_space:
+                    result = get_supabase_admin().table('items').select('*').eq('space_id', alias_space).limit(501).execute()
+                    data = {'items': (result.data or [])[:500], 'truncated': len(result.data or []) > 500}
                 else:
                     data = search_memory_candidates(user_id=user_id, terms=candidates)
                 truncated = data['truncated']

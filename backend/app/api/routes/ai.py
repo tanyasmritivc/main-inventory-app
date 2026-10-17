@@ -24,6 +24,7 @@ from app.services.ai_memory import (
     log_query,
     save_conversation,
 )
+from app.services.memory_context import load_preferences, personalize
 from app.services.documents_repo import create_activity
 from app.services.ask_photo_questions import answer_photo_question, remember_photo_answer
 from app.services.find_pipeline import FindPipelineError
@@ -148,6 +149,8 @@ async def ai_photo_question_route(
                 if not task.done():
                     yield b'data: {"type":"status","message":"Photo analysis is still running..."}\n\n'
             answer = await task
+            preferences = await asyncio.to_thread(load_preferences, effective_user_id)
+            answer = personalize(answer, preferences)
             yield f"data: {json_module.dumps({'type': 'delta', 'delta': answer['assistant_message']})}\n\n".encode()
             try:
                 await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)

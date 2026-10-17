@@ -20,6 +20,7 @@ import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 import 'profile_editor_page.dart';
 import 'appearance_settings.dart';
+import 'memory_page.dart';
 import 'plans_page.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -1354,7 +1355,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const AppearanceSettings(),
-
             // ── Scanning ─────────────────────────────────────────────────────
             _sectionLabel('Scanning'),
             _glassCard(
@@ -1369,6 +1369,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     last: true,
                   ),
                 ],
+              ),
+            ),
+
+            _sectionLabel('Memory'),
+            _glassCard(
+              ListTile(
+                title: const AppText('Personalization and memory'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => MemoryPage(api: widget.api),
+                  ),
+                ),
               ),
             ),
 

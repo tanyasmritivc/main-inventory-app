@@ -1,3 +1,37 @@
+# October 16 account memory activated on self-hosted production
+
+Tanya explicitly approved migration 048 and the reviewed backend after the source
+implementation and TestFlight 70 upload. Migration 048 committed and systemd
+findez restarted with the 12 reviewed backend files from runtime 967ab48,
+including the PR #88 retrieval dependency. The production Git checkout remains
+on main 98597c3 with selective overlays; it was not pulled, reset or cleaned.
+Unrelated backend files match their preserved predeployment copies.
+
+Fresh database/runtime backups are private on the VM at
+/home/ubuntu/findez-memory-release-20261016. The actual public/auth/extensions
+backup restored in a network-isolated disposable container and migration 048
+passed there before live activation. Live read-only metadata confirms RLS,
+owner-read grants, no anonymous reads/client mutations, service-only RPC and old
+collector write guards. Real anonymous PostgREST requests to all five private
+memory/history/log tables are denied (42501); local/public health and database
+health are 200; memory GET/export/POST reject missing and invalid sessions (401).
+No customer records were output or changed for QA. Backup remains on the same
+server disk; off-host disaster recovery is not established by this deployment.
+
+The earlier unsafe PUBLIC true memory grants are fixed in production. This does
+not establish whole-product security or authenticated device acceptance. Build
+1.0.8 (70), runtime 967ab48, was already uploaded successfully; no new binary or
+Apple processing poll for this activation/documentation receipt. Web Memory
+controls are now published after the normal production-configured webpack build
+passed on the server with real fonts. Only the three reviewed Memory UI files
+were overlaid; all other source, including the homepage, was preserved.
+Source checks remain 772 Python, 302 web, 444 Flutter tests and clean static checks;
+no regression-suite reruns after push/build. Live rollout checks are separate.
+The web service runs web-account-memory-20261016. Candidate/public pages pass;
+signed-out Settings emits the existing server sign-in redirect without protected
+controls. Logged-in save/forget and cross-device acceptance remain pending.
+See docs/plans/account-memory-implementation.md for evidence, rollback and gaps.
+
 # October 16 assistant retrieval beta delivery
 
 Active lane `feat/assistant-grounded-retrieval-20261016`, starting

@@ -2,6 +2,21 @@
 
 This describes the current release foundation. Planned systems are labeled.
 
+## Account memory (backend activated October 16)
+
+Migration 048 extends user_memory and inventory_user_memory with typed explicit
+preferences, private Space aliases and source/revision fields. One memory_events
+table stores content-free receipts. A backend-only transactional function handles
+opt-in, edits, deletion and forget with per-actor serialization; RLS protects reads
+and legacy collectors are blocked at the database. Shared memory_context applies
+allowlisted style to sync/SSE/photo answers; current records stay authoritative.
+Web/mobile Settings controls use the same authenticated /memory endpoints outside
+inventory alias routing. No new provider, worker, embeddings or cloud service.
+Migration 048, the reviewed backend and web controls are deployed after approval.
+The real production-configured server web build passes; authenticated device
+and cross-client acceptance are pending. See
+docs/plans/account-memory-implementation.md for rollout and verification limits.
+
 ## Organization and inventory access (released October 15)
 
 Migration 044 adds optional organizations above existing Teams/workspaces, explicit
@@ -83,7 +98,7 @@ defense in depth. The service-role key must never reach a client.
 ## Database and storage
 
 Production uses self-hosted Supabase with PostgreSQL, PostgREST, Auth, Storage, and
-related services. Numbered migrations exist through `037`, but they do not contain
+related services. Numbered migrations exist through `048` (048 is applied), but they do not contain
 the complete origin of every live table. The committed
 `backend/supabase/schema-baseline-2026-08-10.sql` is required for reconstruction and
 live schema verification is still necessary for documented drift.
