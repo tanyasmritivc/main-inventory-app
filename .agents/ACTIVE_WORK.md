@@ -14,6 +14,11 @@ restored production copy passes 21 deletion cases including expected guard
 blocks. No customer records changed; no backend/schema change required. Native
 iPhone 16e fixture review complete; physical acceptance remains pending. Deliver
 checked beta80. See design/mobile-context-directory/IMPLEMENTATION.md.
+CI follow-up: separate test-only parent ae81586 (PR 96) uses installed AnyIO for
+crop tests, full 817 Python plus 10 subtests pass. Newer Flutter CI also flags a
+settings Memory-row ink layer; transparent Material fixes it, with 32 profile
+tests/analysis passing. No dashboard change. First beta80 export was rejected
+for a cached simulator framework; clean rebuild/platform verification required.
 
 # October 17 responsive onboarding follow-up
 

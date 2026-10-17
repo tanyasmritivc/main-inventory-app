@@ -8,6 +8,10 @@ name/purge choice; removing the current resource avoids a stale reload. Existing
 owner, empty-organization and workspace inventory-retention rules remain.
 549 Flutter tests and clean analysis pass; 29 unchanged backend deletion tests
 and 21 copied-record cases pass in a network-isolated restored production copy.
+CI's newer Flutter exposed a settings Memory-row ink assertion: a transparent
+Material wrapper fixes it, with 32 profile tests/analysis passing. A separate
+test-only parent fixes crop-test collection via existing AnyIO; 817 Python tests
+plus 10 subtests pass without pytest-asyncio. Final automatic CI remains pending.
 No production records removed, backend deployment or new migration required.
 Historical deletion 501/502 was not reproduced; current routes/auth and today's
 successful/protected responses are checked. iPhone 16e fixture review is complete;

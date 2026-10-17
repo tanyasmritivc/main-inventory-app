@@ -29,6 +29,10 @@ organization must have no remaining workspaces. Permissions are unchanged.
 
 - Full local Flutter suite and required coverage run: 549 passed. Final analysis:
   clean. Coverage artifact: mobile/coverage/lcov.info (generated, not committed).
+  Automatic CI used newer Flutter 3.47.7 and exposed an existing settings
+  ListTile ink-layer assertion. The Memory row now has a transparent Material
+  owner; its appearance/content are unchanged. All 32 profile tests and analysis
+  pass after that narrow compatibility change; final automatic CI is pending.
 - New regressions cover preserved name/purge state after 409, 501 and 502,
   no automatic retry or false success, and exact-name organization deletion.
   Existing workspace return, navigation, creation, roles and large-text cases pass.
@@ -52,21 +56,32 @@ organization must have no remaining workspaces. Permissions are unchanged.
   it never replaces the signed-in production app or proves live synchronization.
 - Simulator compilation initially ran out of disk space; clearing regenerable
   caches allowed the native build to pass. Previous beta79 IPA/archive preserved.
+- The first beta80 archive was rejected by Apple because cached simulator
+  objective_c.framework entered the device export. The required platform check
+  was missed on that first attempt. The rejected package/receipt are preserved
+  privately; a clean Flutter rebuild and all-executable platform verification
+  are required before retrying. No successful upload is claimed at this stage.
 
 Real-account deletion on the final phone binary remains manual acceptance; no
 customer records were deleted for QA. No new physical/performance claim is made.
 
 ## Files and delivery
 
-Runtime changes are confined to mobile/lib/features/workspaces/:
+Directory runtime changes are confined to mobile/lib/features/workspaces/:
 workspace_home.dart, hierarchy_page.dart, inventory_actions.dart and
-workspace_actions.dart. Tests changed in workspace_home_test.dart,
+workspace_actions.dart. profile/profile_page.dart adds only a transparent
+Material around the settings Memory row for newer Flutter compatibility.
+Tests changed in workspace_home_test.dart,
 organization_place_flow_test.dart, inventory_directory_actions_test.dart and
 workspace_deletion_test.dart. tool/place_preview.dart is a network-free debug
 entry point and is never included by lib/main.dart. pubspec.yaml increments to
 1.0.8+80. This report, review images and .agents state/decision files record QA.
 
 Branch: fix/mobile-context-directory-20261017, based on 75db5c5.
+Its separate test-only parent uses the installed AnyIO runner for crop tests,
+fixing clean-CI collection without adding a dependency. The full backend suite
+passes 817 tests and 10 subtests with pytest-asyncio disabled. See
+docs/plans/crop-test-runner.md and its separate PR.
 No backend deployment or production migration is needed. Candidate migration 053
 remains separately pending. The signed release must use lib/main.dart and the
 existing production defines. TestFlight upload and receipt will be recorded
