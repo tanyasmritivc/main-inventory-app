@@ -1,3 +1,19 @@
+# October 17 simpler mobile context directories
+
+Mobile fix/mobile-context-directory-20261017 replaces the mixed place switcher
+with a focused workspace picker and separate Organizations directory. The compact
+inventory list keeps team utilities under Workspace options. Dashboard, Scan,
+Ask, Spaces and auth are untouched. Failed deletion confirmations keep the typed
+name/purge choice; removing the current resource avoids a stale reload. Existing
+owner, empty-organization and workspace inventory-retention rules remain.
+549 Flutter tests and clean analysis pass; 29 unchanged backend deletion tests
+and 21 copied-record cases pass in a network-isolated restored production copy.
+No production records removed, backend deployment or new migration required.
+Historical deletion 501/502 was not reproduced; current routes/auth and today's
+successful/protected responses are checked. iPhone 16e fixture review is complete;
+real-account final-phone deletion acceptance remains open. Beta80 is prepared
+under the standing release instruction. See design/mobile-context-directory/IMPLEMENTATION.md.
+
 # October 17 responsive onboarding follow-up
 
 Beta79 fits the persistent world between actual heading/control bounds through

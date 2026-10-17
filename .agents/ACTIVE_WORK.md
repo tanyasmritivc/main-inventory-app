@@ -1,3 +1,20 @@
+# October 17 simpler mobile context directories and deletion audit
+
+Active mobile lane fix/mobile-context-directory-20261017, clean start 75db5c5.
+Replace mixed organization/workspace switcher with focused workspace selection
+and separate organization management. Compact inventory directory and hide
+collaboration utilities behind management. Dashboard, Scan, Ask and Spaces remain
+untouched. Trace reported deletion errors, retain confirmations/explicit purge,
+keep failed confirmations usable and remove stale resources after success.
+Audit real constraints only in a network-isolated restored copy; never delete
+customer records for QA. Backend/schema work, if needed, uses a separate lane.
+Migration 053 remains pending separately. Implementation complete: 549 Flutter
+tests pass, final analysis clean, 29 backend deletion tests pass. A network-none
+restored production copy passes 21 deletion cases including expected guard
+blocks. No customer records changed; no backend/schema change required. Native
+iPhone 16e fixture review complete; physical acceptance remains pending. Deliver
+checked beta80. See design/mobile-context-directory/IMPLEMENTATION.md.
+
 # October 17 responsive onboarding follow-up
 
 Same mobile lane feat/build-your-world-onboarding-20261017, clean start eab8962.
