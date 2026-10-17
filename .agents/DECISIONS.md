@@ -1,3 +1,11 @@
+# October 17 Space creation starts with capture
+
+The empty Space Add Item button and its plus control open the same three choices:
+Scan Photo, Scan Barcode and Import Spreadsheet. Use the existing selected
+inventory/Space and save-confirmation flows. Do not start this Space entry point
+in an empty manual item editor. Keep manual correction of scan results and
+editing existing items. Other entry points and the dashboard are unchanged.
+
 # October 17 mobile keeps collaboration behind focused directories
 
 The supporting entry screen is a compact inventory list with one workspace picker.

@@ -1,3 +1,18 @@
+# October 17 Space Add Item starts with capture
+
+Active mobile lane fix/space-add-capture-20261017, clean start be4ab48.
+Space empty-state Add Item opens the same action chooser as its plus control:
+Scan Photo, Scan Barcode and Import Spreadsheet only. Reuse the existing scoped
+flows and selected Space; remove the unused direct manual-create path from this
+page. Preserve editing, capture confirmation, dashboard and other entry points.
+No backend/web/schema changes. All 557 coverage tests and analysis pass. Native
+iPhone 16e chooser/photo/import review is complete. Apple acknowledged 1.0.8 (81),
+runtime 257bb3e, delivery 0ada0dcc-7654-425e-870a-15607fdeb248. All 31 native
+archive/export binaries verify as iOS device code. Processing/tester availability
+remain unverified; no polling. PR 97 tracks automatic checks. The prior deletion
+follow-up was canceled after the user confirmed it worked; no memory/chat
+follow-up implementation was made. Beta80 and both review heads passed all CI.
+
 # October 17 simpler mobile context directories and deletion audit
 
 Active mobile lane fix/mobile-context-directory-20261017, clean start 75db5c5.

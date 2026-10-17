@@ -256,36 +256,39 @@ Future<void> runUploadPhotoFlow({
             color: AppTheme.adaptive(ctx, const Color(0xFF1C1C1E)),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.photo_camera_outlined,
-                  color: AppTheme.foreground(ctx, Colors.white),
-                ),
-                title: AppText(
-                  'Take Photo',
-                  style: TextStyle(
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.photo_camera_outlined,
                     color: AppTheme.foreground(ctx, Colors.white),
                   ),
+                  title: AppText(
+                    'Take Photo',
+                    style: TextStyle(
+                      color: AppTheme.foreground(ctx, Colors.white),
+                    ),
+                  ),
+                  onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
                 ),
-                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.photo_outlined,
-                  color: AppTheme.foreground(ctx, Colors.white),
-                ),
-                title: AppText(
-                  'Choose from Library',
-                  style: TextStyle(
+                ListTile(
+                  leading: Icon(
+                    Icons.photo_outlined,
                     color: AppTheme.foreground(ctx, Colors.white),
                   ),
+                  title: AppText(
+                    'Choose from Library',
+                    style: TextStyle(
+                      color: AppTheme.foreground(ctx, Colors.white),
+                    ),
+                  ),
+                  onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
                 ),
-                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
