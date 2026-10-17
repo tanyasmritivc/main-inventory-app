@@ -19,8 +19,10 @@ analysis, TypeScript, changed-file ESLint and isolated SQL/concurrency/composed
 migration checks pass. Web compile passes with synthetic configuration and bundled
 font fixtures; normal local build fails due to symlinked dependencies and existing
 Google Fonts fetch/loader problems. Fixture output must never be deployed.
-TestFlight 1.0.8 (70) delivery is in progress using completed checks; no post-push
-or post-build reruns or processing wait. Detailed implementation, exact commands,
+Apple acknowledged signed TestFlight 1.0.8 (70), runtime `967ab48`, delivery
+`a4f9218f-38c5-405f-bb60-3de7c938bd3d`. PR #89 (stacked on #88). Artifacts and receipts:
+`Documents/FindEZ/AppStore/1.0.8-build70`. Processing and tester availability are
+unverified; no post-push/build reruns or processing wait. Detailed implementation, exact commands,
 file list, rollout/rollback and device acceptance:
 `docs/plans/account-memory-implementation.md`.
 

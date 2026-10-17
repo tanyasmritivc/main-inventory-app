@@ -12,8 +12,9 @@ metadata check confirms unsafe public legacy memory policy/grants. Migration 048
 closes them but is NOT applied. No production records were read or changed.
 Web compiles with the checked-in synthetic/font-fixture build helper; normal local
 build is blocked by existing font downloads/loader and symlinked node_modules.
-Never publish the fixture output. TestFlight 70 delivery is next; server activation
-and real two-client/device acceptance remain held. Full files/risks/commands:
+Never publish the fixture output. Apple acknowledged signed TestFlight 70,
+runtime `967ab48`, delivery `a4f9218f-38c5-405f-bb60-3de7c938bd3d` (PR #89).
+No processing wait. Server activation and real two-client/device acceptance remain held. Full files/risks/commands:
 `docs/plans/account-memory-implementation.md`.
 
 ## October 16 assistant grounded retrieval

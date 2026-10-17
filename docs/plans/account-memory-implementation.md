@@ -199,3 +199,22 @@ automatic learning/fine-tuning, cost/latency optimization, retention automation 
 complete account deletion reconciliation. Existing evidence and capture flows are
 preserved, not rebuilt. Receipt retention and historical raw-chat cleanup require
 privacy decisions. No inferred sensitive traits, hidden preferences or new services.
+
+## Source and beta delivery receipt
+
+Implementation stages are pushed on PR #89, stacked on PR #88:
+
+- `64067e1`: schema, RLS and transactional revisions.
+- `3a457ec`: authenticated lifecycle APIs.
+- `c0be848`: explicit retrieval/personalization and privacy behavior.
+- `967ab48`: web/mobile controls, verification and build 70.
+
+Apple acknowledged signed 1.0.8 (70), delivery
+`a4f9218f-38c5-405f-bb60-3de7c938bd3d`. The signed archive, IPA, checksum,
+build log and upload receipt are preserved in
+`Documents/FindEZ/AppStore/1.0.8-build70`. No post-push/build test reruns, CI
+polling or Apple processing wait per Tanya's instruction. Processing, group
+availability and physical acceptance are unverified. No public App Store action.
+No production migration, backend deployment or web publication occurred. Migration
+048 and backend activation still require approval; the unsafe live memory grants
+remain open. The normal web/font build must pass before web publication.
