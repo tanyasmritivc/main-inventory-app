@@ -41,7 +41,7 @@ class _HierarchySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-    child: Text(title.toUpperCase(), style: PlaceTokens.section),
+    child: Text(title.toUpperCase(), style: PlacePalette.of(context).section),
   );
 }
 
@@ -839,8 +839,10 @@ class _HierarchyPageState extends State<HierarchyPage>
     padding: const EdgeInsets.only(left: 4, bottom: 8),
     child: Text(
       title.toUpperCase(),
-      style: PlaceTokens.section.copyWith(
-        color: PlaceTokens.muted(context, PlaceTokens.label),
+      style: PlacePalette.of(context).section.copyWith(
+        color: PlacePalette.of(
+          context,
+        ).muted(context, PlacePalette.of(context).label),
       ),
     ),
   );
@@ -886,10 +888,10 @@ class _HierarchyPageState extends State<HierarchyPage>
             PlaceRow(
               title: org['name'].toString(),
               subtitle: placeRole(org['role'].toString()),
-              leading: const Icon(
+              leading: Icon(
                 Icons.business_outlined,
                 size: 20,
-                color: PlaceTokens.dim,
+                color: PlacePalette.of(context).dim,
               ),
               onTap: () => _openOrganization(org),
             ),
@@ -952,14 +954,16 @@ class _HierarchyPageState extends State<HierarchyPage>
                       _query.isNotEmpty
                           ? 'No matching workspaces'
                           : 'No workspaces yet',
-                      style: PlaceTokens.rowTitle,
+                      style: PlacePalette.of(context).rowTitle,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _manager
                           ? 'Create a workspace for your team or project.'
                           : 'Workspaces shared with you will appear here.',
-                      style: PlaceTokens.text(13, color: PlaceTokens.dim),
+                      style: PlacePalette.of(
+                        context,
+                      ).text(13, color: PlacePalette.of(context).dim),
                     ),
                   ],
                 ),
@@ -1113,9 +1117,9 @@ class _HierarchyPageState extends State<HierarchyPage>
   Widget _placeDirectoryPage() => PlaceTheme(
     child: Builder(
       builder: (context) => Scaffold(
-        backgroundColor: PlaceTokens.background,
+        backgroundColor: PlacePalette.of(context).background,
         appBar: AppBar(
-          backgroundColor: PlaceTokens.background,
+          backgroundColor: PlacePalette.of(context).background,
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
           toolbarHeight: MediaQuery.textScalerOf(context).scale(24) > 36
@@ -1127,7 +1131,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 : widget.panel == HierarchyPanel.activity
                 ? 'Activity'
                 : _title,
-            style: PlaceTokens.title,
+            style: PlacePalette.of(context).title,
             maxLines: 2,
           ),
           actions: [
@@ -1153,7 +1157,10 @@ class _HierarchyPageState extends State<HierarchyPage>
             children: [
               if (_loading || _busy) const LinearProgressIndicator(),
               if (_error != null) ...[
-                Text(describeError(_error!).$1, style: PlaceTokens.rowTitle),
+                Text(
+                  describeError(_error!).$1,
+                  style: PlacePalette.of(context).rowTitle,
+                ),
                 TextButton(
                   onPressed: _busy ? null : _load,
                   child: const Text('Retry'),
@@ -1163,7 +1170,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 if (!_inventory && widget.panel == null) ...[
                   TextField(
                     autofocus: widget.focusSearch,
-                    style: PlaceTokens.rowTitle,
+                    style: PlacePalette.of(context).rowTitle,
                     decoration: InputDecoration(
                       hintText: _organizationsOnly
                           ? 'Search organizations'
@@ -1174,14 +1181,16 @@ class _HierarchyPageState extends State<HierarchyPage>
                           : 'Search inventories',
                       semanticCounterText: 'Search workspaces and people',
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: PlacePalette.of(context).card,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: PlaceTokens.border),
+                        borderSide: BorderSide(
+                          color: PlacePalette.of(context).border,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1295,15 +1304,15 @@ class _HierarchyPageState extends State<HierarchyPage>
             child: TextButton(
               onPressed: _leaveWorkspace,
               style: TextButton.styleFrom(
-                foregroundColor: PlaceTokens.destructive,
+                foregroundColor: PlacePalette.of(context).destructive,
                 minimumSize: const Size(44, 44),
               ),
               child: Text(
                 'Leave workspace',
-                style: PlaceTokens.text(
+                style: PlacePalette.of(context).text(
                   16,
                   weight: FontWeight.w500,
-                  color: PlaceTokens.destructive,
+                  color: PlacePalette.of(context).destructive,
                 ),
               ),
             ),
@@ -1440,7 +1449,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             TextButton(
               onPressed: _busy ? null : _deleteWorkspace,
               style: TextButton.styleFrom(
-                foregroundColor: PlaceTokens.destructive,
+                foregroundColor: PlacePalette.of(context).destructive,
               ),
               child: const Text('Delete workspace'),
             ),

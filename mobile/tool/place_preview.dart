@@ -45,6 +45,8 @@ Future<void> main() async {
         'workspaces': [
           if (workspacePresent)
             {'workspace_id': 'ftc', 'name': 'FTC Season 2026-2027'},
+          {'workspace_id': 'lab', 'name': 'Workshop'},
+          {'workspace_id': 'demo', 'name': 'Workshop'},
         ],
       };
     }
@@ -71,6 +73,8 @@ Future<void> main() async {
         'workspaces': [
           if (id == 'org' && workspacePresent)
             {'team_id': 'ftc', 'name': 'FTC Season 2026-2027'},
+          if (id == 'org') {'team_id': 'lab', 'name': 'Workshop'},
+          if (id == 'empty') {'team_id': 'demo', 'name': 'Workshop'},
         ],
         'members': [
           {'user_id': 'actor-a', 'display_name': 'Demo user', 'role': 'owner'},
@@ -99,9 +103,11 @@ Future<void> main() async {
       return {
         'workspace': {
           'workspace_id': id,
-          'name': 'FTC Season 2026-2027',
-          'organization_id': 'org',
-          'organization_name': 'FindEZ Studio',
+          'name': id == 'ftc' ? 'FTC Season 2026-2027' : 'Workshop',
+          'organization_id': id == 'demo' ? 'empty' : 'org',
+          'organization_name': id == 'demo'
+              ? 'Demo organization'
+              : 'FindEZ Studio',
           'role': 'owner',
           'owner_user_id': 'actor-a',
         },
@@ -124,6 +130,16 @@ Future<void> main() async {
                 'role': 'owner',
                 'item_count': entry.key == 'hardware' ? 12 : 0,
               },
+          if (id == 'demo' || id == 'lab')
+            {
+              'workspace_id': id,
+              'inventory_id': '$id-items',
+              'name': id == 'demo' ? 'Demo equipment' : 'Lab equipment',
+              'can_open': true,
+              'can_edit': true,
+              'role': 'owner',
+              'item_count': 0,
+            },
           if (id == 'personal' && workspacePresent)
             {
               'workspace_id': id,
@@ -140,17 +156,33 @@ Future<void> main() async {
         'next_offset': null,
       };
     }
+    if (request.path == '/teams') {
+      return {
+        'teams': [
+          {'team_id': 'ftc', 'name': 'FTC Season 2026-2027'},
+        ],
+      };
+    }
+    if (request.path.endsWith('/board')) return {'tasks': [], 'role': 'owner'};
+    if (request.path.endsWith('/members')) return {'members': []};
+    if (request.path.endsWith('/documents')) {
+      return {'documents': [], 'role': 'owner'};
+    }
     if (request.path.endsWith('/audit')) return {'activity': []};
     if (request.path.endsWith('/access-requests')) return {'requests': []};
     if (request.path == '/access-invitations') return {'invitations': []};
     throw StateError('Unsupported isolated preview route');
   };
   final session = PlaceSession(fixture.api, 'actor-a');
-  unawaited(session.restore(override: const LastPlace.workspace('ftc')));
+  unawaited(
+    session.restoreNavigation(override: const LastPlace.workspace('ftc')),
+  );
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.create(Brightness.light),
+      darkTheme: AppTheme.create(Brightness.dark),
+      themeMode: ThemeMode.system,
       home: WorkspaceHome(
         session: session,
         onOpenInventory: (_, _, _) async {},

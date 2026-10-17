@@ -48,9 +48,11 @@ class MainShell extends StatefulWidget {
     this.onSwitchContext,
     this.onManageContext,
     this.onWorkspaceNotification,
+    this.organizationSelector,
   });
 
   final ApiClient api;
+  final Widget? organizationSelector;
   final Future<void> Function()? onSwitchContext, onManageContext;
   final Future<void> Function(Map<String, dynamic>)? onWorkspaceNotification;
 
@@ -534,46 +536,64 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     if (selected != null) {
       final scaler = MediaQuery.textScalerOf(context);
       return AppBar(
-        toolbarHeight: (scaler.scale(14) * 1.2 + scaler.scale(11) * 1.1 + 20)
-            .clamp(56, double.infinity),
-        title: TextButton(
-          key: TutorialController.teamsSegmentKey,
-          onPressed: widget.onSwitchContext,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppText(
-                [
-                  selected.organizationName,
-                  selected.workspaceName,
-                ].whereType<String>().join(' / '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.1,
-                  color: AppTheme.textSecondary(context),
-                ),
-              ),
-              Row(
+        toolbarHeight:
+            (scaler.scale(14) * 1.2 +
+                    scaler.scale(11) * 1.1 +
+                    (widget.organizationSelector == null
+                        ? 20
+                        : (scaler.scale(13) * 1.4 + 16).clamp(
+                                40,
+                                double.infinity,
+                              ) +
+                              32))
+                .clamp(56, double.infinity),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.organizationSelector != null)
+              widget.organizationSelector!,
+            TextButton(
+              key: TutorialController.teamsSegmentKey,
+              onPressed: widget.onSwitchContext,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: AppText(
-                      selected.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.2,
-                        color: AppTheme.textPrimary(context),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  AppText(
+                    [
+                      if (widget.organizationSelector == null)
+                        selected.organizationName,
+                      selected.workspaceName,
+                    ].whereType<String>().join(' / '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      color: AppTheme.textSecondary(context),
                     ),
                   ),
-                  const Icon(Icons.expand_more, size: 18),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: AppText(
+                          selected.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.2,
+                            color: AppTheme.textPrimary(context),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.expand_more, size: 18),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         actions: [
           NotificationBell(

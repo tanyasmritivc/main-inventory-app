@@ -1,3 +1,14 @@
+# October 17 organization-scoped mobile navigation
+
+Active lane fix/mobile-organization-scope-20261017, clean start 24bbcac.
+Replace the global workspace selector with a top-left organization pill and
+organization-contained workspace/inventory navigation. People, Tasks and Files
+remain visible in the workspace directory. Preserve dashboard content, Scan,
+Ask, Spaces, auth and existing API/schema/data. Personal contains existing
+independent workspaces; no customer records are moved. All 588 Flutter coverage tests pass. Native iPhone 16e review covers
+organization isolation and both light/dark appearances. Beta82 packaging is in
+progress. This supersedes the previous global workspace picker design.
+
 # October 17 Space Add Item starts with capture
 
 Mobile fix/space-add-capture-20261017 connects Space Add Item and plus to the same

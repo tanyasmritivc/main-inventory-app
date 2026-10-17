@@ -1,3 +1,13 @@
+# Mobile organization navigation boundary
+
+PlaceSession owns the selected organization independently of its current
+workspace. The top-left OrganizationPill is the cross-organization control;
+workspace directories are loaded through the selected organization overview and
+child parent IDs are revalidated before use. Existing independent workspaces
+remain in Personal. InventoryContextHost retires the inventory Navigator/client
+on organization changes. Inventory dashboard content and existing API grants
+remain unchanged. See docs/plans/mobile-organization-scope.md.
+
 # Current architecture
 
 This describes the current release foundation. Planned systems are labeled.

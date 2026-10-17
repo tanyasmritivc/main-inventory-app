@@ -7,7 +7,6 @@ import 'package:mobile/core/place_session.dart';
 import 'package:mobile/core/last_place.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
 import 'package:mobile/features/workspaces/hierarchy_page.dart';
-import 'package:mobile/features/workspaces/place_ui.dart';
 import 'support/hierarchy_fixture.dart';
 
 void main() {
@@ -124,11 +123,14 @@ void main() {
     }
   }
 
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    Brightness brightness = Brightness.light,
+  }) async {
     await tester.runAsync(session.restore);
     await tester.pumpWidget(
       MaterialApp(
-        theme: AppTheme.create(Brightness.light),
+        theme: AppTheme.create(brightness),
         home: Navigator(
           onGenerateRoute: (_) => MaterialPageRoute<void>(
             builder: (_) => WorkspaceHome(
@@ -144,145 +146,202 @@ void main() {
 
   Future<void> organization(WidgetTester tester) async {
     await tester.tap(
-      find.bySemanticsLabel('Switch workspace. Current: Personal'),
+      find.bySemanticsLabel('Switch organization. Current: Personal'),
     );
-    await settle(tester);
-    expect(find.text('Acme'), findsNothing);
-    await tester.tap(find.text('Organizations'));
     await settle(tester);
     await tester.tap(find.text('Acme'));
     await settle(tester);
-    expect(find.byType(PlaceSwitcher), findsNothing);
-    if (!failOrganization) {
-      expect(find.text('Workspaces'), findsOneWidget);
-      expect(find.byType(PlaceCardList), findsOneWidget);
-    }
+    expect(find.byType(HierarchyPage), findsNothing);
   }
 
-  testWidgets(
-    'organization selection returns to the same workspace home, then all tools and inventory use that context',
-    (tester) async {
-      await mount(tester);
-      await organization(tester);
-      await tester.tap(find.text('Client project'));
-      await settle(tester);
-      expect(find.byType(HierarchyPage), findsNothing);
-      expect(session.current, const LastPlace.workspace('ws'));
-      expect(await session.store.read(), const LastPlace.workspace('ws'));
-      for (final tool in ['Tasks', 'Files', 'People', 'Activity']) {
-        await tester.tap(find.byTooltip('Workspace options'));
-        await settle(tester);
-        await tester.tap(find.text(tool));
-        await settle(tester);
-        expect(find.text('Retry'), findsNothing);
-        if (tool == 'Tasks') expect(find.text('No open tasks'), findsOneWidget);
-        if (tool == 'Files') expect(find.text('No files yet'), findsOneWidget);
-        await tester.pageBack();
-        await settle(tester);
-        expect(session.current.id, 'ws');
-      }
-      await tester.tap(find.byTooltip('Search'));
-      await settle(tester);
-      expect(find.text('INVENTORIES'), findsOneWidget);
-      expect(find.text('Tasks'), findsNothing);
-      expect(find.text('Tanya'), findsNothing);
-      await tester.enterText(find.byType(TextField), 'missing inventory');
-      await settle(tester);
-      expect(find.text('No matching inventories'), findsOneWidget);
-      await tester.pageBack();
-      await settle(tester);
-      await tester.tap(find.text('ws inventory'));
-      await settle(tester);
-      expect(opens, ['org/ws/inv-ws']);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'empty organization can create and open its workspace without returning to an old dashboard',
-    (tester) async {
-      hasWorkspace = false;
-      await mount(tester);
-      await organization(tester);
-      expect(find.text('No workspaces yet'), findsOneWidget);
-      await tester.tap(find.text('New workspace'));
-      await settle(tester);
-      await tester.enterText(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.byType(TextField),
-        ),
-        'Client project',
+  for (final mode in Brightness.values) {
+    group(mode.name, () {
+      testWidgets(
+        'organization selection returns to the same workspace home, then all tools and inventory use that context',
+        (tester) async {
+          await mount(tester, brightness: mode);
+          await organization(tester);
+          expect(find.byType(HierarchyPage), findsNothing);
+          expect(session.current, const LastPlace.workspace('ws'));
+          expect(await session.store.read(), const LastPlace.workspace('ws'));
+          for (final tool in ['Tasks', 'Files', 'People', 'Activity']) {
+            if (tool == 'Activity') {
+              await tester.tap(find.byTooltip('Workspace settings'));
+              await settle(tester);
+            }
+            await tester.tap(find.text(tool));
+            await settle(tester);
+            expect(find.text('Retry'), findsNothing);
+            if (tool == 'Tasks') {
+              expect(find.text('No open tasks'), findsOneWidget);
+            }
+            if (tool == 'Files') {
+              expect(find.text('No files yet'), findsOneWidget);
+            }
+            await tester.pageBack();
+            await settle(tester);
+            expect(session.current.id, 'ws');
+          }
+          await tester.tap(find.byTooltip('Search'));
+          await settle(tester);
+          expect(find.text('INVENTORIES'), findsOneWidget);
+          expect(find.text('Tasks'), findsNothing);
+          expect(find.text('Tanya'), findsNothing);
+          await tester.enterText(find.byType(TextField), 'missing inventory');
+          await settle(tester);
+          expect(find.text('No matching inventories'), findsOneWidget);
+          await tester.pageBack();
+          await settle(tester);
+          await tester.tap(find.text('ws inventory'));
+          await settle(tester);
+          expect(opens, ['org/ws/inv-ws']);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
       );
-      await tester.tap(find.widgetWithText(TextButton, 'Continue'));
-      await settle(tester);
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(find.text('Client project'), findsOneWidget);
-      await tester.tap(find.text('Client project'));
-      await settle(tester);
-      expect(find.byType(HierarchyPage), findsNothing);
-      expect(session.current.id, 'ws');
-      expect(
-        fixture.requests.where((r) => r.method == 'POST').single.path,
-        '/organizations/org/workspaces',
+      testWidgets(
+        'empty organization can create and open its workspace without returning to an old dashboard',
+        (tester) async {
+          hasWorkspace = false;
+          await mount(tester, brightness: mode);
+          await organization(tester);
+          expect(find.text('No workspaces yet'), findsOneWidget);
+          await tester.tap(find.text('New workspace'));
+          await settle(tester);
+          await tester.enterText(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.byType(TextField),
+            ),
+            'Client project',
+          );
+          await tester.pump();
+          await tester.tap(find.widgetWithText(TextButton, 'Create'));
+          await settle(tester);
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(find.text('Client project'), findsOneWidget);
+          expect(find.byType(HierarchyPage), findsNothing);
+          expect(session.current.id, 'ws');
+          expect(
+            fixture.requests.where((r) => r.method == 'POST').single.path,
+            '/organizations/org/workspaces',
+          );
+          await tester.pumpWidget(const SizedBox());
+        },
       );
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'organization failure and Retry do not switch the current place',
-    (tester) async {
-      await mount(tester);
-      failOrganization = true;
-      await organization(tester);
-      expect(find.text('Retry'), findsOneWidget);
-      expect(session.current.isPersonal, true);
-      failOrganization = false;
-      await tester.tap(find.text('Retry'));
-      await settle(tester);
-      expect(find.text('Client project'), findsOneWidget);
-      expect(find.text('Retry'), findsNothing);
-      await tester.pageBack();
-      await settle(tester);
-      expect(session.current.isPersonal, true);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets(
-    'organization viewer has no management writes and large text stays usable',
-    (tester) async {
-      role = 'viewer';
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.create(Brightness.light),
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(3.2)),
-            child: child!,
-          ),
-          home: HierarchyPage(
-            api: fixture.api,
-            onOpenInventory: (_, _, _) async {},
-            level: HierarchyLevel.organization,
-            id: 'org',
-          ),
-        ),
+      testWidgets(
+        'organization failure and Retry do not switch the current place',
+        (tester) async {
+          await mount(tester, brightness: mode);
+          failOrganization = true;
+          await organization(tester);
+          expect(find.text('Retry'), findsOneWidget);
+          expect(session.current.isPersonal, true);
+          failOrganization = false;
+          await tester.tap(find.text('Retry'));
+          await settle(tester);
+          expect(find.text('Client project'), findsOneWidget);
+          expect(find.text('Retry'), findsNothing);
+          expect(session.organizationId, 'org');
+          expect(session.current.id, 'ws');
+          await tester.pumpWidget(const SizedBox());
+        },
       );
-      await settle(tester);
-      expect(find.text('New workspace'), findsNothing);
-      expect(find.text('Invite organization member'), findsNothing);
-      expect(find.byTooltip('Actions'), findsNothing);
-      await tester.tap(find.text('People'));
-      await settle(tester);
-      expect(find.text('Viewer'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+      testWidgets(
+        'organization pill contains organizations only and creation failures keep the name',
+        (tester) async {
+          await mount(tester, brightness: mode);
+          await tester.tap(
+            find.bySemanticsLabel('Switch organization. Current: Personal'),
+          );
+          await settle(tester);
+          expect(find.text('Client project'), findsNothing);
+          expect(find.text('Acme'), findsOneWidget);
+          await tester.tap(find.text('New organization'));
+          await settle(tester);
+          await tester.enterText(find.byType(TextField), 'New studio');
+          await tester.pump();
+          await tester.tap(find.widgetWithText(TextButton, 'Create'));
+          await settle(tester);
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(find.text('New studio'), findsOneWidget);
+          expect(find.text('Creating...'), findsNothing);
+          expect(session.organizationId, null);
+          await tester.tap(find.text('Cancel'));
+          await settle(tester);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+      testWidgets(
+        'new organization becomes the selected boundary after a confirmed create',
+        (tester) async {
+          final original = fixture.respond;
+          fixture.respond = (r) {
+            if (r.path == '/organizations' && r.method == 'POST') {
+              expect(r.data, {'name': 'New studio'});
+              return {
+                'organization': {'organization_id': 'org'},
+              };
+            }
+            return original(r);
+          };
+          hasWorkspace = false;
+          await mount(tester, brightness: mode);
+          await tester.tap(
+            find.bySemanticsLabel('Switch organization. Current: Personal'),
+          );
+          await settle(tester);
+          await tester.tap(find.text('New organization'));
+          await settle(tester);
+          await tester.enterText(find.byType(TextField), 'New studio');
+          await tester.pump();
+          await tester.tap(find.widgetWithText(TextButton, 'Create'));
+          await settle(tester);
+          expect(session.organizationId, 'org');
+          expect(find.text('No workspaces yet'), findsOneWidget);
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+      testWidgets(
+        'organization viewer has no management writes and large text stays usable',
+        (tester) async {
+          role = 'viewer';
+          tester.view.physicalSize = const Size(390, 844);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: AppTheme.create(mode),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(3.2)),
+                child: child!,
+              ),
+              home: HierarchyPage(
+                api: fixture.api,
+                onOpenInventory: (_, _, _) async {},
+                level: HierarchyLevel.organization,
+                id: 'org',
+              ),
+            ),
+          );
+          await settle(tester);
+          expect(find.text('New workspace'), findsNothing);
+          expect(find.text('Invite organization member'), findsNothing);
+          expect(find.byTooltip('Actions'), findsNothing);
+          await tester.tap(find.text('People'));
+          await settle(tester);
+          expect(find.text('Viewer'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    });
+  }
 }

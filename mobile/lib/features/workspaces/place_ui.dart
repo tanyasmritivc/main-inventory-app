@@ -54,51 +54,120 @@ abstract final class PlaceTokens {
       MediaQuery.highContrastOf(context) ? dim : normal;
 }
 
+/// Theme-bound roles; never mutate global tokens when the account/theme changes.
+class PlacePalette {
+  PlacePalette.of(BuildContext context)
+    : dark = Theme.of(context).brightness == Brightness.dark;
+  final bool dark;
+  Color resolve(Color light) {
+    if (!dark) {
+      return [PlaceTokens.secondary, PlaceTokens.label].contains(light)
+          ? PlaceTokens.dim
+          : light;
+    }
+    return <Color, Color>{
+          PlaceTokens.background: const Color(0xFF111112),
+          PlaceTokens.card: const Color(0xFF1C1C1E),
+          PlaceTokens.border: const Color(0xFF343436),
+          PlaceTokens.separator: const Color(0xFF2C2C2E),
+          PlaceTokens.primary: const Color(0xFFF4F4F2),
+          PlaceTokens.secondary: const Color(0xFFB8B7B2),
+          PlaceTokens.dim: const Color(0xFFC0BFBA),
+          PlaceTokens.label: const Color(0xFFB8B7B2),
+          PlaceTokens.icon: const Color(0xFFC0BFBA),
+          PlaceTokens.chevron: const Color(0xFFAAA9A3),
+          PlaceTokens.outline: const Color(0xFF6B6965),
+          PlaceTokens.destructive: const Color(0xFFFF9B91),
+        }[light] ??
+        light;
+  }
+
+  Color get background => resolve(PlaceTokens.background);
+  Color get card => resolve(PlaceTokens.card);
+  Color get border => resolve(PlaceTokens.border);
+  Color get separator => resolve(PlaceTokens.separator);
+  Color get primary => resolve(PlaceTokens.primary);
+  Color get secondary => resolve(PlaceTokens.secondary);
+  Color get dim => resolve(PlaceTokens.dim);
+  Color get label => resolve(PlaceTokens.label);
+  Color get icon => resolve(PlaceTokens.icon);
+  Color get chevron => resolve(PlaceTokens.chevron);
+  Color get outline => resolve(PlaceTokens.outline);
+  Color get destructive => resolve(PlaceTokens.destructive);
+  Color get orange => PlaceTokens.orange;
+  Color get darkOrange => PlaceTokens.darkOrange;
+  TextStyle text(
+    double size, {
+    FontWeight weight = FontWeight.w400,
+    Color? color,
+    double? spacing,
+  }) => PlaceTokens.text(
+    size,
+    weight: weight,
+    color: color ?? primary,
+    spacing: spacing,
+  );
+  TextStyle get title => PlaceTokens.title.copyWith(color: primary);
+  TextStyle get rowTitle => PlaceTokens.rowTitle.copyWith(color: primary);
+  TextStyle get subtitle => PlaceTokens.subtitle.copyWith(color: secondary);
+  TextStyle get section => PlaceTokens.section.copyWith(color: label);
+  Color muted(BuildContext context, Color normal) =>
+      MediaQuery.highContrastOf(context) ? dim : normal;
+}
+
 class PlaceTheme extends StatelessWidget {
   const PlaceTheme({super.key, required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) => Theme(
-    data: Theme.of(context).copyWith(
-      scaffoldBackgroundColor: PlaceTokens.background,
-      textTheme: Theme.of(context).textTheme.apply(
-        fontFamily: 'PlaceGeist',
-        bodyColor: PlaceTokens.primary,
-        displayColor: PlaceTokens.primary,
-      ),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: PlaceTokens.orange,
-        brightness: Brightness.light,
-        surface: PlaceTokens.background,
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: PlaceTokens.darkOrange,
-          foregroundColor: Colors.white,
-          textStyle: PlaceTokens.text(14, weight: FontWeight.w500),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+  Widget build(BuildContext context) {
+    final p = PlacePalette.of(context);
+    final base = Theme.of(context);
+    return Theme(
+      data: base.copyWith(
+        scaffoldBackgroundColor: p.background,
+        textTheme: base.textTheme.apply(
+          fontFamily: 'PlaceGeist',
+          bodyColor: p.primary,
+          displayColor: p.primary,
+        ),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: PlaceTokens.orange,
+          brightness: base.brightness,
+          surface: p.background,
+          onSurface: p.primary,
+          onSurfaceVariant: p.secondary,
+          outline: p.outline,
+          outlineVariant: p.border,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: p.darkOrange,
+            foregroundColor: Colors.white,
+            textStyle: p.text(14, weight: FontWeight.w500),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: PlaceTokens.primary,
-          backgroundColor: Colors.white,
-          side: const BorderSide(color: PlaceTokens.outline),
-          textStyle: PlaceTokens.text(14, weight: FontWeight.w500),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: p.primary,
+            backgroundColor: p.card,
+            side: BorderSide(color: p.outline),
+            textStyle: p.text(14, weight: FontWeight.w500),
+          ),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: p.background,
+          foregroundColor: p.primary,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
         ),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: PlaceTokens.background,
-        foregroundColor: PlaceTokens.primary,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-    ),
-    child: child,
-  );
+      child: child,
+    );
+  }
 }
 
 enum PlaceSymbol { right, down, search, close, check }
@@ -119,8 +188,8 @@ class PlaceGlyph extends StatelessWidget {
       symbol,
       color ??
           (symbol == PlaceSymbol.right
-              ? PlaceTokens.chevron
-              : PlaceTokens.icon),
+              ? PlacePalette.of(context).chevron
+              : PlacePalette.of(context).icon),
     ),
   );
 }
@@ -281,10 +350,10 @@ class PlaceCardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: PlaceTokens.card,
+      color: PlacePalette.of(context).card,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
-        color: selected ? PlaceTokens.orange : PlaceTokens.border,
+        color: selected ? PlaceTokens.orange : PlacePalette.of(context).border,
         width: selected ? 1.5 : 1,
       ),
     ),
@@ -297,10 +366,10 @@ class PlaceCardList extends StatelessWidget {
           children: [
             for (var i = 0; i < children.length; i++) ...[
               if (i > 0)
-                const Divider(
+                Divider(
                   height: 0,
                   thickness: 1,
-                  color: PlaceTokens.separator,
+                  color: PlacePalette.of(context).separator,
                 ),
               children[i],
             ],
@@ -346,16 +415,15 @@ class PlaceRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: PlaceTokens.rowTitle),
+                  Text(title, style: PlacePalette.of(context).rowTitle),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
                     Text(
                       subtitle!,
-                      style: PlaceTokens.subtitle.copyWith(
-                        color: PlaceTokens.muted(
+                      style: PlacePalette.of(context).subtitle.copyWith(
+                        color: PlacePalette.of(
                           context,
-                          PlaceTokens.secondary,
-                        ),
+                        ).muted(context, PlacePalette.of(context).secondary),
                       ),
                     ),
                   ],

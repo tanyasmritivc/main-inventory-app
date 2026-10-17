@@ -84,20 +84,44 @@ class LastPlaceStore {
     return const LastPlace.personal();
   }
 
-  Future<void> save(LastPlace place, {required bool Function() isCurrent}) =>
-      _queue(() async {
-        final prefs = await SharedPreferences.getInstance();
-        if (!isCurrent()) return;
-        final saved = await prefs.setString(
-          key,
-          jsonEncode({'userId': userId, 'type': place.type, 'id': place.id}),
-        );
-        if (!saved) {
-          throw const FormatException(
-            'Your place could not be saved on this phone.',
-          );
-        }
-      });
+  Future<String?> readOrganization() async {
+    await (_writes[userId] ?? Future<void>.value());
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final value = jsonDecode(prefs.getString(key) ?? '{}') as Map;
+      final id = value['organizationId'];
+      return value['userId'] == userId && id is String && id.isNotEmpty
+          ? id
+          : null;
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    }
+  }
+
+  Future<void> save(
+    LastPlace place, {
+    required bool Function() isCurrent,
+    String? organizationId,
+  }) => _queue(() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!isCurrent()) return;
+    final saved = await prefs.setString(
+      key,
+      jsonEncode({
+        'userId': userId,
+        'type': place.type,
+        'id': place.id,
+        if (organizationId != null) 'organizationId': organizationId,
+      }),
+    );
+    if (!saved) {
+      throw const FormatException(
+        'Your place could not be saved on this phone.',
+      );
+    }
+  });
   Future<void> clear() => _queue(() async {
     final prefs = await SharedPreferences.getInstance();
     if (!await prefs.remove(key)) {
