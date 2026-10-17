@@ -60,6 +60,9 @@ api_router.include_router(invitations_router)
 
 api_router.include_router(onboarding_router)
 
+from app.api.routes.memory import router as memory_router
+api_router.include_router(memory_router)
+
 # The same inventory journeys run behind an explicit, server-validated context.
 # Account, collaboration administration and public integration APIs stay outside.
 from app.api.routes.inventory_workspaces import router as workspace_selection_router, scoped_router
