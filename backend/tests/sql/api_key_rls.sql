@@ -202,3 +202,8 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir inventory_content_delete.sql
 
 \ir account_deletion.sql
+
+\ir workspace_creation_codes.sql
+
+\ir ../../supabase/migrations/052_invitation_push_target.sql
+\ir invitation_push_target.sql

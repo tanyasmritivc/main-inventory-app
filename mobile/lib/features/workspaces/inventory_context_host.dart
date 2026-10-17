@@ -57,7 +57,12 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     try {
       await PushNotifications.initialize(
         onNotificationTap: (payload) async {
-          if (!mounted || widget.api.accountId != _places.accountId) return;
+          if (!mounted ||
+              widget.api.accountId != _places.accountId ||
+              (payload['recipient_user_id'] != null &&
+                  payload['recipient_user_id'] != _places.accountId)) {
+            return;
+          }
           final place = placeFromNotification(payload, _places.accountId);
           if (starting) {
             target = place ?? target;
@@ -72,6 +77,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     }
     if (!mounted) return;
     await _places.restore(override: target);
+    unawaited(_connectPhoneAlerts());
     starting = false;
     if (initialInbox != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,8 +86,22 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     }
   }
 
-  Future<void> _notification(Map<String, dynamic> payload) async {
+  Future<void> _connectPhoneAlerts() async {
     if (!mounted || widget.api.accountId != _places.accountId) return;
+    try {
+      await PushNotifications.registerIfAuthorized(widget.api);
+    } catch (_) {
+      /* The inbox keeps Enable phone alerts available for retry. */
+    }
+  }
+
+  Future<void> _notification(Map<String, dynamic> payload) async {
+    if (!mounted ||
+        widget.api.accountId != _places.accountId ||
+        (payload['recipient_user_id'] != null &&
+            payload['recipient_user_id'] != _places.accountId)) {
+      return;
+    }
     final target = placeFromNotification(payload, _places.accountId);
     if (target != null) {
       final switching = _places.select(target);
@@ -126,6 +146,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_connectPhoneAlerts());
     if (state == AppLifecycleState.resumed && _session.selection != null) {
       unawaited(_revalidate());
     }

@@ -7,6 +7,8 @@ import { AuthForm } from "@/components/site/auth-form";
 const push = jest.fn();
 const refresh = jest.fn();
 const signUp = jest.fn();
+const resend = jest.fn();
+const resetPasswordForEmail = jest.fn();
 const signInWithPassword = jest.fn();
 const upsert = jest.fn();
 const from = jest.fn(() => ({ upsert }));
@@ -17,7 +19,7 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams({ redirect: mockRedirect }),
 }));
 jest.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithPassword }, from }),
+  createSupabaseBrowserClient: () => ({ auth: { signUp, signInWithPassword, resend, resetPasswordForEmail }, from }),
 }));
 jest.mock("@/components/site/app-dialog-provider", () => ({ useAppDialog: () => ({ showNotice: jest.fn() }) }));
 
@@ -124,4 +126,35 @@ test("signup preserves an install invitation in account metadata before email co
   expect(signUp.mock.calls[0][0].options.data.findez_pending_invitation).toEqual({ v: 1, kind: "team", code: "TEAM23", created_at: expect.any(Number) });
   expect(new URL(signUp.mock.calls[0][0].options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
   expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin?redirect=%2Fjoin%2Fteam%2FTEAM23%3Fdownload%3D1");
+});
+
+test("reset password keeps the verified recovery callback destination", async () => {
+ resetPasswordForEmail.mockResolvedValue({ error:null });
+ render(<AuthForm mode="signin" />);
+ await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+ await userEvent.click(screen.getByRole("button", { name:"Forgot password?" }));
+ await waitFor(()=>expect(resetPasswordForEmail).toHaveBeenCalledWith("ada@example.com", { redirectTo:`${window.location.origin}/auth/callback?next=/reset-password` }));
+ expect(signInWithPassword).not.toHaveBeenCalled();
+});
+test("requests a fresh confirmation for the entered email and preserves invitation destination", async () => {
+ mockRedirect="/join/team/TEAM23?download=1";
+ resend.mockResolvedValue({error:null});
+ render(<AuthForm mode="signin" />);
+ await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+ await userEvent.click(screen.getByRole("button", {name:"Resend confirmation email"}));
+ await screen.findByRole("status");
+ const input=resend.mock.calls[0][0];
+ expect(input.email).toBe("ada@example.com");expect(input.type).toBe("signup");
+ expect(new URL(input.options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
+ expect(push).not.toHaveBeenCalled();expect(signUp).not.toHaveBeenCalled();
+});
+test("resend rejects empty email and reports throttling without claiming delivery", async () => {
+ resend.mockResolvedValue({error:new Error("email rate limit exceeded")});
+ render(<AuthForm mode="signin" />);
+ await userEvent.click(screen.getByRole("button",{name:"Resend confirmation email"}));
+ expect(resend).not.toHaveBeenCalled();
+ await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+ await userEvent.click(screen.getByRole("button",{name:"Resend confirmation email"}));
+ expect((await screen.findByRole("alert")).textContent).toContain("Too many attempts");
+ expect(screen.queryByRole("status")).toBeNull();
 });

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../notifications/notification_bell.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -321,6 +322,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
+                  if (session.loading || session.error != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: NotificationBell(api: session.api),
+                    ),
                   if (session.loading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
@@ -411,7 +417,8 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 4),
+                          NotificationBell(api: session.api),
                           Visibility(
                             visible: !_switcherOpen,
                             maintainSize: true,

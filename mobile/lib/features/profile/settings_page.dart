@@ -1,3 +1,4 @@
+import '../notifications/notification_bell.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -269,6 +270,7 @@ class _SettingsPageState extends State<SettingsPage> {
             fontWeight: FontWeight.w500,
           ),
         ),
+        actions: [if (widget.api != null) NotificationBell(api: widget.api!)],
         centerTitle: true,
         iconTheme: IconThemeData(
           color: AppTheme.foreground(context, Colors.white),

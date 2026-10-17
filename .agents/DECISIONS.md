@@ -1,3 +1,16 @@
+# October 16 mobile alerts preserve identity and access boundaries
+
+A visible bell opens the existing authenticated inbox independently of inventory.
+Request OS permission only from the user's phone-alert action; restore previously
+authorized registration after launch/resume. Clear registration and native alerts
+on signout. Push payloads carry recipient identity and never invitation secrets;
+invitation delivery rechecks pending state, verified email and sender permission.
+In-app activity also rechecks current workspace/inventory access. APNs acceptance
+is not proof of device display; keep actual phone delivery as manual acceptance.
+Migration 052 is additive and service-only. Keep it on runtime rollback. Planning
+questions require advice/clarification rather than a literal no-match response;
+current authorized context is the authority for owned-item claims.
+
 # October 16 explicit deletion and category settings
 
 The user explicitly extended 049 empty-only deletion to an optional contents

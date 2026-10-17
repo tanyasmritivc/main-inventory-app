@@ -239,17 +239,37 @@ class ApiClient {
     required String token,
     required String environment,
   }) async {
-    await _dio.post<void>(
+    final result = await _dio.post<Map<String, dynamic>>(
       '/push/devices',
       data: {'device_token': token, 'environment': environment},
+      options: _authOptions(),
+    );
+    if (result.data?['registered'] != true) {
+      throw const FormatException(
+        'Phone alert registration was not confirmed.',
+      );
+    }
+  }
+
+  Future<void> unregisterPushDevice(String token) async {
+    await _dio.delete<void>(
+      '/push/devices/${Uri.encodeComponent(token)}',
       options: _authOptions(),
     );
   }
 
   String? get accountId => Supabase.instance.client.auth.currentUser?.id;
 
-  Future<void> sendTestPush() async =>
-      _dio.post<void>('/push/test', options: _authOptions());
+  Future<void> sendTestPush() async {
+    final result = await _dio.post<Map<String, dynamic>>(
+      '/push/test',
+      options: _authOptions(),
+    );
+    final count = result.data?['delivered'];
+    if (count is! int || count < 1) {
+      throw const FormatException('The test alert was not accepted.');
+    }
+  }
 
   Future<List<ActivityEntry>> getRecentActivity({int limit = 10}) async {
     final res = await _dio.get<Map<String, dynamic>>(

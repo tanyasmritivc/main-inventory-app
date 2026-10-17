@@ -16,7 +16,7 @@ from app.api.routes import notifications, teams
 @pytest.fixture(autouse=True)
 def invitation_transport():
     # Existing activity tests do not contact the invitation database.
-    with patch.object(notifications, 'notification_rows', return_value=[]), patch.object(notifications, 'invitation_rpc', return_value={'saved': True}):
+    with patch.object(notifications, 'notification_rows', return_value=[]), patch.object(notifications, 'invitation_rpc', return_value={'saved': True}), patch.object(notifications, '_team_ids', return_value=['team']):
         yield
 
 
@@ -91,7 +91,7 @@ def test_team_event_persists_deduplicated_recipients_before_enqueuing_push():
 def test_queued_inventory_push_rechecks_access_before_delivery():
     from app.services import push_notifications
     client, _ = database([
-        [{'name':'Workshop'}], [{'display_name':'Alex'}],
+        [{'name':'Workshop'}], [{'display_name':'Alex'}], [{'user_id':'revoked'}],
         [{'user_id':'revoked','device_token':'test-device','environment':'sandbox'}], [],
     ])
     client.rpc.return_value.execute.return_value.data = None
@@ -99,3 +99,39 @@ def test_queued_inventory_push_rechecks_access_before_delivery():
         push_notifications._deliver_to_recipients('workspace','actor','Moved private equipment','item_moved',['revoked'],inventory_id='private-inventory')
     client.rpc.assert_called_once_with('findez_inventory_role',{'p_inventory':'private-inventory','p_actor':'revoked'})
     send.assert_not_called()
+
+
+def test_queued_workspace_push_rechecks_membership_before_device_lookup():
+    from app.services import push_notifications
+    client, _ = database([[{'name':'Workshop'}],[{'display_name':'Alex'}],[]])
+    with patch.object(push_notifications,'get_supabase_admin',return_value=client),patch.object(push_notifications,'_send') as send:
+        push_notifications._deliver_to_recipients('workspace','actor','Updated task','task_updated',['revoked'])
+    send.assert_not_called()
+    assert not any(call.args[0]=='push_devices' for call in client.table.call_args_list)
+
+
+def test_invitation_push_uses_verified_recipient_without_invitation_secrets():
+    from app.services import push_notifications
+    client, _ = database([[{'device_token':'synthetic-token','environment':'sandbox'}]])
+    client.rpc.return_value.execute.return_value.data='recipient'
+    with patch.object(push_notifications,'get_supabase_admin',return_value=client),patch.object(push_notifications,'_send',return_value=True) as send:
+        push_notifications._deliver_invitation('synthetic-invitation')
+    assert send.call_args.kwargs['data']=={'action':'access_invitation','invitation_id':'synthetic-invitation','recipient_user_id':'recipient'}
+    assert 'code' not in send.call_args.kwargs['body']
+
+
+def test_canceled_invitation_push_never_delivers():
+    from app.services import push_notifications
+    client, _ = database([])
+    client.rpc.return_value.execute.return_value.data=None
+    with patch.object(push_notifications,'get_supabase_admin',return_value=client),patch.object(push_notifications,'_send') as send:
+        push_notifications._deliver_invitation('synthetic-invitation')
+    send.assert_not_called()
+
+
+def test_feed_hides_revoked_workspace_and_inventory_activity():
+    client, _ = database([])
+    client.rpc.return_value.execute.return_value.data=None
+    rows=[{'team_id':'revoked','metadata':{},'summary':'private'}, {'team_id':'team','metadata':{'inventory_id':'restricted'},'summary':'private'}]
+    assert notifications._visible_activity(client,'user',rows)==[]
+    client.rpc.assert_called_once_with('findez_inventory_role',{'p_inventory':'restricted','p_actor':'user'})

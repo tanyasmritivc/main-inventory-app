@@ -1,3 +1,19 @@
+# October 16 notification and reliability follow-up
+
+Approved migration 051 fixed intermittent workspace creation (legacy UUID codes
+violated the existing alphabet check); 052 adds a service-only confirmed invitation
+recipient lookup with current sender permission. Both restored-schema rehearsals
+and composed SQL pass. Reviewed backend overlay is live; 87 unrelated backend
+files preserved. No customer mutations or notifications performed for QA.
+Mobile now has a direct inbox bell on primary authenticated routes, badge refresh,
+explicit phone-alert setup/test, account-bound registration cleanup and cold-tap
+retention. Physical background delivery remains unverified. Ask planning no longer
+becomes a literal saved-item search; provider selection and authorization unchanged.
+Web auth recovery/resend is published; a fresh real email-link success remains
+unverified. 802 backend tests plus six subtests, 329 web and 462 Flutter tests pass; analysis
+is clean. Beta 72 upload was acknowledged; beta 73 is being prepared from this
+follow-up. Stop at Apple acknowledgment. See docs/plans/notification-reliability.md.
+
 # October 16 deletion completion and account pages
 
 Same hierarchy lane, includes workspace controls from 5d5f530. Approved migration

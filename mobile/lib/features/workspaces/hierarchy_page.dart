@@ -8,6 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_context.dart';
 import '../../core/ui/app_text.dart';
 import '../notifications/notifications_page.dart';
+import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/invitation_dialog.dart';
 import '../../core/invitation.dart';
@@ -1062,6 +1063,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             maxLines: 2,
           ),
           actions: [
+            NotificationBell(api: widget.api),
             if (_data != null &&
                 !widget.focusSearch &&
                 (_org && _owner ||
@@ -1558,6 +1560,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                   : _title,
             ),
             actions: [
+              NotificationBell(api: widget.api),
               if (_data != null &&
                   (_org && _owner ||
                       _workspace && _owner && !_personal ||

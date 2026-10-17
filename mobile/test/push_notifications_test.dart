@@ -9,6 +9,12 @@ class _PushApi extends ApiClient {
   _PushApi() : super(baseUrl: 'https://api.test');
   String? user = 'account-a';
   int writes = 0;
+  int removals = 0;
+  @override
+  Future<void> unregisterPushDevice(String token) async {
+    removals++;
+  }
+
   @override
   String? get accountId => user;
   @override
@@ -70,6 +76,12 @@ void main() {
     expect(await second, isTrue);
     expect(calls.where((call) => call == 'register').length, 1);
     expect(api.writes, 1);
+  });
+  test('sign out deactivates the currently registered server token', () async {
+    final api = _PushApi();
+    expect(await PushNotifications.register(api), isTrue);
+    await PushNotifications.stop();
+    expect(api.removals, 1);
   });
   test(
     'an account change while awaiting a device token prevents its write',

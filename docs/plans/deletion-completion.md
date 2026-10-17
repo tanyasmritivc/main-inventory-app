@@ -93,7 +93,8 @@ Private backup, rehearsal, source hashes, migration and rollout receipts:
 Mounted Edge source: `/home/ubuntu/supabase/volumes/functions/delete-user/index.ts`.
 The canonical backend/ and root supabase/ copies are identical in source.
 
-Current web: `/home/ubuntu/findez-web-releases/web-account-pages-20261016/frontend`.
+Current web: `/home/ubuntu/findez-web-releases/web-auth-link-recovery-20261016/frontend`.
+This includes the category settings pages plus the later auth recovery controls.
 Normal build, preserved-source manifest, prior service override, auth and
 activation receipts are in its parent. Intermediate workspace-delete and
 account-layout releases remain available for rollback. Homepage and unrelated
@@ -107,9 +108,11 @@ reintroduce pre-Auth destructive account cleanup or blindly restore NOT NULL on
 checkout borrower IDs, since deleted borrowers can now be null. Restoring deleted
 customer records would require a separate explicit recovery decision.
 
-TestFlight 1.0.8 (72) is being prepared with private configuration and existing
-signing. Apple acknowledgement, not processing or tester availability, is the
-requested stopping point. Public App Store submission is unchanged.
+Apple acknowledged TestFlight 1.0.8 (72), runtime 74e445d, delivery
+c3658bef-a8c9-4546-afef-09006dc96c1b. Processing/tester availability remain
+unverified and were not polled. Public App Store submission is unchanged.
+The later auth/workspace/notification follow-up is recorded in
+notification-reliability.md.
 
 ## Remaining acceptance
 

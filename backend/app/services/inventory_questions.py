@@ -75,6 +75,14 @@ _STOP = set('a an the my our i we me you do does did have has own owns is are wa
             'in at inside from by with to only on and'.split())
 
 
+def is_planning_question(message: str) -> bool:
+    text = ' '.join(message.casefold().split())
+    return bool(re.search(
+        r"\bwhat (?:items? |parts? |tools? |materials? |equipment |supplies )?do (?:i|we) need\b"
+        r"|\bwhat (?:should (?:i|we) (?:buy|get|include|stock|have)|am i missing|are we missing)\b"
+        r"|\bhow (?:do|can) (?:i|we) (?:make|build|prepare|plan)\b", text))
+
+
 def interpret(message: str) -> Question | None:
     text = ' '.join(message.casefold().split())
     if mutation_requested(text) and (re.search(r'\b(add|delete|remove|create|increase|decrease|restock|log)\b', text)
@@ -85,7 +93,7 @@ def interpret(message: str) -> Question | None:
     if re.search(r'\b(add|delete|remove|update|change|set|move|rename|create|increase|decrease|use|used)\b', text):
         if not re.search(r'\b(last move|last moved|history|when.*move)\b', text):
             return None
-    if re.search(r'\b(project|kit|kits)\b', text):
+    if is_planning_question(text) or re.search(r'\b(project|kit|kits)\b', text):
         return None
     limits = (
         (r'\bremind me\b', 'I cannot create reminders from this chat. No reminder has been scheduled.'),

@@ -956,3 +956,14 @@ New controller/widget tests cover account switches, pending write retries,
 offline loads, controls, confirmation, large text and dark mode. Manual cross-client
 acceptance must follow approved migration/backend publication; TestFlight alone
 does not deploy /memory. See docs/plans/account-memory-implementation.md.
+
+### October 16 notification reliability and workspace-code follow-up
+
+Run full Python, web and Flutter suites plus Flutter analysis before the next
+release. New tests cover real bell navigation/count errors/account isolation, phone
+test acceptance feedback, registration cleanup, bounded APNs retries without token
+logging, revoked feed/delivery access and invitation secret exclusion. Composed
+SQL includes workspace_creation_codes.sql and invitation_push_target.sql through
+052. Rehearse migrations on restored schema, never customer writes for QA.
+Actual background iPhone delivery, cold notification taps, fresh email links and
+provider planning quality require manual acceptance; see notification-reliability.md.

@@ -361,3 +361,35 @@ def test_interrupted_stream_and_background_memory_keep_scope_and_cleanup():
         assert current_inventory.get() is None
         return observed
     assert asyncio.run(run()) == ['inventory-a', 'inventory-a']
+
+
+@pytest.mark.parametrize('message',[
+    'what items do I need in my database for this ftc season?',
+    'What parts do we need for our build?',
+    'What tools do I need for the workshop?',
+    'What should we stock for the season?',
+])
+def test_planning_goes_to_existing_advice_path_instead_of_literal_item_search(memory,message):
+    assert inventory_questions.is_planning_question(message)
+    assert inventory_questions.answer_question(user_id='owner',message=message) is None
+    assert ai_agent._should_enable_tools(message=message) is False
+
+@pytest.mark.parametrize('message',['What items do I have in Garage?','How many batteries do I have?','Where is my soldering iron?'])
+def test_planning_routing_preserves_grounded_lookup(memory,message):
+    assert not inventory_questions.is_planning_question(message)
+    assert inventory_questions.answer_question(user_id='owner',message=message) is not None
+
+@pytest.mark.parametrize('mode',['sync','stream'])
+def test_season_planning_reaches_gateway_with_current_context_and_honest_requirements(memory,mode):
+    create=Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='Which build or game requirements should we plan for?',tool_calls=[]))]))
+    provider=ai_agent._ChatProvider(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),model='unchanged-model',conversation_id='planning-fixture',timezone='UTC')
+    context={'inventory_count':1,'inventory_preview':[{'name':'Synthetic fixture motor','quantity':2,'location':'Fixture cabinet'}]}
+    with patch.object(ai_agent,'_project_readiness_for_question',return_value=None),patch.object(ai_agent,'_get_chat_provider',return_value=provider),patch.object(ai_agent,'_load_context',return_value=context),patch.object(ai_agent,'_get_state',return_value=ai_agent._SessionState()),patch.object(ai_agent,'_question_history',return_value=[]),patch.object(ai_agent,'_requires_inventory_knowledge',return_value=False),patch.object(ai_agent,'_persist_state'),patch.object(ai_agent,'_update_memory_from_trace'):
+        args={'user_id':'owner','message':'what items do I need in my database for this ftc season?','first_name':None}
+        result=ai_agent.run_ai_command(**args) if mode=='sync' else list(ai_agent._iter_agent_streaming(**args))[-1]
+    assert 'Which build or game' in result['assistant_message']
+    kwargs=create.call_args.kwargs
+    assert kwargs['model']=='unchanged-model' and 'tools' not in kwargs
+    assert 'Synthetic fixture motor' in kwargs['messages'][1]['content']
+    assert 'explicit project requirement list' in kwargs['messages'][0]['content']
+    assert 'Previous assistant replies' in kwargs['messages'][0]['content']

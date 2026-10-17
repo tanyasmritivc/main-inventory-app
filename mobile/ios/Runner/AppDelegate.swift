@@ -5,6 +5,7 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private var pushResult: FlutterResult?
+  private var pushDartReady = false
   private var pushChannel: FlutterMethodChannel?
   private var pendingNotification: [AnyHashable: Any]?
   private var pushGeneration = 0
@@ -41,12 +42,14 @@ import UserNotifications
           self?.pushResult?(FlutterError(code: "registration_cancelled", message: "Registration was cancelled.", details: nil))
           self?.pushResult = nil
           self?.pendingNotification = nil
+          self?.pushDartReady = false
           UIApplication.shared.unregisterForRemoteNotifications()
           UIApplication.shared.applicationIconBadgeNumber = 0
           UNUserNotificationCenter.current().removeAllDeliveredNotifications()
           UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
           result(nil)
         case "getInitialNotification":
+          self?.pushDartReady = true
           result(self?.pendingNotification)
           self?.pendingNotification = nil
         case "setBadgeCount":
@@ -134,6 +137,7 @@ import UserNotifications
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
+    pushChannel?.invokeMethod("notificationReceived", arguments: nil)
     completionHandler([.banner, .list, .sound, .badge])
   }
 
@@ -143,7 +147,7 @@ import UserNotifications
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
     let userInfo = response.notification.request.content.userInfo
-    if pushChannel == nil {
+    if pushChannel == nil || !pushDartReady {
       pendingNotification = userInfo
     } else {
       pushChannel?.invokeMethod("notificationTapped", arguments: userInfo)

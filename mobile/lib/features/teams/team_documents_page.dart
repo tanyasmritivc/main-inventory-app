@@ -1,3 +1,4 @@
+import '../notifications/notification_bell.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -207,6 +208,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
           '$filename will be removed for everyone on this team.',
         ),
         actions: [
+          NotificationBell(api: widget.api),
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const AppText('Cancel'),
