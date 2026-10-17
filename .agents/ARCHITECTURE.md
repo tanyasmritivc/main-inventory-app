@@ -12,8 +12,9 @@ and legacy collectors are blocked at the database. Shared memory_context applies
 allowlisted style to sync/SSE/photo answers; current records stay authoritative.
 Web/mobile Settings controls use the same authenticated /memory endpoints outside
 inventory alias routing. No new provider, worker, embeddings or cloud service.
-Migration 048 and the reviewed backend are deployed after explicit approval. Web
-controls remain unpublished; authenticated device acceptance is pending. See
+Migration 048, the reviewed backend and web controls are deployed after approval.
+The real production-configured server web build passes; authenticated device
+and cross-client acceptance are pending. See
 docs/plans/account-memory-implementation.md for rollout and verification limits.
 
 ## Organization and inventory access (released October 15)

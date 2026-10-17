@@ -22,9 +22,14 @@ The earlier unsafe PUBLIC true memory grants are fixed in production. This does
 not establish whole-product security or authenticated device acceptance. Build
 1.0.8 (70), runtime 967ab48, was already uploaded successfully; no new binary or
 Apple processing poll for this activation/documentation receipt. Web Memory
-controls remain unpublished: the normal production font build is still required.
+controls are now published after the normal production-configured webpack build
+passed on the server with real fonts. Only the three reviewed Memory UI files
+were overlaid; all other source, including the homepage, was preserved.
 Source checks remain 772 Python, 302 web, 444 Flutter tests and clean static checks;
 no regression-suite reruns after push/build. Live rollout checks are separate.
+The web service runs web-account-memory-20261016. Candidate/public pages pass;
+signed-out Settings emits the existing server sign-in redirect without protected
+controls. Logged-in save/forget and cross-device acceptance remain pending.
 See docs/plans/account-memory-implementation.md for evidence, rollback and gaps.
 
 # October 16 assistant retrieval beta delivery

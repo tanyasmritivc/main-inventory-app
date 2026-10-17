@@ -76,7 +76,7 @@ verify that this specific unsafe access path is closed.**
 | Concurrent Postgres | Two commands using the same revision: one succeeds, one is rejected as stale | Network reliability under production load |
 | Composed Postgres | Complete existing inventory/organization migration fixture plus 048 passes; aliases work with actual inventory triggers | Unknown deployed drift beyond inspected definitions |
 | Web compile fallback | `node tools/build-memory-check.cjs` passes using synthetic configuration and substituted bundled fonts | A production-configured/visually exact website build |
-| Normal local web build | Blocked: default Turbopack rejects the existing external node_modules symlink; webpack encounters existing Google Fonts fetch/loader errors | Do not label this a passing production build |
+| Normal web build | Local environment remains blocked; ordinary server `npm run build -- --webpack` passes with actual configuration/fonts | Does not prove logged-in browser or cross-client acceptance |
 
 SQL runs used temporary containers with no network or production mounts, removed
 in finally. Local client tools lacked a PostgreSQL server; no production database
@@ -154,15 +154,16 @@ and real font assets for a web release. No dependencies or secrets were changed.
 
 The source implementation and beta upload initially made no production changes.
 After separate explicit approval, migration 048 and the reviewed backend were
-activated as recorded below. Web publication is still pending. No customer records
+activated as recorded below. Web controls were then published after a normal
+production build on the self-hosted server. No customer records
 were changed for QA. TestFlight delivery alone did not install these backend APIs.
 
 The approved activation preserved the self-hosted checkout, saved fresh backups,
 restored the public/auth/extensions data privately in a disposable network-isolated
 container, rehearsed 048, applied it transactionally live, then published the
 reviewed backend including its dependency on PR #88. Authenticated acceptance
-should use only empty/disposable accounts. A web release additionally requires a normal, correctly configured font
-build, not the compile fixture. No Render/Vercel service is needed.
+should use only empty/disposable accounts. The web release used a normal, correctly
+configured server build with real fonts, not the compile fixture. No Render/Vercel service is needed.
 
 Migration 048 is additive except intentional permission/collector tightening.
 It is applied once; a repeated migration fails transactionally without discarding
@@ -257,3 +258,39 @@ No web deployment, provider/configuration change or FIND transport change.
 
 The source regression results above were reused. Only deployment-specific health,
 authentication, permission and hash checks ran, not the regression suites or CI.
+
+## Web controls publication receipt
+
+On the follow-up "continue", published the reviewed web Memory controls to the
+self-hosted site at 2026-10-17T01:51:47.467176+00:00. Release directory:
+/home/ubuntu/findez-web-releases/web-account-memory-20261016/frontend.
+
+- Copied the active release, retaining all current homepage/design changes. The
+  deployed Settings baseline exactly matched the reviewed pre-memory source.
+- Overlaid only settings-client.tsx, memory-settings.tsx and its module stylesheet
+  from runtime 967ab48. Shared account/session/API dependencies matched the reviewed
+  source. Other 275 source files were hash-verified preserved.
+- Ordinary `npm run build -- --webpack` passed on the server using the actual
+  production environment and real Google Fonts, reusing the production build cache.
+  No fixture helper, synthetic public auth config or substituted fonts were used.
+  The earlier local font/download and dependency-link problem required no source
+  or dependency change for this deployment.
+- Started the candidate privately on loopback port 3001, verified public pages,
+  compiled Memory controls and signed-out Settings protection, then stopped it.
+  Updated only the existing systemd web WorkingDirectory override and restarted.
+  The previous override/release is retained for rollback.
+- Public /, /signin, /privacy and /terms return 200. Signed-out /settings retains
+  its existing server-component NEXT_REDIRECT to sign-in inside streamed HTTP 200;
+  no protected Memory controls render in that response. This is not a claim that
+  the route returns an HTTP 307 or that logged-in browser acceptance passed.
+- No database, backend, native-runtime, provider, FIND or production-secret changes
+  in this web publication. No customer writes or test invitations. Existing 302
+  web tests/static results were reused; no regression-suite/CI reruns after the
+  prior push/build. Deployment-specific route/hash checks are recorded separately.
+- TestFlight 70 remains the current uploaded binary; no new mobile changes or
+  binary for this web activation receipt. Logged-in preference writes, forget,
+  exports, real provider responses and two-client isolation remain the next
+  disposable-account/device acceptance tasks.
+
+Private web build and activation receipts are on the server and the activation
+receipt is also in Documents/FindEZ/AppStore/1.0.8-build70. The homepage is preserved.

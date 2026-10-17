@@ -4,7 +4,10 @@ Approved migration 048 and reviewed backend 967ab48 are live on the self-hosted
 server, including the PR #88 dependency. Fresh backup restore/migration rehearsal,
 public/local health, authentication denial, anonymous PostgREST denial and live
 RLS/grant/trigger checks pass. Unrelated VM changes are preserved. Web controls
-remain unpublished and authenticated device/cross-client acceptance is pending.
+are published from web-account-memory-20261016 after a normal server production
+webpack build with real fonts; only three UI files changed. Candidate/public
+route and signed-out protection checks pass. Authenticated device/cross-client
+acceptance is pending.
 TestFlight 70 was already uploaded; no new binary for this activation receipt.
 See docs/plans/account-memory-implementation.md and CURRENT_STATE.md. Older
 entries below describe the source/beta state before this explicit approval.
@@ -19,13 +22,12 @@ explicit preferences, private inventory location aliases, transactional receipts
 RLS/legacy-collector guards, grounded personalization and web/mobile controls.
 772 Python tests plus six subtests, 302 web tests, 444 Flutter tests, static checks
 and standalone/composed SQL including concurrent edits pass. A read-only live
-metadata check confirms unsafe public legacy memory policy/grants. Migration 048
-closes them but is NOT applied. No production records were read or changed.
-Web compiles with the checked-in synthetic/font-fixture build helper; normal local
-build is blocked by existing font downloads/loader and symlinked node_modules.
-Never publish the fixture output. Apple acknowledged signed TestFlight 70,
+metadata check found unsafe public legacy memory policy/grants; migration 048
+subsequently closed them live after explicit approval. No customer records were
+changed for QA. The normal server production webpack build passes with real fonts
+and configuration; the earlier local fixture output was never published. Apple acknowledged signed TestFlight 70,
 runtime `967ab48`, delivery `a4f9218f-38c5-405f-bb60-3de7c938bd3d` (PR #89).
-No processing wait. Server activation and real two-client/device acceptance remain held. Full files/risks/commands:
+No processing wait. Backend and web are activated; real two-client/device acceptance remains pending. Full files/risks/commands:
 `docs/plans/account-memory-implementation.md`.
 
 ## October 16 assistant grounded retrieval
