@@ -1,3 +1,28 @@
+# October 16 standing push and beta delivery instruction
+
+Tanya explicitly requests pushing all completed task changes and a new TestFlight
+build going forward. Reuse completed checks; do not repeat checks after pushing
+or building. Stop after upload acknowledgment without waiting on processing.
+Do not confuse a beta upload with backend deployment or public App Store review.
+Documentation-only release receipts do not trigger another binary.
+
+# October 16 grounded assistant candidate
+
+Common selected-inventory questions use authorized saved fields and deterministic
+evidence before model generation. Follow-ups reference an owned conversation's
+saved result IDs and re-read current records, never another thread's account
+history as fact. Retain server-validated inventory/actor context while consuming
+SSE and deferred work, because dependency lifetime can end before the body.
+
+Model tool output is untrusted. Keep existing provider selection, validate against
+existing tool schemas, and require a fresh unique target and literal user values
+for conditional name/category/location/notes edits. Unsafe additions, quantity
+deltas, creation and destructive chat actions hand off to existing confirmation
+editors until durable request receipts and atomic event/stock writes exist.
+Never claim a saved edit from provider prose alone. These are local candidate
+changes until backend deployment. The latest user instruction now authorizes
+commits, pushes and a new TestFlight build using completed checks.
+
 # October 16 mobile place versus inventory context
 
 The phone reopens on the last authorized Personal/workspace home, scoped per

@@ -129,6 +129,12 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
             inventory(result, show_rows=True)
             if not result:
                 source('inventory', 'Inventory', 'No matching items found')
+        elif tool == 'inventory_update_item' and isinstance(result, dict) and result.get('item_id'):
+            item_id = _text(result['item_id'])
+            rows[:] = [row for row in rows if row.get('id') != item_id]
+            seen_items.discard(item_id)
+            inventory([result], show_rows=True)
+            source('inventory', 'Saved edit', 'The saved record after the confirmed edit')
         elif tool == 'inventory_recall' and isinstance(result, dict):
             source('history', 'Item history', f"{len(result.get('events') or [])} item events checked")
         elif tool == 'documents_list' and isinstance(result, list):

@@ -1,5 +1,23 @@
 # FindEZ test suite
 
+## Grounded physical-memory questions
+
+Run root `python -m pytest -q` and focus on
+`backend/tests/test_physical_memory_questions.py` and
+`backend/tests/test_assistant_tool_safety.py`. The reusable synthetic fixture is
+`backend/tests/fixtures/physical_memory_questions.json`. It checks record IDs and
+actual quantities/locations, bounded/likely matching, unknowns, linked document
+metadata, saved notes/events, conversation ownership, viewer restrictions, failed
+providers, unsafe commands and conditional/replayed edits. HTTP SSE tests verify
+scope survives dependency cleanup, persisted source snapshots and refreshed facts.
+Concurrency/cancellation tests check actor isolation and stream/background cleanup.
+Existing Ask/photo/project/gateway suites remain required. Run the full web and
+Flutter regressions, Flutter analysis, TypeScript and connector/bundle checks for
+compatibility. See `docs/plans/assistant-grounded-retrieval.md` for exact commands,
+127-case coverage, measured synthetic limits and manual production security gates.
+Fixture latency is not a live provider/database latency result. Do not use
+customer records or production database writes for this suite.
+
 ## Mobile organization and inventory parity
 
 Run `flutter analyze --no-pub` and `flutter test --no-pub --concurrency=1` from

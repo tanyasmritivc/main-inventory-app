@@ -1,5 +1,20 @@
 # Active work
 
+## October 16 assistant grounded retrieval
+
+Active lane `feat/assistant-grounded-retrieval-20261016`, clean starting commit
+`3e3e095`. Read `docs/plans/assistant-grounded-retrieval.md` for discovery,
+baseline, stages and risks. Latest user instruction authorizes commit, push
+and a new TestFlight build using completed checks, with no repeated post-push
+or post-build checks. Preserve gateway selection, client chat contracts, authorization and
+FIND transport. Local implementation adds scoped natural-language reads,
+evidence/follow-ups, retained HTTP stream scope and caller-tool safety. 127
+synthetic cases, 727 Python tests plus six subtests, 296 web tests, 434 Flutter
+tests, static checks and connector/bundle checks pass. Review and live acceptance
+remain separate; backend deployment is not part of the beta upload. Build 69
+delivery is in progress. Full files, security limits
+and remaining work are in the plan/report above.
+
 ## October 16 mobile workspace home and place switcher
 
 Lane `feat/mobile-place-switcher-20261016`, based on mobile build 66. Mobile only:

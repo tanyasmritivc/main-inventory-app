@@ -622,6 +622,74 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     return resp.data or []
 
 
+def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501) -> dict:
+    """Bounded Ask read through the existing inventory/actor authorization client.
+
+    Candidate terms are ORed, then the question resolver checks every requested
+    term and filter. No user text is interpolated into PostgREST grammar.
+    The extra row detects incomplete results; aggregates must disclose that state.
+    """
+    import re
+    safe = list(dict.fromkeys(term for term in terms
+                             if re.fullmatch(r'[a-z0-9][a-z0-9.-]{0,79}', term)))[:12]
+    limit = min(max(limit, 2), 501)
+    query = get_supabase_admin().table('items').select('*').eq('user_id', user_id)
+    if safe:
+        fields = ('name', 'part_number', 'brand', 'barcode', 'category',
+                  'subcategory', 'location', 'notes')
+        query = query.or_(','.join(f'{field}.ilike.%{term}%'
+                                  for term in safe for field in fields))
+    response = _execute_with_retry(lambda: query.order('created_at', desc=True)
+                                   .order('item_id').limit(limit).execute())
+    rows = response.data or []
+    return {'items': rows[:limit - 1], 'truncated': len(rows) >= limit}
+
+
+def update_item_from_chat(*, user_id: str, item_id: str, updates: dict,
+                          expected_item: dict | None = None) -> dict | None:
+    """One compare-and-set for literal chat edits; no inferred identity/stock writes.
+
+    The established general item editor remains unchanged. Unknown write outcomes
+    are not retried, and the old snapshot cannot overwrite concurrent changes.
+    """
+    if not updates or set(updates) - {'name', 'category', 'location', 'notes'}:
+        raise ValueError('Use the item editor for this change')
+    limits = {'name': 200, 'category': 100, 'location': 200, 'notes': 2000}
+    if any(not isinstance(value, str) or not value.strip() or len(value) > limits[key]
+           for key, value in updates.items()):
+        raise ValueError('Invalid item field')
+    client = get_supabase_admin()
+    rows = client.table('items').select('*').eq('user_id', user_id).eq('item_id', item_id).limit(1).execute().data or []
+    if not rows:
+        return None
+    before = rows[0]
+    compared = ('name', 'category', 'location', 'space_id', 'notes', 'quantity')
+    if expected_item is not None and (expected_item.get('item_id') != item_id or any(
+        expected_item.get(key) != before.get(key) for key in compared
+    )):
+        invalidate_inventory_cache(user_id)
+        return None
+    payload = dict(updates)
+    if 'location' in payload:
+        from app.services.spaces_repo import list_spaces
+        spaces = [s for s in list_spaces(user_id=user_id)
+                  if str(s.get('name') or '').casefold() == payload['location'].casefold()]
+        if len(spaces) != 1:
+            raise ValueError('Choose one existing space')
+        payload['location'], payload['space_id'] = spaces[0]['name'], spaces[0]['id']
+    if all(before.get(k) == v for k, v in payload.items()):
+        return before  # A replay of the same absolute edit is already satisfied.
+    query = client.table('items').update(payload).eq('user_id', user_id).eq('item_id', item_id)
+    for key in compared:
+        value = before.get(key)
+        query = query.is_(key, 'null') if value is None else query.eq(key, value)
+    try:
+        result = query.execute().data or []
+        return result[0] if result else None
+    finally:
+        invalidate_inventory_cache(user_id)
+
+
 def _merge_by_item_id(primary: list[dict], secondary: list[dict]) -> list[dict]:
     """Append secondary items that are not already in primary, deduplicating by item_id."""
     seen = {i["item_id"] for i in primary if i.get("item_id")}

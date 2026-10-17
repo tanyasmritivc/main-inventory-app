@@ -46,13 +46,14 @@ verify the current behavior, and update the stale document as part of the work.
 - Do not blindly pull or reset the production VM checkout. It has carried
   unrelated local work. Inspect and preserve it before deployment.
 - Commit and push completed changes. Use one implementation lane per pull request.
-- After each completed functional mobile change, run the checks, increment the
-  build number, build and verify the signed production IPA, then upload to the
-  existing internal TestFlight groups. Tanya explicitly authorized this standing
-  delivery workflow on October 16. Stop after Apple confirms upload; Tanya does
-  not want to wait for processing. Report processing/group availability as pending
-  until observed, and device acceptance separately. Public App Store submission still needs
-  explicit authorization. Documentation-only changes do not require a new binary.
+- Tanya's October 16 standing instruction authorizes committing and pushing all
+  completed task changes and delivering a new TestFlight build. Use completed
+  relevant checks; do not repeat checks after pushing or building. Increment the
+  mobile build number, create a signed production IPA and upload it. Stop once
+  Apple acknowledges upload, without waiting for processing or group availability.
+  Report pending availability and device acceptance honestly. Public App Store
+  submission and production database changes still require explicit authorization.
+  Documentation-only delivery receipts do not require another binary.
 
 ## Finish the work
 

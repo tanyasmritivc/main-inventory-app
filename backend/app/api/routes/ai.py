@@ -1,6 +1,7 @@
 import asyncio
 import json as json_module
 import logging
+from contextvars import copy_context
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
@@ -34,6 +35,40 @@ from app.services.limits import ChatLimitExceeded, ScanLimitExceeded, TeamSoftCa
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+def _authorized_stream(iterator):
+    """Retain only server-validated scope after yield dependencies exit.
+
+    FastAPI versions can finish request dependencies before consuming the body.
+    Context is installed in the consuming task, not trusted from client IDs.
+    """
+    from app.services.inventory_scope import current_inventory
+    from app.services.resource_access import ActorAccess, request_actor
+    inventory = current_inventory.get()
+    actor = request_actor.get()
+    actor_id = actor.actor_id if actor else None
+
+    async def consume():
+        inventory_token = current_inventory.set(inventory)
+        actor_token = request_actor.set(ActorAccess(actor_id) if actor_id else None)
+        try:
+            async for chunk in iterator:
+                yield chunk
+        finally:
+            try:
+                await iterator.aclose()
+            finally:
+                request_actor.reset(actor_token)
+                current_inventory.reset(inventory_token)
+    return consume()
+
+
+def _authorized_background(function, *args):
+    context = copy_context()
+    async def run():
+        await asyncio.create_task(function(*args), context=context.copy())
+    return run
 
 
 def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: str | None) -> str:
@@ -103,8 +138,9 @@ async def ai_photo_question_route(
         logger.exception('Could not save the photo question')
         raise bad_gateway('Your photo question could not be saved. Please try again.')
 
+    effective_user_id = user.user_id
     async def generate():
-        task = asyncio.create_task(answer_photo_question(user_id=user.user_id, message=question, image_bytes=jpeg))
+        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg))
         try:
             yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
             while not task.done():
@@ -121,7 +157,7 @@ async def ai_photo_question_route(
                 yield b'data: [DONE]\n\n'
                 return
             try:
-                await asyncio.to_thread(remember_photo_answer, user_id=user.user_id, message=question, answer=answer['assistant_message'])
+                await asyncio.to_thread(remember_photo_answer, user_id=effective_user_id, message=question, answer=answer['assistant_message'])
             except Exception:
                 logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
             yield f"data: {json_module.dumps({'type': 'done', 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
@@ -141,7 +177,7 @@ async def ai_photo_question_route(
                     await task
                 except asyncio.CancelledError:
                     pass
-    return StreamingResponse(generate(), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
+    return StreamingResponse(_authorized_stream(generate()), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
 
 
 def _wrap_sse(gen):
@@ -443,13 +479,14 @@ async def ai_command_route(
                 logger.exception("Memory context fetch failed — continuing without")
                 memory_context = ""
 
+            effective_user_id, first_name = user.user_id, user.first_name
             async def generate():
                 delta_buffer: list[str] = []
                 try:
                     async for item in iter_ai_command_events_async(
-                        user_id=user.user_id,
+                        user_id=effective_user_id,
                         message=payload.message,
-                        first_name=user.first_name,
+                        first_name=first_name,
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
                         conversation_id=conv_id,
@@ -481,9 +518,9 @@ async def ai_command_route(
                                     yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
                                     yield b"data: [DONE]\n\n"
                                     return
-                            asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
-                            asyncio.create_task(log_query(user.user_id, payload.message))
-                            asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
+                            asyncio.create_task(extract_and_save_memory(effective_user_id, payload.message, full_response))
+                            asyncio.create_task(log_query(effective_user_id, payload.message))
+                            asyncio.create_task(save_conversation(effective_user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
                             yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
@@ -493,7 +530,7 @@ async def ai_command_route(
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
-                generate(),
+                _authorized_stream(generate()),
                 media_type="text/event-stream",
                 headers={
                     "X-Accel-Buffering": "no",
@@ -529,9 +566,9 @@ async def ai_command_route(
         logger.exception("Failed to write ai_chat activity")
 
     assistant_message = out.get("assistant_message") or ""
-    background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
-    background_tasks.add_task(log_query, user.user_id, payload.message)
-    background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
+    background_tasks.add_task(_authorized_background(extract_and_save_memory, user.user_id, payload.message, assistant_message))
+    background_tasks.add_task(_authorized_background(log_query, user.user_id, payload.message))
+    background_tasks.add_task(_authorized_background(save_conversation, user.user_id, payload.message, assistant_message))
 
     return AICommandResponse(
         tool=out.get("tool"),
