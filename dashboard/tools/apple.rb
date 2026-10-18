@@ -48,6 +48,12 @@ end
 
 
 case ARGV.fetch(0)
+when 'tester-check'
+  emails = [EMAIL, 'vinodrex@gmail.com']
+  users = list('/v1/users').select { |u| emails.include?(u.dig('attributes','username').to_s.downcase) }
+  testers = emails.flat_map { |email| list('/v1/betaTesters?filter[email]=' + URI.encode_www_form_component(email)) }
+  groups = list("/v1/betaGroups?filter[app]=#{APP}")
+  puts JSON.pretty_generate({users:users.map { |u| {id:u['id'],attributes:u['attributes']} },testers:testers.map { |u| {id:u['id'],attributes:u['attributes']} },groups:groups})
 when 'preflight'
   bundles = list("/v1/bundleIds?filter[identifier]=#{BUNDLE}")
   apps = list("/v1/apps?filter[bundleId]=#{BUNDLE}")

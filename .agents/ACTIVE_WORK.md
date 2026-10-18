@@ -259,7 +259,7 @@ entries below describe the source/beta state before this explicit approval.
 
 ## Private founder dashboard
 
-Active on `feat/private-dashboard` in `/Users/tanyasmritivictorcharles/dev/findez-dashboard`. Separate `dashboard/` iOS app and isolated monitoring service. Founder-only access for the explicitly authorized existing account; customer apps and their backend code remain unchanged. Includes real connected data, honest unavailable states, incident tracking and TestFlight delivery.
+Delivered on `feat/private-dashboard` in `/Users/tanyasmritivictorcharles/dev/findez-dashboard`. Separate `dashboard/` iOS app and isolated monitoring service. Founder-only access for the explicitly authorized existing account; customer apps and their backend code remain unchanged. Includes real connected data, honest unavailable states, incident tracking and TestFlight delivery. Light redesign and graph icon are installed/launched on Tanya's iPhone and available as 1.0.0 (2) in the private TestFlight group (VALID, IN_BETA_TESTING). Vinod testing/access/notification setup was deferred by Tanya; no invitation or access change for him. No Git push or App Store submission.
 
 ## October 16 account memory foundation
 

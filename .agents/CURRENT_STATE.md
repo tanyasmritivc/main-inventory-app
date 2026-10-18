@@ -1,3 +1,24 @@
+# October 18 private founder dashboard and light design
+
+Separate app `com.findez.dashboard` is implemented in `dashboard/mobile`, with an
+isolated founder-authorized read-only service and additive web API gateway.
+Customer apps, their backend source/environment and schema remain unchanged.
+Live founder access/anonymous denial and dashboard issue persistence pass.
+The founder requested light mode, Apple system font with chosen weights retained
+under Bold Text, fewer icons and clearer grouping. Full snapshots update every
+60 seconds while active/unlocked and immediately on return/unlock; open customer
+details update too. New graph SVG icon is installed in all dashboard icon slots.
+Eight Flutter tests, clean analysis and native simulator journey pass. Earlier
+service 12 and web 332 tests, TypeScript and gateway lint passed. Build 2 installed
+and launched on Tanya's iPhone and Apple acknowledged its TestFlight upload.
+Apple reports build 2 VALID and IN_BETA_TESTING in Founder Private, with autoNotifyEnabled true for the build. No App Store submission or
+Git push. See `dashboard/README.md` and `dashboard/verification/`.
+
+Vinod follow-up was deferred by Tanya: "nevermind ill set it up later". No tester
+invitation or dashboard authorization was applied for him. Current access remains
+Tanya only. Revisit his distribution route, account authorization and future-build
+notifications only when requested again.
+
 # October 17 invitation handoff delivery
 
 Invitations now target their exact organization/workspace/inventory through the

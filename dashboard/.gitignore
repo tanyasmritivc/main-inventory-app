@@ -14,3 +14,4 @@ verification/device-*.json
 verification/simulators.json
 verification/apple-preflight.json
 verification/apple-founder-testers.json
+verification/apple-tester-check.json

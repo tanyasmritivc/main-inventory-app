@@ -1,0 +1,16 @@
+{
+  "bundle": "com.findez.dashboard",
+  "version": "1.0.0",
+  "build": "2",
+  "appearance": "Light",
+  "strict_archive_signature": "passed",
+  "device_platform_executables": [
+    "Runner",
+    "Frameworks/integration_test.framework/integration_test",
+    "Frameworks/Flutter.framework/Flutter",
+    "Frameworks/App.framework/App"
+  ],
+  "icon_source": "design/findez-icon-graph-line-light.svg",
+  "test_fixtures_absent": true,
+  "ipa_sha256": "ea2256fcb6d2c65bef34933f77a86b03e9fac905eb074bf0c54dbd3f2d55e66f"
+}

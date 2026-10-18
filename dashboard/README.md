@@ -91,8 +91,8 @@ identifying the actual public routing path. Safe activation/auth receipts are in
   connected, isolated dashboard issue create/resolve successful. The temporary
   QA session was revoked; no sign-in email or customer inventory write occurred.
 - Signed release build 1 installed/launched on Tanya's iPhone and she confirmed
-  the sign-in screen. Device acceptance of the redesigned build is recorded
-  separately; simulator checks do not assert a real founder login/Face ID round trip.
+  the sign-in screen. The redesigned build 2 also installed and launched successfully. Its visual
+  founder acceptance remains pending; simulator checks do not assert a real founder login/Face ID round trip.
 
 ## Local commands and release
 
@@ -115,8 +115,11 @@ before Apple validation/upload. Signing secrets stay outside the repository.
 Build 2 is 1.0.0 with the light design, full refresh and graph icon. The separate
 Founder Private internal group contains only the authorized founder. Public links
 and external testing are disabled. Upload acknowledgement and processing/tester
-availability are separate states. Stop after acknowledged upload per repository
-release policy; do not claim tester availability before it is verified. The
-helper `apple.rb beta-release` is restricted to build 2 and the founder-only group
-for a later explicit continuation after Apple processing. No App Store submission
+availability are separate states. Apple acknowledged build 2 upload and, after the founder explicitly requested
+TestFlight availability first, it was assigned to Founder Private. Apple reports
+VALID, IN_BETA_TESTING and autoNotifyEnabled true for this build. See
+`verification/apple-build2-release.json`. The helper `apple.rb beta-release` is
+restricted to build 2 and the founder-only group. Vinod's invitation, private-data
+access and future-build notification setup were deferred by the founder; no such
+changes were applied. No App Store submission
 or Git push is part of this delivery.
