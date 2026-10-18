@@ -45,7 +45,7 @@ def test_nonowners_cannot_rename_even_if_they_are_managers(api):
     assert client.patch('/inventory-workspaces/personal', json={'name': 'Renamed'}).status_code == 422
 
 
-def test_inventory_creator_can_rename_only_while_they_still_have_access(api):
+def test_inventory_creation_does_not_grant_rename_after_demotion(api):
     client, db = api
     inv = next(row for row in db.rows['app_inventories'] if row['inventory_id'] == TEAM_INV)
     inv['created_by_user_id'] = MEMBER
@@ -53,12 +53,15 @@ def test_inventory_creator_can_rename_only_while_they_still_have_access(api):
     before = deepcopy(db.rows)
     headers = {'x-test-actor': MEMBER}
     result = client.patch(f'/inventories/{TEAM_INV}', headers=headers, json={'name': 'Fasteners'})
-    assert result.status_code == 200, result.text
-    before['app_inventories'][2]['name'] = 'Fasteners'
+    assert result.status_code == 403, result.text
     assert dict(db.rows) == dict(before)
+    db.rows['team_memberships'][1]['role'] = 'mentor'
+    assert client.patch(f'/inventories/{TEAM_INV}', headers=headers, json={'name':'Fasteners'}).status_code == 200
     assert client.patch(f'/inventories/{TEAM_INV}', headers={'x-test-actor': VIEWER}, json={'name': 'No'}).status_code == 403
     inv.update(access_mode='restricted', default_role='viewer')
-    assert client.patch(f'/inventories/{TEAM_INV}', headers=headers, json={'name': 'Revoked'}).status_code == 403
+    # Workspace administration remains available without restricted contents.
+    assert client.get(f'/inventories/{TEAM_INV}', headers=headers).status_code == 403
+    assert client.patch(f'/inventories/{TEAM_INV}', headers=headers, json={'name': 'Restricted'}).status_code == 200
 
 
 @pytest.mark.parametrize('name', ['', '   ', 'x' * 101, None])

@@ -5,13 +5,14 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 
 from app.core.config import get_settings
 from app.core.errors import unauthorized
 from app.services.supabase_client import get_supabase_admin
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +207,21 @@ async def get_current_user(
     if not user_id:
         logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
         raise unauthorized("Invalid token payload")
+
+    # A still-valid JWT must not keep a deleted or suspended account active.
+    # Check the authoritative account on every protected request; do not cache a
+    # positive result across role/account changes.
+    from app.services.supabase_client import get_supabase_raw
+    try:
+        active = await run_in_threadpool(lambda: get_supabase_raw().rpc(
+            'findez_actor_active', {'p_actor': str(user_id)}
+        ).execute().data)
+    except Exception:
+        raise HTTPException(503, 'Account access could not be verified. Try again.') from None
+    if active is False:
+        raise unauthorized('This account is unavailable or suspended.')
+    if active is not True:
+        raise HTTPException(503, 'Account access could not be verified. Try again.')
 
     cached, first_name = _get_cached_first_name(user_id)
     if not cached:

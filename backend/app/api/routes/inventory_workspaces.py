@@ -1,6 +1,7 @@
 """Workspace selection and an authorized boundary around existing inventory APIs."""
 
 import asyncio
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
@@ -11,6 +12,7 @@ from app.services.inventory_scope import InventoryScope, current_inventory
 from app.services.supabase_client import get_supabase_raw
 from postgrest.exceptions import APIError
 from app.services.teams_repo import list_user_teams
+from app.services import permissions
 
 
 router = APIRouter(tags=['inventory-workspaces'])
@@ -30,11 +32,13 @@ def _workspace(workspace_id, actor_id):
     teams = client.table('teams').select('team_id,name,owner_user_id,organization_id').eq('team_id', workspace_id).limit(1).execute().data or []
     if not teams:
         raise HTTPException(404, 'Workspace not found.')
+    if teams[0].get('organization_id') and not (client.table('app_organization_members').select('role').eq('organization_id', teams[0]['organization_id']).eq('user_id', actor_id).limit(1).execute().data or []):
+        raise HTTPException(403, 'Organization membership is required for this workspace.')
     orgs = client.table('app_organizations').select('name').eq('organization_id', teams[0]['organization_id']).execute().data if teams[0].get('organization_id') else []
     return {'workspace_id': workspace_id, 'kind': 'team', 'team_id': workspace_id, 'name': teams[0]['name'], 'owner_user_id': teams[0]['owner_user_id'], 'role': members[0]['role'], 'organization_id': teams[0].get('organization_id'), 'organization_name': orgs[0]['name'] if orgs else None}
 
 
-def _inventory(inventory_id, actor_id):
+def _inventory(inventory_id, actor_id, *, administration=False):
     try:
         inventory_id = str(UUID(inventory_id))
     except ValueError:
@@ -47,35 +51,24 @@ def _inventory(inventory_id, actor_id):
     if inventory['owner_user_id'] != workspace['owner_user_id']:
         raise HTTPException(403, 'You do not have access to this inventory.')
     role = inventory_role(inventory, workspace, actor_id)
-    if role is None:
+    can_manage = permissions.can_administer_inventory(inventory, workspace, role)
+    if role is None and not (administration and can_manage):
         raise HTTPException(403, 'You do not have access to this inventory.')
     return {**inventory, 'workspace': workspace, 'role': role,
-            'can_edit': role in ('owner', 'admin', 'editor'),
-            'can_rename': inventory.get('created_by_user_id') == actor_id or role in ('owner', 'admin'),
-            'can_manage': role in ('owner', 'admin')}
+            'can_open': role is not None,
+            'can_edit': role in permissions.EDIT_ROLES,
+            'can_delete_space': role in permissions.ADMIN_ROLES,
+            'can_rename': can_manage, 'can_manage': can_manage}
 
 
 def inventory_role(inventory, workspace, actor_id, grants=None):
-    role = workspace['role']
-    if role in ('owner', 'mentor'):
-        return 'owner' if role == 'owner' else 'admin'
     if grants is None:
         grants = get_supabase_raw().table('app_inventory_members').select('inventory_id,role').eq('inventory_id', inventory['inventory_id']).eq('user_id', actor_id).execute().data or []
-    grant = next((row['role'] for row in grants if row['inventory_id'] == inventory['inventory_id']), None)
-    if grant == 'none':
-        return None
-    if grant:
-        return grant
-    if inventory.get('access_mode', 'legacy') == 'restricted':
-        return None
-    if inventory.get('access_mode', 'legacy') == 'workspace':
-        return inventory.get('default_role', 'viewer')
-    return 'editor' if role == 'member' else 'viewer'
+    return permissions.inventory_role(inventory, workspace, actor_id, grants)
 
 
 def can_rename_inventory(inventory, workspace, actor_id, grants=()):
-    # Creation does not bypass current access: callers authorize the inventory first.
-    return inventory.get('created_by_user_id') == actor_id or inventory_role(inventory, workspace, actor_id, grants) in ('owner', 'admin')
+    return permissions.can_administer_inventory(inventory, workspace, inventory_role(inventory, workspace, actor_id, grants))
 
 
 
@@ -92,9 +85,8 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
     client = get_supabase_raw()
     query = client.table('app_inventory_summaries').select('*', count='exact').eq('owner_user_id', workspace['owner_user_id'])
     query = query.eq('team_id', workspace['team_id']) if workspace['team_id'] else query.is_('team_id', 'null')
-    grants = []
+    grants = client.table('app_inventory_members').select('inventory_id,role').eq('user_id', user.user_id).execute().data or []
     if workspace['role'] not in ('owner', 'mentor'):
-        grants = client.table('app_inventory_members').select('inventory_id,role').eq('user_id', user.user_id).execute().data or []
         allowed = [row['inventory_id'] for row in grants if row['role'] != 'none']
         denied = [row['inventory_id'] for row in grants if row['role'] == 'none']
         query = query.or_('access_mode.neq.restricted' + (',inventory_id.in.(' + ','.join(allowed) + ')' if allowed else ''))
@@ -105,7 +97,19 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
     result = query.order('created_at').order('inventory_id').range(offset, offset + 99).execute()
     inventories = result.data or []
     total = result.count if result.count is not None else len(inventories)
-    return {'workspace': workspace, 'inventories': [{**inv, 'can_rename': can_rename_inventory(inv, workspace, user.user_id, grants)} for inv in inventories], 'total': total, 'next_offset': offset + len(inventories) if offset + len(inventories) < total else None}
+    visible = []
+    for inv in inventories:
+        role = inventory_role(inv, workspace, user.user_id, grants)
+        can_manage = permissions.can_administer_inventory(inv, workspace, role)
+        if role is None and not can_manage:
+            continue
+        row = {**inv, 'role': role, 'can_open': role is not None,
+               'can_edit': role in permissions.EDIT_ROLES,
+               'can_rename': can_manage, 'can_manage': can_manage}
+        if role is None:
+            row.pop('item_count', None)
+        visible.append(row)
+    return {'workspace': workspace, 'inventories': visible, 'total': total, 'next_offset': offset + len(inventories) if offset + len(inventories) < total else None}
 
 
 class NewInventory(BaseModel):
@@ -115,6 +119,10 @@ class NewInventory(BaseModel):
     @classmethod
     def trim_name(cls, value):
         return value.strip() if isinstance(value, str) else value
+
+
+class CreateInventory(NewInventory):
+    access_mode: Literal['workspace', 'restricted'] = 'workspace'
 
 
 @router.patch('/inventory-workspaces/{workspace_id}')
@@ -129,27 +137,25 @@ def rename_workspace(workspace_id: UUID, body: NewInventory, user: Authenticated
 
 
 @router.post('/inventory-workspaces/{workspace_id}/inventories')
-def create_workspace_inventory(workspace_id: str, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
+def create_workspace_inventory(workspace_id: str, body: CreateInventory, user: AuthenticatedUser = Depends(get_current_user)):
     workspace = _workspace(workspace_id, user.user_id)
     if workspace['role'] not in ('owner', 'mentor'):
         raise HTTPException(403, 'Only a workspace owner or manager can create inventories.')
     name = body.name.strip()
     if not name:
         raise HTTPException(422, 'Enter an inventory name.')
-    client = get_supabase_raw()
-    query = client.table('app_inventories').select('inventory_id').eq('owner_user_id',workspace['owner_user_id'])
-    query = query.eq('team_id',workspace['team_id']) if workspace['team_id'] else query.is_('team_id','null')
-    first = not (query.limit(1).execute().data or [])
-    row = {'name': name, 'owner_user_id': workspace['owner_user_id'], 'team_id': workspace['team_id'], 'created_by_user_id': user.user_id, 'is_default': first, 'access_mode': 'workspace', 'default_role': 'viewer'}
     try:
-        saved = client.table('app_inventories').insert(row).execute().data or []
+        saved = get_supabase_raw().rpc('findez_create_inventory', {
+            'p_actor': user.user_id, 'p_workspace': workspace['team_id'],
+            'p_name': name, 'p_mode': body.access_mode,
+        }).execute().data
     except APIError as exc:
         if exc.code == '23505':
             raise HTTPException(409, 'An inventory with this name already exists. Refresh or choose another name.')
         raise
-    if not saved:
+    if not isinstance(saved, dict) or not saved.get('inventory_id') or saved.get('team_id') != workspace['team_id'] or saved.get('access_mode') != body.access_mode:
         raise HTTPException(503, 'This inventory could not be confirmed saved. Refresh before trying again.')
-    return {'inventory': {**saved[0], 'workspace': workspace, 'can_edit': True}}
+    return {'inventory': _inventory(saved['inventory_id'], user.user_id)}
 
 
 @router.get('/inventories/{inventory_id}')
@@ -159,16 +165,22 @@ def get_inventory(inventory_id: str, user: AuthenticatedUser = Depends(get_curre
 
 @router.patch('/inventories/{inventory_id}')
 def rename_inventory(inventory_id: str, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
-    inventory = _inventory(inventory_id,user.user_id)
+    inventory = _inventory(inventory_id,user.user_id,administration=True)
     if not inventory['can_rename']:
-        raise HTTPException(403,'Only the inventory creator or an inventory manager can rename it.')
+        raise HTTPException(403,'Only inventory owners, admins or workspace administrators can rename it.')
     if not body.name.strip():
         raise HTTPException(422,'Enter an inventory name.')
     try:
-        rows = get_supabase_raw().table('app_inventories').update({'name':body.name.strip()}).eq('inventory_id',inventory['inventory_id']).execute().data or []
+        query = get_supabase_raw().table('app_inventories').update({'name':body.name.strip()}).eq('inventory_id',inventory['inventory_id'])
+        query.headers = {**query.headers, 'x-findez-actor': user.user_id}
+        rows = query.execute().data or []
     except APIError as exc:
         if exc.code == '23505':
             raise HTTPException(409,'An inventory with this name already exists.')
+        if exc.code == '42501':
+            raise HTTPException(403,'Your permission to manage this inventory changed.') from None
+        if exc.code in ('40P01','40001'):
+            raise HTTPException(409,'This inventory is being updated. Refresh and try again.') from None
         raise
     if not rows:
         raise HTTPException(404,'Inventory not found.')
@@ -185,7 +197,7 @@ class ConfirmInventoryDelete(BaseModel):
 @router.delete('/inventories/{inventory_id}')
 def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete, background_tasks: BackgroundTasks,
                            user: AuthenticatedUser = Depends(get_current_user)):
-    inventory = _inventory(str(inventory_id), user.user_id)
+    inventory = _inventory(str(inventory_id), user.user_id, administration=True)
     if not inventory['can_manage']:
         raise HTTPException(403, 'Only an inventory owner or admin can delete it.')
     try:
@@ -211,7 +223,7 @@ def delete_empty_inventory(inventory_id: UUID, body: ConfirmInventoryDelete, bac
         raise HTTPException(503, 'Deletion could not be confirmed. Refresh before retrying.')
     from app.services.items_repo import invalidate_inventory_cache
     invalidate_inventory_cache(inventory['owner_user_id'])
-    if body.delete_contents:
+    if body.delete_contents or result.get('file_cleanup_pending') is True:
         from app.services.deletion_cleanup import clean_inventory_files
         background_tasks.add_task(clean_inventory_files, str(inventory_id))
         result['file_cleanup_pending'] = True
@@ -256,7 +268,11 @@ async def inventory_session(request: Request, inventory_id: str, user: Authentic
     if scope.team_id and suffix.startswith('/sharing'):
         raise HTTPException(403,'Invite people through workspace settings to share team inventory.')
     read_posts = ('/search_items', '/ai_command', '/ai_photo_question', '/ai_upload', '/process_barcode', '/barcode_lookup', '/inventory/bom/analyze', '/eezy/chat')
-    if not scope.can_edit and request.method not in ('GET', 'HEAD', 'OPTIONS') and suffix not in read_posts and not suffix.startswith('/conversations'):
+    preview = False
+    if not scope.can_edit and suffix in ('/extract_from_image', '/inventory/extract_from_image'):
+        form = await request.form()
+        preview = str(form.get('preview_only', '')).lower() in ('true', '1')
+    if not scope.can_edit and request.method not in ('GET', 'HEAD', 'OPTIONS') and suffix not in read_posts and not suffix.startswith('/conversations') and not preview:
         raise HTTPException(403, 'You have view-only access to this inventory.')
     token = current_inventory.set(scope)
     # Legacy inventory services receive their effective owner, while the actor

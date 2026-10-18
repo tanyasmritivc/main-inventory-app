@@ -195,6 +195,21 @@ def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
 def delete_space(*, user_id: str, space_id: str) -> bool:
     """Delete the Space, saved items and bound review records through FK cascades."""
     supabase = get_supabase_admin()
+    from app.services.inventory_scope import current_inventory
+    from app.services.permissions import require_inventory_action
+    from app.services.resource_access import request_actor
+    from app.services.supabase_client import get_supabase_raw
+    scope = current_inventory.get()
+    if scope is not None:
+        require_inventory_action(scope.role, 'delete_space')
+    elif request_actor.get() is not None:
+        raw = get_supabase_raw()
+        records = raw.table('spaces').select('inventory_id').eq('id', space_id).limit(1).execute().data or []
+        if records:
+            role = raw.rpc('findez_inventory_role', {
+                'p_inventory': records[0]['inventory_id'], 'p_actor': request_actor.get().actor_id,
+            }).execute().data
+            require_inventory_action(role, 'delete_space')
     from app.services.items_repo import invalidate_inventory_cache
 
     try:
