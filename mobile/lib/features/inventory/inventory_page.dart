@@ -1552,6 +1552,7 @@ class _InventoryPageState extends State<InventoryPage>
   final ValueNotifier<Map<String, int>> _thresholds = ValueNotifier(const {});
   RestockPlan _restockPlan = const RestockPlan({});
   bool _restockReady = false;
+  bool _restockFailed = false;
 
   final ValueNotifier<String> _category = ValueNotifier('All');
 
@@ -1914,6 +1915,7 @@ class _InventoryPageState extends State<InventoryPage>
       setState(() {
         _restockPlan = plan;
         _restockReady = true;
+        _restockFailed = false;
       });
       _thresholds.value = plan.thresholds;
       unawaited(
@@ -1942,7 +1944,10 @@ class _InventoryPageState extends State<InventoryPage>
       );
     } catch (_) {
       if (!mounted || account != RestockPrefs.accountKey) return;
-      setState(() => _restockReady = false);
+      setState(() {
+        _restockReady = false;
+        _restockFailed = true;
+      });
     }
   }
 
@@ -3819,7 +3824,7 @@ class _InventoryPageState extends State<InventoryPage>
                           style: AppTypography.bodyStyleOf(context),
                         ),
                         const SizedBox(height: 12),
-                        if (!_restockReady ||
+                        if (_restockFailed ||
                             _lowStockCount() > 0 ||
                             _onOrderCount() > 0)
                           GestureDetector(
