@@ -1,6 +1,6 @@
 # Invitations within organization navigation
 
-Mobile lane fix/invitation-org-handoff-20261017, base d53a320. Build1.0.8(83).
+Mobile lane fix/invitation-org-handoff-20261017, base d53a320. Build 1.0.8 (83).
 The organization pill offers Review invitation for links or manual codes.
 Twelve-character access codes use the same recipient-confirmed review as cold and
 warm links. Legacy six-character codes retain Workspace / Shared Space selection.
@@ -31,8 +31,8 @@ Screenshots are in design/mobile-invitations/out.
 
 Backend/web invitation fixes are published with no migration or customer writes.
 Their guarded activation preserves 90 unrelated Python and 245 web source files;
-health and database health pass. Local backend833 tests plus10 subtests and web331
-Jest tests/coverage, TypeScript, lint and production build pass. Separate PR99/100
+health and database health pass. Local backend 833 tests plus 10 subtests and web 331
+Jest tests/coverage, TypeScript, lint and production build pass. Separate PR 99/100
 use compatibility parents containing the already reviewed AnyIO fixture and
 Material ink fixes, so their runtime diffs stay in their own lanes. CI and Apple
 receipts follow when complete. No post-push regression reruns are planned.
@@ -46,3 +46,20 @@ App Store installation are not proven by synthetic review. Public build17 and
 Team-only AASA remain unchanged; do not claim access Universal Links/deferred
 installation work in that older public binary. Current beta supports the explicit
 installed-app link; web review remains available. No Apple processing polling.
+
+Apple acknowledged TestFlight 1.0.8 (83), runtime 032e86d, delivery
+60b49c4f-fde8-495d-9625-2338908d7cae. IPA SHA256:
+3959b8de0cf2f6541ff6effd37da7cb17908de99e9627ab79b32cc9c0d3be2e4. All 31 archive and 31 exported
+executables verify as iOS device code; strict archive signatures pass. Signed IPA,
+CRC-checked archive ZIP, production configuration and Apple receipt are preserved
+in the private build83 release folder. Processing/tester availability remains
+unverified; no polling or public App Store submission.
+
+All five runtime CI gates pass for mobile (39097732855), backend (39097239026)
+and web (39086417222). Live Safari access/workspace invitation error layouts
+were reviewed in both themes; original light preference and prior tab restored.
+Published runtime hashes and unauthenticated invitation denials pass. PRs: 99
+backend, 100 web, 101 mobile. No customer invites, memberships or emails were used
+for QA. Real email delivery and two-account physical/fresh-install acceptance
+remain unverified. The user recovered disk space; the clean signed archive and
+export then completed normally. No implementation change followed verification.
