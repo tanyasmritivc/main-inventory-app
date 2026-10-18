@@ -1,3 +1,7 @@
+## Final submission audit active - October 18
+
+Isolated lane fix/mobile-final-audit-20261018, based on delivered build91. Full mobile functional/security/sharing and App Store audit with user-authorized sign-in. Preserve customer records; use labelled QA records. GPU transport stays unchanged; provide infrastructure-owner actions.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after

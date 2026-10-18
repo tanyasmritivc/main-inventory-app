@@ -1,6 +1,8 @@
 import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -293,11 +295,14 @@ class _AuthPageState extends State<AuthPage> {
     });
 
     try {
+      final auth = Supabase.instance.client.auth;
+      final rawNonce = auth.generateRawNonce();
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
       );
 
       final idToken = credential.identityToken;
@@ -308,10 +313,10 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       OnboardingPrefs.justSignedUp = true;
-      final auth = Supabase.instance.client.auth;
       await auth.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
+        nonce: rawNonce,
       );
 
       final userId = auth.currentUser?.id;

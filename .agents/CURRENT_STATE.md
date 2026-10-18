@@ -1,3 +1,7 @@
+## Final mobile security audit — October 18, build 92 candidate
+
+Native Apple sign-in now binds a fresh SHA-256 nonce to the Supabase request. Apple-linked deletion requests fresh native authorization, verifies the active account, and sends the code to the server revocation flow. Both share-handler frameworks include their own app-group UserDefaults privacy manifest. All 655 mobile tests pass (one configuration test skipped in the general suite); the separately enabled production configuration test passes; analysis is clean. Build 92 signed delivery and exact-device acceptance are in progress. Runtime Apple deletion, blank-chat validation, AASA links, and approved migration 059 are deployed. GPU HTTP remains unchanged under the earlier user instruction and is a launch blocker.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
