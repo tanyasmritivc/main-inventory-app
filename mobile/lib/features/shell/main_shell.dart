@@ -706,119 +706,123 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           );
     return Scaffold(
       backgroundColor: AppTheme.adaptive(context, HomeColors.background),
-      appBar: _buildAppBar(),
-      body: AnimatedOpacity(
-        opacity: _pageOpacity,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        child: PageView(
-          controller: _pageController,
-          reverse: true,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            unawaited(_loadNotificationCount());
-            final now = DateTime.now();
-            final tooSoon =
-                index == 3 &&
-                _lastTabSwitchRefreshAt != null &&
-                now.difference(_lastTabSwitchRefreshAt!) <
-                    const Duration(seconds: 5);
-            setState(() {
-              if (index == 1 && _currentPage != 1) {
-                _chatReturnPage = _currentPage;
-              }
-              _currentPage = index;
-              if (index == 3 && !tooSoon) {
-                _inventoryRefreshToken++;
-                _lastTabSwitchRefreshAt = now;
-              }
-            });
-          },
-          children: [
-            HomePage(
-              api: widget.api,
-              refreshToken: _inventoryRefreshToken,
-              deletedSpaceId: _deletedSpaceId,
-              onOpenAsk: _openAsk,
-              accountControl: widget.api.inventoryContext == null
-                  ? _buildAccountControl()
-                  : null,
-              onOpenReview: _openReview,
-              onOpenCheckouts: _openCheckouts,
-              onOpenSpace: _openHomeSpace,
-            ),
-            ChatPage(
-              key: ValueKey('chat-$_chatGeneration'),
-              api: widget.api,
-              initialMessage: _chatInitialMessage,
-              inPageView: true,
-              pageController: _pageController,
-              onChatStateChanged: _onChatStateChanged,
-              onBack: _leaveChat,
-              onOpenInventory: () {
-                setState(() => _inventorySection = 0);
-                _animateTo(3);
-              },
-              onInventoryMutated: () {
-                setState(() => _inventoryRefreshToken++);
-                unawaited(_prefetchInventoryCache());
-              },
-              onOpenDestination: (hint) async {
-                _animateTo(3);
-                await Future<void>.delayed(const Duration(milliseconds: 350));
-                await _openAssistDestination?.call(hint);
-              },
-            ),
-            ScanPage(
-              api: widget.api,
-              isActive: _currentPage == 2,
-              showAppBar: false,
-              onSaved: () {
-                setState(() => _inventoryRefreshToken++);
-                unawaited(_prefetchInventoryCache());
-              },
-              onCaptureCompleted: (spaceName) async {
-                setState(() => _inventorySection = 0);
-                _animateTo(3);
-                await Future<void>.delayed(const Duration(milliseconds: 350));
-                if (mounted) await _openHomeSpace({'name': spaceName});
-              },
-              onSpaceScanned: (spaceName) {
-                setState(() => _inventoryRefreshToken++);
-                _animateTo(3);
-              },
-              onSkipCoachmark: () {},
-            ),
-            IndexedStack(
-              index: _inventorySection,
-              children: [
-                InventoryPage(
-                  api: widget.api,
-                  refreshToken: _inventoryRefreshToken,
-                  onSpaceDeleted: (spaceId) {
-                    _inventoryCacheGeneration++;
-                    InventoryCache.removeSpace(
-                      spaceId,
-                      contextKey: widget.api.cacheKey,
-                    );
-                    setState(() {
-                      _deletedSpaceId = spaceId;
-                      _inventoryRefreshToken++;
-                    });
-                  },
-                  showAppBar: false,
-                  onRegisterJoinSpace: (fn) {
-                    if (_joinSpaceCallback == fn) return;
-                    setState(() => _joinSpaceCallback = fn);
-                  },
-                  onRegisterOpenAssistDestination: (fn) =>
-                      _openAssistDestination = fn,
-                ),
-                if (widget.api.inventoryContext == null)
-                  TeamsPage(api: widget.api),
-              ],
-            ),
-          ],
+      appBar: chatFocused ? null : _buildAppBar(),
+      body: SafeArea(
+        top: chatFocused,
+        bottom: chatFocused,
+        child: AnimatedOpacity(
+          opacity: _pageOpacity,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          child: PageView(
+            controller: _pageController,
+            reverse: true,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              unawaited(_loadNotificationCount());
+              final now = DateTime.now();
+              final tooSoon =
+                  index == 3 &&
+                  _lastTabSwitchRefreshAt != null &&
+                  now.difference(_lastTabSwitchRefreshAt!) <
+                      const Duration(seconds: 5);
+              setState(() {
+                if (index == 1 && _currentPage != 1) {
+                  _chatReturnPage = _currentPage;
+                }
+                _currentPage = index;
+                if (index == 3 && !tooSoon) {
+                  _inventoryRefreshToken++;
+                  _lastTabSwitchRefreshAt = now;
+                }
+              });
+            },
+            children: [
+              HomePage(
+                api: widget.api,
+                refreshToken: _inventoryRefreshToken,
+                deletedSpaceId: _deletedSpaceId,
+                onOpenAsk: _openAsk,
+                accountControl: widget.api.inventoryContext == null
+                    ? _buildAccountControl()
+                    : null,
+                onOpenReview: _openReview,
+                onOpenCheckouts: _openCheckouts,
+                onOpenSpace: _openHomeSpace,
+              ),
+              ChatPage(
+                key: ValueKey('chat-$_chatGeneration'),
+                api: widget.api,
+                initialMessage: _chatInitialMessage,
+                inPageView: true,
+                pageController: _pageController,
+                onChatStateChanged: _onChatStateChanged,
+                onBack: _leaveChat,
+                onOpenInventory: () {
+                  setState(() => _inventorySection = 0);
+                  _animateTo(3);
+                },
+                onInventoryMutated: () {
+                  setState(() => _inventoryRefreshToken++);
+                  unawaited(_prefetchInventoryCache());
+                },
+                onOpenDestination: (hint) async {
+                  _animateTo(3);
+                  await Future<void>.delayed(const Duration(milliseconds: 350));
+                  await _openAssistDestination?.call(hint);
+                },
+              ),
+              ScanPage(
+                api: widget.api,
+                isActive: _currentPage == 2,
+                showAppBar: false,
+                onSaved: () {
+                  setState(() => _inventoryRefreshToken++);
+                  unawaited(_prefetchInventoryCache());
+                },
+                onCaptureCompleted: (spaceName) async {
+                  setState(() => _inventorySection = 0);
+                  _animateTo(3);
+                  await Future<void>.delayed(const Duration(milliseconds: 350));
+                  if (mounted) await _openHomeSpace({'name': spaceName});
+                },
+                onSpaceScanned: (spaceName) {
+                  setState(() => _inventoryRefreshToken++);
+                  _animateTo(3);
+                },
+                onSkipCoachmark: () {},
+              ),
+              IndexedStack(
+                index: _inventorySection,
+                children: [
+                  InventoryPage(
+                    api: widget.api,
+                    refreshToken: _inventoryRefreshToken,
+                    onSpaceDeleted: (spaceId) {
+                      _inventoryCacheGeneration++;
+                      InventoryCache.removeSpace(
+                        spaceId,
+                        contextKey: widget.api.cacheKey,
+                      );
+                      setState(() {
+                        _deletedSpaceId = spaceId;
+                        _inventoryRefreshToken++;
+                      });
+                    },
+                    showAppBar: false,
+                    onRegisterJoinSpace: (fn) {
+                      if (_joinSpaceCallback == fn) return;
+                      setState(() => _joinSpaceCallback = fn);
+                    },
+                    onRegisterOpenAssistDestination: (fn) =>
+                        _openAssistDestination = fn,
+                  ),
+                  if (widget.api.inventoryContext == null)
+                    TeamsPage(api: widget.api),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: reduceMotion || keyboardVisible

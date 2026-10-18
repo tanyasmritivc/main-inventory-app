@@ -1,3 +1,7 @@
+## Active Chat focus follow-up (2026-10-18)
+
+After Apple acknowledged streaming build88 (delivery e65c5314-3ab3-4eb1-92d8-290abf9dce21), the requested follow-up hides MainShell context/organization header and bottom navigation during an active conversation. Safe areas remain reserved, and Back restores the prior page without replacing ChatPage or its pending stream/draft. New chat restores normal navigation. No Dashboard content/layout changes. 33 focused chat tests and clean analysis pass; signed build89 and device acceptance pending.
+
 ## Active: chunked Chat delivery and fades (2026-10-18)
 
 mobile lane on fix/mobile-chat-stream-fade-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.

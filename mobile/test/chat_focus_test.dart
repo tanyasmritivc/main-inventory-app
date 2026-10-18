@@ -180,9 +180,11 @@ void main() {
       final api = _FocusApi(pending: pending);
       await _mount(tester, api, brightness: brightness);
       final chatState = tester.state(find.byType(ChatPage));
+      expect(find.byType(AppBar), findsOneWidget);
       expect(find.byType(HomeNavigation), findsOneWidget);
       await _send(tester, 'Where is my drill?');
       expect(find.byType(HomeNavigation), findsNothing);
+      expect(find.byType(AppBar), findsNothing);
       expect(find.text('Where is my drill?'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
       expect(find.byTooltip('Back'), findsOneWidget);
@@ -235,6 +237,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(HomeNavigation), findsOneWidget);
       expect(find.text('What would you like to know?'), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
       expect(tester.state(find.byType(ChatPage)), same(chatState));
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
