@@ -44,7 +44,7 @@ export function assertInventory(value: InventorySelection | null) {
   if (selection !== value) throw new Error("The inventory changed. Reopen this page and try again.");
 }
 
-const dataRoutes = /^\/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)/;
+const dataRoutes = /^\/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)/;
 export function inventoryApiPath(path: string, selected = selection) {
   if (contextRequired && !selected && dataRoutes.test(path)) throw new Error("Choose an inventory before opening this page.");
   return selected && dataRoutes.test(path) ? `/inventories/${selected.inventory_id}${path}` : path;

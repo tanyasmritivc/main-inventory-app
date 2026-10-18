@@ -1,3 +1,4 @@
+import { parseChatItemAction, type ChatItemAction } from "@/lib/chat-item-action-model";
 export type AskSource = { kind: string; label: string; detail: string };
 export type AskRow = {
   id: string;
@@ -13,6 +14,7 @@ export type AskAnswerContext = {
   rows: AskRow[];
   rowsTruncated: boolean;
   photoUrl?: string;
+  pendingActions?: ChatItemAction[];
 };
 
 export function parseAskContext(value: unknown): AskAnswerContext | undefined {
@@ -71,6 +73,7 @@ export function parseAskContext(value: unknown): AskAnswerContext | undefined {
     });
   }
   return {
+    pendingActions: (Array.isArray(raw.pending_actions) ? raw.pending_actions : []).slice(0, 8).map(parseChatItemAction).filter((action): action is ChatItemAction => !!action),
     sources,
     rows,
     rowsTruncated: raw.rows_truncated === true,
@@ -82,6 +85,7 @@ export function trustedAskPhotoUrl(
   value: string | undefined,
   owner: string | null,
   origins: string[],
+  inventoryId?: string,
 ): string | undefined {
   if (!value || !owner) return undefined;
   try {
@@ -100,8 +104,9 @@ export function trustedAskPhotoUrl(
       parts[1] === "v1" &&
       parts[2] === "object" &&
       ["public", "sign"].includes(parts[3]) &&
-      parts[5] === owner &&
-      /^ask-[a-f0-9]{32}\.jpg$/.test(parts[6])
+      ((parts[5] === owner && /^(?:[a-f0-9]{32}-)?ask-[a-f0-9]{32}\.jpg$/.test(parts[6])) ||
+        (!!inventoryId && /^[a-f0-9-]{36}$/i.test(parts[5]) && parts[6].startsWith(`${inventoryId}-`) &&
+          /^[a-f0-9-]{36}-[a-f0-9]{32}-ask-[a-f0-9]{32}\.jpg$/.test(parts[6])))
       ? value
       : undefined;
   } catch {
