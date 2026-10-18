@@ -1,3 +1,13 @@
+## One saved identity photo with explicit crop acceptance (2026-10-18)
+
+Use the Settings photo for authorized People/task/file/activity identities, with
+initials when missing or unavailable. Read only already-authorized roster IDs;
+never expose raw private paths or broaden membership. Before upload, circular
+preview and 512px PNG export must share the same source rectangle. Support drag,
+pinch/controls and Reset; explicit Use photo commits, Cancel uploads nothing.
+Keep account/late-response guards and unsaved profile fields. Photo replacements
+and removal must refresh existing identity widgets, including task attribution.
+
 ## Chat transport and presentation are separate (2026-10-18)
 
 Honor gateway stream requests and normalize fragmented text/tool calls. UI queues reveal short chunks with 180ms fades even if the gateway batches a whole model answer. Network completion must not flush pending text. Historical answers do not animate; Reduce Motion skips presentation effects. Keep permission, action-receipt and private-photo guards.
