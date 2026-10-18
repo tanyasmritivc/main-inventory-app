@@ -1,3 +1,16 @@
+# October 18 photo save/return — beta87 uploaded
+
+Apple acknowledged signed production1.0.8(87), source445d3c7, delivery
+e421ff27-a8c5-48bb-aef2-9ea6aeaaf8dc. Full627 Flutter tests, clean analysis,
+Light/Dark Viewer gallery/return checks and all five CI gates39156943197 pass.
+All31 archive and31 export executables are iOS device code; strict signatures,
+production defines/main target and Apple validation pass. IPA/archive preserved
+in Documents/FindEZ/AppStore/1.0.8-build87. Stop at this upload acknowledgment:
+processing/tester availability were not polled, physical acceptance remains
+pending, public App Store stays held. Approved migration056 and matching API/web
+are live. Captures return to the saved Space's items, keeping failed drafts open;
+the gallery shows crop first/original second. Dashboard content/layout is unchanged.
+
 # October 18 Capture return and original gallery — prepared
 
 Branch fix/mobile-scan-original-return-20261018. Complete Capture saves open the
