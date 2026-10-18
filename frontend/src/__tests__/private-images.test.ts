@@ -8,6 +8,7 @@ const session=jest.fn(),upstream=jest.fn();
 beforeEach(()=>{jest.clearAllMocks();process.env.NEXT_PUBLIC_API_BASE_URL='https://api.test';process.env.NEXT_PUBLIC_SUPABASE_URL='https://storage.test';global.fetch=upstream;jest.mocked(createSupabaseServerClient).mockResolvedValue({auth:{getSession:session}} as never);session.mockResolvedValue({data:{session:{access_token:'actor-token'}},error:null});});
 test('legacy public and signed locators use an authenticated same-origin path',()=>{
  expect(privateImagePath(source)).toBe(path);
+ expect(privateImagePath(source.replace('/storage/','//storage/'))).toBe(path);
  expect(privateImageSrc(source.replace('/public/','/sign/')+'?token=old-secret')).toBe('/api/private-image?path='+encodeURIComponent(path));
  expect(privateImageSrc(source)).not.toContain('token');
  expect(privateImageSrc('https://vendor.test/image.jpg')).toBe('https://vendor.test/image.jpg');
