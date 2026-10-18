@@ -12,6 +12,7 @@ import 'place_ui.dart';
 import 'inventory_actions.dart';
 import 'workspace_actions.dart';
 import 'organization_pill.dart';
+import '../profile/account_button.dart';
 
 class WorkspaceHome extends StatefulWidget {
   const WorkspaceHome({
@@ -87,12 +88,20 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
       );
     } else {
       await _push(
-        RestrictedInventoryPage(
-          api: session.api,
-          id: inventory['inventory_id'].toString(),
-          workspaceId: place.place.id,
-          onOpenInventory: widget.onOpenInventory,
-        ),
+        inventory['can_manage'] == true
+            ? HierarchyPage(
+                api: session.api,
+                onOpenInventory: widget.onOpenInventory,
+                level: HierarchyLevel.inventory,
+                id: inventory['inventory_id'].toString(),
+                name: inventory['name'].toString(),
+              )
+            : RestrictedInventoryPage(
+                api: session.api,
+                id: inventory['inventory_id'].toString(),
+                workspaceId: place.place.id,
+                onOpenInventory: widget.onOpenInventory,
+              ),
       );
     }
   }
@@ -143,10 +152,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
     if (_creating) return false;
     final place = session.current;
     final organizationId = session.organizationId;
-    final name = await showDialog<String>(
+    final draft = await showDialog<Map<String, String>>(
       context: context,
       builder: (context) => _CreatePlaceDialog(kind: kind),
     );
+    final name = draft?['name'];
     if (!mounted ||
         name == null ||
         session.current != place ||
@@ -157,7 +167,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
     try {
       final data = kind == 'workspace'
           ? {'name': name, 'program': 'other', 'custom_category': 'Workspace'}
-          : {'name': name};
+          : {
+              'name': name,
+              if (kind == 'inventory')
+                'access_mode': draft?['access_mode'] ?? 'workspace',
+            };
       final path = kind == 'workspace'
           ? (organizationId == null
                 ? '/teams'
@@ -384,6 +398,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                   onPressed: _organizationSettings,
                   icon: const Icon(Icons.settings_outlined, size: 22),
                 ),
+              AccountButton(api: session.api),
             ],
           ),
           body: SafeArea(
@@ -569,6 +584,16 @@ class _CreatePlaceDialog extends StatefulWidget {
 
 class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
   final _text = TextEditingController();
+  String _accessMode = 'workspace';
+  void _submit() {
+    if (_text.text.trim().isNotEmpty) {
+      Navigator.pop(context, {
+        'name': _text.text.trim(),
+        'access_mode': _accessMode,
+      });
+    }
+  }
+
   @override
   void dispose() {
     _text.dispose();
@@ -578,17 +603,40 @@ class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text('New ${widget.kind}'),
-    content: TextField(
-      controller: _text,
-      autofocus: true,
-      maxLength: 100,
-      decoration: const InputDecoration(labelText: 'Name'),
-      onChanged: (_) => setState(() {}),
-      onSubmitted: (_) {
-        if (_text.text.trim().isNotEmpty) {
-          Navigator.pop(context, _text.text.trim());
-        }
-      },
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _text,
+            autofocus: true,
+            maxLength: 100,
+            decoration: const InputDecoration(labelText: 'Name'),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) {
+              _submit();
+            },
+          ),
+          if (widget.kind == 'inventory')
+            DropdownButtonFormField<String>(
+              initialValue: _accessMode,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Access'),
+              items: const [
+                DropdownMenuItem(
+                  value: 'workspace',
+                  child: Text('Inherited workspace access'),
+                ),
+                DropdownMenuItem(
+                  value: 'restricted',
+                  child: Text('Custom access'),
+                ),
+              ],
+              onChanged: (value) =>
+                  setState(() => _accessMode = value ?? 'workspace'),
+            ),
+        ],
+      ),
     ),
     actions: [
       TextButton(
@@ -596,9 +644,7 @@ class _CreatePlaceDialogState extends State<_CreatePlaceDialog> {
         child: const Text('Cancel'),
       ),
       TextButton(
-        onPressed: _text.text.trim().isEmpty
-            ? null
-            : () => Navigator.pop(context, _text.text.trim()),
+        onPressed: _text.text.trim().isEmpty ? null : _submit,
         child: const Text('Create'),
       ),
     ],

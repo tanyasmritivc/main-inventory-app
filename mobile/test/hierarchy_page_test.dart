@@ -498,6 +498,12 @@ void main() {
       await tester.enterText(find.byType(TextField).last, 'Materials');
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Inherited workspace access'));
+      await tester.pumpAndSettle();
+      expect(fixture.requests.where((r) => r.method == 'POST').single.data, {
+        'name': 'Materials',
+        'access_mode': 'workspace',
+      });
       expect(
         fixture.requests.where((r) => r.method == 'POST').single.path,
         '/inventory-workspaces/workspace-a/inventories',
@@ -562,11 +568,30 @@ void main() {
     final material = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await material.load();
+    await (FontLoader('Roboto')
+          ..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf')))
+        .load();
+    await (FontLoader('PlaceGeist')
+          ..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))
+          ..addFont(rootBundle.load('assets/fonts/Geist-Medium.ttf'))
+          ..addFont(rootBundle.load('assets/fonts/Geist-SemiBold.ttf')))
+        .load();
+    await (FontLoader(
+      'PlaceGeistMono',
+    )..addFont(rootBundle.load('assets/fonts/GeistMono-Medium.ttf'))).load();
     await tester.runAsync(() async {
       final bytes = await File('/System/Library/Fonts/SFNS.ttf').readAsBytes();
-      await (FontLoader(
-        'FindEZ-QA',
-      )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+      for (final family in ['FindEZ-QA']) {
+        await (FontLoader(
+          family,
+        )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+      }
+      await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+            ),
+          ))
+          .load();
     });
     for (final brightness in Brightness.values) {
       for (final level in [

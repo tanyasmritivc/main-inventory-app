@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -1514,7 +1515,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             const Color(0xFF171717),
                           ),
                         ),
-                        Image.network(
+                        PrivateImage(
                           photo.imageUrl,
                           fit: BoxFit.cover,
                           loadingBuilder: (context, child, progress) =>

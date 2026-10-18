@@ -1,5 +1,7 @@
+import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
+import '../profile/account_button.dart';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -91,6 +93,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
             onPressed: _loading ? null : _load,
             icon: const Icon(Icons.refresh_rounded),
           ),
+          AccountButton(api: widget.api),
         ],
       ),
       body: RefreshIndicator(onRefresh: _load, child: _buildBody()),
@@ -187,7 +190,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
                   if (image.isNotEmpty) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(11),
-                      child: Image.network(
+                      child: PrivateImage(
                         image,
                         width: 72,
                         height: 72,
@@ -309,6 +312,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   );
 
   Future<void> _resolve() async {
+    if (!widget.api.canEdit) return;
     if (_name.text.trim().isEmpty ||
         _category.text.trim().isEmpty ||
         _location.text.trim().isEmpty) {
@@ -342,6 +346,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   }
 
   Future<void> _dismiss() async {
+    if (!widget.api.canEdit) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -414,7 +419,9 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                       ),
                       SizedBox(height: 3),
                       AppText(
-                        'Correct anything uncertain, then add it to Find.',
+                        widget.api.canEdit
+                            ? 'Correct anything uncertain, then add it to Find.'
+                            : 'View-only access. Confirming or dismissing requires Editor access.',
                         style: TextStyle(
                           color: AppTheme.foreground(context, Colors.white60),
                           fontSize: 12,
@@ -442,7 +449,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                 if (image.isNotEmpty) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
+                    child: PrivateImage(
                       image,
                       height: 210,
                       width: double.infinity,
@@ -482,7 +489,8 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                 Row(
                   children: [
                     IconButton.filledTonal(
-                      onPressed: _saving || _quantity == 0
+                      onPressed:
+                          _saving || !widget.api.canEdit || _quantity == 0
                           ? null
                           : () => setState(() => _quantity--),
                       icon: const Icon(Icons.remove_rounded),
@@ -498,7 +506,8 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                       ),
                     ),
                     IconButton.filledTonal(
-                      onPressed: _saving || _quantity >= 100000
+                      onPressed:
+                          _saving || !widget.api.canEdit || _quantity >= 100000
                           ? null
                           : () => setState(() => _quantity++),
                       icon: const Icon(Icons.add_rounded),
@@ -507,7 +516,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                 ),
                 const SizedBox(height: 22),
                 FilledButton.icon(
-                  onPressed: _saving ? null : _resolve,
+                  onPressed: _saving || !widget.api.canEdit ? null : _resolve,
                   icon: _saving
                       ? const SizedBox(
                           width: 18,
@@ -519,7 +528,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                 ),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: _saving ? null : _dismiss,
+                  onPressed: _saving || !widget.api.canEdit ? null : _dismiss,
                   child: const AppText('Dismiss capture'),
                 ),
               ],
@@ -535,6 +544,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
       padding: const EdgeInsets.only(bottom: 13),
       child: TextField(
         controller: controller,
+        enabled: widget.api.canEdit && !_saving,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(labelText: label),
         style: AppTypography.bodyStyleOf(context),

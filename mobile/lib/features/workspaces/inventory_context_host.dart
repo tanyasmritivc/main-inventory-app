@@ -42,6 +42,8 @@ class _InventoryContextHostState extends State<InventoryContextHost>
   StreamSubscription<AuthState>? _auth;
   bool _initialAttempted = false, _initialOpened = false;
   bool _placesStarted = false;
+  Timer? _permissionTimer;
+  bool _checkingPermissions = false;
   @override
   void initState() {
     super.initState();
@@ -56,6 +58,12 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     if (!widget.pickOnly) {
       InvitationNavigation.instance.addListener(_invitation);
       unawaited(_startPlaces());
+      _permissionTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        final state = WidgetsBinding.instance.lifecycleState;
+        if (mounted && (state == null || state == AppLifecycleState.resumed)) {
+          unawaited(_revalidate());
+        }
+      });
     }
   }
 
@@ -242,6 +250,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
 
   @override
   void dispose() {
+    _permissionTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _session.removeListener(_changed);
     _session.dispose();
@@ -261,9 +270,16 @@ class _InventoryContextHostState extends State<InventoryContextHost>
   }
 
   Future<void> _revalidate() async {
+    if (_checkingPermissions) return;
     final previous = _session.selection;
     if (previous == null) return;
-    await _session.revalidate();
+    _checkingPermissions = true;
+    try {
+      await _session.revalidate();
+    } finally {
+      _checkingPermissions = false;
+    }
+    if (!mounted) return;
     final next = _session.selection;
     if (next != null &&
         (next.organizationId != _places.organizationId ||

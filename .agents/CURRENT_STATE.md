@@ -1,3 +1,52 @@
+# October 18 permissions, private photos and Account — delivered
+
+This entry supersedes the prepared/active rollout notes below. The user approved
+"Apply 054/055 and publish the fixes." Migrations 054/055 were applied atomically
+after a fresh private backup; backend, web and gateway rules are live. Inherited
+Editor stays Editor, deliberate custom/No access remains authoritative, and
+administrative access does not silently expose restricted contents. Source is
+API b0c04e3 (Python runtime 1c2280c), web eccccc1, mobile 9cec0bc. PRs 102/103/104.
+No Founder Dashboard is included; customer Dashboard content/layout is preserved.
+
+Authorized teammates retain photo access through authenticated app requests;
+copied URLs grant none. A follow-up accepts existing trusted-origin //storage
+locators and rebuilds the two SQL expression indexes. All 16 existing photos are
+recognized, 28 authorized member/photo pairs have 0 lookup failures, and an actual
+authorized backend Storage download validates as an image. Old public links all
+return 404; anonymous application photo requests return 401. No photos, locators
+or customer membership/invitation data were rewritten for QA.
+
+The initial gateway template rewrite missed real entrypoint substitution and
+briefly prevented startup. The original was restored; the corrected fragment-only
+insertion preserves original template bytes and passes all 7 actual-entrypoint
+isolated HTTP privacy cases. Gateway/auth/health/database checks pass. Deployments
+preserve 79 unrelated Python and 242 unrelated web source files. Private backups,
+manifests and live receipts: /home/ubuntu/findez-permission-release-20261018.
+Final web: /home/ubuntu/findez-web-releases/permissions-url-compat-20261018/frontend.
+
+Mobile main-page account controls now open the existing compact Profile hub in an
+opaque Account Scaffold with safe AppBar/back navigation. Profile editing and
+Settings are separate destinations. This fixes the transparent previous-page
+overlay and status-bar clipping without changing Dashboard content. Light/Dark
+widget checks cover opacity, top insets, navigation and actual private Image
+requests; test-font captures are synthetic, not native/device acceptance.
+
+Completed validation: Python 901 + 10 subtests, web 344/46 suites plus types/build
+(lint 0 errors, 54 existing warnings), Flutter 623 with coverage and clean analysis,
+latest 25 focused profile/Review/photo cases, SQL replay/matrix, two real concurrent
+revocations, and the isolated production restore preserving values across 86
+tables. Runtime CI is green: API 39115338261, web 39115340558, mobile 39115340763.
+No completed regression checks were repeated after push/build.
+
+Apple acknowledged signed production TestFlight 1.0.8 (85), delivery
+6a197534-7e09-453d-a1fa-efe1bf9adeec. All 31 archive/export executables are iOS device code;
+strict signatures, production configuration/main target and Apple validation pass.
+Private IPA and archive: Documents/FindEZ/AppStore/1.0.8-build85. Beta85 supersedes
+acknowledged beta84, which missed legacy photo locators and the Account fix.
+Older mobile builds need beta85 for private photo/crop loading. Processing and
+tester availability were not polled; physical-device acceptance remains pending.
+Public App Store submission remains held. Documentation receipts need no binary.
+
 # October 17 invitation handoff delivery
 
 Invitations now target their exact organization/workspace/inventory through the

@@ -1,3 +1,4 @@
+import 'invitation_page.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -12,7 +13,9 @@ import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/review_invitation_page.dart';
 import '../sharing/invitation_navigation.dart';
-import '../profile/profile_page.dart';
+import '../profile/account_page.dart';
+import '../profile/account_button.dart';
+import 'transfer_ownership.dart';
 import 'place_ui.dart';
 import 'inventory_actions.dart';
 import 'workspace_actions.dart';
@@ -83,6 +86,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       _spaces = [];
   Object? _error;
   bool _loading = true, _busy = false;
+  Timer? _permissionTimer;
   int _generation = 0;
   String _query = '';
   bool _organizationPeople = false;
@@ -125,10 +129,21 @@ class _HierarchyPageState extends State<HierarchyPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_load());
+    _permissionTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (mounted &&
+          !_loading &&
+          !_busy &&
+          (lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        unawaited(_load(quiet: true));
+      }
+    });
   }
 
   @override
   void dispose() {
+    _permissionTimer?.cancel();
     ++_generation;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -136,7 +151,9 @@ class _HierarchyPageState extends State<HierarchyPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_busy) unawaited(_load());
+    if (state == AppLifecycleState.resumed && !_busy) {
+      unawaited(_load(quiet: true));
+    }
   }
 
   Future<List<Map<String, dynamic>>> _directory({String? workspaceId}) async {
@@ -166,12 +183,14 @@ class _HierarchyPageState extends State<HierarchyPage>
     return result;
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool quiet = false}) async {
     final generation = ++_generation;
     setState(() {
-      _loading = true;
+      if (!quiet) {
+        _loading = true;
+        _data = null;
+      }
       _error = null;
-      _data = null;
     });
     try {
       Map<String, dynamic> data;
@@ -233,12 +252,14 @@ class _HierarchyPageState extends State<HierarchyPage>
             '/inventory-directory/$_id',
           );
           data['directory'] = entry['inventory'];
-          audit = rows(
-            (await widget.api.collaboration('$_base/audit'))['activity'],
-          );
-          spaces = rows(
-            (await widget.api.collaboration('$_base/spaces'))['spaces'],
-          );
+          if (data['inventory']?['can_open'] != false) {
+            audit = rows(
+              (await widget.api.collaboration('$_base/audit'))['activity'],
+            );
+            spaces = rows(
+              (await widget.api.collaboration('$_base/spaces'))['spaces'],
+            );
+          }
       }
       final resource = record(
         data[_org
@@ -283,6 +304,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       if (mounted && generation == _generation) {
         setState(() {
           _error = error;
+          _data = null;
           _loading = false;
         });
       }
@@ -382,7 +404,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             'Invitation could not be confirmed. Refresh before retrying.',
           );
         }
-        await showDialog<void>(
+        final reviewOwnAccess = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const AppText('Invitation ready'),
@@ -404,6 +426,11 @@ class _HierarchyPageState extends State<HierarchyPage>
               ),
             ),
             actions: [
+              if (_inventory && path.endsWith('/${widget.api.accountId}'))
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const AppText('Review your access invitation'),
+                ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const AppText('Done'),
@@ -411,6 +438,16 @@ class _HierarchyPageState extends State<HierarchyPage>
             ],
           ),
         );
+        if (reviewOwnAccess == true && mounted) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AccessInvitationPage(
+                api: widget.api,
+                code: result['code'].toString(),
+              ),
+            ),
+          );
+        }
       }
       final removedCurrent =
           method == 'DELETE' &&
@@ -586,12 +623,22 @@ class _HierarchyPageState extends State<HierarchyPage>
   Future<void> _create(String kind) async {
     final name = await _text('New $kind');
     if (!mounted || name == null) return;
+    final mode = kind == 'inventory'
+        ? await _choose('Inventory access', {
+            'workspace': 'Inherited workspace access',
+            'restricted': 'Custom access',
+          })
+        : null;
+    if (!mounted || kind == 'inventory' && mode == null) return;
     final path = kind == 'organization'
         ? '/organizations'
         : kind == 'workspace'
         ? '$_base/workspaces'
         : '$_base/inventories';
-    await _mutate(path, data: {'name': name});
+    await _mutate(
+      path,
+      data: {'name': name, if (kind == 'inventory') 'access_mode': mode},
+    );
   }
 
   Future<void> _inviteOrganization() async {
@@ -606,12 +653,9 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _assign() async {
-    final members =
-        rows(_inventory ? (_data?['members']) : (_data?['candidates'])).where(
-          (row) =>
-              !_inventory ||
-              !['owner', 'mentor'].contains(row['workspace_role']),
-        );
+    final members = rows(
+      _inventory ? (_data?['members']) : (_data?['candidates']),
+    );
     final id = await _choose('Choose member', {
       for (final row in members)
         row['user_id'].toString(): row['display_name'].toString(),
@@ -622,7 +666,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       'editor': 'Editor',
       if (_inventory || _resource['role'] == 'owner') 'admin': 'Admin',
       'none': _inventory ? 'No access' : 'Remove from workspace',
-      if (_inventory) 'inherit': 'Use default',
+      if (_inventory) 'inherit': 'Use workspace role',
     });
     if (!mounted || role == null) return;
     if (!await _confirm(
@@ -692,21 +736,15 @@ class _HierarchyPageState extends State<HierarchyPage>
 
   Future<void> _policy() async {
     final mode = await _choose('Inventory access', {
-      'workspace': 'Workspace members',
-      'restricted': 'Assigned members only',
+      'workspace': 'Inherited workspace access',
+      'restricted': 'Custom access',
     });
     if (!mounted || mode == null) return;
-    final role = mode == 'restricted'
-        ? 'viewer'
-        : await _choose('Default role', {
-            'viewer': 'Viewer',
-            'editor': 'Editor',
-          });
-    if (mounted && role != null) {
+    if (mounted) {
       await _mutate(
         '$_base/access',
         method: 'PATCH',
-        data: {'access_mode': mode, 'default_role': role},
+        data: {'access_mode': mode, 'default_role': 'viewer'},
       );
     }
   }
@@ -780,6 +818,22 @@ class _HierarchyPageState extends State<HierarchyPage>
   );
 
   Future<void> _organizationMember(Map<String, dynamic> member) async {
+    if (_owner) {
+      final role = await _choose('Organization role', {
+        'member': 'Member',
+        'admin': 'Admin',
+        'remove': 'Remove member',
+      });
+      if (!mounted || role == null) return;
+      if (role != 'remove') {
+        await _mutate(
+          '$_base/members/${member['user_id']}',
+          method: 'PUT',
+          data: {'role': role},
+        );
+        return;
+      }
+    }
     if (!await _confirm(
       'Remove member?',
       'Remove this person from the organization? Workspace assignments must be removed first.',
@@ -797,6 +851,18 @@ class _HierarchyPageState extends State<HierarchyPage>
         row['team_id'].toString(): row['name'].toString(),
     });
     if (mounted && id != null) await _mutate('$_base/workspaces/$id');
+  }
+
+  Future<void> _transferOwner() async {
+    if (!_owner || _busy || !_org && !_workspace || _personal) return;
+    final confirmed = await confirmOwnershipTransfer(
+      context,
+      widget.api,
+      scope: _org ? 'organization' : 'workspace',
+      id: widget.id!,
+      name: _resource['name'].toString(),
+    );
+    if (mounted && confirmed) await _load();
   }
 
   Widget _placeSection(String title) => Padding(
@@ -940,8 +1006,10 @@ class _HierarchyPageState extends State<HierarchyPage>
               PlaceRow(
                 title: ws['name'].toString(),
                 leading: PlaceBadge(ws['name'].toString()),
-                subtitle: 'Workspace',
-                onTap: _busy
+                subtitle: ws['can_open'] == false
+                    ? 'Not assigned to this workspace'
+                    : 'Workspace',
+                onTap: _busy || ws['can_open'] == false
                     ? null
                     : () async {
                         if (widget.onOpenWorkspace != null) {
@@ -989,11 +1057,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                   index: index,
                 ),
                 trailing: RoleTag(member['role']?.toString() ?? 'member'),
-                onTap:
-                    !_manager ||
-                        _busy ||
-                        member['role'] == 'owner' ||
-                        member['role'] == 'admin' && !_owner
+                onTap: !_manager || _busy || member['role'] == 'owner'
                     ? null
                     : () => _organizationMember(member),
               ),
@@ -1034,12 +1098,21 @@ class _HierarchyPageState extends State<HierarchyPage>
                   );
                 } else {
                   await _push(
-                    RestrictedInventoryPage(
-                      api: widget.api,
-                      id: inv['inventory_id'].toString(),
-                      workspaceId: widget.id!,
-                      onOpenInventory: widget.onOpenInventory,
-                    ),
+                    inv['can_manage'] == true
+                        ? HierarchyPage(
+                            api: widget.api,
+                            level: HierarchyLevel.inventory,
+                            id: inv['inventory_id'].toString(),
+                            organizationId: _resource['organization_id']
+                                ?.toString(),
+                            onOpenInventory: widget.onOpenInventory,
+                          )
+                        : RestrictedInventoryPage(
+                            api: widget.api,
+                            id: inv['inventory_id'].toString(),
+                            workspaceId: widget.id!,
+                            onOpenInventory: widget.onOpenInventory,
+                          ),
                   );
                 }
               },
@@ -1107,10 +1180,13 @@ class _HierarchyPageState extends State<HierarchyPage>
                     _inventory && _resource['can_rename'] == true))
               _menu({
                 'Rename': () => _rename(),
+                if (_owner && (_org || _workspace) && !_personal)
+                  'Transfer ownership': _transferOwner,
                 if (_org && _owner) 'Delete organization': _deleteOrganization,
                 if (_workspace && _owner && !_personal)
                   'Delete workspace': _deleteWorkspace,
               }),
+            AccountButton(api: widget.api),
           ],
         ),
         body: RefreshIndicator(
@@ -1356,7 +1432,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         _row('Join with a code', onTap: _join),
         _row(
           'Profile and settings',
-          onTap: () => _push(ProfilePage(api: widget.api)),
+          onTap: () => _push(AccountPage(api: widget.api)),
         ),
       ];
     }
@@ -1387,12 +1463,21 @@ class _HierarchyPageState extends State<HierarchyPage>
                 );
               } else {
                 await _push(
-                  RestrictedInventoryPage(
-                    api: widget.api,
-                    id: inv['inventory_id'].toString(),
-                    workspaceId: widget.id!,
-                    onOpenInventory: widget.onOpenInventory,
-                  ),
+                  inv['can_manage'] == true
+                      ? HierarchyPage(
+                          api: widget.api,
+                          level: HierarchyLevel.inventory,
+                          id: inv['inventory_id'].toString(),
+                          organizationId: _resource['organization_id']
+                              ?.toString(),
+                          onOpenInventory: widget.onOpenInventory,
+                        )
+                      : RestrictedInventoryPage(
+                          api: widget.api,
+                          id: inv['inventory_id'].toString(),
+                          workspaceId: widget.id!,
+                          onOpenInventory: widget.onOpenInventory,
+                        ),
                 );
               }
             },
@@ -1437,14 +1522,14 @@ class _HierarchyPageState extends State<HierarchyPage>
     return [
       _row(
         'Your role',
-        detail: membershipRoleLabel(_resource['role']?.toString() ?? ''),
+        detail: membershipRoleLabel(_resource['role']?.toString() ?? 'none'),
       ),
       if (_resource['can_manage'] == true && _resource['team_id'] != null) ...[
         _row(
           'Inventory access',
           detail: _resource['access_mode'] == 'restricted'
-              ? 'Assigned members only'
-              : 'Workspace permissions',
+              ? 'Custom access'
+              : 'Inherited workspace access',
           onTap: _policy,
         ),
         _row('Directory visibility and description', onTap: _directorySettings),
@@ -1452,19 +1537,23 @@ class _HierarchyPageState extends State<HierarchyPage>
       ..._people(),
       if (_manager) _row('Assign member access', onTap: _assign),
       ..._pending(),
-      if (_manager) ..._locations(),
-      _heading('Inventory Spaces'),
-      for (final space in _spaces)
-        _row(
-          space['name'].toString(),
-          detail: _resource['can_edit'] == true
-              ? 'Move to another inventory'
-              : null,
-          onTap: _resource['can_edit'] != true ? null : () => _moveSpace(space),
-        ),
-      if (_spaces.isEmpty)
-        const ListTile(title: AppText('No Spaces yet. Add one in Find.')),
-      ..._history(),
+      if (_manager && _resource['can_open'] != false) ..._locations(),
+      if (_resource['can_open'] != false) ...[
+        _heading('Inventory Spaces'),
+        for (final space in _spaces)
+          _row(
+            space['name'].toString(),
+            detail: _resource['can_edit'] == true
+                ? 'Move to another inventory'
+                : null,
+            onTap: _resource['can_edit'] != true
+                ? null
+                : () => _moveSpace(space),
+          ),
+        if (_spaces.isEmpty)
+          const ListTile(title: AppText('No Spaces yet. Add one in Find.')),
+        ..._history(),
+      ],
     ];
   }
 
@@ -1496,7 +1585,10 @@ class _HierarchyPageState extends State<HierarchyPage>
         onTap:
             !_manager ||
                 member['role'] == 'owner' ||
-                (['admin', 'mentor'].contains(member['role']) && !_owner)
+                (!_org &&
+                    !_inventory &&
+                    ['admin', 'mentor'].contains(member['role']) &&
+                    !_owner)
             ? null
             : () async {
                 if (_org) {
@@ -1612,6 +1704,8 @@ class _HierarchyPageState extends State<HierarchyPage>
                       _inventory && _resource['can_rename'] == true))
                 _menu({
                   'Rename': () => _rename(),
+                  if (_owner && (_org || _workspace) && !_personal)
+                    'Transfer ownership': _transferOwner,
                   if (_org && _owner) 'Delete': _deleteOrganization,
                   if (_workspace && _owner && !_personal)
                     'Delete workspace': _deleteWorkspace,
@@ -1621,6 +1715,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 onPressed: _loading || _busy ? null : _load,
                 icon: const Icon(Icons.refresh),
               ),
+              AccountButton(api: widget.api),
             ],
           ),
           body: RefreshIndicator(

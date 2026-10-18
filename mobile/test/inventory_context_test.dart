@@ -104,7 +104,7 @@ void main() {
   );
 
   test(
-    'viewer can search and chat but cannot create, scan, edit or delete',
+    'viewer can search and inspect scans but cannot save, edit or delete',
     () async {
       final api = ApiClient.forInventory(
         fixture.api,
@@ -126,15 +126,31 @@ void main() {
           request: UpdateItemRequest(itemId: 'drill', quantity: 4),
         ),
         () => api.deleteItem(itemId: 'drill'),
-        () => api.extractInventoryFromImage(
-          bytes: [1, 2, 3],
-          filename: 'photo.jpg',
-        ),
         () => api.createSpace(name: 'Cabinet'),
       ]) {
         await expectLater(operation(), throwsA(isA<dio.DioException>()));
       }
       expect(fixture.requests, hasLength(1));
+      fixture.respond = (_) => {
+        'items': [],
+        'summary': {'total_detected': 0, 'categories': {}},
+      };
+      await api.extractInventoryFromImage(
+        bytes: [1, 2, 3],
+        filename: 'photo.jpg',
+      );
+      expect(
+        fixture.requests.last.path,
+        '/inventories/tools/inventory/extract_from_image',
+      );
+      expect(
+        (fixture.requests.last.data as dio.FormData).fields,
+        contains(
+          predicate<MapEntry<String, String>>(
+            (entry) => entry.key == 'preview_only' && entry.value == 'true',
+          ),
+        ),
+      );
     },
   );
 
@@ -393,4 +409,24 @@ void main() {
       expect(prefs.getString('findez.active-inventory:actor-a'), 'normal');
     },
   );
+  for (final role in ['owner', 'admin', 'editor', 'viewer']) {
+    test('$role Space deletion requires content administration', () async {
+      final api = ApiClient.forInventory(
+        fixture.api,
+        context('tools', role: role),
+        isCurrent: () => true,
+      );
+      fixture.respond = (_) => {'deleted': true};
+      if (['owner', 'admin'].contains(role)) {
+        expect(await api.deleteSpace(spaceId: 'space'), true);
+        expect(fixture.requests.single.path, '/inventories/tools/spaces/space');
+      } else {
+        await expectLater(
+          api.deleteSpace(spaceId: 'space'),
+          throwsA(isA<dio.DioException>()),
+        );
+        expect(fixture.requests, isEmpty);
+      }
+    });
+  }
 }

@@ -1,4 +1,5 @@
 import '../notifications/notification_bell.dart';
+import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -28,20 +29,39 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
   Map<String, dynamic>? _team;
   String _role = 'viewer';
   bool _loading = true;
+  Timer? _permissionTimer;
   String? _error;
   String _filter = 'open';
 
-  bool get _canEdit => _role != 'viewer';
+  bool get _canEdit => ['owner', 'mentor', 'member'].contains(_role);
+  bool _canDelete(Map<String, dynamic> task) =>
+      ['owner', 'mentor'].contains(_role) ||
+      (_canEdit && task['created_by'] == widget.api.accountId);
 
   @override
   void initState() {
     super.initState();
     unawaited(_load(teamId: widget.initialTeamId));
+    _permissionTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (mounted &&
+          !_loading &&
+          (lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        unawaited(_load(quiet: true));
+      }
+    });
   }
 
-  Future<void> _load({String? teamId}) async {
+  @override
+  void dispose() {
+    _permissionTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({String? teamId, bool quiet = false}) async {
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {
@@ -84,6 +104,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
+        _role = 'viewer';
         _error = describeError(error).$1;
         _loading = false;
       });
@@ -260,7 +281,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 title: const AppText('Move to To do'),
                 onTap: () => Navigator.pop(context, 'todo'),
               ),
-            if (_canEdit)
+            if (_canDelete(task))
               ListTile(
                 leading: Icon(
                   CupertinoIcons.delete,
@@ -283,6 +304,11 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       final teamId = _team!['team_id'].toString();
       final taskId = task['task_id'].toString();
       if (action == 'delete') {
+        if (!_canDelete(task)) {
+          throw const AskRequestException(
+            'Only workspace owners and admins can delete another person’s task.',
+          );
+        }
         await widget.api.deleteTeamBoardTask(teamId, taskId);
       } else {
         await widget.api.updateTeamBoardTask(teamId, taskId, {
@@ -310,6 +336,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
             icon: const Icon(CupertinoIcons.refresh),
             tooltip: 'Refresh',
           ),
+          AccountButton(api: widget.api),
         ],
       ),
       floatingActionButton: _team != null && _canEdit

@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
@@ -24,6 +25,7 @@ import '../../core/ui/glass_card.dart';
 import '../../core/ui/frosted_surface.dart';
 import 'confirm_scan_sheet.dart';
 import 'review_capture.dart';
+import 'scan_inspection.dart';
 import 'qr_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -502,6 +504,7 @@ class _ScanPageState extends State<ScanPage> {
                         context,
                         item: match,
                         api: widget.api,
+                        permission: widget.api.canEdit ? 'edit' : 'view',
                       );
                     },
                     style: GlassControl.buttonStyle(
@@ -600,6 +603,31 @@ class _ScanPageState extends State<ScanPage> {
       final res = await widget.api.barcodeLookup(barcode: trimmedBarcode);
       if (!mounted) return;
 
+      if (!widget.api.canEdit &&
+          (res.foundInInventory || (res.name?.trim().isNotEmpty == true))) {
+        if (res.existingItem != null) {
+          await showItemDetailSheet(
+            context,
+            item: InventoryItem.fromJson(res.existingItem!),
+            api: widget.api,
+            permission: 'view',
+          );
+        } else {
+          await _inspect([
+            ExtractedInventoryItem(
+              name: res.name!,
+              category: res.category ?? 'Other',
+              quantity: 1,
+              brand: res.brand,
+              partNumber: res.model,
+              barcode: trimmedBarcode,
+              imageUrl: res.imageUrl,
+            ),
+          ]);
+        }
+        return;
+      }
+
       if (res.foundInInventory && res.existingItem != null) {
         setState(() {
           _loading = false;
@@ -657,6 +685,22 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
+  Future<void> _inspect(List<ExtractedInventoryItem> items) async {
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _scanStatus = null;
+      _scannedItems = [];
+    });
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => ScanInspection(items: items),
+    );
+  }
+
   Future<void> _showUnknownBarcodeActions(String barcode) async {
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -696,13 +740,14 @@ class _ScanPageState extends State<ScanPage> {
                   label: const AppText('Scan Product Label'),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx, 'manual'),
-                  child: const AppText('Enter details manually'),
+              if (widget.api.canEdit)
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx, 'manual'),
+                    child: const AppText('Enter details manually'),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -785,7 +830,7 @@ class _ScanPageState extends State<ScanPage> {
                   Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
+                      child: PrivateImage(
                         imageUrl,
                         width: 80,
                         height: 80,
@@ -1204,6 +1249,10 @@ class _ScanPageState extends State<ScanPage> {
       await Future<void>.delayed(const Duration(milliseconds: 120));
       if (!mounted) return;
       if (runNonce != _extractionNonce) return;
+      if (!widget.api.canEdit) {
+        await _inspect(res.items);
+        return;
+      }
       if (barcodeToAssociate != null) {
         final verified = res.items
             .where((item) => item.catalogMatch?.verified == true)
@@ -1616,6 +1665,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _onSaveAllTapped() async {
+    if (!widget.api.canEdit) return;
     final prefs = await SharedPreferences.getInstance();
     final confirm = prefs.getBool('confirm_before_save') ?? false;
     if (!confirm) {
@@ -1654,6 +1704,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _saveAll() async {
+    if (!widget.api.canEdit) return;
     if (_defaultLocation.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1984,7 +2035,7 @@ class _ScanPageState extends State<ScanPage> {
               surfaceTintColor: Colors.transparent,
             )
           : null,
-      floatingActionButton: _scannedItems.isEmpty
+      floatingActionButton: _scannedItems.isEmpty || !widget.api.canEdit
           ? null
           : Padding(
               padding: EdgeInsets.only(bottom: widget.showAppBar ? 94 : 0),

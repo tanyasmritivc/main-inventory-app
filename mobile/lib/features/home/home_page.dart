@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -289,7 +290,7 @@ class _AttentionItemsPageState extends State<_AttentionItemsPage> {
                     ? null
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
+                        child: PrivateImage(
                           item.imageUrl!,
                           width: 42,
                           height: 42,
