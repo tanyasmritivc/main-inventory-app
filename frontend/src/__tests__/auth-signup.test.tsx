@@ -53,7 +53,7 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   expect(redirect.pathname).toBe("/auth/callback");
   expect(redirect.searchParams.get("next")).toBe("/onboarding");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
-  expect(args.options.data.terms_version).toBe("2026-10-11");
+  expect(args.options.data.terms_version).toBe("2026-10-18");
   expect(args.options.data.eligibility_attested).toBe(true);
   expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(false);
 });

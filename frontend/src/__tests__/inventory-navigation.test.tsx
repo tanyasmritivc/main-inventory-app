@@ -154,3 +154,12 @@ test("account change discards a rename dialog and ignores its late saved name",a
  await act(async()=>finish({workspace:{name:"Private renamed"}}));
  expect(screen.queryByRole("dialog")).toBeNull();expect(screen.queryByText("Private renamed")).toBeNull();
 });
+
+
+test("an expired session offers sign-in instead of a workspace loop", () => {
+ jest.mocked(useApiSession).mockReturnValue({accountId:null,loading:false,error:"Could not verify your session. Please sign in again."} as ReturnType<typeof useApiSession>);
+ render(<InventoryBoundary><p>Private page</p></InventoryBoundary>);
+ expect(screen.getByRole("link",{name:"Sign in again"}).getAttribute("href")).toContain("/signin?");
+ expect(screen.queryByText("Private page")).toBeNull();
+ expect(screen.queryByRole("link",{name:"Choose a workspace"})).toBeNull();
+});

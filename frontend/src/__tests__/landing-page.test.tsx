@@ -12,9 +12,9 @@ let authChanged: (event: string, session: object | null) => void;
 jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({ auth: { getUser } }),
 }));
-jest.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "lab-geist" }),
-  Geist_Mono: () => ({ variable: "lab-mono" }),
+jest.mock("next/font/local", () => ({
+  __esModule: true,
+  default: ({ variable }: { variable: string }) => ({ variable: variable === "--fzl-geist" ? "lab-geist" : "lab-mono" }),
 }));
 jest.mock("@/components/site/landing-lab-engine", () => ({
   ...jest.requireActual("@/components/site/landing-lab-engine"),
