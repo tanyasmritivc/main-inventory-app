@@ -8,6 +8,7 @@ import '../shell/main_shell.dart';
 import 'hierarchy_page.dart';
 import '../../core/place_session.dart';
 import '../../core/last_place.dart';
+import '../../core/invitation_destination.dart';
 import '../../core/push_notifications.dart';
 import '../notifications/notifications_page.dart';
 import 'workspace_home.dart';
@@ -40,6 +41,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
   late final PlaceSession _places;
   StreamSubscription<AuthState>? _auth;
   bool _initialAttempted = false, _initialOpened = false;
+  bool _placesStarted = false;
   @override
   void initState() {
     super.initState();
@@ -52,6 +54,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       if (event.event == AuthChangeEvent.signedOut) unawaited(_clearPlace());
     });
     if (!widget.pickOnly) {
+      InvitationNavigation.instance.addListener(_invitation);
       unawaited(_startPlaces());
     }
   }
@@ -104,13 +107,73 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       /* Optional phone alerts remain retryable in Notifications. */
     }
     if (!mounted) return;
-    await _places.restoreNavigation(override: target);
+    if (target == null && widget.initialOrganizationId != null) {
+      await _places.selectOrganization(widget.initialOrganizationId);
+    } else {
+      await _places.restoreNavigation(override: target);
+    }
+    if (!mounted) return;
+    _placesStarted = true;
+    await _consumeInvitation();
     unawaited(_connectPhoneAlerts());
     starting = false;
     if (initialInbox != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_notification(initialInbox!));
       });
+    }
+  }
+
+  void _invitation() {
+    if (_placesStarted) unawaited(_consumeInvitation());
+  }
+
+  Future<void> _consumeInvitation() async {
+    final target = InvitationNavigation.instance.take(_places.accountId);
+    if (target == null ||
+        !mounted ||
+        widget.api.accountId != _places.accountId) {
+      return;
+    }
+    // Retire the old dashboard and its inventory-bound client immediately.
+    await _session.chooseAnother();
+    if (!mounted) return;
+    if (target.workspaceId == null) {
+      await _places.selectOrganization(target.organizationId);
+    } else {
+      if (target.organizationId != null || target.inventoryId != null) {
+        await _places.selectOrganization(
+          target.organizationId,
+          preferred: LastPlace.workspace(target.workspaceId!),
+        );
+      } else {
+        await _places.restoreNavigation(
+          override: LastPlace.workspace(target.workspaceId!),
+        );
+      }
+      if (!mounted ||
+          _places.error != null ||
+          _places.current.id != target.workspaceId) {
+        return;
+      }
+      if (target.organizationId != null &&
+          _places.organizationId != target.organizationId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This invitation destination changed. Review the invitation again.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (target.inventoryId != null) {
+        await _open(
+          target.inventoryId!,
+          target.workspaceId!,
+          target.organizationId,
+        );
+      }
     }
   }
 
@@ -146,6 +209,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
 
   Future<void> _clearPlace() async {
     try {
+      InvitationNavigation.instance.take(_places.accountId);
       await _places.signOut();
     } catch (_) {
       if (mounted) {
@@ -182,6 +246,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     _session.removeListener(_changed);
     _session.dispose();
     _auth?.cancel();
+    InvitationNavigation.instance.removeListener(_invitation);
     _places.removeListener(_initialPlaceReady);
     _places.dispose();
     super.dispose();

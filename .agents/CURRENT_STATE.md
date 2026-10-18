@@ -1,3 +1,16 @@
+# October 17 invitation handoff delivery
+
+Invitations now target their exact organization/workspace/inventory through the
+account-bound mobile root. Manual link/code review is in the organization pill.
+All 601 Flutter coverage tests, analysis, native synthetic light/dark review and
+all five runtime CI gates pass. Backend/web fixes are published with exact source
+preservation and health/denial checks; their five CI gates also pass. No migration
+or customer writes. Apple acknowledged TestFlight 1.0.8 (83), runtime 032e86d,
+delivery 60b49c4f-fde8-495d-9625-2338908d7cae. All 31 archive/export executables
+verify as iOS device code. Processing/tester availability is unverified; no polling.
+Real email delivery/two-account physical/fresh-install acceptance remains open.
+See docs/plans/mobile-invitation-handoff.md and PRs 99, 100, 101.
+
 # October 17 organization-scoped mobile navigation
 
 Completed mobile lane fix/mobile-organization-scope-20261017, clean start 24bbcac.

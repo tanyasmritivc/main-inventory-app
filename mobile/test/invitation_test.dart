@@ -384,7 +384,7 @@ void main() {
   testWidgets('team preview and Not now never add membership', (tester) async {
     final api = Api();
     await openDialog(tester, api, 'team');
-    expect(find.text('Join team'), findsOneWidget);
+    expect(find.text('Join workspace'), findsOneWidget);
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(api.joins, 0);
@@ -612,7 +612,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Join team'), findsOneWidget);
+    expect(find.text('Join workspace'), findsOneWidget);
     links.add(Uri.parse('findez://space-invite?code=ABC123'));
     await tester.pumpAndSettle();
     expect(find.text('Join space'), findsNothing);

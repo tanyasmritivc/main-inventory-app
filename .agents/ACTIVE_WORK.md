@@ -1,3 +1,13 @@
+# October 17 invitation handoff refresh
+
+Completed mobile lane `fix/invitation-org-handoff-20261017`, clean start d53a320.
+Repair accepted organization/inventory destinations, root-shell retirement and
+manual invitation entry for organization-scoped navigation. Preserve explicit
+recipient consent and all API/schema grants. Verify both themes, link/code, auth
+continuity, expired/revoked/wrong-account paths. Web/backend are live in separate lanes; all five runtime CI gates pass in each.
+Apple acknowledged build 83; availability and physical acceptance remain unverified.
+See docs/plans/mobile-invitation-handoff.md.
+
 # October 17 organization-scoped mobile navigation
 
 Completed mobile lane fix/mobile-organization-scope-20261017, clean start 24bbcac.

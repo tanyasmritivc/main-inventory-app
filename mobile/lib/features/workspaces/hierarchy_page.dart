@@ -10,10 +10,9 @@ import '../../core/ui/app_text.dart';
 import '../notifications/notifications_page.dart';
 import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
-import '../sharing/invitation_dialog.dart';
-import '../../core/invitation.dart';
+import '../sharing/review_invitation_page.dart';
+import '../sharing/invitation_navigation.dart';
 import '../profile/profile_page.dart';
-import 'invitation_page.dart';
 import 'place_ui.dart';
 import 'inventory_actions.dart';
 import 'workspace_actions.dart';
@@ -312,9 +311,6 @@ class _HierarchyPageState extends State<HierarchyPage>
       organizationId: org,
     ),
   );
-  void _notice(String message) => ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: AppText(message)));
 
   Future<bool> _mutate(
     String path, {
@@ -513,44 +509,12 @@ class _HierarchyPageState extends State<HierarchyPage>
       true;
 
   Future<void> _join() async {
-    final value = await _text(
-      'Review invitation',
-      label: 'Invitation link or code',
-      limit: 300,
+    final owner = widget.api.accountId;
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (_) => ReviewInvitationPage(api: widget.api)),
     );
-    if (!mounted || value == null) return;
-    final uri = Uri.tryParse(value);
-    final linked = uri != null && uri.hasScheme
-        ? Invitation.fromUri(uri)
-        : null;
-    final code = linked?.code ?? value.toUpperCase();
-    if (linked?.kind == 'access' || RegExp(r'^[A-Z2-9]{12}$').hasMatch(code)) {
-      await _push(AccessInvitationPage(api: widget.api, code: code));
-      return;
-    }
-    if (!RegExp(r'^[A-Z0-9]{6}$').hasMatch(code)) {
-      _notice('Use a FindEZ invitation link or code.');
-      return;
-    }
-    final kind =
-        linked?.kind ??
-        await _choose('Invitation type', {
-          'team': 'Workspace',
-          'space': 'Shared Space',
-        });
-    if (!mounted || kind == null) return;
-    await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => InvitationDialog(
-        api: widget.api,
-        invitation: Invitation(
-          kind: kind,
-          code: code,
-          createdAt: DateTime.now().millisecondsSinceEpoch,
-        ),
-        userId: widget.api.accountId ?? '',
-      ),
-    );
+    if (!mounted || widget.api.accountId != owner) return;
+    openInvitationResult(context, widget.api, result);
     if (mounted) await _load();
   }
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
+import '../sharing/review_invitation_page.dart';
+import '../sharing/invitation_navigation.dart';
 
 /// The only cross-organization navigation control. Children never populate it.
 class OrganizationPill extends StatefulWidget {
@@ -73,10 +75,23 @@ class _OrganizationPillState extends State<OrganizationPill> {
           ),
           const PopupMenuDivider(),
           const PopupMenuItem(value: 'new', child: Text('New organization')),
+          const PopupMenuItem(
+            value: 'invite',
+            child: Text('Review invitation'),
+          ),
         ],
       );
       if (!mounted || value == null || widget.api.accountId != account) return;
-      if (value == 'new') {
+      if (value == 'invite') {
+        final result = await Navigator.of(context).push<Map<String, dynamic>>(
+          MaterialPageRoute(
+            builder: (_) => ReviewInvitationPage(api: widget.api),
+          ),
+        );
+        if (mounted && widget.api.accountId == account) {
+          openInvitationResult(context, widget.api, result);
+        }
+      } else if (value == 'new') {
         final id = await _create();
         if (mounted && id != null && widget.api.accountId == account) {
           await widget.onSelected(id);

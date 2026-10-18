@@ -39,6 +39,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
     setState(() {
       _busy = true;
       _error = null;
+      _preview = null;
     });
     try {
       final data = await widget.api.previewInvitation(
@@ -72,6 +73,15 @@ class _InvitationDialogState extends State<InvitationDialog> {
       final destination = widget.invitation.kind == 'team'
           ? Map<String, dynamic>.from(result['membership'] ?? const {})
           : result;
+      final id =
+          destination[widget.invitation.kind == 'team'
+              ? 'team_id'
+              : 'share_id'];
+      if (id is! String || id.isEmpty || id != _preview!['target_id']) {
+        throw const FormatException(
+          'Invitation destination could not be confirmed. Refresh the review.',
+        );
+      }
       Navigator.of(context).pop(<String, dynamic>{
         ..._preview!,
         ...destination,
@@ -93,7 +103,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
     final joined = _preview?['already_joined'] == true;
     final name = _preview?['name']?.toString();
     final access = team
-        ? 'Team member'
+        ? 'Workspace member'
         : _preview?['permission'] == 'edit'
         ? 'Can edit'
         : 'View only';
@@ -109,7 +119,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppText(
-                team ? 'TEAM INVITATION' : 'SPACE INVITATION',
+                team ? 'WORKSPACE INVITATION' : 'SPACE INVITATION',
                 style: TextStyle(
                   color: AppTheme.foreground(context, AppColors.muted),
                   fontSize: 11,
@@ -131,7 +141,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
                   joined
                       ? 'You already have access. Open it to continue.'
                       : team
-                      ? 'Join this team to work together in FindEZ.'
+                      ? 'Join this workspace to work together in FindEZ.'
                       : 'Join this space to see its inventory in FindEZ.',
                   style: TextStyle(
                     color: AppTheme.foreground(context, AppColors.muted),
@@ -184,8 +194,8 @@ class _InvitationDialogState extends State<InvitationDialog> {
                     _busy
                         ? 'Please wait...'
                         : joined
-                        ? 'Open ${team ? 'team' : 'space'}'
-                        : 'Join ${team ? 'team' : 'space'}',
+                        ? 'Open ${team ? 'workspace' : 'space'}'
+                        : 'Join ${team ? 'workspace' : 'space'}',
                   ),
                 ),
               if (_preview == null && !_busy)

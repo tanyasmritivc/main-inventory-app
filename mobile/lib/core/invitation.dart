@@ -131,12 +131,17 @@ class InvitationInbox {
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     if (pending == null) {
-      await prefs.remove(_storageKey);
+      if (!await prefs.remove(_storageKey)) {
+        throw StateError('Invitation could not be cleared on this phone.');
+      }
       return;
     }
-    await prefs.setString(
+    final saved = await prefs.setString(
       _storageKey,
       jsonEncode({'invitation': pending?.toData(), 'owner': ownerId}),
     );
+    if (!saved) {
+      throw StateError('Invitation could not be saved on this phone.');
+    }
   }
 }
