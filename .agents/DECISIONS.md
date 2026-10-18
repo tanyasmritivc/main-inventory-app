@@ -1178,3 +1178,10 @@ notes and review instructions. No em dashes are permitted in entered form text.
 No supplied screenshots were uploaded or replaced. Submit only after this
 screenshot task is resumed by the user; do not treat the earlier request to use
 the ZIPs unchanged as the final instruction.
+# October 18: retain original scans in inventory-scoped item galleries
+
+Keep the crop primary and the original scan second using existing private photo
+events. Shared originals must survive pending Review and sibling item references;
+do not expose them through workspace Files. Review resolution needs migration056
+to attach its original atomically before the pending image grant disappears.
+Prepare/rehearse first; production DB activation still requires explicit approval.

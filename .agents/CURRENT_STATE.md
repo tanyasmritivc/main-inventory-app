@@ -1,3 +1,15 @@
+# October 18 original capture galleries — prepared, not activated
+
+Branch fix/api-scan-original-gallery-20261018. New captures retain a private
+original as gallery photo two; crop stays primary. Retry repairs missing photo
+receipts without duplicate items, and cleanup retains sources needed by pending
+Review or sibling items. Migration056 atomically attaches the source during Review
+resolution. Full Python996 +10 subtests and final24 focused cases pass. Composed
+SQL/replay/privacy/rollback checks and a fresh isolated production restore pass;
+existing public/auth/storage values and unrelated rules are unchanged. Production
+DB/runtime activation awaits separate reviewed approval. See
+docs/plans/capture-original-gallery.md. Live Chat remains71c0ca4; no customer QA writes.
+
 # October 18 model-written Chat - delivered
 
 The user requested removing scripted/fallback Chat answers and then reported a

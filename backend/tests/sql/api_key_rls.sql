@@ -211,3 +211,4 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir resource_permissions.sql
 
 \ir private_item_images.sql
+\ir capture_original_gallery.sql
