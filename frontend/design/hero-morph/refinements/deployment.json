@@ -1,0 +1,23 @@
+{
+  "url": "https://findez.ai/",
+  "build_id": "7TbDSICsTgfD5NyLfPiBN",
+  "prior_build_id": "ocvFkneLLa0EzDFA14ToX",
+  "active_frontend": "/home/ubuntu/findez-web-releases/invitation-handoff-20261017/frontend",
+  "rollback_frontend": "/home/ubuntu/findez-web-releases/landing-refinements-20261018/frontend",
+  "original_source_files_preserved": 288,
+  "changed_existing_files": [
+    "src/components/site/hero-morph-engine.ts",
+    "src/components/site/hero-morph.css",
+    "src/components/site/hero-morph.tsx",
+    "src/components/site/landing-lab-engine.ts",
+    "src/components/site/landing-lab.tsx"
+  ],
+  "new_runtime_files": [
+    "src/components/site/landing-learning.tsx",
+    "src/components/site/landing-scenes-engine.ts",
+    "src/components/site/landing-scenes.css"
+  ],
+  "environment_and_service_configuration_unchanged": true,
+  "backend_mobile_database_untouched": true,
+  "frontend_service_active": "active"
+}

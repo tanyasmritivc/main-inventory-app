@@ -1,0 +1,14 @@
+{
+  "build_id": "7TbDSICsTgfD5NyLfPiBN",
+  "changed_existing_files": [
+    "src/components/site/hero-morph-engine.ts",
+    "src/components/site/hero-morph.css",
+    "src/components/site/hero-morph.tsx",
+    "src/components/site/landing-lab-engine.ts",
+    "src/components/site/landing-lab.tsx"
+  ],
+  "preserved_original_files": 288,
+  "prior_static_assets_preserved": 142,
+  "environment_unchanged": true,
+  "build_passed": true
+}

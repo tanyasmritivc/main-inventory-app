@@ -13,15 +13,15 @@
 
 .fzh.fzh .fzh-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #8C8C8C; }
 .fzh.fzh .fzh-eyebrow i { width: 4px; height: 4px; border-radius: 50%; background: #C9C6C0; display: block; }
-.fzh.fzh .fzh-h1 { margin: 24px 0 0; font-weight: 400; font-size: clamp(54px, 5.9vw, 92px); line-height: .96; letter-spacing: -.055em; }
+.fzh.fzh .fzh-h1 { margin: 0; font-weight: 400; font-size: var(--fzh-title-size, clamp(44px, 7.5vw, 112px)); line-height: .96; letter-spacing: -.055em; }
 .fzh.fzh .fzh-orange { color: #E8590C; }
-.fzh.fzh .fzh-sub { margin: 30px 0 0; max-width: 460px; font-size: 21px; line-height: 1.45; color: #3F3D39; }
+.fzh.fzh .fzh-sub { margin: 28px 0 0; max-width: 580px; font-size: clamp(19px, 1.45vw, 23px); line-height: 1.45; color: #3F3D39; }
 .fzh.fzh .fzh-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 .fzh.fzh .fzh-btn { height: 52px; padding: 0 24px; border-radius: 12px; display: flex; align-items: center; gap: 9px; font-size: 16px; }
 .fzh.fzh .fzh-btn.dark { background: #111112; color: #FFF; }
 .fzh.fzh .fzh-btn.line { box-shadow: inset 0 0 0 1px #E3E3E1; padding: 0 22px; }
 
-.fzh.fzh .fzh-h2 { margin: 18px 0 0; font-weight: 400; font-size: clamp(34px, 3.4vw, 52px); line-height: 1.04; letter-spacing: -.045em; }
+.fzh.fzh .fzh-h2 { margin: 18px 0 0; font-weight: 400; font-size: clamp(34px, 3.4vw, 64px); line-height: 1.04; letter-spacing: -.045em; }
 .fzh.fzh .fzh-body { margin: 22px 0 0; font-size: 17px; line-height: 1.6; color: #6B6B6B; }
 .fzh.fzh .fzh-stats { display: flex; gap: 48px; margin-top: 36px; padding-top: 28px; border-top: 1px solid #F1F1F0; }
 .fzh.fzh .fzh-num { font-size: 44px; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -83,11 +83,14 @@
 .fzh.fzh .fzh-card li:nth-child(3) { animation-delay:.8s; }
 .fzh.fzh .fzh-card li:nth-child(4) { animation-delay:1.05s; }
 /* The static layout is available before hydration as well as after resize. */
-@media (width < 980px), (prefers-reduced-motion: reduce) {
+@media (width < 980px), (height < 600px), (prefers-reduced-motion: reduce) {
   .fzh.fzh { height:auto; }
   .fzh.fzh .fzh-stage { position:relative; height:auto; padding:40px 0 64px; overflow:visible; }
   .fzh.fzh .fzh-inner { max-width:1240px; padding:0 24px; display:flex; flex-direction:column; gap:32px; }
   .fzh.fzh .fzh-abs { position:relative!important; left:auto!important; top:auto!important; width:100%!important; opacity:1!important; transform:none!important; }
   .fzh.fzh .fzh-chip { display:none; }
   .fzh.fzh .fzh-s2 { order:9; }
+}
+@media (max-width:600px) {
+  .fzh.fzh .fzh-hint { display:none; }
 }

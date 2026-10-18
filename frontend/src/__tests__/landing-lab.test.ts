@@ -34,3 +34,15 @@ test("reduced motion finishes the camera and removes pinned travel", () => {
   expect(values.zCard).toContain("opacity:1.000");
   expect(values.ownPct).toBe("92%");
 });
+
+test("the location headline reveals in order and reverses with scroll", () => {
+  const before = landingLabValues({ ...initialLabState, ze: 0 }, true).locationLetters!;
+  const during = landingLabValues({ ...initialLabState, ze: 0.55 }, true).locationLetters!;
+  const after = landingLabValues({ ...initialLabState, ze: 1 }, true).locationLetters!;
+  expect(before.every(letter => letter.style === "opacity:0.000")).toBe(true);
+  expect(during[0].style).toBe("opacity:1.000");
+  expect(during.at(-1)!.style).toBe("opacity:0.000");
+  expect(after.every(letter => letter.style === "opacity:1.000")).toBe(true);
+  expect(landingLabValues({ ...initialLabState, ze: 0 }, true).locationLetters).toEqual(before);
+  expect(landingLabValues({ ...initialLabState, still: true, ze: 0 }, true).locationLetters!.every(letter => letter.style === "opacity:1.000")).toBe(true);
+});

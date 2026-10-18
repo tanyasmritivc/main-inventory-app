@@ -16,10 +16,10 @@ const QUESTIONS = [
 
 const LENS_R = 92;
 const SCROLL_LEN = 1300;
-const MAX_W = 1160;
-const GUTTER = 48;
+const MAX_W = 1920;
 const OVER = 170;
 const NARROW = 980;
+const SHORT = 600;
 const Q_EVERY = 4200;
 const C = (v: number) => Math.min(1, Math.max(0, v));
 const ss = (v: number) => { v = C(v); return v * v * (3 - 2 * v); };
@@ -34,15 +34,16 @@ export function init(root: HTMLElement): () => void {
   const hint = get("hint"), count = get("count"), foundEl = get("found"), needsEl = get("needs");
   const qEl = get("q"), aEl = get("a");
   const detEls = [...root.querySelectorAll<HTMLElement>(".fzh-det")];
+  const tagEls = detEls.map(el => el.firstElementChild as HTMLElement);
   const header = root.closest(".fzLab")?.querySelector<HTMLElement>(".fzl-scroll-header, .fzl-site-header");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const st = { p: 0, t: 0, hover: false, mx: 50, my: 45, q: 0, staticMode: false };
   let raf = 0, last = 0, lastQ = 0, dirty = true, disposed = false;
-  const styled = [root, inner, text, s2, photo, base, lit, lens, card, chip, ...detEls];
+  const styled = [root, inner, text, s2, photo, base, lit, lens, card, chip, ...detEls, ...tagEls];
   const originalStyles = styled.map(el => el.getAttribute("style"));
 
   function measure() {
-    st.staticMode = motion.matches || window.innerWidth < NARROW;
+    st.staticMode = motion.matches || window.innerWidth < NARROW || window.innerHeight < SHORT;
     root.classList.toggle("fzh-static", st.staticMode);
     if (st.staticMode) { st.p = 0; return; }
     const rect = root.getBoundingClientRect();
@@ -72,6 +73,8 @@ export function init(root: HTMLElement): () => void {
       if (seen) inView++;
       const asked = QUESTIONS[st.q][2] === i;
       detEls[i].style.opacity = String(Math.max(ai, (seen || asked) ? 1 - allOn : 0));
+      const boxLeft = (d[0] - d[2] / 2) / 100 * W;
+      tagEls[i].style.left = Math.max(8 - boxLeft, Math.min(-1.5, W - boxLeft - tagEls[i].offsetWidth - 8)) + "px";
     });
     if (statics) {
       found = DETECTIONS.length;
@@ -98,22 +101,28 @@ export function init(root: HTMLElement): () => void {
       return;
     }
 
-    const Wi = Math.min(MAX_W, VW - 2 * GUTTER);
+    const gutter = Math.max(24, Math.min(80, VW * 0.04));
+    const Wi = Math.min(MAX_W, VW - 2 * gutter);
     const visH = VH - HDR;
-    const hH = Math.max(260, Math.min(Wi * 0.62 * 0.75, visH - OVER - 40));
+    const hH = Math.min(Wi * 0.49 * 0.75, visH - OVER - 48);
     const hW = hH / 0.75;
-    const hL = Wi * 0.52;
-    const hT = Math.max(16, Math.min(56, (visH - (hH + OVER)) / 2));
+    const hL = Wi - hW;
+    const hT = Math.max(24, Math.min(96, (visH - (hH + OVER)) / 2));
+    const textW = Wi * 0.46;
+    const titleSize = Math.min(112, textW * 0.15, (visH - 200) / 3.84);
+    const textTop = Math.max(24, Math.min(hT, visH - text.offsetHeight - 24));
     const eW = Math.min(Wi * 0.55, VH * 0.74 / 0.75), eH = eW * 0.75;
     const eL = 0, eT = (VH - eH) / 2;
     const pW = L(hW, eW, e), pL = L(hL, eL, e), pT = L(hT, eT, e);
-    const cW = Math.min(380, Wi * 0.33), cT = hT + hH - 120;
+    const cW = Math.min(400, Wi * 0.31), cT = hT + hH - 120;
+    const chipL = hL + hW - chip.offsetWidth - 20;
+    const chipT = chipL < hL - 36 + cW + 16 ? hT + 20 : hT + hH - 66;
     inner.style.width = Wi + "px";
-    text.style.cssText = `left:0;top:${Math.max(8, hT - 6)}px;width:${hL - 48}px;opacity:${1 - textOut};transform:translateY(${-80 * textOut}px);pointer-events:${textOut > 0.5 ? "none" : "auto"}`;
-    s2.style.cssText = `left:${eW + 72}px;top:50%;width:${Wi - eW - 72}px;max-width:460px;opacity:${s2In};transform:translateY(calc(-50% + ${40 * (1 - s2In)}px));pointer-events:${s2In > 0.5 ? "auto" : "none"}`;
+    text.style.cssText = `left:0;top:${textTop}px;width:${textW}px;--fzh-title-size:${titleSize}px;opacity:${1 - textOut};transform:translateY(${-80 * textOut}px);pointer-events:${textOut > 0.5 ? "none" : "auto"}`;
+    s2.style.cssText = `left:${eW + 72}px;top:50%;width:${Wi - eW - 72}px;max-width:560px;opacity:${s2In};transform:translateY(calc(-50% + ${40 * (1 - s2In)}px));pointer-events:${s2In > 0.5 ? "auto" : "none"}`;
     photo.style.cssText = `left:${pL}px;top:${pT}px;width:${pW}px`;
     card.style.cssText = `left:${hL - 36}px;top:${cT}px;width:${cW}px;opacity:${1 - cardOut};transform:translateY(${60 * cardOut}px);pointer-events:${cardOut > 0.5 ? "none" : "auto"}`;
-    chip.style.cssText = `left:${hL + hW - 250}px;top:${hT + hH - 66}px;opacity:${1 - textOut}`;
+    chip.style.cssText = `left:${chipL}px;top:${chipT}px;opacity:${1 - textOut}`;
   }
 
   const invalidate = () => { dirty = true; };
@@ -130,7 +139,7 @@ export function init(root: HTMLElement): () => void {
   function tick(ts: number) {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
-    if ((motion.matches || window.innerWidth < NARROW) !== st.staticMode) dirty = true;
+    if ((motion.matches || window.innerWidth < NARROW || window.innerHeight < SHORT) !== st.staticMode) dirty = true;
     if (dirty) measure();
     if (ts - last >= 33) {
       last = ts;

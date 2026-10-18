@@ -1,0 +1,13 @@
+PASS responsive hero 2560x1440
+PASS responsive hero 2048x1152
+PASS responsive hero 1920x1080
+PASS responsive hero 1440x900
+PASS responsive hero 1280x720
+PASS responsive hero 1280x600
+PASS responsive hero 1024x768
+PASS responsive hero 980x600
+PASS responsive hero 768x1024
+PASS responsive hero 390x844
+PASS responsive hero 375x667
+PASS responsive hero 1440x540
+PASS all scene, copy, link, motion and browser-error checks

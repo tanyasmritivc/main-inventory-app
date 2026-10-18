@@ -1,5 +1,8 @@
 # Landing audit before implementation
 
+The later screenshot refinements and current landing order are documented in
+[REFINEMENTS.md](REFINEMENTS.md). The original audit below is preserved.
+
 This is the original local audit. During the later authorized publication, the
 running frontend was audited again. Its newer memory headline reveal and existing
 homepage omission of the Own and Vision screens were preserved. See

@@ -1,0 +1,80 @@
+
+> frontend@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.3.8 (webpack)
+- Environments: .env.production
+✓ Running next.config.ts took 16ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.6s
+  Running TypeScript ...
+  Finished TypeScript in 3.2s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/47) ...
+  Generating static pages using 3 workers (11/47) 
+  Generating static pages using 3 workers (23/47) 
+  Generating static pages using 3 workers (35/47) 
+✓ Generating static pages using 3 workers (47/47) in 555ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /activity
+├ ƒ /assist
+├ ƒ /auth/callback
+├ ○ /billing/cancel
+├ ○ /billing/success
+├ ƒ /checkout
+├ ƒ /collections
+├ ○ /docs/api
+├ ƒ /documents
+├ ƒ /home
+├ ƒ /inventory
+├ ƒ /inventory-access
+├ ƒ /inventory-access-request/[inventoryId]
+├ ƒ /join
+├ ƒ /join/[code]
+├ ƒ /join/access
+├ ƒ /join/team/[code]
+├ ○ /lab
+├ ƒ /labels
+├ ○ /mobile-app
+├ ƒ /notifications
+├ ƒ /onboarding/usage
+├ ƒ /organizations
+├ ƒ /organizations/[organizationId]
+├ ○ /pricing
+├ ○ /privacy
+├ ○ /product
+├ ○ /product/ask
+├ ○ /product/capture
+├ ○ /product/spaces-and-sharing
+├ ƒ /project-kits
+├ ○ /reset-password
+├ ƒ /restock
+├ ƒ /review
+├ ○ /robotics
+├ ○ /robots.txt
+├ ƒ /scan
+├ ƒ /settings
+├ ƒ /settings/[section]
+├ ƒ /settings/api-keys
+├ ƒ /sharing/[shareId]
+├ ○ /signin
+├ ○ /signup
+├ ○ /sitemap.xml
+├ ƒ /spaces
+├ ƒ /teams
+├ ○ /terms
+├ ○ /upgrade
+├ ○ /upgrade-success
+├ ƒ /workspaces
+└ ƒ /workspaces/[workspaceId]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

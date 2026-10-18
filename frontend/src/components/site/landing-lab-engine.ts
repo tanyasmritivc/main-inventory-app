@@ -1,8 +1,9 @@
 // Exact Lab prototype formulas. React renders once; the engine updates bound DOM nodes.
-export const initialLabState = { W: 1440, H: 900, still: false, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 0, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1,
+export const initialLabState = { W: 1440, H: 900, still: false, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, ze: 1, gp: 1, zp: 0, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1,
       ci: 0, qn: 999, an: 999, phase: 'hold' as 'hold' | 'q' | 'think' | 'a', askOn: false, seen: 3, email: '', joined: false, err: false, mk: {} as Record<string, number>, gx: 0 };
 export type LabState = typeof initialLabState;
 export const memoryHeadline = "Knowing what it is is useful. Knowing everything around it is memory.";
+export const locationHeadline = "Not just \u201cWorkshop\u201d. Exactly where.";
 export function landingLabValues(state: LabState = initialLabState, containedHero = false) {
 
     const S = state, W = S.W || 1440, H = S.H || 900, narrow = W < 860;
@@ -96,6 +97,10 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
         lab: 'position:absolute;left:' + (mx / 10) + '%;top:' + ((my - 34) / 6.4) + '%;transform:translate(-50%,-50%);font-family:var(--fzl-mono),monospace;font-size:1.1cqw;color:#8C8C8C;white-space:nowrap;opacity:' + t.toFixed(3),
         style: 'stroke-dasharray:1;stroke-dashoffset:' + (1 - ss(c(S.gp * 7.2 - k))).toFixed(3) });
     });
+
+    const locationLetters = Array.from(locationHeadline).map((t, i) => ({
+      t, style: 'opacity:' + (S.still ? 1 : ss(c((S.ze - .25 - i / (locationHeadline.length - 1) * .45) / .25))).toFixed(3),
+    }));
 
     /* infinite zoom through the location hierarchy */
     const zoomSec = 'position:relative;height:' + (S.still ? pinH : pinH + 2900) + 'px';
@@ -195,7 +200,7 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
       phoneA, benchBox, phoneB, fanBox, fan, markA, markB,
       segDim, heroSec, heroBox, heroCopy, progBar, pinTop, zoomBox, askCard, whoSec, scanCount, words, seg, segCount, segReview, scanBar,
       graphSec, pinStyle, nodes, edges, zoomSec, zImg, zBoxes, zCard, crumbs,
-      ...(containedHero ? { memoryLetters } : {}),
+      ...(containedHero ? { memoryLetters, locationLetters } : {}),
       chatQ, chatA, chatCtx, typingQ: S.phase === 'q', typingA: S.phase === 'a', thinking: S.phase === 'think',
       ownProd, ownBox, ownRing, ownPct, ownLabel, ownCard, rowA, rowB, pipeNodes, flow, stages, roadFill, roadDot, visHead, seeSec, askSec, visSec, wlCard, findSec, letters,
       email: S.email,
@@ -448,7 +453,7 @@ class LabEngine {
       }
       const r = (id: string) => { const el = this.root.querySelector<HTMLElement>(`#${id}`); return el ? el.getBoundingClientRect() : null; };
       // Reduced motion uses the prototype finished state without pinned travel.
-      if (this.reduce) { this.setState({ W, H, still: true, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, gp: 1, zp: 1, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1, askOn: true, phase: "hold", qn: 999, an: 999, mk: {}, gx: 0 }); return; }
+      if (this.reduce) { this.setState({ W, H, still: true, prog: 0, hp: 0, sp: -1, seg: 1, ge: 1, ze: 1, gp: 1, zp: 1, ap: 1, own: 1, wp: 1, fp: 1, vp: 1, ep: 1, askOn: true, phase: "hold", qn: 999, an: 999, mk: {}, gx: 0 }); return; }
       const pin = Math.min(H, 860), n: Partial<LabState> = { W, H, still: false };
       const se = document.scrollingElement || document.documentElement;
       n.prog = c(se.scrollTop / Math.max(1, se.scrollHeight - H));
@@ -456,7 +461,7 @@ class LabEngine {
       const s = r('stmt'); if (s) n.sp = s.top < H ? c((H * .9 - s.top) / (s.height * .9)) : 0;
       const sg = r('see'); if (sg) n.seg = c((H * .85 - sg.top) / (sg.height * .8));
       const g = r('graph'); if (g) { n.ge = c((H - g.top) / H); n.gp = c(-g.top / Math.max(1, g.height - pin)); }
-      const z = r('zoom'); if (z) n.zp = c(-z.top / Math.max(1, z.height - pin));
+      const z = r('zoom'); if (z) { n.ze = c((H - z.top) / H); n.zp = c(-z.top / Math.max(1, z.height - pin)); }
       const a = r('ask'); if (a) { n.askOn = a.top < H && a.bottom > 0; n.ap = c((H - a.top) / (H * .75)); }
       const o = r('own'); if (o) n.own = c((H * .85 - o.top) / (o.height * .75));
       const w = r('who'); if (w) n.wp = c((H - w.top) / (H * .9));

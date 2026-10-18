@@ -16,7 +16,6 @@ export function HeroMorph() {
     <div className="fzh-stage">
       <div className="fzh-inner">
         <div className="fzh-abs fzh-text">
-          <div className="fzh-eyebrow fzh-mono">Capture<i aria-hidden="true" />Ask<i aria-hidden="true" />Find</div>
           <h1 className="fzh-h1">FindEZ gives the physical world <span className="fzh-orange">a memory.</span></h1>
           <p className="fzh-sub">You don&apos;t organize your physical world for FindEZ. FindEZ organizes it for you.</p>
           <div className="fzh-ctas">

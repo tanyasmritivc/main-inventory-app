@@ -3,10 +3,13 @@
 /* Native image sizing is part of the approved prototype. */
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
-import { initLandingLab, landingLabValues, memoryHeadline } from "./landing-lab-engine";
+import { initLandingLab, landingLabValues, memoryHeadline, locationHeadline } from "./landing-lab-engine";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
 import { HeroMorph } from "./hero-morph";
+import { LandingLearning } from "./landing-learning";
+import { initLandingScenes } from "./landing-scenes-engine";
+import "./landing-scenes.css";
 import { LegacyLandingLab } from "./legacy/landing-lab-before-hero-morph";
 
 // Convert the prototype's static style declarations for the initial React render.
@@ -33,7 +36,11 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
   const v = landingLabValues(undefined, siteNavigation);
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (rootRef.current) return initLandingLab(rootRef.current);
+    if (rootRef.current) {
+      const stopLab = initLandingLab(rootRef.current);
+      const stopScenes = initLandingScenes(rootRef.current);
+      return () => { stopScenes(); stopLab(); };
+    }
   }, []);
   return (<><div style={css("background:#FFF;color:#000;font-family:var(--fzl-geist),'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip")} className={`fzLab ${className}`} ref={rootRef}>
 {!siteNavigation && <div style={css("background:#000;color:#FFF;font-size:13px;text-align:center;padding:10px 16px")}>{"FindEZ for iPhone is coming soon. "}<a href="#waitlist" style={css("color:#A3A3A3")}>{"Join the waitlist \u203a"}</a></div>}
@@ -47,27 +54,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 
 <HeroMorph />
 
-<section id="see" style={css(v.seeSec)} data-lab-style="seeSec">
-<div className="wrap" style={css("max-width:920px")}>
-<div style={css("position:relative")}>
-<div style={css(v.benchBox)} data-lab-style="benchBox">
-<img src="/images/landing-lab/bench.jpg" alt="A real workbench: a labelled parts cabinet, a battery charger, tape, screws, gears and aluminum housings" style={css("display:block;width:100%;aspect-ratio:800/520;object-fit:cover")} />
-<svg viewBox="0 0 800 520" aria-hidden="true" style={css("position:absolute;inset:0;width:100%;height:100%")}>
-<mask id="fzHoles"><rect width="800" height="520" fill="#FFFFFF"></rect>{v.seg.map((g, i) => <Fragment key={i}><rect x={g.x} data-lab-x={`seg.${i}.x`} y={g.y} data-lab-y={`seg.${i}.y`} width={g.w} data-lab-width={`seg.${i}.w`} height={g.h} data-lab-height={`seg.${i}.h`} rx="6" fill="#000000" style={css(g.hole)} data-lab-style={`seg.${i}.hole`} data-lab-row={`seg.${i}`}></rect></Fragment>)}</mask>
-<rect width="800" height="520" fill="#111112" mask="url(#fzHoles)" style={css(v.segDim)} data-lab-style="segDim"></rect>
-{v.seg.map((g, i) => <Fragment key={i}>
-<rect x={g.x} data-lab-x={`seg.${i}.x`} y={g.y} data-lab-y={`seg.${i}.y`} width={g.w} data-lab-width={`seg.${i}.w`} height={g.h} data-lab-height={`seg.${i}.h`} rx="6" fill="none" pathLength="1" style={css(g.line)} data-lab-style={`seg.${i}.line`} data-lab-row={`seg.${i}`}></rect>
-</Fragment>)}
-<rect style={css(v.scanBar)} data-lab-style="scanBar" y="0" width="2" height="520" fill="rgba(255,255,255,.8)"></rect>
-</svg>
-<div style={css("position:absolute;inset:0;container-type:inline-size;pointer-events:none")}>
-{v.seg.map((g, i) => <Fragment key={i}><span style={css(g.tag)} data-lab-style={`seg.${i}.tag`} data-lab-row={`seg.${i}`}><span data-lab-text={`seg.${i}.label`}>{g.label}</span></span></Fragment>)}
-</div>
-</div>
-<div className="fz-phone hide-s" style={css(v.phoneB)} data-lab-style="phoneB"><div className="fz-bezel"><div className="fz-screen"><img src="/images/landing-lab/app-capture.jpg" alt="The Capture screen listing each object from the photo as its own row" /></div></div></div>
-</div>
-</div>
-</section>
+
 
 <section id="graph" style={css(v.graphSec)} data-lab-style="graphSec">
 <div style={css(v.pinStyle)} data-lab-style="pinStyle">
@@ -96,8 +83,9 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 
 <section id="zoom" style={css(v.zoomSec)} data-lab-style="zoomSec">
 <div style={css(v.pinTop)} data-lab-style="pinTop">
+<div className="fzl-zoom-stage" data-landing-scene="zoom">
 <div className="wrap" style={css("padding-top:84px;text-align:center")}>
-<h2 className="h2" style={css("margin-top:14px")}>{"Not just \u201cWorkshop\u201d. Exactly where."}</h2>
+<h2 className="h2" aria-label={locationHeadline} style={css("margin-top:14px")}><span aria-hidden="true">{v.locationLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`locationLetters.${i}.style`}>{letter.t}</span>)}</span></h2>
 </div>
 <div style={css(v.zoomBox)} data-lab-style="zoomBox">
 <div style={css("position:relative;border-radius:14px;overflow:hidden;background:#1A1A1A;aspect-ratio:1000/560;container-type:inline-size")}>
@@ -111,6 +99,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 <div style={css("display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin-top:22px;font-size:17px")}>
 {v.crumbs.map((b, i) => <Fragment key={i}><span style={css(b.style)} data-lab-style={`crumbs.${i}.style`} data-lab-row={`crumbs.${i}`}><span data-lab-text={`crumbs.${i}.t`}>{b.t}</span></span></Fragment>)}
+</div>
 </div>
 </div>
 </div>
@@ -173,37 +162,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </section>
 
-<section id="find" className="wrap" style={css(v.findSec)} data-lab-style="findSec">
-<h2 className="h2" style={css("margin-top:16px;max-width:15ch")}>{"Not one giant model. A pipeline."}</h2>
-<p className="lede" style={css("max-width:600px")}>{"Precise tools wherever they work, deeper reasoning only for the hard cases, and every correction you make feeding back into FIND."}</p>
-<div style={css("margin-top:60px;overflow-x:auto")}>
-<div style={css("position:relative;min-width:640px;container-type:inline-size")}>
-<svg viewBox="0 0 1100 320" role="img" aria-label="Objects flow through perceive, identify, confidence, context and memory; uncertain ones take a closer look; corrections loop back" style={css("display:block;width:100%;height:auto")}>
-<path d="M60 150 H1040" stroke="#E5E5E5" strokeWidth="2" fill="none"></path>
-<path d="M520 150 C520 250 710 250 710 150" stroke="#E5E5E5" strokeWidth="2" fill="none" strokeDasharray="4 6"></path>
-<path d="M900 150 C900 40 140 40 140 150" stroke="#F3C9B1" strokeWidth="2" fill="none" strokeDasharray="4 6"></path>
-<circle cx="140" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
-<circle cx="330" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
-<circle cx="520" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
-<circle cx="710" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
-<circle cx="900" cy="150" r="9" fill="#FFF" stroke="#111112" strokeWidth="2"></circle>
-<text x="615" y="262" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="10" fill="#79648C">{"UNSURE \u00b7 CLOSER LOOK"}</text>
-<text x="520" y="58" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="10" fill="#C2410C">{"YOUR CORRECTIONS \u00b7 FIND LEARNS"}</text>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-0s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-1s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-2s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-3s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-4s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#111112"><animateMotion dur="6s" begin="-5s" repeatCount="indefinite" path="M60 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-0s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
-<circle r="5" fill="#79648C"><animateMotion dur="8s" begin="-4s" repeatCount="indefinite" path="M60 150 H520 C520 250 710 250 710 150 H1040"></animateMotion></circle>
-<circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-0.0s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
-<circle r="4" fill="#E8590C"><animateMotion dur="7s" begin="-3.5s" repeatCount="indefinite" path="M900 150 C900 40 140 40 140 150"></animateMotion></circle>
-</svg>
-{v.pipeNodes.map((n, i) => <Fragment key={i}><div style={css(n.s)} data-lab-style={`pipeNodes.${i}.s`} data-lab-row={`pipeNodes.${i}`}><div style={css("font-size:1.55cqw;color:#000")}><span data-lab-text={`pipeNodes.${i}.t`}>{n.t}</span></div><div style={css("font-family:var(--fzl-mono),monospace;font-size:.92cqw;letter-spacing:.05em;color:#8C8C8C;margin-top:.5cqw")}><span data-lab-text={`pipeNodes.${i}.d`}>{n.d}</span></div></div></Fragment>)}
-</div>
-</div>
-</section>
+<LandingLearning />
 
 {!siteNavigation && <section id="vision" style={css(v.visSec)} data-lab-style="visSec">
 <div style={css("max-width:1200px;margin:0 auto;padding:0 24px")}>
@@ -227,7 +186,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </section>}
 
-<section id="app" style={css("padding:140px 0 120px;overflow:hidden")}>
+<section id="app" className="fzl-scene-app" data-landing-scene="app" style={css("padding:140px 0 120px;overflow:hidden")}>
 <div className="wrap" style={css("text-align:center")}>
 <h2 className="h2" style={css("margin:16px auto 0;max-width:16ch")}>{"Capture. Ask. Find."}</h2>
 <p className="lede" style={css("margin:18px auto 0")}>{"Everything you own, remembered, in one app that stays in sync with the web."}</p>

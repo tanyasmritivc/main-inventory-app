@@ -1,0 +1,675 @@
+{
+  "origin": "http://127.0.0.1:3214",
+  "checks": [
+    "Requested removals, replacement copy and business email destination",
+    "Hero fits 12 large, standard, narrow and short viewports",
+    "Hero releases continuously directly into memory, without the deleted phone scene",
+    "Location headline fades letter by letter and reverses with scroll",
+    "Model improvement surface and orbit morph with scroll, reverse cleanly, and keep stable layout",
+    "Complete landing flow retains all remaining sections with scroll-driven motion",
+    "Reduced motion keeps the full content visible without pinning or letter fades"
+  ],
+  "errors": [],
+  "sizes": [
+    {
+      "width": 2560,
+      "height": 1440,
+      "static": false,
+      "text": {
+        "x": 320,
+        "y": 162,
+        "width": 883.1875,
+        "height": 499.234375,
+        "right": 1203.1875,
+        "bottom": 661.234375
+      },
+      "photo": {
+        "x": 1299.1875,
+        "y": 162,
+        "width": 940.796875,
+        "height": 705.59375,
+        "right": 2239.984375,
+        "bottom": 867.59375
+      },
+      "card": {
+        "x": 1263.1875,
+        "y": 747.59375,
+        "width": 400,
+        "height": 276,
+        "right": 1663.1875,
+        "bottom": 1023.59375
+      },
+      "chip": {
+        "x": 2009,
+        "y": 801.59375,
+        "width": 210.90625,
+        "height": 42,
+        "right": 2219.90625,
+        "bottom": 843.59375
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 2560,
+        "height": 2740,
+        "right": 2560,
+        "bottom": 2806
+      },
+      "graph": {
+        "x": 72,
+        "y": 2806,
+        "width": 2416,
+        "height": 3160,
+        "right": 2488,
+        "bottom": 5966
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 2048,
+      "height": 1152,
+      "static": false,
+      "text": {
+        "x": 80,
+        "y": 162,
+        "width": 868.46875,
+        "height": 499.234375,
+        "right": 948.46875,
+        "bottom": 661.234375
+      },
+      "photo": {
+        "x": 1042.875,
+        "y": 162,
+        "width": 925.109375,
+        "height": 693.828125,
+        "right": 1967.984375,
+        "bottom": 855.828125
+      },
+      "card": {
+        "x": 1006.875,
+        "y": 735.828125,
+        "width": 400,
+        "height": 276,
+        "right": 1406.875,
+        "bottom": 1011.828125
+      },
+      "chip": {
+        "x": 1737,
+        "y": 789.828125,
+        "width": 210.90625,
+        "height": 42,
+        "right": 1947.90625,
+        "bottom": 831.828125
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 2048,
+        "height": 2452,
+        "right": 2048,
+        "bottom": 2518
+      },
+      "graph": {
+        "x": 72,
+        "y": 2518,
+        "width": 1904,
+        "height": 3160,
+        "right": 1976,
+        "bottom": 5678
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "static": false,
+      "text": {
+        "x": 76.796875,
+        "y": 162,
+        "width": 812.53125,
+        "height": 499.234375,
+        "right": 889.328125,
+        "bottom": 661.234375
+      },
+      "photo": {
+        "x": 977.65625,
+        "y": 162,
+        "width": 865.53125,
+        "height": 649.140625,
+        "right": 1843.1875,
+        "bottom": 811.140625
+      },
+      "card": {
+        "x": 941.65625,
+        "y": 691.140625,
+        "width": 400,
+        "height": 276,
+        "right": 1341.65625,
+        "bottom": 967.140625
+      },
+      "chip": {
+        "x": 1612.1875,
+        "y": 745.140625,
+        "width": 210.90625,
+        "height": 42,
+        "right": 1823.09375,
+        "bottom": 787.140625
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1920,
+        "height": 2380,
+        "right": 1920,
+        "bottom": 2446
+      },
+      "graph": {
+        "x": 72,
+        "y": 2446,
+        "width": 1776,
+        "height": 3160,
+        "right": 1848,
+        "bottom": 5606
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "static": false,
+      "text": {
+        "x": 57.59375,
+        "y": 154.5625,
+        "width": 609.40625,
+        "height": 433.78125,
+        "right": 667,
+        "bottom": 588.34375
+      },
+      "photo": {
+        "x": 733.234375,
+        "y": 154.5625,
+        "width": 649.140625,
+        "height": 486.84375,
+        "right": 1382.375,
+        "bottom": 641.40625
+      },
+      "card": {
+        "x": 697.234375,
+        "y": 521.421875,
+        "width": 400,
+        "height": 276,
+        "right": 1097.234375,
+        "bottom": 797.421875
+      },
+      "chip": {
+        "x": 1151.390625,
+        "y": 575.421875,
+        "width": 210.90625,
+        "height": 42,
+        "right": 1362.296875,
+        "bottom": 617.421875
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1440,
+        "height": 2200,
+        "right": 1440,
+        "bottom": 2266
+      },
+      "graph": {
+        "x": 72,
+        "y": 2266,
+        "width": 1296,
+        "height": 3160,
+        "right": 1368,
+        "bottom": 5426
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "static": false,
+      "text": {
+        "x": 51.203125,
+        "y": 91.609375,
+        "width": 541.6875,
+        "height": 399.09375,
+        "right": 592.890625,
+        "bottom": 490.703125
+      },
+      "photo": {
+        "x": 651.765625,
+        "y": 91.609375,
+        "width": 577.015625,
+        "height": 432.75,
+        "right": 1228.78125,
+        "bottom": 524.359375
+      },
+      "card": {
+        "x": 615.765625,
+        "y": 404.375,
+        "width": 365.046875,
+        "height": 276,
+        "right": 980.8125,
+        "bottom": 680.375
+      },
+      "chip": {
+        "x": 997.796875,
+        "y": 458.375,
+        "width": 210.90625,
+        "height": 42,
+        "right": 1208.703125,
+        "bottom": 500.375
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1280,
+        "height": 2020,
+        "right": 1280,
+        "bottom": 2086
+      },
+      "graph": {
+        "x": 72,
+        "y": 2086,
+        "width": 1136,
+        "height": 3020,
+        "right": 1208,
+        "bottom": 5106
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "height": 600,
+      "static": false,
+      "text": {
+        "x": 51.203125,
+        "y": 90,
+        "width": 541.6875,
+        "height": 399.09375,
+        "right": 592.890625,
+        "bottom": 489.09375
+      },
+      "photo": {
+        "x": 807.46875,
+        "y": 90,
+        "width": 421.328125,
+        "height": 315.984375,
+        "right": 1228.796875,
+        "bottom": 405.984375
+      },
+      "card": {
+        "x": 771.46875,
+        "y": 286,
+        "width": 365.046875,
+        "height": 276,
+        "right": 1136.515625,
+        "bottom": 562
+      },
+      "chip": {
+        "x": 997.796875,
+        "y": 110,
+        "width": 210.90625,
+        "height": 42,
+        "right": 1208.703125,
+        "bottom": 152
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1280,
+        "height": 1900,
+        "right": 1280,
+        "bottom": 1966
+      },
+      "graph": {
+        "x": 72,
+        "y": 1966,
+        "width": 1136,
+        "height": 2900,
+        "right": 1208,
+        "bottom": 4866
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "static": false,
+      "text": {
+        "x": 40.953125,
+        "y": 158.890625,
+        "width": 433.34375,
+        "height": 352.265625,
+        "right": 474.296875,
+        "bottom": 511.15625
+      },
+      "photo": {
+        "x": 521.40625,
+        "y": 158.890625,
+        "width": 461.609375,
+        "height": 346.203125,
+        "right": 983.015625,
+        "bottom": 505.09375
+      },
+      "card": {
+        "x": 485.40625,
+        "y": 385.09375,
+        "width": 292.03125,
+        "height": 276,
+        "right": 777.4375,
+        "bottom": 661.09375
+      },
+      "chip": {
+        "x": 752.03125,
+        "y": 178.890625,
+        "width": 210.90625,
+        "height": 42,
+        "right": 962.9375,
+        "bottom": 220.890625
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1024,
+        "height": 2068,
+        "right": 1024,
+        "bottom": 2134
+      },
+      "graph": {
+        "x": 72,
+        "y": 2134,
+        "width": 880,
+        "height": 3068,
+        "right": 952,
+        "bottom": 5202
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 980,
+      "height": 600,
+      "static": false,
+      "text": {
+        "x": 39.203125,
+        "y": 90,
+        "width": 414.734375,
+        "height": 406.203125,
+        "right": 453.9375,
+        "bottom": 496.203125
+      },
+      "photo": {
+        "x": 519.46875,
+        "y": 90,
+        "width": 421.328125,
+        "height": 315.984375,
+        "right": 940.796875,
+        "bottom": 405.984375
+      },
+      "card": {
+        "x": 483.46875,
+        "y": 286,
+        "width": 279.484375,
+        "height": 276,
+        "right": 762.953125,
+        "bottom": 562
+      },
+      "chip": {
+        "x": 709.796875,
+        "y": 110,
+        "width": 210.90625,
+        "height": 42,
+        "right": 920.703125,
+        "bottom": 152
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 980,
+        "height": 1900,
+        "right": 980,
+        "bottom": 1966
+      },
+      "graph": {
+        "x": 72,
+        "y": 1966,
+        "width": 836,
+        "height": 2900,
+        "right": 908,
+        "bottom": 4866
+      },
+      "found": "0",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "static": true,
+      "text": {
+        "x": 24,
+        "y": 106,
+        "width": 720,
+        "height": 275.65625,
+        "right": 744,
+        "bottom": 381.65625
+      },
+      "photo": {
+        "x": 24,
+        "y": 413.65625,
+        "width": 720,
+        "height": 540,
+        "right": 744,
+        "bottom": 953.65625
+      },
+      "card": {
+        "x": 24,
+        "y": 985.65625,
+        "width": 720,
+        "height": 276,
+        "right": 744,
+        "bottom": 1261.65625
+      },
+      "chip": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 768,
+        "height": 1602.75,
+        "right": 768,
+        "bottom": 1668.75
+      },
+      "graph": {
+        "x": 16,
+        "y": 1668.75,
+        "width": 736,
+        "height": 3160,
+        "right": 752,
+        "bottom": 4828.75
+      },
+      "found": "6",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "static": true,
+      "text": {
+        "x": 24,
+        "y": 106,
+        "width": 342,
+        "height": 353.796875,
+        "right": 366,
+        "bottom": 459.796875
+      },
+      "photo": {
+        "x": 24,
+        "y": 491.796875,
+        "width": 342,
+        "height": 256.5,
+        "right": 366,
+        "bottom": 748.296875
+      },
+      "card": {
+        "x": 24,
+        "y": 780.296875,
+        "width": 342,
+        "height": 276,
+        "right": 366,
+        "bottom": 1056.296875
+      },
+      "chip": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 390,
+        "height": 1424.578125,
+        "right": 390,
+        "bottom": 1490.578125
+      },
+      "graph": {
+        "x": 16,
+        "y": 1490.578125,
+        "width": 358,
+        "height": 3144,
+        "right": 374,
+        "bottom": 4634.578125
+      },
+      "found": "6",
+      "overflow": false
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "static": true,
+      "text": {
+        "x": 24,
+        "y": 106,
+        "width": 327,
+        "height": 381.34375,
+        "right": 351,
+        "bottom": 487.34375
+      },
+      "photo": {
+        "x": 24,
+        "y": 519.34375,
+        "width": 327,
+        "height": 245.25,
+        "right": 351,
+        "bottom": 764.59375
+      },
+      "card": {
+        "x": 24,
+        "y": 796.59375,
+        "width": 327,
+        "height": 276,
+        "right": 351,
+        "bottom": 1072.59375
+      },
+      "chip": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 375,
+        "height": 1440.875,
+        "right": 375,
+        "bottom": 1506.875
+      },
+      "graph": {
+        "x": 16,
+        "y": 1506.875,
+        "width": 343,
+        "height": 2967,
+        "right": 359,
+        "bottom": 4473.875
+      },
+      "found": "6",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 540,
+      "static": true,
+      "text": {
+        "x": 124,
+        "y": 106,
+        "width": 1192,
+        "height": 377.875,
+        "right": 1316,
+        "bottom": 483.875
+      },
+      "photo": {
+        "x": 124,
+        "y": 515.875,
+        "width": 1192,
+        "height": 894,
+        "right": 1316,
+        "bottom": 1409.875
+      },
+      "card": {
+        "x": 124,
+        "y": 1441.875,
+        "width": 1192,
+        "height": 276,
+        "right": 1316,
+        "bottom": 1717.875
+      },
+      "chip": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "hero": {
+        "x": 0,
+        "y": 66,
+        "width": 1440,
+        "height": 2062.875,
+        "right": 1440,
+        "bottom": 2128.875
+      },
+      "graph": {
+        "x": 72,
+        "y": 2128.875,
+        "width": 1296,
+        "height": 2840,
+        "right": 1368,
+        "bottom": 4968.875
+      },
+      "found": "6",
+      "overflow": false
+    }
+  ]
+}

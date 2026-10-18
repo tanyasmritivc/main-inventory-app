@@ -24,6 +24,9 @@ jest.mock("@/components/site/hero-morph-engine", () => ({
   ...jest.requireActual("@/components/site/hero-morph-engine"),
   init: () => () => {},
 }));
+jest.mock("@/components/site/landing-scenes-engine", () => ({
+  initLandingScenes: () => () => {},
+}));
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => ({
     auth: {
@@ -49,7 +52,7 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "see", "graph", "zoom", "ask", "who", "find", "app", "waitlist", "end"]) {
+  for (const id of ["hero", "graph", "zoom", "ask", "who", "find", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }
   expect(document.getElementById("own")).toBeNull();
@@ -58,9 +61,12 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll("#hero")).toHaveLength(1);
   expect(document.querySelectorAll(".fzh-det")).toHaveLength(6);
   expect(document.querySelectorAll(".fzh-h2")).toHaveLength(1);
-  expect(document.querySelector("#see h2")).toBeNull();
-  expect(document.querySelector('#see img[src$="app-capture.jpg"]')).toBeTruthy();
-  expect(document.querySelector("#see #fzHoles")).toBeTruthy();
+  expect(document.getElementById("see")).toBeNull();
+  expect(document.querySelector(".fzh-text .fzh-eyebrow")).toBeNull();
+  expect(document.querySelector('#zoom [data-lab-style="locationLetters.0.style"]')).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Not one giant model. A pipeline." })).toBeNull();
+  expect(screen.getByRole("heading", { name: "Making our model better, day by day." })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Business inquiries" }).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
   expect(document.querySelector('#graph [data-lab-style="memoryLetters.0.style"]')).toBeTruthy();
   expect(document.querySelector('#hero img[src="/images/landing/hero-workbench.jpg"]')).toBeTruthy();
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
