@@ -25,6 +25,7 @@ const client = {
   },
 };
 const mockNavigate = jest.fn();
+jest.mock("@/components/site/profile-photo-cropper", () => ({ ProfilePhotoCropper: ({ onSave, onCancel }: { onSave: (file: File) => void; onCancel: () => void }) => <div><button onClick={() => onSave(new File(["cropped"], "avatar.png", { type: "image/png" }))}>Use photo</button><button onClick={onCancel}>Cancel crop</button></div> }));
 let mockPathname="/settings";
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => client,
@@ -208,12 +209,14 @@ test("uploads the photo under the field required by the current backend", async 
   );
   const photo = new File(["image"], "avatar.png", { type: "image/png" });
   await userEvent.upload(screen.getByLabelText("Profile photo file"), photo);
+  expect(jest.mocked(accountRequest).mock.calls.some(([,path]) => path === "/profile/photo")).toBe(false);
+  await userEvent.click(screen.getByText("Use photo"));
   await waitFor(() => {
     const call = jest
       .mocked(accountRequest)
       .mock.calls.find(([, path]) => path === "/profile/photo");
     expect(call?.[2]?.body).toBeInstanceOf(FormData);
-    expect((call?.[2]?.body as FormData).get("photo")).toBe(photo);
+    expect(((call?.[2]?.body as FormData).get("photo") as File).name).toBe("avatar.png");
     expect((call?.[2]?.body as FormData).has("file")).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 "use client";
+import { MemberAvatar, type MemberIdentity } from "./member-avatar";
 import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
@@ -20,7 +21,7 @@ import styles from "./directory-design.module.css";
 import { WorkspaceManagementActions } from "./workspace-management-actions";
 import { TransferOwnership } from "./transfer-ownership";
 type Org = { organization_id: string; name: string; role: string; owner_user_id?: string };
-type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string; can_open?: boolean }[]; members: { user_id: string; display_name: string; role: string }[] };
+type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string; can_open?: boolean }[]; members: (MemberIdentity & { display_name: string; role: string })[] };
 export function OrganizationActions({ organization, onRename, onDelete, disabled }: {
  organization: OrganizationTarget; onRename: () => void; onDelete: () => void; disabled: boolean;
 }) {
@@ -101,7 +102,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
   {organizationId && !people && <h2 style={{fontSize:15,fontWeight:500,marginBottom:16}}>Workspaces</h2>}
   <input className="product-input directory-search" type="search" aria-label={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} placeholder={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} value={query} onChange={(e) => setQuery(e.target.value)} />
   {loading ? <p role="status" className="workspace-muted">Loading...</p> : organizationId ? people ? <>
-   <div className="context-people-list">{overview?.members.filter((m) => matches(m.display_name)).map((m) => <div className="context-person" key={m.user_id}><strong>{m.display_name === "Member" ? `Member ${m.user_id.slice(0,8)}` : m.display_name}</strong>{overview?.organization.role === "owner" && m.role !== "owner" ? <select className="product-select" aria-label={`Organization role for ${m.display_name}`} value={m.role} disabled={busy} onChange={event=>void changeRole(m.user_id,event.target.value)}><option value="member">Member</option><option value="admin">Admin</option></select> : <span>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}</span>}{manager && m.role !== "owner" && <button className="directory-rename" disabled={busy} onClick={() => void removeMember(m.user_id)}>Remove</button>}</div>)}</div>
+   <div className="context-people-list">{overview?.members.filter((m) => matches(m.display_name)).map((m) => <div className="context-person" key={m.user_id}><MemberAvatar member={m} /><strong>{m.display_name === "Member" ? `Member ${m.user_id.slice(0,8)}` : m.display_name}</strong>{overview?.organization.role === "owner" && m.role !== "owner" ? <select className="product-select" aria-label={`Organization role for ${m.display_name}`} value={m.role} disabled={busy} onChange={event=>void changeRole(m.user_id,event.target.value)}><option value="member">Member</option><option value="admin">Admin</option></select> : <span>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}</span>}{manager && m.role !== "owner" && <button className="directory-rename" disabled={busy} onClick={() => void removeMember(m.user_id)}>Remove</button>}</div>)}</div>
    {!overview?.members.some((m) => matches(m.display_name)) && <p className="workspace-muted">No matching people.</p>}
    {manager && <PendingInvitations scope="organization" resourceId={organizationId} revision={revision} />}
   </> : <>

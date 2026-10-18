@@ -1,7 +1,8 @@
 "use client";
-import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 
 import Link from "next/link";
+import { MemberAvatar, MemberIdentityLabel, type MemberIdentity } from "./member-avatar";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
@@ -9,7 +10,7 @@ import { userFacingError } from "@/lib/user-facing-error";
 import type { InvitationDelivery } from "@/lib/access-invitation";
 import { InvitationDeliveryDetails, PendingInvitations } from "@/components/site/access-invitation-tools";
 
-type Member = { user_id: string; display_name: string; role: string; workspace_role?: string; override?: string; source?: string };
+type Member = MemberIdentity & { display_name: string; role: string; workspace_role?: string; override?: string; source?: string };
 type Location = { location_id: string; name: string; parent_id: string | null };
 type Access = {
   workspace?: { name: string; role: string; organization_id?: string };
@@ -45,8 +46,8 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   const [activity, setActivity] = useState<{ audit_id: string; action: string; actor_id: string; created_at: string; changes: { before?: { location?: string; quantity?: number }; after?: { location?: string; quantity?: number } } }[]>([]);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const base = inventoryId ? `/inventories/${inventoryId}` : `/inventory-workspaces/${workspaceId}`;
   usePermissionRefresh(() => setRevision(v => v + 1), busy);
+  const base = inventoryId ? `/inventories/${inventoryId}` : `/inventory-workspaces/${workspaceId}`;
   useEffect(() => {
     if (!accountId) return;
     let live = true;
@@ -86,7 +87,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
       {show("policy") && inventoryId && !manager && <p className="workspace-muted">{!data.inventory?.team_id ? "This inventory is private to you." : data.inventory.access_mode === "restricted" ? "Access is assigned individually." : "Access follows this workspace's permissions."}</p>}
       {show("people") && <section>{section === "all" && <h2>{inventoryId ? "People with access" : "Workspace members"}</h2>}
         <div className="directory-rows">{data.members.filter((m) => m.role !== "none").map((member) => <div className="directory-row" key={member.user_id}>
-          <span>{member.display_name === "Member" ? `Member ${member.user_id.slice(0, 8)}` : member.display_name}</span><span>{roleName(member.role)}{inventoryId && member.source === "workspace" ? " · inherited" : ""}</span>
+          <span className="member-identity-label"><MemberAvatar member={member} />{member.display_name === "Member" ? `Member ${member.user_id.slice(0, 8)}` : member.display_name}</span><span>{roleName(member.role)}{inventoryId && member.source === "workspace" ? " · inherited" : ""}</span>
         </div>)}</div>
         {manager && (inventoryId || data.workspace?.organization_id) && <form className="collaboration-form" onSubmit={(e) => submit(e, `${base}/${inventoryId ? "access" : "members"}/${memberId}`, "PUT", { role: memberRole })}>
           <label>Member<select required className="product-select" value={memberId} onChange={(e) => setMemberId(e.target.value)}><option value="">Choose member</option>{candidates?.map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name === "Member" ? `Member ${m.user_id.slice(0, 8)}` : m.display_name}</option>)}</select></label>
@@ -111,7 +112,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
       {show("locations") && !manager && <p className="workspace-muted">{inventoryId && !data.inventory?.team_id ? "Manage the locations in this inventory in Spaces." : "Workspace owners and admins manage shared locations."}</p>}
       {show("activity") && <section>{section === "all" && <h2>History</h2>}{activity.length ? <div className="directory-rows">{activity.map((entry) => <div className="collaboration-event" key={entry.audit_id}>
         <span>{entry.action.replaceAll("_", " ")}</span><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time>
-        <small className="workspace-muted">By {data.members.find((m) => m.user_id === entry.actor_id)?.display_name || entry.actor_id?.slice(0, 8) || "Unknown"}</small>
+        <small className="workspace-muted"><MemberIdentityLabel member={data.members.find((m) => m.user_id === entry.actor_id)} prefix="By " /></small>
         {entry.changes.after?.location !== undefined && <span>Recorded location: {entry.changes.after.location || "Not recorded"}</span>}
         {entry.changes.before?.quantity !== entry.changes.after?.quantity && entry.changes.after?.quantity !== undefined && <span>Quantity: {entry.changes.before?.quantity ?? "New"} → {entry.changes.after.quantity}</span>}
       </div>)}</div> : <p className="workspace-muted">No recorded changes yet.</p>}</section>}

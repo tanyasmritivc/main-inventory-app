@@ -1572,3 +1572,6 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
 .ask-action-card li span, .ask-action-card li small { display: block; }
 .ask-action-card li small { opacity: .7; margin-top: 4px; }
 .ask-action-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+
+.member-identity-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; vertical-align: middle; }
+.member-identity-label > span:last-child { overflow-wrap: anywhere; }

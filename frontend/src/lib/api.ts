@@ -739,6 +739,7 @@ export async function deleteSpace({ token, spaceId }: { token: string; spaceId: 
 // ── Activity and notifications ───────────────────────────────────────────────
 
 export type ActivityEntry = {
+  actor_id?: string;
   invitation?: AccessInvitation;
   id?: string;
   activity_id?: string;

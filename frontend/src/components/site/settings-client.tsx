@@ -2,6 +2,7 @@
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
+import { ProfilePhotoCropper } from "./profile-photo-cropper";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
@@ -69,6 +70,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useInventoryRouter();
   const photoRef = useRef<HTMLInputElement>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingName, setEditingName] = useState("");
   const [editingEmail, setEditingEmail] = useState("");
@@ -164,8 +166,10 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
         current ? { ...current, avatar_url: result.avatar_url } : current,
       );
       setProfileMessage("Profile photo updated.");
+      setPendingPhoto(null);
     } catch {
       setProfileMessage("The photo could not be updated.");
+      throw new Error("The photo could not be updated.");
     } finally {
       setSavingProfile(false);
     }
@@ -263,6 +267,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
 
   return (
     <div className="settings-content">
+      {pendingPhoto && <ProfilePhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={changePhoto} />}
       {section === "profile" && <section className="settings-panel" id="profile">
         <header>
           <h2>Profile</h2>
@@ -292,7 +297,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
             hidden
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => void changePhoto(event.target.files?.[0])}
+            onChange={(event) => { setPendingPhoto(event.target.files?.[0] || null); event.currentTarget.value = ""; }}
           />
           <div>
             <strong>Profile image</strong>
