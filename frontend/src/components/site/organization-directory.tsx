@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -17,8 +18,9 @@ import { OrganizationDeleteDialog, type OrganizationTarget } from "@/components/
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import styles from "./directory-design.module.css";
 import { WorkspaceManagementActions } from "./workspace-management-actions";
+import { TransferOwnership } from "./transfer-ownership";
 type Org = { organization_id: string; name: string; role: string; owner_user_id?: string };
-type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string }[]; members: { user_id: string; display_name: string; role: string }[] };
+type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string; can_open?: boolean }[]; members: { user_id: string; display_name: string; role: string }[] };
 export function OrganizationActions({ organization, onRename, onDelete, disabled }: {
  organization: OrganizationTarget; onRename: () => void; onDelete: () => void; disabled: boolean;
 }) {
@@ -47,6 +49,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  useLayoutEffect(() => { requireInventoryContext(false); selectInventory(null); }, []);
  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
  const base = organizationId ? `/organizations/${organizationId}` : "/organizations";
+  usePermissionRefresh(() => setRevision(v => v + 1), busy || !!mode);
  useEffect(() => {
   if (!accountId) return;
   let active = true;
@@ -77,6 +80,12 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
   catch (reason) { if (live.current) setError(userFacingError(reason, "The member could not be removed.")); }
   finally { if (live.current) setBusy(false); }
  }
+ async function changeRole(id: string, role: string) {
+  if (!accountId || busy) return; setBusy(true); setError("");
+  try { await accountRequest(accountId, `${base}/members/${id}`, {method:"PUT",body:{role}}); if (live.current) { setRevision(v=>v+1); window.dispatchEvent(new Event("findez-permissions-changed")); } }
+  catch (reason) { if (live.current) setError(userFacingError(reason,"The role could not be changed.")); }
+  finally { if (live.current) setBusy(false); }
+ }
  const manager = overview && ["owner", "admin"].includes(overview.organization.role);
  const people = !!organizationId && view === "people";
  const matches = (value: string) => value.toLowerCase().includes(query.trim().toLowerCase());
@@ -84,6 +93,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  return <div className={styles.shell}><AppShell context={context}><section className={`product-page context-directory ${styles.flow}`}>
   <header className="product-page-header"><div><span className={styles.eyebrow}>{organizationId ? "Organization" : "Your places"}</span><h1>{organizationId ? people ? "People" : overview?.organization.name || "Organization" : "Organizations"}</h1></div><div className="product-actions">
    {accountId && overview?.organization.owner_user_id === accountId && <OrganizationActions organization={overview.organization} disabled={busy} onRename={() => setRename({ kind: "organization", id: overview.organization.organization_id, name: overview.organization.name })} onDelete={() => setDeleting(overview.organization)} />}
+   {organizationId && overview?.organization.role === "owner" && <TransferOwnership scope="organization" resourceId={organizationId} name={overview.organization.name} onTransferred={()=>setRevision(v=>v+1)} />}
    {!organizationId && <button className="product-button" onClick={() => open("organization")}>New organization</button>}
    {manager && <>{!people && !!overview?.attachable?.length && <button className="product-button" onClick={() => open("attach")}>Add existing workspace</button>}<button className="product-button" onClick={() => open(people ? "member" : "workspace")}>{people ? "Invite member" : "New workspace"}</button></>}
   </div></header>
@@ -91,11 +101,11 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
   {organizationId && !people && <h2 style={{fontSize:15,fontWeight:500,marginBottom:16}}>Workspaces</h2>}
   <input className="product-input directory-search" type="search" aria-label={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} placeholder={people ? "Search people" : organizationId ? "Search workspaces" : "Search organizations"} value={query} onChange={(e) => setQuery(e.target.value)} />
   {loading ? <p role="status" className="workspace-muted">Loading...</p> : organizationId ? people ? <>
-   <div className="context-people-list">{overview?.members.filter((m) => matches(m.display_name)).map((m) => <div className="context-person" key={m.user_id}><strong>{m.display_name === "Member" ? `Member ${m.user_id.slice(0,8)}` : m.display_name}</strong><span>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}</span>{manager && m.role !== "owner" && (m.role !== "admin" || overview?.organization.role === "owner") && <button className="directory-rename" disabled={busy} onClick={() => void removeMember(m.user_id)}>Remove</button>}</div>)}</div>
+   <div className="context-people-list">{overview?.members.filter((m) => matches(m.display_name)).map((m) => <div className="context-person" key={m.user_id}><strong>{m.display_name === "Member" ? `Member ${m.user_id.slice(0,8)}` : m.display_name}</strong>{overview?.organization.role === "owner" && m.role !== "owner" ? <select className="product-select" aria-label={`Organization role for ${m.display_name}`} value={m.role} disabled={busy} onChange={event=>void changeRole(m.user_id,event.target.value)}><option value="member">Member</option><option value="admin">Admin</option></select> : <span>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}</span>}{manager && m.role !== "owner" && <button className="directory-rename" disabled={busy} onClick={() => void removeMember(m.user_id)}>Remove</button>}</div>)}</div>
    {!overview?.members.some((m) => matches(m.display_name)) && <p className="workspace-muted">No matching people.</p>}
    {manager && <PendingInvitations scope="organization" resourceId={organizationId} revision={revision} />}
   </> : <>
-   <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}><Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><strong>{ws.name}</strong><span>Workspace</span></Link>{accountId && ws.owner_user_id === accountId && <div className={styles.actions}><WorkspaceManagementActions id={ws.team_id} name={ws.name} accountId={accountId} onRenamed={()=>setRevision(v=>v+1)} onDeleted={()=>setRevision(v=>v+1)} /></div>}</div>)}</div>
+   <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}>{ws.can_open === false ? <div className="context-card-link"><strong>{ws.name}</strong><span>Not assigned to this workspace</span></div> : <Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><strong>{ws.name}</strong><span>Workspace</span></Link>}{accountId && ws.owner_user_id === accountId && <div className={styles.actions}><WorkspaceManagementActions id={ws.team_id} name={ws.name} accountId={accountId} onRenamed={()=>setRevision(v=>v+1)} onDeleted={()=>setRevision(v=>v+1)} /></div>}</div>)}</div>
    {!overview?.workspaces.some((ws) => matches(ws.name)) && <div className={styles.empty}><h2>{query ? "No matching workspaces" : "No workspaces yet"}</h2><p>{query ? "Try another name." : manager ? "Create a workspace for your team or project." : "You have not been assigned to a workspace."}</p>{manager && !query && <button className="product-button" onClick={()=>open("workspace")}>Create workspace</button>}</div>}
   </> : <>
    <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && org.owner_user_id === accountId && <OrganizationActions organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>

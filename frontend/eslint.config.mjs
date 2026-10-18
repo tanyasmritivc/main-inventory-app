@@ -11,8 +11,10 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "coverage/**",
     "next-env.d.ts",
   ]),
+  { files: ["tools/**/*.cjs"], rules: { "@typescript-eslint/no-require-imports": "off" } },
   // This legacy client code still has a gradual typing backlog. Keep it visible
   // without letting it mask real build and React correctness failures.
   {

@@ -1,6 +1,6 @@
 import type { TeamCategory } from "./team-categories";
 import { getAccessToken, getAccessSession } from "@/lib/session";
-import { activeInventory, assertInventory, inventoryApiPath } from "@/lib/inventory-selection";
+import { activeInventory, assertInventory, canDeleteSpace, inventoryApiPath } from "@/lib/inventory-selection";
 import type { AccessInvitation } from "./access-invitation";
 
 export type InventoryItem = {
@@ -115,6 +115,9 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
 async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
   const selected = activeInventory();
   const scopedPath = inventoryApiPath(path, selected);
+  if (selected && opts.method?.toUpperCase() === "DELETE" && path.startsWith("/spaces/") && !canDeleteSpace()) {
+    throw new ApiError("Only inventory owners and admins can delete a Space.", 403, null);
+  }
   // Prefer the live session token: a token captured earlier by a component can be
   // stale after Supabase's hourly refresh. The explicit token is the fallback.
   let token = opts.bindToToken ? opts.token : (await getAccessToken()) || opts.token;

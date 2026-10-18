@@ -4,5 +4,6 @@ export type DirectoryInventory = {
   directory_visibility?: "workspace" | "hidden"; item_count?: number;
 };
 export function directoryInventoryHref(inventory: DirectoryInventory) {
+  if (inventory.can_open === false && inventory.can_manage) return `/inventory-access?inventory=${encodeURIComponent(inventory.inventory_id)}`;
   return inventory.can_open === false ? `/inventory-access-request/${encodeURIComponent(inventory.inventory_id)}` : `/home?inventory=${encodeURIComponent(inventory.inventory_id)}`;
 }

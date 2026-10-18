@@ -2,7 +2,7 @@
 import { apiRequest } from "@/lib/api";
 import { accountRequest } from "@/lib/account-request";
 import { getAccessToken, getAccessSession } from "@/lib/session";
-import { activeInventory, inventoryApiPath, inventoryHref, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
+import { activeInventory, canDeleteSpace, permissionFingerprint, inventoryApiPath, inventoryHref, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import { documentOwner } from "@/lib/documents";
 import { adoptRestockEntries, changeRestock, restockKey } from "@/lib/restock-plan";
 
@@ -83,4 +83,23 @@ test("legacy purchase plans are adopted only for verified inventory item IDs and
   selectInventory(b);adoptRestockEntries(localStorage,"actor",["partB"]);
   expect(JSON.parse(localStorage.getItem(restockKey("actor"))!)).toEqual({partB:{buy_quantity:3}});
   expect(JSON.parse(localStorage.getItem("findez-restock-v1:actor")!)).toHaveProperty("partA");
+});
+
+test.each(["owner","admin","editor","viewer"] as const)("%s Space deletion uses effective inventory content role",async(role)=>{
+  const selected={...a,role,can_edit:role!=="viewer"}; selectInventory(selected);
+  fetchMock.mockResolvedValue(response({deleted:true}));
+  expect(canDeleteSpace()).toBe(["owner","admin"].includes(role));
+  if(["owner","admin"].includes(role)) await apiRequest("/spaces/space",{method:"DELETE"});
+  else { await expect(apiRequest("/spaces/space",{method:"DELETE"})).rejects.toMatchObject({status:403}); expect(fetchMock).not.toHaveBeenCalled(); }
+});
+test("a role-only change retires existing inventory requests without switching inventories",async()=>{
+  const original={...a,role:"editor" as const}; selectInventory(original);
+  let finish!:(r:Response)=>void;
+  fetchMock.mockReturnValue(new Promise<Response>(resolve=>{finish=resolve;}));
+  const pending=apiRequest("/search_items",{method:"POST",body:{query:""}});
+  await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+  const changed={...original,role:"viewer" as const,can_edit:false};
+  expect(permissionFingerprint(changed)).not.toBe(permissionFingerprint(original));
+  selectInventory(changed);finish(response({items:[{name:"Retired result"}]}));
+  await expect(pending).rejects.toThrow("inventory changed");
 });

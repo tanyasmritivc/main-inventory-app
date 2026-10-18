@@ -1,4 +1,6 @@
 "use client";
+import { privateImageSrc } from "@/lib/private-image";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, MessageSquarePlus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { AskMarkdown } from "@/components/site/ask-markdown";
@@ -388,7 +390,7 @@ function AssistClientWorkspace({
                 <article className={`ask-message${m.role === "user" ? " is-user" : ""}`} key={m.id}>
                   <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>
                   {photoUrl && (
-                    <img src={photoUrl} alt="Photo used for this question" />
+                    <img src={privateImageSrc(photoUrl, accountId)} alt="Photo used for this question" />
                   )}
                   {m.content ? (
                     m.role === "assistant" ? <AskMarkdown>{m.content}</AskMarkdown> : <div className="ask-body">{m.content}</div>
@@ -479,7 +481,7 @@ function AssistClientWorkspace({
           <div className="ask-composer-box">
             {preview && (
               <div className="ask-photo-preview">
-                <img src={preview} alt="Attached photo" />
+                <img src={privateImageSrc(preview, accountId)} alt="Attached photo" />
                 <span className="workspace-muted">{photo?.name}</span>
                 <button
                   className="workspace-button"

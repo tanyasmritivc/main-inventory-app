@@ -1,3 +1,19 @@
+# October 18 permissions and private photos — prepared
+
+Web implementation follows the supplied Roles and Permissions Specification.
+Inherited Editor remains Editor; explicit restrictions, separate administration,
+protected ownership, current parent/account checks and role refresh are enforced.
+First-party photos require a current authorized session; URL possession grants
+nothing. Mobile includes the requested top-right own-profile access. No Founder
+Dashboard work is included (user withdrew that accidental request).
+Local checks pass: Python 901 + 10 subtests, web 344, Flutter 623, types/build,
+Flutter analysis, composed SQL/replay, two real revocation races and 7 isolated
+Kong HTTP checks. Fresh restored production copy preserves original values in
+86 tables. All production schema/gateway changes are still held for explicit
+reviewed approval; signed beta84 is prepared, not uploaded. Older mobile builds
+need beta84 to display private photos. Physical-device acceptance is pending.
+See API-lane docs/plans/consistent-resource-permissions.md for activation scope.
+
 # October 17 web dashboard cleanup
 
 Recently added and Spaces use contained responsive panels with consistent rows

@@ -1,5 +1,4 @@
 "use client";
-import { canEditInventory } from "@/lib/inventory-selection";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
@@ -283,7 +282,7 @@ export function AppSidebar({
             (section) => (
               <div className="app-nav-section" key={section}>
                 {section !== "FindEZ" && <p>{section}</p>}
-                {items.filter((item) => item.section === section && (canEditInventory() || item.route !== "/scan")).map(
+                {items.filter((item) => item.section === section).map(
                   (item) => {
                     const Icon = item.icon;
                     return (

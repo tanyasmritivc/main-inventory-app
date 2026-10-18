@@ -1,4 +1,5 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ import { directoryInventoryHref, type DirectoryInventory } from "@/lib/workspace
 
 import styles from "./directory-design.module.css";
 import { InventoryManagementActions, DeleteInventoryDialog } from "./inventory-management-actions";
+import { TransferOwnership } from "./transfer-ownership";
 
 type InventoryPage = { workspace: InventoryWorkspace; inventories: DirectoryInventory[]; total: number; next_offset: number | null };
 type SharedSpace = { share_id: string; share_name: string; team_shares?: SharedSpace | SharedSpace[] };
@@ -43,11 +45,13 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const [deleting, setDeleting] = useState<DirectoryInventory | null>(null);
   const [renaming, setRenaming] = useState<DirectoryInventory | null>(null);
   const [joinKind, setJoinKind] = useState("workspace");
+  const [accessMode, setAccessMode] = useState("workspace");
   const [name, setName] = useState(""), [category, setCategory] = useState(""), [customCategory, setCustomCategory] = useState(""), [code, setCode] = useState("");
   const actor = useRef(accountId);
   useLayoutEffect(() => { requireInventoryContext(false); selectInventory(null); }, []);
   useEffect(() => { actor.current = accountId; return () => { actor.current = null; }; }, [accountId]);
   useEffect(() => { setQuery(""); setOffset(0); setPage(null); }, [workspaceId]);
+  usePermissionRefresh(() => setReload(v => v + 1), busy || !!mode);
   useEffect(() => {
     if (!accountId) return;
     let live = true;
@@ -73,7 +77,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
 
   function open(mode: "inventory" | "workspace" | "join" | "rename") {
     setName(mode === "inventory" && !page?.inventories.length ? (workspaceId === "personal" ? "My inventory" : "Inventory") : "");
-    setRenaming(null); setCategory(""); setCustomCategory(""); setCode(""); setError(""); setMode(mode);
+    setRenaming(null); setAccessMode("workspace"); setCategory(""); setCustomCategory(""); setCode(""); setError(""); setMode(mode);
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -86,7 +90,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
         if (!result.inventory?.name || result.inventory.inventory_id !== renaming.inventory_id) throw new Error("The name could not be confirmed saved. Refresh before retrying.");
         if (actor.current === account) setReload((value) => value + 1);
       } else if (mode === "inventory" && workspaceId) {
-        const result = await accountRequest<{ inventory: AppInventory }>(account, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/inventories`, { method: "POST", body: { name } });
+        const result = await accountRequest<{ inventory: AppInventory }>(account, `/inventory-workspaces/${encodeURIComponent(workspaceId)}/inventories`, { method: "POST", body: { name, ...(workspaceId !== "personal" ? {access_mode:accessMode} : {}) } });
         if (!result.inventory?.inventory_id) throw new Error("The new inventory could not be confirmed. Refresh before retrying.");
         if (actor.current === account) { setQuery(""); setOffset(0); setReload(value=>value+1); }
       } else if (mode === "workspace") {
@@ -142,7 +146,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
           {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="context-card" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
         </div></section>}
       </> : workspaceId && page && <>
-        {view === "overview" ? <WorkspaceOverview workspace={page.workspace} inventories={page.inventories} /> : view === "settings" ? <section className="workspace-settings"><dl className="directory-rows"><div className="directory-row"><dt>Name</dt><dd>{page.workspace.name}</dd></div><div className="directory-row"><dt>Your role</dt><dd>{page.workspace.role === "mentor" ? "Admin" : page.workspace.role.charAt(0).toUpperCase() + page.workspace.role.slice(1)}</dd></div></dl><Link className="workspace-return" href={`/workspaces/${encodeURIComponent(workspaceId)}?view=people`}>Members, invitations and access requests</Link>{accountId && page.workspace.kind === "team" && page.workspace.owner_user_id === accountId && <p style={{marginTop:24}}><button className="product-button" style={{color:"#b42318"}} onClick={()=>setDeleteWorkspace(true)}>Delete workspace</button></p>}</section> : <>
+        {view === "overview" ? <WorkspaceOverview workspace={page.workspace} inventories={page.inventories} /> : view === "settings" ? <section className="workspace-settings"><dl className="directory-rows"><div className="directory-row"><dt>Name</dt><dd>{page.workspace.name}</dd></div><div className="directory-row"><dt>Your role</dt><dd>{page.workspace.role === "mentor" ? "Admin" : page.workspace.role.charAt(0).toUpperCase() + page.workspace.role.slice(1)}</dd></div></dl><Link className="workspace-return" href={`/workspaces/${encodeURIComponent(workspaceId)}?view=people`}>Members, invitations and access requests</Link>{accountId && page.workspace.kind === "team" && page.workspace.owner_user_id === accountId && <p style={{marginTop:24}}><TransferOwnership scope="workspace" resourceId={workspaceId} name={page.workspace.name} onTransferred={()=>setReload(v=>v+1)} /> <button className="product-button" style={{color:"#b42318"}} onClick={()=>setDeleteWorkspace(true)}>Delete workspace</button></p>}</section> : <>
         {(view === "board" || view === "files" || (view === "people" && !page.workspace.organization_id)) ? <TeamsClient selectedTeamId={workspaceId} panel={view === "people" ? "people" : view === "files" ? "files" : "board"} /> : <CollaborationPanel workspaceId={workspaceId} section={view === "people" ? "people" : view === "locations" ? "locations" : "activity"} />}
         {view === "people" && <AccessRequests workspaceId={workspaceId} />}
         </>}
@@ -155,6 +159,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
       <form onSubmit={submit}>
         {mode === "join" ? <><label>Invitation type<select className="product-select" value={joinKind} onChange={(event) => setJoinKind(event.target.value)}><option value="workspace">Workspace</option><option value="space">Shared Space</option></select></label><label>Invitation code<input className="product-input" autoFocus required maxLength={6} value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /></label></> : <>
           <label>Name<input className="product-input" autoFocus required maxLength={100} value={name} onChange={(event) => setName(event.target.value)} /></label>
+          {mode === "inventory" && workspaceId !== "personal" && <label>Access<select className="product-select" value={accessMode} onChange={event => setAccessMode(event.target.value)}><option value="workspace">Inherited workspace access</option><option value="restricted">Custom access</option></select><span className="workspace-muted">Inherited roles follow the workspace. Custom access starts with only your explicit access.</span></label>}
           {mode === "workspace" && <label>Category<select className="product-select" required value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Choose category</option>{teamCategories.map((value) => <option key={value.value} value={value.value}>{value.label}</option>)}</select></label>}
           {mode === "workspace" && category === "custom" && <label>Custom category<input className="product-input" required maxLength={60} value={customCategory} onChange={(event) => setCustomCategory(event.target.value)} /></label>}
         </>}

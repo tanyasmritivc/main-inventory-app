@@ -1,5 +1,7 @@
 "use client";
-import { activeInventory, assertInventory, canEditInventory } from "@/lib/inventory-selection";
+import { privateImageSrc } from "@/lib/private-image";
+
+import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
 import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
@@ -705,8 +707,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }
 
   async function onDeleteSpace(space: Space) {
+    if (!canDeleteSpace()) { setError("Only inventory owners and admins can delete a Space."); return; }
     const inventory=activeInventory();
-    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "This Space, its saved items, and any pending identifications will be permanently deleted.", confirmLabel: 'Delete Space', danger: true })) return;
+    let itemCount: number;
+    try {
+      const t = token || (await refreshToken());
+      if (!t) return;
+      const current = (await getSpaces({ token: t })).find(row => row.id === space.id);
+      if (!current || typeof current.item_count !== "number") throw new Error("Refresh the Space before deleting it.");
+      itemCount = current.item_count;
+    } catch (reason) { setError(errorMessage(reason, "Could not check the Space's contents.")); return; }
+    if (activeInventory()!==inventory) return;
+    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: `This Space contains ${itemCount} saved ${itemCount === 1 ? "item" : "items"}. The Space, its items, and any pending identifications will be permanently deleted.`, confirmLabel: 'Delete Space', danger: true })) return;
     if (activeInventory()!==inventory) return;
     setLoading(true);
     setError(null);
@@ -1048,7 +1060,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {(visibleItems ?? []).map((item) => (
             <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                {item.image_url && <Image unoptimized width={42} height={42} src={item.image_url} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                {item.image_url && <Image unoptimized width={42} height={42} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                 <div style={{ minWidth: 0 }}>
                   <button type="button" style={{ textAlign: "left", background: "transparent", border: 0, padding: 0, fontSize: 13, fontWeight: 590, color: "var(--text-primary)" }} onClick={() => setDetailItem(item)}>{itemDisplayName(item)}</button>
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
@@ -1186,7 +1198,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
-                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
@@ -1395,7 +1407,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
-                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
@@ -1559,7 +1571,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                         <DropdownMenuItem onSelect={() => void onRenameSpace(spaceObj)}>Rename space</DropdownMenuItem>
                         {activeInventory() && <DropdownMenuItem onSelect={() => setMovingSpace(spaceObj)}>Move to inventory</DropdownMenuItem>}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>
+                        {canDeleteSpace() && <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}

@@ -1,5 +1,7 @@
 "use client";
+import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
@@ -37,20 +39,21 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   const [data, setData] = useState<Access | null>(null), [error, setError] = useState("");
   const [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
   const [delivery, setDelivery] = useState<InvitationDelivery | null>(null);
-  const [policy, setPolicy] = useState("workspace"), [defaultRole, setDefaultRole] = useState("viewer");
+  const [policy, setPolicy] = useState("workspace");
   const [memberId, setMemberId] = useState(""), [memberRole, setMemberRole] = useState("viewer");
   const [name, setName] = useState(""), [parent, setParent] = useState(""), [location, setLocation] = useState("");
   const [activity, setActivity] = useState<{ audit_id: string; action: string; actor_id: string; created_at: string; changes: { before?: { location?: string; quantity?: number }; after?: { location?: string; quantity?: number } } }[]>([]);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const base = inventoryId ? `/inventories/${inventoryId}` : `/inventory-workspaces/${workspaceId}`;
+  usePermissionRefresh(() => setRevision(v => v + 1), busy);
   useEffect(() => {
     if (!accountId) return;
     let live = true;
     void accountRequest<Access>(accountId, `${base}/${inventoryId ? "access" : "overview"}`).then((result) => {
       if (!live) return;
       setData(result); setPolicy(result.inventory?.access_mode === "restricted" ? "restricted" : "workspace");
-      setDefaultRole(result.inventory?.default_role || "viewer"); setError("");
+      setError("");
     }).catch((reason) => { if (live) setError(userFacingError(reason, "Access could not be loaded.")); });
     if (section === "all" || section === "activity") void accountRequest<{ activity: typeof activity }>(accountId, `${base}/audit`).then((result) => { if (live) setActivity(result.activity); }).catch((reason) => { if (live) setError(userFacingError(reason, "Activity could not be loaded.")); });
     return () => { live = false; };
@@ -60,13 +63,13 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
     setBusy(true); setError(""); setDelivery(null);
     try {
       const result = await accountRequest<Partial<InvitationDelivery>>(accountId, path, { method, body });
-      if (alive.current) { setRevision((v) => v + 1); setName(""); if (result.invitation && result.code && result.invite_url) setDelivery(result as InvitationDelivery); }
+      if (alive.current) { setRevision((v) => v + 1); setName(""); window.dispatchEvent(new Event("findez-permissions-changed")); if (result.invitation && result.code && result.invite_url) setDelivery(result as InvitationDelivery); }
     } catch (reason) { if (alive.current) setError(userFacingError(reason, "The change could not be saved.")); }
     finally { if (alive.current) setBusy(false); }
   }
   function submit(event: FormEvent, path: string, method: "POST" | "PUT" | "PATCH", body: Record<string, unknown>) { event.preventDefault(); void save(path, method, body); }
   const manager = inventoryId ? data?.inventory?.can_manage && data.inventory.team_id : ["owner", "mentor"].includes(data?.workspace?.role || "");
-  const candidates = inventoryId ? data?.members.filter((m) => !["owner", "mentor"].includes(m.workspace_role || "")) : data?.candidates;
+  const candidates = inventoryId ? data?.members : data?.candidates;
   const show = (value: CollaborationSection) => section === "all" || section === value;
   const existing = data?.members.find((m) => m.user_id === memberId);
   const invites = memberId && (!existing || existing.role === "none") && memberRole !== "none";
@@ -74,12 +77,11 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
     {error && <p role="alert" className="notice-error">{error} <button className="product-button" onClick={() => setRevision((v) => v + 1)}>Retry</button></p>}
     {!data ? <p role="status">Loading access...</p> : <>
       {show("policy") && inventoryId && manager && <section>{section === "all" && <h2>Inventory access</h2>}
-        <form className="collaboration-form" onSubmit={(e) => submit(e, `${base}/access`, "PATCH", { access_mode: policy, default_role: defaultRole })}>
-          <label>Access<select className="product-select" value={policy} onChange={(e) => setPolicy(e.target.value)}><option value="workspace">Workspace members</option><option value="restricted">Assigned members only</option></select></label>
-          {policy === "workspace" && <label>Default role<select className="product-select" value={defaultRole} onChange={(e) => setDefaultRole(e.target.value)}><option value="viewer">Viewer</option><option value="editor">Editor</option></select></label>}
+        <form className="collaboration-form" onSubmit={(e) => submit(e, `${base}/access`, "PATCH", { access_mode: policy, default_role: "viewer" })}>
+          <label>Access<select className="product-select" value={policy} onChange={(e) => setPolicy(e.target.value)}><option value="workspace">Inherited workspace access</option><option value="restricted">Custom access</option></select></label>
           <button className="product-button" disabled={busy}>Save access</button>
         </form>
-        <p className="workspace-muted">{data.inventory?.access_mode === "legacy" ? "Existing workspace roles are currently inherited. Saving applies the selected default." : "Workspace owners and admins retain administration. Individual assignments override the default."}</p>
+        <p className="workspace-muted">Inherited access follows each workspace role. Custom access requires individual assignments. Explicit roles and No access override inheritance, including for workspace administrators.</p>
       </section>}
       {show("policy") && inventoryId && !manager && <p className="workspace-muted">{!data.inventory?.team_id ? "This inventory is private to you." : data.inventory.access_mode === "restricted" ? "Access is assigned individually." : "Access follows this workspace's permissions."}</p>}
       {show("people") && <section>{section === "all" && <h2>{inventoryId ? "People with access" : "Workspace members"}</h2>}
@@ -89,10 +91,10 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
         {manager && (inventoryId || data.workspace?.organization_id) && <form className="collaboration-form" onSubmit={(e) => submit(e, `${base}/${inventoryId ? "access" : "members"}/${memberId}`, "PUT", { role: memberRole })}>
           <label>Member<select required className="product-select" value={memberId} onChange={(e) => setMemberId(e.target.value)}><option value="">Choose member</option>{candidates?.map((m) => <option key={m.user_id} value={m.user_id}>{m.display_name === "Member" ? `Member ${m.user_id.slice(0, 8)}` : m.display_name}</option>)}</select></label>
           <label>Role<select className="product-select" value={memberRole} onChange={(e) => setMemberRole(e.target.value)}>
-            <option value="viewer">Viewer</option><option value="editor">Editor</option><option value="admin">Admin</option><option value="none">{inventoryId ? "No access" : "Remove from workspace"}</option>{inventoryId && <option value="inherit">Use default</option>}
+            <option value="viewer">Viewer</option><option value="editor">Editor</option>{(inventoryId || data.workspace?.role === "owner") && <option value="admin">Admin</option>}<option value="none">{inventoryId ? "No access" : "Remove from workspace"}</option>{inventoryId && <option value="inherit">Use workspace role</option>}
           </select></label><button className="product-button" disabled={busy || !memberId}>{invites ? "Send invitation" : "Save role"}</button>
         </form>}
-        {delivery && <InvitationDeliveryDetails delivery={delivery} />}
+        {delivery && <><InvitationDeliveryDetails delivery={delivery} />{memberId === accountId && <Link className="product-button" href={`/join/access?code=${encodeURIComponent(delivery.code)}`}>Review your access invitation</Link>}</>}
         {manager && <PendingInvitations scope={inventoryId ? "inventory" : "workspace"} resourceId={inventoryId || workspaceId!} revision={revision} />}
       </section>}
       {show("locations") && manager && <section>{section === "all" && <h2>Physical locations</h2>}
