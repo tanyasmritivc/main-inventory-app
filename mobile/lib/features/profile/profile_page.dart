@@ -1367,12 +1367,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
             _sectionLabel('Memory'),
             _glassCard(
-              ListTile(
-                title: const AppText('Personalization and memory'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute(
-                    builder: (_) => MemoryPage(api: widget.api),
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  title: const AppText('Personalization and memory'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => MemoryPage(api: widget.api),
+                    ),
                   ),
                 ),
               ),
