@@ -12,7 +12,7 @@ and an item-recognition subtitle. Its name is now saved as "FindEZ AI", subtitle
 text is refreshed; its approved description and all historical versions remain.
 No version was submitted or released, and no build selection changed.
 
-## Published-source candidate
+## Published sources
 
 - Title: FindEZ AI | AI memory for the physical world
 - Description: Turn the physical world into memory. Scan photos and barcodes,
@@ -85,10 +85,21 @@ renderer. No customer QA writes or signed-in content is used.
 
 Server receipts: /home/ubuntu/findez-search-positioning-20261018. App Store
 before/prepared/confirmed metadata is retained privately under
-Documents/FindEZ/AppStore/search-positioning-20261018. Exact-source CI and web
-activation remain pending. Google recrawl/indexing and generated AI Overview
-wording are external; never claim a reindex request or changed results without
-the corresponding Search Console receipt.
+Documents/FindEZ/AppStore/search-positioning-20261018. Source `303bd45` is published
+in PR125; all five CI gates pass (39174991125). Final candidate-current preserves
+the simultaneous invitation association and account-deletion changes and passes
+both-host public/auth checks. No native rebuild is needed for this metadata-only
+web/static-file and external listing change; acknowledged TestFlight91 remains.
+
+The user explicitly approved the signed-in Google account for site ownership and
+completed Google reauthentication. The HTML proof file is retained in public/.
+Google confirmed Ownership auto verified. Sitemap submission shows Success and 4
+pages. Homepage URL Inspection showed already indexed, then confirmed Indexing
+requested and placement in the priority crawl queue. These are submission
+receipts, not evidence that search snippets or AI Overview wording have refreshed.
+Google timing and generated wording remain external; do not resubmit repeatedly.
+The editable App Store description targets the matching future release; public
+review, binary selection and physical release gates still require separate work.
 
 Google guidance: https://developers.google.com/search/docs/appearance/ai-features
 and https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl.
