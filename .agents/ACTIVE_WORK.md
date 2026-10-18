@@ -1,3 +1,13 @@
+# October 18 web onboarding
+
+Lane `web-onboarding` from published authenticated-web head `c242920`. Supplied
+Build your world onboarding is implemented after ordinary signup with per-account
+eligibility, local drafts, guarded creation receipts and the existing APIs. No
+backend/mobile/schema changes. All 375 web tests, types and lint pass. The isolated
+production candidate builds and preserves 296 unrelated source/public files,
+including the user-approved restored hero JPEG. User explicitly requests push and
+deployment. Activation receipt: frontend/design/web-onboarding-a/IMPLEMENTATION.md.
+
 # October 18 Capture return — live
 
 Approved matching capture release3908580 is live from

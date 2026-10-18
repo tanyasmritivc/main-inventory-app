@@ -1,3 +1,15 @@
+# October 18 web onboarding candidate
+
+The supplied web onboarding now follows ordinary signup and creates the selected
+organization/workspace/inventory using existing API contracts. Eligibility reads
+the authorized directory and preserves interrupted setup receipts. Per-account
+drafts/completion, guarded retries, reduced motion and responsive SVG match the
+reference. All 375 Jest tests, types and lint pass; the real-config production
+candidate builds and preserves 296 unrelated source/public files. The missing
+homepage JPEG was separately restored with explicit approval and serves HTTP 200.
+Publication is authorized and in progress. See
+frontend/design/web-onboarding-a/IMPLEMENTATION.md for evidence and limitations.
+
 # October 18 Capture return — live
 
 Approved matching capture release3908580 is live from
