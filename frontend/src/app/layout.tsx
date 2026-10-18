@@ -3,6 +3,7 @@ import { DM_Sans, Inter, Syne } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import { CookieNotice } from "@/components/site/cookie-notice";
 import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
+import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
 import "./globals.css";
 import "./app-theme.css";
 import "./workspace.css";
@@ -41,21 +42,26 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://findez.ai"),
+  metadataBase: new URL(PUBLIC_SITE_URL),
   title: {
-    default: "FindEZ | Know what you have. Find what you need.",
-    template: "%s | FindEZ",
+    default: PUBLIC_SITE_TITLE,
+    template: "%s | FindEZ AI",
   },
-  description: "Capture items from photos, barcodes, or spreadsheets, then find anything through search or Ask FindEZ.",
+  description: PUBLIC_SITE_DESCRIPTION,
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "FindEZ",
-    description: "Know what you have. Find it.",
-    url: "https://findez.ai",
-    siteName: "FindEZ",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
+    url: PUBLIC_SITE_URL,
+    siteName: "FindEZ AI",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
   },
   icons: {
     icon: "/images/findez-favicon.svg",

@@ -1,3 +1,14 @@
+## Active: public product positioning and search sources (2026-10-18)
+
+Web lane fix/web-search-positioning-20261018 from 8da4d43. Google screenshots cite
+an old workshop-only App Store description. Align public title/description,
+social previews and factual structured identity with AI memory for the physical
+world; retain the current landing renderer and authenticated product unchanged.
+Keep sitemap modification dates truthful. Independently update App Store live
+promotional text and editable next-version metadata, without submitting/releasing
+a public version or selecting another binary. Search recrawl is external and
+cannot be promised immediate. No backend, database or mobile code changes.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
