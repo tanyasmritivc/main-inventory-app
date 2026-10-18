@@ -241,6 +241,34 @@ void main() {
     });
   }
 
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} completion drains chunks instead of dumping a batched answer',
+      (tester) async {
+        final answer = List.generate(90, (index) => 'part$index').join(' ');
+        await _mount(tester, _FocusApi(answer: answer), brightness: brightness);
+        await _send(tester, 'Show my parts');
+        await tester.pump();
+        final initial = tester
+            .widgetList<RichText>(find.byType(RichText))
+            .map((text) => text.text.toPlainText())
+            .join(' ');
+        expect(initial, isNot(contains('part89')));
+        await tester.pump(const Duration(milliseconds: 72));
+        final during = tester
+            .widgetList<RichText>(find.byType(RichText))
+            .map((text) => text.text.toPlainText())
+            .join(' ');
+        expect(during, contains('part0'));
+        expect(during, isNot(contains('part89')));
+        await tester.pumpAndSettle();
+        expect(find.textContaining(answer), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
+
   testWidgets(
     'Back returns to Find and remains reachable with large text and keyboard',
     (tester) async {

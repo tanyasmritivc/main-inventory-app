@@ -280,10 +280,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _queuePresentationWords(int index, String content) {
-    for (final match in RegExp(r'\S+\s*').allMatches(content)) {
+    for (final match in RegExp(r'\s+|\S+\s*').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
-    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 36), (
       _,
     ) {
       if (!mounted) return;
@@ -292,52 +292,73 @@ class _ChatPageState extends State<ChatPage>
         _presentationTimer = null;
         return;
       }
-      final chunk = _presentationQueue.removeFirst();
-      if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
+      final index = _presentationQueue.first.index;
+      final text = StringBuffer();
+      final reduced = MediaQuery.disableAnimationsOf(context);
+      final count = reduced
+          ? _presentationQueue.length
+          : (4 + _presentationQueue.length ~/ 30).clamp(4, 16);
+      for (
+        var i = 0;
+        i < count &&
+            _presentationQueue.isNotEmpty &&
+            _presentationQueue.first.index == index;
+        i++
+      ) {
+        text.write(_presentationQueue.removeFirst().text);
+      }
+      if (index < 0 || index >= _session.messages.length) return;
       final isLast =
-          _presentationComplete.contains(chunk.index) &&
-          !_presentationQueue.any((entry) => entry.index == chunk.index);
+          _presentationComplete.contains(index) &&
+          !_presentationQueue.any((entry) => entry.index == index);
       setState(() {
-        final message = _session.messages[chunk.index];
-        _session.messages[chunk.index] = message.copyWith(
-          content: message.content + chunk.text,
+        final message = _session.messages[index];
+        _session.messages[index] = message.copyWith(
+          content: message.content + text.toString(),
           isStreaming: !isLast,
-          navHint: isLast ? _presentationHints.remove(chunk.index) : null,
+          navHint: isLast ? _presentationHints.remove(index) : null,
         );
       });
-      if (isLast) _presentationComplete.remove(chunk.index);
+      if (isLast) _presentationComplete.remove(index);
       _scrollToBottom(animated: false);
     });
   }
 
-  void _completePresentation(int index, Map<String, dynamic>? hint) {
+  void _completePresentation(
+    int index,
+    Map<String, dynamic>? hint, {
+    String? canonical,
+  }) {
     if (!mounted || index < 0 || index >= _session.messages.length) return;
     _presentationIdleTimer?.cancel();
     _presentationIdleTimer = null;
-    final tail = StringBuffer();
+    final message = _session.messages[index];
+    final pending = StringBuffer(message.content);
     for (final entry in _presentationQueue) {
-      if (entry.index == index) tail.write(entry.text);
+      if (entry.index == index) pending.write(entry.text);
     }
+    pending.write(_presentationBuffers.remove(index)?.toString() ?? '');
+    final target = canonical ?? pending.toString();
+    if (target.trim().isEmpty) throw StateError('Ask returned no answer');
     _presentationQueue.removeWhere((entry) => entry.index == index);
-    tail.write(_presentationBuffers.remove(index)?.toString() ?? '');
-    if (_presentationQueue.isEmpty) {
-      _presentationTimer?.cancel();
-      _presentationTimer = null;
-    }
-    if (tail.isEmpty && _session.messages[index].content.isEmpty) {
-      tail.write('Something went wrong. Please try again.');
-    }
-    _presentationHints.remove(index);
-    _presentationComplete.remove(index);
-    setState(() {
-      final message = _session.messages[index];
-      _session.messages[index] = message.copyWith(
-        content: message.content + tail.toString(),
-        isStreaming: false,
-        navHint: hint,
+    // Reconcile formatting without exposing the unseen suffix at completion.
+    final shown = message.content.length.clamp(0, target.length);
+    _session.messages[index] = message.copyWith(
+      content: target.substring(0, shown),
+    );
+    _presentationHints[index] = hint;
+    _presentationComplete.add(index);
+    if (shown < target.length) {
+      _queuePresentationWords(index, target.substring(shown));
+    } else {
+      _presentationComplete.remove(index);
+      setState(
+        () => _session.messages[index] = _session.messages[index].copyWith(
+          isStreaming: false,
+          navHint: _presentationHints.remove(index),
+        ),
       );
-    });
-    _scrollToBottom(animated: false);
+    }
   }
 
   void _cancelPresentation(int index) {
@@ -1965,6 +1986,7 @@ class _ChatPageState extends State<ChatPage>
           content: '',
           timestamp: _nowTs(),
           isStreaming: true,
+          live: true,
         ),
       );
     });
@@ -1978,6 +2000,7 @@ class _ChatPageState extends State<ChatPage>
       Map<String, dynamic>? hint;
       String? conversationId;
       var completed = false;
+      String? canonical;
       final events = photo == null
           ? widget.api.aiCommandStream(
               message: q,
@@ -1990,6 +2013,14 @@ class _ChatPageState extends State<ChatPage>
             );
       await for (final event in events) {
         if (!mounted || requestGeneration != _requestGeneration) return;
+        if (event.type == 'reset') {
+          _cancelPresentation(assistantIndex);
+          setState(
+            () => _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(content: ''),
+          );
+        }
         if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
           if (photo != null) _progress = null;
           _enqueuePresentation(assistantIndex, event.delta!);
@@ -2002,6 +2033,7 @@ class _ChatPageState extends State<ChatPage>
         if (event.conversationId != null) conversationId = event.conversationId;
         if (event.type == 'done') {
           completed = true;
+          canonical = event.assistantMessage;
           if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
               !_presentationQueue.any(
                 (chunk) => chunk.index == assistantIndex,
@@ -2019,7 +2051,7 @@ class _ChatPageState extends State<ChatPage>
           .copyWith(answerContext: answerContext);
 
       if (mounted) {
-        _completePresentation(assistantIndex, hint);
+        _completePresentation(assistantIndex, hint, canonical: canonical);
         setState(() {
           _sending = false;
           _canQueueFollowUp = false;
@@ -2699,6 +2731,7 @@ class _ChatPageState extends State<ChatPage>
             : message.content,
         contextData: message.answerContext,
         isLoading: isTyping,
+        animateChunks: message.live,
         pendingMessage: _progress ?? 'Checking your things...',
         onOpenSource:
             message.navHint?['type'] != 'project_kit' ||
@@ -3010,6 +3043,7 @@ class _ChatMessage {
     required this.content,
     required this.timestamp,
     this.isStreaming = false,
+    this.live = false,
     this.navHint,
     this.answerContext,
     this.photo,
@@ -3020,6 +3054,7 @@ class _ChatMessage {
   final String content;
   final int timestamp;
   final bool isStreaming;
+  final bool live;
   final Map<String, dynamic>? navHint;
   final AskAnswerContext? answerContext;
   final AskPhoto? photo;
@@ -3038,6 +3073,7 @@ class _ChatMessage {
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
+      live: live,
       navHint: navHint ?? this.navHint,
       answerContext: answerContext ?? this.answerContext,
       photo: photo,

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'streaming_text_fade.dart';
 
 import '../../core/ask_answer.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -78,12 +79,14 @@ class AskAnswerView extends StatefulWidget {
     required this.answer,
     this.contextData,
     this.isLoading = false,
+    this.animateChunks = false,
     this.pendingMessage = 'Checking your things...',
     this.onOpenSource,
   });
   final String answer;
   final AskAnswerContext? contextData;
   final bool isLoading;
+  final bool animateChunks;
   final String pendingMessage;
   final VoidCallback? onOpenSource;
 
@@ -201,36 +204,41 @@ class _AskAnswerViewState extends State<AskAnswerView> {
         else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: MarkdownBody(
-              data: widget.answer,
-              selectable: !widget.isLoading,
-              softLineBreak: true,
-              // Generated images must not trigger arbitrary third-party requests.
-              sizedImageBuilder: (_) => const SizedBox.shrink(),
-              styleSheet: MarkdownStyleSheet(
-                p: AppTypography.styleOf(
-                  context,
-                  TextStyle(
-                    color: primary,
-                    fontSize: 17,
-                    height: 1.5,
-                    fontWeight: FontWeight.w400,
+            child: StreamingTextFade(
+              enabled:
+                  widget.animateChunks &&
+                  !MediaQuery.disableAnimationsOf(context),
+              child: MarkdownBody(
+                data: widget.answer,
+                selectable: !widget.isLoading,
+                softLineBreak: true,
+                // Generated images must not trigger arbitrary third-party requests.
+                sizedImageBuilder: (_) => const SizedBox.shrink(),
+                styleSheet: MarkdownStyleSheet(
+                  p: AppTypography.styleOf(
+                    context,
+                    TextStyle(
+                      color: primary,
+                      fontSize: 17,
+                      height: 1.5,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-                strong: AppTypography.styleOf(
-                  context,
-                  TextStyle(
-                    color: primary,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
+                  strong: AppTypography.styleOf(
+                    context,
+                    TextStyle(
+                      color: primary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
+                  listBullet: AppTypography.styleOf(
+                    context,
+                    TextStyle(color: primary, fontSize: 17, height: 1.5),
+                  ),
+                  blockSpacing: 10,
+                  listIndent: 20,
                 ),
-                listBullet: AppTypography.styleOf(
-                  context,
-                  TextStyle(color: primary, fontSize: 17, height: 1.5),
-                ),
-                blockSpacing: 10,
-                listIndent: 20,
               ),
             ),
           ),
