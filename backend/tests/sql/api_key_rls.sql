@@ -212,3 +212,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 
 \ir private_item_images.sql
 \ir capture_original_gallery.sql
+
+\ir api_inventory_compatibility.sql

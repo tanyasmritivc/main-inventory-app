@@ -1,3 +1,11 @@
+## Audit delivery complete — build90 uploaded
+
+Web/API audit fixes are live. Apple validated and acknowledged 1.0.8(90), delivery 0541ba2e-4a4f-4757-adf6-fc00405544b7. No processing polling or public submission. Physical-device acceptance remains pending; see docs/plans/release-readiness-20261018.md. Final connector uses locked, patched production dependencies; its production audit is clean, while the MCPB development tool has an unpatched node-forge advisory.
+
+## Release audit published — October 18
+
+User approved migrations 053/058; both and the two reviewed backend files are live. API writes/private-photo retention and public catalog restrictions were repaired. Web API-key account isolation, expired-session recovery, API/Actions/MCP docs, legal pages and local fonts are live. Backend 1006 tests, web 379 tests plus five font regression tests, production build, TypeScript, mobile 631 tests/analysis and 17 focused gates pass. Live health/connector checks pass. Build90 upload is acknowledged. See docs/plans/release-readiness-20261018.md for scope and remaining physical-device gates.
+
 ## Chunked Chat delivery and fades prepared (2026-10-18)
 
 1,004 Python tests + 10 subtests pass; model-only/photo/scope/cancellation regression coverage.
