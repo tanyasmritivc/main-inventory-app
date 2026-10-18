@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
-import 'profile_page.dart';
+import 'account_page.dart';
 
 /// Account identity, independent of organization/workspace/inventory roles.
 class AccountButton extends StatefulWidget {
@@ -38,7 +38,7 @@ class _AccountButtonState extends State<AccountButton> {
     try {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => ProfilePage(api: _api, store: _profile),
+          builder: (_) => AccountPage(api: _api, store: _profile),
         ),
       );
       if (mounted) unawaited(_profile.load(force: true));

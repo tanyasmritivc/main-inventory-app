@@ -1,9 +1,16 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/features/profile/profile_page.dart';
+import 'package:mobile/features/profile/account_page.dart';
+import 'package:mobile/features/profile/profile_hub_page.dart';
+import 'package:mobile/features/profile/profile_editor_page.dart';
 import 'package:mobile/features/workspaces/hierarchy_page.dart';
 import 'package:mobile/features/workspaces/transfer_ownership.dart';
 import 'package:mobile/features/teams/team_board_page.dart';
@@ -16,7 +23,23 @@ import 'support/hierarchy_fixture.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final fixture = HierarchyFixture();
-  setUpAll(fixture.initialize);
+  setUpAll(() async {
+    await fixture.initialize();
+    if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
+      await (FontLoader(
+        'Roboto',
+      )..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))).load();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+      await (FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+            ),
+          ))
+          .load();
+    }
+  });
   tearDownAll(() => Supabase.instance.dispose());
   setUp(() {
     fixture.requests.clear();
@@ -61,10 +84,19 @@ void main() {
         (tester) async {
           tester.view.physicalSize = const Size(390, 844);
           tester.view.devicePixelRatio = 1;
+          tester.view.padding = const FakeViewPadding(top: 47, bottom: 34);
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetPadding);
+          final capture = GlobalKey();
           await tester.pumpWidget(
-            MaterialApp(theme: AppTheme.create(mode), home: entry.value()),
+            RepaintBoundary(
+              key: capture,
+              child: MaterialApp(
+                theme: AppTheme.create(mode),
+                home: entry.value(),
+              ),
+            ),
           );
           await tester.pumpAndSettle();
           final button = find.byTooltip('Your profile');
@@ -73,7 +105,52 @@ void main() {
           expect(tester.getCenter(button).dy, lessThan(100));
           await tester.tap(button);
           await tester.pumpAndSettle();
-          expect(find.byType(ProfilePage), findsOneWidget);
+          expect(find.byType(AccountPage), findsOneWidget);
+          expect(find.byType(ProfileHubPage), findsOneWidget);
+          expect(find.byType(ProfilePage), findsNothing);
+          final screen = tester.widget<Scaffold>(
+            find
+                .descendant(
+                  of: find.byType(AccountPage),
+                  matching: find.byType(Scaffold),
+                )
+                .first,
+          );
+          expect(
+            screen.backgroundColor,
+            AppTheme.create(mode).scaffoldBackgroundColor,
+          );
+          expect(screen.backgroundColor!.a, 1);
+          expect(
+            tester.getTopLeft(find.byType(ProfileHubPage)).dy,
+            greaterThanOrEqualTo(47 + kToolbarHeight),
+          );
+          expect(find.text('Free Pilot'), findsNothing);
+          if (const bool.fromEnvironment('FINDEZ_VISUAL_QA') &&
+              entry.key == 'organizations') {
+            await tester.runAsync(() async {
+              final boundary =
+                  capture.currentContext!.findRenderObject()!
+                      as RenderRepaintBoundary;
+              final image = await boundary.toImage(pixelRatio: 2);
+              final bytes = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await File(
+                '/private/tmp/findez-account-${mode.name}.png',
+              ).writeAsBytes(bytes!.buffer.asUint8List());
+              image.dispose();
+            });
+          }
+          await tester.tap(find.text('Edit profile'));
+          await tester.pumpAndSettle();
+          expect(find.byType(ProfileEditorPage), findsOneWidget);
+          await tester.tap(find.byType(BackButton).last);
+          await tester.pumpAndSettle();
+          expect(find.byType(AccountPage), findsOneWidget);
+          await tester.tap(find.byType(BackButton).last);
+          await tester.pumpAndSettle();
+          expect(find.byTooltip('Your profile'), findsOneWidget);
           expect(
             fixture.requests.where((r) => r.path == '/profile/me'),
             isNotEmpty,

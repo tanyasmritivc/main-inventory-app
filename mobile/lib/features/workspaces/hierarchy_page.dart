@@ -13,7 +13,7 @@ import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/review_invitation_page.dart';
 import '../sharing/invitation_navigation.dart';
-import '../profile/profile_page.dart';
+import '../profile/account_page.dart';
 import '../profile/account_button.dart';
 import 'transfer_ownership.dart';
 import 'place_ui.dart';
@@ -1432,7 +1432,7 @@ class _HierarchyPageState extends State<HierarchyPage>
         _row('Join with a code', onTap: _join),
         _row(
           'Profile and settings',
-          onTap: () => _push(ProfilePage(api: widget.api)),
+          onTap: () => _push(AccountPage(api: widget.api)),
         ),
       ];
     }

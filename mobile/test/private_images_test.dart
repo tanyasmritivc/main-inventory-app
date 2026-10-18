@@ -22,6 +22,7 @@ void main() {
     'saved public and signed image locators require an authenticated API request',
     () {
       expect(imagePath(source), path);
+      expect(imagePath(source.replaceFirst('/storage/', '//storage/')), path);
       expect(
         imagePath("${source.replaceAll('/public/', '/sign/')}?token=old"),
         path,
@@ -83,7 +84,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: PrivateImage(
-            source,
+            source.replaceFirst('/storage/', '//storage/'),
             storageOrigin: 'https://storage.test',
             errorBuilder: (_, _, _) => const SizedBox(),
           ),

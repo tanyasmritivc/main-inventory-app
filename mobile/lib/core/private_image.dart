@@ -16,7 +16,7 @@ String? privateItemImagePath(String source, {String? storageOrigin}) {
     return null;
   }
   final match = RegExp(
-    r'^/storage/v1/object/(?:public/|sign/|authenticated/)?item-images/(.+)$',
+    r'^/+storage/v1/object/(?:public/|sign/|authenticated/)?item-images/(.+)$',
   ).firstMatch(uri.path);
   if (match == null) return null;
   String path;
