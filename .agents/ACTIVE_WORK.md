@@ -1,10 +1,44 @@
-# October 18 model-written Chat answers
+# October 18 model-written Chat - delivered
 
-Active backend-only lane fix/model-only-chat-20261018 from ce9d182. The user asks
-to remove scripted/fallback Chat answers. Route every text and photo turn through
-the configured model, with model-selected read tools and backend permission/
-mutation guards intact. Empty/provider failures must remain error events, never
-fabricated assistant answers. Preserve schemas, clients, FIND and model settings.
+The user requested removing scripted/fallback Chat answers and then reported a
+photo-attachment request receiving an irrelevant identification report. Backend
+0d2f38f removes the deterministic answer paths; final runtime 71c0ca4 keeps photo
+answers focused on the actual requested action with truthful capability facts.
+Both are live. Every successful text/photo/file Chat reply uses the configured
+model. Model errors/empty replies are errors, never substitute assistant answers.
+Permission checks, data-only tools, bounded evidence and conditional edit receipts
+remain authoritative. No schema, provider configuration, FIND or client UI change.
+
+The old interpreter/answer script is deleted. The model chooses semantic tools on
+every turn, including planning and follow-ups. Photo-name matches cannot prove a
+Space is empty. Attaching one photo to all existing entries from Chat is currently
+unsupported; the model explains the per-item Add photo/Add another gallery flow
+instead of listing objects, falsely claiming changes or directing this to Capture.
+Customer Dashboard, stored conversations, permissions and private photos remain.
+
+990 Python tests plus 10 subtests pass. All 127 former question fixtures exercise
+model invocation in sync/events. Eight actual configured-model cases use synthetic
+facts and no customer writes, including Roadrunner requirements/stock, empty
+inventory clarification, preferences, uncertain photo and the exact Garage photo
+request. All five runtime CI gates pass on 71c0ca4 (39152846348); the initial
+0d2f38f run 39152004764 and native increment run 39152005559 also passed.
+
+Production health/db and invalid-session Chat/private-photo denial pass. Initial
+overlay preserves 86 unrelated Python files; the two-file follow-up preserves
+92. The first non-privileged restart failed, restored the reviewed files and left
+the existing service healthy; the corrected privileged restart succeeded.
+Private backups/manifests/evaluations/receipts:
+/home/ubuntu/findez-model-chat-release-20261018 and its -photo-intent sibling.
+No customer inventory, membership, invitation or configuration writes for QA.
+
+Apple acknowledged 1.0.8 (86), native source 326d578, delivery
+a0d40e13-003f-4885-a83b-6c7539f9681c. Native runtime is unchanged from beta85;
+the completed 623 Flutter tests and clean analysis are reused. All 31 archive/
+export executables verify as iOS device code, strict signatures, production
+configuration/main target and Apple validation pass. No Apple processing/group
+polling followed acknowledgment. Availability and physical acceptance remain
+unverified; public App Store submission remains held. Chat behavior is shared
+backend delivery and does not depend on a new mobile install. PRs 105 and 106.
 
 # October 18 permissions, private photos and Account — delivered
 

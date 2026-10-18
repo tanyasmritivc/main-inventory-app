@@ -75,3 +75,15 @@ the unchanged beta85 native runtime. Reuse the completed 623 mobile tests and
 clean analysis; do not repeat them for a build-number-only change. Verify signing,
 device binaries, configuration and Apple validation; stop at upload acknowledgment.
 Public App Store submission and physical-device acceptance remain separate.
+
+## Final delivery
+
+Final photo-intent runtime 71c0ca4 is published after all five CI gates passed
+(39152846348). The two-file guarded overlay preserves 92 unrelated Python files.
+Health/database return 200 and invalid Chat session/anonymous photo return 401.
+Backups and receipt are private under the -photo-intent release directory.
+Apple acknowledged production beta86, delivery a0d40e13-003f-4885-a83b-6c7539f9681c.
+31 archive/export device executables, strict signatures, production configuration
+and Apple validation pass. Native runtime is unchanged from beta85, so completed
+623 tests/analysis are reused. No processing/tester polling or repeated checks.
+Availability and physical acceptance remain unverified; public App Store held.
