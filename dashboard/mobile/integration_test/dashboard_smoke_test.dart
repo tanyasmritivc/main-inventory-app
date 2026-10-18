@@ -1,12 +1,81 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:findez_dashboard/main.dart';
 import 'package:findez_dashboard/dashboard_api.dart';
-import '../test/dashboard_test.dart' show FakeApi, fixture;
+import '../test/dashboard_test.dart'
+    show FakeApi, MemoryVault, SignInApi, sessionFixture, fixture;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+    'native sign-in waits for the first snapshot and survives canceled unlock',
+    (tester) async {
+      final snapshot = Completer<http.Response>();
+      var requests = 0;
+      final vault = MemoryVault();
+      final api = SignInApi(
+        vault: vault,
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/auth/v1/token')) {
+            return http.Response(jsonEncode(sessionFixture()), 200);
+          }
+          requests++;
+          return requests == 1
+              ? snapshot.future
+              : http.Response(jsonEncode(fixture()), 200);
+        }),
+      );
+      await tester.pumpWidget(FounderApp(api: api));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'isolated-fixture-password',
+      );
+      await tester.ensureVisible(find.text('Open dashboard'));
+      await tester.tap(find.text('Open dashboard'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(requests, 1);
+      expect(find.text('Loading your dashboard...'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('startup-loading-fixture');
+      snapshot.complete(http.Response(jsonEncode(fixture()), 200));
+      await tester.pumpAndSettle();
+      expect(find.text('Registered users').hitTestable(), findsOneWidget);
+      await binding.takeScreenshot('startup-loaded-fixture');
+      api.lock();
+      await tester.pumpAndSettle();
+      vault.authenticate = () async {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        return false;
+      };
+      await tester.tap(find.text('Unlock dashboard'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Unlock was canceled. Try again.').hitTestable(),
+        findsOneWidget,
+      );
+      await binding.takeScreenshot('unlock-canceled-fixture');
+      vault.authenticate = () async => true;
+      await tester.tap(find.text('Return to dashboard'));
+      await tester.pumpAndSettle();
+      expect(find.text('Registered users').hitTestable(), findsOneWidget);
+      await binding.takeScreenshot('unlock-loaded-fixture');
+      expect(tester.takeException(), isNull);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('private dashboard native journey with isolated test fixtures', (
     tester,
   ) async {

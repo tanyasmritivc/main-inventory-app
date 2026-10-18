@@ -1,3 +1,13 @@
+## 2026-10-18: Dashboard pages wait for the first authenticated snapshot
+
+Dashboard page construction must guard absent data before dereferencing a
+snapshot. Build 2's outer loading state did not protect the eagerly evaluated
+`_page()` call; first sign-in raised a null-check error. Keep the regression that
+starts with an authenticated session and no snapshot, plus the actual password
+sign-in journey with a delayed/failed initial response. Do not replace these
+with a preview that starts with populated data. Privacy shielding must render a
+named recoverable screen, and canceled/backgrounded unlocks must remain locked.
+
 ## 2026-10-18: Private founder dashboard is a separate application
 
 The founder dashboard uses `dashboard/mobile`, bundle `com.findez.dashboard`, and

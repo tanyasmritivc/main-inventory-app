@@ -1,6 +1,6 @@
 {
   "flutter_analysis": "clean",
-  "flutter_tests": 8,
+  "flutter_tests": 12,
   "native_simulator_journey": "passed",
   "native_keychain": "passed",
   "bold_text_keeps_chosen_font_weight": true,
@@ -17,5 +17,13 @@
   "typescript": "passed",
   "changed_file_eslint": "passed",
   "live_authorization_receipt": "live-api.json",
-  "ui_fixtures_only": true
+  "ui_fixtures_only": true,
+  "regression_before_fix": "Null check operator used on a null value",
+  "first_snapshot_delay": "passed",
+  "failed_first_snapshot_retry": "passed",
+  "canceled_unlock_recovery": "passed",
+  "background_invalidates_pending_unlock": "passed",
+  "native_authentication_journey": "passed with isolated HTTP and biometric fixtures",
+  "native_navigation_journey": "passed",
+  "build": "3"
 }

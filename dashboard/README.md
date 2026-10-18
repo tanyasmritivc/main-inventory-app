@@ -78,10 +78,11 @@ identifying the actual public routing path. Safe activation/auth receipts are in
 
 ## Validation
 
-- Flutter analysis: clean. Eight tests pass, including exact minute refresh,
+- Flutter analysis: clean. Twelve tests pass, including exact minute refresh,
   foreground refresh, whole-snapshot replacement, coalescing, failure timestamp,
   open customer detail updates, light mode, Apple font, Bold Text and large text.
-- Native iPhone 16e simulator journey passes: overview, issue form, Customers,
+- Native iPhone 16e simulator journeys pass: password sign-in with delayed first
+  snapshot, canceled unlock/recovery, overview, issue form, Customers,
   grouped navigation and Revenue. Native Keychain write/read/clear passes.
   Screenshots in `verification/ui/` use isolated fixtures, never live customers.
 - Service: 12 tests pass. Website: 332 tests in 46 suites pass, including seven
@@ -123,3 +124,28 @@ restricted to build 2 and the founder-only group. Vinod's invitation, private-da
 access and future-build notification setup were deferred by the founder; no such
 changes were applied. No App Store submission
 or Git push is part of this delivery.
+
+
+## Build 3: post-sign-in blank screen repair
+
+Build 2 tried to construct the selected page before the first authenticated
+snapshot existed. `_DashboardShellState._page` dereferenced `api.data!` even
+though the outer body had a loading state. A new test reproduced the exact
+null-check exception on unmodified build 2 code. The initial simulator journey
+started with an already loaded fixture, which did not exercise this transition.
+
+Build 3 guards page construction until data exists, shows a labeled loading state
+and a useful retry screen after a failed first request. The privacy cover now
+shows a named screen and an authenticated recovery button instead of a blank
+color. Device unlock has progress, cancellation/error feedback, a timeout and
+single-request protection. Returning to the background invalidates an in-flight
+unlock. Founder authorization, Keychain policy, light appearance, graph icon,
+font weights and 60-second refresh remain intact. No customer app, backend or
+schema change is needed.
+
+The expanded native simulator journey now enters a password through the actual
+SignIn widget, holds the HTTP response to verify loading, completes the first
+snapshot, cancels device unlock and recovers without relying on a resume callback.
+HTTP and biometric results in this journey are isolated test fixtures. The native
+Keychain round trip is tested separately. Actual iPhone sign-in/Face ID acceptance
+is recorded separately and must not be inferred from simulator results.

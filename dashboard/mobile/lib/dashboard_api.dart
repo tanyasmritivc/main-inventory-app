@@ -40,6 +40,8 @@ class DashboardApi extends ChangeNotifier {
   bool loading = false;
   bool restoring = true;
   bool locked = false;
+  bool unlocking = false;
+  int _unlockGeneration = 0;
   bool emailCodePending = false;
   DateTime? lastSuccess;
   Future<void>? _refreshing;
@@ -303,6 +305,7 @@ class DashboardApi extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _unlockGeneration++;
     try {
       if (session != null) {
         await _request(
@@ -326,14 +329,33 @@ class DashboardApi extends ChangeNotifier {
   }
 
   Future<void> unlock() async {
-    if (await vault.unlock()) {
-      locked = false;
+    if (unlocking || session == null) return;
+    unlocking = true;
+    final generation = _unlockGeneration;
+    error = null;
+    notifyListeners();
+    try {
+      final accepted = await vault.unlock().timeout(
+        const Duration(seconds: 45),
+      );
+      if (generation != _unlockGeneration || session == null) return;
+      if (accepted) {
+        locked = false;
+        notifyListeners();
+        await refresh();
+      } else {
+        error = 'Unlock was canceled. Try again.';
+      }
+    } catch (_) {
+      error = 'Could not unlock your dashboard. Try again or sign out.';
+    } finally {
+      unlocking = false;
       notifyListeners();
-      await refresh();
     }
   }
 
   void lock() {
+    _unlockGeneration++;
     if (session != null) {
       locked = true;
       notifyListeners();

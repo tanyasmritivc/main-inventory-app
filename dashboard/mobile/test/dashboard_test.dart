@@ -9,6 +9,7 @@ import 'package:findez_dashboard/dashboard_api.dart';
 import 'package:findez_dashboard/main.dart';
 
 class FakeApi extends DashboardApi {
+  FakeApi({super.client, super.vault});
   @override
   Future<void> restore() async {
     restoring = false;
@@ -18,6 +19,38 @@ class FakeApi extends DashboardApi {
   @override
   Future<void> refresh() async {}
 }
+
+class MemoryVault extends SessionVault {
+  String? saved;
+  Future<bool> Function()? authenticate;
+  @override
+  Future<String?> read() async => saved;
+  @override
+  Future<void> write(String value) async {
+    saved = value;
+  }
+
+  @override
+  Future<void> clear() async {
+    saved = null;
+  }
+
+  @override
+  Future<bool> unlock() => authenticate?.call() ?? Future.value(true);
+}
+
+class SignInApi extends DashboardApi {
+  SignInApi({required super.client, required super.vault});
+  @override
+  bool get configured => true;
+}
+
+Json sessionFixture() => {
+  'access_token': 'isolated-auth-fixture',
+  'refresh_token': 'isolated-refresh-fixture',
+  'expires_at': 4102444800,
+  'user': {'factors': []},
+};
 
 Json fixture() => {
   'analytics': {
@@ -303,5 +336,143 @@ void main() {
     expect(find.text('9'), findsOneWidget);
     expect(find.text('2'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+    'a signed-in session can load before its first snapshot arrives',
+    (tester) async {
+      final api = FakeApi()
+        ..restoring = false
+        ..session = {'access_token': 'fixture'}
+        ..loading = true;
+      await tester.pumpWidget(FounderApp(api: api));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Loading your dashboard...'), findsOneWidget);
+      api.data = fixture();
+      api.loading = false;
+      api.notifyListeners();
+      await tester.pumpAndSettle();
+      expect(find.text('Registered users'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'password sign-in loads, handles a failed first request and retries',
+    (tester) async {
+      final firstSnapshot = Completer<http.Response>();
+      var requests = 0;
+      final api = SignInApi(
+        vault: MemoryVault(),
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/auth/v1/token')) {
+            return http.Response(jsonEncode(sessionFixture()), 200);
+          }
+          expect(request.url.path, endsWith('/snapshot'));
+          requests++;
+          return requests == 1
+              ? firstSnapshot.future
+              : http.Response(jsonEncode(fixture()), 200);
+        }),
+      );
+      await tester.pumpWidget(FounderApp(api: api));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'isolated-fixture-password',
+      );
+      await tester.tap(find.text('Open dashboard'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(requests, 1);
+      expect(find.text('Loading your dashboard...'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      firstSnapshot.complete(
+        http.Response('{"detail":"Temporarily unavailable"}', 503),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Temporarily unavailable'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Registered users'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
+      expect(requests, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'canceled device unlock stays visible and can recover without a resume callback',
+    (tester) async {
+      final canceled = Completer<bool>();
+      var attempts = 0;
+      final vault = MemoryVault()
+        ..authenticate = () {
+          attempts++;
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          return attempts == 1 ? canceled.future : Future.value(true);
+        };
+      final api =
+          SignInApi(
+              vault: vault,
+              client: MockClient(
+                (_) async => http.Response(jsonEncode(fixture()), 200),
+              ),
+            )
+            ..session = sessionFixture()
+            ..locked = true;
+      await tester.pumpWidget(FounderApp(api: api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unlock dashboard'));
+      await tester.pump();
+      expect(find.text('FindEZ Dashboard'), findsOneWidget);
+      expect(
+        find.text('Complete device authentication to continue.'),
+        findsOneWidget,
+      );
+      canceled.complete(false);
+      await tester.pumpAndSettle();
+      expect(api.locked, isTrue);
+      expect(
+        find.text('Unlock was canceled. Try again.').hitTestable(),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Return to dashboard'));
+      await tester.pumpAndSettle();
+      expect(api.locked, isFalse);
+      expect(find.text('Registered users').hitTestable(), findsOneWidget);
+      expect(find.text('12').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  test('backgrounding invalidates an in-flight device unlock', () async {
+    final accepted = Completer<bool>();
+    final vault = MemoryVault()..authenticate = () => accepted.future;
+    var requests = 0;
+    final api =
+        SignInApi(
+            vault: vault,
+            client: MockClient((_) async {
+              requests++;
+              return http.Response('{}', 200);
+            }),
+          )
+          ..session = sessionFixture()
+          ..locked = true;
+    final pending = api.unlock();
+    api.lock();
+    accepted.complete(true);
+    await pending;
+    expect(api.locked, isTrue);
+    expect(api.unlocking, isFalse);
+    expect(requests, 0);
+    api.dispose();
   });
 }

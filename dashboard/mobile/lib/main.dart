@@ -216,9 +216,15 @@ class _FounderAppState extends State<FounderApp> with WidgetsBindingObserver {
                       style: TextStyle(fontSize: 24),
                     ),
                     const SizedBox(height: 24),
+                    if (api.error != null) ...[
+                      Text(api.error!, style: const TextStyle(color: muted)),
+                      const SizedBox(height: 16),
+                    ],
                     FilledButton(
-                      onPressed: api.unlock,
-                      child: const Text('Unlock dashboard'),
+                      onPressed: api.unlocking ? null : api.unlock,
+                      child: Text(
+                        api.unlocking ? 'Unlocking...' : 'Unlock dashboard',
+                      ),
                     ),
                     TextButton(
                       onPressed: api.signOut,
@@ -238,7 +244,60 @@ class _FounderAppState extends State<FounderApp> with WidgetsBindingObserver {
           children: [
             child,
             if (obscured)
-              const Positioned.fill(child: ColoredBox(color: canvas)),
+              Positioned.fill(
+                child: Scaffold(
+                  body: SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'FindEZ Dashboard',
+                              style: TextStyle(fontSize: 28),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              api.unlocking
+                                  ? 'Complete device authentication to continue.'
+                                  : 'Your dashboard is private.',
+                              style: const TextStyle(color: muted),
+                            ),
+                            if (api.error != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                api.error!,
+                                style: const TextStyle(color: muted),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                            FilledButton(
+                              onPressed: api.unlocking
+                                  ? null
+                                  : () async {
+                                      if (api.session != null) {
+                                        api.lock();
+                                        await api.unlock();
+                                        if (api.locked) return;
+                                      }
+                                      if (mounted) {
+                                        setState(() => obscured = false);
+                                      }
+                                    },
+                              child: Text(
+                                api.unlocking
+                                    ? 'Unlocking...'
+                                    : 'Return to dashboard',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -543,10 +602,30 @@ class _DashboardShellState extends State<DashboardShell> {
                     child: api.data == null
                         ? Center(
                             child: api.loading
-                                ? const CircularProgressIndicator()
-                                : FilledButton(
-                                    onPressed: api.refresh,
-                                    child: const Text('Try again'),
+                                ? const Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(),
+                                      SizedBox(height: 20),
+                                      Text(
+                                        'Loading your dashboard...',
+                                        style: TextStyle(color: muted),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Dashboard data is not available yet.',
+                                        style: TextStyle(color: muted),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      FilledButton(
+                                        onPressed: api.refresh,
+                                        child: const Text('Try again'),
+                                      ),
+                                    ],
                                   ),
                           )
                         : RefreshIndicator(onRefresh: api.refresh, child: body),
@@ -606,7 +685,9 @@ class _DashboardShellState extends State<DashboardShell> {
   }
 
   Widget _page() {
-    final api = widget.api, data = api.data!;
+    final api = widget.api;
+    final data = api.data;
+    if (data == null) return const SizedBox.shrink();
     switch (page) {
       case 0:
         return Overview(data: data, go: go);
