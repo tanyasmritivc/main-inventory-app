@@ -1,0 +1,93 @@
+
+> frontend@0.1.0 lint
+> eslint
+
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/coverage/lcov-report/block-navigation.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/__tests__/workspace-flows.test.tsx
+  104:28  warning  'p' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/activity-feed-client.tsx
+  107:18  warning  The ref value 'generation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'generation.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/assist-client.tsx
+  100:13  warning  The ref value 'epoch.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'epoch.current' to a variable inside the effect, and use that variable in the cleanup function                                react-hooks/exhaustive-deps
+  391:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  482:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/billing-success-client.tsx
+  36:16  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+  59:14  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/documents-client.tsx
+  161:18  warning  The ref value 'generation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'generation.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/home-docs-client.tsx
+  29:9   warning  'supabase' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  32:17  warning  'setToken' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/home-inventory-client.tsx
+   278:44  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   279:52  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   280:10  warning  'sharedSpacesLoading' is assigned a value but never used                                        @typescript-eslint/no-unused-vars
+   287:60  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   328:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   391:73  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   457:3   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+   560:19  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   651:24  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   776:34  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   776:60  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   877:49  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   882:56  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   885:32  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+   931:52  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  1178:47  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+  1879:29  warning  Unexpected any. Specify a different type                                                        @typescript-eslint/no-explicit-any
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/home-overview.tsx
+  240:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/item-photo-gallery.tsx
+   84:18  warning  The ref value 'generation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'generation.current' to a variable inside the effect, and use that variable in the cleanup function                      react-hooks/exhaustive-deps
+  190:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  226:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/share-space-modal.tsx
+   73:30   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:57   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:44   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:125  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:117  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  221:157  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  271:117  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  280:277  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  286:347  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  316:95   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/shared-space-client.tsx
+   71:38   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  270:44   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  276:52   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  280:13   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  313:117  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  501:39   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/spreadsheet-import-modal.tsx
+  4:10  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+  4:24  warning  'Loader2' is defined but never used       @typescript-eslint/no-unused-vars
+  4:33  warning  'UploadCloud' is defined but never used   @typescript-eslint/no-unused-vars
+  5:10  warning  'Button' is defined but never used        @typescript-eslint/no-unused-vars
+  7:10  warning  'Input' is defined but never used         @typescript-eslint/no-unused-vars
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/components/site/upgrade-gate.tsx
+  32:9  warning  'tip' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/tanyasmritivictorcharles/dev/findez-hero-morph/frontend/src/lib/use-api-session.ts
+  76:18  warning  The ref value 'generation.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'generation.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+✖ 55 problems (0 errors, 55 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

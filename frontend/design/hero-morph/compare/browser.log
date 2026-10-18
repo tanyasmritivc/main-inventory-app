@@ -1,0 +1,52 @@
+Fonts: {
+  body: 'Geist, "Geist Fallback", -apple-system, system-ui, sans-serif',
+  mono: '"Geist Mono", "Geist Mono Fallback", ui-monospace, monospace',
+  faces: [
+    { family: 'Inter', status: 'loaded' },
+    { family: 'Inter', status: 'unloaded' },
+    { family: 'Inter Fallback', status: 'unloaded' },
+    { family: 'Syne', status: 'unloaded' },
+    { family: 'Syne', status: 'unloaded' },
+    { family: 'Syne Fallback', status: 'unloaded' },
+    { family: 'DM Sans', status: 'unloaded' },
+    { family: 'DM Sans', status: 'unloaded' },
+    { family: 'DM Sans Fallback', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Source Sans 3 Variable', status: 'unloaded' },
+    { family: 'Geist', status: 'loaded' },
+    { family: 'Geist', status: 'loaded' },
+    { family: 'Geist Fallback', status: 'loaded' },
+    { family: 'Geist Mono', status: 'loaded' },
+    { family: 'Geist Mono', status: 'unloaded' },
+    { family: 'Geist Mono Fallback', status: 'loaded' },
+    { family: '__nextjs-Geist', status: 'unloaded' },
+    { family: '__nextjs-Geist Mono', status: 'unloaded' },
+    { family: '__nextjs-Geist', status: 'unloaded' },
+    { family: '__nextjs-Geist Mono', status: 'unloaded' }
+  ]
+}
+PASS screenshots 1440x900
+PASS screenshots 1280x720
+PASS screenshots 390x844
+PASS 1280x720 fit
+PASS six staggered boxes and exact counter thresholds
+PASS scrolling back counts down
+PASS lens pointer tracking and idle drift
+PASS four Ask questions cycle every 4.2s and light up the corresponding box
+PASS narrow static stack, final counters and pointer tracking
+PASS live reduced-motion switch removes pin, drift, caret and row animation
+PASS live motion preference restore
+PASS legacy /lab route preserved
+PASS no browser runtime errors or horizontal overflow

@@ -6,6 +6,8 @@ import { Fragment, useEffect, useRef, type CSSProperties } from "react";
 import { initLandingLab, landingLabValues } from "./landing-lab-engine";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
+import { HeroMorph } from "./hero-morph";
+import { LegacyLandingLab } from "./legacy/landing-lab-before-hero-morph";
 
 // Convert the prototype's static style declarations for the initial React render.
 function css(text: string): CSSProperties {
@@ -24,7 +26,11 @@ function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
     <a href={signedIn ? "/home" : "/signup"} className="btn fzl-site-cta"><span>{signedIn ? "Dashboard" : "Get started"}</span><span aria-hidden="true">&#8599;</span></a>
   </nav>;
 }
-export function LandingLab({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
+type LandingProps = { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean };
+export function LandingLab(props: LandingProps) {
+  return props.siteNavigation ? <HomepageLanding {...props} /> : <LegacyLandingLab {...props} />;
+}
+function HomepageLanding({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
@@ -39,41 +45,10 @@ export function LandingLab({ className = "", siteNavigation = false, initialSign
 <div style={css(v.progBar)} data-lab-style="progBar"></div>
 </div>
 
-<section id="hero" style={css(v.heroSec)} data-lab-style="heroSec">
-<div style={css(v.heroBox)} data-lab-style="heroBox">
-<canvas id="fzField" aria-label="A real workbench photo; a scanning lens names the parts it passes over" style={css("position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair")}></canvas>
-<div style={css("position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#0B0B0B,rgba(11,11,11,.85) 55%,rgba(11,11,11,0));pointer-events:none")}></div>
-<div style={css(v.heroCopy)} data-lab-style="heroCopy">
-<h1 style={css("font-weight:400;font-size:clamp(40px,5.4vw,76px);line-height:1.02;letter-spacing:-.03em;margin:18px auto 0;max-width:15ch;color:#FFF")}>{"Find"}<span style={css("color:#E8590C")}>{"EZ"}</span>{" gives the physical world a memory."}</h1>
-<div style={css("display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px;pointer-events:auto")}>
-<a href="/signup" className="btn" style={css("background:#FFF;color:#000")}>{"Get started"}</a>
-<a href="#waitlist" className="btn" style={css("border:1px solid rgba(255,255,255,.25);color:#FFF")}>{"Join the iPhone waitlist"}</a>
-</div>
-</div>
-<span className="mono hide-s" style={css("position:absolute;left:20px;bottom:20px;color:#6B6B6B")}>{"Move your cursor to scan"}</span>
-<span className="mono" style={css("position:absolute;right:20px;bottom:20px;color:#6B6B6B")}><span data-lab-text="scanCount">{v.scanCount}</span></span>
-</div>
-</section>
-
-<section id="stmt" className="wrap" style={css("padding-top:120px;padding-bottom:120px")}>
-<div className="split" style={css("grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr)")}>
-<p style={css("font-size:clamp(32px,4.2vw,60px);line-height:1.1;letter-spacing:-.025em;margin:0;max-width:22ch")}>{v.words.map((w, i) => <Fragment key={i}><span style={css(w.style)} data-lab-style={`words.${i}.style`} data-lab-row={`words.${i}`}><span data-lab-text={`words.${i}.t`}>{w.t}</span></span></Fragment>)}</p>
-<div style={css("display:flex;justify-content:center;perspective:1400px")}>
-<div className="fz-phone" style={css(v.phoneA)} data-lab-style="phoneA"><div className="fz-bezel"><div className="fz-screen"><img src="/images/landing-lab/app-home.jpg" alt="The FindEZ home screen: items that need a decision, recent captures and where things live" /></div></div></div>
-</div>
-</div>
-</section>
+<HeroMorph />
 
 <section id="see" style={css(v.seeSec)} data-lab-style="seeSec">
-<div className="wrap split">
-<div>
-<h2 className="h2" style={css("margin-top:16px")}>{"Take a picture. That is it."}</h2>
-<p className="lede">{"No forms, no categories, no typing. FIND separates every object in the photo, counts it, and tells you how sure it is."}</p>
-<div style={css("display:flex;gap:28px;margin-top:34px")}>
-<div><div style={css("font-size:48px;letter-spacing:-.03em;line-height:1")}><span data-lab-text="segCount">{v.segCount}</span></div><div className="mono" style={css("color:#8C8C8C;margin-top:8px")}>{"Objects found"}</div></div>
-<div><div style={css("font-size:48px;letter-spacing:-.03em;line-height:1;color:#C2410C")}><span data-lab-text="segReview">{v.segReview}</span></div><div className="mono" style={css("color:#8C8C8C;margin-top:8px")}>{"Need a look"}</div></div>
-</div>
-</div>
+<div className="wrap" style={css("max-width:920px")}>
 <div style={css("position:relative")}>
 <div style={css(v.benchBox)} data-lab-style="benchBox">
 <img src="/images/landing-lab/bench.jpg" alt="A real workbench: a labelled parts cabinet, a battery charger, tape, screws, gears and aluminum housings" style={css("display:block;width:100%;aspect-ratio:800/520;object-fit:cover")} />

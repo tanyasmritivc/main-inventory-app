@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FindEZ hero morph (reference)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #FFF; color: #111112; font-family: Geist, -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #111112; text-decoration: none; }
+  a:hover { color: #C2410C; }
+  .mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+  /* Stand-in for the EXISTING site header. Do not rebuild it; only its height matters (HDR). */
+  .fzh-header { max-width: 1240px; margin: 0 auto; padding: 18px 40px; display: flex; align-items: center; flex-wrap: wrap; gap: 14px 28px; border-bottom: 1px solid #F1F1F0; }
+  .fzh-header nav { display: flex; gap: 6px 26px; font-size: 15px; margin-left: auto; }
+  .fzh-header .cta { height: 42px; padding: 0 18px; border-radius: 10px; background: #F2F2F0; display: flex; align-items: center; font-size: 15px; }
+
+  /* ---------- the new pinned section ---------- */
+  .fzh-wrap { position: relative; height: calc(100vh + 1300px); }
+  .fzh-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .fzh-inner { position: relative; height: 100%; margin: 0 auto; }
+  .fzh-abs { position: absolute; }
+
+  .fzh-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #8C8C8C; }
+  .fzh-eyebrow i { width: 4px; height: 4px; border-radius: 50%; background: #C9C6C0; display: block; }
+  .fzh-h1 { margin: 24px 0 0; font-weight: 400; font-size: clamp(54px, 5.9vw, 92px); line-height: .96; letter-spacing: -.055em; }
+  .fzh-orange { color: #E8590C; }
+  .fzh-sub { margin: 30px 0 0; max-width: 460px; font-size: 21px; line-height: 1.45; color: #3F3D39; }
+  .fzh-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .fzh-btn { height: 52px; padding: 0 24px; border-radius: 12px; display: flex; align-items: center; gap: 9px; font-size: 16px; }
+  .fzh-btn.dark { background: #111112; color: #FFF; }
+  .fzh-btn.line { box-shadow: inset 0 0 0 1px #E3E3E1; padding: 0 22px; }
+
+  .fzh-h2 { margin: 18px 0 0; font-weight: 400; font-size: clamp(34px, 3.4vw, 52px); line-height: 1.04; letter-spacing: -.045em; }
+  .fzh-body { margin: 22px 0 0; font-size: 17px; line-height: 1.6; color: #6B6B6B; }
+  .fzh-stats { display: flex; gap: 48px; margin-top: 36px; padding-top: 28px; border-top: 1px solid #F1F1F0; }
+  .fzh-num { font-size: 44px; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .fzh-statlabel { margin-top: 6px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: #8C8C8C; }
+
+  .fzh-photo { aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden; background: #2A2724; cursor: crosshair; }
+  .fzh-photo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .fzh-lit { pointer-events: none; }
+  .fzh-det { position: absolute; pointer-events: none; transition: opacity .2s; box-shadow: inset 0 0 0 1.5px #E8590C; }
+  .fzh-det.low { box-shadow: inset 0 0 0 1.5px #F5B48A; }
+  .fzh-det span { position: absolute; left: -1.5px; bottom: 100%; height: 20px; padding: 0 6px; background: #E8590C; color: #FFF; display: flex; align-items: center; font-size: 10.5px; white-space: nowrap; }
+  .fzh-det.low span { background: #C2410C; }
+  .fzh-lens { position: absolute; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9); pointer-events: none; }
+  .fzh-lens::before, .fzh-lens::after { content: ""; position: absolute; left: 50%; top: 50%; background: #E8590C; }
+  .fzh-lens::before { width: 18px; height: 2px; margin: -1px 0 0 -9px; }
+  .fzh-lens::after { width: 2px; height: 18px; margin: -9px 0 0 -1px; }
+  .fzh-corner { position: absolute; bottom: 16px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+
+  .fzh-card { border-radius: 16px; background: #FFF; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 30px 60px rgba(17,17,18,.18); overflow: hidden; }
+  .fzh-card header { padding: 16px 18px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F1F1F0; }
+  .fzh-card ul { list-style: none; margin: 0; padding: 8px 18px; }
+  .fzh-card li { display: flex; align-items: center; gap: 12px; height: 38px; font-size: 14px; animation: fzh-in .5s ease-out both; }
+  .fzh-card li + li { border-top: 1px solid #F4F4F2; }
+  .fzh-card li .qty { font-size: 11.5px; color: #8C8C8C; width: 44px; text-align: right; }
+  .fzh-card li .conf { font-size: 11.5px; width: 40px; text-align: right; color: #3F3D39; }
+  .fzh-card li .conf.low { color: #C2410C; }
+  .fzh-ask { margin: 4px 12px 12px; height: 42px; border-radius: 10px; background: #F6F6F4; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 12px; }
+  .fzh-ask .q { font-size: 14px; color: #3F3D39; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .fzh-ask .caret { width: 1.5px; height: 16px; background: #111112; margin-left: -6px; animation: fzh-caret 1s steps(1) infinite; }
+  .fzh-ask .a { margin-left: auto; height: 30px; padding: 0 10px; border-radius: 7px; background: #FFF; display: flex; align-items: center; font-size: 12.5px; white-space: nowrap; }
+
+  .fzh-chip { height: 42px; padding: 0 16px 0 13px; border-radius: 12px; background: #FFF; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 12px 28px rgba(17,17,18,.16); display: flex; align-items: center; gap: 10px; font-size: 14px; white-space: nowrap; }
+  .fzh-chip .vf { position: relative; width: 20px; height: 20px; flex: none; }
+  .fzh-chip .vf i { position: absolute; left: 3px; right: 3px; top: 4px; height: 2px; border-radius: 2px; background: #E8590C; animation: fzh-scan 1.6s ease-in-out infinite; }
+
+  @keyframes fzh-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @keyframes fzh-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes fzh-scan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(11px); } }
+
+  /* Static layout: narrow screens and reduced motion. No pin, no morph. */
+  .fzh-static .fzh-wrap { height: auto; }
+  .fzh-static .fzh-stage { position: relative; height: auto; padding: 40px 0 64px; overflow: visible; }
+  .fzh-static .fzh-inner { max-width: 1240px; padding: 0 24px; display: flex; flex-direction: column; gap: 32px; }
+  .fzh-static .fzh-abs { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; opacity: 1 !important; transform: none !important; }
+  .fzh-static .fzh-chip { display: none; }
+  .fzh-static .fzh-s2 { order: 9; }
+  @media (prefers-reduced-motion: reduce) {
+    .fzh-card li, .fzh-ask .caret, .fzh-chip .vf i { animation: none; }
+  }
+
+  .after { min-height: 120vh; display: flex; align-items: center; justify-content: center; color: #8C8C8C; border-top: 1px dashed #EAEAEA; }
+</style>
+</head>
+<body>
+
+<header class="fzh-header">
+  <img src="assets/findez-wordmark.png" alt="FindEZ" style="height:24px">
+  <nav><a href="#">Developers</a><a href="#">iOS App</a><a href="#">Sign in</a></nav>
+  <a class="cta" href="#">Get started</a>
+</header>
+
+<section id="hero" class="fzh-wrap" aria-label="FindEZ">
+  <div class="fzh-stage">
+    <div class="fzh-inner" id="fzh-inner">
+
+      <div class="fzh-abs fzh-text" id="fzh-text">
+        <div class="fzh-eyebrow mono">Capture<i></i>Ask<i></i>Find</div>
+        <h1 class="fzh-h1">FindEZ gives the physical world <span class="fzh-orange">a memory.</span></h1>
+        <p class="fzh-sub">You don't organize your physical world for FindEZ. FindEZ organizes it for you.</p>
+        <div class="fzh-ctas">
+          <a class="fzh-btn dark" href="/signup">Try FindEZ on the web</a>
+          <a class="fzh-btn line" href="https://apps.apple.com/us/app/findez-ai/id6760401697"><svg width="11" height="16" viewBox="0 0 11 16" fill="none" stroke="#111112" stroke-width="1.5" aria-hidden="true"><rect x=".75" y=".75" width="9.5" height="14.5" rx="2.4"/><path d="M4.2 12.8h2.6" stroke-linecap="round"/></svg>Get the iPhone app</a>
+        </div>
+      </div>
+
+      <div class="fzh-abs fzh-s2" id="fzh-s2">
+        <div class="fzh-eyebrow mono">Capture</div>
+        <h2 class="fzh-h2">Take a picture.<br><span class="fzh-orange">That is it.</span></h2>
+        <p class="fzh-body">No forms, no categories, no typing. FIND separates every object in the photo, counts it, and tells you how sure it is.</p>
+        <div class="fzh-stats">
+          <div><div class="fzh-num" id="fzh-found">0</div><div class="fzh-statlabel mono">Objects found</div></div>
+          <div><div class="fzh-num fzh-orange" id="fzh-needs">0</div><div class="fzh-statlabel mono">Needs a look</div></div>
+        </div>
+      </div>
+
+      <div class="fzh-abs fzh-photo" id="fzh-photo">
+        <img id="fzh-base" src="assets/hero-workbench.jpg" alt="A workbench with an 18V battery charger, parts bins and a labelled parts cabinet">
+        <img id="fzh-lit" class="fzh-lit" src="assets/hero-workbench.jpg" alt="" aria-hidden="true">
+        <div id="fzh-dets"></div>
+        <div class="fzh-lens" id="fzh-lens"></div>
+        <span class="fzh-corner mono" style="left:18px" id="fzh-hint">Move your cursor to scan</span>
+        <span class="fzh-corner mono" style="right:18px" id="fzh-count">0 objects in view</span>
+      </div>
+
+      <div class="fzh-abs fzh-card" id="fzh-card">
+        <header><span style="font-size:16px;font-weight:500">Workshop › Workbench</span><span class="mono" style="margin-left:auto;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8C8C8C">Today</span></header>
+        <ul>
+          <li style="animation-delay:.3s"><span style="flex:1">Battery charger, 18V</span><span class="qty mono">x1</span><span class="conf mono">0.97</span></li>
+          <li style="animation-delay:.55s"><span style="flex:1">Duct tape</span><span class="qty mono">x1</span><span class="conf mono">0.93</span></li>
+          <li style="animation-delay:.8s"><span style="flex:1">Socket head screws</span><span class="qty mono">x40</span><span class="conf mono">0.91</span></li>
+          <li style="animation-delay:1.05s"><span style="flex:1">Gearbox housing</span><span class="qty mono">x2</span><span class="conf mono low">0.79</span></li>
+        </ul>
+        <div class="fzh-ask" aria-live="polite">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6B6B6B" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5.2"/><path d="m11 11 3.5 3.5"/></svg>
+          <span class="q" id="fzh-q">Where’s the duct tape</span><span class="caret"></span>
+          <span class="a" id="fzh-a">Workbench › Middle</span>
+        </div>
+      </div>
+
+      <div class="fzh-abs fzh-chip" id="fzh-chip">
+        <span class="vf"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="#111112" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M1.5 7V4a2.5 2.5 0 0 1 2.5-2.5h3M15 1.5h3A2.5 2.5 0 0 1 20.5 4v3M20.5 15v3a2.5 2.5 0 0 1-2.5 2.5h-3M7 20.5H4A2.5 2.5 0 0 1 1.5 18v-3"/></svg><i></i></span>Remembering 6 objects
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="after">The rest of the existing landing page continues here.</div>
+
+<script>
+(function () {
+  // ---------- data ----------
+  // Detection boxes, in % of the 4:3 photo: [centerX, centerY, width, height, label, confidence]
+  var DETS = [
+    [54.4, 31.9, 8, 9, 'battery pack 18V', '0.95'],
+    [65.6, 44.4, 13, 12, 'battery charger 18V', '0.97'],
+    [41.7, 49.6, 9, 10, 'duct tape', '0.93'],
+    [27, 58, 8, 7, 'spur gear', '0.84'],
+    [40, 66, 17, 16, 'socket head screws', '0.91'],
+    [66.7, 71, 20, 16, 'gearbox housing', '0.79']
+  ];
+  // Ask questions that cycle in the card: [question, answer, index of the detection it lights up]
+  var QS = [
+    ['Where’s the duct tape', 'Workbench › Middle', 2],
+    ['How many socket head screws', '40 · Front bin', 4],
+    ['Do I own an 18V charger', 'Yes, 1 · Right side', 1],
+    ['What needs a look', 'Gearbox housing · 0.79', 5]
+  ];
+
+  // ---------- constants ----------
+  var LENS_R = 92;          // lens radius, px
+  var SCROLL_LEN = 1300;    // extra scroll the section is pinned for, px
+  var MAX_W = 1160;         // content width cap, px
+  var GUTTER = 48;          // side gutter each side, px
+  var OVER = 170;           // how far the card hangs below the photo in the hero, px
+  var NARROW = 980;         // below this width: static layout
+  var Q_EVERY = 4200;       // ms between Ask questions
+
+  // ---------- helpers ----------
+  function C(v) { return Math.min(1, Math.max(0, v)); }
+  function ss(v) { v = C(v); return v * v * (3 - 2 * v); }   // smoothstep
+  function L(a, b, v) { return a + (b - a) * v; }             // lerp
+  function $(id) { return document.getElementById(id); }
+
+  var root = document.documentElement;
+  var wrap = $('hero'), inner = $('fzh-inner'), text = $('fzh-text'), s2 = $('fzh-s2');
+  var photo = $('fzh-photo'), base = $('fzh-base'), lit = $('fzh-lit'), lens = $('fzh-lens');
+  var card = $('fzh-card'), chip = $('fzh-chip');
+  var hint = $('fzh-hint'), count = $('fzh-count'), foundEl = $('fzh-found'), needsEl = $('fzh-needs');
+  var qEl = $('fzh-q'), aEl = $('fzh-a');
+  var header = document.querySelector('.fzh-header');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // build detection boxes
+  var detEls = DETS.map(function (d) {
+    var el = document.createElement('div');
+    el.className = 'fzh-det' + (parseFloat(d[5]) < 0.8 ? ' low' : '');
+    el.style.left = (d[0] - d[2] / 2) + '%';
+    el.style.top = (d[1] - d[3] / 2) + '%';
+    el.style.width = d[2] + '%';
+    el.style.height = d[3] + '%';
+    el.style.opacity = 0;
+    el.innerHTML = '<span class="mono">' + d[4] + ' ' + d[5] + '</span>';
+    $('fzh-dets').appendChild(el);
+    return el;
+  });
+
+  var st = { p: 0, t: 0, hover: false, mx: 50, my: 45, q: 0, staticMode: false };
+
+  function measure() {
+    st.staticMode = reduced || window.innerWidth < NARROW;
+    document.body.classList.toggle('fzh-static', st.staticMode);
+    if (st.staticMode) { st.p = 0; return; }
+    var r = wrap.getBoundingClientRect();
+    var span = r.height - window.innerHeight;
+    st.p = span > 0 ? C(-r.top / span) : 0;
+  }
+
+  function render() {
+    var p = st.p, statics = st.staticMode;
+    var VH = window.innerHeight, VW = window.innerWidth;
+    var HDR = header ? header.offsetHeight : 82;
+
+    // ---- progress curves ----
+    var e = ss((p - 0.08) / 0.62);        // photo travel hero -> section 2
+    var textOut = ss(p / 0.24);           // hero text leaves
+    var cardOut = ss((p - 0.22) / 0.3);   // card leaves
+    var s2In = ss((p - 0.45) / 0.35);     // section 2 text arrives
+    var allOn = statics ? 0 : ss((p - 0.5) / 0.3); // lens off, photo brightens
+
+    // ---- lens position (idle drift or cursor) ----
+    var lx = st.hover ? st.mx : 54 + 13 * Math.sin(st.t * 0.45);
+    var ly = st.hover ? st.my : 47 + 11 * Math.sin(st.t * 0.7 + 1);
+    var W = photo.offsetWidth || 580, H = W * 0.75;
+    var R = Math.min(LENS_R, W * 0.2);   // smaller lens on small photos
+
+    // ---- detections + counters ----
+    var inView = 0, found = 0, needs = 0;
+    DETS.forEach(function (d, i) {
+      var ai = statics ? 0 : ss((p - 0.46 - i * 0.045) / 0.07);   // staggered reveal on scroll
+      if (ai > 0.5) { found++; if (parseFloat(d[5]) < 0.8) needs++; }
+      var seen = Math.hypot((d[0] - lx) / 100 * W, (d[1] - ly) / 100 * H) < R;
+      if (seen) inView++;
+      var asked = QS[st.q][2] === i;
+      detEls[i].style.opacity = Math.max(ai, (seen || asked) ? 1 - allOn : 0);
+    });
+    if (statics) {  // static layout shows the finished counts
+      found = DETS.length;
+      needs = DETS.filter(function (d) { return parseFloat(d[5]) < 0.8; }).length;
+    }
+    foundEl.textContent = found;
+    needsEl.textContent = needs;
+    hint.textContent = allOn > 0.5 ? 'One photo' : 'Move your cursor to scan';
+    count.textContent = allOn > 0.05
+      ? found + (found === 1 ? ' object found' : ' objects found')
+      : inView + (inView === 1 ? ' object' : ' objects') + ' in view';
+
+    base.style.filter = 'brightness(' + L(0.55, 0.92, allOn) + ')';
+    lit.style.clipPath = 'circle(' + R + 'px at ' + lx + '% ' + ly + '%)';
+    lit.style.opacity = 1 - allOn;
+    lens.style.cssText = 'left:' + lx + '%;top:' + ly + '%;width:' + (R * 2) + 'px;height:' + (R * 2) + 'px;margin:' + (-R) + 'px 0 0 ' + (-R) + 'px;opacity:' + (1 - allOn);
+    qEl.textContent = QS[st.q][0];
+    aEl.textContent = QS[st.q][1];
+
+    if (statics) {
+      [inner, text, s2, photo, card, chip].forEach(function (el) { el.style.cssText = ''; });
+      return;
+    }
+
+    // ---- geometry ----
+    var Wi = Math.min(MAX_W, VW - GUTTER * 2);
+    var visH = VH - HDR;
+    // hero frame: photo starts just past the middle and bleeds off the right edge
+    var hH = Math.max(260, Math.min(Wi * 0.62 * 0.75, visH - OVER - 40)), hW = hH / 0.75;
+    var hL = Wi * 0.52, hT = Math.max(16, Math.min(56, (visH - (hH + OVER)) / 2));
+    // section 2 frame: photo on the left, vertically centred in the full viewport
+    var eW = Math.min(Wi * 0.55, VH * 0.74 / 0.75), eH = eW * 0.75;
+    var eL = 0, eT = (VH - eH) / 2;
+    var pW = L(hW, eW, e), pL = L(hL, eL, e), pT = L(hT, eT, e);
+    var cW = Math.min(380, Wi * 0.33), cT = hT + hH - 120;
+
+    inner.style.width = Wi + 'px';
+    text.style.cssText = 'left:0;top:' + Math.max(8, hT - 6) + 'px;width:' + (hL - 48) + 'px;opacity:' + (1 - textOut) + ';transform:translateY(' + (-80 * textOut) + 'px);pointer-events:' + (textOut > 0.5 ? 'none' : 'auto');
+    s2.style.cssText = 'left:' + (eW + 72) + 'px;top:50%;width:' + (Wi - eW - 72) + 'px;max-width:460px;opacity:' + s2In + ';transform:translateY(calc(-50% + ' + (40 * (1 - s2In)) + 'px));pointer-events:' + (s2In > 0.5 ? 'auto' : 'none');
+    photo.style.cssText = 'left:' + pL + 'px;top:' + pT + 'px;width:' + pW + 'px';
+    card.style.cssText = 'left:' + (hL - 36) + 'px;top:' + cT + 'px;width:' + cW + 'px;opacity:' + (1 - cardOut) + ';transform:translateY(' + (60 * cardOut) + 'px);pointer-events:' + (cardOut > 0.5 ? 'none' : 'auto');
+    chip.style.cssText = 'left:' + (hL + hW - 250) + 'px;top:' + (hT + hH - 66) + 'px;opacity:' + (1 - textOut);
+  }
+
+  // ---------- events ----------
+  var queued = false;
+  function onScroll() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () { queued = false; measure(); render(); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+
+  photo.addEventListener('mousemove', function (ev) {
+    var r = photo.getBoundingClientRect();
+    st.hover = true;
+    st.mx = (ev.clientX - r.left) / r.width * 100;
+    st.my = (ev.clientY - r.top) / r.height * 100;
+    render();
+  });
+  photo.addEventListener('mouseleave', function () { st.hover = false; });
+
+  // idle drift (about 30fps) and the Ask cycle
+  var last = 0, lastQ = 0;
+  function tick(ts) {
+    requestAnimationFrame(tick);
+    if (ts - last < 33) return;
+    last = ts;
+    if (!lastQ) lastQ = ts;
+    var dirty = false;
+    if (!st.hover && !reduced && st.p < 0.6) { st.t = ts / 1000; dirty = true; }
+    if (ts - lastQ > Q_EVERY && st.p < 0.3) { lastQ = ts; st.q = (st.q + 1) % QS.length; dirty = true; }
+    if (dirty) render();
+  }
+
+  measure(); render();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1004 @@
+{
+  "checks": [
+    {
+      "name": "screenshots 1440x900",
+      "details": "Reference left, site right; scroll 0, 500, 900, 1400"
+    },
+    {
+      "name": "screenshots 1280x720",
+      "details": "Reference left, site right; scroll 0, 500, 900, 1400"
+    },
+    {
+      "name": "screenshots 390x844",
+      "details": "Reference left, site right; scroll 0, 500, 900, 1400"
+    },
+    {
+      "name": "1280x720 fit",
+      "details": {
+        "found": 0,
+        "needs": 0,
+        "question": "Where’s the duct tape",
+        "answer": "Workbench › Middle",
+        "lens": "left: 55.4696%; top: 49.4373%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+        "clip": "circle(92px at 55.4696% 49.4373%)",
+        "boxes": [
+          1,
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        "photo": {
+          "x": 663.1875,
+          "y": 86,
+          "width": 592,
+          "height": 444,
+          "bottom": 530,
+          "right": 1255.1875
+        },
+        "text": {
+          "x": 60,
+          "y": 80,
+          "width": 555.1875,
+          "height": 430.328125,
+          "bottom": 510.328125,
+          "right": 615.1875
+        },
+        "card": {
+          "x": 627.1875,
+          "y": 410,
+          "width": 380,
+          "height": 276,
+          "bottom": 686,
+          "right": 1007.1875
+        },
+        "s2": {
+          "x": 770,
+          "y": 300.5625,
+          "width": 450,
+          "height": 330.875,
+          "bottom": 631.4375,
+          "right": 1220
+        },
+        "stagePosition": "sticky",
+        "overflow": false,
+        "header": 66,
+        "track": 2020,
+        "rootClass": "fzh",
+        "reduced": false,
+        "viewport": [
+          1280,
+          720
+        ]
+      }
+    },
+    {
+      "name": "six staggered boxes and exact counter thresholds",
+      "details": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0.52,
+          1,
+          0
+        ],
+        [
+          0.565,
+          2,
+          0
+        ],
+        [
+          0.61,
+          3,
+          0
+        ],
+        [
+          0.655,
+          4,
+          0
+        ],
+        [
+          0.7,
+          5,
+          0
+        ],
+        [
+          0.745,
+          6,
+          1
+        ],
+        [
+          1,
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "name": "scrolling back counts down",
+      "details": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "lens pointer tracking and idle drift"
+    },
+    {
+      "name": "four Ask questions cycle every 4.2s and light up the corresponding box",
+      "details": [
+        {
+          "question": "Where’s the duct tape",
+          "answer": "Workbench › Middle",
+          "elapsed": 1265.4000000357628
+        },
+        {
+          "question": "How many socket head screws",
+          "answer": "40 · Front bin",
+          "elapsed": 4681.699999988079
+        },
+        {
+          "question": "Do I own an 18V charger",
+          "answer": "Yes, 1 · Right side",
+          "elapsed": 8918.699999988079
+        },
+        {
+          "question": "What needs a look",
+          "answer": "Gearbox housing · 0.79",
+          "elapsed": 13149.600000023842
+        }
+      ]
+    },
+    {
+      "name": "narrow static stack, final counters and pointer tracking",
+      "details": {
+        "found": 6,
+        "needs": 1,
+        "question": "What needs a look",
+        "answer": "Gearbox housing · 0.79",
+        "lens": "left: 50.9826%; top: 37.8359%; width: 136.8px; height: 136.8px; margin: -68.4px 0px 0px -68.4px; opacity: 1;",
+        "clip": "circle(68.4px at 50.9826% 37.8359%)",
+        "boxes": [
+          1,
+          1,
+          1,
+          0,
+          0,
+          1
+        ],
+        "photo": {
+          "x": 24,
+          "y": 650.625,
+          "width": 342,
+          "height": 256.5,
+          "bottom": 907.125,
+          "right": 366
+        },
+        "text": {
+          "x": 24,
+          "y": 106,
+          "width": 342,
+          "height": 512.625,
+          "bottom": 618.625,
+          "right": 366
+        },
+        "card": {
+          "x": 24,
+          "y": 939.125,
+          "width": 342,
+          "height": 276,
+          "bottom": 1215.125,
+          "right": 366
+        },
+        "s2": {
+          "x": 24,
+          "y": 1247.125,
+          "width": 342,
+          "height": 338.28125,
+          "bottom": 1585.40625,
+          "right": 366
+        },
+        "stagePosition": "relative",
+        "overflow": false,
+        "header": 66,
+        "track": 1583,
+        "rootClass": "fzh fzh-static",
+        "reduced": false,
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    {
+      "name": "live reduced-motion switch removes pin, drift, caret and row animation",
+      "details": {
+        "found": 6,
+        "needs": 1,
+        "question": "What needs a look",
+        "answer": "Gearbox housing · 0.79",
+        "lens": "left: 54%; top: 56.2562%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+        "clip": "circle(92px at 54% 56.2562%)",
+        "boxes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "photo": {
+          "x": 44,
+          "y": 495.84375,
+          "width": 1192,
+          "height": 894,
+          "bottom": 1389.84375,
+          "right": 1236
+        },
+        "text": {
+          "x": 44,
+          "y": 106,
+          "width": 1192,
+          "height": 357.84375,
+          "bottom": 463.84375,
+          "right": 1236
+        },
+        "card": {
+          "x": 44,
+          "y": 1421.84375,
+          "width": 1192,
+          "height": 276,
+          "bottom": 1697.84375,
+          "right": 1236
+        },
+        "s2": {
+          "x": 44,
+          "y": 1729.84375,
+          "width": 1192,
+          "height": 303.6875,
+          "bottom": 2033.53125,
+          "right": 1236
+        },
+        "stagePosition": "relative",
+        "overflow": false,
+        "header": 66,
+        "track": 2032,
+        "rootClass": "fzh fzh-static",
+        "reduced": true,
+        "viewport": [
+          1280,
+          720
+        ]
+      }
+    },
+    {
+      "name": "live motion preference restore"
+    },
+    {
+      "name": "legacy /lab route preserved"
+    },
+    {
+      "name": "no browser runtime errors or horizontal overflow"
+    }
+  ],
+  "errors": [],
+  "comparisons": [
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "scroll": 0,
+      "found": 0,
+      "needs": 0,
+      "question": "How many socket head screws",
+      "answer": "40 · Front bin",
+      "lens": "left: 55.7266%; top: 40.7574%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+      "clip": "circle(92px at 55.7266% 40.7574%)",
+      "boxes": [
+        1,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      "photo": {
+        "x": 743.1875,
+        "y": 122,
+        "width": 719.1875,
+        "height": 539.390625,
+        "bottom": 661.390625,
+        "right": 1462.375
+      },
+      "text": {
+        "x": 140,
+        "y": 116,
+        "width": 555.1875,
+        "height": 539.0625,
+        "bottom": 655.0625,
+        "right": 695.1875
+      },
+      "card": {
+        "x": 707.1875,
+        "y": 541.390625,
+        "width": 380,
+        "height": 276,
+        "bottom": 817.390625,
+        "right": 1087.1875
+      },
+      "s2": {
+        "x": 850,
+        "y": 384.90625,
+        "width": 450,
+        "height": 342.1875,
+        "bottom": 727.09375,
+        "right": 1300
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2200,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "scroll": 500,
+      "found": 0,
+      "needs": 0,
+      "question": "How many socket head screws",
+      "answer": "40 · Front bin",
+      "lens": "left: 50.888%; top: 46.7774%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+      "clip": "circle(92px at 50.888% 46.7774%)",
+      "boxes": [
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "photo": {
+        "x": 522.640625,
+        "y": 112.578125,
+        "width": 689.5,
+        "height": 517.125,
+        "bottom": 629.703125,
+        "right": 1212.140625
+      },
+      "text": {
+        "x": 140,
+        "y": -30,
+        "width": 555.1875,
+        "height": 539.0625,
+        "bottom": 509.0625,
+        "right": 695.1875
+      },
+      "card": {
+        "x": 707.1875,
+        "y": 494.7545166015625,
+        "width": 380,
+        "height": 276,
+        "bottom": 770.7545166015625,
+        "right": 1087.1875
+      },
+      "s2": {
+        "x": 850,
+        "y": 318.90625,
+        "width": 450,
+        "height": 342.1875,
+        "bottom": 661.09375,
+        "right": 1300
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2200,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "scroll": 900,
+      "found": 4,
+      "needs": 0,
+      "question": "How many socket head screws",
+      "answer": "40 · Front bin",
+      "lens": "left: 50.6992%; top: 47.0338%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 0.542263;",
+      "clip": "circle(92px at 50.6992% 47.0338%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0.738295,
+        0.542263,
+        0
+      ],
+      "photo": {
+        "x": 155.0625,
+        "y": 206.875,
+        "width": 640.015625,
+        "height": 480,
+        "bottom": 686.875,
+        "right": 795.078125
+      },
+      "text": {
+        "x": 140,
+        "y": -30,
+        "width": 555.1875,
+        "height": 539.0625,
+        "bottom": 509.0625,
+        "right": 695.1875
+      },
+      "card": {
+        "x": 707.1875,
+        "y": 535.390625,
+        "width": 380,
+        "height": 276,
+        "bottom": 811.390625,
+        "right": 1087.1875
+      },
+      "s2": {
+        "x": 850,
+        "y": 296.07952880859375,
+        "width": 450,
+        "height": 342.1875,
+        "bottom": 638.2670288085938,
+        "right": 1300
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2200,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "scroll": 1400,
+      "found": 6,
+      "needs": 1,
+      "question": "How many socket head screws",
+      "answer": "40 · Front bin",
+      "lens": "left: 50.6992%; top: 47.0338%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 0;",
+      "clip": "circle(92px at 50.6992% 47.0338%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "photo": {
+        "x": 140,
+        "y": 176.75,
+        "width": 638,
+        "height": 478.5,
+        "bottom": 655.25,
+        "right": 778
+      },
+      "text": {
+        "x": 140,
+        "y": -64,
+        "width": 555.1875,
+        "height": 539.0625,
+        "bottom": 475.0625,
+        "right": 695.1875
+      },
+      "card": {
+        "x": 707.1875,
+        "y": 501.390625,
+        "width": 380,
+        "height": 276,
+        "bottom": 777.390625,
+        "right": 1087.1875
+      },
+      "s2": {
+        "x": 850,
+        "y": 244.90625,
+        "width": 450,
+        "height": 342.1875,
+        "bottom": 587.09375,
+        "right": 1300
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2200,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "scroll": 0,
+      "found": 0,
+      "needs": 0,
+      "question": "Do I own an 18V charger",
+      "answer": "Yes, 1 · Right side",
+      "lens": "left: 46.3533%; top: 43.0134%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+      "clip": "circle(92px at 46.3533% 43.0134%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "photo": {
+        "x": 663.1875,
+        "y": 86,
+        "width": 592,
+        "height": 444,
+        "bottom": 530,
+        "right": 1255.1875
+      },
+      "text": {
+        "x": 60,
+        "y": 80,
+        "width": 555.1875,
+        "height": 430.328125,
+        "bottom": 510.328125,
+        "right": 615.1875
+      },
+      "card": {
+        "x": 627.1875,
+        "y": 410,
+        "width": 380,
+        "height": 276,
+        "bottom": 686,
+        "right": 1007.1875
+      },
+      "s2": {
+        "x": 770,
+        "y": 300.5625,
+        "width": 450,
+        "height": 330.875,
+        "bottom": 631.4375,
+        "right": 1220
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2020,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "scroll": 500,
+      "found": 0,
+      "needs": 0,
+      "question": "Do I own an 18V charger",
+      "answer": "Yes, 1 · Right side",
+      "lens": "left: 50.3595%; top: 38.332%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 1;",
+      "clip": "circle(92px at 50.3595% 38.332%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "photo": {
+        "x": 442.640625,
+        "y": 56.828125,
+        "width": 608.8125,
+        "height": 456.609375,
+        "bottom": 513.4375,
+        "right": 1051.453125
+      },
+      "text": {
+        "x": 60,
+        "y": -66,
+        "width": 555.1875,
+        "height": 430.328125,
+        "bottom": 364.328125,
+        "right": 615.1875
+      },
+      "card": {
+        "x": 627.1875,
+        "y": 363.3638916015625,
+        "width": 380,
+        "height": 276,
+        "bottom": 639.3638916015625,
+        "right": 1007.1875
+      },
+      "s2": {
+        "x": 770,
+        "y": 234.5625,
+        "width": 450,
+        "height": 330.875,
+        "bottom": 565.4375,
+        "right": 1220
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2020,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "scroll": 900,
+      "found": 4,
+      "needs": 0,
+      "question": "Do I own an 18V charger",
+      "answer": "Yes, 1 · Right side",
+      "lens": "left: 50.3595%; top: 38.332%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 0.542263;",
+      "clip": "circle(92px at 50.3595% 38.332%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0.738295,
+        0.00142787,
+        0
+      ],
+      "photo": {
+        "x": 75.0625,
+        "y": 118.21875,
+        "width": 636.84375,
+        "height": 477.625,
+        "bottom": 595.84375,
+        "right": 711.90625
+      },
+      "text": {
+        "x": 60,
+        "y": -66,
+        "width": 555.1875,
+        "height": 430.328125,
+        "bottom": 364.328125,
+        "right": 615.1875
+      },
+      "card": {
+        "x": 627.1875,
+        "y": 404,
+        "width": 380,
+        "height": 276,
+        "bottom": 680,
+        "right": 1007.1875
+      },
+      "s2": {
+        "x": 770,
+        "y": 211.73577880859375,
+        "width": 450,
+        "height": 330.875,
+        "bottom": 542.6107788085938,
+        "right": 1220
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2020,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "scroll": 1400,
+      "found": 6,
+      "needs": 1,
+      "question": "Do I own an 18V charger",
+      "answer": "Yes, 1 · Right side",
+      "lens": "left: 50.3595%; top: 38.332%; width: 184px; height: 184px; margin: -92px 0px 0px -92px; opacity: 0;",
+      "clip": "circle(92px at 50.3595% 38.332%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "photo": {
+        "x": 60,
+        "y": 86.75,
+        "width": 638,
+        "height": 478.5,
+        "bottom": 565.25,
+        "right": 698
+      },
+      "text": {
+        "x": 60,
+        "y": -100,
+        "width": 555.1875,
+        "height": 430.328125,
+        "bottom": 330.328125,
+        "right": 615.1875
+      },
+      "card": {
+        "x": 627.1875,
+        "y": 370,
+        "width": 380,
+        "height": 276,
+        "bottom": 646,
+        "right": 1007.1875
+      },
+      "s2": {
+        "x": 770,
+        "y": 160.5625,
+        "width": 450,
+        "height": 330.875,
+        "bottom": 491.4375,
+        "right": 1220
+      },
+      "stagePosition": "sticky",
+      "overflow": false,
+      "header": 66,
+      "track": 2020,
+      "rootClass": "fzh",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "scroll": 0,
+      "found": 6,
+      "needs": 1,
+      "question": "What needs a look",
+      "answer": "Gearbox housing · 0.79",
+      "lens": "left: 65.9561%; top: 57.5336%; width: 136.8px; height: 136.8px; margin: -68.4px 0px 0px -68.4px; opacity: 1;",
+      "clip": "circle(68.4px at 65.9561% 57.5336%)",
+      "boxes": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "photo": {
+        "x": 24,
+        "y": 650.625,
+        "width": 342,
+        "height": 256.5,
+        "bottom": 907.125,
+        "right": 366
+      },
+      "text": {
+        "x": 24,
+        "y": 106,
+        "width": 342,
+        "height": 512.625,
+        "bottom": 618.625,
+        "right": 366
+      },
+      "card": {
+        "x": 24,
+        "y": 939.125,
+        "width": 342,
+        "height": 276,
+        "bottom": 1215.125,
+        "right": 366
+      },
+      "s2": {
+        "x": 24,
+        "y": 1247.125,
+        "width": 342,
+        "height": 338.28125,
+        "bottom": 1585.40625,
+        "right": 366
+      },
+      "stagePosition": "relative",
+      "overflow": false,
+      "header": 66,
+      "track": 1583,
+      "rootClass": "fzh fzh-static",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "scroll": 500,
+      "found": 6,
+      "needs": 1,
+      "question": "What needs a look",
+      "answer": "Gearbox housing · 0.79",
+      "lens": "left: 63.9137%; top: 57.833%; width: 136.8px; height: 136.8px; margin: -68.4px 0px 0px -68.4px; opacity: 1;",
+      "clip": "circle(68.4px at 63.9137% 57.833%)",
+      "boxes": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "photo": {
+        "x": 24,
+        "y": 150.625,
+        "width": 342,
+        "height": 256.5,
+        "bottom": 407.125,
+        "right": 366
+      },
+      "text": {
+        "x": 24,
+        "y": -394,
+        "width": 342,
+        "height": 512.625,
+        "bottom": 118.625,
+        "right": 366
+      },
+      "card": {
+        "x": 24,
+        "y": 439.125,
+        "width": 342,
+        "height": 276,
+        "bottom": 715.125,
+        "right": 366
+      },
+      "s2": {
+        "x": 24,
+        "y": 747.125,
+        "width": 342,
+        "height": 338.28125,
+        "bottom": 1085.40625,
+        "right": 366
+      },
+      "stagePosition": "relative",
+      "overflow": false,
+      "header": 66,
+      "track": 1583,
+      "rootClass": "fzh fzh-static",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "scroll": 900,
+      "found": 6,
+      "needs": 1,
+      "question": "Where’s the duct tape",
+      "answer": "Workbench › Middle",
+      "lens": "left: 60.9861%; top: 55.816%; width: 136.8px; height: 136.8px; margin: -68.4px 0px 0px -68.4px; opacity: 1;",
+      "clip": "circle(68.4px at 60.9861% 55.816%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "photo": {
+        "x": 24,
+        "y": -249.375,
+        "width": 342,
+        "height": 256.5,
+        "bottom": 7.125,
+        "right": 366
+      },
+      "text": {
+        "x": 24,
+        "y": -794,
+        "width": 342,
+        "height": 512.625,
+        "bottom": -281.375,
+        "right": 366
+      },
+      "card": {
+        "x": 24,
+        "y": 39.125,
+        "width": 342,
+        "height": 276,
+        "bottom": 315.125,
+        "right": 366
+      },
+      "s2": {
+        "x": 24,
+        "y": 347.125,
+        "width": 342,
+        "height": 338.28125,
+        "bottom": 685.40625,
+        "right": 366
+      },
+      "stagePosition": "relative",
+      "overflow": false,
+      "header": 66,
+      "track": 1583,
+      "rootClass": "fzh fzh-static",
+      "reduced": false
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "scroll": 1400,
+      "found": 6,
+      "needs": 1,
+      "question": "Where’s the duct tape",
+      "answer": "Workbench › Middle",
+      "lens": "left: 57.434%; top: 51.9133%; width: 136.8px; height: 136.8px; margin: -68.4px 0px 0px -68.4px; opacity: 1;",
+      "clip": "circle(68.4px at 57.434% 51.9133%)",
+      "boxes": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "photo": {
+        "x": 24,
+        "y": -749.375,
+        "width": 342,
+        "height": 256.5,
+        "bottom": -492.875,
+        "right": 366
+      },
+      "text": {
+        "x": 24,
+        "y": -1294,
+        "width": 342,
+        "height": 512.625,
+        "bottom": -781.375,
+        "right": 366
+      },
+      "card": {
+        "x": 24,
+        "y": -460.875,
+        "width": 342,
+        "height": 276,
+        "bottom": -184.875,
+        "right": 366
+      },
+      "s2": {
+        "x": 24,
+        "y": -152.875,
+        "width": 342,
+        "height": 338.28125,
+        "bottom": 185.40625,
+        "right": 366
+      },
+      "stagePosition": "relative",
+      "overflow": false,
+      "header": 66,
+      "track": 1583,
+      "rootClass": "fzh fzh-static",
+      "reduced": false
+    }
+  ]
+}

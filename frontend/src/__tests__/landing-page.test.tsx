@@ -20,6 +20,10 @@ jest.mock("@/components/site/landing-lab-engine", () => ({
   ...jest.requireActual("@/components/site/landing-lab-engine"),
   initLandingLab: () => () => {},
 }));
+jest.mock("@/components/site/hero-morph-engine", () => ({
+  ...jest.requireActual("@/components/site/hero-morph-engine"),
+  init: () => () => {},
+}));
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => ({
     auth: {
@@ -45,9 +49,17 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "stmt", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
+  for (const id of ["hero", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }
+  expect(document.getElementById("stmt")).toBeNull();
+  expect(document.querySelectorAll("#hero")).toHaveLength(1);
+  expect(document.querySelectorAll(".fzh-det")).toHaveLength(6);
+  expect(document.querySelectorAll(".fzh-h2")).toHaveLength(1);
+  expect(document.querySelector("#see h2")).toBeNull();
+  expect(document.querySelector('#see img[src$="app-capture.jpg"]')).toBeTruthy();
+  expect(document.querySelector("#see #fzHoles")).toBeTruthy();
+  expect(document.querySelector('#hero img[src="/images/landing/hero-workbench.jpg"]')).toBeTruthy();
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
   expect(header.getAllByRole("link").map(link => link.textContent)).toEqual(["Developers", "iOS App", "Get started↗"]);
   expect(header.getByRole("link", { name: "Developers" }).getAttribute("href")).toBe("/docs/api");
@@ -60,7 +72,8 @@ test("the homepage publishes the approved Lab design with its original destinati
   for (const link of screen.getAllByRole("link", { name: "Get started" })) {
     expect(link.getAttribute("href")).toBe("/signup");
   }
-  expect(screen.getByRole("link", { name: "Try FindEZ on the web" }).getAttribute("href")).toBe("/signup");
+  for (const link of screen.getAllByRole("link", { name: "Try FindEZ on the web" })) expect(link.getAttribute("href")).toBe("/signup");
+  expect(screen.getByRole("link", { name: "Get the iPhone app" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
   for (const link of screen.getAllByRole("link", { name: "Join the iPhone waitlist" })) expect(link.getAttribute("href")).toBe("#waitlist");
 });
 
