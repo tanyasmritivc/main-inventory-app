@@ -1,3 +1,14 @@
+# October 18 Chat prose belongs to the model
+
+Do not restore deterministic question/answer routers or canned project, preference,
+photo or action replies. The configured model interprets each turn, chooses tools
+and writes every successful reply. Retrieval, permissions, evidence and action
+receipts remain code; failed/empty generation is an error, not an assistant answer.
+An attached photo does not imply an identification task. Address the user's actual
+intent and supplied capability facts. Never claim bulk attachment is available,
+infer empty Spaces from photo matches or recommend Capture for existing-item
+photo attachment. The current supported path is the saved item's photo gallery.
+
 # October 18 Account containment and existing photo compatibility
 
 Never push the transparent combined ProfilePage body directly from a main-page
