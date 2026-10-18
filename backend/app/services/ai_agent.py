@@ -14,6 +14,7 @@ from typing import Any, Iterator
 
 from app.services.inventory_scope import inventory_cache_key
 from app.services.agent_gateway_client import AgentGatewayClient
+from app.services.completion_stream import completion_events
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads
 from app.services.project_kits_service import get_project_readiness
@@ -1150,7 +1151,7 @@ def _run_agent(
 def _iter_agent_streaming(
     *, user_id: str, message: str, first_name: str | None,
     conversation_history: list[dict] | None = None, memory_context: str | None = None,
-    conversation_id: str | None = None,
+    conversation_id: str | None = None, cancelled=None,
 ) -> Iterator[dict]:
     """One model/tool loop for every chat turn; failures never become answers."""
     if not user_id:
@@ -1178,19 +1179,33 @@ def _iter_agent_streaming(
     trace, results = [], {}
     last_tool = None
     for step in range(9):
+        if cancelled and cancelled():
+            return
         enabled = step < 8
         response = provider.client.chat.completions.create(**_completion_kwargs(
-            provider, messages=messages, stream=False, allow_tools=enabled))
-        output = response.choices[0].message
-        calls = (getattr(output, 'tool_calls', None) or [])[:4]
-        content = getattr(output, 'content', None) or ''
+            provider, messages=messages, stream=True, allow_tools=enabled))
+        streamed = ''
+        content, calls = '', []
+        for event in completion_events(response):
+            if cancelled and cancelled():
+                return
+            if event['type'] == 'delta':
+                streamed += event['delta']
+                validate_model_answer(message, trace, streamed)
+                yield event
+            else:
+                content, calls = event['content'], event['tool_calls']
         if calls:
+            if streamed:
+                yield {'type': 'reset'}
             if not enabled:
                 raise RuntimeError('The model did not complete within the tool budget')
             messages.append({'role': 'assistant', 'content': content, 'tool_calls': [
                 {'id': call.id, 'type': 'function', 'function': {'name': call.function.name, 'arguments': call.function.arguments}}
                 for call in calls]})
             for call in calls:
+                if cancelled and cancelled():
+                    return
                 raw = call.function.arguments or '{}'
                 try:
                     args = json.loads(raw) if isinstance(raw, str) and len(raw) <= 8000 else None
@@ -1213,7 +1228,6 @@ def _iter_agent_streaming(
         state.last_user_message, state.updated_at = message, time.time()
         _update_memory_from_trace(user_id=user_id, tool_trace=trace)
         _persist_state(user_id)
-        yield {'type': 'delta', 'delta': answer}
         yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': trace},
                'assistant_message': answer, 'nav_hint': _navigation_hint_from_trace(trace),
                'answer_context': answer_context_from_reads(context, trace)}
@@ -1229,6 +1243,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         for item in _iter_agent_streaming(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history):
             if item.get('type') == 'delta':
                 yield _evt({'type': 'delta', 'delta': item['delta']})
+            elif item.get('type') == 'reset':
+                yield _evt({'type': 'reset'})
             elif item.get('type') == 'done':
                 yield _evt({'type': 'done', 'tool': item.get('tool'), 'result': item.get('result'), 'assistant_message': item.get('assistant_message') or '', 'nav_hint': item.get('nav_hint')})
     except Exception:
@@ -1242,86 +1258,63 @@ async def iter_ai_command_events_async(
 ):
     """Async raw-event generator — runs the sync agent in a background thread and yields
     raw event dicts (not SSE-formatted) into the asyncio event loop."""
+    from concurrent.futures import TimeoutError as FutureTimeout
     loop = asyncio.get_running_loop()
-    queue: asyncio.Queue = asyncio.Queue(maxsize=128)
-    SENTINEL = object()
+    queue: asyncio.Queue = asyncio.Queue(maxsize=32)
+    sentinel = object()
+    stopped = threading.Event()
 
-    def _run_sync() -> None:
+    def send(value):
+        if stopped.is_set():
+            return False
+        future = asyncio.run_coroutine_threadsafe(queue.put(value), loop)
+        while not stopped.is_set():
+            try:
+                future.result(timeout=.1)
+                return True
+            except FutureTimeout:
+                continue
+        future.cancel()
+        return False
+
+    def worker():
+        iterator = _iter_agent_streaming(
+            user_id=user_id, message=message, first_name=first_name,
+            conversation_history=conversation_history, memory_context=memory_context,
+            conversation_id=conversation_id, cancelled=stopped.is_set)
         try:
-            for item in _iter_agent_streaming(
-                user_id=user_id, message=message,
-                first_name=first_name, conversation_history=conversation_history,
-                memory_context=memory_context, conversation_id=conversation_id,
-            ):
-                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
+            for item in iterator:
+                if not send(item):
+                    break
         except BaseException as exc:
-            asyncio.run_coroutine_threadsafe(queue.put(exc), loop).result()
+            send(exc)
         finally:
-            asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
+            iterator.close()
+            send(sentinel)
 
-    thread = threading.Thread(target=copy_context().run, args=(_run_sync,), daemon=True)
+    thread = threading.Thread(target=copy_context().run, args=(worker,), daemon=True)
     thread.start()
     try:
         while True:
             item = await queue.get()
-            if item is SENTINEL:
-                break
+            if item is sentinel:
+                return
             if isinstance(item, BaseException):
                 raise item
             yield item
     finally:
-        await asyncio.to_thread(thread.join, timeout=10)
+        stopped.set()
 
 
 async def iter_ai_command_sse_async(
-    *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
-    conversation_id: str | None = None,
+    *, user_id: str, message: str, first_name: str | None = None,
+    conversation_history: list[dict] | None = None, conversation_id: str | None = None,
 ):
-    """Async SSE generator — runs the sync agent in a background thread and yields
-    each SSE chunk into the asyncio event loop for true per-token flushing."""
-    loop = asyncio.get_running_loop()
-    queue: asyncio.Queue = asyncio.Queue(maxsize=128)
-    SENTINEL = object()
-
-    def _run_sync() -> None:
-        def _evt(payload: dict) -> str:
-            return f"data: {_json_dumps(payload)}\n\n"
-        try:
-            for item in _iter_agent_streaming(
-                user_id=user_id, message=message,
-                first_name=first_name, conversation_history=conversation_history,
-                conversation_id=conversation_id,
-            ):
-                if item.get('type') == 'delta':
-                    chunk = _evt({'type': 'delta', 'delta': item['delta']})
-                elif item.get('type') == 'done':
-                    chunk = _evt({
-                        'type': 'done',
-                        'tool': item.get('tool'),
-                        'result': item.get('result'),
-                        'assistant_message': item.get('assistant_message') or '',
-                        'nav_hint': item.get('nav_hint'),
-                    })
-                else:
-                    continue
-                asyncio.run_coroutine_threadsafe(queue.put(chunk), loop).result()
-        except BaseException as exc:
-            asyncio.run_coroutine_threadsafe(queue.put(exc), loop).result()
-        finally:
-            asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
-
-    thread = threading.Thread(target=copy_context().run, args=(_run_sync,), daemon=True)
-    thread.start()
-    try:
-        while True:
-            item = await queue.get()
-            if item is SENTINEL:
-                break
-            if isinstance(item, BaseException):
-                raise item
-            yield item
-    finally:
-        await asyncio.to_thread(thread.join, timeout=10)
+    async for item in iter_ai_command_events_async(user_id=user_id, message=message,
+            first_name=first_name, conversation_history=conversation_history,
+            conversation_id=conversation_id):
+        if item.get('type') in ('delta', 'reset', 'done'):
+            yield f"data: {_json_dumps(item)}\n\n"
 
 
 def run_ai_command(

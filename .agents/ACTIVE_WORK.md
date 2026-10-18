@@ -1,3 +1,7 @@
+## Active: chunked Chat delivery and fades (2026-10-18)
+
+API lane on fix/api-chat-streaming-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.
+
 # October 18 capture originals — live
 
 The user explicitly approved "Apply 056 and publish the photo fixes." Reviewed

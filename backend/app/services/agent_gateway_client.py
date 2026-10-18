@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
+import json
 
 import httpx
 
@@ -26,8 +27,8 @@ class _Completions:
     def __init__(self, owner: "AgentGatewayClient") -> None:
         self._owner = owner
 
-    def create(self, **kwargs: Any) -> SimpleNamespace:
-        extra_headers = kwargs.pop("extra_headers", None) or {}
+    def create(self, **kwargs: Any):
+        extra_headers = dict(kwargs.pop("extra_headers", None) or {})
         from app.services.inventory_scope import current_inventory
         scope = current_inventory.get()
         if scope:
@@ -38,7 +39,9 @@ class _Completions:
             identity = f'{scope.inventory_id}:{scope.actor_id}:{thread}'
             extra_headers['X-Agent-Conversation-ID'] = 'inventory-' + hashlib.sha256(identity.encode()).hexdigest()
         payload = dict(kwargs)
-        payload["stream"] = False
+        payload["stream"] = bool(payload.get("stream"))
+        if payload["stream"]:
+            return self._stream(payload, extra_headers)
         with httpx.Client(timeout=self._owner.timeout) as client:
             response = client.post(
                 self._owner.url,
@@ -47,6 +50,28 @@ class _Completions:
             )
         response.raise_for_status()
         return _as_namespace(response.json())
+
+    def _stream(self, payload: dict, extra_headers: dict):
+        with httpx.Client(timeout=self._owner.timeout) as client:
+            with client.stream("POST", self._owner.url,
+                    headers={**self._owner.headers, **extra_headers}, json=payload) as response:
+                response.raise_for_status()
+                if 'text/event-stream' not in response.headers.get('content-type', ''):
+                    raise RuntimeError('The model gateway did not return an event stream')
+                data = []
+                for line in response.iter_lines():
+                    if line.startswith('data:'):
+                        data.append(line[5:].lstrip(' '))
+                    elif not line and data:
+                        value = '\n'.join(data)
+                        data = []
+                        if value == '[DONE]':
+                            return
+                        event = json.loads(value)
+                        if not isinstance(event, dict) or event.get('error'):
+                            raise RuntimeError('The model stream failed')
+                        yield _as_namespace(event)
+                raise RuntimeError('The model stream ended without completion')
 
 
 class AgentGatewayClient:

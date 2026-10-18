@@ -1,3 +1,7 @@
+## Chat transport and presentation are separate (2026-10-18)
+
+Honor gateway stream requests and normalize fragmented text/tool calls. UI queues reveal short chunks with 180ms fades even if the gateway batches a whole model answer. Network completion must not flush pending text. Historical answers do not animate; Reduce Motion skips presentation effects. Keep permission, action-receipt and private-photo guards.
+
 # October 18 Chat prose belongs to the model
 
 Do not restore deterministic question/answer routers or canned project, preference,
