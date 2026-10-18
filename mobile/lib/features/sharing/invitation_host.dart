@@ -7,10 +7,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/invitation.dart';
 import '../../core/last_place.dart';
-import '../workspaces/inventory_context_host.dart';
+import '../../core/invitation_destination.dart';
 import '../workspaces/invitation_page.dart';
 import 'invitation_dialog.dart';
-import 'shared_inventory_page.dart';
+import 'invitation_navigation.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 /// One inbox across cold starts, sign-in, account creation and warm app links.
@@ -59,15 +59,12 @@ class _InvitationHostState extends State<InvitationHost>
     _pendingPlace = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _auth.currentUser?.id != owner) return;
-      unawaited(
-        widget.navigatorKey.currentState?.push<void>(
-          MaterialPageRoute(
-            builder: (_) => InventoryContextHost(
-              api: widget.api,
-              initialWorkspaceId: place.id,
-            ),
-          ),
-        ),
+      final navigator = widget.navigatorKey.currentState;
+      if (navigator == null) return;
+      navigator.popUntil((route) => route.isFirst);
+      InvitationNavigation.instance.open(
+        owner,
+        InvitationDestination(workspaceId: place.id),
       );
     });
   }
@@ -227,36 +224,7 @@ class _InvitationHostState extends State<InvitationHost>
             result['accepted'] != true) {
           return;
         }
-        if (invitation.kind == 'access' || invitation.kind == 'team') {
-          unawaited(
-            navigator.push<void>(
-              MaterialPageRoute(
-                builder: (_) => InventoryContextHost(
-                  api: widget.api,
-                  initialWorkspaceId:
-                      (result['workspace_id'] ?? result['team_id'])?.toString(),
-                ),
-              ),
-            ),
-          );
-        } else {
-          final id = result['share_id']?.toString() ?? '';
-          if (id.isEmpty) return;
-          unawaited(
-            navigator.push<void>(
-              MaterialPageRoute(
-                builder: (_) => SharedInventoryPage(
-                  api: widget.api,
-                  shareId: id,
-                  shareName:
-                      result['share_name']?.toString() ??
-                      result['name'].toString(),
-                  permission: result['permission']?.toString() ?? 'view',
-                ),
-              ),
-            ),
-          );
-        }
+        openInvitationResult(navigator.context, widget.api, result);
       } catch (_) {
         continueInbox = false;
         _notice('Could not finish opening the invitation. Tap the link again.');

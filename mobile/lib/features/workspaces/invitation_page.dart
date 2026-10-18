@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_text.dart';
-import 'inventory_context_host.dart';
+import '../../core/invitation.dart';
+import '../../core/invitation_destination.dart';
+import '../sharing/invitation_navigation.dart';
 
 /// Preview is read-only. Only the explicit Accept button grants membership.
 class AccessInvitationPage extends StatefulWidget {
@@ -26,10 +29,29 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
   Object? _error;
   bool _busy = false;
   late final ApiClient _api;
+  late final String _owner;
+  StreamSubscription<AuthState>? _auth;
+  bool get _sameAccount => widget.api.accountId == _owner;
+  bool get _expired {
+    final expiry = DateTime.tryParse(
+      _invitation?['expires_at']?.toString() ?? '',
+    );
+    return expiry != null && !expiry.isAfter(DateTime.now());
+  }
+
   @override
   void initState() {
     super.initState();
-    _api = ApiClient.forAccount(widget.api, widget.api.accountId ?? '');
+    _owner = widget.api.accountId ?? '';
+    _api = ApiClient.forAccount(widget.api, _owner);
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      if (mounted && !_sameAccount) {
+        setState(() {
+          _invitation = null;
+          _error = null;
+        });
+      }
+    });
     unawaited(_load());
   }
 
@@ -44,19 +66,16 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
       if (code != null) {
         final uri = Uri.tryParse(code);
         if (uri != null && uri.hasScheme) {
-          if (uri.scheme != 'https' ||
-              uri.userInfo.isNotEmpty ||
-              (uri.hasPort && uri.port != 443) ||
-              !['findez.ai', 'www.findez.ai'].contains(uri.host) ||
-              uri.path != '/join/access') {
+          final linked = Invitation.fromUri(uri);
+          if (linked?.kind != 'access') {
             throw const FormatException(
               'Use a FindEZ access invitation link or code.',
             );
           }
-          code = uri.queryParameters['code'];
+          code = linked!.code;
         }
-        code = code?.toUpperCase();
-        if (code == null || !RegExp(r'^[A-Z2-9]{12}$').hasMatch(code)) {
+        code = code.toUpperCase();
+        if (!RegExp(r'^[A-Z2-9]{12}$').hasMatch(code)) {
           throw const FormatException(
             'Enter the 12-character invitation code.',
           );
@@ -73,16 +92,16 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
         },
       );
       final invitation = Map<String, dynamic>.from(data['invitation'] as Map);
-      if (mounted) setState(() => _invitation = invitation);
+      if (mounted && _sameAccount) setState(() => _invitation = invitation);
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted && _sameAccount) setState(() => _error = error);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && _sameAccount) setState(() => _busy = false);
     }
   }
 
   Future<void> _decide(String action) async {
-    if (_busy || _invitation == null) return;
+    if (_busy || _invitation == null || !_sameAccount || _expired) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -94,91 +113,111 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
         data: {'action': action},
       );
       final invitation = Map<String, dynamic>.from(data['invitation'] as Map);
-      if (!['accepted', 'declined'].contains(invitation['status'])) {
+      if (invitation['invitation_id'] != _invitation!['invitation_id'] ||
+          invitation['scope'] != _invitation!['scope'] ||
+          invitation['resource_id'] != _invitation!['resource_id'] ||
+          invitation['status'] !=
+              (action == 'accept' ? 'accepted' : 'declined')) {
         throw const FormatException(
           'Decision could not be confirmed. Refresh before retrying.',
         );
       }
-      if (mounted) setState(() => _invitation = invitation);
+      if (action == 'accept') InvitationDestination.fromAccess(invitation);
+      if (mounted && _sameAccount) setState(() => _invitation = invitation);
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted && _sameAccount) setState(() => _error = error);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && _sameAccount) setState(() => _busy = false);
     }
   }
 
+  @override
+  void dispose() {
+    _auth?.cancel();
+    super.dispose();
+  }
+
   void _done() {
+    if (!_sameAccount || _busy || _invitation == null) return;
     final accepted = _invitation!['status'] == 'accepted';
-    final workspace =
-        (_invitation!['team_id'] ??
-                (_invitation!['scope'] == 'workspace'
-                    ? _invitation!['resource_id']
-                    : null))
-            ?.toString();
-    if (widget.returnDecision) {
-      Navigator.pop(context, <String, dynamic>{
-        'accepted': accepted,
-        if (accepted && workspace != null) 'workspace_id': workspace,
-      });
-    } else if (accepted && workspace != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) => InventoryContextHost(
-            api: widget.api,
-            initialWorkspaceId: workspace,
-          ),
-        ),
-      );
-    } else {
-      Navigator.pop(context);
+    try {
+      final result = accepted
+          ? InvitationDestination.fromAccess(_invitation!).toResult()
+          : <String, dynamic>{'accepted': false};
+      if (widget.returnDecision) {
+        Navigator.pop(context, result);
+      } else if (accepted) {
+        openInvitationResult(context, _api, result);
+      } else {
+        Navigator.pop(context);
+      }
+    } catch (error) {
+      setState(() => _error = error);
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const AppText('Invitation')),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        if (_busy) const LinearProgressIndicator(),
-        if (_error != null) ...[
-          AppText(describeError(_error!).$1),
-          TextButton(
-            onPressed: _busy ? null : _load,
-            child: const AppText('Retry'),
+    body: !_sameAccount
+        ? const Center(
+            child: AppText(
+              'Your account changed. Reopen the invitation with the invited account.',
+            ),
+          )
+        : ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              if (_busy) const LinearProgressIndicator(),
+              if (_error != null) ...[
+                AppText(describeError(_error!).$1),
+                TextButton(
+                  onPressed: _busy ? null : _load,
+                  child: const AppText('Retry'),
+                ),
+              ],
+              if (_invitation != null) ...[
+                AppText(
+                  (_invitation!['name'] ?? _invitation!['resource_name'])
+                      .toString(),
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(height: 12),
+                AppText('${_invitation!['scope']} | ${_invitation!['role']}'),
+                const SizedBox(height: 12),
+                AppText('Status: ${_invitation!['status']}'),
+                if (_invitation!['expires_at'] != null)
+                  AppText('Expires: ${_invitation!['expires_at']}'),
+                if (_invitation!['status'] == 'pending' && _expired)
+                  const AppText(
+                    'This invitation has expired. Ask the sender for a new one.',
+                  ),
+                if (_invitation!['status'] == 'pending' && !_expired) ...[
+                  const SizedBox(height: 20),
+                  const AppText(
+                    'Joining requires your consent. Access is checked again when you accept.',
+                  ),
+                  FilledButton(
+                    onPressed: _busy ? null : () => _decide('accept'),
+                    child: const AppText('Accept invitation'),
+                  ),
+                  TextButton(
+                    onPressed: _busy ? null : () => _decide('decline'),
+                    child: const AppText('Decline'),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: _busy ? null : _done,
+                    child: AppText(
+                      _invitation!['status'] == 'accepted'
+                          ? 'Open ${_invitation!['scope']}'
+                          : 'Done',
+                    ),
+                  ),
+                ],
+              ],
+            ],
           ),
-        ],
-        if (_invitation != null) ...[
-          AppText(
-            (_invitation!['name'] ?? _invitation!['resource_name']).toString(),
-            style: const TextStyle(fontSize: 24),
-          ),
-          const SizedBox(height: 12),
-          AppText('${_invitation!['scope']} | ${_invitation!['role']}'),
-          const SizedBox(height: 12),
-          AppText('Status: ${_invitation!['status']}'),
-          if (_invitation!['expires_at'] != null)
-            AppText('Expires: ${_invitation!['expires_at']}'),
-          if (_invitation!['status'] == 'pending') ...[
-            const SizedBox(height: 20),
-            const AppText(
-              'Joining requires your consent. Access is checked again when you accept.',
-            ),
-            FilledButton(
-              onPressed: _busy ? null : () => _decide('accept'),
-              child: const AppText('Accept invitation'),
-            ),
-            TextButton(
-              onPressed: _busy ? null : () => _decide('decline'),
-              child: const AppText('Decline'),
-            ),
-          ] else ...[
-            const SizedBox(height: 20),
-            TextButton(onPressed: _done, child: const AppText('Done')),
-          ],
-        ],
-      ],
-    ),
   );
 }

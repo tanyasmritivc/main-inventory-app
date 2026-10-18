@@ -1,3 +1,11 @@
+# October 17 invitation handoff refresh
+
+Active mobile lane `fix/invitation-org-handoff-20261017`, clean start d53a320.
+Repair accepted organization/inventory destinations, root-shell retirement and
+manual invitation entry for organization-scoped navigation. Preserve explicit
+recipient consent and all API/schema grants. Verify both themes, link/code, auth
+continuity, expired/revoked/wrong-account paths. Web handoff uses a separate lane.
+
 # October 17 organization-scoped mobile navigation
 
 Completed mobile lane fix/mobile-organization-scope-20261017, clean start 24bbcac.

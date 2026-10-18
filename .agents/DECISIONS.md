@@ -1,3 +1,11 @@
+# Invitation acceptance establishes an explicit organization destination
+
+Accepted access invitations target the exact organization/workspace/inventory
+from the confirmed receipt, then revalidate current server access and parents.
+A single account-bound root handoff retires old inventory clients/routes; do not
+stack another shell that can reveal the prior organization on Back. Manual codes,
+links and Notifications share the same consent and destination flow.
+
 # October 17 Space creation starts with capture
 
 The empty Space Add Item button and its plus control open the same three choices:

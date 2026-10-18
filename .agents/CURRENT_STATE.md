@@ -1,3 +1,11 @@
+# October 17 invitation handoff refresh
+
+Mobile invitation source passes all601 tests/coverage, clean analysis and native
+synthetic light/dark review. Build83 production archive/upload is in progress.
+Backend and web invitation fixes are live with health/db/source-preservation gates.
+No schema/customer-record changes. Separate PR99/100; details and physical limits
+in docs/plans/mobile-invitation-handoff.md.
+
 # October 17 organization-scoped mobile navigation
 
 Completed mobile lane fix/mobile-organization-scope-20261017, clean start 24bbcac.

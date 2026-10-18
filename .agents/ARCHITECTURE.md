@@ -58,7 +58,8 @@ and Notifications do not grant access. Acceptance rechecks current sender and
 parent permissions transactionally. The old immediate-grant function is private;
 the public management RPC supports existing-role changes and revocation only.
 Existing Space/Team self-join links remain compatible. New access invitations
-use `/join/access` web review; mobile navigation/binary are unchanged.
+use `/join/access` review on web/mobile. Mobile confirms the returned destination
+through the account-bound root handoff and existing scoped directory/session.
 
 ## Repository
 

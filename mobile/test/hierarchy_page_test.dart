@@ -320,6 +320,7 @@ void main() {
       fixture.respond = (r) => {
         'invitation': {
           'invitation_id': 'invite-a',
+          'resource_id': 'org-a',
           'name': 'Acme',
           'scope': 'organization',
           'role': 'member',
@@ -636,6 +637,7 @@ void main() {
       fixture.respond = (_) => {
         'invitation': {
           'invitation_id': 'invite-a',
+          'resource_id': 'org-a',
           'name': 'Acme',
           'scope': 'organization',
           'role': 'member',
