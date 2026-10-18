@@ -1,5 +1,10 @@
 # Landing audit before implementation
 
+This is the original local audit. During the later authorized publication, the
+running frontend was audited again. Its newer memory headline reveal and existing
+homepage omission of the Own and Vision screens were preserved. See
+[PUBLISH.md](PUBLISH.md) and the pre-publication source snapshots in `publish/`.
+
 Date: 2026-10-17. Branch: `hero-morph`. Base: `e9c3e27`.
 Worktree: `/Users/tanyasmritivictorcharles/dev/findez-hero-morph`.
 

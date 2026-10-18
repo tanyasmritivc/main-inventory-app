@@ -3,7 +3,7 @@
 /* Native image sizing is part of the approved prototype. */
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, useEffect, useRef, type CSSProperties } from "react";
-import { initLandingLab, landingLabValues } from "./landing-lab-engine";
+import { initLandingLab, landingLabValues, memoryHeadline } from "./landing-lab-engine";
 import { useMarketingSession } from "@/lib/use-marketing-session";
 import "./landing-lab.css";
 import { HeroMorph } from "./hero-morph";
@@ -17,7 +17,6 @@ function css(text: string): CSSProperties {
     return [key, declaration.slice(colon + 1).trim()];
   })) as CSSProperties;
 }
-const v = landingLabValues();
 function SiteActions({ initialSignedIn }: { initialSignedIn: boolean }) {
   const signedIn = useMarketingSession(initialSignedIn);
   return <nav className="fzl-site-actions" aria-label="Main navigation">
@@ -31,6 +30,7 @@ export function LandingLab(props: LandingProps) {
   return props.siteNavigation ? <HomepageLanding {...props} /> : <LegacyLandingLab {...props} />;
 }
 function HomepageLanding({ className = "", siteNavigation = false, initialSignedIn = false }: { className?: string; siteNavigation?: boolean; initialSignedIn?: boolean }) {
+  const v = landingLabValues(undefined, siteNavigation);
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (rootRef.current) return initLandingLab(rootRef.current);
@@ -73,7 +73,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 <div style={css(v.pinStyle)} data-lab-style="pinStyle">
 <div className="wrap split" style={css("height:100%;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:40px")}>
 <div>
-<h2 className="h2" style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{"Knowing what it is is useful. Knowing everything around it is memory."}</h2>
+<h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
 <p className="lede hide-s" style={css("color:#A3A3A3")}>{"The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen."}</p>
 </div>
 <div className="float" style={css("position:relative;container-type:inline-size")}>
@@ -135,7 +135,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </section>
 
-<section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
+{!siteNavigation && <section id="own" className="wrap" style={css("padding-top:150px;padding-bottom:140px")}>
 <div className="split">
 <div style={css("position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(#1C1C1C,#111);aspect-ratio:16/11;container-type:inline-size")}>
 <svg viewBox="0 0 800 550" role="img" aria-label="A camera recognizing a USB-C hub and finding two similar ones you already own" style={css("position:absolute;inset:0;width:100%;height:100%")}>
@@ -157,7 +157,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="who" style={css(v.whoSec)} data-lab-style="whoSec">
 <div className="wrap" style={css("text-align:center")}>
@@ -205,7 +205,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </section>
 
-<section id="vision" style={css(v.visSec)} data-lab-style="visSec">
+{!siteNavigation && <section id="vision" style={css(v.visSec)} data-lab-style="visSec">
 <div style={css("max-width:1200px;margin:0 auto;padding:0 24px")}>
 <div style={css(v.visHead)} data-lab-style="visHead">
 <h2 className="h2" style={css("margin-top:16px;max-width:16ch")}>{"From inventory to action."}</h2>
@@ -225,7 +225,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </div>
 </div>
 </div>
-</section>
+</section>}
 
 <section id="app" style={css("padding:140px 0 120px;overflow:hidden")}>
 <div className="wrap" style={css("text-align:center")}>

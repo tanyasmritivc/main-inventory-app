@@ -49,9 +49,11 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
+  for (const id of ["hero", "see", "graph", "zoom", "ask", "who", "find", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }
+  expect(document.getElementById("own")).toBeNull();
+  expect(document.getElementById("vision")).toBeNull();
   expect(document.getElementById("stmt")).toBeNull();
   expect(document.querySelectorAll("#hero")).toHaveLength(1);
   expect(document.querySelectorAll(".fzh-det")).toHaveLength(6);
@@ -59,6 +61,7 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelector("#see h2")).toBeNull();
   expect(document.querySelector('#see img[src$="app-capture.jpg"]')).toBeTruthy();
   expect(document.querySelector("#see #fzHoles")).toBeTruthy();
+  expect(document.querySelector('#graph [data-lab-style="memoryLetters.0.style"]')).toBeTruthy();
   expect(document.querySelector('#hero img[src="/images/landing/hero-workbench.jpg"]')).toBeTruthy();
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
   expect(header.getAllByRole("link").map(link => link.textContent)).toEqual(["Developers", "iOS App", "Get started↗"]);

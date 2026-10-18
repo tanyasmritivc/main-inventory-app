@@ -1,0 +1,4 @@
+PASS transition 1440x900
+PASS transition 1280x720
+PASS transition 390x844
+PASS no browser errors

@@ -1,0 +1,427 @@
+{
+  "origin": "http://127.0.0.1:3214",
+  "checks": [
+    {
+      "name": "1440x900 wheel handoff",
+      "frames": 85,
+      "maxStep": 50
+    },
+    {
+      "name": "1440x900 continuous handoff and preserved next screens",
+      "samples": [
+        {
+          "y": 1364,
+          "photo": {
+            "x": 140,
+            "y": 210.75,
+            "width": 638,
+            "bottom": 689.25
+          },
+          "next": {
+            "x": 72,
+            "y": 902,
+            "width": 1296,
+            "bottom": 1688.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1365,
+          "photo": {
+            "x": 140,
+            "y": 210.75,
+            "width": 638,
+            "bottom": 689.25
+          },
+          "next": {
+            "x": 72,
+            "y": 901,
+            "width": 1296,
+            "bottom": 1687.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1366,
+          "photo": {
+            "x": 140,
+            "y": 210.75,
+            "width": 638,
+            "bottom": 689.25
+          },
+          "next": {
+            "x": 72,
+            "y": 900,
+            "width": 1296,
+            "bottom": 1686.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1367,
+          "photo": {
+            "x": 140,
+            "y": 209.75,
+            "width": 638,
+            "bottom": 688.25
+          },
+          "next": {
+            "x": 72,
+            "y": 899,
+            "width": 1296,
+            "bottom": 1685.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1368,
+          "photo": {
+            "x": 140,
+            "y": 208.75,
+            "width": 638,
+            "bottom": 687.25
+          },
+          "next": {
+            "x": 72,
+            "y": 898,
+            "width": 1296,
+            "bottom": 1684.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1466,
+          "photo": {
+            "x": 140,
+            "y": 110.75,
+            "width": 638,
+            "bottom": 589.25
+          },
+          "next": {
+            "x": 67.09375,
+            "y": 800,
+            "width": 1305.8125,
+            "bottom": 1586.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1666,
+          "photo": {
+            "x": 140,
+            "y": -89.25,
+            "width": 638,
+            "bottom": 389.25
+          },
+          "next": {
+            "x": 38.59375,
+            "y": 600,
+            "width": 1362.8125,
+            "bottom": 1386.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1866,
+          "photo": {
+            "x": 140,
+            "y": -289.25,
+            "width": 638,
+            "bottom": 189.25
+          },
+          "next": {
+            "x": 7.890625,
+            "y": 400,
+            "width": 1424.21875,
+            "bottom": 1186.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 2066,
+          "photo": {
+            "x": 140,
+            "y": -489.25,
+            "width": 638,
+            "bottom": -10.75
+          },
+          "next": {
+            "x": 0,
+            "y": 200,
+            "width": 1440,
+            "bottom": 986.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "1280x720 wheel handoff",
+      "frames": 85,
+      "maxStep": 50
+    },
+    {
+      "name": "1280x720 continuous handoff and preserved next screens",
+      "samples": [
+        {
+          "y": 1364,
+          "photo": {
+            "x": 60,
+            "y": 120.75,
+            "width": 638,
+            "bottom": 599.25
+          },
+          "next": {
+            "x": 72,
+            "y": 722,
+            "width": 1136,
+            "bottom": 1508.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1365,
+          "photo": {
+            "x": 60,
+            "y": 120.75,
+            "width": 638,
+            "bottom": 599.25
+          },
+          "next": {
+            "x": 72,
+            "y": 721,
+            "width": 1136,
+            "bottom": 1507.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1366,
+          "photo": {
+            "x": 60,
+            "y": 120.75,
+            "width": 638,
+            "bottom": 599.25
+          },
+          "next": {
+            "x": 72,
+            "y": 720,
+            "width": 1136,
+            "bottom": 1506.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1367,
+          "photo": {
+            "x": 60,
+            "y": 119.75,
+            "width": 638,
+            "bottom": 598.25
+          },
+          "next": {
+            "x": 72,
+            "y": 719,
+            "width": 1136,
+            "bottom": 1505.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1368,
+          "photo": {
+            "x": 60,
+            "y": 118.75,
+            "width": 638,
+            "bottom": 597.25
+          },
+          "next": {
+            "x": 72,
+            "y": 718,
+            "width": 1136,
+            "bottom": 1504.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1466,
+          "photo": {
+            "x": 60,
+            "y": 20.75,
+            "width": 638,
+            "bottom": 499.25
+          },
+          "next": {
+            "x": 64.59375,
+            "y": 620,
+            "width": 1150.8125,
+            "bottom": 1406.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1666,
+          "photo": {
+            "x": 60,
+            "y": -179.25,
+            "width": 638,
+            "bottom": 299.25
+          },
+          "next": {
+            "x": 25.796875,
+            "y": 420,
+            "width": 1228.40625,
+            "bottom": 1206.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1866,
+          "photo": {
+            "x": 60,
+            "y": -379.25,
+            "width": 638,
+            "bottom": 99.25
+          },
+          "next": {
+            "x": 0,
+            "y": 220,
+            "width": 1280,
+            "bottom": 1006.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 2066,
+          "photo": {
+            "x": 60,
+            "y": -579.25,
+            "width": 638,
+            "bottom": -100.75
+          },
+          "next": {
+            "x": 0,
+            "y": 20,
+            "width": 1280,
+            "bottom": 806.5
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "name": "390x844 continuous handoff and preserved next screens",
+      "samples": [
+        {
+          "y": 805,
+          "photo": {
+            "x": 24,
+            "y": -154.375,
+            "width": 342,
+            "bottom": 102.125
+          },
+          "next": {
+            "x": 10,
+            "y": 844.40625,
+            "width": 370,
+            "bottom": 1313.703125
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1249,
+          "photo": {
+            "x": 24,
+            "y": -598.375,
+            "width": 342,
+            "bottom": -341.875
+          },
+          "next": {
+            "x": 1.59375,
+            "y": 400.40625,
+            "width": 386.8125,
+            "bottom": 880.625
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1649,
+          "photo": {
+            "x": 24,
+            "y": -998.375,
+            "width": 342,
+            "bottom": -741.875
+          },
+          "next": {
+            "x": 0,
+            "y": 0.40625,
+            "width": 390,
+            "bottom": 482.703125
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        },
+        {
+          "y": 1949,
+          "photo": {
+            "x": 24,
+            "y": -1298.375,
+            "width": 342,
+            "bottom": -1041.875
+          },
+          "next": {
+            "x": 6.59375,
+            "y": -299.59375,
+            "width": 376.8125,
+            "bottom": 174.125
+          },
+          "found": "6",
+          "needs": "1",
+          "overflow": false
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

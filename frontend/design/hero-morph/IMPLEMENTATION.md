@@ -1,5 +1,9 @@
 # Hero morph implementation report
 
+This report records the initial local delivery. The later user-authorized live
+publication and preservation of newer live landing behavior are documented in
+[PUBLISH.md](PUBLISH.md).
+
 Completed locally on branch `hero-morph`, based on `e9c3e27`, in
 `/Users/tanyasmritivictorcharles/dev/findez-hero-morph`.
 Preview: `http://127.0.0.1:3214/` while the local dev process is running.

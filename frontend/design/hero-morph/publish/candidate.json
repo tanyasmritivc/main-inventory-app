@@ -1,0 +1,11 @@
+{
+  "candidate": "/home/ubuntu/findez-web-releases/hero-morph-20261018/frontend",
+  "build_id": "ocvFkneLLa0EzDFA14ToX",
+  "real_production_configuration": true,
+  "changed_existing": [
+    "src/components/site/landing-lab.tsx"
+  ],
+  "other_original_files_preserved": 287,
+  "old_static_assets_retained": 71,
+  "env_preserved": true
+}
