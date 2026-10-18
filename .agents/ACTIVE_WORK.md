@@ -1,3 +1,16 @@
+## Active: Settings photo consistency and adjustment (2026-10-18)
+
+User clarified the photo saved in Settings must appear wherever that person is
+shown, including People and task assignees/creators. Add circular preview with
+zoom/pan and explicit acceptance before upload, using the saved crop everywhere.
+Separate fix/*-member-avatars-20261018 branches are stacked on the reviewed Chat
+action branches. Avatar work adds no schema change; Chat migration057 remains
+unapproved/unapplied. User explicitly corrected release number to91 because90
+already exists. Preserve original90 IPA/archive/Apple records and include its
+96b00d3 terms/config-source changes in91. Chat build90 export was not preserved
+or uploaded; the pre-existing90 artifacts remain intact. Crop/avatar testing and
+new91 signing/release are in progress. Dashboard remains unchanged.
+
 ## Chat item actions candidate (2026-10-18)
 
 Model proposal cards show exact new records or frozen deletion selections.
