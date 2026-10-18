@@ -14,6 +14,7 @@ import { FindEZWordmark } from "@/components/site/findez-brand";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
 import { normalizeAuthNext } from "@/lib/auth-callback";
 import { LEGAL_VERSION } from "@/lib/legal-content";
+import { signupDestination } from "@/lib/web-onboarding";
 
 type Mode = "signin" | "signup";
 
@@ -54,6 +55,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/home";
   const normalizedRedirect = normalizeAuthNext(redirect);
+  const successRedirect = mode === "signup" ? signupDestination(normalizedRedirect) : normalizedRedirect;
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { showNotice } = useAppDialog();
@@ -107,7 +109,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
   function authCallbackUrl() {
     const callback = new URL("/auth/callback", window.location.origin);
-    callback.searchParams.set("next", normalizedRedirect);
+    callback.searchParams.set("next", successRedirect);
     return callback.toString();
   }
 
@@ -245,12 +247,12 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           });
         if (profileError) {
           setError("Your account was created, but your profile details could not be saved. You can update them in Settings.");
-          setContinueHref(normalizedRedirect);
+          setContinueHref(successRedirect);
           return;
         }
 
         onSuccess?.();
-        router.push(normalizedRedirect);
+        router.push(successRedirect);
         router.refresh();
         return;
       }

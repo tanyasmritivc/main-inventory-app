@@ -1,0 +1,487 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>FindEZ Web Onboarding</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: app top bar, then a two-column stage. Left: the step. Right: the isometric "world" that grows as the user answers. Stacks on phones. */
+/* Single light theme on purpose: this is the FindEZ product look (matches the app and auth screens). */
+:root {
+  --bg: #F7F7F6;
+  --surface: #FFFFFF;
+  --ink: #111112;
+  --ink-2: #3F3D39;
+  --muted: #6B6965;
+  --hint: #8A8782;
+  --line: #E3E0DA;
+  --line-2: #ECEAE6;
+  --accent: #E8590C;
+  --accent-ink: #C2410C;
+  --accent-wash: #FFF8F3;
+  --world: #F0EEEA;
+  --font: Geist, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Fluid gutters: never closer than 20px to the window edge, roomier on big screens. */
+.app { --gut: clamp(20px, 4.5vw, 72px); min-height: 100%; display: flex; flex-direction: column; padding-left: max(var(--gut), env(safe-area-inset-left, 0px)); padding-right: max(var(--gut), env(safe-area-inset-right, 0px)); }
+.top { max-width: 1400px; width: 100%; margin: 0 auto; padding-block: clamp(14px, 2.4vh, 24px); display: flex; align-items: center; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.brand b { font-weight: 500; color: var(--accent); }
+.steps { display: flex; gap: 6px; margin-left: auto; }
+.steps i { width: 26px; height: 4px; border-radius: 2px; background: var(--line); transition: background .3s; }
+.steps i.on { background: var(--ink); }
+.skip { border: 0; background: none; font-size: 14.5px; color: var(--muted); padding: 10px 4px; }
+.skip:hover { color: var(--ink); }
+
+/* Desktop: the stage fills exactly the space under the top bar, so nothing scrolls or touches the bottom edge. */
+.stage { flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; padding-block: clamp(4px, 1vh, 12px) clamp(20px, 4vh, 48px); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(24px, 4vw, 64px); align-items: stretch; height: calc(100dvh - clamp(14px, 2.4vh, 24px) * 2 - 44px); min-height: 480px; max-height: 900px; }
+.panel { position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding-block: 12px; overflow-y: auto; }
+.world { position: relative; min-width: 0; border-radius: clamp(20px, 2.4vw, 32px); background: var(--world); overflow: hidden; }
+.world svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.world .cap { position: absolute; left: 24px; bottom: 20px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--hint); }
+
+.step { display: none; flex-direction: column; gap: 0; max-width: 470px; }
+.step.on { display: flex; animation: in .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 18px; }
+h1 { margin: 0; font-size: clamp(28px, min(3.6vw, 6vh), 56px); line-height: 1.04; font-weight: 600; letter-spacing: -0.035em; text-wrap: balance; }
+.sub { margin: 14px 0 0; font-size: clamp(15px, 1.25vw, 17px); line-height: 1.5; color: var(--muted); max-width: 44ch; }
+.body { margin-top: clamp(20px, 3.5vh, 32px); display: flex; flex-direction: column; gap: 12px; }
+
+.tiles { display: grid; gap: 12px; }
+.tile { display: flex; align-items: center; gap: 18px; text-align: left; padding: 20px 22px; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); transition: border-color .2s, background .2s, box-shadow .2s; }
+.tile:hover { border-color: #CFCBC4; }
+.tile.on { border: 2px solid var(--accent); padding: 19px 21px; background: var(--accent-wash); }
+.tile .t { display: block; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.tile .d { display: block; font-size: 14.5px; color: var(--muted); margin-top: 3px; }
+.tile svg { flex: none; margin-left: auto; }
+.note { font-size: 13.5px; color: var(--hint); }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label { font-size: 13.5px; color: var(--muted); }
+.input { height: 58px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface); padding: 0 18px; font: inherit; font-size: 18px; color: var(--ink); caret-color: var(--accent); outline: none; width: 100%; }
+.input::placeholder { color: #B3B0A9; }
+.input:focus { border: 2px solid var(--accent); padding: 0 17px; }
+.helper { font-size: 13px; color: var(--hint); }
+.inwrap { position: relative; }
+.inwrap .input { padding-right: 62px; }
+.inwrap .input:focus { padding-right: 61px; }
+.tick { position: absolute; right: 9px; top: 50%; width: 40px; height: 40px; margin-top: -20px; border: 0; border-radius: 50%; background: var(--ink); color: #FFF; display: flex; align-items: center; justify-content: center; padding: 0; transition: background .2s, color .2s, transform .15s; }
+.tick:hover:not(:disabled) { transform: scale(1.06); }
+.tick:disabled { background: var(--line-2); color: #B3B0A9; cursor: default; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 500; color: var(--ink-2); transition: background .15s, color .15s, border-color .15s; }
+.chip:hover { border-color: #CFCBC4; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #FFF; }
+.chip.add { color: var(--muted); }
+
+.actions { margin-top: clamp(20px, 3.5vh, 32px); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.primary { height: 54px; padding: 0 28px; border: 0; border-radius: 16px; background: var(--ink); color: #FFF; font-size: 16.5px; font-weight: 600; transition: background .2s, color .2s; }
+.primary:disabled { background: var(--line); color: #9A978F; cursor: default; }
+.back { border: 0; background: none; font-size: 15px; color: var(--muted); padding: 12px 4px; }
+.back:hover { color: var(--ink); }
+.kbd { font-family: var(--mono); font-size: 12px; color: var(--hint); }
+.adv { margin-left: auto; width: 96px; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; opacity: 0; transition: opacity .2s; }
+.adv.run { opacity: 1; }
+.adv i { display: block; height: 100%; width: 0; background: var(--accent); }
+
+.legend { display: grid; gap: 0; border-top: 1px solid var(--line-2); margin-top: 28px; }
+.legend div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line-2); }
+.legend .k { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--hint); display: flex; align-items: center; gap: 10px; }
+.legend .k i { width: 10px; height: 10px; border-radius: 3px; display: block; }
+.legend .v { font-size: 17px; font-weight: 500; }
+
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--line); border-top-color: var(--accent); animation: sp .8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.status { display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--ink-2); margin-top: 28px; }
+.checks { margin-top: 18px; display: grid; gap: 10px; font-size: 15.5px; color: var(--ink-2); }
+.checks div { display: flex; align-items: center; gap: 10px; opacity: .35; transition: opacity .3s; }
+.checks div.ok { opacity: 1; }
+.checks svg { flex: none; }
+
+@media (max-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 20px; height: auto; min-height: 0; max-height: none; }
+  .world { order: -1; height: clamp(240px, 40vh, 380px); }
+  .panel { padding-block: 4px 24px; overflow: visible; justify-content: flex-start; }
+  .steps { display: none; }
+  .skip { margin-left: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .step.on { animation: none; } .spin { animation: none; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><svg width="24" height="24" viewBox="0 0 100 100" aria-hidden="true"><rect x="55.5" y="1" width="43.5" height="43" fill="#E8590C"/><rect x="0" y="23.5" width="76" height="22.5" fill="#111112"/><rect x="53.5" y="23.5" width="22.5" height="76.5" fill="#111112"/></svg><span>Find<b>EZ</b></span></div>
+    <div class="steps" id="dots" aria-hidden="true"></div>
+    <button class="skip" id="skip" type="button">Skip for now</button>
+  </header>
+
+  <main class="stage">
+    <section class="panel" aria-live="polite">
+
+      <div class="step" id="s-welcome">
+        <div class="eyebrow">Welcome to FindEZ</div>
+        <h1>Let’s set up your first inventory.</h1>
+        <p class="sub">Three quick questions. Then point your camera at a shelf and FindEZ fills it in for you.</p>
+        <div class="actions"><button class="primary" id="go-welcome" type="button">Get started</button><span class="kbd">Press Enter</span></div>
+      </div>
+
+      <div class="step" id="s-choose">
+        <h1>Who’s FindEZ for?</h1>
+        <p class="sub">Pick one to start. You can change it later.</p>
+        <div class="body">
+          <div class="tiles" role="radiogroup" aria-label="Who is FindEZ for">
+            <button class="tile" type="button" role="radio" aria-checked="false" data-path="personal"><span><span class="t">Just me</span><span class="d">Home, garage, desk or dorm.</span></span><svg width="62" height="56" viewBox="-40 -40 80 70" aria-hidden="true" id="ico-personal"></svg></button>
+            <button class="tile" type="button" role="radio" aria-checked="false" data-path="team"><span><span class="t">My team</span><span class="d">A company, lab or team.</span></span><svg width="76" height="60" viewBox="-60 -48 120 90" aria-hidden="true" id="ico-team"></svg></button>
+          </div>
+          <div class="note">Starting solo? You can add an organization anytime.</div>
+        </div>
+        <div class="actions"><button class="primary" id="go-choose" type="button" disabled hidden>Continue</button><button class="back" type="button" data-back>Back</button><span class="adv" aria-hidden="true"><i></i></span></div>
+      </div>
+
+      <div class="step" id="s-org">
+        <h1>Name your organization</h1>
+        <p class="sub">Use the name of your company, lab or team.</p>
+        <div class="body field">
+          <label for="org">Organization name</label>
+          <div class="inwrap"><input class="input" id="org" maxlength="60" placeholder="e.g. Kestrel Labs" autocomplete="organization"><button class="tick" type="button" id="ok-org" aria-label="Continue" disabled><svg width="16" height="13" viewBox="0 0 16 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.8 6 11 14.5 1.8"/></svg></button></div>
+          <div class="helper">Your team will see this. You can change it later.</div>
+        </div>
+        <div class="actions"><button class="primary" id="go-org" type="button" disabled hidden>Continue</button><button class="back" type="button" data-back>Back</button></div>
+      </div>
+
+      <div class="step" id="s-purpose">
+        <h1>What’s this workspace for?</h1>
+        <p class="sub" id="purpose-sub">Each purpose gets its own dashboard.</p>
+        <div class="body">
+          <div class="chips" id="purpose-chips"></div>
+          <div class="field" id="purpose-custom" hidden><label for="purpose-in">Your own purpose</label><div class="inwrap"><input class="input" id="purpose-in" maxlength="40" placeholder="e.g. Field service"><button class="tick" type="button" id="ok-purpose" aria-label="Continue" disabled><svg width="16" height="13" viewBox="0 0 16 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.8 6 11 14.5 1.8"/></svg></button></div></div>
+        </div>
+        <div class="actions"><button class="primary" id="go-purpose" type="button" disabled hidden>Continue</button><button class="back" type="button" data-back>Back</button><span class="adv" aria-hidden="true"><i></i></span></div>
+      </div>
+
+      <div class="step" id="s-inventory">
+        <h1>Create your first inventory</h1>
+        <p class="sub" id="inv-sub">Group your things by team, like hardware or software.</p>
+        <div class="body">
+          <div class="chips" id="inv-chips"></div>
+          <div class="field" id="inv-custom" hidden><label for="inv-in">Your own inventory</label><div class="inwrap"><input class="input" id="inv-in" maxlength="40" placeholder="e.g. Lab supplies"><button class="tick" type="button" id="ok-inv" aria-label="Continue" disabled><svg width="16" height="13" viewBox="0 0 16 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.8 6 11 14.5 1.8"/></svg></button></div></div>
+        </div>
+        <div class="actions"><button class="primary" id="go-inventory" type="button" disabled hidden>Create inventory</button><button class="back" type="button" data-back>Back</button><span class="adv" aria-hidden="true"><i></i></span></div>
+      </div>
+
+      <div class="step" id="s-world">
+        <h1>This is your world.</h1>
+        <p class="sub">Add more workspaces and inventories anytime. Spaces like a parts wall go inside each inventory.</p>
+        <div class="legend" id="legend"></div>
+        <div class="actions"><button class="primary" id="go-world" type="button">Open my dashboard</button><button class="back" type="button" data-back>Back</button></div>
+      </div>
+
+      <div class="step" id="s-setup">
+        <h1 id="setup-title">Setting up your dashboard</h1>
+        <p class="sub" id="setup-sub">This takes a moment.</p>
+        <div class="checks" id="checks"></div>
+        <div class="actions" id="setup-actions" hidden><button class="primary" id="restart" type="button">Restart the prototype</button></div>
+      </div>
+
+    </section>
+
+    <section class="world" aria-label="Your world, a preview of what you are setting up">
+      <svg id="w" viewBox="0 0 640 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Isometric model of your organization, workspace and inventory"></svg>
+      <div class="cap" id="cap">Your world</div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const io = (x) => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const eo = (x) => { x = cl(x); return 1 - Math.pow(1 - x, 3); };
+  const back = (x) => { x = cl(x); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- copy ---------- */
+  const PURPOSE = { team: ['R&D', 'Production', 'Competition'], personal: ['Home', 'Workshop', 'Studio'] };
+  const INV = { team: ['Hardware', 'Electronics', 'Software'], personal: ['Tools', 'Electronics', 'Household'] };
+  const SUB = {
+    purpose: { team: 'Each purpose gets its own dashboard.', personal: 'Your personal space. Only you can see it.' },
+    inv: { team: 'Group your things by team, like hardware or software.', personal: 'Group your things, like tools or electronics.' }
+  };
+
+  /* ---------- state ---------- */
+  const st = { step: 'welcome', path: null, org: '', purpose: '', inv: '', wsAt: 0, invAt: 0, platAt: 0 };
+  const ORDER = { team: ['welcome', 'choose', 'org', 'purpose', 'inventory', 'world', 'setup'], personal: ['welcome', 'choose', 'purpose', 'inventory', 'world', 'setup'] };
+  const order = () => ORDER[st.path || 'team'];
+
+  /* ---------- iso drawing ---------- */
+  const CS = Math.cos(Math.PI / 6);
+  let CAM = { x: 320, y: 360, s: 1 };
+  const P = (x, y, z) => [CAM.x + (x - y) * CS * CAM.s, CAM.y + ((x + y) * 0.5 - z) * CAM.s];
+  const poly = (pts, fill, extra = '') => '<path d="M' + pts.map(p => P(...p).map(v => v.toFixed(1)).join(' ')).join('L') + 'Z" fill="' + fill + '" ' + extra + '/>';
+  function box(x, y, z, w, d, h, c, extra = '') {
+    const a = x - w / 2, b = x + w / 2, e = y - d / 2, f = y + d / 2, z1 = z + h;
+    return poly([[a, f, z], [b, f, z], [b, f, z1], [a, f, z1]], c[1], extra) +
+           poly([[b, e, z], [b, f, z], [b, f, z1], [b, e, z1]], c[2], extra) +
+           poly([[a, e, z1], [b, e, z1], [b, f, z1], [a, f, z1]], c[0], extra);
+  }
+  const C_TEAM = ['#FFFFFF', '#D6D1C9', '#E7E3DC'], C_PERS = ['#FFFFFF', '#CFE0D4', '#E2EEE6'];
+  const C_WS = ['#DDE7FB', '#A3B8E2', '#C2D2F1'], C_INV = ['#FCE3D3', '#D99A76', '#EDBB9C'];
+  const CUBES = [[-36, -38, '#F7F7F6'], [-14, -40, '#E8590C'], [-38, -14, '#FDBA8C'], [-12, -16, '#9FB3DD'], [-24, -2, '#D4D1CB'], [0, -26, '#F7F7F6'], [-2, -2, '#FDBA8C']];
+  const SHADE = (c) => c === '#E8590C' ? ['#E8590C', '#9C3A07', '#C24A0A'] : c === '#9FB3DD' ? ['#B9CAEE', '#7F95C4', '#9DB1DD'] : c === '#FDBA8C' ? ['#FDBA8C', '#C98458', '#E39E70'] : c === '#D4D1CB' ? ['#D4D1CB', '#8F8B84', '#B3AFA8'] : ['#FFFFFF', '#BDB8B0', '#DDD9D2'];
+
+  function tag(x, y, text, dot) {
+    const w = 26 + text.length * 7.4;
+    return '<g><rect x="' + (x - w / 2).toFixed(1) + '" y="' + (y - 15).toFixed(1) + '" width="' + w.toFixed(1) + '" height="30" rx="15" fill="#FFFFFF" fill-opacity=".96" stroke="#E3E0DA"/>' +
+      '<circle cx="' + (x - w / 2 + 14).toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4" fill="' + dot + '"/>' +
+      '<text x="' + (x - w / 2 + 24).toFixed(1) + '" y="' + (y + 4.5).toFixed(1) + '" font-family="Geist, system-ui, sans-serif" font-size="13" font-weight="500" fill="#111112">' + esc(text) + '</text></g>';
+  }
+  const esc = (s) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  /* mini icons on the choose tiles */
+  function minis() {
+    const save = CAM;
+    CAM = { x: 0, y: 0, s: 0.36 };
+    $('ico-personal').innerHTML = box(0, 0, 0, 200, 200, 22, C_PERS) + poly([[-100, -100, 22], [100, -100, 22], [100, 100, 22], [-100, 100, 22]], 'none', 'stroke="#3E9B63" stroke-width="2"') + box(-20, -20, 22, 110, 110, 46, C_WS);
+    CAM = { x: 0, y: 0, s: 0.36 };
+    $('ico-team').innerHTML = box(0, 0, 0, 200, 200, 22, C_TEAM) + poly([[-100, -100, 22], [100, -100, 22], [100, 100, 22], [-100, 100, 22]], 'none', 'stroke="#E8590C" stroke-width="2"') + box(-20, -20, 22, 110, 110, 46, C_WS) + box(-20, -20, 68, 70, 70, 12, C_INV);
+    CAM = save;
+  }
+
+  /* camera per step */
+  const CAMS = {
+    welcome: { x: 320, y: 360, s: 1.1 }, choose: { x: 320, y: 360, s: 1.05 }, org: { x: 320, y: 370, s: 1.15 },
+    purpose: { x: 320, y: 372, s: 1.3 }, inventory: { x: 320, y: 368, s: 1.45 }, world: { x: 320, y: 360, s: 1.22 }, setup: { x: 320, y: 330, s: 0.7 }
+  };
+  let camFrom = CAMS.welcome, camTo = CAMS.welcome, camAt = 0;
+  function setCam(target) { camFrom = { ...CAM }; camTo = target; camAt = performance.now(); }
+
+  /* ---------- render loop ---------- */
+  function frame(now) {
+    const k = reduced ? 1 : io((now - camAt) / 800);
+    CAM = { x: lerp(camFrom.x, camTo.x, k), y: lerp(camFrom.y, camTo.y, k), s: lerp(camFrom.s, camTo.s, k) };
+    let svg = '<defs><radialGradient id="glow"><stop offset="0" stop-color="#111112" stop-opacity=".10"/><stop offset="1" stop-color="#111112" stop-opacity="0"/></radialGradient></defs>';
+
+    if (st.step === 'welcome') {
+      // intro: dots get bracketed by a scan line, on a loop
+      const t = (now / 1000) % 4.2;
+      const ly = lerp(90, 560, io((t - 0.4) / 1.8));
+      const dots = [[150, 170], [470, 140], [220, 470], [450, 430], [110, 330], [520, 300], [320, 220], [330, 540], [260, 330], [400, 360]];
+      if (t > 0.3 && t < 2.4) svg += '<rect x="40" y="' + (ly - 1).toFixed(1) + '" width="560" height="2" fill="#E8590C" opacity=".8"/>';
+      dots.forEach(([x, y]) => {
+        const hit = ly > y && t > 0.4 && t < 3.8;
+        svg += '<circle cx="' + x + '" cy="' + y + '" r="3.2" fill="' + (hit ? '#E8590C' : '#C4C1BA') + '"/>';
+        if (hit) svg += '<rect x="' + (x - 10) + '" y="' + (y - 10) + '" width="20" height="20" rx="4" fill="none" stroke="#E8590C" stroke-width="1.6"/>';
+      });
+      $('w').innerHTML = svg; $('cap').textContent = 'FindEZ sees what you own';
+      return requestAnimationFrame(frame);
+    }
+
+    if (st.step === 'choose' && !st.path && !st.hover) {
+      const dash = 'fill="none" stroke="#B9B5AE" stroke-width="1.4" stroke-dasharray="6 6" stroke-linejoin="round"';
+      svg += poly([[-100, -100, 0], [100, -100, 0], [100, 100, 0], [-100, 100, 0]], 'none', dash);
+      svg += poly([[-75, -75, 46], [35, -75, 46], [35, 35, 46], [-75, 35, 46]], 'none', dash);
+      [[-75, 35], [35, 35], [35, -75]].forEach(([x, y]) => { const a1 = P(x, y, 0), a2 = P(x, y, 46); svg += '<line x1="' + a1[0] + '" y1="' + a1[1] + '" x2="' + a2[0] + '" y2="' + a2[1] + '" stroke="#B9B5AE" stroke-width="1.4" stroke-dasharray="6 6"/>'; });
+      const c = P(0, 0, 0);
+      svg += '<text x="' + c[0] + '" y="' + (c[1] + 150 * CAM.s) + '" text-anchor="middle" font-family="Geist, system-ui, sans-serif" font-size="16" fill="#8A8782">Your world builds here as you answer</text>';
+      $('w').innerHTML = svg; $('cap').textContent = 'Pick one to preview it';
+      return requestAnimationFrame(frame);
+    }
+    const viewPath = st.step === 'choose' && st.hover ? st.hover : st.path;
+    const team = viewPath !== 'personal';
+    const showPlat = viewPath && st.step !== 'welcome';
+    if (showPlat) {
+      const pk = reduced ? 1 : eo((now - st.platAt) / 600);
+      const plat = st.step === 'choose' ? (team ? C_TEAM : C_PERS) : (team ? C_TEAM : C_PERS);
+      const outline = team ? '#E8590C' : '#3E9B63';
+      svg += '<ellipse cx="' + P(0, 0, 0)[0] + '" cy="' + (P(0, 0, 0)[1] + 18 * CAM.s) + '" rx="' + 240 * CAM.s + '" ry="' + 120 * CAM.s + '" fill="url(#glow)" opacity="' + pk + '"/>';
+      svg += '<g opacity="' + pk + '">' + box(0, 0, 0, 200, 200, 22, plat) +
+        poly([[-100, -100, 22], [100, -100, 22], [100, 100, 22], [-100, 100, 22]], 'none', 'stroke="' + outline + '" stroke-width="1.4" stroke-linejoin="round"') +
+        poly([[-100, 100, 0], [100, 100, 0], [100, -100, 0]], 'none', 'stroke="' + outline + '" stroke-opacity=".35" stroke-width="1"') + '</g>';
+
+      // choose step preview: show what each path builds, faded
+      const preview = st.step === 'choose';
+      const hasWs = !!st.purpose || preview;
+      let wsTop = 22;
+      if (hasWs) {
+        const wh = preview ? 1 : (reduced ? 1 : Math.max(0.02, back((now - st.wsAt) / 700)));
+        svg += '<g opacity="' + (preview ? 0.5 : 1) + '">' + box(-20, -20, 22, 110, 110, 46 * wh, C_WS) + '</g>';
+        wsTop = 22 + 46 * wh;
+        if (!preview) {
+          const gh = reduced ? 1 : eo((now - st.wsAt - 1000) / 600);
+          [[62, -50], [-50, 62]].forEach(([x, y]) => { svg += poly([[x - 28, y - 28, 22.5], [x + 28, y - 28, 22.5], [x + 28, y + 28, 22.5], [x - 28, y + 28, 22.5]], 'none', 'stroke="#8A8782" stroke-opacity="' + (0.6 * gh) + '" stroke-dasharray="4 4" stroke-width="1.2"'); });
+        }
+      }
+      const hasInv = !!st.inv || (preview && team);
+      let invTop = wsTop;
+      if (hasInv) {
+        const ih = preview ? 1 : (reduced ? 1 : Math.max(0.05, back((now - st.invAt) / 600)));
+        svg += '<g opacity="' + (preview ? 0.5 : 1) + '">' + box(-20, -20, wsTop, 70, 70, 12 * ih, C_INV) + '</g>';
+        invTop = wsTop + 12 * ih;
+        if (!preview) CUBES.slice().sort((a, b) => (a[0] + a[1]) - (b[0] + b[1])).forEach(([x, y, c]) => {
+          const i = CUBES.findIndex(q => q[0] === x && q[1] === y);
+          const t0 = st.invAt + 800 + i * 120;
+          const kk = reduced ? 1 : cl((now - t0) / 450);
+          if (kk <= 0) return;
+          const dz = kk < 0.75 ? (1 - kk / 0.75) * 80 : Math.sin((kk - 0.75) / 0.25 * Math.PI) * 6;
+          const sz = 12 + (i % 3) * 2;
+          svg += box(x, y, invTop + dz, sz, sz, sz, SHADE(c), 'opacity="' + cl(kk * 3) + '"');
+        });
+      }
+      // tags
+      if (!preview) {
+        const pl = P(0, 100, 0);
+        svg += tag(pl[0] - 70 * CAM.s, pl[1] + 26, team ? (st.org || 'Your organization') : 'Personal', team ? '#E8590C' : '#3E9B63');
+        if (st.purpose) { const p = P(-20, -20, wsTop); svg += tag(p[0] + 95 * CAM.s, p[1] - 10 * CAM.s, st.purpose, '#7F95C4'); }
+        if (st.inv) { const p = P(-20, -20, invTop + 30); svg += tag(p[0] - 70 * CAM.s, p[1] - 30 * CAM.s, st.inv, '#D99A76'); }
+      }
+    }
+    $('w').innerHTML = svg;
+    $('cap').textContent = st.step === 'choose' ? (viewPath ? (team ? 'Organization, workspace, inventory' : 'Personal workspace') : 'Pick one to preview it') : st.step === 'setup' ? 'Saving to your account' : 'Your world';
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- steps ---------- */
+  function renderDots() {
+    const steps = order().filter(s => s !== 'welcome' && s !== 'setup');
+    const idx = steps.indexOf(st.step);
+    $('dots').innerHTML = steps.map((s, i) => '<i class="' + (i <= idx ? 'on' : '') + '"></i>').join('');
+  }
+  let autoT = null;
+  function cancelAuto() {
+    clearTimeout(autoT); autoT = null;
+    document.querySelectorAll('.adv').forEach(a => { a.classList.remove('run'); const i = a.querySelector('i'); i.style.transition = 'none'; i.style.width = '0'; });
+  }
+  function autoNext(ms) {
+    cancelAuto();
+    const a = document.querySelector('#s-' + st.step + ' .adv');
+    if (a && !reduced) { const i = a.querySelector('i'); void i.offsetWidth; i.style.transition = 'width ' + ms + 'ms linear'; a.classList.add('run'); requestAnimationFrame(() => { i.style.width = '100%'; }); }
+    const step = st.step;
+    autoT = setTimeout(() => { if (st.step === step) next(); }, ms);
+  }
+  function show(step) {
+    cancelAuto();
+    st.step = step;
+    document.querySelectorAll('.step').forEach(el => el.classList.toggle('on', el.id === 's-' + step));
+    setCam(CAMS[step]);
+    renderDots();
+    $('skip').hidden = step === 'setup';
+    if (step === 'org') setTimeout(() => $('org').focus(), 60);
+    if (step === 'purpose') buildChips('purpose');
+    if (step === 'inventory') buildChips('inv');
+    if (step === 'world') buildLegend();
+    if (step === 'setup') runSetup();
+    save();
+  }
+  function next() { const o = order(); show(o[o.indexOf(st.step) + 1]); }
+  function prev() { const o = order(); const i = o.indexOf(st.step); if (i > 0) show(o[i - 1]); }
+
+  function buildChips(kind) {
+    const list = kind === 'purpose' ? PURPOSE[st.path] : INV[st.path];
+    const cur = kind === 'purpose' ? st.purpose : st.inv;
+    const box = $(kind === 'purpose' ? 'purpose-chips' : 'inv-chips');
+    $(kind === 'purpose' ? 'purpose-sub' : 'inv-sub').textContent = SUB[kind === 'purpose' ? 'purpose' : 'inv'][st.path];
+    const custom = cur && !list.includes(cur);
+    box.innerHTML = list.map(v => '<button class="chip' + (v === cur ? ' on' : '') + '" type="button" data-v="' + esc(v) + '">' + esc(v) + '</button>').join('') +
+      '<button class="chip add' + (custom ? ' on' : '') + '" type="button" data-custom>+ Custom</button>';
+    const field = $(kind === 'purpose' ? 'purpose-custom' : 'inv-custom'), input = $(kind === 'purpose' ? 'purpose-in' : 'inv-in');
+    field.hidden = !custom; if (custom) input.value = cur;
+    $(kind === 'purpose' ? 'ok-purpose' : 'ok-inv').disabled = !custom;
+    $(kind === 'purpose' ? 'go-purpose' : 'go-inventory').disabled = !cur;
+    box.onclick = (e) => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      if (b.hasAttribute('data-custom')) { field.hidden = false; input.value = custom ? cur : ''; input.focus(); setValue(kind, input.value.trim(), true); box.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b)); return; }
+      field.hidden = true; setValue(kind, b.dataset.v);
+      box.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b));
+    };
+    input.oninput = () => setValue(kind, input.value.trim(), true);
+  }
+  function setValue(kind, v, typed) {
+    const now = performance.now();
+    if (kind === 'purpose') { if (!st.purpose && v) st.wsAt = now; st.purpose = v; $('go-purpose').disabled = !v; }
+    else { if (!st.inv && v) st.invAt = now; st.inv = v; $('go-inventory').disabled = !v; }
+    $(kind === 'purpose' ? 'ok-purpose' : 'ok-inv').disabled = !v;
+    if (v && !typed) autoNext(kind === 'purpose' ? 1100 : 1900); else cancelAuto();
+    save();
+  }
+  function buildLegend() {
+    const team = st.path === 'team';
+    const rows = [[team ? 'Organization' : 'Personal', team ? st.org : 'Only you', team ? '#E8590C' : '#3E9B63'], ['Workspace', st.purpose, '#A3B8E2'], ['Inventory', st.inv, '#EDBB9C']];
+    $('legend').innerHTML = rows.map(([k, v, c]) => '<div><span class="k"><i style="background:' + c + '"></i>' + k + '</span><span class="v">' + esc(v) + '</span></div>').join('');
+  }
+
+  /* setup: what the real app does after "Open my dashboard" (calls the existing create APIs, in order, once) */
+  function runSetup() {
+    if (st.skipped) {
+      $('checks').innerHTML = '';
+      $('setup-title').textContent = 'Skipped for now.';
+      $('setup-sub').textContent = 'In the app, this opens your dashboard. You can set up a workspace anytime from the organization menu.';
+      $('setup-actions').hidden = false;
+      return;
+    }
+    const team = st.path === 'team';
+    const items = (team ? ['Organization “' + st.org + '”'] : []).concat(['Workspace “' + st.purpose + '”', 'Inventory “' + st.inv + '”']);
+    const tick = '<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="9" fill="#111112"/><path d="M5 9.2 7.8 12 13 6.5" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    $('checks').innerHTML = items.map(t => '<div>' + tick + '<span>' + esc(t) + '</span></div>').join('');
+    $('setup-title').textContent = 'Setting up your dashboard';
+    $('setup-sub').textContent = 'Creating what you picked. This takes a moment.';
+    $('setup-actions').hidden = true;
+    const rows = [...$('checks').children];
+    rows.forEach((r, i) => setTimeout(() => r.classList.add('ok'), 500 + i * 550));
+    setTimeout(() => {
+      $('setup-title').textContent = 'You’re all set.';
+      $('setup-sub').textContent = 'In the app, this is where your new ' + st.purpose + ' dashboard opens, ready for your first capture.';
+      $('setup-actions').hidden = false;
+      try { localStorage.removeItem('fz-web-onboarding'); } catch (e) {}
+    }, 700 + rows.length * 550);
+  }
+
+  /* persistence (prototype convenience: survive a refresh) */
+  function save() { try { localStorage.setItem('fz-web-onboarding', JSON.stringify({ step: st.step, path: st.path, org: st.org, purpose: st.purpose, inv: st.inv })); } catch (e) {} }
+
+  /* ---------- wiring ---------- */
+  $('go-welcome').onclick = next;
+  document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { cancelAuto(); prev(); });
+  document.querySelector('.tiles').onclick = (e) => {
+    const t = e.target.closest('.tile'); if (!t) return;
+    const was = st.path; st.path = t.dataset.path;
+    if (was !== st.path) { st.purpose = ''; st.inv = ''; st.platAt = performance.now(); }
+    document.querySelectorAll('.tile').forEach(x => { const on = x === t; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+    $('go-choose').disabled = false; renderDots(); save();
+    autoNext(900);
+  };
+  document.querySelectorAll('.tile').forEach(t => { t.addEventListener('mouseenter', () => { st.hover = t.dataset.path; }); t.addEventListener('mouseleave', () => { st.hover = null; }); t.addEventListener('focus', () => { st.hover = t.dataset.path; }); t.addEventListener('blur', () => { st.hover = null; }); });
+  $('go-choose').onclick = next;
+  $('org').oninput = (e) => { st.org = e.target.value.trim(); $('go-org').disabled = !st.org; $('ok-org').disabled = !st.org; save(); };
+  $('ok-org').onclick = () => { if (st.org) next(); };
+  $('ok-purpose').onclick = () => { if (st.purpose) next(); };
+  $('ok-inv').onclick = () => { if (st.inv) next(); };
+  $('go-org').onclick = next;
+  $('go-purpose').onclick = next;
+  $('go-inventory').onclick = next;
+  $('go-world').onclick = next;
+  $('skip').onclick = () => { st.skipped = true; show('setup'); };
+  $('restart').onclick = () => { Object.assign(st, { path: null, org: '', purpose: '', inv: '', skipped: false }); $('org').value = ''; document.querySelectorAll('.tile').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-checked', 'false'); }); $('go-choose').disabled = true; $('go-org').disabled = true; $('ok-org').disabled = true; show('welcome'); };
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    const btn = { welcome: 'go-welcome', choose: 'go-choose', org: 'go-org', purpose: 'go-purpose', inventory: 'go-inventory', world: 'go-world' }[st.step];
+    if (btn && !$(btn).disabled) { e.preventDefault(); cancelAuto(); next(); }
+  });
+
+  minis();
+  show('welcome');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
