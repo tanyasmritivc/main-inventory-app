@@ -1167,3 +1167,9 @@ notes and review instructions. No em dashes are permitted in entered form text.
 No supplied screenshots were uploaded or replaced. Submit only after this
 screenshot task is resumed by the user; do not treat the earlier request to use
 the ZIPs unchanged as the final instruction.
+# October 18: return confirmed Capture saves to scoped Items
+
+After every clear/Review receipt is confirmed, replace Capture with Items filtered
+to the saved Space and retain the selected inventory URL. Keep partial drafts and
+ignore obsolete inventory completions. The API retains private crop/original
+gallery records; no separate workspace-wide file publication or Dashboard edit.

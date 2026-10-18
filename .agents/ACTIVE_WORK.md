@@ -1,3 +1,15 @@
+# October 18 Capture return — live
+
+Approved matching capture release3908580 is live from
+/home/ubuntu/findez-capture-release-20261018/web-candidate/frontend. Complete saves
+return to Items filtered to the Space in the same inventory. Two hundred twenty-six
+unrelated runtime files are preserved, including independent landing work;
+Dashboard stays unchanged. Branch full345 tests/types/lint/build and all five CI
+gates39156877889 pass. The actual preserved candidate builds and public/protected
+route checks pass. Its old landing section-ID assertion is stale for the existing
+live renderer; Capture/auth/navigation tests pass. This task does not change that
+landing renderer. Production signin healthy; no customer QA writes.
+
 # October 18 permissions, private photos and Account — delivered
 
 This entry supersedes the prepared/active rollout notes below. The user approved
@@ -1188,3 +1200,8 @@ billing, original logo assets, native lifecycle and FIND transport are unchanged
 
 No task-specific handoff is registered in `.agents/HANDOFFS/`. Current release
 preflight evidence and blockers are in `CURRENT_STATE.md` and the release checklist.
+# October 18 capture return — active
+
+Lane fix/web-scan-save-return-20261018 from 8553ad4. Confirmed Capture saves return
+to the inventory-scoped Items route; failed drafts stay for retry. Original photo
+retention/order is API-owned; existing galleries remain private. Dashboard untouched.

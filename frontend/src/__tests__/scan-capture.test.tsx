@@ -2,9 +2,12 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ScanCenterClient } from "@/components/site/scan-center-client";
-import { selectInventory } from "@/lib/inventory-selection";
+import { activeInventory, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import * as api from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+
+const replace = jest.fn();
+jest.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
 jest.mock("@/lib/use-api-session");
 jest.mock("@/lib/api", () => ({
@@ -38,6 +41,7 @@ test("partial save retains only failed drafts and retries the same identity", as
   jest.mocked(api.bulkCreate).mockResolvedValueOnce({ inserted: [{} as api.InventoryItem], accepted_indices: [0], failures: [{ index: 1, reason: "Retry" }] });
   await user.click(screen.getByRole("button", { name: "Save to Workbench" }));
   await screen.findByText(/1 item was not confirmed saved/);
+  expect(replace).not.toHaveBeenCalled();
   expect((screen.getByLabelText("Item 1 name") as HTMLInputElement).value).toBe("Hex bolt");
   expect(screen.queryByLabelText("Item 2 name")).toBeNull();
   const originalId = jest.mocked(api.bulkCreate).mock.calls[0][0].items[1].client_request_id;
@@ -46,6 +50,20 @@ test("partial save retains only failed drafts and retries the same identity", as
   await user.click(screen.getByRole("button", { name: "Save to Workbench" }));
   await waitFor(() => expect(screen.queryByLabelText("Item 1 name")).toBeNull());
   expect(jest.mocked(api.bulkCreate).mock.calls[1][0].items[0].client_request_id).toBe(originalId);
+  expect(replace).toHaveBeenCalledWith('/inventory?space=Workbench');
+});
+
+test("a complete capture retains its original and returns to Items in the same inventory", async () => {
+  selectInventory({inventory_id: 'inventory-a', can_edit: true} as InventorySelection);
+  jest.mocked(api.extractFromImageMulti).mockResolvedValue({items: [{...items[0], image_url: 'crop.jpg', source_frame_url: 'original.jpg'}], summary: {total_detected: 1, categories: {}}});
+  jest.mocked(api.bulkCreate).mockResolvedValue({inserted: [{} as api.InventoryItem], accepted_indices: [0], failures: []});
+  const {container} = render(<ScanCenterClient />);
+  await upload(container);
+  await screen.findByLabelText('Item 1 name');
+  await userEvent.click(screen.getByRole('button', {name: 'Save to Workbench'}));
+  await waitFor(() => expect(replace).toHaveBeenCalledWith('/inventory?space=Workbench&inventory=inventory-a'));
+  expect(jest.mocked(api.bulkCreate).mock.calls[0][0].items[0].source_frame_url).toBe('original.jpg');
+  expect(activeInventory()?.inventory_id).toBe('inventory-a');
 });
 
 test("a late photo response cannot enter a different account", async () => {
