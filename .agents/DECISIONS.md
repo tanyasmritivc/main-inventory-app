@@ -1,3 +1,15 @@
+# October 18 resource roles and photo authorization
+
+Use current workspace roles for inherited inventory access, with deliberate
+custom/No access taking precedence. Workspace administration is separate from
+restricted content. Only inventory content Owner/Admin deletes a Space.
+Ownership transfers require exact-name confirmation and current membership.
+Photograph URLs are locators, not grants: first-party photos require current
+session authorization and old bearer/public Storage URLs must be blocked at the
+gateway. Preserve ordinary team visibility and personal accepted legacy shares.
+Activate with compatible web/mobile delivery, not by flipping bucket visibility
+alone. The user withdrew the accidentally pasted Founder Dashboard request.
+
 # Invitation acceptance establishes an explicit organization destination
 
 Accepted access invitations target the exact organization/workspace/inventory

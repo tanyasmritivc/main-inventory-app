@@ -73,7 +73,27 @@ class ApiClient {
             assertCurrentContext();
             final path = options.path;
             if (inventoryContext != null && _inventoryRoutes.hasMatch(path)) {
-              if (!canEdit && !_readOperation(options.method, path)) {
+              if (options.method == 'DELETE' &&
+                  path.startsWith('/spaces/') &&
+                  !canDeleteSpace) {
+                throw const AskRequestException(
+                  'Only inventory owners and admins can delete a Space.',
+                );
+              }
+              final preview =
+                  [
+                    '/extract_from_image',
+                    '/inventory/extract_from_image',
+                  ].contains(path) &&
+                  options.data is dio.FormData &&
+                  (options.data as dio.FormData).fields.any(
+                    (field) =>
+                        field.key == 'preview_only' &&
+                        ['true', '1'].contains(field.value.toLowerCase()),
+                  );
+              if (!canEdit &&
+                  !_readOperation(options.method, path) &&
+                  !preview) {
                 throw const AskRequestException(
                   'You have view-only access to this inventory.',
                 );
@@ -155,6 +175,9 @@ class ApiClient {
   final String? _boundAccount;
   final bool Function()? _isCurrent;
   bool get canEdit => inventoryContext?.canEdit ?? true;
+  bool get canDeleteSpace =>
+      inventoryContext == null ||
+      ['owner', 'admin'].contains(inventoryContext!.role);
   String get cacheKey => inventoryContext == null
       ? 'legacy'
       : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';

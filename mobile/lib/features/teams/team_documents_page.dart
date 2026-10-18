@@ -1,4 +1,5 @@
 import '../notifications/notification_bell.dart';
+import '../profile/account_button.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 
@@ -30,12 +31,13 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   static const _maxBytes = 50 * 1024 * 1024;
 
   bool _loading = true;
+  Timer? _permissionTimer;
   bool _uploading = false;
   String? _error;
   String _role = 'viewer';
   List<Map<String, dynamic>> _documents = const [];
 
-  bool get _canUpload => _role != 'viewer';
+  bool get _canUpload => ['owner', 'mentor', 'member'].contains(_role);
   bool get _canManage => _role == 'owner' || _role == 'mentor';
   String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
@@ -43,12 +45,27 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   void initState() {
     super.initState();
     unawaited(_load());
+    _permissionTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (mounted &&
+          !_loading &&
+          (lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        unawaited(_load(quiet: true));
+      }
+    });
   }
 
-  Future<void> _load() async {
+  @override
+  void dispose() {
+    _permissionTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool quiet = false}) async {
     if (!mounted) return;
     setState(() {
-      _loading = true;
+      if (!quiet) _loading = true;
       _error = null;
     });
     try {
@@ -64,6 +81,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
+        _role = 'viewer';
         _error = describeError(error).$1;
         _loading = false;
       });
@@ -238,7 +256,8 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
   }
 
   bool _canDelete(Map<String, dynamic> document) {
-    return _canManage || document['uploaded_by']?.toString() == _userId;
+    return _canManage ||
+        (_canUpload && document['uploaded_by']?.toString() == _userId);
   }
 
   void _showMessage(String message) {
@@ -259,6 +278,7 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
               onPressed: _uploading ? null : _chooseUploadSource,
               icon: const Icon(CupertinoIcons.plus),
             ),
+          AccountButton(api: widget.api),
         ],
         bottom: _uploading
             ? const PreferredSize(

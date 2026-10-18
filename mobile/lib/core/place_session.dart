@@ -307,6 +307,7 @@ class PlaceSession extends ChangeNotifier {
                 'workspace_id': row['team_id'] ?? row['workspace_id'],
               },
             )
+            .where((row) => row['can_open'] != false)
             .toList();
       } else {
         // Existing independent workspaces stay in the private Personal scope.

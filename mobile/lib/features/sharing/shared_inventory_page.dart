@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -878,7 +879,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             if (imageUrl.isNotEmpty) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.network(
+                child: PrivateImage(
                   imageUrl,
                   width: 52,
                   height: 52,

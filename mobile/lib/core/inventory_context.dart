@@ -59,7 +59,7 @@ String membershipRoleLabel(String role) => switch (role) {
   'mentor' => 'Admin',
   'member' => 'Editor',
   'none' => 'No access',
-  'inherit' => 'Use default',
+  'inherit' => 'Use workspace role',
   _ =>
     role.isEmpty ? 'Unknown' : '${role[0].toUpperCase()}${role.substring(1)}',
 };

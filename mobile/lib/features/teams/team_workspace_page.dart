@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import 'team_categories.dart';
 import '../../core/app_theme.dart';
 import '../inventory/space_icon_picker.dart';
@@ -1243,7 +1244,7 @@ class _TeamSpaceInventoryPageState
                             ? null
                             : ClipRRect(
                                 borderRadius: BorderRadius.circular(9),
-                                child: Image.network(
+                                child: PrivateImage(
                                   imageUrl,
                                   width: 48,
                                   height: 48,

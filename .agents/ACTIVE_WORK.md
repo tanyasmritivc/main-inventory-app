@@ -1,3 +1,28 @@
+# October 18 permissions and private photos — prepared
+
+Mobile implementation follows the supplied Roles and Permissions Specification.
+Inherited Editor remains Editor; explicit restrictions, separate administration,
+protected ownership, current parent/account checks and role refresh are enforced.
+First-party photos require a current authorized session; URL possession grants
+nothing. Mobile includes the requested top-right own-profile access. No Founder
+Dashboard work is included (user withdrew that accidental request).
+Local checks pass: Python 901 + 10 subtests, web 344, Flutter 623, types/build,
+Flutter analysis, composed SQL/replay, two real revocation races and 7 isolated
+Kong HTTP checks. Fresh restored production copy preserves original values in
+86 tables. All production schema/gateway changes are still held for explicit
+reviewed approval; signed beta84 is prepared, not uploaded. Older mobile builds
+need beta84 to display private photos. Physical-device acceptance is pending.
+See API-lane docs/plans/consistent-resource-permissions.md for activation scope.
+
+# October 17 unified permission policy and profile access
+
+Active mobile lane fix/mobile-workspace-editor-profile-20261017 from e9c3e27.
+Implement the supplied Roles and Permissions Specification across inheritance,
+custom restrictions, admin-only Space deletion, ownership transfer and role
+refresh. Then keep the account/profile control at the top right of main pages.
+Preserve dashboard content, auth and capture/chat behavior outside permissions.
+Backend/schema and web use separate lanes. No customer membership probes.
+
 # October 17 invitation handoff refresh
 
 Completed mobile lane `fix/invitation-org-handoff-20261017`, clean start d53a320.

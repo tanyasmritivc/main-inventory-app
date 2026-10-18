@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -276,7 +277,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               borderRadius: BorderRadius.circular(12),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Image.network(
+                child: PrivateImage(
                   widget.items[i].imageUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => Container(

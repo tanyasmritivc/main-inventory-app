@@ -606,6 +606,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             onPressed: widget.onManageContext,
             icon: const Icon(Icons.more_horiz),
           ),
+          _buildAccountControl(),
         ],
       );
     }
@@ -663,12 +664,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
                 tooltip: 'Join Shared Space',
               ),
+            _buildAccountControl(),
           ],
         );
       case 2:
-        return AppBar(title: const AppText('Capture'));
+        return AppBar(
+          title: const AppText('Capture'),
+          actions: [_buildAccountControl()],
+        );
       case 1:
-        return null;
+        return AppBar(
+          title: const AppText('Ask'),
+          actions: [_buildAccountControl()],
+        );
       default:
         return null;
     }
@@ -732,7 +740,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               refreshToken: _inventoryRefreshToken,
               deletedSpaceId: _deletedSpaceId,
               onOpenAsk: _openAsk,
-              accountControl: _buildAccountControl(),
+              accountControl: widget.api.inventoryContext == null
+                  ? _buildAccountControl()
+                  : null,
               onOpenReview: _openReview,
               onOpenCheckouts: _openCheckouts,
               onOpenSpace: _openHomeSpace,
@@ -755,27 +765,20 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 await _openAssistDestination?.call(hint);
               },
             ),
-            if (!widget.api.canEdit)
-              const Center(
-                child: AppText(
-                  'You have view-only access. Ask or Find items in this inventory.',
-                ),
-              )
-            else
-              ScanPage(
-                api: widget.api,
-                isActive: _currentPage == 2,
-                showAppBar: false,
-                onSaved: () {
-                  setState(() => _inventoryRefreshToken++);
-                  unawaited(_prefetchInventoryCache());
-                },
-                onSpaceScanned: (spaceName) {
-                  setState(() => _inventoryRefreshToken++);
-                  _animateTo(3);
-                },
-                onSkipCoachmark: () {},
-              ),
+            ScanPage(
+              api: widget.api,
+              isActive: _currentPage == 2,
+              showAppBar: false,
+              onSaved: () {
+                setState(() => _inventoryRefreshToken++);
+                unawaited(_prefetchInventoryCache());
+              },
+              onSpaceScanned: (spaceName) {
+                setState(() => _inventoryRefreshToken++);
+                _animateTo(3);
+              },
+              onSkipCoachmark: () {},
+            ),
             IndexedStack(
               index: _inventorySection,
               children: [

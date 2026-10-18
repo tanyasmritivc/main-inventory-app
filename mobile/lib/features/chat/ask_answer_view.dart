@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:typed_data';
 
@@ -43,7 +44,7 @@ class AskQuestionCard extends StatelessWidget {
                       errorBuilder: (_, _, _) =>
                           const AppText('Photo unavailable'),
                     )
-                  : Image.network(
+                  : PrivateImage(
                       photoUrl!,
                       fit: BoxFit.contain,
                       semanticLabel: 'Attached photo',

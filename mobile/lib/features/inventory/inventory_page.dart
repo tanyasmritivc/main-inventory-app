@@ -1,6 +1,8 @@
+import 'package:mobile/core/private_image.dart';
 import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import 'dart:async';
+import '../profile/account_button.dart';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -318,7 +320,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               if (imageUrl.isNotEmpty) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
+                  child: PrivateImage(
                     imageUrl,
                     width: 52,
                     height: 52,
@@ -821,6 +823,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   ),
               ],
             ),
+            AccountButton(api: widget.api),
           ],
           backgroundColor: AppTheme.bg(context),
           elevation: 0,
@@ -3443,19 +3446,20 @@ class _InventoryPageState extends State<InventoryPage>
                 ),
                 onTap: () => Navigator.pop(context, 'rename'),
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_outline,
-                  color: AppTheme.foreground(context, Color(0xFFFF453A)),
-                ),
-                title: AppText(
-                  'Delete Space',
-                  style: TextStyle(
+              if (widget.api.canDeleteSpace)
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_outline,
                     color: AppTheme.foreground(context, Color(0xFFFF453A)),
                   ),
+                  title: AppText(
+                    'Delete Space',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Color(0xFFFF453A)),
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'delete'),
                 ),
-                onTap: () => Navigator.pop(context, 'delete'),
-              ),
             ],
           ),
         ),
@@ -3554,6 +3558,16 @@ class _InventoryPageState extends State<InventoryPage>
     String loc,
     String spaceId,
   ) async {
+    if (!widget.api.canDeleteSpace) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText(
+            'Only inventory owners and admins can delete a Space.',
+          ),
+        ),
+      );
+      return;
+    }
     final owner = Supabase.instance.client.auth.currentUser?.id;
     final spaceData = _spaces.firstWhere(
       (s) => s['id'] == spaceId,
@@ -3771,6 +3785,7 @@ class _InventoryPageState extends State<InventoryPage>
                     ),
                   ],
                 ),
+                AccountButton(api: widget.api),
               ],
             )
           : null,
@@ -4063,7 +4078,7 @@ class _SearchResultsList extends StatelessWidget {
                 ? null
                 : ClipRRect(
                     borderRadius: BorderRadius.circular(9),
-                    child: Image.network(
+                    child: PrivateImage(
                       imageUrl,
                       width: 50,
                       height: 50,

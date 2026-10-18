@@ -1,5 +1,7 @@
+import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
+import '../profile/account_button.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -446,7 +448,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: InteractiveViewer(
-                child: Image.network(
+                child: PrivateImage(
                   url,
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const Padding(
@@ -797,7 +799,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         leading: _isImage(document) && imageUrl != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
+                child: PrivateImage(
                   imageUrl,
                   width: 44,
                   height: 44,
@@ -1031,6 +1033,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                 ),
               ),
             ),
+          AccountButton(api: widget.api),
         ],
       ),
       body: RefreshIndicator(

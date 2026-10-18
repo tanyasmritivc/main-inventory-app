@@ -1,3 +1,4 @@
+import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -549,7 +550,7 @@ class _CaptureCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
+            child: PrivateImage(
               item.imageUrl!.trim(),
               width: width,
               height: width,
