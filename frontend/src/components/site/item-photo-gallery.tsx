@@ -1,4 +1,6 @@
 "use client";
+import { privateImageSrc } from "@/lib/private-image";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, RefreshCw } from "lucide-react";
 import {
@@ -187,7 +189,7 @@ function ItemPhotoGalleryWorkspace({
                 setImageError(false);
               }}
             >
-              <img src={photo.image_url} alt={`Item photo ${i + 1}`} />
+              <img src={privateImageSrc(photo.image_url, accountId)} alt={`Item photo ${i + 1}`} />
             </button>
             {canEdit && (
               <button
@@ -225,7 +227,7 @@ function ItemPhotoGalleryWorkspace({
             viewing && (
               <img
                 className="gallery-full-image"
-                src={viewing.image_url}
+                src={privateImageSrc(viewing.image_url, accountId)}
                 alt="Full item photo"
                 onError={() => setImageError(true)}
               />

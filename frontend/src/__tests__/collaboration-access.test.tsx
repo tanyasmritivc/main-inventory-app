@@ -13,17 +13,17 @@ jest.mock("next/navigation",()=>({useRouter:()=>router}));
 jest.mock("@/lib/account-request",()=>({accountRequest:jest.fn()}));
 jest.mock("@/lib/use-api-session",()=>({useApiSession:jest.fn()}));
 jest.mock("@/components/site/use-app-theme",()=>({AppThemeProvider:({children}:{children:React.ReactNode})=><>{children}</>}));
-const member={user_id:"student-1",display_name:"Alex",role:"viewer",workspace_role:"member",source:"workspace"};
+const member={user_id:"student-1",display_name:"Alex",role:"editor",workspace_role:"member",source:"workspace"};
 const data={inventory:{name:"Tools",team_id:"team",can_manage:true,access_mode:"workspace",default_role:"viewer"},members:[member],locations:[]};
 beforeEach(()=>{
  jest.clearAllMocks();
  jest.mocked(useApiSession).mockReturnValue({accountId:"owner",loading:false,error:null} as ReturnType<typeof useApiSession>);
  jest.mocked(accountRequest).mockImplementation(async(_actor,path)=> (path.startsWith("/access-invitations?") ? {invitations:[]} : path.endsWith("/audit") ? {activity:[]} : data) as never);
 });
-test("inventory permissions are explicit saved actions with viewer defaults",async()=>{
+test("inherited workspace Editor stays Editor until an explicit inventory override",async()=>{
  render(<CollaborationPanel inventoryId="tools"/>);
  await screen.findByRole("heading",{name:"Inventory access"});
- expect(screen.getByText("Viewer · inherited")).toBeTruthy();
+ expect(screen.getByText("Editor · inherited")).toBeTruthy();
  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Access"}),"restricted");
  expect(jest.mocked(accountRequest).mock.calls.filter((c)=>c[2]?.method)).toHaveLength(0);
  await userEvent.click(screen.getByRole("button",{name:"Save access"}));

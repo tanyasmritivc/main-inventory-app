@@ -1,4 +1,6 @@
 "use client";
+import { privateImageSrc } from "@/lib/private-image";
+
 import { canEditInventory } from "@/lib/inventory-selection";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 import Link from "@/components/site/inventory-link";
@@ -239,7 +241,7 @@ function HomeOverviewWorkspace() {
               href={`/inventory?item=${encodeURIComponent(item.item_id)}`}
             >
               {item.image_url ? (
-                <img src={item.image_url} alt="" />
+                <img src={privateImageSrc(item.image_url, accountId)} alt="" />
               ) : <span className={styles.itemPlaceholder}><Box size={20} aria-hidden="true" /></span>}
               <span className={styles.itemCopy}>
                 <strong>{itemDisplayName(item)}</strong>

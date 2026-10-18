@@ -2,6 +2,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ScanCenterClient } from "@/components/site/scan-center-client";
+import { selectInventory } from "@/lib/inventory-selection";
 import * as api from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 
@@ -17,7 +18,7 @@ const session = (accountId: string) => ({ accountId, token: accountId + "-token"
 const items = ["Soldering iron", "Hex bolt"].map(name => ({ name, category: "Tools", quantity: 1 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.clearAllMocks(); selectInventory(null);
   jest.mocked(useApiSession).mockReturnValue(session("a"));
   jest.mocked(api.getSpaces).mockResolvedValue([{ id: "space", name: "Workbench", created_at: null }]);
   jest.mocked(api.extractFromImageMulti).mockResolvedValue({ items, summary: { total_detected: 2, categories: {} } });
@@ -58,4 +59,17 @@ test("a late photo response cannot enter a different account", async () => {
   expect(screen.queryByLabelText("Item 1 name")).toBeNull();
   expect(api.bulkCreate).not.toHaveBeenCalled();
   expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("");
+});
+
+afterEach(()=>selectInventory(null));
+test("Viewer can inspect photo results without a destination or write controls",async()=>{
+  selectInventory({inventory_id:"view",name:"Tools",owner_user_id:"owner",team_id:null,is_default:true,accountId:"a",workspace:{workspace_id:"personal",name:"Personal",kind:"personal",team_id:null,role:"owner"},role:"viewer",can_edit:false});
+  const {container}=render(<ScanCenterClient/>);
+  expect(screen.queryByRole("combobox",{name:"Destination Space"})).toBeNull();
+  fireEvent.change(container.querySelector('input[type="file"]')!,{target:{files:[new File(["photo"],"drawer.jpg",{type:"image/jpeg"})]}});
+  const field=await screen.findByLabelText("Item 1 name");
+  expect((field as HTMLInputElement).disabled || !!field.closest('fieldset:disabled')).toBe(true);
+  expect(screen.queryByRole("button",{name:/Save to/})).toBeNull();
+  expect(screen.queryByRole("button",{name:"Manual add"})).toBeNull();
+  expect(api.bulkCreate).not.toHaveBeenCalled();
 });

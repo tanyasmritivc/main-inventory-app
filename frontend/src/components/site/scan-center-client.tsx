@@ -1,4 +1,6 @@
 "use client";
+import { privateImageSrc } from "@/lib/private-image";
+
 
 import Link from "@/components/site/inventory-link";
 import Image from "next/image";
@@ -13,6 +15,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
 import { confirmedCaptureIndices } from "@/lib/capture-receipt";
+import { canEditInventory } from "@/lib/inventory-selection";
 
 type ScanMode = "barcode" | "photo" | "manual" | "spreadsheet" | "bom";
 
@@ -53,6 +56,7 @@ function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
 }
 
 export function ScanCenterClient() {
+  const canWrite = canEditInventory();
   const { token, accountId } = useApiSession();
   const [manual, setManual] = useState<Record<string, string>>({ category: "Other", quantity: "1" });
   const owner = useRef(accountId); useEffect(() => { owner.current = accountId; return () => { owner.current = null; }; }, [accountId]);
@@ -85,7 +89,7 @@ export function ScanCenterClient() {
   }, [token]);
 
   async function addDestinationSpace() {
-    if (!token || !accountId || working) return;
+    if (!canEditInventory() || !token || !accountId || working) return;
     const account = accountId;
     const name = (await promptValue({ title: "Create a Space", message: "Choose where imported items should be saved.", label: "Space name", placeholder: "Build room", confirmLabel: "Create Space" }))?.trim();
     if (!name || owner.current !== account) return;
@@ -115,7 +119,7 @@ export function ScanCenterClient() {
   async function scanPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !accountId || !file || working) return;
     const account = accountId;
-    if (!space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
+    if (canWrite && !space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
     setWorking(true); setError(null); setItems([]); setScanSummary(null); setSaved(null);
     try {
       const result = await extractFromImageMulti({ token, file });
@@ -129,7 +133,7 @@ export function ScanCenterClient() {
   }
 
   async function saveDetected() {
-    if (!token || !accountId || items.length === 0 || working) return;
+    if (!canEditInventory() || !token || !accountId || items.length === 0 || working) return;
     const account = accountId;
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     setWorking(true); setError(null);
@@ -168,7 +172,7 @@ export function ScanCenterClient() {
   }
 
   async function saveManual(event: React.FormEvent) {
-    event.preventDefault(); if (!accountId || working) return;
+    event.preventDefault(); if (!canEditInventory() || !accountId || working) return;
     const account = accountId, quantity = Number(manual.quantity);
     if (!space || !manual.name?.trim() || !manual.category?.trim() || !Number.isSafeInteger(quantity) || quantity < 0) { setError("Choose a Space, enter a name and category, and use a whole stock count."); return; }
     setWorking(true); setError(null); setSaved(null);
@@ -190,17 +194,18 @@ export function ScanCenterClient() {
     <section className="product-page scan-page">
       <header className="product-page-header">
         <h1>Capture</h1>
-        <div className="scan-destination">
+        {canWrite && <div className="scan-destination">
           <span>to</span>
           <select id="scan-destination" className="product-select" disabled={working} value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
           <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
-        </div>
+        </div>}
       </header>
       {error && <div className="notice-error">{error}</div>}
       {saved && <div className="notice-success">{saved}</div>}
+      {!canWrite && <p className="workspace-muted">Inspect photos and barcodes. Saving requires Editor access.</p>}
 
       <nav className="source-tabs" aria-label="Import method">
-        {modes.map(({ id, label, icon: Icon }) => (
+        {modes.filter(({id}) => canWrite || id === "photo" || id === "barcode").map(({ id, label, icon: Icon }) => (
           <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={16} /><span>{label}</span></button>
         ))}
       </nav>
@@ -213,26 +218,26 @@ export function ScanCenterClient() {
             <div className="barcode-camera"><BarcodeScanner onDetected={(value) => { setBarcode(value); void lookup(value); }} /></div>
             <div className="barcode-entry">
               <div className="scan-input-action"><input id="barcode-value" aria-label="Barcode" className="product-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="UPC, EAN, or manufacturer code" /><button className="product-button primary" disabled={!barcode.trim() || working} onClick={() => void lookup()}>{working ? "Looking up…" : "Look up"}</button></div>
-              {barcodeResult && <div className="scan-result"><strong>Found</strong>{barcodeFields.map(([key, value]) => <div key={key}><span>{formatFieldName(key)}</span><b>{value == null || value === "" ? "" : String(value)}</b></div>)}<button className="workspace-button" onClick={() => { setManual({ quantity: "1", category: String(barcodeResult.category || "Other"), name: String(barcodeResult.name || barcodeResult.title || ""), brand: String(barcodeResult.brand || ""), barcode, part_number: String(barcodeResult.part_number || "") }); setMode("manual"); }}>Review and add item</button></div>}
+              {barcodeResult && <div className="scan-result"><strong>Found</strong>{barcodeFields.map(([key, value]) => <div key={key}><span>{formatFieldName(key)}</span><b>{value == null || value === "" ? "" : String(value)}</b></div>)}{canWrite && <button className="workspace-button" onClick={() => { setManual({ quantity: "1", category: String(barcodeResult.category || "Other"), name: String(barcodeResult.name || barcodeResult.title || ""), brand: String(barcodeResult.brand || ""), barcode, part_number: String(barcodeResult.part_number || "") }); setMode("manual"); }}>Review and add item</button>}</div>}
             </div>
           </div>
         )}
 
         {mode === "photo" && (
           <div className="photo-stage">
-            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || !space}><UploadCloud size={22} /><strong>{working ? "Detecting objects and reading labels…" : "Choose photo"}</strong><span>{space ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
+            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || (canWrite && !space)}><UploadCloud size={22} /><strong>{working ? "Detecting objects and reading labels…" : "Choose photo"}</strong><span>{space || !canWrite ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">
                 <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
-                <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>
+                {canWrite && <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>}
               </div>
-              <fieldset disabled={working} className="find-review-list" style={{ border: 0, padding: 0, minWidth: 0 }}>
+              <fieldset disabled={working || !canWrite} className="find-review-list" style={{ border: 0, padding: 0, minWidth: 0 }}>
                 {items.map((item, index) => {
                   const update = (changes: Partial<ExtractedInventoryItem>) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...changes } : row));
                   return <article className="find-review-card" key={item.client_request_id ?? index}>
                     <header><span>Object {index + 1}</span>{item.scan_evidence?.needs_review ? <b className="find-review-warning">Review needed</b> : <b>{percent(item.confidence) ? `${percent(item.confidence)} identity` : "Detected"}</b>}<button type="button" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></header>
-                    {item.image_url && <Image unoptimized width={720} height={480} className="find-review-image" src={item.image_url} alt={`Captured ${item.name || `object ${index + 1}`}`} />}
+                    {item.image_url && <Image unoptimized width={720} height={480} className="find-review-image" src={privateImageSrc(item.image_url, accountId)} alt={`Captured ${item.name || `object ${index + 1}`}`} />}
                     <div className="find-review-primary">
                       <label><span>Name</span><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => update({ name: event.target.value })} /></label>
                       <label><span>Category</span><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => update({ category: event.target.value })} /></label>

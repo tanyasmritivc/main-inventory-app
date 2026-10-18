@@ -21,6 +21,10 @@ export type InventorySelection = AppInventory & {
   accountId: string;
   workspace: InventoryWorkspace;
   can_edit: boolean;
+  role?: "owner" | "admin" | "editor" | "viewer" | null;
+  can_open?: boolean;
+  can_manage?: boolean;
+  can_delete_space?: boolean;
 };
 
 // Window-local and URL-selected: another tab cannot switch this tab's inventory.
@@ -30,6 +34,11 @@ let contextRequired = false;
 export function requireInventoryContext(required: boolean) { contextRequired = required; }
 export const activeInventory = () => selection;
 export const canEditInventory = () => selection?.can_edit ?? true;
+export const canDeleteSpace = () => !selection || (selection.can_delete_space ?? ["owner", "admin"].includes(selection.role || ""));
+export function permissionFingerprint(value: InventorySelection) {
+  return JSON.stringify([value.accountId, value.inventory_id, value.role, value.can_open,
+    value.can_edit, value.can_manage, value.can_rename, value.can_delete_space, value.name, value.workspace]);
+}
 export function selectInventory(value: InventorySelection | null) { selection = value; }
 export function assertInventory(value: InventorySelection | null) {
   if (selection !== value) throw new Error("The inventory changed. Reopen this page and try again.");

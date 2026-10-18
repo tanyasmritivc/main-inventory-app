@@ -220,16 +220,19 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     {label:"Help and information",route:"/settings/help",icon:BookOpen,section:"Account settings"},
     {label:"Account",route:"/settings/account",icon:Settings,section:"Account settings"},
   ];
-  const navigationItems = accountPage ? accountItems : context?.items || (inventory ? [
+  const navigationItems = accountPage ? accountItems : context?.items || (inventory?.can_open === false ? [
+    { label: "Workspace", route: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`, icon: ArrowLeft, section: "Workspace" },
+    { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "Administration" },
+  ] : inventory ? [
     ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Dashboard","/inventory":"Items","/spaces":"Locations","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
     { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
   ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
   const breadcrumbs = accountPage ? [{label:"Account",href:"/settings"}] : context?.breadcrumbs || (inventory ? [
     inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },
     { label: inventory.workspace.name, href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}` },
-    { label: inventory.name, href: `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` },
+    { label: inventory.name, href: `/${inventory.can_open === false ? "inventory-access" : "home"}?inventory=${encodeURIComponent(inventory.inventory_id)}` },
   ] : []);
-  const commandItems = navigationItems.filter((item) => (inventory?.can_edit !== false || item.route !== "/scan") &&
+  const commandItems = navigationItems.filter((item) =>
     [item.label, item.section, ...(item.keywords ?? [])]
       .join(" ")
       .toLowerCase()
@@ -267,7 +270,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
           </button>
           {breadcrumbs.length > 0 && <nav className="app-inventory-switcher" aria-label={inventory ? "Current inventory" : "Current workspace"}>
             {breadcrumbs.map((crumb, index) => <span className="context-crumb" key={crumb.href}>{index > 0 && <span aria-hidden="true">/</span>}<Link href={crumb.href}>{crumb.label}</Link></span>)}
-            {inventory && !inventory.can_edit && <small>View only</small>}
+            {inventory && !inventory.can_edit && <small>{inventory.can_open === false ? "Administration only" : "View only"}</small>}
           </nav>}
           <div className="app-topbar-spacer" />
           <button

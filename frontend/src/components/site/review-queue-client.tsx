@@ -1,4 +1,6 @@
 "use client";
+import { privateImageSrc } from "@/lib/private-image";
+
 import { canEditInventory } from "@/lib/inventory-selection";
 
 import { useCallback, useEffect, useState } from "react";
@@ -48,7 +50,7 @@ function Evidence({ item }: { item: ReviewItem }) {
 }
 
 export function ReviewQueueClient() {
-  const { token } = useApiSession();
+  const { token, accountId } = useApiSession();
   const { confirmAction } = useAppDialog();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export function ReviewQueueClient() {
           return (
             <article className="review-queue-card" key={item.review_id}>
               <header><div><small>CAPTURE {index + 1}</small><h2>{item.name || "Unidentified item"}</h2></div><span>Not in inventory yet</span></header>
-              {item.image_url && <Image unoptimized width={720} height={480} className="review-queue-image" src={item.image_url} alt={`Captured ${item.name || "item"}`} />}
+              {item.image_url && <Image unoptimized width={720} height={480} className="review-queue-image" src={privateImageSrc(item.image_url, accountId)} alt={`Captured ${item.name || "item"}`} />}
               <Evidence item={item} />
               <div className="review-fields">
                 <label><span>Name</span><input disabled={!canEditInventory()} className="product-input" value={item.name} onChange={(event) => change(item.review_id, { name: event.target.value })} /></label>
