@@ -13,8 +13,6 @@ from app.core.limiter import limiter
 from app.schemas.ai import AICommandRequest, AICommandResponse
 from app.services.ai_agent import (
     iter_ai_command_events_async,
-    iter_ai_command_sse,
-    iter_ai_command_sse_async,
     run_ai_command,
 )
 from app.services.ai_memory import (
@@ -24,7 +22,6 @@ from app.services.ai_memory import (
     log_query,
     save_conversation,
 )
-from app.services.memory_context import load_preferences, personalize
 from app.services.documents_repo import create_activity
 from app.services.ask_photo_questions import answer_photo_question, remember_photo_answer
 from app.services.find_pipeline import FindPipelineError
@@ -149,8 +146,6 @@ async def ai_photo_question_route(
                 if not task.done():
                     yield b'data: {"type":"status","message":"Photo analysis is still running..."}\n\n'
             answer = await task
-            preferences = await asyncio.to_thread(load_preferences, effective_user_id)
-            answer = personalize(answer, preferences)
             yield f"data: {json_module.dumps({'type': 'delta', 'delta': answer['assistant_message']})}\n\n".encode()
             try:
                 await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
@@ -183,211 +178,12 @@ async def ai_photo_question_route(
     return StreamingResponse(_authorized_stream(generate()), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
 
 
-def _wrap_sse(gen):
-    done_sent = False
-    try:
-        for chunk in gen:
-            if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
-                done_sent = True
-            yield chunk
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            yield 'event: end\n'
-            yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
 
 
-def _wrap_sse_with_conv(gen, conversation_id: str):
-    """SSE wrapper that buffers assistant text and persists messages to the DB."""
-    client = get_supabase_admin()
-    done_sent = False
-    delta_buffer: list[str] = []
-
-    try:
-        for chunk in gen:
-            if not isinstance(chunk, str):
-                yield chunk
-                continue
-
-            is_done = '"type": "done"' in chunk or '"type":"done"' in chunk
-            is_delta = '"type": "delta"' in chunk or '"type":"delta"' in chunk
-
-            if is_delta:
-                for line in chunk.split('\n'):
-                    if line.startswith('data:'):
-                        try:
-                            evt = json_module.loads(line[5:].strip())
-                            d = evt.get('delta') or ''
-                            if d:
-                                delta_buffer.append(d)
-                        except Exception:
-                            pass
-
-            if is_done:
-                done_sent = True
-                assistant_text = ''.join(delta_buffer)
-                intercepted = False
-                for line in chunk.split('\n'):
-                    if not line.startswith('data:'):
-                        continue
-                    try:
-                        evt = json_module.loads(line[5:].strip())
-                        if evt.get('type') != 'done':
-                            continue
-                        full_msg = assistant_text or evt.get('assistant_message') or ''
-                        try:
-                            client.table("messages").insert({
-                                "conversation_id": conversation_id,
-                                "role": "assistant",
-                                "content": full_msg,
-                            }).execute()
-                            client.table("conversations").update({
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }).eq("id", conversation_id).execute()
-                        except Exception:
-                            logger.exception("Failed to persist assistant message")
-                        evt['conversation_id'] = conversation_id
-                        yield f'data: {json_module.dumps(evt)}\n\n'
-                        intercepted = True
-                        break
-                    except Exception:
-                        pass
-                if not intercepted:
-                    yield chunk
-                continue
-
-            yield chunk
-
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            assistant_text = ''.join(delta_buffer)
-            try:
-                client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "role": "assistant",
-                    "content": assistant_text,
-                }).execute()
-                client.table("conversations").update({
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", conversation_id).execute()
-            except Exception:
-                logger.exception("Failed to persist assistant message in fallback")
-            done_evt = {
-                "type": "done",
-                "tool": None,
-                "result": None,
-                "assistant_message": assistant_text or "Let me think about that...",
-                "conversation_id": conversation_id,
-            }
-            yield 'event: end\n'
-            yield f'data: {json_module.dumps(done_evt)}\n\n'
 
 
-async def _wrap_sse_async(async_gen):
-    """Async version of _wrap_sse — passes through chunks from an async generator."""
-    done_sent = False
-    try:
-        async for chunk in async_gen:
-            if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
-                done_sent = True
-            yield chunk
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            yield 'event: end\n'
-            yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
 
 
-async def _wrap_sse_with_conv_async(async_gen, conversation_id: str):
-    """Async SSE wrapper that buffers assistant text and persists messages to DB."""
-    client = get_supabase_admin()
-    done_sent = False
-    delta_buffer: list[str] = []
-
-    try:
-        async for chunk in async_gen:
-            if not isinstance(chunk, str):
-                yield chunk
-                continue
-
-            is_done = '"type": "done"' in chunk or '"type":"done"' in chunk
-            is_delta = '"type": "delta"' in chunk or '"type":"delta"' in chunk
-
-            if is_delta:
-                for line in chunk.split('\n'):
-                    if line.startswith('data:'):
-                        try:
-                            evt = json_module.loads(line[5:].strip())
-                            d = evt.get('delta') or ''
-                            if d:
-                                delta_buffer.append(d)
-                        except Exception:
-                            pass
-
-            if is_done:
-                done_sent = True
-                assistant_text = ''.join(delta_buffer)
-                intercepted = False
-                for line in chunk.split('\n'):
-                    if not line.startswith('data:'):
-                        continue
-                    try:
-                        evt = json_module.loads(line[5:].strip())
-                        if evt.get('type') != 'done':
-                            continue
-                        full_msg = assistant_text or evt.get('assistant_message') or ''
-                        try:
-                            client.table("messages").insert({
-                                "conversation_id": conversation_id,
-                                "role": "assistant",
-                                "content": full_msg,
-                            }).execute()
-                            client.table("conversations").update({
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }).eq("id", conversation_id).execute()
-                        except Exception:
-                            logger.exception("Failed to persist assistant message")
-                        evt['conversation_id'] = conversation_id
-                        yield f'data: {json_module.dumps(evt)}\n\n'
-                        intercepted = True
-                        break
-                    except Exception:
-                        pass
-                if not intercepted:
-                    yield chunk
-                continue
-
-            yield chunk
-
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            assistant_text = ''.join(delta_buffer)
-            try:
-                client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "role": "assistant",
-                    "content": assistant_text,
-                }).execute()
-                client.table("conversations").update({
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", conversation_id).execute()
-            except Exception:
-                logger.exception("Failed to persist assistant message in fallback")
-            done_evt = {
-                "type": "done",
-                "tool": None,
-                "result": None,
-                "assistant_message": assistant_text or "Let me think about that...",
-                "conversation_id": conversation_id,
-            }
-            yield 'event: end\n'
-            yield f'data: {json_module.dumps(done_evt)}\n\n'
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
@@ -502,7 +298,9 @@ async def ai_command_route(
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer) or item.get("assistant_message") or "Something went wrong. Please try again."
+                            full_response = "".join(delta_buffer) or item.get("assistant_message")
+                            if not full_response:
+                                raise RuntimeError("The model returned no completed answer")
                             answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
@@ -569,6 +367,8 @@ async def ai_command_route(
         logger.exception("Failed to write ai_chat activity")
 
     assistant_message = out.get("assistant_message") or ""
+    if not assistant_message:
+        raise bad_gateway("AI temporarily unavailable. Please try again.")
     background_tasks.add_task(_authorized_background(extract_and_save_memory, user.user_id, payload.message, assistant_message))
     background_tasks.add_task(_authorized_background(log_query, user.user_id, payload.message))
     background_tasks.add_task(_authorized_background(save_conversation, user.user_id, payload.message, assistant_message))
@@ -576,7 +376,7 @@ async def ai_command_route(
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),
-        assistant_message=assistant_message or "Let me think about that...",
+        assistant_message=assistant_message,
         answer_context=out.get("answer_context"),
     )
 
@@ -611,7 +411,7 @@ def ai_upload_route(
         finally:
             if not done_sent:
                 yield 'event: end\n'
-                yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
+                yield 'data: {"type":"error","error":"File analysis could not be completed. Please try again."}\n\n'
 
     gen = iter_assist_file_analysis_sse(
         filename=file.filename or "upload",

@@ -1,3 +1,11 @@
+# October 18 model-written Chat answers
+
+Active backend-only lane fix/model-only-chat-20261018 from ce9d182. The user asks
+to remove scripted/fallback Chat answers. Route every text and photo turn through
+the configured model, with model-selected read tools and backend permission/
+mutation guards intact. Empty/provider failures must remain error events, never
+fabricated assistant answers. Preserve schemas, clients, FIND and model settings.
+
 # October 18 permissions, private photos and Account — delivered
 
 This entry supersedes the prepared/active rollout notes below. The user approved

@@ -4,7 +4,8 @@ import re
 
 
 READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
-                        'inventory_recall', 'documents_list', 'list_spaces'))
+                        'inventory_recall', 'documents_list', 'list_spaces',
+                        'inventory_query', 'project_kit_readiness'))
 SAFE_EDIT_FIELDS = frozenset(('name', 'category', 'location', 'notes'))
 _ACTION = r'^\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:move|rename|change|set|update|edit|add|delete|remove|create|increase|decrease|restock|log)\b'
 
@@ -24,6 +25,9 @@ def _valid(value, schema):
         return (not (set(value) - set(properties))
                 and all(key in value for key in schema.get('required', []))
                 and all(_valid(v, properties[k]) for k, v in value.items()))
+    if kind == 'array':
+        return (isinstance(value, list) and len(value) <= schema.get('maxItems', 12)
+                and all(_valid(item, schema['items']) for item in value))
     if kind == 'string':
         return isinstance(value, str) and len(value) <= 2000 and ('enum' not in schema or value in schema['enum'])
     if kind == 'integer':
@@ -64,6 +68,8 @@ def rejection(*, tool_name, args, definitions, enabled, message, trace):
     for entry in trace:
         if entry.get('tool') == 'inventory_search' and isinstance(entry.get('result'), list):
             matches = entry['result']
+        elif entry.get('tool') == 'inventory_query' and isinstance(entry.get('result'), dict):
+            matches = entry['result'].get('items', []) if entry['result'].get('complete') else []
         elif entry.get('tool') == 'inventory_knowledge_search' and isinstance(entry.get('result'), dict):
             result = entry['result']
             matches = (result.get('personal_items') or []) + (result.get('shared_and_joined_items') or [])
@@ -94,30 +100,20 @@ def fingerprint(tool_name, args):
     return tool_name + ':' + json.dumps(args, sort_keys=True, separators=(',', ':'))
 
 
-def failure_answer(trace):
-    for entry in reversed(trace):
-        result = entry.get('result')
-        if isinstance(result, dict) and result.get('error'):
-            # This is a server-created public message, never a provider exception.
-            return result.get('message') or 'The operation could not be confirmed. Refresh the record before retrying.'
-    return None
-
-
-def action_answer(message, trace):
-    failure = failure_answer(trace)
-    if not mutation_requested(message):
-        return failure
-    for entry in reversed(trace):
-        result = entry.get('result')
-        if entry.get('tool') == 'inventory_update_item' and isinstance(result, dict) and result.get('item_id'):
-            clean = lambda value: re.sub(r'[\x00-\x1f`*\[\]<>]', ' ', str(value or ''))[:200]
-            fields = entry.get('args', {}).get('updates', {})
-            saved = '; '.join(f'{key}: {clean(result.get(key))}' for key in fields if key in SAFE_EDIT_FIELDS)
-            answer = f"Saved {clean(result.get('name'))}. {saved}. This confirms a saved edit, not a physical sighting."
-            return answer + (' Additional operation: ' + failure if failure else '')
-    if failure:
-        return failure
-    return 'No inventory change was confirmed. Please give the exact saved item name and new value, or use the item editor.'
+def validate_model_answer(message, trace, text):
+    """Reject false action claims; never substitute scripted assistant prose."""
+    writes = [entry for entry in trace if entry.get('tool') not in READ_TOOLS]
+    if not mutation_requested(message) and not writes:
+        return
+    confirmed = any(entry.get('tool') == 'inventory_update_item'
+                    and isinstance(entry.get('result'), dict)
+                    and entry['result'].get('item_id') and not entry['result'].get('error')
+                    for entry in writes)
+    if confirmed:
+        return
+    claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)
+    if claims:
+        raise RuntimeError('The model claimed an action without a confirmed receipt')
 
 
 def provider_data(value):
