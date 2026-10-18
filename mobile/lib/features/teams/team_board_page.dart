@@ -263,6 +263,22 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               title: AppText(task['title']?.toString() ?? 'Task'),
               subtitle: AppText(task['description']?.toString() ?? ''),
             ),
+            if (task['assigned_to'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: _identity(task['assigned_to'].toString(), 'Assigned to'),
+              ),
+            if (task['created_by'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: _identity(task['created_by'].toString(), 'Created by'),
+              ),
             if (_canEdit && status != 'doing')
               ListTile(
                 leading: const Icon(CupertinoIcons.hammer),
@@ -497,6 +513,16 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                         fontSize: 13,
                       ),
                     ),
+                    if ((task['assigned_to'] ?? task['created_by']) !=
+                        null) ...[
+                      const SizedBox(height: 8),
+                      _identity(
+                        (task['assigned_to'] ?? task['created_by']).toString(),
+                        task['assigned_to'] != null
+                            ? 'Assigned to'
+                            : 'Created by',
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -543,14 +569,34 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     if (task['status'] == 'doing') parts.add('In progress');
     if (task['priority'] == 'high') parts.add('High priority');
     if (task['priority'] == 'urgent') parts.add('Urgent');
-    final assignedTo = task['assigned_to']?.toString();
-    if (assignedTo != null && assignedTo.isNotEmpty) {
-      final member = _members
-          .where((row) => row['user_id']?.toString() == assignedTo)
-          .firstOrNull;
-      parts.add(member?['display_name']?.toString() ?? 'Assigned');
-    }
     return parts.isEmpty ? 'To do' : parts.join(' · ');
+  }
+
+  Widget _identity(String id, String label) {
+    final member = _members
+        .where((row) => row['user_id']?.toString() == id)
+        .firstOrNull;
+    final name = member?['display_name']?.toString() ?? 'Former member';
+    return Row(
+      children: [
+        MemberAvatar(
+          name: name,
+          photoUrl: member?['avatar_url']?.toString(),
+          colorHex: member?['avatar_color']?.toString(),
+          size: 24,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: AppText(
+            '$label $name',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTheme.textSecondary(context),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

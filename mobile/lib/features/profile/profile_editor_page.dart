@@ -1,5 +1,6 @@
 import '../../core/app_theme.dart';
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +9,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
+import 'profile_photo_crop_page.dart';
 import '../home/home_overview.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -176,9 +178,9 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
             await (widget.pickPhoto?.call() ??
                 ImagePicker().pickImage(
                   source: ImageSource.gallery,
-                  maxWidth: 512,
-                  maxHeight: 512,
-                  imageQuality: 78,
+                  maxWidth: 2048,
+                  maxHeight: 2048,
+                  imageQuality: 90,
                 ));
         if (picked == null || !mounted || owner != _store.owner) return;
         final bytes = await picked.readAsBytes();
@@ -187,9 +189,13 @@ class _ProfileEditorPageState extends State<ProfileEditorPage> {
           _message('Choose a photo smaller than 5 MB.');
           return;
         }
+        final cropped = await Navigator.of(context).push<Uint8List>(
+          MaterialPageRoute(builder: (_) => ProfilePhotoCropPage(bytes: bytes)),
+        );
+        if (cropped == null || !mounted || owner != _store.owner) return;
         url = await widget.api.uploadProfilePhoto(
-          bytes: bytes,
-          filename: picked.name,
+          bytes: cropped,
+          filename: 'avatar.png',
         );
         if (url.isEmpty) throw StateError('Missing saved photo');
       }

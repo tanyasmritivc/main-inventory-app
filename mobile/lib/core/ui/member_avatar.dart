@@ -28,7 +28,9 @@ class MemberAvatar extends StatelessWidget {
     color: _color,
     child: Center(
       child: AppText(
-        name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?',
+        name.trim().isNotEmpty
+            ? name.trim().characters.first.toUpperCase()
+            : '?',
         style: TextStyle(
           color: Colors.white,
           fontSize: size * 0.4,
@@ -47,8 +49,12 @@ class MemberAvatar extends StatelessWidget {
         child: url.isEmpty
             ? _fallback
             : Image.network(
+                key: ValueKey(url),
                 url,
                 fit: BoxFit.cover,
+                excludeFromSemantics: true,
+                frameBuilder: (_, child, frame, loaded) =>
+                    frame == null && !loaded ? _fallback : child,
                 errorBuilder: (_, _, _) => _fallback,
               ),
       ),

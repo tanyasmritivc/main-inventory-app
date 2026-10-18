@@ -7,6 +7,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/ui/member_avatar.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/workspaces/hierarchy_page.dart';
 import 'package:mobile/features/shell/main_shell.dart';
@@ -81,6 +82,7 @@ void main() {
             {
               'user_id': 'actor-a',
               'display_name': 'Tanya',
+              'avatar_url': 'https://api.test/saved-profile.png',
               'role': organizationRole,
             },
           ],
@@ -94,6 +96,7 @@ void main() {
             {
               'user_id': 'actor-a',
               'display_name': 'Tanya',
+              'avatar_url': 'https://api.test/saved-profile.png',
               'role': workspaceRole,
             },
           ],
@@ -141,6 +144,48 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('organization and workspace People use the saved profile photo', (
+    tester,
+  ) async {
+    for (final level in [
+      HierarchyLevel.organization,
+      HierarchyLevel.workspace,
+    ]) {
+      await pump(
+        tester,
+        HierarchyPage(
+          api: fixture.api,
+          level: level,
+          id: level == HierarchyLevel.organization ? 'org-0' : 'workspace-a',
+          panel: HierarchyPanel.people,
+          onOpenInventory: (id, workspace, organization) async {},
+        ),
+      );
+      if (level == HierarchyLevel.organization) {
+        await tester.tap(
+          find.descendant(
+            of: find.byWidgetPredicate(
+              (widget) => widget is SegmentedButton<bool>,
+            ),
+            matching: find.text('People'),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+      final savedAvatar = find.byWidgetPredicate(
+        (widget) =>
+            widget is MemberAvatar &&
+            widget.photoUrl == 'https://api.test/saved-profile.png',
+      );
+      expect(savedAvatar, findsOneWidget);
+      expect(
+        tester.widget<MemberAvatar>(savedAvatar).photoUrl,
+        'https://api.test/saved-profile.png',
+      );
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
 
   Future<void> open(String id, String workspace, String? org) async {
     opens.add('$org/$workspace/$id');
@@ -568,9 +613,9 @@ void main() {
     final material = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await material.load();
-    await (FontLoader('Roboto')
-          ..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf')))
-        .load();
+    await (FontLoader(
+      'Roboto',
+    )..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))).load();
     await (FontLoader('PlaceGeist')
           ..addFont(rootBundle.load('assets/fonts/Geist-Regular.ttf'))
           ..addFont(rootBundle.load('assets/fonts/Geist-Medium.ttf'))

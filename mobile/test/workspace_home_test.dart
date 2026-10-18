@@ -7,7 +7,7 @@ import 'package:mobile/core/last_place.dart';
 import 'package:mobile/core/place_session.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
 import 'package:mobile/features/workspaces/hierarchy_page.dart';
-import 'package:mobile/features/workspaces/place_ui.dart';
+import 'package:mobile/core/ui/member_avatar.dart';
 import 'support/hierarchy_fixture.dart';
 
 void main() {
@@ -245,7 +245,7 @@ void main() {
           await pump(tester, brightness: mode);
           await tester.tap(find.text('People'));
           await settle(tester);
-          expect(find.byType(PlaceAvatar), findsNWidgets(2));
+          expect(find.byType(MemberAvatar), findsNWidgets(2));
           expect(find.text('Leave workspace'), findsOneWidget);
           await tester.tap(find.text('Leave workspace'));
           await settle(tester);
