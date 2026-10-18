@@ -1,6 +1,9 @@
 # Consistent resource permissions and private photographs
 
-Prepared October 18, 2026. Not activated in production.
+Activated October 18, 2026 after the user's explicit approval to apply 054/055
+and publish. Backend, web, private storage and gateway rules are live. Mobile
+build 85 contains the legacy-photo and standalone Account follow-ups; its final
+Apple delivery receipt is recorded in the shared agent state.
 
 The supplied Roles and Permissions Specification is the target policy, copied to
 permissions-specification.md. Workspace storage roles mentor/member retain their
@@ -30,6 +33,10 @@ separate from workspace membership and inventory content access.
 - Mobile main-page headers expose the user's own profile at the top right. The
   web shared topbar retains its account menu. Customer Dashboard content/layout
   is preserved; no Founder Dashboard is part of this work.
+- The standalone mobile account destination uses an opaque, safe-area-aware
+  Scaffold/AppBar and the existing compact Profile hub. Profile editing and
+  Settings open separately, preserving back navigation and account binding. The
+  legacy transparent combined body is no longer pushed over the caller's page.
 
 ## Private photos
 
@@ -62,8 +69,11 @@ The reviewed candidate leaves the service's authenticated Storage SDK route inta
 - Full web: 344 tests / 46 suites pass; TypeScript passes; lint has 0 errors and
   54 existing warnings; real production webpack build passes.
 - Full Flutter: 623 tests with coverage pass; static analysis has no issues.
-  Role/profile/ownership checks include Light and Dark. Synthetic directory
-  captures exercise both themes; this is not physical-device acceptance.
+  Role/profile/ownership checks include Light and Dark. The latest 25 focused
+  cases cover profile opacity, safe-area geometry, back navigation, actual
+  private Image widgets, legacy URLs and Review. Synthetic captures exercise
+  both themes; some test-font rendering remains synthetic. This is not simulator
+  or physical-device acceptance of this release.
 - Composed PostgreSQL fixture replays migrations 054 and 055 twice; inherited/
   custom/No access matrix, direct JWT/API-key access, suspension, parent removal,
   owner retention, ownership confirmation, stale invitations, consent, Space
@@ -75,26 +85,49 @@ The reviewed candidate leaves the service's authenticated Storage SDK route inta
   original record values across 86 public/auth/storage tables remain unchanged
   except intended permission metadata and the bucket visibility flag. Storage
   objects are preserved. No live customer role/invitation/data writes used for QA.
-- Kong 3.9.3 expressions parser and 7 isolated HTTP privacy tests pass, including
-  old signed, public, render, encoded-bucket and bucket-root paths. Live gateway
-  remains unchanged. Its before/candidate hashes and private receipts are kept
-  in /home/ubuntu/findez-permission-release-20261018.
+- Kong 3.9.3 and 7 isolated HTTP privacy tests pass, including old signed, public,
+  render, encoded-bucket and bucket-root paths. The probe now exercises the real
+  self-hosted entrypoint and environment on an internal Docker network, without
+  publishing ports or exposing configuration. The first template serialization
+  missed entrypoint substitution and briefly prevented gateway startup; the
+  original template was restored, then a fragment-only insertion was verified
+  and activated. Preserve all original template bytes outside the added service.
+  Private receipts remain in /home/ubuntu/findez-permission-release-20261018.
+- A real existing-photo compatibility issue was corrected: stored locators use
+  //storage after the hostname. SQL, web and mobile accept these trusted-origin
+  locators; both immutable-parser expression indexes were rebuilt. All 16 existing
+  photos are recognized, with 28 authorized member/photo pairs and 0 lookup
+  failures. An authorized backend RPC plus the actual Storage SDK downloads and
+  validates image bytes. No stored locator, image or customer record was rewritten.
+- Live health/database/auth routes pass; anonymous app photo requests return 401,
+  and all 16 actual old public links plus old signed/render paths return 404.
+  The item-images bucket is private. No customer invitation or membership writes
+  were used for QA. Automatic CI is green on API b0c04e3 (39115338261), web eccccc1
+  (39115340558), and mobile 9cec0bc (39115340763).
 
 ## Activation and compatibility
 
-Migration 054 and 055 and the gateway activation require the explicit reviewed
-production-database authorization in AGENTS.md. They have not been applied.
-Prepare a fresh backup, verify reviewed source hashes, apply migrations in order,
-then publish only changed backend files and an isolated web release; preserve the
-VM's unrelated dirty source. Verify unauthenticated image requests return 401,
-old Storage links return 404, and existing health/auth routes remain available.
-No real invitation or permission changes are allowed merely for smoke testing.
+The user approved "Apply 054/055 and publish the fixes." Both migrations were
+applied in one outer transaction after a fresh private backup. Only reviewed
+backend files were overlaid; 79 unrelated Python files and 242 unrelated web
+source files were preserved. Backend runtime is 1c2280c; schema/tool follow-up is
+b0c04e3. Final web eccccc1 runs from
+/home/ubuntu/findez-web-releases/permissions-url-compat-20261018/frontend.
+The double-slash parser correction was applied transactionally after a separate
+fresh backup, together with REINDEX of permission_item_image_path and
+permission_event_image_path. Migration 055 includes the correction for replay.
+The final gateway source SHA-256 is
+0c5b76c0d535b81f20d22b23d7ae5b65d4e0f1146222e8e1b2bd118fcd5c26d1.
+Backups, manifests and activation/compatibility/live/storage receipts are private
+under /home/ubuntu/findez-permission-release-20261018. Do not rerun activation
+scripts or alter real invitations merely for smoke tests.
 
-The matching signed mobile build is 1.0.8 (84), production main target and normal
-production configuration. Old mobile versions request public Storage links and
-will need this update to display private photos. Coordinate privacy activation
-with that compatibility requirement. TestFlight upload is already authorized;
-stop Apple work at upload acknowledgment, without processing/group polling.
+The matching signed mobile build is 1.0.8 (85), runtime 9cec0bc, production main
+target and normal production configuration. Build 84 was uploaded and acknowledged
+but is superseded: it did not parse the real //storage locators and used the
+transparent legacy profile body directly. Old mobile versions request public
+Storage links and need build 85 to display private photos and crops. Stop Apple
+work at upload acknowledgment, without processing/group polling.
 Public App Store submission remains held. Device acceptance, actual customer
 cross-client role changes and native camera/auth/push remain manual checks;
 automated fixtures must not be described as those checks.
@@ -102,3 +135,13 @@ automated fixtures must not be described as those checks.
 API lane: fix/api-workspace-editor-20261017 (base 8c0c0f7).
 Web lane: fix/web-workspace-editor-20261017 (base 406e36b).
 Mobile lane: fix/mobile-workspace-editor-profile-20261017 (base e9c3e27).
+
+## Final Apple delivery
+
+Apple acknowledged production 1.0.8 (85), runtime 9cec0bc, delivery
+6a197534-7e09-453d-a1fa-efe1bf9adeec. IPA and compressed archive are preserved privately under
+Documents/FindEZ/AppStore/1.0.8-build85. All 31 archive and export executables verify
+as iOS device code; strict signatures, production defines/main target and Apple
+validation pass. No processing/group/tester polling followed acknowledgment.
+Processing, tester availability and physical-device acceptance remain unverified.
+Beta84 is superseded. Public App Store submission remains held.

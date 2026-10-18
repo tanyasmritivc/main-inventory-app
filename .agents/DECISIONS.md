@@ -1,3 +1,16 @@
+# October 18 Account containment and existing photo compatibility
+
+Never push the transparent combined ProfilePage body directly from a main-page
+account button. Use the opaque AccountPage with AppBar/safe areas, the compact
+existing ProfileHubPage and separate account editor/Settings destinations.
+Keep current-account binding and normal back navigation. Dashboard content stays
+unchanged. Existing trusted Storage locators may contain //storage; treat them as
+locators for authenticated delivery, never restore public access to hide a client
+compatibility bug. After changing an immutable SQL path parser, rebuild its
+expression indexes so existing rows receive the new authorization lookup.
+Preserve the self-hosted Kong template outside the added service fragment and
+probe its actual entrypoint substitutions, not only a raw YAML parse.
+
 # October 18 resource roles and photo authorization
 
 Use current workspace roles for inherited inventory access, with deliberate
