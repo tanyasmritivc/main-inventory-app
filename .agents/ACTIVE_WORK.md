@@ -1,3 +1,10 @@
+# October 17 web invitation refresh
+
+Published web-only lane `fix/web-invitation-handoff-20261017`, clean ee1a684.
+Preserve access invite codes through signup and add installed-app handoff,
+validate decision/target receipts, align legacy invitation appearance with both
+themes. Preserve current server grants, auth callback ownership and Team-only AASA.
+
 # October 17 web dashboard cleanup
 
 Active lane fix/web-dashboard-empty-state-20261017, clean base eab8962. User now

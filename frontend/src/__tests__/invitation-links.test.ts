@@ -41,3 +41,11 @@ test("malformed or overlong codes cannot be normalized into another invitation",
   expect(invitationHandoff("/join/ABC123?download=1", 100)).toEqual({ v: 1, kind: "space", code: "ABC123", created_at: 100 });
   for (const path of ["//evil.test/join/ABC123", "/join/ABC123extra", "/join/ABC123?role=owner", "/join/team/ABC123/extra"]) expect(invitationHandoff(path)).toBeNull();
 });
+
+
+test("access invite handoff supports current mobile links and preserves only valid codes", () => {
+ expect(invitationAppSchemeLink("access", "ABCDEF234567")).toBe("findez://access-invite?code=ABCDEF234567");
+ expect(invitationHandoff("/join/access?code=abcdef234567",100)).toEqual({v:1,kind:"access",code:"ABCDEF234567",created_at:100});
+ expect(invitationHandoff("/join/access?code=ABCDEF234567&download=1")).not.toBeNull();
+ for(const path of ["/join/access?code=ABCDEF234567&role=owner", "/join/access?code=ABCDEF234567extra", "/join/access?code=ABCDEF234567&code=BBBBBB234567", "//evil.test/join/access?code=ABCDEF234567"]) expect(invitationHandoff(path)).toBeNull();
+});

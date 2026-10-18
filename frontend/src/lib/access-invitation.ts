@@ -2,6 +2,9 @@ export type AccessInvitation = {
   invitation_id: string;
   scope: "organization" | "workspace" | "inventory";
   resource_id: string;
+  organization_id?: string | null;
+  team_id?: string | null;
+  inventory_id?: string | null;
   name: string;
   role: string;
   recipient_email?: string;
