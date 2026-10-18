@@ -1,3 +1,17 @@
+## Chat item actions candidate (2026-10-18)
+
+Model proposal cards show exact new records or frozen deletion selections.
+Separate delete confirmation, account/inventory-bound retries, Viewer protection,
+confirmed-receipt/model-error handling and shared-photo history are implemented.
+361 branch tests/types/lint pass. Actual preserved web runtime builds/types;
+Chat/inventory/streaming tests pass, with 18 unrelated existing failures in five
+older signup/API-key/landing/legal/deletion fixtures. No unrelated runtime edits.
+Backend migration057 is still unapproved; neither candidate is activated.
+
+## Active: confirmed Chat item add/delete (2026-10-18)
+
+User requested adds/deletes through Chat. Separate feat/*-chat-item-actions branches; design in API docs/plans/chat-item-actions.md. No customer test writes. Migration057 will need explicit activation approval after review/tests. Streaming/focus delivery is complete: API17a60ac and webec14cee are live; Apple acknowledged builds88 and89. No processing/tester availability polling.
+
 ## Active: chunked Chat delivery and fades (2026-10-18)
 
 web lane on fix/web-chat-stream-fade-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.

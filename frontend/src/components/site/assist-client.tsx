@@ -3,6 +3,8 @@ import { privateImageSrc } from "@/lib/private-image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, MessageSquarePlus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { activeInventory } from "@/lib/inventory-selection";
+import { ChatItemActionCard } from "@/components/site/chat-item-action";
 import { AskMarkdown } from "@/components/site/ask-markdown";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
@@ -391,6 +393,7 @@ function AssistClientWorkspace({
                 m.context?.photoUrl,
                 accountId,
                 [process.env.NEXT_PUBLIC_SUPABASE_URL || ""],
+                activeInventory()?.inventory_id,
               );
               return (
                 <article className={`ask-message${m.role === "user" ? " is-user" : ""}`} key={m.id}>
@@ -411,6 +414,14 @@ function AssistClientWorkspace({
                       on it.
                     </p>
                   )}
+                  {!m.failed && accountId && m.context?.pendingActions?.map((action) => <ChatItemActionCard
+                    key={`${action.id}-${action.status}`} action={action} accountId={accountId}
+                    onReply={(reply) => {
+                      if (owner.current !== accountId) return;
+                      setMessages((messages) => messages.some((message) => message.id === reply.id) ? messages : [...messages,
+                        { id: reply.id, role: "assistant", content: reply.content, created_at: new Date().toISOString(), live: true }]);
+                      void loadHistory().catch(() => setError("Your change is confirmed, but history could not refresh."));
+                    }} />)}
                   {!m.failed && m.context && (!!m.context.sources.length || !!m.context.rows.length) && (
                     <details className="ask-evidence">
                       <summary>Sources</summary>

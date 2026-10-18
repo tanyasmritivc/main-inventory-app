@@ -105,6 +105,7 @@ export async function askQuestion({
   if (photo) {
     form.append("file", photo);
     form.append("message", message);
+    form.append("supports_item_actions", "true");
     if (conversationId) form.append("conversation_id", conversationId);
   }
   const response = await fetch(
@@ -119,7 +120,7 @@ export async function askQuestion({
       },
       body: photo
         ? form
-        : JSON.stringify({ message, conversation_id: conversationId || null }),
+        : JSON.stringify({ message, conversation_id: conversationId || null, supports_item_actions: true }),
     },
   );
   if (!response.ok || !response.body)
