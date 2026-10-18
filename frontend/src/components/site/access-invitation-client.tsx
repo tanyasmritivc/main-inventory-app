@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { invitationAppSchemeLink, isIosDevice } from "@/lib/app-store";
+import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { accountRequest } from "@/lib/account-request";
@@ -16,8 +18,11 @@ export function AccessInvitationClient({ code = "", invitationId = "" }: { code?
   return <AppThemeProvider><Review key={`${accountId}:${code}:${invitationId}`} initialCode={code} invitationId={invitationId} /></AppThemeProvider>;
 }
 function Review({ initialCode, invitationId }: { initialCode: string; invitationId: string }) {
-  const { accountId, loading, error: sessionError } = useApiSession(), router = useRouter();
+  const { accountId, loading, error: sessionError, supabase } = useApiSession(), router = useRouter();
   const [code, setCode] = useState(initialCode), [invitation, setInvitation] = useState<AccessInvitation | null>(null);
+  const [ios, setIos] = useState(false);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { setIos(isIosDevice(navigator.userAgent, navigator.maxTouchPoints)); }, []);
   const [error, setError] = useState(""), [busy, setBusy] = useState(false);
   const live = useRef(true), generation = useRef(0);
   useLayoutEffect(() => { requireInventoryContext(false); selectInventory(null); }, []);
@@ -53,10 +58,30 @@ function Review({ initialCode, invitationId }: { initialCode: string; invitation
     setBusy(true); setError("");
     try {
       const result = await accountRequest<{ invitation: AccessInvitation }>(accountId, `/access-invitations/${invitation.invitation_id}/decision`, { method: "POST", body: { action } });
-      if (live.current) { setInvitation(result.invitation); publishNotificationSnapshot(accountId, null); }
+      const confirmed = result.invitation;
+      if (confirmed.invitation_id !== invitation.invitation_id || confirmed.scope !== invitation.scope || confirmed.resource_id !== invitation.resource_id || confirmed.status !== (action === "accept" ? "accepted" : "declined")) throw new Error("Decision could not be confirmed. Refresh the invitation before retrying.");
+      if (live.current) { setInvitation(confirmed); publishNotificationSnapshot(accountId, null); }
     } catch (reason) { if (live.current) setError(invitationError(reason)); }
     finally { if (live.current) setBusy(false); }
   }
+  async function saveForApp() {
+    if (!accountId || !invitation || busy) return;
+    setBusy(true); setError("");
+    try {
+      const handoff = invitationHandoff(path);
+      if (!handoff) throw new Error("Keep this link and reopen it in FindEZ.");
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || data.session?.user.id !== accountId) throw new Error("Your account changed. Sign in again to save this invitation.");
+      const { error: saveError } = await supabase.auth.updateUser({ data: { [INVITATION_METADATA_KEY]: handoff } });
+      if (saveError) throw saveError;
+      const { data: current } = await supabase.auth.getSession();
+      if (current.session?.user.id !== accountId) throw new Error("Your account changed. Save the invitation again.");
+      if (live.current) setSaved(true);
+    } catch (reason) { if (live.current) setError(userFacingError(reason, "Could not save the invitation. Keep this link and try again.")); }
+    finally { if (live.current) setBusy(false); }
+  }
+  const validCode = /^[A-Z2-9]{12}$/.test(code);
+  const destination = invitation ? invitation.scope === "organization" ? `/organizations/${encodeURIComponent(invitation.resource_id)}` : invitation.scope === "workspace" ? `/workspaces/${encodeURIComponent(invitation.resource_id)}` : `/home?inventory=${encodeURIComponent(invitation.resource_id)}` : "";
   const expired = invitation && new Date(invitation.expires_at).getTime() <= Date.now();
   return <main className="invitation-review"><section>
     <Link className="invitation-brand" href="/">FindEZ</Link>
@@ -68,7 +93,7 @@ function Review({ initialCode, invitationId }: { initialCode: string; invitation
         <p className="workspace-muted">You choose whether to join. Access starts only after you accept.</p>
         <div className="product-actions"><button className="product-button" disabled={busy} onClick={() => void decide("decline")}>Decline</button><button className="product-button" disabled={busy} onClick={() => void decide("accept")}>Accept invitation</button></div>
       </> : <p role="status">{expired && invitation.status === "pending" ? "This invitation has expired. Ask the sender for a new one." : `Invitation ${invitation.status}.`}</p>}
-      {invitation.status === "accepted" && <Link className="product-button" href={invitation.destination}>Open {invitation.scope}</Link>}
+      {invitation.status === "accepted" && <Link className="product-button" href={destination}>Open {invitation.scope}</Link>}
     </> : <>
       <p className="workspace-muted">Sign in with the invited email, then review the requested access.</p>
       <form onSubmit={(event) => void review(event)}><label>Invitation code<input className="product-input" autoComplete="off" autoCapitalize="characters" maxLength={12} value={code} disabled={busy || !!invitationId} onChange={(e) => setCode(e.target.value.replace(/[^a-z2-9]/gi, "").toUpperCase())} /></label>
@@ -76,6 +101,12 @@ function Review({ initialCode, invitationId }: { initialCode: string; invitation
       </form>
       {!loading && !accountId && <Link href={`/signin?redirect=${encodeURIComponent(path)}`}>Sign in</Link>}
     </>}
+    {ios && validCode && <div className="product-actions"><a className="product-button" href={invitationAppSchemeLink("access", code)}>Open in FindEZ</a></div>}
+    {validCode && accountId && invitation && invitation.status === "pending" && !expired && <>
+      <button className="product-button" disabled={busy} onClick={() => void saveForApp()}>Save invitation for app</button>
+      {saved && <p role="status">Invitation saved. Open FindEZ and sign in to this same account to review it.</p>}
+    </>}
+    {!loading && !accountId && <p><Link href={`/signup?redirect=${encodeURIComponent(path)}`}>Create account with invited email</Link></p>}
     {(error || sessionError) && <p className="notice-error" role="alert">{error || sessionError}</p>}
     {busy && <span className="sr-only" role="status">Please wait...</span>}
   </section></main>;

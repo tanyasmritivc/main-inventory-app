@@ -208,7 +208,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             // Confirmation links return through the existing /auth/callback page.
             emailRedirectTo: authCallbackUrl(),
             data: {
-              ...(normalizedRedirect.endsWith("?download=1") && invitationHandoff(normalizedRedirect)
+              ...(invitationHandoff(normalizedRedirect)
                 ? { [INVITATION_METADATA_KEY]: invitationHandoff(normalizedRedirect) } : {}),
               display_name: displayName,
               full_name: displayName,

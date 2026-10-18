@@ -114,3 +114,29 @@ test("notification review is a link and marking read never accepts membership",a
  expect((await screen.findByRole("link",{name:"Review invitation"})).getAttribute("href")).toBe("/join/access?invitation=inv-1");
  expect(screen.queryByRole("button",{name:"Accept invitation"})).toBeNull();
 });
+
+
+test("a mismatched decision receipt does not expose another target",async()=>{
+ render(<AccessInvitationClient code="ABCDEF234567"/>);
+ await screen.findByRole("heading",{name:"Acme Company"});
+ jest.mocked(accountRequest).mockResolvedValue({invitation:{...invitation,resource_id:"other",status:"accepted"}});
+ await userEvent.click(screen.getByRole("button",{name:"Accept invitation"}));
+ await screen.findByRole("alert");
+ expect(screen.queryByRole("link",{name:"Open organization"})).toBeNull();
+});
+test("accepted inventory target is canonical and cannot redirect to an external destination",async()=>{
+ jest.mocked(accountRequest).mockResolvedValue({invitation:{...invitation,scope:"inventory",resource_id:"inv/a",status:"accepted",destination:"https://evil.test"}});
+ render(<AccessInvitationClient code="ABCDEF234567"/>);
+ expect((await screen.findByRole("link",{name:"Open inventory"})).getAttribute("href")).toBe("/home?inventory=inv%2Fa");
+});
+test("saved access invitation carries no membership and blocks failed saves",async()=>{
+ const updateUser=jest.fn().mockResolvedValue({error:null});
+ const getSession=jest.fn().mockResolvedValue({data:{session:{user:{id:"recipient"},access_token:"token"}},error:null});
+ jest.mocked(useApiSession).mockReturnValue({accountId:"recipient",loading:false,error:null,supabase:{auth:{getSession,updateUser}}} as never);
+ render(<AccessInvitationClient code="ABCDEF234567"/>);
+ await screen.findByRole("heading",{name:"Acme Company"});
+ await userEvent.click(screen.getByRole("button",{name:"Save invitation for app"}));
+ await screen.findByText(/Invitation saved/);
+ expect(updateUser).toHaveBeenCalledWith({data:{findez_pending_invitation:{v:1,kind:"access",code:"ABCDEF234567",created_at:expect.any(Number)}}});
+ expect(jest.mocked(accountRequest).mock.calls.every(c=>c[1].endsWith("/preview"))).toBe(true);
+});

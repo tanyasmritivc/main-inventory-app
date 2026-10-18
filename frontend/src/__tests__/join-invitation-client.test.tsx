@@ -14,6 +14,7 @@ function session(token: string | null = "test-token") {
   jest.mocked(useApiSession).mockReturnValue({ token, loading: false, supabase: { auth } } as unknown as ReturnType<typeof useApiSession>);
 }
 beforeEach(() => {
+  window.matchMedia = jest.fn().mockReturnValue({matches:false,addEventListener:jest.fn(),removeEventListener:jest.fn()});
   jest.clearAllMocks(); session();
   getSession.mockResolvedValue({ data: { session: { access_token: "test-token", user: { id: "recipient" } } }, error: null });
   updateUser.mockResolvedValue({ error: null });
@@ -40,10 +41,11 @@ test("loads a read-only preview and joins only after explicit consent", async ()
 });
 
 test("Team acceptance uses the Team endpoint", async () => {
+  jest.mocked(previewInvitation).mockResolvedValue({kind:"team",name:"Robotics",target_id:"team-123",permission:"member",already_joined:false});
   jest.mocked(joinTeam).mockResolvedValue({ membership: { team_id: "team-123", user_id: "recipient", role: "member" } });
   render(<JoinInvitationClient kind="team" code="TEAM23" />);
-  await screen.findByRole("button", { name: "Join team" });
-  await userEvent.click(screen.getByRole("button", { name: "Join team" }));
+  await screen.findByRole("button", { name: "Join workspace" });
+  await userEvent.click(screen.getByRole("button", { name: "Join workspace" }));
   await waitFor(() => expect(replace).toHaveBeenCalledWith("/workspaces/team-123"));
   expect(joinTeam).toHaveBeenCalledWith({ token: "test-token", code: "TEAM23", bindToToken: true });
 });
