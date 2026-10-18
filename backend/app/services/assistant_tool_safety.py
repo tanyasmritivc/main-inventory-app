@@ -111,7 +111,7 @@ def validate_model_answer(message, trace, text):
                     for entry in writes)
     if confirmed:
         return
-    claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)
+    claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|attached|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)
     if claims:
         raise RuntimeError('The model claimed an action without a confirmed receipt')
 

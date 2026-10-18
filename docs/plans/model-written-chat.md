@@ -35,17 +35,33 @@ receipt is rejected, never rewritten into a scripted assistant answer. Inventory
 and Space deletion, quantities and other unconfirmed operations remain in the
 existing reviewed editors. No schema, GPU/FIND configuration or client UI change.
 
-Validation: 989 backend tests and 10 subtests pass. All 127 previous question
+Validation: 990 backend tests and 10 subtests pass. All 127 previous question
 fixtures are tested in both sync and streaming paths for actual model invocation
 using hermetic model doubles; these are routing tests, not model-quality scores.
 Structured retrieval, unknown/partial counts, cross-inventory isolation, current
 aliases, stale edits, failed/forged tools, action claims, photo cleanup, history
-persistence and empty/error HTTP/SSE contracts are covered. Separately, six
+persistence and empty/error HTTP/SSE contracts are covered. Separately, seven
 requests use the actual configured model with synthetic facts, no customer writes:
 Roadrunner requirements/stock, broad robotics inventory, recorded location,
-deletion refusal, preferences and uncertain photo. The saved fixture needs four
+deletion refusal, preferences, uncertain photo and an empty-inventory Roadrunner
+clarification. The saved fixture needs four
 wheels and has two; the model retrieves that project and explains the shortage.
-Private evidence is in /home/ubuntu/findez-model-chat-release-20261018.
+One further actual-model case covers the later screenshot's request to attach a
+photo to existing Garage entries. The model receives current edit permissions
+and truthful attachment capabilities, addresses that action without a photo/
+stock report, and does not infer an empty Space from photo-name matches. Bulk
+photo attachment from Chat is not implemented; the model explains the existing
+per-item Add photo/Add another gallery flow rather than directing existing-record
+attachments to Capture. This is eight evaluated model cases in total, not a
+guarantee of all model behavior. Private evidence is in
+/home/ubuntu/findez-model-chat-release-20261018.
+
+The main 0d2f38f backend rollout is live after all five CI gates passed. Health,
+database, invalid Chat session and anonymous private-photo denial pass. All 86
+unrelated Python files are preserved. The first restart attempt lacked sudo,
+restored every reviewed source file and left the existing service healthy; the
+correct privileged restart then succeeded. The photo-intent follow-up is checked
+and published separately from this baseline.
 
 Publish only the reviewed backend files, remove the retired script after checking
 its old hash and preserve unrelated dirty VM source. No migration or authentication

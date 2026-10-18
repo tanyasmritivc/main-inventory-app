@@ -295,6 +295,22 @@ def test_photo_evidence_keeps_matching_counts_and_never_writes_prose():
     assert evidence['inventory_changed'] is False
 
 
+def test_existing_entry_photo_request_supplies_truthful_actions_and_keeps_model_answer():
+    from app.services.inventory_scope import InventoryScope, current_inventory
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='I cannot attach this photo to all Garage entries from Chat. Open an existing item and use Add photo.'))])
+    token = current_inventory.set(InventoryScope('inventory', 'actor', 'owner', None, 'viewer'))
+    try:
+        with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={}):
+            result=asyncio.run(photos.answer_photo_question(user_id='user-1',message='add this to all the entries in garage',image_bytes=image()))
+    finally:
+        current_inventory.reset(token)
+    payload=json.loads(model.call_args.kwargs['messages'][1]['content'].split('\nEvidence: ',1)[1])
+    assert payload['available_actions']['attach_photo_from_chat'] is False
+    assert payload['available_actions']['bulk_attach_photo_from_chat'] is False
+    assert payload['available_actions']['can_edit_selected_inventory'] is False
+    assert result['assistant_message']==reply.choices[0].message.content
+
+
 @pytest.mark.parametrize('quantity',[None,-1,0.5,True,float('nan')])
 def test_photo_evidence_does_not_convert_unknown_quantity_to_zero(quantity):
     evidence=photos.photo_evidence(identified=[item()],inventory=[item(quantity=quantity)],photo_url=URL)
