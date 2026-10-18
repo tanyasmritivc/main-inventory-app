@@ -6,6 +6,7 @@ ALTER TABLE public.item_events ADD COLUMN IF NOT EXISTS item_id uuid, ADD COLUMN
 \ir ../../supabase/migrations/055_private_item_images.sql
 SELECT pg_temp.check((SELECT NOT public FROM storage.buckets WHERE id='item-images'),'item image bucket is private');
 SELECT pg_temp.check(public.findez_item_image_path('https://storage.test/storage/v1/object/sign/item-images/d4000000-0000-0000-0000-000000000003/Photo%20one.jpg?token=old')='d4000000-0000-0000-0000-000000000003/Photo one.jpg','legacy signed/public locators resolve without reuploading');
+SELECT pg_temp.check(public.findez_item_image_path('https://storage.example.invalid//storage/v1/object/public/item-images/d4000000-0000-0000-0000-000000000001/legacy.jpg')='d4000000-0000-0000-0000-000000000001/legacy.jpg','legacy double-slash storage URL is recognized');
 SELECT pg_temp.check(public.findez_item_image_path('https://storage.test/storage/v1/object/public/item-images/d4000000-0000-0000-0000-000000000003/%2e%2e/photo.jpg') IS NULL,'image path traversal rejected');
 UPDATE public.items SET image_url='https://storage.test/storage/v1/object/public/item-images/d4000000-0000-0000-0000-000000000003/kept.jpg' WHERE item_id='d4200000-0000-0000-0000-000000000001';
 UPDATE public.app_inventory_members SET role='viewer' WHERE inventory_id=(SELECT id FROM permission_demo WHERE key='inventory') AND user_id='d4000000-0000-0000-0000-000000000003';

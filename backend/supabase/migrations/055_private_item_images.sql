@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION public.findez_item_image_path(p_url text) RETURNS tex
 LANGUAGE plpgsql IMMUTABLE SET search_path=public AS $$
 DECLARE tail text; output bytea:=''::bytea; pos integer:=1; ch text; decoded text;
 BEGIN
- IF p_url!~'^(https?://[^/]+)?/storage/v1/object/' THEN RETURN NULL; END IF;
+ IF p_url!~'^(https?://[^/]+)?/+storage/v1/object/' THEN RETURN NULL; END IF;
  tail:=substring(split_part(p_url,'?',1) FROM '/storage/v1/object/(?:public/|sign/|authenticated/)?item-images/(.+)$');
  IF tail IS NULL THEN RETURN NULL; END IF;
  WHILE pos<=length(tail) LOOP
@@ -139,6 +139,10 @@ DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['items','item_events','capt
 END LOOP; END $$;
 CREATE INDEX IF NOT EXISTS permission_item_image_path ON public.items(public.findez_item_image_path(image_url));
 CREATE INDEX IF NOT EXISTS permission_event_image_path ON public.item_events(public.findez_item_image_path(image_url));
+-- Rebuilding expression indexes is required when this immutable parser changes;
+-- existing legacy URLs can contain //storage after the origin.
+REINDEX INDEX public.permission_item_image_path;
+REINDEX INDEX public.permission_event_image_path;
 -- Preview metadata is not saved inventory content. Preserve the existing
 -- guarded deletion/cleanup contracts for empty and populated inventories.
 CREATE OR REPLACE FUNCTION pg_temp.private_photo_patch(target regprocedure,old_sql text,new_sql text) RETURNS void
