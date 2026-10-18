@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 
 import { LandingLab } from "@/components/site/landing-lab";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const geist = Geist({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-geist", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-mono", display: "swap" });
+const geist = localFont({
+  src: [{ path: "./fonts/geist-400.ttf", weight: "400" }, { path: "./fonts/geist-500.ttf", weight: "500" }],
+  variable: "--fzl-geist", display: "swap",
+});
+const mono = localFont({
+  src: [{ path: "./fonts/geist-mono-400.ttf", weight: "400" }, { path: "./fonts/geist-mono-500.ttf", weight: "500" }],
+  variable: "--fzl-mono", display: "swap",
+});
 
 export const metadata: Metadata = {
   title: { absolute: "FindEZ | Know what you have. Find what you need." },

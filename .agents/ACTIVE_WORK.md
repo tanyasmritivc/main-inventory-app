@@ -1,3 +1,7 @@
+# October 18 release audit
+
+Feature freeze: isolated release audit lane. See docs/plans/release-readiness-20261018.md. API keys, documentation, legal updates and release regressions are published; user-approved production migrations 053/058 and their two backend files are now live; health and privileges verified. Preserve other unfinished feature work.
+
 # October 18 web onboarding
 
 Lane `web-onboarding` from published authenticated-web head `c242920`. Supplied

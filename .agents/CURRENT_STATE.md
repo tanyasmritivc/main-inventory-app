@@ -1,3 +1,7 @@
+## Release audit published — October 18
+
+User approved migrations 053/058; both and the two reviewed backend files are live. API writes/private-photo retention and public catalog restrictions were repaired. Web API-key account isolation, expired-session recovery, API/Actions/MCP docs, legal pages and local fonts are live. Backend 1006 tests, web 379 tests plus five font regression tests, production build, TypeScript, mobile 631 tests/analysis and 17 focused gates pass. Live health/connector checks pass. Build90 Apple delivery is in progress. See docs/plans/release-readiness-20261018.md for scope and remaining physical-device gates.
+
 # October 18 web onboarding live
 
 The supplied web onboarding now follows ordinary signup and creates the selected

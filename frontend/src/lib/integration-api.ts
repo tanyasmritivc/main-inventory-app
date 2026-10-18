@@ -12,8 +12,14 @@ export type CreateIntegrationKey = {
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  workspace_access_denied: "Only the team owner can manage integrations for this workspace.",
-  organization_required: "Create a team first, then return here to create its API key.",
+  workspace_access_denied: "Only the workspace owner can manage integrations. Inventory content permissions must also allow access.",
+  organization_required: "Create a workspace first, then return here to create its API key.",
+  key_creation_unavailable: "The key could not be created. Try again after refreshing the page.",
+  key_list_unavailable: "API keys could not be loaded. Try again.",
+  workspace_list_unavailable: "Your workspaces could not be loaded. Try again.",
+  key_revocation_unavailable: "The key could not be revoked. It may still be active. Try again.",
+  database_unavailable: "Inventory access is temporarily unavailable. Your key has not been changed.",
+  authentication_unavailable: "API authentication is temporarily unavailable. Try again.",
   invalid_expiration: "Choose an expiration date in the future.",
   invalid_api_key: "This API key is invalid. Check that you copied the entire key.",
   revoked_api_key: "This API key has been revoked.",
