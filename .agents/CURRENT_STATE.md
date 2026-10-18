@@ -9,8 +9,11 @@ rejected credentials and returns to sign-in, normalizes token expiry and shares
 concurrent token rotations. Auth outages preserve valid sessions. No server,
 customer app, schema or Vinod access change. Sixteen tests, clean analysis and
 two native simulator journeys pass, including the exact saved-token error and
-fresh login. Build 4 release packaging is in progress; real iPhone acceptance and
-TestFlight availability are not yet claimed. Build 3 uploaded but was not assigned
+fresh login. Build 4 installed and launched on Tanya's iPhone, and Apple acknowledged its
+validated internal-only upload. Source e622b42. Real fresh sign-in acceptance is
+still pending the founder's reply; no device success is inferred from simulator
+fixtures. Apple processing/group availability is unverified after upload
+acknowledgement, per the standing release policy. Build 3 uploaded but was not assigned
 to the private testing group. See dashboard/README.md and verification receipts.
 
 # October 18 private founder dashboard and light design

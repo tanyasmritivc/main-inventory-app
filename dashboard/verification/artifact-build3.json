@@ -1,0 +1,13 @@
+{
+  "bundle_id": "com.findez.dashboard",
+  "version": "1.0.0",
+  "build": "3",
+  "sha256": "9721c5d67f9b46a0c64c5abe1a372fde2475e71d20dea4a955728c331df9b674",
+  "internal_only": true,
+  "compiled_configuration_checked": true,
+  "uploaded": true,
+  "source_commit": "b0da89c",
+  "private_group_assignment": "Not assigned",
+  "superseded_by": "4",
+  "reason": "Physical check exposed expired saved token; build 4 adds session recovery"
+}

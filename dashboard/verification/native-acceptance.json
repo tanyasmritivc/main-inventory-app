@@ -10,5 +10,12 @@
   "build2_release_install": true,
   "build2_release_process_launch": true,
   "build2_first_frame_founder_acceptance": "Pending",
-  "graph_icon_source": "design/findez-icon-graph-line-light.svg"
+  "graph_icon_source": "design/findez-icon-graph-line-light.svg",
+  "latest_build": "1.0.0 (4)",
+  "build3_release_install": true,
+  "build3_release_process_launch": true,
+  "build3_founder_result": "First-load crash fixed; real saved session reported invalid refresh token",
+  "build4_release_install": true,
+  "build4_release_process_launch": true,
+  "build4_real_sign_in_result": "Founder confirmation pending"
 }

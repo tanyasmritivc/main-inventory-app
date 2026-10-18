@@ -259,7 +259,7 @@ entries below describe the source/beta state before this explicit approval.
 
 ## Private founder dashboard
 
-Active blank-screen repair after build 2: reproduce first authenticated snapshot/loading and device unlock paths, then deliver build 4. Reproduced the missing snapshot crash; physical build 3 exposed a rejected saved refresh token. Build 4 returns rejected credentials to sign-in; 16 tests and both native journeys pass.
+Active blank-screen repair after build 2: reproduce first authenticated snapshot/loading and device unlock paths, then deliver build 4. Reproduced the missing snapshot crash; physical build 3 exposed a rejected saved refresh token. Build 4 returns rejected credentials to sign-in; 16 tests and both native journeys pass. Installed/launched on Tanya's iPhone and Apple acknowledged the internal-only TestFlight upload (source e622b42). Fresh real-account sign-in confirmation remains pending. Processing/group availability is unverified; no polling.
 
 Delivered on `feat/private-dashboard` in `/Users/tanyasmritivictorcharles/dev/findez-dashboard`. Separate `dashboard/` iOS app and isolated monitoring service. Founder-only access for the explicitly authorized existing account; customer apps and their backend code remain unchanged. Includes real connected data, honest unavailable states, incident tracking and TestFlight delivery. Light redesign and graph icon are installed/launched on Tanya's iPhone and available as 1.0.0 (2) in the private TestFlight group (VALID, IN_BETA_TESTING). Vinod testing/access/notification setup was deferred by Tanya; no invitation or access change for him. No Git push or App Store submission.
 

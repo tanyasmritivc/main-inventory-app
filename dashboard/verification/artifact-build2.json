@@ -1,0 +1,14 @@
+{
+  "bundle_id": "com.findez.dashboard",
+  "version": "1.0.0",
+  "build": "2",
+  "sha256": "ea2256fcb6d2c65bef34933f77a86b03e9fac905eb074bf0c54dbd3f2d55e66f",
+  "internal_only": true,
+  "compiled_configuration_checked": true,
+  "uploaded": true,
+  "source_commit": "ad59e54",
+  "processing": "VALID",
+  "internal_testflight": "IN_BETA_TESTING",
+  "group": "Founder Private",
+  "vinod_setup": "Deferred by founder"
+}

@@ -1,0 +1,17 @@
+{
+  "bundle": "com.findez.dashboard",
+  "version": "1.0.0",
+  "build": "3",
+  "source_commit": "b0da89c",
+  "appearance": "Light",
+  "strict_archive_signature": "passed",
+  "device_platform_executables": [
+    "Runner",
+    "Frameworks/integration_test.framework/integration_test",
+    "Frameworks/Flutter.framework/Flutter",
+    "Frameworks/App.framework/App"
+  ],
+  "test_fixtures_absent": true,
+  "first_load_message_compiled": true,
+  "ipa_sha256": "9721c5d67f9b46a0c64c5abe1a372fde2475e71d20dea4a955728c331df9b674"
+}

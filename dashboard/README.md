@@ -166,3 +166,12 @@ Sixteen tests and both native journeys pass, including the exact saved-token
 error followed by a fresh password sign-in. Build 3 was uploaded but not assigned
 to testers; build 4 supersedes it. Actual device acceptance and Apple upload
 status are separate release receipts.
+
+
+Build 4 delivery: source `e622b42`, strict archive signatures and four native iOS
+executables verified. Production API URL, first-load fix and session-expiry
+message are present in the release binary; fixture tokens are absent. The signed
+release installed/launched on Tanya's iPhone. Apple validated and acknowledged the
+internal-only upload. Processing/group availability is unverified after that
+acknowledgement. Real fresh sign-in acceptance is awaiting the founder's reply;
+this is not claimed from simulator fixtures. No Git push or public submission.

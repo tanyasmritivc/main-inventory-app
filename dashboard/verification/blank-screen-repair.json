@@ -1,0 +1,17 @@
+{
+  "original_build": "2",
+  "missing_first_snapshot": "reproduced null-check exception before fix",
+  "first_load_fix_build": "3",
+  "physical_followup": "Auth HTTP 400 invalid refresh token",
+  "complete_fix_build": "4",
+  "source_commit": "e622b42",
+  "flutter_tests": 16,
+  "native_first_login_delayed_snapshot": "passed with fixtures",
+  "native_expired_saved_session_then_login": "passed with fixtures",
+  "native_canceled_unlock_recovery": "passed with fixtures",
+  "temporary_auth_outage_preserves_session": true,
+  "public_health_status": 200,
+  "public_anonymous_snapshot_status": 401,
+  "customer_backend_and_app_unchanged": true,
+  "real_phone_login": "Awaiting founder confirmation"
+}
