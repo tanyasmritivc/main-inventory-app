@@ -160,6 +160,11 @@ def join_team_route(
         if "NOT_FOUND" in str(exc):
             raise HTTPException(404, "Invalid join code")
         raise HTTPException(400, str(exc))
+    except APIError as exc:
+        if exc.code == "23514":
+            raise HTTPException(422, "Workspace access changed. Accept the organization invitation first, then reopen the current workspace link.")
+        logger.exception("Failed to save workspace invitation user=%s", user.user_id)
+        raise HTTPException(503, "Could not save workspace access. Please try again.")
     except Exception:
         logger.exception("Failed to join team user=%s", user.user_id)
         raise HTTPException(500, "Could not join team. Please try again.")
