@@ -62,8 +62,12 @@ def completion_events(response):
 
 async def async_completion_events(response):
     """Read blocking HTTP chunks off the event loop, one at a time."""
+    async for event in async_iterate(completion_events(response)):
+        yield event
+
+
+async def async_iterate(iterator):
     import asyncio
-    iterator = completion_events(response)
     sentinel = object()
     try:
         while True:

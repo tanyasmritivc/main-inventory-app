@@ -1,3 +1,16 @@
+## Chat item actions candidate (2026-10-18)
+
+Text/photo model proposals, explicit review cards, service-only atomic add/delete
+and retry receipts are implemented. 1,027 Python +10 subtests, composed SQL replay,
+real confirmation/revocation races, synthetic real-model decisions and isolated
+87-table restore preservation pass. No customer QA writes. Migration057 and
+runtime activation still require the user's separate production-DB approval.
+Details: docs/plans/chat-item-actions.md. Streaming/focus remain delivered.
+
+## Active: confirmed Chat item add/delete (2026-10-18)
+
+User requested adds/deletes through Chat. Separate feat/*-chat-item-actions branches; design in API docs/plans/chat-item-actions.md. No customer test writes. Migration057 will need explicit activation approval after review/tests. Streaming/focus delivery is complete: API17a60ac and webec14cee are live; Apple acknowledged builds88 and89. No processing/tester availability polling.
+
 ## Active: chunked Chat delivery and fades (2026-10-18)
 
 API lane on fix/api-chat-streaming-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.

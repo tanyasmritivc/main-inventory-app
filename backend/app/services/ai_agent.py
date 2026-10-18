@@ -15,6 +15,7 @@ from typing import Any, Iterator
 from app.services.inventory_scope import inventory_cache_key
 from app.services.agent_gateway_client import AgentGatewayClient
 from app.services.completion_stream import completion_events
+from app.services.chat_item_actions import propose_additions, propose_deletion, ChatProposalError, action_context, recent_photo, photo_facts, use_photo
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads
 from app.services.project_kits_service import get_project_readiness
@@ -25,11 +26,19 @@ from app.services.assistant_tool_safety import rejection, fingerprint, validate_
 from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
 from app.services.item_events_repo import get_events_for_item, log_event
-from app.services.items_repo import add_item, delete_item, search_items_basic, update_item, update_item_from_chat
+from app.services.items_repo import search_items_basic, update_item, update_item_from_chat
 from app.services.spaces_repo import SpaceLimitExceeded, space_exists
 
 
 logger = logging.getLogger(__name__)
+
+
+def _current_items(*, user_id: str, q: str) -> list[dict]:
+    # A different API worker or teammate may have deleted an item since this
+    # process cached it. Chat must never use that cache as current evidence.
+    from app.services.items_repo import invalidate_inventory_cache
+    invalidate_inventory_cache(user_id)
+    return search_items_basic(user_id=user_id, q=q)
 
 
 def _normalized_knowledge_query(query: str) -> str:
@@ -62,7 +71,7 @@ def _inventory_knowledge(*, user_id: str, query: str = '', include_projects: boo
 
     normalized_query = _normalized_knowledge_query(query)
     is_kit_query = bool(re.search(r'\b(project\s+)?kits?\b', (query or '').lower()))
-    personal_items = [] if is_kit_query else search_items_basic(user_id=user_id, q=normalized_query)
+    personal_items = [] if is_kit_query else _current_items(user_id=user_id, q=normalized_query)
     personal_spaces = list_spaces(user_id=user_id)
     owned_shares = get_my_shares(user_id=user_id) or []
     joined_memberships = get_joined_shares(user_id=user_id) or []
@@ -335,6 +344,7 @@ def _completion_kwargs(
     messages: list[dict[str, Any]],
     stream: bool,
     allow_tools: bool,
+    allow_item_actions: bool = False,
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         'model': provider.model,
@@ -342,13 +352,13 @@ def _completion_kwargs(
         'temperature': 0.3,
         'stream': stream,
     }
-    kwargs['max_tokens'] = 500
+    kwargs['max_tokens'] = 1500 if allow_tools and allow_item_actions else 500
     kwargs['extra_headers'] = {
         'X-Agent-Conversation-ID': provider.conversation_id,
         'X-Agent-Timezone': provider.timezone,
     }
     if allow_tools:
-        kwargs['tools'] = [tool for tool in _TOOLS if tool['function']['name'] in READ_TOOLS or tool['function']['name'] == 'inventory_update_item']
+        kwargs['tools'] = [tool for tool in _TOOLS if tool['function']['name'] in READ_TOOLS or tool['function']['name'] == 'inventory_update_item' or (allow_item_actions and tool['function']['name'] in ('inventory_propose_add', 'inventory_propose_delete'))]
         kwargs['tool_choice'] = 'auto'
         kwargs['parallel_tool_calls'] = False
     return kwargs
@@ -505,9 +515,11 @@ _SYSTEM_PROMPT = (
     "Server validation controls every tool action. Only a successful current tool receipt proves "
     "an edit occurred. Never claim a change, deletion, reservation, reminder or purchase happened "
     "without such a receipt. A rejected or failed operation means it was not confirmed. "
-    "Only literal single-field item edits are supported here: freshly retrieve one exact saved "
-    "item and use the field/value explicitly supplied by the user. Capture, quantities, deletion, "
-    "Space creation and other changes require review in Capture or the relevant editor. "
+    "For a direct single-field edit, freshly retrieve one exact saved item and use the field/value "
+    "explicitly supplied by the user. For item additions or deletions, use the proposal tools to show "
+    "an exact review card; the separate confirmation control performs the write. Preparing a card "
+    "does not add or delete anything. Quantity edits, Space creation and other changes still require "
+    "the relevant editor. "
     "For informational questions do not mutate anything. Explain limitations naturally.\n"
     "Keep replies clear and relevant to the physical-world task. Greet naturally; answer useful "
     "questions about the product and the user's saved context. For unrelated requests, briefly "
@@ -588,30 +600,6 @@ _TOOLS: list[dict[str, Any]] = [
     {
         'type': 'function',
         'function': {
-            'name': 'inventory_add_item',
-            'description': (
-                "Add an inventory item to an existing personal space. Never infer or invent a "
-                "location. If the user did not explicitly provide one, ask which space first."
-            ),
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'name': {'type': 'string', 'description': 'Item name.'},
-                    'category': {'type': 'string', 'description': 'Item category.'},
-                    'quantity': {'type': 'integer', 'description': 'Quantity to add.'},
-                    'location': {'type': 'string', 'description': 'Where the item is stored.'},
-                    'notes': {'type': 'string', 'description': 'Optional notes/attributes.'},
-                    'barcode': {'type': 'string', 'description': 'Optional barcode.'},
-                    'image_url': {'type': 'string', 'description': 'Optional image URL.'},
-                    'purchase_source': {'type': 'string', 'description': 'Optional purchase source.'},
-                },
-                'required': ['name', 'category', 'quantity'],
-            },
-        },
-    },
-    {
-        'type': 'function',
-        'function': {
             'name': 'inventory_update_item',
             'description': "Edit one literal field of one freshly retrieved item. The user must name that exact item and say its field and new value, such as Change Pliers notes to Inspected. Never infer a target or value.",
             'parameters': {
@@ -625,52 +613,6 @@ _TOOLS: list[dict[str, Any]] = [
                     },
                 },
                 'required': ['item_id', 'updates'],
-            },
-        },
-    },
-    {
-        'type': 'function',
-        'function': {
-            'name': 'inventory_delete_item',
-            'description': "Delete an inventory item by item_id.",
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'item_id': {'type': 'string', 'description': 'The item_id to delete.'},
-                },
-                'required': ['item_id'],
-            },
-        },
-    },
-    {
-        'type': 'function',
-        'function': {
-            'name': 'inventory_delete_by_filter',
-            'description': (
-                "Delete multiple inventory items at once "
-                "by location, category, or both. "
-                "Use when the user asks to delete all "
-                "items in a space or category."
-            ),
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'location': {
-                        'type': 'string',
-                        'description': (
-                            'Delete all items in this '
-                            'location e.g. Unsorted, Kitchen'
-                        ),
-                    },
-                    'category': {
-                        'type': 'string',
-                        'description': (
-                            'Delete all items in this '
-                            'category e.g. Electronics, Food'
-                        ),
-                    },
-                },
-                'required': [],
             },
         },
     },
@@ -770,10 +712,25 @@ _TOOLS: list[dict[str, Any]] = [
 ]
 
 
+_TOOLS.extend([
+    {'type': 'function', 'function': {
+        'name': 'inventory_propose_add',
+        'description': 'Prepare new item records for a review card. Nothing is saved until the user presses Confirm. Ask for an existing destination Space if unspecified. Do not use this to attach a photo to existing items or to restock an existing quantity. Use observation_index only for items from the current photo evidence.',
+        'parameters': {'type': 'object', 'properties': {'items': {'type': 'array', 'maxItems': 20, 'items': {
+            'type': 'object', 'properties': {'name': {'type': 'string'}, 'category': {'type': 'string'},
+                'quantity': {'type': 'integer'}, 'location': {'type': 'string'}, 'notes': {'type': 'string'},
+                'observation_index': {'type': 'integer'}}, 'required': ['name', 'quantity', 'location']}}}, 'required': ['items']}}},
+    {'type': 'function', 'function': {
+        'name': 'inventory_propose_delete',
+        'description': 'Freeze specific freshly retrieved item IDs for a deletion review card. No items are deleted until the user reviews and confirms. Never infer ambiguous item IDs; search and clarify first.',
+        'parameters': {'type': 'object', 'properties': {'item_ids': {'type': 'array', 'maxItems': 100, 'items': {'type': 'string'}}}, 'required': ['item_ids']}}},
+])
+
+
 def _load_context(*, user_id: str, first_name: str | None) -> dict:
     inventory_status = 'available'
     try:
-        items = search_items_basic(user_id=user_id, q='')
+        items = _current_items(user_id=user_id, q='')
     except Exception:
         logger.exception('Inventory load failed')
         inventory_status = 'unavailable'
@@ -885,6 +842,10 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
 
 def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
                        expected_item: dict | None = None) -> Any:
+    if tool_name == 'inventory_propose_add':
+        return propose_additions(user_id=user_id, items=args['items'])
+    if tool_name == 'inventory_propose_delete':
+        return propose_deletion(user_id=user_id, item_ids=args['item_ids'])
     if tool_name == 'project_kit_readiness':
         return get_project_readiness(kit_id=args['kit_id'], user_id=user_id)
 
@@ -897,45 +858,7 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
 
     if tool_name == 'inventory_search':
         query = (args.get('query') or '').strip()
-        return search_items_basic(user_id=user_id, q=query)
-
-    if tool_name == 'inventory_add_item':
-        item = {
-            'name': (args.get('name') or '').strip(),
-            'category': (args.get('category') or '').strip(),
-            'quantity': int(args.get('quantity') or 0),
-            'location': (args.get('location') or '').strip(),
-            'notes': (args.get('notes') or '').strip() or None,
-            'barcode': (args.get('barcode') or '').strip() or None,
-            'image_url': (args.get('image_url') or '').strip() or None,
-            'purchase_source': (args.get('purchase_source') or '').strip() or None,
-        }
-        item['name'] = (item.get('name') or '').strip() or 'Unknown item'
-        item['category'] = (item.get('category') or '').strip() or 'Other'
-        item['location'] = (item.get('location') or '').strip()
-        if not item['location']:
-            return {
-                'error': 'location_required',
-                'message': 'Ask the user which existing space should receive this item.',
-            }
-        if not space_exists(user_id=user_id, name=item['location']):
-            return {
-                'error': 'space_not_found',
-                'message': (
-                    f"There is no space named {item['location']}. Ask the user to choose an "
-                    "existing space or explicitly create a new one."
-                ),
-            }
-        if item['quantity'] < 0:
-            item['quantity'] = 0
-        try:
-            created = add_item(user_id=user_id, item=item)
-        except SpaceLimitExceeded:
-            return {
-                'error': 'space_limit_reached',
-                'message': 'You\'ve reached the free plan limit of 3 spaces. Upgrade to Pro for unlimited spaces.',
-            }
-        return created
+        return _current_items(user_id=user_id, q=query)
 
     if tool_name == 'inventory_update_item':
         item_id = (args.get('item_id') or '').strip()
@@ -953,15 +876,6 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
             return {'error': 'edit_not_confirmed', 'message': 'The item changed or is no longer accessible. No edit was confirmed. Refresh before retrying.'}
         return changed
 
-    if tool_name == 'inventory_delete_item':
-        item_id = (args.get('item_id') or '').strip()
-        if not item_id:
-            raise ValueError('item_id is required')
-        if not _is_valid_uuid(item_id):
-            logger.warning(f"Invalid UUID format for item_id: {item_id}")
-            return {'deleted': False, 'error': 'Invalid item_id format'}
-        return {'deleted': bool(delete_item(user_id=user_id, item_id=item_id))}
-
     if tool_name == 'documents_list':
         limit = args.get('limit', 50)
         try:
@@ -971,49 +885,6 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
         if limit_i <= 0:
             limit_i = 50
         return list_documents(user_id=user_id, limit=min(limit_i, 50))
-
-    if tool_name == 'inventory_delete_by_filter':
-        location = (args.get('location') or '').strip()
-        category = (args.get('category') or '').strip()
-        if not location and not category:
-            return {'deleted': 0, 'error': 'No filter provided'}
-        q = location or category
-        items = search_items_basic(user_id=user_id, q=q)
-        if not isinstance(items, list):
-            return {'deleted': 0}
-        matched = []
-        for item in items:
-            loc_match = (
-                not location or
-                (item.get('location') or '').strip().lower()
-                == location.lower()
-            )
-            cat_match = (
-                not category or
-                (item.get('category') or '').strip().lower()
-                == category.lower()
-            )
-            if loc_match and cat_match:
-                matched.append(item)
-        deleted_count = 0
-        for item in matched:
-            item_id = (item.get('item_id') or '').strip()
-            if _is_valid_uuid(item_id):
-                try:
-                    success = delete_item(
-                        user_id=user_id,
-                        item_id=item_id
-                    )
-                    if success:
-                        deleted_count += 1
-                except Exception:
-                    logger.exception(
-                        'Bulk delete failed for %s', item_id
-                    )
-        return {
-            'deleted': deleted_count,
-            'total_found': len(matched),
-        }
 
     if tool_name == 'inventory_log_event':
         item_id = (args.get('item_id') or '').strip()
@@ -1040,7 +911,7 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
         result: dict = {'event': event}
         if qty_int is not None:
             try:
-                items = search_items_basic(user_id=user_id, q='')
+                items = _current_items(user_id=user_id, q='')
                 current_item = next(
                     (i for i in (items or []) if i.get('item_id') == item_id), None
                 )
@@ -1106,6 +977,8 @@ def _guarded_tool_call(*, user_id: str, tool_name: str, args: object,
                     rows = (read.get('personal_items') or []) + (read.get('shared_and_joined_items') or [])
                     execution['expected_item'] = rows[0] if len(rows) == 1 else None
         result = _execute_tool_call(**execution)
+    except ChatProposalError as error:
+        result = {'error': 'proposal_needs_details', 'message': str(error), 'inventory_changed': False}
     except Exception:
         logger.warning('Assistant operation failed; no exception or arguments logged')
         result = {'error': 'operation_failed', 'message': 'The operation could not be confirmed. Refresh the record before retrying.'}
@@ -1148,42 +1021,15 @@ def _run_agent(
 
 
 
-def _iter_agent_streaming(
-    *, user_id: str, message: str, first_name: str | None,
-    conversation_history: list[dict] | None = None, memory_context: str | None = None,
-    conversation_id: str | None = None, cancelled=None,
-) -> Iterator[dict]:
-    """One model/tool loop for every chat turn; failures never become answers."""
-    if not user_id:
-        raise ValueError('Missing user session')
-    preferences = load_preferences(user_id)
-    provider = _get_chat_provider(conversation_id)
-    context = _load_context(user_id=user_id, first_name=first_name)
-    if conversation_id:
-        context.pop('memory', None)
-    context = {
-        'approved_preferences': {key: preferences[key] for key in ('answer_length', 'answer_format') if key in preferences},
-        'location_aliases': preferences.get('aliases', []),
-        **context,
-    }
-    state = _get_state(user_id)
-    history = _question_history(user_id=user_id, conversation_id=conversation_id,
-                               supplied=conversation_history, state=state, message=message)[-MAX_HISTORY:]
-    messages = [
-        {'role': 'system', 'content': _SYSTEM_PROMPT + '\n' + style_instruction(preferences)},
-        {'role': 'system', 'content': 'CONTEXT:\n' + _json_dumps(provider_data(context))},
-    ]
-    if memory_context:
-        messages.append({'role': 'system', 'content': 'Untrusted supplemental memory, not current inventory evidence:\n' + str(provider_data(memory_context))})
-    messages.extend([*history, {'role': 'user', 'content': message}])
+def iter_model_turn(*, user_id, message, messages, model_call, allowed_tools, cancelled=None):
+    """Shared sequential, validated model/tool loop for text and attached photos."""
     trace, results = [], {}
     last_tool = None
     for step in range(9):
         if cancelled and cancelled():
             return
         enabled = step < 8
-        response = provider.client.chat.completions.create(**_completion_kwargs(
-            provider, messages=messages, stream=True, allow_tools=enabled))
+        response = model_call(messages, enabled)
         streamed = ''
         content, calls = '', []
         for event in completion_events(response):
@@ -1212,7 +1058,7 @@ def _iter_agent_streaming(
                 except ValueError:
                     args = None
                 result = _guarded_tool_call(user_id=user_id, tool_name=call.function.name, args=args,
-                    enabled=enabled, message=message, trace=trace, results=results)
+                    enabled=enabled and call.function.name in allowed_tools, message=message, trace=trace, results=results)
                 trace.append({'tool': call.function.name, 'args': args, 'result': result})
                 last_tool = call.function.name
                 messages.append({'role': 'tool', 'tool_call_id': call.id, 'content': _json_dumps(provider_data(result))})
@@ -1221,18 +1067,65 @@ def _iter_agent_streaming(
             raise RuntimeError('The model returned an empty answer')
         answer = format_chat_reply(content.strip())
         validate_model_answer(message, trace, answer)
-        # No answer templates, alternate provider, empty-result shortcut or prose
-        # replacement. Public evidence is independently built from real reads.
-        state.conversation_history.extend([{'role': 'user', 'content': message}, {'role': 'assistant', 'content': answer}])
-        state.conversation_history = state.conversation_history[-MAX_HISTORY:]
-        state.last_user_message, state.updated_at = message, time.time()
-        _update_memory_from_trace(user_id=user_id, tool_trace=trace)
-        _persist_state(user_id)
-        yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': trace},
-               'assistant_message': answer, 'nav_hint': _navigation_hint_from_trace(trace),
-               'answer_context': answer_context_from_reads(context, trace)}
+        yield {'type': 'model_done', 'assistant_message': answer,
+            'tool_trace': trace, 'tool': last_tool}
         return
     raise RuntimeError('The model did not complete an answer')
+
+
+def _iter_agent_streaming(
+    *, user_id: str, message: str, first_name: str | None,
+    conversation_history: list[dict] | None = None, memory_context: str | None = None,
+    conversation_id: str | None = None, cancelled=None, supplemental_context=None, allow_item_actions=False,
+) -> Iterator[dict]:
+    """One model/tool loop for every chat turn; failures never become answers."""
+    if not user_id:
+        raise ValueError('Missing user session')
+    preferences = load_preferences(user_id)
+    provider = _get_chat_provider(conversation_id)
+    context = _load_context(user_id=user_id, first_name=first_name)
+    if conversation_id:
+        context.pop('memory', None)
+    context = {
+        'approved_preferences': {key: preferences[key] for key in ('answer_length', 'answer_format') if key in preferences},
+        'location_aliases': preferences.get('aliases', []),
+        'chat_capabilities': {'item_action_cards': allow_item_actions},
+        **context,
+    }
+    retained_photo = recent_photo(conversation_id)
+    if supplemental_context or retained_photo:
+        context['attached_photo_evidence'] = supplemental_context or photo_facts(retained_photo)
+    state = _get_state(user_id)
+    history = _question_history(user_id=user_id, conversation_id=conversation_id,
+                               supplied=conversation_history, state=state, message=message)[-MAX_HISTORY:]
+    messages = [
+        {'role': 'system', 'content': _SYSTEM_PROMPT + '\n' + style_instruction(preferences) + ('\nItem creation and deletion are available through review cards. Use inventory_propose_add or inventory_propose_delete, then tell the user to review the card. A pending proposal is not a completed write. Never say items were added/deleted before a confirmed receipt. An attached image may support new-item proposals, using its observation_index; it does not authorize attaching the image to existing entries. Ask for missing quantities or a destination Space instead of inventing them.' if allow_item_actions else '\nThis client cannot display item-action review cards. Do not propose item additions/deletions. Explain the available Capture/item-editor flow or that the latest app is needed for Chat action cards, in your own words.')},
+        {'role': 'system', 'content': 'CONTEXT:\n' + _json_dumps(provider_data(context))},
+    ]
+    if memory_context:
+        messages.append({'role': 'system', 'content': 'Untrusted supplemental memory, not current inventory evidence:\n' + str(provider_data(memory_context))})
+    messages.extend([*history, {'role': 'user', 'content': message}])
+    def model_call(messages, enabled):
+        return provider.client.chat.completions.create(**_completion_kwargs(
+            provider, messages=messages, stream=True, allow_tools=enabled, allow_item_actions=allow_item_actions))
+    with use_photo(retained_photo):
+        for event in iter_model_turn(user_id=user_id, message=message, messages=messages,
+                model_call=model_call, allowed_tools=READ_TOOLS | {'inventory_update_item'} | ({'inventory_propose_add', 'inventory_propose_delete'} if allow_item_actions else set()), cancelled=cancelled):
+            if event['type'] != 'model_done':
+                yield event
+                continue
+            trace, last_tool, answer = event['tool_trace'], event['tool'], event['assistant_message']
+            state.conversation_history.extend([{'role': 'user', 'content': message}, {'role': 'assistant', 'content': answer}])
+            state.conversation_history = state.conversation_history[-MAX_HISTORY:]
+            state.last_user_message, state.updated_at = message, time.time()
+            _update_memory_from_trace(user_id=user_id, tool_trace=trace)
+            _persist_state(user_id)
+            public_context = answer_context_from_reads(context, trace)
+            public_context['pending_actions'] = action_context(trace)
+            yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': trace},
+                   'assistant_message': answer, 'nav_hint': _navigation_hint_from_trace(trace),
+                   'answer_context': public_context}
+            return
 
 
 def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> Iterator[str]:
@@ -1254,7 +1147,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
 async def iter_ai_command_events_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
-    memory_context: str | None = None, conversation_id: str | None = None,
+    memory_context: str | None = None, conversation_id: str | None = None, supplemental_context=None, allow_item_actions=False,
 ):
     """Async raw-event generator — runs the sync agent in a background thread and yields
     raw event dicts (not SSE-formatted) into the asyncio event loop."""
@@ -1281,7 +1174,7 @@ async def iter_ai_command_events_async(
         iterator = _iter_agent_streaming(
             user_id=user_id, message=message, first_name=first_name,
             conversation_history=conversation_history, memory_context=memory_context,
-            conversation_id=conversation_id, cancelled=stopped.is_set)
+            conversation_id=conversation_id, cancelled=stopped.is_set, supplemental_context=supplemental_context, allow_item_actions=allow_item_actions)
         try:
             for item in iterator:
                 if not send(item):

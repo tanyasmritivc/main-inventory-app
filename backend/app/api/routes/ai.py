@@ -86,10 +86,27 @@ def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: st
 
 def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
     client = get_supabase_admin()
-    client.table('messages').insert({
+    record = {
         'conversation_id': conversation_id, 'role': 'assistant',
         'content': answer['assistant_message'], 'answer_context': answer.get('answer_context'),
-    }).execute()
+    }
+    if (answer.get('answer_context') or {}).get('pending_actions'):
+        # A review card is actionable only after its exact frozen payload is
+        # durable. A stable identity also reconciles a lost insert response.
+        from uuid import uuid4
+        record['id'] = str(uuid4())
+        def saved():
+            rows = client.table('messages').select('id,content,answer_context').eq('id', record['id']).eq('conversation_id', conversation_id).limit(1).execute().data
+            return isinstance(rows, list) and len(rows) == 1 and all(rows[0].get(key) == record[key] for key in ('id', 'content', 'answer_context'))
+        try:
+            client.table('messages').insert(record).execute()
+        except Exception:
+            if not saved():
+                raise RuntimeError('The Chat review could not be saved') from None
+        if not saved():
+            raise RuntimeError('The Chat review could not be verified')
+    else:
+        client.table('messages').insert(record).execute()
     client.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).execute()
 
 
@@ -100,6 +117,7 @@ async def ai_photo_question_route(
     file: UploadFile = File(...),
     message: str = Form('What is in this photo? Do I already have it?', max_length=2000),
     conversation_id: str | None = Form(None, max_length=100),
+    supports_item_actions: bool = Form(False),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> StreamingResponse:
     raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
@@ -141,13 +159,18 @@ async def ai_photo_question_route(
         chunks = asyncio.Queue(maxsize=32)
         async def on_delta(text):
             await chunks.put(text)
-        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg, on_delta=on_delta))
+        async def on_reset():
+            await chunks.put(None)
+        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg, on_delta=on_delta, on_reset=on_reset, allow_item_actions=supports_item_actions))
         try:
             yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
             while not task.done() or not chunks.empty():
                 try:
                     text = await asyncio.wait_for(chunks.get(), timeout=.1)
-                    yield f"data: {json_module.dumps({'type': 'delta', 'delta': text})}\n\n".encode()
+                    if text is None:
+                        yield b'data: {"type":"reset"}\n\n'
+                    else:
+                        yield f"data: {json_module.dumps({'type': 'delta', 'delta': text})}\n\n".encode()
                 except asyncio.TimeoutError:
                     continue
             answer = await task
@@ -228,6 +251,9 @@ async def ai_command_route(
     accept = (request.headers.get("accept") or "").lower()
     wants_stream = bool(stream) or ("text/event-stream" in accept)
 
+    if payload.supports_item_actions and not wants_stream:
+        raise bad_request('Chat item review requires the streaming Chat connection.')
+
     if wants_stream:
         try:
             # Never silently claim an answer was saved if its history write fails.
@@ -293,6 +319,7 @@ async def ai_command_route(
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
                         conversation_id=conv_id,
+                        allow_item_actions=payload.supports_item_actions,
                     ):
                         if item.get("type") == "delta":
                             content = item.get("delta") or ""
@@ -311,16 +338,8 @@ async def ai_command_route(
                             answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
-                                    sb = get_supabase_admin()
-                                    sb.table("messages").insert({
-                                        "conversation_id": conv_id,
-                                        "role": "assistant",
-                                        "content": full_response,
-                                        "answer_context": answer_context,
-                                    }).execute()
-                                    sb.table("conversations").update({
-                                        "updated_at": datetime.now(timezone.utc).isoformat(),
-                                    }).eq("id", conv_id).execute()
+                                    await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer={
+                                        'assistant_message': full_response, 'answer_context': answer_context})
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
                                     yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
@@ -435,3 +454,34 @@ def ai_upload_route(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+from typing import Literal
+from uuid import UUID
+from pydantic import BaseModel
+
+
+class ChatActionDecision(BaseModel):
+    decision: Literal['confirm', 'cancel']
+
+
+@router.get('/ai_actions/{action_id}')
+async def chat_action_status(action_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_item_actions import change_action
+    return await asyncio.to_thread(change_action, actor=user.actor_id or user.user_id, action_id=str(action_id), decision='read')
+
+
+@router.post('/ai_actions/{action_id}')
+@limiter.limit('20/minute')
+async def chat_action_decision(request: Request, action_id: UUID, payload: ChatActionDecision,
+                               user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_item_actions import change_action, completed_reply
+    action = await asyncio.to_thread(change_action, actor=user.actor_id or user.user_id, action_id=str(action_id), decision=payload.decision)
+    if action['status'] == 'confirmed':
+        try:
+            text, reply_id = await asyncio.to_thread(completed_reply, actor=user.actor_id or user.user_id, action=action)
+            return {'action': action, 'assistant_message': text, 'reply_id': reply_id}
+        except Exception:
+            logger.warning('Confirmed Chat item receipt retained; model/history reply unavailable')
+            return {'action': action, 'answer_error': 'The item change is confirmed, but its AI reply could not load. Retry this same card to load the answer safely.'}
+    return {'action': action}

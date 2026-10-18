@@ -1,3 +1,18 @@
+## Chat item actions candidate (2026-10-18)
+
+Text/photo model proposals, explicit review cards, service-only atomic add/delete
+and retry receipts are implemented. 1,027 Python +10 subtests, composed SQL replay,
+real confirmation/revocation races, synthetic real-model decisions and isolated
+87-table restore preservation pass. No customer QA writes. Migration057 and
+runtime activation still require the user's separate production-DB approval.
+Details: docs/plans/chat-item-actions.md. Streaming/focus remain delivered.
+
+## Streaming and focus delivered (2026-10-18)
+
+API17a60ac/webec14cee are live with 89 unrelated Python and 223 unrelated web runtime files preserved. 1,004 Python +10 subtests; 347 web tests/types/lint; 631 Flutter tests/analysis and rendered-pixel checks pass. All five CI gates pass on PRs110/111/112; all five also pass for focus PR113 (run39161964797). The existing branch landing Google-font build/preview failure is outside this change; the preserved actual live candidate builds/types and route smoke pass. The upstream gateway still batches a single SSE text event; client chunk fades/pacing handle that without scripted text.
+
+Apple ACK88: e65c5314-3ab3-4eb1-92d8-290abf9dce21, sourcef440717, IPA83663dd3560322c6c60ce079f978f8681967ba6184608b8db4f6d72f75e89f54. Apple ACK89: 0bdf5216-4d6a-42d8-8e87-d859b16954a0, source4bfe0ff, IPA2cba9bb716e6b52c8f604f99fac995935fe991c6545c9a18ed6c071379fca26a. Both signed/Apple-validated, 31+31 device executables checked, signed archives preserved in Documents/FindEZ/AppStore. Processing/tester availability unverified and not polled; physical-device acceptance pending; public App Store held. No schema changes for streaming/focus.
+
 ## Chunked Chat delivery and fades prepared (2026-10-18)
 
 1,004 Python tests + 10 subtests pass; model-only/photo/scope/cancellation regression coverage.
