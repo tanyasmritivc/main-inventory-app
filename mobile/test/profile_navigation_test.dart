@@ -19,6 +19,7 @@ import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
 import 'package:mobile/features/profile/profile_page.dart';
 import 'package:mobile/features/shell/main_shell.dart';
+import 'package:mobile/features/scan/scan_page.dart';
 
 int _deleteRequests = 0;
 
@@ -170,6 +171,57 @@ Widget _hub(
 );
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} confirmed Capture returns to Items, partial refresh stays in Capture',
+      (tester) async {
+        final api = _ProfileApi();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.create(brightness),
+            home: MainShell(api: api),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(NavigationDestination).at(1));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        final capture = tester.widget<ScanPage>(find.byType(ScanPage));
+        capture.onSaved();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(
+          tester
+              .widget<NavigationBar>(find.byType(NavigationBar))
+              .selectedIndex,
+          1,
+        );
+        capture.onCaptureCompleted!('Garage');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<NavigationBar>(
+                find.byType(NavigationBar, skipOffstage: false),
+              )
+              .selectedIndex,
+          3,
+        );
+        expect(
+          tester.widget<LocationItemsPage>(find.byType(LocationItemsPage)).api,
+          same(api),
+        );
+        expect(
+          tester
+              .widget<LocationItemsPage>(find.byType(LocationItemsPage))
+              .location,
+          'Garage',
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
   if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
     testWidgets(
       'Home and Account renders keep identical weights with OS Bold Text',

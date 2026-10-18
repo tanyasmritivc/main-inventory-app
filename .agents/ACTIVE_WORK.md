@@ -1297,3 +1297,9 @@ billing, original logo assets, native lifecycle and FIND transport are unchanged
 
 No task-specific handoff is registered in `.agents/HANDOFFS/`. Current release
 preflight evidence and blockers are in `CURRENT_STATE.md` and the release checklist.
+# October 18 capture return — active
+
+Lane fix/mobile-scan-original-return-20261018 from 3414fc0. Confirmed auto-extract
+saves return to Items in the current inventory; partial saves stay in Capture.
+Existing item gallery receives crop first/original second from backend. Preserve
+Dashboard layout and permissions. Verify both themes and deliver signed beta87.

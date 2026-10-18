@@ -35,6 +35,7 @@ class ScanPage extends StatefulWidget {
     super.key,
     required this.api,
     required this.onSaved,
+    this.onCaptureCompleted,
     this.isActive = false,
     this.onSpaceScanned,
     this.onSkipCoachmark,
@@ -43,6 +44,9 @@ class ScanPage extends StatefulWidget {
 
   final ApiClient api;
   final VoidCallback onSaved;
+
+  /// Called only when every draft has a confirmed item or Review receipt.
+  final ValueChanged<String>? onCaptureCompleted;
   final bool isActive;
   final void Function(String spaceName)? onSpaceScanned;
   final VoidCallback? onSkipCoachmark;
@@ -1814,6 +1818,7 @@ class _ScanPageState extends State<ScanPage> {
               : 'Fix the highlighted rows and try again.';
         });
         widget.onSaved();
+        if (failures.isEmpty) widget.onCaptureCompleted?.call(selectedSpace);
         return;
       }
 
@@ -1947,7 +1952,9 @@ class _ScanPageState extends State<ScanPage> {
             _lastSavedCategory = cat;
             _lastSavedLocation = loc;
           });
-          if (noBarcodeItems.isNotEmpty) {
+          if (widget.onCaptureCompleted != null) {
+            widget.onCaptureCompleted!(loc);
+          } else if (noBarcodeItems.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               if (noBarcodeItems.length == 1) {

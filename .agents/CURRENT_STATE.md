@@ -1,3 +1,15 @@
+# October 18 Capture return and original gallery — prepared
+
+Branch fix/mobile-scan-original-return-20261018. Complete Capture saves open the
+saved Space's item list with the same API/inventory; partial refresh stays in
+Capture. Chat-launched scanning returns its Space before opening Items. In-Space
+upload refreshes its current list without a QR offer. The existing swipe gallery
+shows API-ordered crop/original photos. Both-theme navigation and Viewer gallery
+checks are included. Final full mobile checks and signed production beta87 are
+being prepared; migration056/API/web activation await reviewed DB approval.
+Live model-written Chat stays active and beta86 is already acknowledged by Apple.
+Physical camera/library acceptance remains manual; public App Store stays held.
+
 # October 18 model-written Chat - delivered
 
 The user requested removing scripted/fallback Chat answers and then reported a

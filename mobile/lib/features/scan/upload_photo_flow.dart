@@ -15,7 +15,6 @@ import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
 import 'capture_progress.dart';
 import 'review_capture.dart';
-import 'qr_sheet.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 List<int> _compressImageBytes(Uint8List bytes) {
@@ -558,30 +557,8 @@ Future<void> runUploadPhotoFlow({
     await onItemsSaved();
     if (!context.mounted || !isCurrent()) return;
 
-    if (allSucceeded) {
-      final noBarcodeItems = res.inserted
-          .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
-          .toList();
-      if (noBarcodeItems.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted || !isCurrent()) return;
-          if (noBarcodeItems.length == 1) {
-            showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: Colors.transparent,
-              builder: (_) => QrOfferSheet(item: noBarcodeItems.first),
-            );
-          } else {
-            showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (_) => BulkQrOfferSheet(items: noBarcodeItems),
-            );
-          }
-        });
-      }
-    } else {
+    // A completed in-Space capture returns directly to the refreshed item list.
+    if (!allSucceeded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted || !isCurrent()) return;
         _showSaveFailureSummary(

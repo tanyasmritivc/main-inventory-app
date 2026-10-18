@@ -1207,3 +1207,10 @@ notes and review instructions. No em dashes are permitted in entered form text.
 No supplied screenshots were uploaded or replaced. Submit only after this
 screenshot task is resumed by the user; do not treat the earlier request to use
 the ZIPs unchanged as the final instruction.
+# October 18: confirmed capture returns to its Space's items
+
+Distinguish a partial inventory refresh from complete Capture success. Only the
+complete receipt callback navigates to the saved Space's item list, using the same
+inventory API context. Keep failed drafts visible. Crop/original photo ordering is
+owned by the API gallery; keep the existing swipe viewer in both themes. Do not
+cover the returned list with a QR offer. Preserve customer Dashboard content.
