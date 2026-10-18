@@ -32,13 +32,6 @@ def item(**changes):
             'barcode': '12345678', 'quantity': 2, 'location': 'Garage', **changes}
 
 
-def test_strong_identifiers_match_product_not_physical_ownership():
-    result = photos.format_photo_answer(identified=[item()], inventory=[item(), item(item_id='b', quantity=3, location='Loft')], photo_url=URL)
-    assert '5 units recorded' in result['assistant_message']
-    assert 'Garage, Loft' in result['assistant_message']
-    assert 'Your inventory lists these products' in result['assistant_message']
-    assert len(result['answer_context']['rows']) == 2
-    assert all('required_quantity' not in row and 'status' not in row for row in result['answer_context']['rows'])
 
 
 @pytest.mark.parametrize('photo,expected', [
@@ -52,72 +45,26 @@ def test_weak_names_short_codes_and_uncertainty_cannot_confirm_product(photo, ex
     assert photos._match(photo, item()) == expected
 
 
-def test_uncertain_item_and_no_match_are_honest_and_visible_in_review():
-    result = photos.format_photo_answer(identified=[item(scan_evidence={'needs_review': True}, review_id='r', review_status='pending')], inventory=[], photo_url=URL)
-    text = result['assistant_message']
-    assert 'I am not certain' in text and 'does not mean you do not own' in text
-    assert 'Review on Home' not in text and 'No inventory item has been added' in text
 
 
-def test_zero_stock_and_output_has_no_private_fields():
-    result = photos.format_photo_answer(identified=[item()], inventory=[item(quantity=0, user_id='SECRET', internal_model='SECRET')], photo_url=URL)
-    assert '0 units recorded' in result['assistant_message']
-    assert 'SECRET' not in json.dumps(result)
 
 
-@pytest.mark.parametrize('quantity', [None, -1, 0.5, True, float('nan')])
-def test_unknown_quantity_and_unset_location_are_never_claimed_as_confirmed(quantity):
-    result = photos.format_photo_answer(identified=[item()], inventory=[item(quantity=quantity, location='Unsorted')], photo_url=URL)
-    assert 'quantity not fully recorded' in result['assistant_message']
-    assert 'recorded location not set' in result['assistant_message']
-    assert '0 units recorded' not in result['assistant_message']
-    row = result['answer_context']['rows'][0]
-    assert row['available_quantity'] is None and row['match_basis'] == 'barcode match'
-    assert 'physical confirmation time' in result['assistant_message']
 
 
-def test_empty_and_large_photo_results_are_explicitly_bounded():
-    assert 'could not identify' in photos.format_photo_answer(identified=[], inventory=[], photo_url=URL)['assistant_message']
-    result = photos.format_photo_answer(identified=[item(name=f'Servo type {i}') for i in range(21)], inventory=[item()], photo_url=URL)
-    assert 'Showing 6 of 21 distinct item types' in result['assistant_message']
-    assert 'Servo type 6' not in result['assistant_message']
-    assert len(result['answer_context']['rows']) == 1
 
 
-def test_repeated_fragments_do_not_become_repeated_objects_or_stock_totals():
-    result = photos.format_photo_answer(identified=[item() for _ in range(30)], inventory=[item()], photo_url=URL)
-    text = result['assistant_message']
-    assert text.count('- Servo (') == 1
-    assert text.count('2 units recorded') == 1
-    assert '30' not in text and 'additional' not in text
-    assert len(result['answer_context']['rows']) == 1
 
 
 @pytest.mark.parametrize('name', ['Unknown', 'unknown object', 'Unidentified item', 'Object', 'Item', ''])
 def test_generic_unknown_labels_never_match_inventory_by_name(name):
     photo = item(name=name, barcode='', brand='', part_number='', scan_evidence={'needs_review': True})
     assert photos._match(photo, item(name=name)) is None
-    result = photos.format_photo_answer(identified=[photo], inventory=[item(name=name)], photo_url=URL)
-    assert 'could not identify the contents' in result['assistant_message']
-    assert 'Possible name matches' not in result['assistant_message']
+    result = photos.photo_evidence(identified=[photo], inventory=[item(name=name)], photo_url=URL)
+    assert result['unidentified_observations'] is True
+    assert result['observations'] == []
     assert result['answer_context']['rows'] == []
 
 
-def test_noisy_scene_has_one_inventory_check_and_one_uncertainty_explanation():
-    names = ['blueberry toast', 'banana dessert', 'banana slice', 'sliced banana',
-             'plastic bag', 'aluminum foil', 'bubble wrap', 'unknown object', 'unknown']
-    identified = [item(name=name, barcode='', brand='', part_number='', category='Supplies',
-                       scan_evidence={'needs_review': True}) for name in names] * 3
-    inventory = [item(item_id=str(i), name='Other saved part') for i in range(637)]
-    result = photos.format_photo_answer(identified=identified, inventory=inventory, photo_url=URL)
-    text = result['assistant_message']
-    assert text.count('Inventory check') == 1
-    assert text.count('No matching saved items found') == 1
-    assert text.count('The uncertain labels are guesses') == 1
-    assert 'Category:' not in text and '637' not in text and 'unknown object' not in text
-    assert 'Showing 6 of 7 distinct item types' in text
-    assert len(text) < 900
-    assert '637 accessible item records' in result['answer_context']['sources'][1]['detail']
 
 
 def noisy_scene():
@@ -126,101 +73,24 @@ def noisy_scene():
             for name in ['blueberry toast', 'banana dessert', 'banana slice', 'sliced banana', 'plastic bag', 'aluminum foil']]
 
 
-def test_scene_consolidation_only_selects_existing_labels_and_omits_overlapping_guesses():
-    identified = noisy_scene()
-    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"indices": [0, 2]}'))])
-    with patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
-        subjects = photos.select_photo_subjects(identified)
-    assert subjects == [identified[0], identified[2]]
-    request = gateway.call_args.kwargs
-    assert request['request_timeout_seconds'] == 12
-    assert 'tools' not in request
-    assert 'PRIVATE' not in json.dumps(request) and 'https://' not in json.dumps(request)
-    result = photos.format_photo_answer(identified=identified, subjects=subjects, inventory=[], photo_url=URL)
-    text = result['assistant_message']
-    assert 'blueberry toast' in text and 'banana slice' in text
-    assert 'banana dessert' not in text and 'sliced banana' not in text
-    assert 'plastic bag' not in text and 'aluminum foil' not in text
-    assert text.count('No matching saved items found') == 1
-    assert 'conflicting detections were left out' in text
 
 
-@pytest.mark.parametrize('content', ['not json', '{"indices": [999]}', '{"indices": [-1]}',
-                                     '{"indices": [true]}', '{"indices": [0, 0]}',
-                                     '{"indices": [0, 1, 2, 3]}', '{"summary": "Invented object"}'])
-def test_invalid_scene_selection_falls_back_without_generated_identities(content):
-    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
-    with patch.object(photos, 'gateway_completion', return_value=reply):
-        assert photos.select_photo_subjects(noisy_scene()) is None
 
 
-def test_unavailable_consolidation_keeps_deterministic_photo_results():
-    with patch.object(photos, 'gateway_completion', side_effect=TimeoutError):
-        assert photos.select_photo_subjects(noisy_scene()) is None
 
 
-def test_incoherent_scene_does_not_turn_any_guess_into_a_product_match():
-    result = photos.format_photo_answer(identified=noisy_scene(), subjects=[], inventory=[item(name='banana slice')], photo_url=URL)
-    assert 'could not identify the contents' in result['assistant_message']
-    assert result['answer_context']['rows'] == []
 
 
-def test_scene_selection_skips_single_items_and_product_identifiers():
-    with patch.object(photos, 'gateway_completion') as gateway:
-        assert photos.select_photo_subjects([item()]) is None
-        assert photos.select_photo_subjects([*noisy_scene(), item()]) is None
-    gateway.assert_not_called()
 
 
-def test_noisy_photo_service_returns_consolidated_reply_through_existing_contract():
-    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"indices": [0, 2]}'))])
-    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
-         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': noisy_scene()})), \
-         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'accessible_inventory', return_value=[]), \
-         patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
-        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='What is in this photo, and do I own it?', image_bytes=image()))
-    assert 'banana dessert' not in result['assistant_message'] and 'plastic bag' not in result['assistant_message']
-    assert 'banana slice' in result['assistant_message']
-    assert result['answer_context']['photo_path'] == PATH
-    assert result['answer_context']['photo_url'] == URL
-    assert result['answer_context']['rows'] == []
-    gateway.assert_called_once()
 
 
-def test_clear_identifications_precede_uncertain_fragments_without_confirming_them():
-    weak = [item(name=f'Guess {i}', scan_evidence={'needs_review': True}) for i in range(10)]
-    clear = item(name='Known motor', confidence=0.95)
-    result = photos.format_photo_answer(identified=[*weak, clear], inventory=[item()], photo_url=URL)
-    text = result['assistant_message']
-    assert text.index('Known motor') < text.index('Guess 0')
-    assert 'Guess 0 (uncertain' in text
 
 
-def test_same_named_products_with_different_identifiers_remain_distinct():
-    first = item(name='Motor', barcode='', part_number='M-1')
-    second = item(name='Motor', barcode='', part_number='M-2')
-    inventory = [first, {**second, 'item_id': 'b', 'quantity': 4}]
-    result = photos.format_photo_answer(identified=[first, second], inventory=inventory, photo_url=URL)
-    assert len(result['answer_context']['rows']) == 2
-    assert 'Part: M-1' in result['assistant_message'] and 'Part: M-2' in result['assistant_message']
-    assert '2 units recorded' in result['assistant_message'] and '4 units recorded' in result['assistant_message']
 
 
-def test_low_confidence_cannot_confirm_stock_even_without_review_flag():
-    photo = item(confidence=0.3)
-    result = photos.format_photo_answer(identified=[photo], inventory=[item()], photo_url=URL)
-    assert 'Possible name matches' in result['assistant_message']
-    assert 'units recorded' not in result['assistant_message']
 
 
-def test_measurements_are_shown_only_when_requested_and_keep_estimate_caveat():
-    photo = item(scan_evidence={'length_mm': 123, 'width_mm': 45})
-    normal = photos.format_photo_answer(identified=[photo], inventory=[], photo_url=URL)
-    measured = photos.format_photo_answer(identified=[photo], inventory=[], photo_url=URL, message='How wide is this?')
-    assert '123 x 45' not in normal['assistant_message']
-    assert 'estimated 123 x 45 mm' in measured['assistant_message']
-    assert 'check with a ruler' in measured['assistant_message']
 
 
 def test_barcode_padding_brand_aliases_and_specific_name_matches():
@@ -238,25 +108,6 @@ def test_accessible_inventory_deduplicates_only_authorized_live_reads():
     assert [row['item_id'] for row in result] == ['a', 'joined']
 
 
-@pytest.mark.parametrize('message', ['What is this? Do I own it?', 'What are its dimensions?', 'Measure the width'])
-def test_photo_service_checks_inventory_without_creating_reviews(message):
-    uncertain = item(scan_evidence={'needs_review': True})
-    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)) as upload, \
-         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [uncertain]})) as extract, \
-         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch('app.services.review_queue.enqueue_uncertain_items') as review, \
-         patch.object(photos, 'accessible_inventory', return_value=[]) as inventory, \
-         patch.object(photos, 'gateway_completion') as gateway:
-        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message=message, image_bytes=image()))
-    assert upload.call_args.kwargs['user_id'] == 'user-1'
-    assert upload.call_args.kwargs['filename'].startswith('ask-')
-    assert 'include_measurements' not in extract.call_args.kwargs
-    assert extract.call_args.kwargs['source_frame_url'] == URL
-    review.assert_not_called()
-    assert 'ownership is not confirmed' in uncertain['notes']
-    inventory.assert_called_once_with('user-1')
-    gateway.assert_not_called()
-    assert result['answer_context']['photo_path'] == PATH
 
 
 def test_failed_analysis_cleans_only_new_source_before_review():
@@ -269,34 +120,8 @@ def test_failed_analysis_cleans_only_new_source_before_review():
     review.assert_not_called()
 
 
-@pytest.mark.parametrize('question,explain', [('Add this photo item', False), ('How does this work?', True)])
-def test_photo_requests_use_no_mutation_tools_and_keep_grounded_check(question, explain):
-    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='A servo controls position\u2014using feedback.'))])
-    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
-         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [item()]})), \
-         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'accessible_inventory', return_value=[]), patch.object(photos, 'gateway_completion', return_value=reply) as gateway:
-        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message=question, image_bytes=image()))
-    if explain:
-        assert 'tools' not in gateway.call_args.kwargs
-        assert 'controls position - using feedback' in result['assistant_message']
-        assert 'Do not use em dashes' in gateway.call_args.kwargs['messages'][0]['content']
-    else:
-        gateway.assert_not_called()
-        assert 'confirm the change' in result['assistant_message']
-    assert 'No inventory item' in result['assistant_message']
-    assert '\u2014' not in result['assistant_message']
 
 
-def test_unknown_only_photo_does_not_generate_an_explanation_from_missing_identity():
-    unknown = item(name='Unknown object', scan_evidence={'needs_review': True})
-    with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
-         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [unknown]})), \
-         patch.object(photos, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
-         patch.object(photos, 'accessible_inventory', return_value=[]), patch.object(photos, 'gateway_completion') as gateway:
-        result = asyncio.run(photos.answer_photo_question(user_id='user-1', message='How does this work?', image_bytes=image()))
-    gateway.assert_not_called()
-    assert 'could not identify the contents' in result['assistant_message']
 
 
 @pytest.mark.parametrize('path', ['other-user/ask-' + 'a'*32 + '.jpg', 'user-1/../photo.jpg', 'user-1/photo.jpg', None])
@@ -333,7 +158,8 @@ def route_io():
     for name in ('select', 'eq', 'limit', 'insert', 'update'):
         getattr(query, name).return_value = query
     query.execute.return_value = SimpleNamespace(data=[{'id': 'conversation-1'}])
-    result = photos.format_photo_answer(identified=[item()], inventory=[item()], photo_url=URL)
+    result = photos.photo_evidence(identified=[item()], inventory=[item()], photo_url=URL)
+    result = {'assistant_message': 'Model photo answer.', 'answer_context': result['answer_context']}
     result['answer_context']['photo_path'] = PATH
     with patch.object(ai, 'get_supabase_admin', return_value=client), \
          patch.object(ai, 'check_and_increment_scan') as scan, patch.object(ai, 'check_and_increment_chat') as chat, \
@@ -433,3 +259,69 @@ def test_failed_photo_snapshot_is_visible_and_not_remembered(route_io):
     assert 'history_save_failed' in response.text and 'SECRET' not in response.text
     assert '"type": "done"' not in response.text
     route_io.memory.assert_not_called()
+
+@pytest.mark.parametrize('identified',[[item()],noisy_scene(),[item(name='Unknown object',scan_evidence={'needs_review':True})],[]])
+@pytest.mark.parametrize('question',['What is this? Do I own it?','How does this work?','Add this item'])
+def test_every_photo_question_gets_its_answer_from_model(identified,question):
+    reply=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='A model-written photo answer.'))])
+    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':identified})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[item()]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={'answer_format':'bullets'}),patch('app.services.review_queue.enqueue_uncertain_items') as enqueue:
+        result=asyncio.run(photos.answer_photo_question(user_id='user-1',message=question,image_bytes=image()))
+    model.assert_called_once()
+    assert result['assistant_message']=='A model-written photo answer.'
+    assert result['answer_context']['photo_path']==PATH
+    payload=model.call_args.kwargs
+    assert 'tools' not in payload
+    assert question in payload['messages'][1]['content']
+    assert 'Use a bullet list' in payload['messages'][0]['content']
+    assert URL not in json.dumps(payload) and 'PRIVATE NOTES' not in json.dumps(payload)
+    enqueue.assert_not_called()
+
+
+@pytest.mark.parametrize('failure',['exception','empty'])
+def test_photo_model_failure_has_no_scripted_answer_and_cleans_preview(failure):
+    reply=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=''))])
+    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply,side_effect=RuntimeError('PRIVATE') if failure=='exception' else None) as model,patch.object(photos,'load_preferences',return_value={}),patch.object(photos,'delete_image') as delete:
+        with pytest.raises(RuntimeError): asyncio.run(photos.answer_photo_question(user_id='user-1',message='What is this?',image_bytes=image()))
+    model.assert_called_once()
+    delete.assert_called_once_with(path=PATH)
+
+
+def test_photo_evidence_keeps_matching_counts_and_never_writes_prose():
+    evidence=photos.photo_evidence(identified=[item()]*30,inventory=[item(),item(item_id='b',quantity=3,location='Loft')],photo_url=URL)
+    assert len(evidence['observations'])==1
+    assert len(evidence['answer_context']['rows'])==2
+    assert sorted(row['available_quantity'] for row in evidence['answer_context']['rows'])==[2,3]
+    assert 'assistant_message' not in evidence
+    assert evidence['inventory_changed'] is False
+
+
+def test_existing_entry_photo_request_supplies_truthful_actions_and_keeps_model_answer():
+    from app.services.inventory_scope import InventoryScope, current_inventory
+    reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='I cannot attach this photo to all Garage entries from Chat. Open an existing item and use Add photo.'))])
+    token = current_inventory.set(InventoryScope('inventory', 'actor', 'owner', None, 'viewer'))
+    try:
+        with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={}):
+            result=asyncio.run(photos.answer_photo_question(user_id='user-1',message='add this to all the entries in garage',image_bytes=image()))
+    finally:
+        current_inventory.reset(token)
+    payload=json.loads(model.call_args.kwargs['messages'][1]['content'].split('\nEvidence: ',1)[1])
+    assert payload['available_actions']['attach_photo_from_chat'] is False
+    assert payload['available_actions']['bulk_attach_photo_from_chat'] is False
+    assert payload['available_actions']['can_edit_selected_inventory'] is False
+    assert result['assistant_message']==reply.choices[0].message.content
+
+
+@pytest.mark.parametrize('quantity',[None,-1,0.5,True,float('nan')])
+def test_photo_evidence_does_not_convert_unknown_quantity_to_zero(quantity):
+    evidence=photos.photo_evidence(identified=[item()],inventory=[item(quantity=quantity)],photo_url=URL)
+    assert evidence['answer_context']['rows'][0]['available_quantity'] is None
+
+
+def test_uncertain_photo_and_distinct_identifiers_preserve_evidence():
+    photo=item(confidence=0.3,scan_evidence={'length_mm':123,'width_mm':45})
+    evidence=photos.photo_evidence(identified=[photo],inventory=[item()],photo_url=URL)
+    assert evidence['observations'][0]['uncertain'] is True
+    assert evidence['observations'][0]['matches'][0]['match_basis']=='possible name match'
+    assert evidence['observations'][0]['length_mm']==123
+    evidence=photos.photo_evidence(identified=[item(barcode='',part_number='M1'),item(barcode='',part_number='M2')],inventory=[],photo_url=URL)
+    assert len(evidence['observations'])==2

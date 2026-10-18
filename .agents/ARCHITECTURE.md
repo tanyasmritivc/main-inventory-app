@@ -1,3 +1,14 @@
+# Model-written Chat (October 18)
+
+All successful text/photo/file Chat replies are written by the configured model.
+One sync/event tool loop provides authorized context and model-selected reads;
+inventory_query and project_kit_readiness return facts, not response templates.
+Photo evidence preserves uncertain identities and recorded-match limits, while
+the model addresses the actual request using current capability facts. Empty or
+failed generation becomes an error, not a saved assistant answer. Authorization,
+tool schemas, conditional edits and evidence stay server-owned. No alternate
+provider/model is introduced. See docs/plans/model-written-chat.md.
+
 # Current architecture
 
 This describes the current release foundation. Planned systems are labeled.

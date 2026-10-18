@@ -1,3 +1,8 @@
+This historical deterministic fix was superseded on October 18 by
+model-written-chat.md. The interpreter mentioned below is removed; authorized
+retrieval is retained as a data-only tool and every successful reply uses the
+configured model.
+
 # First-answer inventory context
 
 The deterministic read path treated a purpose such as "for FTC robotics" as
