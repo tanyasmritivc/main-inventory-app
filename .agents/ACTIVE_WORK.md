@@ -1,3 +1,7 @@
+## Final mobile audit — October 18
+
+Final mobile submission audit: universal-link route coverage and Apple authorization revocation in account deletion. Preserve current runtime through reviewed file overlays. Isolated branch fix/web-mobile-links-audit-20261018.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
