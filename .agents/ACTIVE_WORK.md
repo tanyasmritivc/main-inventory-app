@@ -1188,3 +1188,8 @@ billing, original logo assets, native lifecycle and FIND transport are unchanged
 
 No task-specific handoff is registered in `.agents/HANDOFFS/`. Current release
 preflight evidence and blockers are in `CURRENT_STATE.md` and the release checklist.
+# October 18 capture return — active
+
+Lane fix/web-scan-save-return-20261018 from 8553ad4. Confirmed Capture saves return
+to the inventory-scoped Items route; failed drafts stay for retry. Original photo
+retention/order is API-owned; existing galleries remain private. Dashboard untouched.

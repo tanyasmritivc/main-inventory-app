@@ -1,3 +1,13 @@
+# October 18 Capture return — prepared, not activated
+
+Branch fix/web-scan-save-return-20261018. After complete clear/Review receipts,
+Capture returns to Items filtered to the saved Space in the selected inventory.
+Partial drafts remain retryable. Full345 web tests, TypeScript, changed-file lint
+and production webpack build pass in the unpublished server candidate, with final
+scoped capture checks after the Space query refinement. Backend owns private
+crop-first/original-second gallery retention. Live web remains eccccc1; pending
+matching API/migration056 activation. Dashboard content/layout is unchanged.
+
 # October 18 permissions, private photos and Account — delivered
 
 This entry supersedes the prepared/active rollout notes below. The user approved

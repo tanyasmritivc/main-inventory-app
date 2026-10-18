@@ -2,7 +2,7 @@
 import { privateImageSrc } from "@/lib/private-image";
 
 
-import Link from "@/components/site/inventory-link";
+import Link, { useInventoryRouter } from "@/components/site/inventory-link";
 import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
@@ -15,7 +15,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
 import { confirmedCaptureIndices } from "@/lib/capture-receipt";
-import { canEditInventory } from "@/lib/inventory-selection";
+import { activeInventory, canEditInventory } from "@/lib/inventory-selection";
 
 type ScanMode = "barcode" | "photo" | "manual" | "spreadsheet" | "bom";
 
@@ -56,6 +56,7 @@ function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
 }
 
 export function ScanCenterClient() {
+  const router = useInventoryRouter();
   const canWrite = canEditInventory();
   const { token, accountId } = useApiSession();
   const [manual, setManual] = useState<Record<string, string>>({ category: "Other", quantity: "1" });
@@ -136,6 +137,7 @@ export function ScanCenterClient() {
     if (!canEditInventory() || !token || !accountId || items.length === 0 || working) return;
     const account = accountId;
     if (!space) { setError("Choose a destination Space before saving items."); return; }
+    const inventory = activeInventory();
     setWorking(true); setError(null);
     try {
       const located = items.map((item) => ({ ...item, location: space }));
@@ -165,6 +167,7 @@ export function ScanCenterClient() {
         setError(`${remaining.length} ${remaining.length === 1 ? "item was" : "items were"} not confirmed saved. Your remaining drafts are available to correct or retry.`);
       } else {
         setScanSummary(null);
+        if (activeInventory() === inventory) router.replace(`/inventory?space=${encodeURIComponent(space)}`);
       }
     }
     catch (reason) { if (owner.current === account) setError(userFacingError(reason, "The detected items could not be saved.")); }
