@@ -1,3 +1,13 @@
+## Chat writes require separate durable review receipts (2026-10-18)
+
+Model tools prepare additions/deletions without item writes. The actor confirms
+an exact private, inventory-bound payload through one service-only transaction.
+Current permissions, frozen record fingerprints and limits are checked under
+locks; item changes, audit and success receipt commit together. AI confirmation
+prose follows the actual receipt and may be retried independently. Keep capability
+gating for older clients, current uncached Chat reads and private crop/original
+references. Never execute SQL or arbitrary filters supplied by the model.
+
 ## Chat transport and presentation are separate (2026-10-18)
 
 Honor gateway stream requests and normalize fragmented text/tool calls. UI queues reveal short chunks with 180ms fades even if the gateway batches a whole model answer. Network completion must not flush pending text. Historical answers do not animate; Reduce Motion skips presentation effects. Keep permission, action-receipt and private-photo guards.

@@ -6,6 +6,7 @@ class AICommandRequest(BaseModel):
     message: str = Field(max_length=4000)
     conversation_history: list[dict] = Field(default=[], max_length=50)
     conversation_id: str | None = Field(default=None, max_length=100)
+    supports_item_actions: bool = False
 
 
 class AICommandResponse(BaseModel):

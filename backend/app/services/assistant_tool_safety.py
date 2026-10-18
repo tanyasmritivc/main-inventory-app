@@ -48,6 +48,8 @@ def rejection(*, tool_name, args, definitions, enabled, message, trace):
     scope = current_inventory.get()
     if scope is not None and not scope.can_edit:
         return 'You have view-only access to this inventory. No change was made.'
+    if tool_name in ('inventory_propose_add', 'inventory_propose_delete'):
+        return None  # A proposal is read-only; confirmation has a separate server transaction.
     # These established write services do not have durable chat request receipts
     # or atomic quantity/event updates. A model cannot manufacture confirmation.
     if tool_name in ('inventory_add_item', 'inventory_log_event', 'create_space'):

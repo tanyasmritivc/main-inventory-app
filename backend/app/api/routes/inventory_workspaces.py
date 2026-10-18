@@ -272,7 +272,7 @@ async def inventory_session(request: Request, inventory_id: str, user: Authentic
     if not scope.can_edit and suffix in ('/extract_from_image', '/inventory/extract_from_image'):
         form = await request.form()
         preview = str(form.get('preview_only', '')).lower() in ('true', '1')
-    if not scope.can_edit and request.method not in ('GET', 'HEAD', 'OPTIONS') and suffix not in read_posts and not suffix.startswith('/conversations') and not preview:
+    if not scope.can_edit and request.method not in ('GET', 'HEAD', 'OPTIONS') and suffix not in read_posts and not suffix.startswith('/conversations') and not suffix.startswith('/ai_actions/') and not preview:
         raise HTTPException(403, 'You have view-only access to this inventory.')
     token = current_inventory.set(scope)
     # Legacy inventory services receive their effective owner, while the actor

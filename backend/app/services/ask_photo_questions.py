@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from app.core.config import get_settings
 from app.services.agent_gateway_client import gateway_completion
-from app.services.completion_stream import async_completion_events
+from app.services.completion_stream import async_iterate
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads, recorded_quantity
 from app.services.assistant_tool_safety import provider_data, validate_model_answer
@@ -149,7 +149,7 @@ def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: 
                     seen.add(item['item_id'])
         evidence = photo.get('scan_evidence') or {}
         observation = {key: photo.get(key) for key in ('name', 'brand', 'part_number', 'barcode')}
-        observation.update(uncertain=_uncertain(photo), matches=found)
+        observation.update(uncertain=_uncertain(photo), matches=found, observation_index=next((i for i, row in enumerate(identified[:20]) if row is photo or row == photo), None))
         for key in ('length_mm', 'width_mm'):
             value = evidence.get(key)
             if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value > 0:
@@ -167,7 +167,7 @@ def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: 
             'inventory_changed': False, 'answer_context': context}
 
 
-async def answer_photo_question(*, user_id: str, message: str, image_bytes: bytes, on_delta=None) -> dict:
+async def answer_photo_question(*, user_id: str, message: str, image_bytes: bytes, on_delta=None, on_reset=None, allow_item_actions=False) -> dict:
     stored = await asyncio.to_thread(upload_image, user_id=user_id, filename=f'ask-{uuid4().hex}.jpg', content=image_bytes)
     try:
         data = await extract_inventory_items_with_find(
@@ -181,6 +181,8 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
         evidence = {'inventory_matches_are_complete_inventory': False,
             'target_space_membership_checked': False,
             'available_actions': {
+            'create_items_via_review_card': bool(allow_item_actions and scope and scope.can_edit),
+            'delete_items_via_review_card': bool(allow_item_actions and scope and scope.can_edit),
             'attach_photo_from_chat': False,
             'bulk_attach_photo_from_chat': False,
             'can_edit_selected_inventory': scope.can_edit if scope else True,
@@ -188,8 +190,7 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
             'capture_flow': 'Create and review new inventory entries, not attach one image to existing entries',
         }, **evidence}
         preferences = await asyncio.to_thread(load_preferences, user_id)
-        response = await asyncio.to_thread(gateway_completion,
-            messages=[
+        messages=[
                 {'role': 'system', 'content':
                     'You are FindEZ AI, memory for the physical world. First understand the task the user requested, then answer it directly in your own words. '
                     'An attached photo does not mean the user asked for identification or an ownership check. Describe its contents or matching stock only when that addresses the question. '
@@ -203,25 +204,39 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
                     'inventory_matches contains only potential matches for the photo labels, not every item or Space. The target Space membership was not checked. Never infer that a requested Space has no entries or which entries it contains from these matches. '
                     'Saved quantities are recorded stock, not counts in the photo. Null, invalid or missing quantities are unknown; do not turn them into zero. Locations are saved records, not live sightings. '
                     'Only discuss supplied dimensions when relevant to the question, as estimates to verify with a ruler. Never invent compatibility, specifications, quantities or exact fit. '
-                    'No inventory mutation was performed. Respect the selected inventory edit permission. '
+                    'No inventory mutation was performed. You may prepare item additions or deletions through the supplied review-card tools. No item changes until the user confirms a card. Ask for missing quantities and a destination Space. observation_index refers only to the current attached photo. Do not create new entries when the user asked to attach a photo to existing entries. Respect the selected inventory edit permission. '
                     'Do not expose internal providers, model names or infrastructure. Do not output JSON or a fixed boilerplate report. ' + CHAT_STYLE_INSTRUCTION + ' ' + style_instruction(preferences)},
                 {'role': 'user', 'content': 'Question: ' + message + '\nEvidence: ' + json.dumps(provider_data(evidence))},
-            ], conversation_id='ask-photo-' + uuid4().hex, max_tokens=500, stream=True)
-        content = ''
-        async for event in async_completion_events(response):
-            if event['type'] == 'delta':
-                content += event['delta']
-                validate_model_answer(message, [], content)
-                if on_delta:
+            ]
+        from app.services.ai_agent import iter_model_turn, _TOOLS
+        from app.services.assistant_tool_safety import READ_TOOLS
+        from app.services.chat_item_actions import action_context, photo_observations, retained_photo
+        allowed = (READ_TOOLS | {'inventory_propose_add', 'inventory_propose_delete'}) if allow_item_actions else set()
+        tools = [tool for tool in _TOOLS if tool['function']['name'] in allowed]
+        photo_conversation = 'ask-photo-' + uuid4().hex
+        def model_call(messages, enabled):
+            return gateway_completion(messages=messages, conversation_id=photo_conversation,
+                max_tokens=1500 if enabled and tools else 500, stream=True,
+                **({'tools': tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled and tools else {}))
+        token = photo_observations.set({'items': identified[:20], 'source_url': stored.url})
+        try:
+            content = ''
+            async for event in async_iterate(iter_model_turn(user_id=user_id, message=message,
+                    messages=messages, model_call=model_call, allowed_tools=allowed)):
+                if event['type'] == 'delta' and on_delta:
                     await on_delta(event['delta'])
-            elif event['tool_calls']:
-                raise RuntimeError('Unexpected photo tool call')
-        if not isinstance(content, str) or not content.strip():
+                elif event['type'] == 'reset' and on_reset:
+                    await on_reset()
+                elif event['type'] == 'model_done':
+                    content = event['assistant_message']
+                    context['pending_actions'] = action_context(event['tool_trace'])
+        finally:
+            photo_observations.reset(token)
+        if not content:
             raise RuntimeError('The model returned an empty photo answer')
-        answer = format_chat_reply(content.strip())
-        validate_model_answer(message, [], answer)
         context['photo_path'] = stored.path
-        return {'assistant_message': answer, 'answer_context': context}
+        context['chat_photo'] = retained_photo(identified, stored.url)
+        return {'assistant_message': content, 'answer_context': context}
     except BaseException:
         # No answer/history owns this preview yet. Clean up only this upload.
         try:
