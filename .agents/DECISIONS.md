@@ -1,3 +1,15 @@
+## Public search copy describes physical memory (2026-10-18)
+
+Keep the website title, search/social descriptions and App Store drafts aligned
+with FindEZ AI as memory for the physical world, supported by current Scan, Ask
+and Spaces behavior. Do not revive workshop-only positioning or imply that a
+TestFlight upload refreshes Google. Public JSON-LD contains public product facts
+only; no fabricated ratings, prices, account data or promised AI Overview wording.
+Use known modification dates rather than a new sitemap date on every request.
+Preserve public/googleafd2b06039ac225c.html: the user explicitly approved this
+Search Console ownership proof. Removing it can revoke verified owner access.
+Public App Store review/release remains a separate authorized action.
+
 ## One saved identity photo with explicit crop acceptance (2026-10-18)
 
 Use the Settings photo for authorized People/task/file/activity identities, with

@@ -1,3 +1,38 @@
+## Public search positioning published (2026-10-18)
+
+Web source `303bd45` (PR125) is live from
+/home/ubuntu/findez-search-positioning-20261018/candidate-current/frontend.
+Title/search/social descriptions now use FindEZ AI and AI memory for the physical
+world. Factual public identity JSON-LD and truthful sitemap dates match that
+positioning. The download page copy is aligned. Preserve the current landing
+renderer and Dashboard. All 261 unrelated runtime/public files are retained,
+including concurrent invitation AASA and account-deletion changes. Source guards
+halted stale activation before service changes; the final candidate was rebuilt
+against the newly deployed runtime. No backend/database/native code changes.
+
+All 365 branch web tests/48 suites, TypeScript, scoped ESLint, the preserved
+production-configured build and browser/Googlebot/canonical/JSON-LD/sitemap/
+robots/auth checks pass. All five CI gates pass on `303bd45` (run39174991125).
+Both public hosts pass final HTTP checks, including the approved verification
+file and the latest invitation association file. No customer QA writes.
+
+The user approved Search Console owner verification for the signed-in account,
+completed Google reauthentication, and Google auto-verified the HTML file.
+Sitemap submission shows Success with 4 discovered pages. Homepage URL Inspection
+showed indexed and then confirmed Indexing requested / priority crawl queue.
+Do not repeat the request to try to accelerate Google. Search snippets and AI
+Overview refresh/wording remain external and unverified. Keep the HTML proof file.
+
+Apple's live US 1.0.7 listing already had memory-focused copy; Google's source
+snapshot still showed older 1.0.6 workshop copy. Updated live 1.0.7 promotional text
+and saved the 1.0.8 draft name FindEZ AI, subtitle AI memory for your things and
+current-capability description. No App Store submission/release/build-selection
+change. Private Apple/Search Console receipts:
+Documents/FindEZ/AppStore/search-positioning-20261018. Server release manifests/
+health receipts are in the corresponding findez-search-positioning directory.
+This is public marketing/indexing delivery; TestFlight91 remains the previously
+acknowledged native binary. See docs/plans/public-search-positioning.md.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
