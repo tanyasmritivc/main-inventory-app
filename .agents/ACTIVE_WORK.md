@@ -1,3 +1,12 @@
+# October 18 Chat release increment
+
+Lane release/model-chat-beta86-20261018 starts from 1748f92. The model-only Chat
+change belongs to the shared backend. Native runtime is unchanged from beta85;
+only pubspec increments to 1.0.8+86 for the standing TestFlight instruction.
+Reuse the completed 623 tests and clean analysis. Archive/export device binaries,
+strict signatures, production configuration/main target and Apple validation
+pass. Upload once and stop at acknowledgment; public App Store remains held.
+
 # October 18 permissions, private photos and Account — delivered
 
 This entry supersedes the prepared/active rollout notes below. The user approved
