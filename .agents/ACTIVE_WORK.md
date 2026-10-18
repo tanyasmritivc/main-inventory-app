@@ -1,3 +1,22 @@
+## Chat item action cards prepared for build90 (2026-10-18)
+
+Model-selected additions/deletions use exact review cards, separate delete consent,
+current inventory permissions and stable receipt retries. Confirmed/cancelled
+status is retained on the message when a lazy list disposes its offscreen card.
+Actual confirmed model replies use the existing paced fade queue. Main header/nav
+stay hidden during Chat; Back remains accessible. Dashboard is unchanged.
+
+645 final Flutter tests with coverage, clean analysis, 12 focused card/API/photo
+history checks and two actual Chat confirmation/fade/scroll integrations pass.
+Light/Dark system-font card captures inspected; 320px/2.6x text remains usable.
+Backend/web implementations and migration057 remain unactivated pending explicit
+production DB approval. Signed production1.0.8(90), exact-source CI and physical
+acceptance are pending. Earlier streaming88/focus89 uploads remain acknowledged.
+
+## Active: confirmed Chat item add/delete (2026-10-18)
+
+User requested adds/deletes through Chat. Separate feat/*-chat-item-actions branches; design in API docs/plans/chat-item-actions.md. No customer test writes. Migration057 will need explicit activation approval after review/tests. Streaming/focus delivery is complete: API17a60ac and webec14cee are live; Apple acknowledged builds88 and89. No processing/tester availability polling.
+
 ## Active Chat focus follow-up (2026-10-18)
 
 After Apple acknowledged streaming build88 (delivery e65c5314-3ab3-4eb1-92d8-290abf9dce21), the requested follow-up hides MainShell context/organization header and bottom navigation during an active conversation. Safe areas remain reserved, and Back restores the prior page without replacing ChatPage or its pending stream/draft. New chat restores normal navigation. No Dashboard content/layout changes. 33 focused chat tests and clean analysis pass; signed build89 and device acceptance pending.

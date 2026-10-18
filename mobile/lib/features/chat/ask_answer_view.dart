@@ -5,6 +5,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'streaming_text_fade.dart';
+import 'chat_item_action_card.dart';
+import '../../core/api_client.dart';
+import '../../core/chat_item_action.dart';
 
 import '../../core/ask_answer.dart';
 import 'package:mobile/core/ui/app_text.dart';
@@ -82,6 +85,8 @@ class AskAnswerView extends StatefulWidget {
     this.animateChunks = false,
     this.pendingMessage = 'Checking your things...',
     this.onOpenSource,
+    this.api,
+    this.onActionResult,
   });
   final String answer;
   final AskAnswerContext? contextData;
@@ -89,6 +94,8 @@ class AskAnswerView extends StatefulWidget {
   final bool animateChunks;
   final String pendingMessage;
   final VoidCallback? onOpenSource;
+  final ApiClient? api;
+  final ValueChanged<ChatItemActionResult>? onActionResult;
 
   @override
   State<AskAnswerView> createState() => _AskAnswerViewState();
@@ -242,6 +249,14 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               ),
             ),
           ),
+        if (!widget.isLoading && data != null && widget.api != null)
+          for (final action in data.pendingActions)
+            ChatItemActionCard(
+              key: ValueKey(action.id),
+              api: widget.api!,
+              action: action,
+              onResult: widget.onActionResult,
+            ),
         if (!widget.isLoading && data != null && data.rows.isNotEmpty) ...[
           const SizedBox(height: 22),
           ClipRRect(

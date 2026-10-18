@@ -1,3 +1,24 @@
+## Chat item action cards prepared for build90 (2026-10-18)
+
+Model-selected additions/deletions use exact review cards, separate delete consent,
+current inventory permissions and stable receipt retries. Confirmed/cancelled
+status is retained on the message when a lazy list disposes its offscreen card.
+Actual confirmed model replies use the existing paced fade queue. Main header/nav
+stay hidden during Chat; Back remains accessible. Dashboard is unchanged.
+
+645 final Flutter tests with coverage, clean analysis, 12 focused card/API/photo
+history checks and two actual Chat confirmation/fade/scroll integrations pass.
+Light/Dark system-font card captures inspected; 320px/2.6x text remains usable.
+Backend/web implementations and migration057 remain unactivated pending explicit
+production DB approval. Signed production1.0.8(90), exact-source CI and physical
+acceptance are pending. Earlier streaming88/focus89 uploads remain acknowledged.
+
+## Streaming and focus delivered (2026-10-18)
+
+API17a60ac/webec14cee are live with 89 unrelated Python and 223 unrelated web runtime files preserved. 1,004 Python +10 subtests; 347 web tests/types/lint; 631 Flutter tests/analysis and rendered-pixel checks pass. All five CI gates pass on PRs110/111/112; all five also pass for focus PR113 (run39161964797). The existing branch landing Google-font build/preview failure is outside this change; the preserved actual live candidate builds/types and route smoke pass. The upstream gateway still batches a single SSE text event; client chunk fades/pacing handle that without scripted text.
+
+Apple ACK88: e65c5314-3ab3-4eb1-92d8-290abf9dce21, sourcef440717, IPA83663dd3560322c6c60ce079f978f8681967ba6184608b8db4f6d72f75e89f54. Apple ACK89: 0bdf5216-4d6a-42d8-8e87-d859b16954a0, source4bfe0ff, IPA2cba9bb716e6b52c8f604f99fac995935fe991c6545c9a18ed6c071379fca26a. Both signed/Apple-validated, 31+31 device executables checked, signed archives preserved in Documents/FindEZ/AppStore. Processing/tester availability unverified and not polled; physical-device acceptance pending; public App Store held. No schema changes for streaming/focus.
+
 ## Active Chat focus follow-up (2026-10-18)
 
 After Apple acknowledged streaming build88 (delivery e65c5314-3ab3-4eb1-92d8-290abf9dce21), the requested follow-up hides MainShell context/organization header and bottom navigation during an active conversation. Safe areas remain reserved, and Back restores the prior page without replacing ChatPage or its pending stream/draft. New chat restores normal navigation. No Dashboard content/layout changes. 33 focused chat tests and clean analysis pass; signed build89 and device acceptance pending.
