@@ -42,7 +42,13 @@ def test_legacy_named_corners_remain_supported():
     assert Image.open(BytesIO(crop)).size == (80, 100)
 
 
-@pytest.mark.asyncio
+@pytest.fixture
+def anyio_backend():
+    # FastAPI already installs AnyIO; CI must not require an undeclared plugin.
+    return 'asyncio'
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize('crop_response', ['valid', 'missing', 'invalid', 'timeout'])
 async def test_unknown_detection_keeps_its_persisted_crop_before_job_cleanup(crop_response):
     calls, stored = [], []
