@@ -73,6 +73,7 @@ export async function askQuestion({
   signal,
   onDelta,
   onStatus,
+  onReset,
   onDone,
 }: {
   accountId: string;
@@ -82,6 +83,7 @@ export async function askQuestion({
   signal: AbortSignal;
   onDelta: (text: string) => void;
   onStatus: (text: string) => void;
+  onReset?: () => void;
   onDone: (result: {
     conversationId?: string;
     content?: string;
@@ -132,6 +134,7 @@ export async function askQuestion({
     );
   await readAskEvents(response.body, (event) => {
     assertInventory(selected);
+    if (event.type === "reset") onReset?.();
     if (event.content || event.delta)
       onDelta(event.content || event.delta || "");
     if (event.type === "status" && event.message) onStatus(event.message);

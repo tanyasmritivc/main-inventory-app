@@ -1,3 +1,9 @@
+## Chunked Chat delivery and fades prepared (2026-10-18)
+
+347 web tests, TypeScript and scoped lint pass on Next 16.3.8. Production candidate build pending; branch build hit an unrelated Google font loader error.
+
+web lane uses incremental model events with paced UI chunks, stable earlier text and Reduce Motion. Tool arguments stay private; tool preambles reset before the final answer. Completion never dumps a queued suffix. No model/provider/config/schema changes, scripted successful answers or Dashboard changes. The current gateway probe returned one SSE text event (436 characters; first text 1.374s, total 1.378s), so upstream token granularity is not claimed. Photo fixes/056 and beta87 are already delivered. Release/physical-device acceptance for streaming remains pending.
+
 # October 18 Capture return — live
 
 Approved matching capture release3908580 is live from

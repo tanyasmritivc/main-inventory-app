@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { AskMarkdown } from "@/components/site/ask-markdown";
 
 test("AI emphasis, lists, headings and code render as readable semantic content", () => {
@@ -37,4 +37,33 @@ test("ordinary links are safe and decorative rules are omitted", () => {
   expect(screen.getByRole("link", { name: "Inventory" }).getAttribute("href")).toBe("/inventory");
   expect(screen.getByRole("link", { name: "Documentation" }).getAttribute("rel")).toContain("noopener");
   expect(container.querySelector("hr")).toBeNull();
+});
+
+
+test("a batched completed answer still reveals chunks and earlier text never restarts its fade", () => {
+  jest.useFakeTimers();
+  const answer = Array.from({ length: 50 }, (_, i) => `word${i}`).join(" ");
+  const view = render(<AskMarkdown animate>{answer}</AskMarkdown>);
+  const surface = view.container.querySelector(".ask-markdown")!;
+  expect(surface.textContent).toContain("word0");
+  expect(surface.textContent).not.toContain("word49");
+  act(() => jest.advanceTimersByTime(220));
+  expect(surface.querySelector(".ask-chunk")?.getAttribute("style")).toContain("animation-duration: 0ms");
+  act(() => jest.advanceTimersByTime(1500));
+  expect(surface.textContent).toBe(answer);
+  expect(surface.textContent?.match(/word49/g)).toHaveLength(1);
+  view.unmount();
+  expect(jest.getTimerCount()).toBe(0);
+  jest.useRealTimers();
+});
+
+test("reduced motion shows model text without presentation delay, and history never animates", () => {
+  const original = window.matchMedia;
+  window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+  const view = render(<AskMarkdown animate>{"**New answer** with no delay."}</AskMarkdown>);
+  expect(view.container.textContent).toBe("New answer with no delay.");
+  view.rerender(<AskMarkdown>{"Saved history"}</AskMarkdown>);
+  expect(view.container.querySelector(".ask-chunk")).toBeNull();
+  view.unmount();
+  window.matchMedia = original;
 });

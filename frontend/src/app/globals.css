@@ -1560,3 +1560,8 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
   .label-toolbar { align-items: stretch; flex-direction: column; padding-bottom: 10px; }.label-toolbar .product-input { max-width: none; }
   .team-title-row { max-width: calc(100% - 90px); }.app-frame .team-title-select { min-width: 0; max-width: 100%; }
 }
+
+/* Only newly received answer text fades; earlier text remains steady. */
+@keyframes ask-chunk-in { from { opacity: 0; } to { opacity: 1; } }
+.ask-chunk { animation: ask-chunk-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .ask-chunk { animation: none !important; } }
