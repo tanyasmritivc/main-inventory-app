@@ -1,3 +1,20 @@
+# October 18 landing warm paper
+
+Completed isolated lane `style/landing-warm-background-20261018`, based on the
+deployed hero renderer `ca4bb5f`. The homepage canvas uses the user-selected
+`#F7F5F1` with a matching translucent header. Only two color literals change in
+`frontend/src/components/site/landing-lab.tsx`. White cards, photos, animation,
+copy, authentication and app routes are preserved.
+
+The production build passes and desktop/mobile browser previews were inspected.
+The web suite has 325 passing tests; TypeScript and changed-file ESLint pass.
+The candidate preserves all 307 other source/public files from the latest release
+audit snapshot. It activated at 21:22:06 UTC from
+`/home/ubuntu/findez-web-releases/landing-warm-paper-20261018/frontend`.
+Public home/signup/signin return 200, protected onboarding redirects to signin,
+and the hero JPEG retains its original SHA-256. Private baseline, build, activation
+and rollback receipts are in the candidate parent directory.
+
 # October 17 invitation handoff refresh
 
 Completed mobile lane `fix/invitation-org-handoff-20261017`, clean start d53a320.
