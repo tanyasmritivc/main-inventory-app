@@ -1,32 +1,47 @@
-## Active: Settings photo consistency and adjustment (2026-10-18)
+## Chat actions and profile photos — delivered (2026-10-18)
 
-User clarified the photo saved in Settings must appear wherever that person is
-shown, including People and task assignees/creators. Add circular preview with
-zoom/pan and explicit acceptance before upload, using the saved crop everywhere.
-Separate fix/*-member-avatars-20261018 branches are stacked on the reviewed Chat
-action branches. Avatar work adds no schema change; Chat migration057 remains
-unapproved/unapplied. User explicitly corrected release number to91 because90
-already exists. Preserve original90 IPA/archive/Apple records and include its
-96b00d3 terms/config-source changes in91. Chat build90 export was not preserved
-or uploaded; the pre-existing90 artifacts remain intact. Crop/avatar testing and
-new91 signing/release are in progress. Dashboard remains unchanged.
+The user approved "Apply 057 and publish build 91." Migration 057 is applied after
+a fresh private database backup. API `65c90d4` and web `bee5088` are live. Public health
+and database checks return 200; invalid-session Chat and anonymous private-photo
+requests return 401. The deployment preserves 87 unrelated Python and 227 unrelated
+web runtime source files. No customer QA writes or existing record rewrites.
+Private activation receipts: /home/ubuntu/findez-chat-actions-release-20261018.
 
-## Chat item actions candidate (2026-10-18)
+Chat can prepare item additions/deletions for explicit review and confirmation.
+Service-only atomic receipts enforce current role/scope, stale-record protection,
+limits, rollback and idempotent retries. Model-written replies use paced fades;
+active mobile Chat hides the main header/navigation while keeping Back available.
+Older clients receive ordinary model-written guidance until upgraded. The gateway
+still batches a text event; upstream token-by-token delivery is not claimed.
 
-Text/photo model proposals, explicit review cards, service-only atomic add/delete
-and retry receipts are implemented. 1,027 Python +10 subtests, composed SQL replay,
-real confirmation/revocation races, synthetic real-model decisions and isolated
-87-table restore preservation pass. No customer QA writes. Migration057 and
-runtime activation still require the user's separate production-DB approval.
-Details: docs/plans/chat-item-actions.md. Streaming/focus remain delivered.
+The saved Settings photo appears in People, task assignees/creators, file
+attribution and activity. Replacements/removal refresh correctly. Circular preview
+supports drag, pinch zoom, zoom controls and Reset before explicit Use photo;
+preview/export share the same crop and output 512px PNG. Cancel never uploads.
+Dashboard content/layout, current inventory permissions and private photos remain.
 
-## Active: confirmed Chat item add/delete (2026-10-18)
+Validation: 1,032 Python tests plus 10 subtests; 365 branch web tests/48 suites,
+types and scoped lint; 651 Flutter tests with coverage and clean analysis.
+The one compiled-production-config gate is separately enabled and passes.
+Both-theme crop pixels/gestures, Settings, People/task refresh and Chat action
+checks pass. SQL replay, real concurrent confirmation/revocation,87-table isolated
+restore preservation and synthetic configured-model add/delete probes pass.
+All five CI gates pass for API 39170702187, web 39170702070, mobile 39170880574.
+The actual preserved web runtime builds/types and route smoke pass; its full
+suite retains18 unrelated failures in five older signup/API-key/landing/legal/
+account-deletion fixture suites. Do not change unrelated runtime to hide these.
 
-User requested adds/deletes through Chat. Separate feat/*-chat-item-actions branches; design in API docs/plans/chat-item-actions.md. No customer test writes. Migration057 will need explicit activation approval after review/tests. Streaming/focus delivery is complete: API17a60ac and webec14cee are live; Apple acknowledged builds88 and89. No processing/tester availability polling.
-
-## Active: chunked Chat delivery and fades (2026-10-18)
-
-API lane on fix/api-chat-streaming-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.
+Apple acknowledged signed production 1.0.8 (91), source `79b9abe`, delivery
+c6cab1f6-1254-4395-87f7-9e449ad60d18. IPA SHA256:
+aa4d26c06fb2a89cbe8ec3bbecee844c063de43a1bb2695e022ddbe0e2242647.
+Strict signature, all 31 archive +31 export device executables, production defines
+and main.dart target, archive preservation and Apple validation pass. Artifacts
+and acknowledgment: Documents/FindEZ/AppStore/1.0.8-build91. Original 90 binaries/
+Apple receipts remain intact;91 includes 90's 96b00d3 terms/config source fixes.
+Stop at upload acknowledgment: processing/tester availability were not polled;
+physical-device acceptance remains pending. Public App Store submission is held.
+PRs120/119/121 contain Chat; stacked PRs123/122/124 contain photo consistency/crop.
+This receipt supersedes earlier candidate/pending delivery notes below.
 
 # October 18 capture originals — live
 
