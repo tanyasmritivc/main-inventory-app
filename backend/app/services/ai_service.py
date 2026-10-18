@@ -12,6 +12,7 @@ from uuid import uuid4
 from PIL import Image
 
 from app.services.agent_gateway_client import gateway_completion
+from app.services.completion_stream import completion_events
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.document_text_extractor import extract_text_from_upload
 from app.services.find_pipeline import FindPipelineError, extract_inventory_items_with_find
@@ -169,12 +170,17 @@ def iter_assist_file_analysis_sse(*, filename: str, mime_type: str | None, conte
                 'Do not invent content, physical counts, product matches or inventory ownership. No item was saved and no mutation is permitted. '
                 'Do not imply that you can add items from this upload; direct reviewed additions to Capture. ' + CHAT_STYLE_INSTRUCTION},
             {'role':'user','content':f'Filename: {name}\nEvidence: {evidence}'},
-        ],max_tokens=450)
-        answer = _message_text(response)
+        ],max_tokens=450, stream=True)
+        answer = ''
+        for event in completion_events(response):
+            if event['type'] == 'delta':
+                answer += event['delta']
+                yield _evt(event)
+            elif event['tool_calls']:
+                raise RuntimeError('Unexpected file tool call')
         if not answer:
             raise RuntimeError('The model returned an empty file answer')
         answer=format_chat_reply(answer)
-        yield _evt({'type':'delta','delta':answer})
         yield _evt({'type':'done','tool':None,'result':None,'assistant_message':answer})
     except Exception:
         logger.warning('Chat file analysis failed; no substitute answer emitted')

@@ -19,7 +19,7 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     http.post.return_value = response
     with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), patch('app.services.agent_gateway_client.httpx.Client', return_value=http):
         client = AgentGatewayClient()
-        result = client.chat.completions.create(model='deepseek-v4-flash-agent', messages=[{'role': 'user', 'content': 'Hello'}], stream=True, extra_headers={'X-Agent-Conversation-ID': 'conversation-123'})
+        result = client.chat.completions.create(model='deepseek-v4-flash-agent', messages=[{'role': 'user', 'content': 'Hello'}], stream=False, extra_headers={'X-Agent-Conversation-ID': 'conversation-123'})
     response.raise_for_status.assert_called_once_with()
     request = http.post.call_args
     assert request.args[0] == 'https://agent.ftctools.com/v1/chat/completions'
@@ -66,7 +66,7 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
         events = list(ai_agent._iter_agent_streaming(user_id='user-1', message='Where are the M4 screws?', first_name='Tanya', conversation_id='conversation-123'))
     execute.assert_called_once_with(user_id='user-1', tool_name='inventory_search', args={'query': 'M4'})
     assert create.call_count == 2
-    assert create.call_args_list[0].kwargs['stream'] is False
+    assert create.call_args_list[0].kwargs['stream'] is True
     assert create.call_args_list[0].kwargs['parallel_tool_calls'] is False
     returned_messages = create.call_args_list[1].kwargs['messages']
     assert returned_messages[-2]['tool_calls'][0]['id'] == 'tool-call-1'

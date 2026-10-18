@@ -138,15 +138,19 @@ async def ai_photo_question_route(
 
     effective_user_id = user.user_id
     async def generate():
-        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg))
+        chunks = asyncio.Queue(maxsize=32)
+        async def on_delta(text):
+            await chunks.put(text)
+        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg, on_delta=on_delta))
         try:
             yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
-            while not task.done():
-                await asyncio.wait({task}, timeout=5)
-                if not task.done():
-                    yield b'data: {"type":"status","message":"Photo analysis is still running..."}\n\n'
+            while not task.done() or not chunks.empty():
+                try:
+                    text = await asyncio.wait_for(chunks.get(), timeout=.1)
+                    yield f"data: {json_module.dumps({'type': 'delta', 'delta': text})}\n\n".encode()
+                except asyncio.TimeoutError:
+                    continue
             answer = await task
-            yield f"data: {json_module.dumps({'type': 'delta', 'delta': answer['assistant_message']})}\n\n".encode()
             try:
                 await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
             except Exception:
@@ -297,8 +301,11 @@ async def ai_command_route(
                                 data = f"data: {json_module.dumps({'content': content})}\n\n"
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
+                        elif item.get("type") == "reset":
+                            delta_buffer.clear()
+                            yield b'data: {"type":"reset"}\n\n'
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer) or item.get("assistant_message")
+                            full_response = item.get("assistant_message") or "".join(delta_buffer)
                             if not full_response:
                                 raise RuntimeError("The model returned no completed answer")
                             answer_context = item.get("answer_context")

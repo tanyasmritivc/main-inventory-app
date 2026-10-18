@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from app.core.config import get_settings
 from app.services.agent_gateway_client import gateway_completion
+from app.services.completion_stream import async_completion_events
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.ask_presentation import answer_context_from_reads, recorded_quantity
 from app.services.assistant_tool_safety import provider_data, validate_model_answer
@@ -166,7 +167,7 @@ def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: 
             'inventory_changed': False, 'answer_context': context}
 
 
-async def answer_photo_question(*, user_id: str, message: str, image_bytes: bytes) -> dict:
+async def answer_photo_question(*, user_id: str, message: str, image_bytes: bytes, on_delta=None) -> dict:
     stored = await asyncio.to_thread(upload_image, user_id=user_id, filename=f'ask-{uuid4().hex}.jpg', content=image_bytes)
     try:
         data = await extract_inventory_items_with_find(
@@ -205,8 +206,16 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
                     'No inventory mutation was performed. Respect the selected inventory edit permission. '
                     'Do not expose internal providers, model names or infrastructure. Do not output JSON or a fixed boilerplate report. ' + CHAT_STYLE_INSTRUCTION + ' ' + style_instruction(preferences)},
                 {'role': 'user', 'content': 'Question: ' + message + '\nEvidence: ' + json.dumps(provider_data(evidence))},
-            ], conversation_id='ask-photo-' + uuid4().hex, max_tokens=500)
-        content = response.choices[0].message.content
+            ], conversation_id='ask-photo-' + uuid4().hex, max_tokens=500, stream=True)
+        content = ''
+        async for event in async_completion_events(response):
+            if event['type'] == 'delta':
+                content += event['delta']
+                validate_model_answer(message, [], content)
+                if on_delta:
+                    await on_delta(event['delta'])
+            elif event['tool_calls']:
+                raise RuntimeError('Unexpected photo tool call')
         if not isinstance(content, str) or not content.strip():
             raise RuntimeError('The model returned an empty photo answer')
         answer = format_chat_reply(content.strip())
