@@ -53,8 +53,8 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
     settings = get_settings()
     supabase = get_supabase_admin()
 
-    safe_filename = filename.replace("/", "_").replace("\\", "_")
-    path = f"{user_id}/{safe_filename}"
+    safe_filename = filename.replace("/", "_").replace("\\", "_").replace("%", "_")
+    path = f"{user_id}/{uuid4().hex}-{safe_filename}"
     scope = current_inventory.get()
     if scope:
         path = f"{user_id}/{scope.inventory_id}-{uuid4().hex}-{safe_filename}"
@@ -66,19 +66,20 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
         file_options={"content-type": _guess_content_type(filename), "x-upsert": "true"},
     )
 
-    if settings.supabase_storage_public:
-        url = bucket.get_public_url(path)
-        return StoredImage(
-            path=path,
-            url=_external_storage_url(url, settings.supabase_public_url),
-        )
-
-    signed = bucket.create_signed_url(path, settings.supabase_storage_signed_url_ttl_seconds)
-    url = signed.get("signedURL") or signed.get("signedUrl")
-    return StoredImage(
-        path=path,
-        url=_external_storage_url(url, settings.supabase_public_url),
-    )
+    # Preview grants are private to the requesting actor and are consumed when
+    # the image is attached to an item/review. Stored URLs remain stable locators.
+    from app.services.resource_access import request_actor
+    from app.services.supabase_client import get_supabase_raw
+    actor = request_actor.get()
+    if actor:
+        registered = get_supabase_raw().rpc('findez_register_image_preview', {
+            'p_actor': actor.actor_id, 'p_inventory': scope.inventory_id if scope else None, 'p_path': path,
+        }).execute().data
+        if registered is not True:
+            raise RuntimeError('Private image preview could not be registered')
+    # Stable locator only: even legacy values use authenticated image delivery.
+    # Never issue a bearer signed Storage link for an inventory photo.
+    return StoredImage(path=path, url=_external_storage_url(bucket.get_public_url(path),settings.supabase_public_url))
 
 
 def delete_image(*, path: str) -> None:
@@ -92,7 +93,7 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
     settings = get_settings()
     supabase = get_supabase_admin()
 
-    safe_filename = filename.replace("/", "_").replace("\\", "_")
+    safe_filename = filename.replace("/", "_").replace("\\", "_").replace("%", "_")
     path = f"{user_id}/docs/{safe_filename}"
     scope = current_inventory.get()
     if scope:
@@ -115,7 +116,7 @@ def upload_team_document(
     settings = get_settings()
     supabase = get_supabase_admin()
 
-    safe_filename = filename.replace("/", "_").replace("\\", "_")
+    safe_filename = filename.replace("/", "_").replace("\\", "_").replace("%", "_")
     path = f"teams/{team_id}/{user_id}/{uuid4().hex}_{safe_filename}"
 
     bucket = supabase.storage.from_("documents")

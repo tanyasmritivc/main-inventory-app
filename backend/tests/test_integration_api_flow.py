@@ -73,7 +73,10 @@ class MemoryQuery:
 @pytest.fixture
 def api(monkeypatch):
     rows = {"api_keys": [], "teams": [{"team_id": WORKSPACE, "owner_user_id": OWNER, "name": "Team"}]}
-    admin = SimpleNamespace(table=lambda table: MemoryQuery(rows[table]))
+    def active_account(name, params):
+        assert name == 'findez_actor_active' and params == {'p_actor': OWNER}
+        return SimpleNamespace(execute=lambda:SimpleNamespace(data=True))
+    admin = SimpleNamespace(table=lambda table: MemoryQuery(rows[table]), rpc=active_account)
     monkeypatch.setattr(api_v1, "get_supabase_admin", lambda: admin)
     monkeypatch.setattr(api_key_auth, "get_supabase_admin", lambda: admin)
     settings = SimpleNamespace(env="production", api_key_requests_per_minute=120,

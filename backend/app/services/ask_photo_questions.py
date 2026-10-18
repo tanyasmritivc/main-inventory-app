@@ -29,16 +29,12 @@ def refresh_photo_context(context: dict, user_id: str) -> dict:
     context = dict(context)
     context.pop('photo_url', None)
     path = context.get('photo_path')
-    if not isinstance(path, str) or not re.fullmatch(re.escape(user_id) + r'/ask-[a-f0-9]{32}\.jpg', path):
+    if not isinstance(path, str) or not re.fullmatch(re.escape(user_id) + r'/(?:[a-f0-9-]{36}-[a-f0-9]{32}-|[a-f0-9]{32}-)?ask-[a-f0-9]{32}\.jpg', path):
         context.pop('photo_path', None)
         return context
     settings = get_settings()
     bucket = get_supabase_admin().storage.from_(settings.supabase_storage_bucket)
-    if settings.supabase_storage_public:
-        url = bucket.get_public_url(path)
-    else:
-        signed = bucket.create_signed_url(path, settings.supabase_storage_signed_url_ttl_seconds)
-        url = signed.get('signedURL') or signed.get('signedUrl')
+    url = bucket.get_public_url(path)
     if not url:
         raise RuntimeError('Photo URL unavailable')
     context['photo_url'] = _external_storage_url(url, settings.supabase_public_url)

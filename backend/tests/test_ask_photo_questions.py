@@ -307,14 +307,15 @@ def test_history_never_signs_foreign_or_arbitrary_photo_paths(path):
     assert 'photo_url' not in result and 'photo_path' not in result
 
 
-def test_history_refreshes_expired_private_photo_url_from_owned_path():
+def test_history_refreshes_authenticated_photo_locator_from_owned_path():
     client = MagicMock()
-    client.storage.from_.return_value.create_signed_url.return_value = {'signedURL': 'http://storage.internal/storage/v1/object/sign/item-images/' + PATH + '?token=fresh'}
+    client.storage.from_.return_value.get_public_url.return_value = 'http://storage.internal/storage/v1/object/public/item-images/' + PATH
     settings = SimpleNamespace(supabase_storage_bucket='item-images', supabase_storage_public=False, supabase_storage_signed_url_ttl_seconds=3600, supabase_public_url='https://api.test')
     with patch.object(photos, 'get_settings', return_value=settings), patch.object(photos, 'get_supabase_admin', return_value=client):
         result = photos.refresh_photo_context({'photo_path': PATH, 'photo_url': 'https://evil.test'}, 'user-1')
     assert result['photo_url'].startswith('https://api.test/storage/')
-    client.storage.from_.return_value.create_signed_url.assert_called_once_with(PATH, 3600)
+    client.storage.from_.return_value.get_public_url.assert_called_once_with(PATH)
+    client.storage.from_.return_value.create_signed_url.assert_not_called()
 
 
 def api_client(authenticated=True):

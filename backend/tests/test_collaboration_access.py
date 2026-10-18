@@ -54,6 +54,8 @@ def test_editor_override_viewer_default_revocation_and_cache_scope(api):
     inv.update(access_mode='workspace',default_role='viewer')
     enable_actor(client,db)
     headers={'x-test-actor':MEMBER}
+    assert client.get(f'/inventories/{TEAM_INV}',headers=headers).json()['inventory']['role']=='editor'
+    db.rows['app_inventory_members']=[{'inventory_id':TEAM_INV,'user_id':MEMBER,'role':'viewer'}]
     assert client.get(f'/inventories/{TEAM_INV}',headers=headers).json()['inventory']['role']=='viewer'
     assert client.patch(f'/inventories/{TEAM_INV}/update_item',headers=headers,json={'item_id':TEAM_INV,'quantity':9}).status_code==403
     db.rows['app_inventory_members']=[{'inventory_id':TEAM_INV,'user_id':MEMBER,'role':'editor'}]
@@ -74,7 +76,7 @@ def test_members_view_is_inventory_specific_not_entire_workspace(api):
     db.rows['app_inventory_members']=[{'inventory_id':TEAM_INV,'user_id':MEMBER,'role':'viewer'}]
     result=client.get(f'/inventories/{TEAM_INV}/access',headers={'x-test-actor':MEMBER})
     assert result.status_code==200,result.text
-    assert {m['user_id'] for m in result.json()['members']}=={OWNER,MEMBER}
+    assert {m['user_id'] for m in result.json()['members']}=={MEMBER}
     assert result.json()['inventory']['can_manage'] is False
     # Removal invalidates a surviving grant even if database cleanup is delayed.
     db.rows['team_memberships']=[m for m in db.rows['team_memberships'] if m['user_id']!=MEMBER]
@@ -85,6 +87,7 @@ def test_legacy_viewer_cannot_modify_owned_files_or_photos(api):
     client,db=api
     inv=next(r for r in db.rows['app_inventories'] if r['inventory_id']==TEAM_INV)
     inv.update(access_mode='workspace',default_role='viewer')
+    db.rows['app_inventory_members']=[{'inventory_id':TEAM_INV,'user_id':MEMBER,'role':'viewer'}]
     item=next(r for r in db.rows['items'] if r['inventory_id']==TEAM_INV)
     item['user_id']=MEMBER
     path=f'{MEMBER}/note.txt'

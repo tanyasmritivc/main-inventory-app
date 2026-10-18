@@ -1,3 +1,15 @@
+## Consistent resource permissions and private photos
+
+Run the full Python, web and Flutter suites/analysis/types/build. The composed
+empty disposable SQL fixture now includes resource_permissions.sql and
+private_item_images.sql (054/055 replay). Then, in that same disposable database,
+run FINDEZ_DISPOSABLE_SQL_TESTS=1 python3
+backend/tests/sql/resource_permission_concurrency.py. Positive controls and two
+real connections verify that revocation defeats an in-flight member change or
+inventory rename. Never run synthetic setup on production. See
+`docs/plans/consistent-resource-permissions.md` for evidence, gateway checks,
+restored-copy preservation and old-mobile compatibility/activation gates.
+
 # FindEZ test suite
 
 ## Shared catalog write permissions
