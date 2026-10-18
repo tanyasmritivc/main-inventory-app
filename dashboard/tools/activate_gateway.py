@@ -1,0 +1,122 @@
+"""Activate the checked frontend without changing service, proxy or env config."""
+import ctypes
+import hashlib
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import time
+import urllib.request
+
+release = Path('/home/ubuntu/findez-web-releases/dashboard-gateway-20261018')
+candidate = release / 'frontend'
+live = Path(json.loads((release / 'active.json').read_text())['directory'])
+baseline = json.loads((release / 'baseline.json').read_text())
+expected_build = '1gl0V0qpc3yh9GrtKknG3'
+changed_files = set()
+new_files = {'src/app/api/founder/[...path]/route.ts'}
+
+
+def hashes(root):
+    return {
+        str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in root.rglob('*')
+        if p.is_file() and not any(
+            part in {'node_modules', '.next', 'coverage'}
+            for part in p.relative_to(root).parts
+        )
+    }
+
+
+def service_directory():
+    return subprocess.check_output([
+        'systemctl', 'show', 'findez-web', '-p', 'WorkingDirectory', '--value',
+    ], text=True).strip()
+
+
+assert service_directory() == str(live), 'Another frontend release became active'
+assert hashes(live) == baseline, 'The live frontend changed after preparation'
+prepared = hashes(candidate)
+assert set(prepared) - set(baseline) == new_files
+assert {n for n in baseline if prepared[n] != baseline[n]} == changed_files
+assert (candidate / '.next/BUILD_ID').read_text().strip() == expected_build
+prior_build = (live / '.next/BUILD_ID').read_text().strip()
+config_paths = [
+    Path('/etc/systemd/system/findez-web.service'),
+    Path('/etc/systemd/system/findez-web.service.d/web-rebuild.conf'),
+    Path('/etc/systemd/system/findez-web.service.d/network-online.conf'),
+    Path('/home/ubuntu/findez/frontend/.env.production'),
+]
+config_hashes = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in config_paths}
+
+# Stop only the private candidate listener before exchanging its directory.
+listener = subprocess.run(['fuser', '-n', 'tcp', '3215'], capture_output=True, text=True)
+if listener.returncode == 0:
+    pids = [int(value) for value in listener.stdout.split()]
+    assert len(pids) == 1
+    pid = pids[0]
+    assert Path(f'/proc/{pid}/cwd').resolve() == candidate
+    assert b'next' in Path(f'/proc/{pid}/cmdline').read_bytes()
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(30):
+        if not Path(f'/proc/{pid}').exists():
+            break
+        time.sleep(.1)
+
+libc = ctypes.CDLL(None, use_errno=True)
+rename_exchange = libc.renameat2
+rename_exchange.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+
+
+def exchange():
+    if rename_exchange(-100, os.fsencode(candidate), -100, os.fsencode(live), 2):
+        raise OSError(ctypes.get_errno(), 'Atomic frontend directory exchange failed')
+
+
+def restart():
+    subprocess.run(['sudo', 'systemctl', 'restart', 'findez-web'], check=True, timeout=30)
+
+
+exchange()
+try:
+    restart()
+    for attempt in range(25):
+        try:
+            request = urllib.request.Request('http://127.0.0.1:3000/', headers={'Host': 'findez.ai'})
+            with urllib.request.urlopen(request, timeout=2) as response:
+                html = response.read().decode()
+            assert 'fzh-stage' in html and 'Making our model better,' in html
+            assert 'Business inquiries' in html and 'id=\"see\"' not in html
+            break
+        except Exception:
+            if attempt == 24:
+                raise
+            time.sleep(.3)
+    assert (live / '.next/BUILD_ID').read_text().strip() == expected_build
+    assert service_directory() == str(live)
+    assert hashes(live) == prepared
+    assert all(hashlib.sha256(p.read_bytes()).hexdigest() == value for p, value in config_hashes.items())
+    assert (candidate / '.next/BUILD_ID').read_text().strip() == prior_build
+except Exception:
+    exchange()
+    restart()
+    raise
+
+receipt = {
+    'url': 'https://findez.ai/api/founder/v1',
+    'build_id': expected_build,
+    'prior_build_id': prior_build,
+    'active_frontend': str(live),
+    'rollback_frontend': str(candidate),
+    'original_source_files_preserved': len(baseline) - len(changed_files),
+    'changed_existing_files': sorted(changed_files),
+    'new_runtime_files': sorted(new_files),
+    'environment_and_service_configuration_unchanged': True,
+    'backend_mobile_database_untouched': True,
+    'frontend_service_active': subprocess.check_output([
+        'systemctl', 'is-active', 'findez-web',
+    ], text=True).strip(),
+}
+(release / 'deployment.json').write_text(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps(receipt))

@@ -1,0 +1,34 @@
+{
+  "public_api": "https://findez.ai/api/founder/v1",
+  "verified_direct_service": "https://findez.ai/api/founder/v1",
+  "founder_access": 200,
+  "anonymous_access": 401,
+  "forged_token_access": 401,
+  "customer_directory_connected": true,
+  "issue_create_and_resolve": true,
+  "data_sources": [
+    {
+      "name": "analytics",
+      "status": "synced"
+    },
+    {
+      "name": "ai",
+      "status": "synced"
+    },
+    {
+      "name": "revenue",
+      "status": "not connected"
+    },
+    {
+      "name": "infrastructure",
+      "status": "synced"
+    },
+    {
+      "name": "diagnostics",
+      "status": "synced"
+    }
+  ],
+  "customer_inventory_unchanged": true,
+  "email_not_sent": true,
+  "temporary_session_revoked": true
+}

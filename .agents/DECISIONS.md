@@ -1,3 +1,20 @@
+## 2026-10-18: Private founder dashboard is a separate application
+
+The founder dashboard uses `dashboard/mobile`, bundle `com.findez.dashboard`, and
+an isolated read-only collector service. A verified founder UUID is enforced on
+every administrative route. Customer organization/workspace roles never grant
+founder access. Service/provider secrets remain server-side. Only the dashboard's
+own issues, monitoring and audit store is writable; customer mutations are not
+enabled. All unavailable metrics are labeled, with no simulated production data.
+
+The founder's latest design instruction supersedes the original dark brief:
+light mode, Apple system display font, body 400 and metric numbers 300. Keep these
+weights even when iOS Bold Text is on. Preserve text scaling and VoiceOver. The
+supplied graph SVG is the dashboard icon. A full snapshot refreshes every 60
+seconds while active/unlocked, immediately on return/unlock, and updates open
+customer detail routes too. iOS background suspension is not misrepresented as
+continuous client polling. See `dashboard/README.md`.
+
 # Invitation acceptance establishes an explicit organization destination
 
 Accepted access invitations target the exact organization/workspace/inventory

@@ -1,0 +1,16 @@
+mobile/.env
+service/.env
+service/owner.json
+*.sqlite*
+__pycache__/
+.pytest_cache/
+verification/*.ipa
+verification/*.xcarchive/
+verification/*private*
+verification/*.log
+
+
+verification/device-*.json
+verification/simulators.json
+verification/apple-preflight.json
+verification/apple-founder-testers.json

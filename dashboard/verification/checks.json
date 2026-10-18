@@ -1,0 +1,21 @@
+{
+  "flutter_analysis": "clean",
+  "flutter_tests": 8,
+  "native_simulator_journey": "passed",
+  "native_keychain": "passed",
+  "bold_text_keeps_chosen_font_weight": true,
+  "light_theme_with_system_dark": true,
+  "refresh_at_60_and_120_seconds": true,
+  "foreground_refresh": true,
+  "full_snapshot_replacement": true,
+  "open_customer_detail_refresh": true,
+  "failed_refresh_preserves_timestamp_and_data": true,
+  "service_tests": 12,
+  "frontend_tests": 332,
+  "frontend_suites": 46,
+  "gateway_tests": 7,
+  "typescript": "passed",
+  "changed_file_eslint": "passed",
+  "live_authorization_receipt": "live-api.json",
+  "ui_fixtures_only": true
+}

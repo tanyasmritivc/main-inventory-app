@@ -1,0 +1,48 @@
+{
+  "type": "bundleIds",
+  "id": "4BL6W38DU2",
+  "attributes": {
+    "name": "FindEZ Dashboard",
+    "identifier": "com.findez.dashboard",
+    "platform": "UNIVERSAL",
+    "seedId": "Y68YH9U95S"
+  },
+  "relationships": {
+    "bundleIdCapabilities": {
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 2147483647
+        }
+      },
+      "data": [
+        {
+          "type": "bundleIdCapabilities",
+          "id": "4BL6W38DU2_IN_APP_PURCHASE"
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/4BL6W38DU2/relationships/bundleIdCapabilities",
+        "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/4BL6W38DU2/bundleIdCapabilities"
+      }
+    },
+    "profiles": {
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 2147483647
+        }
+      },
+      "data": [
+
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/4BL6W38DU2/relationships/profiles",
+        "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/4BL6W38DU2/profiles"
+      }
+    }
+  },
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/4BL6W38DU2"
+  }
+}

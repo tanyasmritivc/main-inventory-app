@@ -1,0 +1,15 @@
+{
+  "url": "https://findez.ai/api/founder/v1",
+  "build_id": "1gl0V0qpc3yh9GrtKknG3",
+  "prior_build_id": "9mnbC6UHSo7x7JzHmEpZy",
+  "active_frontend": "/home/ubuntu/findez-web-releases/permissions-url-compat-20261018/frontend",
+  "rollback_frontend": "/home/ubuntu/findez-web-releases/dashboard-gateway-20261018/frontend",
+  "original_source_files_preserved": 300,
+  "changed_existing_files": [],
+  "new_runtime_files": [
+    "src/app/api/founder/[...path]/route.ts"
+  ],
+  "environment_and_service_configuration_unchanged": true,
+  "backend_mobile_database_untouched": true,
+  "frontend_service_active": "active"
+}

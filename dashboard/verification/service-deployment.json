@@ -1,0 +1,14 @@
+{
+  "service": "findez-dashboard",
+  "release": "/home/ubuntu/findez-dashboard/releases/20261018-v1",
+  "data": "/home/ubuntu/findez-dashboard-data",
+  "api": "https://findez.ai/api/founder/v1",
+  "founder_only": true,
+  "unauthenticated_snapshot_status": 401,
+  "customer_backend_source_and_environment_unchanged": true,
+  "customer_services_not_restarted": true,
+  "database_schema_unchanged": true,
+  "nginx_original_backup": "/home/ubuntu/findez-dashboard/nginx-before-dashboard.conf",
+  "nginx_original_restored": true,
+  "public_gateway": "Next.js additive API route"
+}

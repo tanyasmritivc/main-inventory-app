@@ -257,6 +257,10 @@ entries below describe the source/beta state before this explicit approval.
 
 # Active work
 
+## Private founder dashboard
+
+Active on `feat/private-dashboard` in `/Users/tanyasmritivictorcharles/dev/findez-dashboard`. Separate `dashboard/` iOS app and isolated monitoring service. Founder-only access for the explicitly authorized existing account; customer apps and their backend code remain unchanged. Includes real connected data, honest unavailable states, incident tracking and TestFlight delivery.
+
 ## October 16 account memory foundation
 
 Lane `feat/account-memory-foundation-20261016`, based on `5ca4e97`. Tanya approved
