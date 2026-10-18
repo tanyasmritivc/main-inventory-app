@@ -1,3 +1,7 @@
+## Active: chunked Chat delivery and fades (2026-10-18)
+
+mobile lane on fix/mobile-chat-stream-fade-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.
+
 # October 18 photo save/return — beta87 uploaded
 
 Apple acknowledged signed production1.0.8(87), source445d3c7, delivery
