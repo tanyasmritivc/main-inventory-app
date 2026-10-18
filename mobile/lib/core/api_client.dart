@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ask_answer.dart';
+import 'chat_item_action.dart';
 import 'inventory_context.dart';
 
 class SessionExpiredException implements Exception {
@@ -182,11 +183,12 @@ class ApiClient {
       ? 'legacy'
       : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
   static final _inventoryRoutes = RegExp(
-    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)',
+    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)',
   );
   static bool _readOperation(String method, String path) =>
       ['GET', 'HEAD', 'OPTIONS'].contains(method) ||
       path.startsWith('/conversations') ||
+      path.startsWith('/ai_actions/') ||
       [
         '/search_items',
         '/ai_command',
@@ -962,6 +964,53 @@ class ApiClient {
     await _dio.delete<void>('/conversations/$id', options: _authOptions());
   }
 
+  Future<ChatItemActionResult> decideChatItemAction({
+    required ChatItemAction action,
+    required String decision,
+    dio.CancelToken? cancelToken,
+  }) async {
+    assertCurrentContext();
+    if (inventoryContext == null ||
+        inventoryContext!.inventoryId != action.inventoryId) {
+      throw const AskRequestException(
+        'Open the inventory containing this action before continuing.',
+      );
+    }
+    if (!const ['confirm', 'cancel'].contains(decision)) {
+      throw ArgumentError('Invalid decision');
+    }
+    if (decision == 'confirm' && !canEdit) {
+      throw const AskRequestException(
+        'You have view-only access to this inventory.',
+      );
+    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/ai_actions/${action.id}',
+      data: {'decision': decision},
+      options: _authOptions().copyWith(
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+      cancelToken: cancelToken,
+    );
+    assertCurrentContext();
+    final data = response.data ?? {};
+    final updated = ChatItemAction.parse(data['action']);
+    if (updated == null ||
+        updated.id != action.id ||
+        updated.inventoryId != action.inventoryId ||
+        updated.status == 'pending') {
+      throw const AskRequestException(
+        'The action receipt could not be checked. Retry this same card safely.',
+      );
+    }
+    return ChatItemActionResult(
+      action: updated,
+      assistantMessage: data['assistant_message'] as String?,
+      replyId: data['reply_id'] as String?,
+      answerError: data['answer_error'] as String?,
+    );
+  }
+
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
@@ -982,6 +1031,7 @@ class ApiClient {
     request.body = json.encode(<String, dynamic>{
       'message': message,
       if (conversationId != null) 'conversation_id': conversationId,
+      'supports_item_actions': true,
     });
 
     final client = http.Client();
@@ -1021,6 +1071,7 @@ class ApiClient {
     request.headers['Accept'] = 'text/event-stream';
     request.headers['Authorization'] = 'Bearer ${_requireToken()}';
     request.fields['message'] = message;
+    request.fields['supports_item_actions'] = 'true';
     if (conversationId != null) {
       request.fields['conversation_id'] = conversationId;
     }

@@ -16,6 +16,7 @@ import '../../core/api_error.dart';
 import '../../core/config.dart';
 import '../../core/restock_plan.dart';
 import '../../core/ask_answer.dart';
+import '../../core/chat_item_action.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/frosted_surface.dart';
 import 'ask_answer_view.dart';
@@ -204,6 +205,7 @@ class _ChatPageState extends State<ChatPage>
   final Queue<({int index, String text})> _presentationQueue = Queue();
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
   final Set<int> _presentationComplete = <int>{};
+  final Set<String> _actionReplyIds = {};
   final Queue<String> _queuedFollowUps = Queue();
   bool _canQueueFollowUp = false;
 
@@ -379,6 +381,7 @@ class _ChatPageState extends State<ChatPage>
     _presentationHints.clear();
     _presentationComplete.clear();
     _queuedFollowUps.clear();
+    _actionReplyIds.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2250,6 +2253,7 @@ class _ChatPageState extends State<ChatPage>
           owner != Supabase.instance.client.auth.currentUser?.id) {
         return;
       }
+      _actionReplyIds.addAll(result.messages.map((message) => message.id));
       final msgs = result.messages
           .map(
             (m) => _ChatMessage(
@@ -2266,6 +2270,7 @@ class _ChatPageState extends State<ChatPage>
           msgs[i].answerContext?.photoUrl,
           owner: Supabase.instance.client.auth.currentUser?.id,
           origins: [widget.api.baseUrl, AppConfig.supabaseUrl],
+          inventoryId: widget.api.inventoryContext?.inventoryId,
         );
         if (photoUrl != null) {
           msgs[i - 1] = msgs[i - 1].copyWith(photoUrl: photoUrl);
@@ -2723,6 +2728,63 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
+  void _onItemActionResult(ChatItemActionResult result) {
+    if (!mounted) return;
+    // ListView may dispose offscreen cards. Retain the actual receipt on the
+    // message itself so scrolling back never shows a confirmed card as pending.
+    setState(() {
+      for (var i = 0; i < _session.messages.length; i++) {
+        final message = _session.messages[i];
+        final data = message.answerContext;
+        if (data == null ||
+            !data.pendingActions.any(
+              (action) => action.id == result.action.id,
+            )) {
+          continue;
+        }
+        _session.messages[i] = message.copyWith(
+          answerContext: AskAnswerContext(
+            sources: data.sources,
+            rows: data.rows,
+            rowsTruncated: data.rowsTruncated,
+            photoUrl: data.photoUrl,
+            pendingActions: data.pendingActions
+                .map(
+                  (action) =>
+                      action.id == result.action.id ? result.action : action,
+                )
+                .toList(),
+          ),
+        );
+      }
+    });
+    if (result.action.status != 'confirmed') return;
+    widget.onInventoryMutated?.call();
+    unawaited(_prefetchInventorySnapshot());
+    final text = result.assistantMessage;
+    final replyId = result.replyId;
+    if (text == null ||
+        text.isEmpty ||
+        replyId == null ||
+        !_actionReplyIds.add(replyId)) {
+      return;
+    }
+    final index = _session.messages.length;
+    setState(
+      () => _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: '',
+          timestamp: _nowTs(),
+          isStreaming: true,
+          live: true,
+        ),
+      ),
+    );
+    _enqueuePresentation(index, text);
+    _completePresentation(index, null, canonical: text);
+  }
+
   Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) =>
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
@@ -2732,6 +2794,8 @@ class _ChatPageState extends State<ChatPage>
         contextData: message.answerContext,
         isLoading: isTyping,
         animateChunks: message.live,
+        api: widget.api,
+        onActionResult: _onItemActionResult,
         pendingMessage: _progress ?? 'Checking your things...',
         onOpenSource:
             message.navHint?['type'] != 'project_kit' ||

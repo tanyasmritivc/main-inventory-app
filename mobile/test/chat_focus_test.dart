@@ -9,6 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/chat_item_action.dart';
+import 'package:mobile/core/ask_answer.dart';
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/ui/app_typography.dart';
 import 'package:mobile/core/inventory_cache.dart';
@@ -66,6 +69,32 @@ class _FocusApi extends ApiClient {
   Future<Map<String, dynamic>> getMyProfile() async => {};
   @override
   Future<Map<String, dynamic>> getMyLimits() async => {'pilot_mode': true};
+}
+
+class _ActionFocusApi extends _FocusApi {
+  _ActionFocusApi(StreamController<AiStreamEvent> stream)
+    : super(pending: stream);
+  int confirmations = 0;
+  final reply = List.generate(90, (i) => 'receipt$i').join(' ');
+  @override
+  Future<ChatItemActionResult> decideChatItemAction({
+    required ChatItemAction action,
+    required String decision,
+    CancelToken? cancelToken,
+  }) async {
+    confirmations++;
+    return ChatItemActionResult(
+      action: ChatItemAction(
+        id: action.id,
+        inventoryId: action.inventoryId,
+        operation: 'add',
+        status: 'confirmed',
+        items: action.items,
+      ),
+      assistantMessage: reply,
+      replyId: 'confirmed-reply',
+    );
+  }
 }
 
 Future<void> _tab(WidgetTester tester, int index) async {
@@ -167,6 +196,63 @@ void main() {
   });
 
   for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} reviewed Chat action keeps focus and fades the confirmed model reply',
+      (tester) async {
+        final stream = StreamController<AiStreamEvent>();
+        final api = _ActionFocusApi(stream);
+        await _mount(tester, api, brightness: brightness);
+        await _send(tester, 'Add 3 bolts in Garage');
+        stream.add(
+          AiStreamEvent(
+            type: 'delta',
+            delta: 'Review the new items before confirming.',
+          ),
+        );
+        stream.add(
+          AiStreamEvent(
+            type: 'done',
+            conversationId: 'action-conversation',
+            answerContext: AskAnswerContext.fromJson({
+              'pending_actions': [
+                {
+                  'id': '22222222-2222-4222-8222-222222222222',
+                  'inventory_id': '11111111-1111-4111-8111-111111111111',
+                  'operation': 'add',
+                  'status': 'pending',
+                  'items': [
+                    {'name': 'Bolt', 'quantity': 3, 'location': 'Garage'},
+                  ],
+                },
+              ],
+            }),
+          ),
+        );
+        await stream.close();
+        await tester.pumpAndSettle();
+        expect(api.confirmations, 0);
+        await tester.ensureVisible(find.text('Confirm additions'));
+        await tester.tap(find.text('Confirm additions'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 36));
+        expect(api.confirmations, 1);
+        expect(find.byType(AppBar), findsNothing);
+        expect(find.byType(HomeNavigation), findsNothing);
+        expect(find.byTooltip('Back'), findsOneWidget);
+        expect(find.textContaining('receipt89'), findsNothing);
+        await tester.pumpAndSettle();
+        expect(find.textContaining(api.reply), findsOneWidget);
+        tester
+            .widget<ListView>(find.byType(ListView).first)
+            .controller!
+            .jumpTo(0);
+        await tester.pumpAndSettle();
+        expect(find.text('Change confirmed'), findsOneWidget);
+        expect(find.text('Confirm additions'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
     testWidgets('${brightness.name} focus keeps stream and draft across Back', (
       tester,
     ) async {

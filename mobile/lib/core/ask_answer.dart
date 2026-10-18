@@ -1,3 +1,4 @@
+import 'chat_item_action.dart';
 import 'dart:typed_data';
 
 class AskSessionScope {
@@ -46,11 +47,13 @@ class AskAnswerContext {
     this.rows = const [],
     this.rowsTruncated = false,
     this.photoUrl,
+    this.pendingActions = const [],
   });
   final List<AskSource> sources;
   final List<AskResultRow> rows;
   final bool rowsTruncated;
   final String? photoUrl;
+  final List<ChatItemAction> pendingActions;
 
   factory AskAnswerContext.fromJson(Map<String, dynamic> json) {
     String text(Object? value, [int limit = 200]) {
@@ -126,6 +129,14 @@ class AskAnswerContext {
       }
     }
     return AskAnswerContext(
+      pendingActions:
+          (json['pending_actions'] is List
+                  ? json['pending_actions'] as List
+                  : const [])
+              .take(8)
+              .map(ChatItemAction.parse)
+              .whereType<ChatItemAction>()
+              .toList(),
       sources: sources,
       rows: rows,
       rowsTruncated: json['rows_truncated'] == true,
@@ -147,6 +158,7 @@ String? trustedAskPhotoUrl(
   String? value, {
   required String? owner,
   required List<String> origins,
+  String? inventoryId,
 }) {
   if (value == null || owner == null || owner.isEmpty) return null;
   final uri = Uri.tryParse(value);
@@ -169,9 +181,18 @@ String? trustedAskPhotoUrl(
       path[1] != 'v1' ||
       path[2] != 'object' ||
       !{'public', 'sign'}.contains(path[3]) ||
-      path[4].isEmpty ||
-      path[5] != owner) {
+      path[4].isEmpty) {
     return null;
   }
-  return RegExp(r'^ask-[a-f0-9]{32}\.jpg$').hasMatch(path[6]) ? value : null;
+  final legacy =
+      path[5] == owner &&
+      RegExp(r'^(?:[a-f0-9]{32}-)?ask-[a-f0-9]{32}\.jpg$').hasMatch(path[6]);
+  final scoped =
+      inventoryId != null &&
+      RegExp(r'^[a-f0-9-]{36}$', caseSensitive: false).hasMatch(path[5]) &&
+      RegExp(
+        '^${RegExp.escape(inventoryId)}-[a-f0-9]{32}-ask-[a-f0-9]{32}\\.jpg'
+        r'$',
+      ).hasMatch(path[6]);
+  return legacy || scoped ? value : null;
 }
