@@ -1,3 +1,7 @@
+# October 18 release audit
+
+Feature freeze: isolated release audit lane. See docs/plans/release-readiness-20261018.md. API keys, documentation, legal updates and release regressions are published; user-approved production migrations 053/058 and their two backend files are now live; health and privileges verified. Preserve other unfinished feature work.
+
 ## Active: chunked Chat delivery and fades (2026-10-18)
 
 API lane on fix/api-chat-streaming-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.

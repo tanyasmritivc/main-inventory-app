@@ -321,3 +321,16 @@ def test_patch_rejects_null_required_fields_or_workspace_change(api, body):
     response = api.client.patch(f"/api/v1/items/{uuid4()}", headers=bearer(key), json=body)
     assert response.status_code == 422
     api.factory.assert_not_called()
+
+
+@pytest.mark.parametrize("code", ["23514", "23503"])
+def test_invalid_inventory_writes_return_actionable_400_without_internal_details(code):
+    from postgrest.exceptions import APIError
+    request = Request({"type": "http", "headers": []})
+    error = api_v1._data_failure(request, "update item", APIError({
+        "code": code, "message": "private constraint and tenant identifiers", "details": None, "hint": None,
+    }))
+    assert error.status_code == 400
+    assert error.detail["code"] == "invalid_inventory_request"
+    assert "same inventory" in error.detail["message"]
+    assert "private constraint" not in str(error.detail)
