@@ -21,3 +21,14 @@ fonts passes. The sandboxed Turbopack runner stalled and was stopped; the normal
 production compiler/build is used for this release. No schema or membership
 changes on publication. Runtime files match active release base hashes.
 Publication and visual review receipts follow after activation.
+
+Guarded publication succeeded at2026-10-18 01:15UTC. Runtime7a0998f is content
+identical to rebased0b49cd4, on compatibility parent46ced29. PR100 passes all
+five gates, run39086417222. The current release is
+/home/ubuntu/findez-web-releases/invitation-handoff-20261017/frontend. Candidate
+and live invitation routes, backend/database health and exact runtime file hashes
+pass;245 unrelated web source files are preserved. Safari visually verifies
+access/workspace unavailable-code presentation in light and dark. The original
+light preference is restored and the temporary review tab closed. No invitations
+or memberships were created/accepted for live QA. Private rollback/activation
+receipt: /home/ubuntu/findez-invitation-release-20261017.
