@@ -169,6 +169,35 @@ Future<void> _editNotes(WidgetTester tester, String text) async {
 
 void main() {
   for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} Viewer can swipe from crop to original in item info',
+      (tester) async {
+        final api = _Api()
+          ..photoList = const [
+            ItemPhoto(
+              photoId: 'crop',
+              imageUrl: 'https://api.test/crop.jpg',
+              isPrimary: true,
+            ),
+            ItemPhoto(
+              photoId: 'original',
+              imageUrl: 'https://api.test/original.jpg',
+              isPrimary: false,
+            ),
+          ];
+        await _open(tester, api, permission: 'view', brightness: brightness);
+        expect(find.text('1 of 2'), findsOneWidget);
+        await tester.drag(find.byType(PageView), const Offset(-300, 0));
+        await tester.pumpAndSettle();
+        expect(find.text('2 of 2'), findsOneWidget);
+        expect(find.byTooltip('Delete photo'), findsNothing);
+        expect(_scroll, findsOneWidget);
+        expect(api.writes, isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+  for (final brightness in Brightness.values) {
     for (final scale in [1.0, 2.6]) {
       testWidgets(
         '${brightness.name} item info supports $scale text and swipe dismissal',

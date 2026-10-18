@@ -1,3 +1,16 @@
+# October 18 photo save/return — beta87 uploaded
+
+Apple acknowledged signed production1.0.8(87), source445d3c7, delivery
+e421ff27-a8c5-48bb-aef2-9ea6aeaaf8dc. Full627 Flutter tests, clean analysis,
+Light/Dark Viewer gallery/return checks and all five CI gates39156943197 pass.
+All31 archive and31 export executables are iOS device code; strict signatures,
+production defines/main target and Apple validation pass. IPA/archive preserved
+in Documents/FindEZ/AppStore/1.0.8-build87. Stop at this upload acknowledgment:
+processing/tester availability were not polled, physical acceptance remains
+pending, public App Store stays held. Approved migration056 and matching API/web
+are live. Captures return to the saved Space's items, keeping failed drafts open;
+the gallery shows crop first/original second. Dashboard content/layout is unchanged.
+
 # October 18 model-written Chat - delivered
 
 The user requested removing scripted/fallback Chat answers and then reported a
@@ -1297,3 +1310,9 @@ billing, original logo assets, native lifecycle and FIND transport are unchanged
 
 No task-specific handoff is registered in `.agents/HANDOFFS/`. Current release
 preflight evidence and blockers are in `CURRENT_STATE.md` and the release checklist.
+# October 18 capture return — active
+
+Lane fix/mobile-scan-original-return-20261018 from 3414fc0. Confirmed auto-extract
+saves return to Items in the current inventory; partial saves stay in Capture.
+Existing item gallery receives crop first/original second from backend. Preserve
+Dashboard layout and permissions. Verify both themes and deliver signed beta87.

@@ -755,6 +755,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               pageController: _pageController,
               onChatStateChanged: _onChatStateChanged,
               onBack: _leaveChat,
+              onOpenInventory: () {
+                setState(() => _inventorySection = 0);
+                _animateTo(3);
+              },
               onInventoryMutated: () {
                 setState(() => _inventoryRefreshToken++);
                 unawaited(_prefetchInventoryCache());
@@ -772,6 +776,12 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               onSaved: () {
                 setState(() => _inventoryRefreshToken++);
                 unawaited(_prefetchInventoryCache());
+              },
+              onCaptureCompleted: (spaceName) async {
+                setState(() => _inventorySection = 0);
+                _animateTo(3);
+                await Future<void>.delayed(const Duration(milliseconds: 350));
+                if (mounted) await _openHomeSpace({'name': spaceName});
               },
               onSpaceScanned: (spaceName) {
                 setState(() => _inventoryRefreshToken++);

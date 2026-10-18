@@ -1462,16 +1462,24 @@ class _ChatPageState extends State<ChatPage>
     if (kind == null) return;
 
     if (kind == _UploadKind.image) {
-      await Navigator.of(context).push<void>(
+      final savedSpace = await Navigator.of(context).push<String>(
         MaterialPageRoute(
           builder: (context) => ScanPage(
             api: widget.api,
             onSaved: () => widget.onInventoryMutated?.call(),
+            onCaptureCompleted: (space) => Navigator.of(context).pop(space),
           ),
         ),
       );
 
       widget.onInventoryMutated?.call();
+      if (savedSpace != null && mounted) {
+        if (widget.onOpenDestination != null) {
+          await widget.onOpenDestination!({'space_name': savedSpace});
+        } else {
+          widget.onOpenInventory?.call();
+        }
+      }
       unawaited(_prefetchInventorySnapshot());
       return;
     }
