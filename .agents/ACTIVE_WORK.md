@@ -1,3 +1,7 @@
+## Active: chunked Chat delivery and fades (2026-10-18)
+
+web lane on fix/web-chat-stream-fade-20261018. Preserve model-only prose, Dashboard, inventory authorization and private photos. No database changes. Full tests and release checks in progress. Provider currently batches one SSE text event; presentation pacing also handles this explicitly.
+
 # October 18 Capture return — live
 
 Approved matching capture release3908580 is live from

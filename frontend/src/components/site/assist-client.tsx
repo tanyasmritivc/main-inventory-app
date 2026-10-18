@@ -20,6 +20,8 @@ type Message = ConversationMessage & {
   context?: AskAnswerContext;
   localPhoto?: string;
   failed?: boolean;
+  live?: boolean;
+  revision?: number;
 };
 export function AssistClient({ initialQuery = "" }: { initialQuery?: string }) {
   const { accountId } = useApiSession();
@@ -223,7 +225,7 @@ function AssistClientWorkspace({
     setMessages((m) => [
       ...m,
       { id: userId, role: "user", content: text, created_at: now },
-      { id: assistantId, role: "assistant", content: "", created_at: now },
+      { id: assistantId, role: "assistant", content: "", created_at: now, live: true },
     ]);
     let final:
       | {
@@ -249,6 +251,10 @@ function AssistClientWorkspace({
                   : msg,
               ),
             );
+        },
+        onReset: () => {
+          if (current()) setMessages((m) => m.map((msg) => msg.id === assistantId
+            ? { ...msg, content: "", revision: (msg.revision ?? 0) + 1 } : msg));
         },
         onStatus: (value) => {
           if (current()) setStatus(value);
@@ -287,7 +293,7 @@ function AssistClientWorkspace({
       if (current()) {
         setMessages((m) =>
           m.map((msg) =>
-            msg.id === assistantId ? { ...msg, failed: true } : msg,
+            msg.id === assistantId ? { ...msg, content: "", failed: true } : msg,
           ),
         );
         setError(
@@ -393,7 +399,7 @@ function AssistClientWorkspace({
                     <img src={privateImageSrc(photoUrl, accountId)} alt="Photo used for this question" />
                   )}
                   {m.content ? (
-                    m.role === "assistant" ? <AskMarkdown>{m.content}</AskMarkdown> : <div className="ask-body">{m.content}</div>
+                    m.role === "assistant" ? <AskMarkdown key={`${m.id}-${m.revision ?? 0}`} animate={!!m.live && !m.failed}>{m.content}</AskMarkdown> : <div className="ask-body">{m.content}</div>
                   ) : (
                     <p className="ask-pending" role={m.id === pendingMessageId ? "status" : undefined}>
                       {m.id === pendingMessageId ? status : "The answer did not finish."}
