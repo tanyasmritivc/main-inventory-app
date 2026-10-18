@@ -8,6 +8,7 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_context.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/ui/member_avatar.dart';
 import '../notifications/notifications_page.dart';
 import '../notifications/notification_bell.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -789,14 +790,17 @@ class _HierarchyPageState extends State<HierarchyPage>
     String? detail,
     VoidCallback? onTap,
     Widget? trailing,
+    Widget? leading,
   }) => widget.level != HierarchyLevel.organizations
       ? PlaceRow(
           title: title,
+          leading: leading,
           subtitle: detail,
           trailing: trailing,
           onTap: _busy ? null : onTap,
         )
       : ListTile(
+          leading: leading,
           title: AppText(title),
           subtitle: detail == null ? null : AppText(detail),
           onTap: _busy ? null : onTap,
@@ -1048,13 +1052,14 @@ class _HierarchyPageState extends State<HierarchyPage>
         ],
         PlaceCardList(
           children: [
-            for (final (index, member) in members.indexed)
+            for (final member in members)
               PlaceRow(
                 title: member['display_name']?.toString() ?? 'Member',
-                leading: PlaceAvatar(
-                  member['display_name']?.toString() ?? 'Member',
-                  current: member['user_id'] == widget.api.accountId,
-                  index: index,
+                leading: MemberAvatar(
+                  name: member['display_name']?.toString() ?? 'Member',
+                  photoUrl: member['avatar_url']?.toString(),
+                  colorHex: member['avatar_color']?.toString(),
+                  size: 30,
                 ),
                 trailing: RoleTag(member['role']?.toString() ?? 'member'),
                 onTap: !_manager || _busy || member['role'] == 'owner'
@@ -1267,15 +1272,16 @@ class _HierarchyPageState extends State<HierarchyPage>
           padding: EdgeInsets.zero,
           child: PlaceCardList(
             children: [
-              for (final (index, member) in rows(
+              for (final member in rows(
                 _data?['members'],
-              ).where((m) => m['role'] != 'none').indexed)
+              ).where((m) => m['role'] != 'none'))
                 PlaceRow(
                   title: member['display_name']?.toString() ?? 'Member',
-                  leading: PlaceAvatar(
-                    member['display_name']?.toString() ?? 'Member',
-                    current: member['user_id'] == widget.api.accountId,
-                    index: index,
+                  leading: MemberAvatar(
+                    name: member['display_name']?.toString() ?? 'Member',
+                    photoUrl: member['avatar_url']?.toString(),
+                    colorHex: member['avatar_color']?.toString(),
+                    size: 30,
                   ),
                   trailing: RoleTag(
                     membershipRoleLabel(member['role'].toString()),
@@ -1580,6 +1586,12 @@ class _HierarchyPageState extends State<HierarchyPage>
     ).where((row) => row['role'] != 'none'))
       _row(
         member['display_name']?.toString() ?? 'Member',
+        leading: MemberAvatar(
+          name: member['display_name']?.toString() ?? 'Member',
+          photoUrl: member['avatar_url']?.toString(),
+          colorHex: member['avatar_color']?.toString(),
+          size: 30,
+        ),
         detail:
             '${_org ? member['role'] : membershipRoleLabel(member['role'].toString())}${member['source'] == 'workspace' ? ' | inherited' : ''}',
         onTap:

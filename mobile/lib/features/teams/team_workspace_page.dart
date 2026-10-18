@@ -1562,6 +1562,7 @@ class _TeamActivityPage extends StatefulWidget {
 
 class _TeamActivityPageState extends State<_TeamActivityPage> {
   List<Map<String, dynamic>>? _activity;
+  List<Map<String, dynamic>> _members = const [];
   String? _error;
   @override
   void initState() {
@@ -1572,7 +1573,18 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
   Future<void> _load() async {
     try {
       final rows = await widget.api.getTeamActivity(widget.teamId);
-      if (mounted) setState(() => _activity = rows);
+      List<Map<String, dynamic>> members = const [];
+      try {
+        members = await widget.api.getTeamMembers(widget.teamId);
+      } catch (_) {
+        /* Keep authorized activity available if photos cannot load. */
+      }
+      if (mounted) {
+        setState(() {
+          _activity = rows;
+          _members = members;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = describeError(e).$1);
     }
@@ -1608,11 +1620,28 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
                         const Divider(height: 1, indent: 54),
                     itemBuilder: (context, index) {
                       final row = _activity![index];
+                      final member = _members
+                          .where(
+                            (member) => member['user_id'] == row['actor_id'],
+                          )
+                          .firstOrNull;
                       return ListTile(
-                        leading: Icon(
-                          CupertinoIcons.clock,
-                          color: AppTheme.foreground(context, AppColors.accent),
-                        ),
+                        leading: member != null
+                            ? MemberAvatar(
+                                name:
+                                    member['display_name']?.toString() ??
+                                    'Member',
+                                photoUrl: member['avatar_url']?.toString(),
+                                colorHex: member['avatar_color']?.toString(),
+                                size: 30,
+                              )
+                            : Icon(
+                                CupertinoIcons.clock,
+                                color: AppTheme.foreground(
+                                  context,
+                                  AppColors.accent,
+                                ),
+                              ),
                         title: AppText(
                           row['summary']?.toString() ?? 'Team activity',
                         ),

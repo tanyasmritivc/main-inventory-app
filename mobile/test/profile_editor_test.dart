@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -10,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as bitmap;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
@@ -164,6 +164,12 @@ Future<void> _choose(WidgetTester tester, String choice) async {
   await tester.tap(find.text('Change photo'));
   await tester.pumpAndSettle();
   await tester.tap(find.text(choice));
+  if (choice == 'Choose photo') {
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+  }
   await tester.pumpAndSettle();
 }
 
@@ -361,35 +367,46 @@ void main() {
     expect(find.text('Open editor'), findsOneWidget);
     expect(api.saves, 0);
   });
-  testWidgets('replace and remove update shared avatars without losing drafts', (
-    tester,
-  ) async {
-    final api = _Api();
-    final store = ProfileStore(api: api, ownerId: () => 'owner');
-    addTearDown(store.dispose);
-    final png = base64Decode(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==',
-    );
-    await _open(
-      tester,
-      api,
-      store,
-      picker: () async => XFile.fromData(png, name: 'photo.png'),
-    );
-    await tester.enterText(find.byType(TextFormField).first, 'Unsaved name');
-    await _choose(tester, 'Choose photo');
-    expect(store.photoUrl, _photo('replacement'));
-    expect(api.uploads, 1);
-    expect(find.text('Unsaved name'), findsOneWidget);
-    api.failPhoto = true;
-    await _choose(tester, 'Remove photo');
-    expect(store.photoUrl, _photo('replacement'));
-    expect(find.textContaining('SECRET'), findsNothing);
-    api.failPhoto = false;
-    await _choose(tester, 'Remove photo');
-    expect(store.photoUrl, isEmpty);
-    expect(find.text('Unsaved name'), findsOneWidget);
-  });
+  testWidgets(
+    'replace and remove update shared avatars without losing drafts',
+    (tester) async {
+      final api = _Api();
+      final store = ProfileStore(api: api, ownerId: () => 'owner');
+      addTearDown(store.dispose);
+      final png = bitmap.encodePng(bitmap.Image(width: 32, height: 32));
+      await _open(
+        tester,
+        api,
+        store,
+        picker: () async => XFile.fromData(png, name: 'photo.png'),
+      );
+      await tester.enterText(find.byType(TextFormField).first, 'Unsaved name');
+      await _choose(tester, 'Choose photo');
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(api.uploads, 0);
+      await tester.ensureVisible(find.text('Use photo'));
+      await tester.tap(find.text('Use photo'));
+      await tester.pump();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(store.photoUrl, _photo('replacement'));
+      expect(api.uploads, 1);
+      expect(find.text('Unsaved name'), findsOneWidget);
+      api.failPhoto = true;
+      await _choose(tester, 'Remove photo');
+      expect(store.photoUrl, _photo('replacement'));
+      expect(find.textContaining('SECRET'), findsNothing);
+      api.failPhoto = false;
+      await _choose(tester, 'Remove photo');
+      expect(store.photoUrl, isEmpty);
+      expect(find.text('Unsaved name'), findsOneWidget);
+    },
+  );
   testWidgets('account summary uses the saved photo and replacement revision', (
     tester,
   ) async {

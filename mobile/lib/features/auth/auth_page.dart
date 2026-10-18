@@ -43,6 +43,7 @@ class _AuthPageState extends State<AuthPage> {
   double _edgeDistance = 0;
   bool _legalAccepted = false;
   Map<String, dynamic> get _legalAcceptance => {
+    'terms_version': legalTermsVersion,
     'terms_url': legalDocumentUrl(LegalDocumentKind.terms).toString(),
     'terms_accepted_at': DateTime.now().toUtc().toIso8601String(),
     'eligibility_attested': true,

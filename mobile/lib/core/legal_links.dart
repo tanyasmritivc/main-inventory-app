@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'ui/app_text.dart';
 
+const legalTermsVersion = '2026-10-18';
+
 enum LegalDocumentKind { privacy, terms }
 
 Uri legalDocumentUrl(LegalDocumentKind document) => Uri.https(

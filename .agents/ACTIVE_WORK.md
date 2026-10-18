@@ -1,3 +1,27 @@
+## Build91 Chat and profile-photo candidate verified (2026-10-18)
+
+651 Flutter tests with coverage pass, with one intentionally skipped compiled
+production-config gate; analysis is clean. Actual native crop pixels, pinch/pan,
+Settings accept/cancel/replacement/removal, People photos and task assignee/creator
+refresh pass in Light/Dark. Chat receipts/fades/permissions remain covered.
+User corrected release number to91; existing90 IPA/archive/Apple acknowledgment
+are retained. Source includes90's 96b00d3 terms/config test changes. No Dashboard
+layout/content changes. Signed91/CI and real-device acceptance remain pending;
+combined backend/web activation still requires explicit migration057 approval.
+
+## Active: Settings photo consistency and adjustment (2026-10-18)
+
+User clarified the photo saved in Settings must appear wherever that person is
+shown, including People and task assignees/creators. Add circular preview with
+zoom/pan and explicit acceptance before upload, using the saved crop everywhere.
+Separate fix/*-member-avatars-20261018 branches are stacked on the reviewed Chat
+action branches. Avatar work adds no schema change; Chat migration057 remains
+unapproved/unapplied. User explicitly corrected release number to91 because90
+already exists. Preserve original90 IPA/archive/Apple records and include its
+96b00d3 terms/config-source changes in91. Chat build90 export was not preserved
+or uploaded; the pre-existing90 artifacts remain intact. Crop/avatar testing and
+new91 signing/release are in progress. Dashboard remains unchanged.
+
 ## Chat item action cards prepared for build90 (2026-10-18)
 
 Model-selected additions/deletions use exact review cards, separate delete consent,

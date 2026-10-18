@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/member_avatar.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class TeamDocumentsPage extends StatefulWidget {
@@ -28,6 +29,7 @@ class TeamDocumentsPage extends StatefulWidget {
 }
 
 class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
+  List<Map<String, dynamic>> _members = const [];
   static const _maxBytes = 50 * 1024 * 1024;
 
   bool _loading = true;
@@ -70,8 +72,15 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
     });
     try {
       final result = await widget.api.getTeamDocuments(widget.teamId);
+      List<Map<String, dynamic>> members = const [];
+      try {
+        members = await widget.api.getTeamMembers(widget.teamId);
+      } catch (_) {
+        /* Photos are optional; keep authorized files available. */
+      }
       if (!mounted) return;
       setState(() {
+        _members = members;
         _documents = List<Map<String, dynamic>>.from(
           result['documents'] ?? const [],
         );
@@ -307,6 +316,13 @@ class _TeamDocumentsPageState extends State<TeamDocumentsPage> {
                         final document = _documents[index];
                         return _DocumentRow(
                           document: document,
+                          member: _members
+                              .where(
+                                (member) =>
+                                    member['user_id'] ==
+                                    document['uploaded_by'],
+                              )
+                              .firstOrNull,
                           canDelete: _canDelete(document),
                           onOpen: () => _open(document),
                           onDelete: () => _delete(document),
@@ -326,9 +342,11 @@ class _DocumentRow extends StatelessWidget {
     required this.canDelete,
     required this.onOpen,
     required this.onDelete,
+    this.member,
   });
 
   final Map<String, dynamic> document;
+  final Map<String, dynamic>? member;
   final bool canDelete;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
@@ -375,8 +393,33 @@ class _DocumentRow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: AppText(
-          [size, date].where((value) => value.isNotEmpty).join(' · '),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              [size, date].where((value) => value.isNotEmpty).join(' · '),
+            ),
+            if (member != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    MemberAvatar(
+                      name: member!['display_name']?.toString() ?? 'Member',
+                      photoUrl: member!['avatar_url']?.toString(),
+                      colorHex: member!['avatar_color']?.toString(),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: AppText(
+                        'Uploaded by ${member!['display_name'] ?? 'Member'}',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         trailing: canDelete
             ? PopupMenuButton<String>(
