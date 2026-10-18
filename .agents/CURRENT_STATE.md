@@ -1,3 +1,26 @@
+# October 18 capture originals — live
+
+The user explicitly approved "Apply 056 and publish the photo fixes." Reviewed
+056 applied after a fresh private backup. The atomic Review resolver and two-file
+API overlay10d4e41 are live; health/database200, invalid-session/anonymous-photo401.
+Ninety-two unrelated Python files are preserved. No customer QA writes or record
+rewrites. Crop remains primary, private original is gallery photo two. Full996
+Python +10 subtests and focused24 cases, SQL replay/privacy/atomic-failure checks,
+restored-copy preservation and all five CI gates (39156878192) pass. The gateway
+configuration/model and model-written Chat are unchanged. See capture-original-gallery.md.
+
+# October 18 original capture galleries — prepared, not activated
+
+Branch fix/api-scan-original-gallery-20261018. New captures retain a private
+original as gallery photo two; crop stays primary. Retry repairs missing photo
+receipts without duplicate items, and cleanup retains sources needed by pending
+Review or sibling items. Migration056 atomically attaches the source during Review
+resolution. Full Python996 +10 subtests and final24 focused cases pass. Composed
+SQL/replay/privacy/rollback checks and a fresh isolated production restore pass;
+existing public/auth/storage values and unrelated rules are unchanged. Production
+DB/runtime activation awaits separate reviewed approval. See
+docs/plans/capture-original-gallery.md. Live Chat remains71c0ca4; no customer QA writes.
+
 # October 18 model-written Chat - delivered
 
 The user requested removing scripted/fallback Chat answers and then reported a
