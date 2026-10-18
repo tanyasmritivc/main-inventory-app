@@ -1,3 +1,14 @@
+# October 18 capture originals — live
+
+The user explicitly approved "Apply 056 and publish the photo fixes." Reviewed
+056 applied after a fresh private backup. The atomic Review resolver and two-file
+API overlay10d4e41 are live; health/database200, invalid-session/anonymous-photo401.
+Ninety-two unrelated Python files are preserved. No customer QA writes or record
+rewrites. Crop remains primary, private original is gallery photo two. Full996
+Python +10 subtests and focused24 cases, SQL replay/privacy/atomic-failure checks,
+restored-copy preservation and all five CI gates (39156878192) pass. The gateway
+configuration/model and model-written Chat are unchanged. See capture-original-gallery.md.
+
 # October 18 original capture galleries — prepared, not activated
 
 Branch fix/api-scan-original-gallery-20261018. New captures retain a private
