@@ -1,6 +1,10 @@
+## Audit delivery complete — build90 uploaded
+
+Web/API audit fixes are live. Apple validated and acknowledged 1.0.8(90), delivery 0541ba2e-4a4f-4757-adf6-fc00405544b7. No processing polling or public submission. Physical-device acceptance remains pending; see docs/plans/release-readiness-20261018.md. Final connector uses locked, patched production dependencies; its production audit is clean, while the MCPB development tool has an unpatched node-forge advisory.
+
 # October 18 release audit
 
-Feature freeze: isolated release audit lane. See docs/plans/release-readiness-20261018.md. API keys, documentation, legal updates and release regressions are prepared; user-approved production migrations 053/058 and their two backend files are now live; health and privileges verified. Preserve other unfinished feature work.
+Feature freeze: isolated release audit lane. See docs/plans/release-readiness-20261018.md. API keys, documentation, legal updates and release regressions are published; user-approved production migrations 053/058 and their two backend files are now live; health and privileges verified. Preserve other unfinished feature work.
 
 ## Active Chat focus follow-up (2026-10-18)
 

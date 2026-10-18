@@ -1,6 +1,10 @@
+## Audit delivery complete — build90 uploaded
+
+Web/API audit fixes are live. Apple validated and acknowledged 1.0.8(90), delivery 0541ba2e-4a4f-4757-adf6-fc00405544b7. No processing polling or public submission. Physical-device acceptance remains pending; see docs/plans/release-readiness-20261018.md. Final connector uses locked, patched production dependencies; its production audit is clean, while the MCPB development tool has an unpatched node-forge advisory.
+
 ## Release audit — October 18
 
-Mobile 1.0.8+90 adds the current terms acceptance version and restores the compiled production configuration gate. Full 631 tests, clean analysis, and 17 focused/release tests pass. Build/upload is in progress; see docs/plans/release-readiness-20261018.md for the complete cross-platform audit and physical acceptance limits. Previous build89 upload is acknowledged.
+Mobile 1.0.8+90 adds the current terms acceptance version and restores the compiled production configuration gate. Full 631 tests, clean analysis, and 17 focused/release tests pass. Build/upload is complete; see docs/plans/release-readiness-20261018.md for the complete cross-platform audit and physical acceptance limits. Previous build89 upload is acknowledged.
 
 ## Active Chat focus follow-up (2026-10-18)
 
