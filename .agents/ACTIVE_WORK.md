@@ -5,8 +5,11 @@ Build your world onboarding is implemented after ordinary signup with per-accoun
 eligibility, local drafts, guarded creation receipts and the existing APIs. No
 backend/mobile/schema changes. All 375 web tests, types and lint pass. The isolated
 production candidate builds and preserves 296 unrelated source/public files,
-including the user-approved restored hero JPEG. User explicitly requests push and
-deployment. Activation receipt: frontend/design/web-onboarding-a/IMPLEMENTATION.md.
+including the user-approved restored hero JPEG. Runtime `f97a4d9` is pushed in
+PR 114, all five CI jobs pass, and the rebuilt r2 candidate is live at 20:18:56 UTC,
+preserving 297 files from the newer concurrent chat release. Public
+signup/signin/home/image and protected onboarding checks pass.
+Receipt: frontend/design/web-onboarding-a/IMPLEMENTATION.md.
 
 # October 18 Capture return — live
 

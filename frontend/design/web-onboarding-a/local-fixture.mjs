@@ -41,6 +41,10 @@ http.createServer(async (req, res) => {
   if (!user) return send({ message: "Local fixture session required." }, 401);
   if (path === "/auth/v1/user") return send(user);
   if (path.startsWith("/rest/v1/")) return send(path.endsWith("profiles") ? [{ id, display_name: "Local QA" }] : []);
+  if (path.endsWith("/search_items")) return send({ items: [] });
+  if (path.endsWith("/checkouts/active")) return send({ checkouts: [] });
+  if (path.endsWith("/review-items")) return send({ pending_count: 0, reviews: [] });
+  if (path === "/profile/me") return send({ display_name: "Local QA" });
   const personal = { workspace_id: "personal", name: "Personal", kind: "personal", team_id: null, role: "owner", owner_user_id: id };
   if (req.method === "POST") {
     await new Promise(resolve => setTimeout(resolve, 450));

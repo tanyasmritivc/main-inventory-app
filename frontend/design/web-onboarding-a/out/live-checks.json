@@ -1,0 +1,33 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": null
+  },
+  {
+    "path": "/signup",
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": null
+  },
+  {
+    "path": "/signin",
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "location": null
+  },
+  {
+    "path": "/onboarding",
+    "status": 307,
+    "content_type": "text/html; charset=utf-8",
+    "location": "/signin?redirect=%2Fonboarding"
+  },
+  {
+    "path": "/images/landing/hero-workbench.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "location": null,
+    "sha256": "ba9365e2403a700dc4f9ad962fd1f9f8e15cfb6e2cdd07bbd3c9263b9dc39fb8"
+  }
+]

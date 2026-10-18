@@ -72,10 +72,10 @@ Verification:
 - The actual server candidate builds normally with webpack and real production
   configuration/fonts, with no fixtures or replacement fonts.
 - Browser QA uses the real Next dev route with a loopback-only synthetic auth/API
-  fixture. Personal creation opens its new inventory dashboard. The team path,
+  fixture. Both personal and team creation open their new inventory dashboards. The team path,
   confirmation fields, model and responsive fit were reviewed in Chrome.
 - `out/` contains both world recaps at 1920x1080, 1440x900, 1280x620 and 390x844,
-  plus phone welcome. Captures can be at device pixel ratio 2; filenames give CSS
+  plus phone welcome and choices at 1000x700 and 390x700. Captures can be at device pixel ratio 2; filenames give CSS
   viewport dimensions. The local Next dev badge is absent from production.
 - Supplied 1440x900 recap and React recap were inspected together. Geometry,
   palette, hierarchy and copy match the reference; typography uses self-hosted
@@ -110,3 +110,30 @@ including all independent landing code/assets and the restored JPEG. Receipts
 and build log are in its parent directory. Private loopback preview checks pass:
 signup 200, image 200 and onboarding 307 to signin with its return path retained.
 Activation and final public verification are recorded below after publication.
+
+## Published October 18, 2026
+
+Runtime commit `f97a4d9` is pushed in draft PR
+https://github.com/tanyasmritivc/main-inventory-app/pull/114. All five CI jobs pass
+on that exact source: PostgreSQL API permissions, backend, AI connectors, web and
+Flutter. Run: https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39162183979.
+
+A concurrent chat release activated during preparation. The final candidate was
+therefore rebuilt from that newer active release, not the earlier snapshot:
+`/home/ubuntu/findez-web-releases/web-onboarding-20261018-r2/frontend`. The final
+hash comparison preserves all 297 other src/public files, including current chat
+changes, independent landing work and the restored hero image. The only runtime
+differences remain the same six onboarding files. This composite candidate builds
+normally with Next.js 16.3.8 and the real server configuration.
+
+Activation succeeded at 20:18:56 UTC. The existing systemd WorkingDirectory
+override now points to that final candidate; its prior override and an automatic
+startup rollback were preserved. No backend service, database, environment values
+or customer records changed. Release manifest, build and activation receipts are
+in the candidate's parent directory.
+
+Final public checks: `/`, `/signup` and `/signin` return 200; `/onboarding` returns
+307 to `/signin?redirect=%2Fonboarding`; the hero JPEG returns 200 / image/jpeg
+with its original SHA256. Chrome also visibly renders the restored workbench
+photo. `out/live-checks.json` records the public HTTP receipts. Completed source
+checks were reused; no regression suites were rerun after publication.

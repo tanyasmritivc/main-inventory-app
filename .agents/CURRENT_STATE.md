@@ -1,4 +1,4 @@
-# October 18 web onboarding candidate
+# October 18 web onboarding live
 
 The supplied web onboarding now follows ordinary signup and creates the selected
 organization/workspace/inventory using existing API contracts. Eligibility reads
@@ -7,7 +7,11 @@ drafts/completion, guarded retries, reduced motion and responsive SVG match the
 reference. All 375 Jest tests, types and lint pass; the real-config production
 candidate builds and preserves 296 unrelated source/public files. The missing
 homepage JPEG was separately restored with explicit approval and serves HTTP 200.
-Publication is authorized and in progress. See
+Runtime `f97a4d9` is pushed in PR 114 with all five CI jobs passing. The final r2
+release, rebuilt on the concurrent chat release and preserving 297 unrelated
+src/public files, activated at 20:18:56 UTC. Public home/signup/signin/image and
+protected onboarding checks pass. Both fixture paths open their new dashboards.
+No production customer records were created for QA. See
 frontend/design/web-onboarding-a/IMPLEMENTATION.md for evidence and limitations.
 
 # October 18 Capture return — live
