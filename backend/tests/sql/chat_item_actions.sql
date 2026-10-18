@@ -158,6 +158,15 @@ BEGIN
  PERFORM pg_temp.check((SELECT count(*)=original_count FROM public.items WHERE inventory_id=inv),'missing original photo rolls back new item');
  PERFORM pg_temp.chat_action_call(actor,inv,proposed,'cancel',null);
  PERFORM pg_temp.check(NOT public.findez_can_read_item_image(actor,crop),'cancel ends pending crop grant');
+ -- Unknown quantities remain unknown in the reviewed selection, and can be
+ -- deleted without JSON null being confused with SQL NULL during comparison.
+ INSERT INTO public.items(item_id,user_id,inventory_id,name,category,quantity,location,space_id)
+ VALUES(gen_random_uuid(),(SELECT id FROM chat_action_demo WHERE key='owner'),inv,'Unknown quantity QA','Other',-1,'Chat shelf',place);
+ SELECT public.findez_chat_delete_snapshot(actor,inv,ARRAY[(SELECT item_id FROM public.items WHERE inventory_id=inv AND name='Unknown quantity QA')]) INTO rows;
+ PERFORM pg_temp.check(rows->0->'quantity'='null'::jsonb,'review preserves unknown quantity');
+ proposed:=pg_temp.chat_proposal(actor,inv,'delete',rows);
+ PERFORM pg_temp.chat_action_call(actor,inv,proposed,'confirm',null);
+ PERFORM pg_temp.check(NOT EXISTS(SELECT 1 FROM public.items WHERE inventory_id=inv AND name='Unknown quantity QA'),'unknown quantity does not block reviewed deletion');
 END $$;
 SELECT set_config('request.jwt.claims','{}',false);
 SELECT set_config('request.headers','{}',false);

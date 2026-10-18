@@ -54,3 +54,5 @@ build 90 preparation and exact-source CI remain. Physical-device acceptance and
 TestFlight availability are not claimed. Activation must recheck file hashes and
 keep a fresh database/file backup. Roll back runtime only if necessary; do not
 remove the transaction/privacy functions after receipts have been created.
+
+Legacy invalid quantities remain explicitly unknown on deletion cards, rather than blocking their review or turning them into zero. The disposable fixture confirms exact deletion of such a record.

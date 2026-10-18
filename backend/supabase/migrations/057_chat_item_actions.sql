@@ -15,7 +15,7 @@ BEGIN
   OR (SELECT count(DISTINCT x) FROM unnest(p_items) x)<>array_length(p_items,1) THEN RAISE invalid_parameter_value; END IF;
  PERFORM public.findez_lock_inventory_authority(p_inventory,p_actor);
  IF NOT coalesce(public.findez_inventory_role(p_inventory,p_actor) IN ('owner','admin','editor'),false) THEN RAISE insufficient_privilege; END IF;
- SELECT jsonb_agg(jsonb_build_object('item_id',i.item_id,'name',i.name,'quantity',i.quantity,'location',i.location,
+ SELECT jsonb_agg(jsonb_build_object('item_id',i.item_id,'name',i.name,'quantity',CASE WHEN i.quantity>=0 THEN i.quantity END,'location',i.location,
   'snapshot',public.findez_chat_item_fingerprint(to_jsonb(i))) ORDER BY i.item_id) INTO rows
  FROM public.items i WHERE i.inventory_id=p_inventory AND i.item_id=ANY(p_items);
  IF jsonb_array_length(rows) IS DISTINCT FROM array_length(p_items,1) THEN RAISE no_data_found; END IF;
@@ -95,9 +95,9 @@ BEGIN
    FOR entry IN SELECT value FROM jsonb_array_elements(action->'items') LOOP
     SELECT * INTO STRICT target FROM public.items WHERE item_id=(entry->>'item_id')::uuid AND inventory_id=p_inventory;
     IF entry->>'snapshot' IS DISTINCT FROM public.findez_chat_item_fingerprint(to_jsonb(target))
-     OR entry->>'name' IS DISTINCT FROM target.name OR entry->'quantity' IS DISTINCT FROM to_jsonb(target.quantity)
+     OR entry->>'name' IS DISTINCT FROM target.name OR entry->'quantity' IS DISTINCT FROM coalesce(to_jsonb(CASE WHEN target.quantity>=0 THEN target.quantity END),'null'::jsonb)
      OR entry->>'location' IS DISTINCT FROM target.location THEN RAISE check_violation; END IF;
-    receipts:=receipts||jsonb_build_array(jsonb_build_object('item_id',target.item_id,'name',target.name,'category',target.category,'quantity',target.quantity,'location',target.location));
+    receipts:=receipts||jsonb_build_array(jsonb_build_object('item_id',target.item_id,'name',target.name,'category',target.category,'quantity',CASE WHEN target.quantity>=0 THEN target.quantity END,'location',target.location));
    END LOOP;
    DELETE FROM public.items WHERE inventory_id=p_inventory AND item_id IN
     (SELECT (value->>'item_id')::uuid FROM jsonb_array_elements(action->'items'));
