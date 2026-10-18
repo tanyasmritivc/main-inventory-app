@@ -1,3 +1,12 @@
+## 2026-10-18: Rejected dashboard refresh tokens require a new sign-in
+
+GoTrue can reject an expired/revoked refresh token with HTTP 400. Treat 400/401/403
+from the refresh-token exchange as session expiry, clear the saved credentials
+and return to sign-in. Do not clear valid sessions on temporary Auth outages.
+Normalize expiry from Auth/JWT data and serialize refresh-token rotation across
+snapshot and issue operations. Keep the saved-token rejection followed by fresh
+sign-in regression, including the native simulator journey.
+
 ## 2026-10-18: Dashboard pages wait for the first authenticated snapshot
 
 Dashboard page construction must guard absent data before dereferencing a

@@ -1,6 +1,6 @@
 {
   "flutter_analysis": "clean",
-  "flutter_tests": 12,
+  "flutter_tests": 16,
   "native_simulator_journey": "passed",
   "native_keychain": "passed",
   "bold_text_keeps_chosen_font_weight": true,
@@ -23,7 +23,11 @@
   "failed_first_snapshot_retry": "passed",
   "canceled_unlock_recovery": "passed",
   "background_invalidates_pending_unlock": "passed",
-  "native_authentication_journey": "passed with isolated HTTP and biometric fixtures",
+  "native_authentication_journey": "expired saved token, fresh login, delayed snapshot and canceled unlock recovery passed with isolated fixtures",
   "native_navigation_journey": "passed",
-  "build": "3"
+  "build": "4",
+  "expired_saved_refresh_token": "returns to sign-in and fresh login succeeds",
+  "missing_absolute_expiry": "normalized",
+  "concurrent_refresh_token_rotation": "single request",
+  "auth_outage": "preserves session and data"
 }

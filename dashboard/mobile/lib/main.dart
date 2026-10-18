@@ -625,6 +625,10 @@ class _DashboardShellState extends State<DashboardShell> {
                                         onPressed: api.refresh,
                                         child: const Text('Try again'),
                                       ),
+                                      TextButton(
+                                        onPressed: api.signOut,
+                                        child: const Text('Sign in again'),
+                                      ),
                                     ],
                                   ),
                           )

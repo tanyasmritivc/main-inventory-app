@@ -475,4 +475,143 @@ void main() {
     expect(requests, 0);
     api.dispose();
   });
+  testWidgets(
+    'a revoked saved refresh token returns to sign-in and a new login works',
+    (tester) async {
+      final vault = MemoryVault()
+        ..saved = jsonEncode({...sessionFixture(), 'expires_at': 0});
+      var refreshes = 0;
+      final api = SignInApi(
+        vault: vault,
+        client: MockClient((request) async {
+          if (request.url.queryParameters['grant_type'] == 'refresh_token') {
+            refreshes++;
+            return http.Response(
+              '{"msg":"Invalid refresh token: refresh token not found"}',
+              400,
+            );
+          }
+          if (request.url.queryParameters['grant_type'] == 'password') {
+            return http.Response(jsonEncode(sessionFixture()), 200);
+          }
+          return http.Response(jsonEncode(fixture()), 200);
+        }),
+      );
+      await tester.pumpWidget(FounderApp(api: api));
+      await tester.pumpAndSettle();
+      expect(refreshes, 1);
+      expect(api.session, isNull);
+      expect(vault.saved, isNull);
+      expect(find.text('Your session expired. Sign in again.'), findsOneWidget);
+      expect(find.text('Open dashboard'), findsOneWidget);
+      expect(find.textContaining('Invalid refresh token'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.enterText(
+        find.byType(TextField).last,
+        'isolated-fixture-password',
+      );
+      await tester.tap(find.text('Open dashboard'));
+      await tester.pumpAndSettle();
+      expect(find.text('Registered users').hitTestable(), findsOneWidget);
+      expect(api.signedIn, isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  test(
+    'token expiry is normalized from expires_in before first synchronization',
+    () async {
+      var refreshes = 0;
+      final value = {...sessionFixture(), 'expires_in': 3600}
+        ..remove('expires_at');
+      final api = SignInApi(
+        vault: MemoryVault(),
+        client: MockClient((request) async {
+          if (request.url.queryParameters['grant_type'] == 'password') {
+            return http.Response(jsonEncode(value), 200);
+          }
+          if (request.url.queryParameters['grant_type'] == 'refresh_token') {
+            refreshes++;
+          }
+          return http.Response(jsonEncode(fixture()), 200);
+        }),
+      );
+      await api.signIn('fixture@example.invalid', 'fixture-password');
+      expect(refreshes, 0);
+      expect(
+        api.session!['expires_at'],
+        greaterThan(DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3500),
+      );
+      expect(api.data, isNotNull);
+      api.dispose();
+    },
+  );
+
+  test(
+    'automatic refresh and an issue write share a single token rotation',
+    () async {
+      var rotations = 0;
+      final rotate = Completer<http.Response>();
+      final vault = MemoryVault();
+      final api = SignInApi(
+        vault: vault,
+        client: MockClient((request) async {
+          if (request.url.queryParameters['grant_type'] == 'refresh_token') {
+            rotations++;
+            return rotate.future;
+          }
+          if (request.url.path.endsWith('/issues')) {
+            return http.Response('{"saved":true}', 201);
+          }
+          return http.Response(jsonEncode(fixture()), 200);
+        }),
+      )..session = {...sessionFixture(), 'expires_at': 0};
+      final refresh = api.refresh();
+      final write = api.saveIssue(title: 'Isolated token rotation fixture');
+      await Future<void>.delayed(Duration.zero);
+      expect(rotations, 1);
+      rotate.complete(
+        http.Response(
+          jsonEncode({
+            ...sessionFixture(),
+            'refresh_token': 'isolated-new-refresh-fixture',
+          }),
+          200,
+        ),
+      );
+      await Future.wait([refresh, write]);
+      expect(rotations, 1);
+      expect(api.session!['refresh_token'], 'isolated-new-refresh-fixture');
+      expect(
+        jsonDecode(vault.saved!)['refresh_token'],
+        'isolated-new-refresh-fixture',
+      );
+      expect(api.signedIn, isTrue);
+      api.dispose();
+    },
+  );
+
+  test(
+    'a temporary auth outage preserves the saved session for retry',
+    () async {
+      final saved = {...sessionFixture(), 'expires_at': 0};
+      final vault = MemoryVault()..saved = jsonEncode(saved);
+      final api =
+          SignInApi(
+              vault: vault,
+              client: MockClient(
+                (_) async =>
+                    http.Response('{"msg":"Temporarily unavailable"}', 503),
+              ),
+            )
+            ..session = saved
+            ..data = fixture();
+      await api.refresh();
+      expect(api.session, isNotNull);
+      expect(api.data, isNotNull);
+      expect(vault.saved, isNotNull);
+      expect(api.error, 'Temporarily unavailable');
+      api.dispose();
+    },
+  );
 }

@@ -90,8 +90,8 @@ when 'beta-status', 'beta-prepare'
 when 'beta-release'
   app = api('get', "/v1/apps/#{APP}").fetch('data')
   raise 'Wrong app' unless app.dig('attributes','bundleId') == BUNDLE
-  builds = list("/v1/builds?filter[app]=#{APP}&filter[version]=3")
-  raise 'Expected one build 3' unless builds.length == 1
+  builds = list("/v1/builds?filter[app]=#{APP}&filter[version]=4")
+  raise 'Expected one build 4' unless builds.length == 1
   build = builds.first
   raise 'Build is not valid' unless build.dig('attributes','processingState') == 'VALID'
   pre = api('get',"/v1/builds/#{build.fetch('id')}/preReleaseVersion").fetch('data')
@@ -102,7 +102,7 @@ when 'beta-release'
   members = list("/v1/betaGroups/#{group.fetch('id')}/betaTesters")
   raise 'Expected only founder' unless members.length == 1 && members.first.dig('attributes','email').to_s.downcase == EMAIL
   notes = list("/v1/builds/#{build.fetch('id')}/betaBuildLocalizations")
-  description = 'Fixes the blank screen after sign-in or device unlock. The first dashboard load now waits for synchronized data and offers Retry when a request fails. Canceled device authentication can be retried visibly. Keeps the light Apple system font, graph icon and full 60-second refresh. Private founder access only.'
+  description = 'Fixes the blank screen after sign-in or device unlock and returns expired saved sessions to sign-in. The first dashboard load now waits for synchronized data and offers Retry when a request fails. Canceled device authentication can be retried visibly. Keeps the light Apple system font, graph icon and full 60-second refresh. Private founder access only.'
   unless notes.any? { |n| n.dig('attributes','locale') == 'en-US' }
     api('post','/v1/betaBuildLocalizations',{data:{type:'betaBuildLocalizations',attributes:{locale:'en-US',whatsNew:description},relationships:{build:{data:{type:'builds',id:build.fetch('id')}}}}})
   end

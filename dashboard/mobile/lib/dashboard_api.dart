@@ -45,6 +45,7 @@ class DashboardApi extends ChangeNotifier {
   bool emailCodePending = false;
   DateTime? lastSuccess;
   Future<void>? _refreshing;
+  Future<void>? _tokenRefreshing;
   DashboardApi({http.Client? client, SessionVault? vault})
     : client = client ?? http.Client(),
       vault = vault ?? SessionVault();
@@ -150,7 +151,7 @@ class DashboardApi extends ChangeNotifier {
   }
 
   Future<void> _establish(Json value) async {
-    session = value;
+    session = _normalizedSession(value);
     locked = false;
     emailCodePending = false;
     final factors = ((session!['user'] as Map?)?['factors'] as List? ?? [])
@@ -231,16 +232,84 @@ class DashboardApi extends ChangeNotifier {
     }
   }
 
-  Future<void> _refreshToken() async {
-    final expires = session?['expires_at'] as int? ?? 0;
-    if (DateTime.now().millisecondsSinceEpoch ~/ 1000 < expires - 60) return;
-    session = await _request(
-      'POST',
-      Uri.parse('$authBase/auth/v1/token?grant_type=refresh_token'),
-      body: {'refresh_token': session!['refresh_token']},
-      auth: false,
+  Json _normalizedSession(Json value) {
+    final result = Map<String, dynamic>.from(value);
+    if (result['expires_at'] is! num) {
+      // JWT expiry only schedules refresh; the server still authorizes requests.
+      try {
+        final claims =
+            jsonDecode(
+                  utf8.decode(
+                    base64Url.decode(
+                      base64Url.normalize(
+                        result['access_token'].toString().split('.')[1],
+                      ),
+                    ),
+                  ),
+                )
+                as Map;
+        if (claims['exp'] is num) result['expires_at'] = claims['exp'];
+      } catch (_) {
+        final seconds = result['expires_in'];
+        if (seconds is num) {
+          result['expires_at'] =
+              DateTime.now().millisecondsSinceEpoch ~/ 1000 + seconds.toInt();
+        }
+      }
+    }
+    return result;
+  }
+
+  Future<void> _expireSession() async {
+    _unlockGeneration++;
+    session = null;
+    data = null;
+    factor = null;
+    challenge = null;
+    locked = false;
+    lastSuccess = null;
+    await vault.clear();
+  }
+
+  Future<void> _refreshToken() {
+    if (session == null) {
+      return Future.error(
+        DashboardError('Your session expired. Sign in again.', 401),
+      );
+    }
+    final pending = _tokenRefreshing;
+    if (pending != null) return pending;
+    final expires = (session?['expires_at'] as num?)?.toInt() ?? 0;
+    if (DateTime.now().millisecondsSinceEpoch ~/ 1000 < expires - 60) {
+      return Future.value();
+    }
+    return _tokenRefreshing ??= _rotateToken().whenComplete(
+      () => _tokenRefreshing = null,
     );
-    await vault.write(jsonEncode(session));
+  }
+
+  Future<void> _rotateToken() async {
+    final originalToken = session?['refresh_token'];
+    try {
+      final value = await _request(
+        'POST',
+        Uri.parse('$authBase/auth/v1/token?grant_type=refresh_token'),
+        body: {'refresh_token': originalToken},
+        auth: false,
+      );
+      if (session?['refresh_token'] != originalToken) return;
+      session = _normalizedSession(value);
+      await vault.write(jsonEncode(session));
+    } on DashboardError catch (e) {
+      // Auth rejects an expired or revoked refresh token with HTTP 400 too.
+      if ((e.status == 400 || e.status == 401 || e.status == 403) &&
+          session?['refresh_token'] == originalToken) {
+        await _expireSession();
+        notifyListeners();
+        throw DashboardError('Your session expired. Sign in again.', 401);
+      }
+      rethrow;
+    }
   }
 
   Future<void> refresh() {
@@ -264,9 +333,7 @@ class DashboardApi extends ChangeNotifier {
     } catch (e) {
       error = e.toString();
       if (e is DashboardError && (e.status == 401 || e.status == 403)) {
-        session = null;
-        data = null;
-        await vault.clear();
+        await _expireSession();
       }
     } finally {
       loading = false;

@@ -1,3 +1,18 @@
+# October 18 dashboard blank-screen and expired-session repair
+
+Build 2 eagerly dereferenced an absent first authenticated snapshot, causing a
+null-check error after sign-in/unlock. A new regression reproduced this before
+the fix. Build 3 guards first-page construction, labels loading and retry states,
+and makes privacy/unlock recovery visible. The physical iPhone check then exposed
+an expired stored refresh token returned by Auth as HTTP 400. Build 4 clears
+rejected credentials and returns to sign-in, normalizes token expiry and shares
+concurrent token rotations. Auth outages preserve valid sessions. No server,
+customer app, schema or Vinod access change. Sixteen tests, clean analysis and
+two native simulator journeys pass, including the exact saved-token error and
+fresh login. Build 4 release packaging is in progress; real iPhone acceptance and
+TestFlight availability are not yet claimed. Build 3 uploaded but was not assigned
+to the private testing group. See dashboard/README.md and verification receipts.
+
 # October 18 private founder dashboard and light design
 
 Separate app `com.findez.dashboard` is implemented in `dashboard/mobile`, with an

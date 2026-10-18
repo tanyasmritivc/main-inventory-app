@@ -14,14 +14,21 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-    'native sign-in waits for the first snapshot and survives canceled unlock',
+    'native expired session recovery, first snapshot and canceled unlock',
     (tester) async {
       final snapshot = Completer<http.Response>();
       var requests = 0;
-      final vault = MemoryVault();
+      final vault = MemoryVault()
+        ..saved = jsonEncode({...sessionFixture(), 'expires_at': 0});
       final api = SignInApi(
         vault: vault,
         client: MockClient((request) async {
+          if (request.url.queryParameters['grant_type'] == 'refresh_token') {
+            return http.Response(
+              '{"msg":"Invalid refresh token: refresh token not found"}',
+              400,
+            );
+          }
           if (request.url.path.endsWith('/auth/v1/token')) {
             return http.Response(jsonEncode(sessionFixture()), 200);
           }
@@ -33,6 +40,9 @@ void main() {
       );
       await tester.pumpWidget(FounderApp(api: api));
       await tester.pumpAndSettle();
+      expect(find.text('Your session expired. Sign in again.'), findsOneWidget);
+      expect(vault.saved, isNull);
+      await binding.takeScreenshot('expired-session-signin-fixture');
       await tester.enterText(
         find.byType(TextField).last,
         'isolated-fixture-password',

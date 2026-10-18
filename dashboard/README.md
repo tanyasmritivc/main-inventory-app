@@ -78,7 +78,7 @@ identifying the actual public routing path. Safe activation/auth receipts are in
 
 ## Validation
 
-- Flutter analysis: clean. Twelve tests pass, including exact minute refresh,
+- Flutter analysis: clean. Sixteen tests pass, including exact minute refresh,
   foreground refresh, whole-snapshot replacement, coalescing, failure timestamp,
   open customer detail updates, light mode, Apple font, Bold Text and large text.
 - Native iPhone 16e simulator journeys pass: password sign-in with delayed first
@@ -149,3 +149,20 @@ snapshot, cancels device unlock and recovers without relying on a resume callbac
 HTTP and biometric results in this journey are isolated test fixtures. The native
 Keychain round trip is tested separately. Actual iPhone sign-in/Face ID acceptance
 is recorded separately and must not be inferred from simulator results.
+
+
+## Build 4: rejected saved sessions return to sign-in
+
+The real iPhone check of build 3 exposed `Invalid refresh token: refresh token not
+found`. The Auth server reports this with HTTP 400, while the client previously
+cleared credentials only for 401/403. Build 4 clears rejected saved credentials
+and shows `Your session expired. Sign in again.` instead of retrying the invalid
+session. Temporary Auth outages preserve credentials and data for retry. Token
+expiry is derived from the Auth response/JWT where needed, and refresh-token
+rotation is shared by concurrent snapshot and issue requests. The unavailable
+first-load screen also offers a manual sign-in escape.
+
+Sixteen tests and both native journeys pass, including the exact saved-token
+error followed by a fresh password sign-in. Build 3 was uploaded but not assigned
+to testers; build 4 supersedes it. Actual device acceptance and Apple upload
+status are separate release receipts.
