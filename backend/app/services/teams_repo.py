@@ -88,7 +88,7 @@ def join_team(*, user_id: str, code: str) -> dict:
 
     team_resp = supabase_execute_with_retry(
         lambda: supabase.table("teams")
-        .select("team_id, name, program, custom_category, plan, plan_expires_at, owner_user_id")
+        .select("team_id, name, program, custom_category, plan, plan_expires_at, owner_user_id, organization_id")
         .eq("join_code", code)
         .execute()
     )
@@ -96,6 +96,15 @@ def join_team(*, user_id: str, code: str) -> dict:
         raise ValueError("NOT_FOUND")
     team = team_resp.data[0]
     team_id = team["team_id"]
+
+    organization = team.get("organization_id")
+    if organization:
+        parents = supabase_execute_with_retry(
+            lambda: supabase.table("app_organization_members").select("user_id")
+            .eq("organization_id", organization).eq("user_id", user_id).limit(1).execute()
+        ).data or []
+        if not parents:
+            raise ValueError("Accept your organization invitation first, then reopen this workspace invitation. Ask the sender for an organization invitation if you do not have one.")
 
     existing = supabase_execute_with_retry(
         lambda: supabase.table("team_memberships")

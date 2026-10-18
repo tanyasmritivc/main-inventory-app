@@ -1,3 +1,10 @@
+# October 17 workspace invitation parent errors
+
+Active backend-only lane `fix/api-invitation-parent-errors-20261017`, clean a65d601.
+Keep existing membership grants and database guards; report missing organization
+consent before attempting legacy workspace-code membership, map parent races to
+a useful client error. No schema or production data mutations for installation.
+
 # October 17 shared Ask first-answer follow-up
 
 Active lane fix/ask-first-answer-20261017, clean base eab8962. Purpose phrases
