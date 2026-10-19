@@ -1,3 +1,7 @@
+## Build94 delivered — final acceptance remains partial
+
+Apple ACK9ecd266d-911a-4147-93bb-8521bf239d46, sourcee639000, all five CI gates39187235236 pass. Signed artifacts preserved and installed. Legal links, support fallback, notification permission/registration/APNs acceptance and warm/cold invalid invitation handoff pass. See docs/plans/final-mobile-delivery-20261018.md for receipts and open hardware/provider/sharing/VoiceOver gates. Public submission held; GPU HTTP remains a launch blocker. Do not treat prior “in progress” entries below as current delivery status.
+
 ## October 18 final native corrections — build 94
 
 Physical build93 exposed failed legal-browser launching. Build94 moves plugin registration and the push channel into Flutter 3.41's implicit-engine callback for the existing UIScene setup. Legal pages prefer the system browser view with external fallback; failed support-mail launches show the contact address. Plans remain hidden. Full suite:659 pass plus one separately enabled production configuration gate; clean analysis;42 follow-up legal/profile tests pass. Signed build and physical re-verification are in progress; do not count pending camera/barcode/mic/provider/push/share-extension checks as passed.

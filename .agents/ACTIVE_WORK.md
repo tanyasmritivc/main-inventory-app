@@ -1,6 +1,6 @@
-## Final submission audit active - October 18
+## Final submission audit — build94 delivered, user hardware acceptance pending
 
-Isolated lane fix/mobile-final-audit-20261018, based on delivered build91. Full mobile functional/security/sharing and App Store audit with user-authorized sign-in. Preserve customer records; use labelled QA records. GPU transport stays unchanged; provide infrastructure-owner actions.
+Lane fix/mobile-final-audit-20261018 delivered signed1.0.8(94), sourcee639000. Apple acknowledgment and all five CI gates pass. Physical legal links, Plans hiding, notification registration/APNs acceptance, and warm/cold invalid invitation handoff pass. The phone is in direct user use for camera/barcode/mic and visible-alert checks; do not interrupt Mirroring while in use. Remaining gates and owner GPU/origin-port work are recorded in docs/plans/final-mobile-delivery-20261018.md and API PR127's security report. Public submission held. Preserve customer records and the Release QA inventory for final hardware checks.
 
 ## Chat actions and profile photos — delivered (2026-10-18)
 
