@@ -446,7 +446,7 @@ void main() {
     for (final serverNotice in [true, false]) {
       for (final scale in [1.0, 2.6, 3.4]) {
         testWidgets(
-          '${brightness.name} pilot date uses ${serverNotice ? 'API' : 'fallback'} at $scale text',
+          '${brightness.name} plans hidden with ${serverNotice ? 'API' : 'fallback'} notice at $scale text',
           (tester) async {
             SharedPreferences.setMockInitialValues({});
             ProStatus.reset();
@@ -474,16 +474,10 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            final date = find.textContaining('through November 1, 2026');
-            await tester.scrollUntilVisible(date, 200);
-            await tester.pumpAndSettle();
-            expect(date, findsOneWidget);
-            expect(find.textContaining('begin November 2'), findsOneWidget);
-            expect(
-              find.textContaining('not be charged automatically'),
-              findsOneWidget,
-            );
-            expect(find.textContaining('September'), findsNothing);
+            expect(find.text('Plans'), findsNothing);
+            expect(find.text('Free Pilot'), findsNothing);
+            expect(find.textContaining('begin November 2'), findsNothing);
+            expect(find.text('Appearance'), findsOneWidget);
             expect(ProStatus.isPilotMode, isTrue);
             expect(ProStatus.isPro, isFalse);
             expect(tester.takeException(), isNull);

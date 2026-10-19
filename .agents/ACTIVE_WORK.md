@@ -1365,3 +1365,6 @@ Lane fix/mobile-scan-original-return-20261018 from 3414fc0. Confirmed auto-extra
 saves return to Items in the current inventory; partial saves stay in Capture.
 Existing item gallery receives crop first/original second from backend. Preserve
 Dashboard layout and permissions. Verify both themes and deliver signed beta87.
+
+## October 18 final submission audit
+Active lane `fix/mobile-final-audit-20261018`: user requested hiding mobile Plans. Build 93 hides Settings plan/pilot promotion and the limit-sheet comparison link; server quotas and memberships remain unchanged. Build 92 delivery and backend security audit are recorded in the API lane report.

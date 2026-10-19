@@ -1,3 +1,7 @@
+## October 18 final mobile audit — build 93
+
+User requested hiding Plans. The mobile-only visibility flag removes Settings plan/pilot promotion and plan comparison from limit prompts; backend quotas remain enforced. All 655 tests pass (one config gate separately enabled and passing), 53 targeted tests pass, analysis clean. Build93 preserves build92 Apple nonce/deletion/privacy-manifest and restock-loading fixes. Signed export/upload and physical acceptance are in progress. GPU HTTP remains outside this lane and blocks unconditional public-launch signoff; camera/barcode/mic/provider/push acceptance remains pending.
+
 ## Final mobile security audit — October 18, build 92 candidate
 
 Native Apple sign-in now binds a fresh SHA-256 nonce to the Supabase request. Apple-linked deletion requests fresh native authorization, verifies the active account, and sends the code to the server revocation flow. Both share-handler frameworks include their own app-group UserDefaults privacy manifest. All 655 mobile tests pass (one configuration test skipped in the general suite); the separately enabled production configuration test passes; analysis is clean. Build 92 signed delivery and exact-device acceptance are in progress. Runtime Apple deletion, blank-chat validation, AASA links, and approved migration 059 are deployed. GPU HTTP remains unchanged under the earlier user instruction and is a launch blocker.

@@ -23,6 +23,7 @@ import 'profile_editor_page.dart';
 import 'appearance_settings.dart';
 import 'memory_page.dart';
 import 'plans_page.dart';
+import '../../core/plan_visibility.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -1071,282 +1072,313 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Pro / Upgrade ────────────────────────────────────────────────
           if (!widget.accountOnly) ...[
-            if (_proLoading)
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                  ),
-                ),
-                child: Center(
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: AppTheme.adaptive(context, Color(0x73FFFFFF)),
-                    ),
-                  ),
-                ),
-              )
-            else if (_isPilotMode)
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface(context),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.border(context)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.rocket_launch_outlined,
-                          color: AppTheme.textSecondary(context),
-                          size: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: AppText(
-                            'Free Pilot',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    AppText(
-                      ProStatus.pilotNotice ?? ProStatus.defaultPilotNotice,
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Color(0x99FFFFFF)),
-                        fontSize: 13,
-                        height: 1.5,
+            if (mobilePlansVisible) ...[
+              if (_proLoading)
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    GestureDetector(
-                      onTap: () => unawaited(_sendFeedback()),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                          horizontal: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surface2(context),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppTheme.border(context)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.mail_outline,
-                              color: AppTheme.textSecondary(context),
-                              size: 15,
-                            ),
-                            SizedBox(width: 6),
-                            Flexible(
-                              child: AppText(
-                                'Send feedback',
-                                style: TextStyle(
-                                  color: AppTheme.textPrimary(context),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: AppTheme.adaptive(context, Color(0x73FFFFFF)),
                       ),
                     ),
-                  ],
-                ),
-              )
-            else if (_isTeamCovered)
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0x0AA78BFA)),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x33A78BFA)),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.group,
-                      color: AppTheme.foreground(context, Color(0xFFA78BFA)),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText(
-                            'FindEZ Team — Active',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (ProStatus.teamName != null)
-                            AppText(
-                              'Covered by ${ProStatus.teamName}',
-                              style: TextStyle(
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0x73FFFFFF),
-                                ),
-                                fontSize: 12,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (_isPro)
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0x0A30D158)),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x3330D158)),
+                )
+              else if (_isPilotMode)
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.border(context)),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: AppTheme.foreground(context, Color(0xFF30D158)),
-                      size: 20,
-                    ),
-                    SizedBox(width: 10),
-                    AppText(
-                      'FindEZ Pro — Active',
-                      style: TextStyle(
-                        color: AppTheme.foreground(context, Colors.white),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                margin: const EdgeInsets.only(top: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.adaptive(
-                                context,
-                                const Color(0x1AA78BFA),
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.group_outlined,
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0xFFA78BFA),
-                              ),
-                              size: 16,
-                            ),
+                          Icon(
+                            Icons.rocket_launch_outlined,
+                            color: AppTheme.textSecondary(context),
+                            size: 20,
                           ),
-                          const SizedBox(width: 10),
-                          AppText(
-                            'FindEZ Team',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: AppText(
+                              'Free Pilot',
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       AppText(
-                        'Share inventory with your household, business, lab, or team. Ask a team manager for a join code.',
+                        ProStatus.pilotNotice ?? ProStatus.defaultPilotNotice,
                         style: TextStyle(
                           color: AppTheme.foreground(
                             context,
-                            Color(0x73FFFFFF),
+                            Color(0x99FFFFFF),
                           ),
                           fontSize: 13,
-                          height: 1.45,
+                          height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       GestureDetector(
-                        onTap: () => showJoinTeamDialog(context, widget.api),
+                        onTap: () => unawaited(_sendFeedback()),
                         child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          decoration: BoxDecoration(
-                            color: AppTheme.adaptive(
-                              context,
-                              const Color(0xFFA78BFA),
-                            ),
-                            borderRadius: BorderRadius.circular(12),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 14,
                           ),
-                          child: AppText(
-                            'Enter join code',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surface2(context),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppTheme.border(context)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.mail_outline,
+                                color: AppTheme.textSecondary(context),
+                                size: 15,
+                              ),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: AppText(
+                                  'Send feedback',
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary(context),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
+                )
+              else if (_isTeamCovered)
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x0AA78BFA)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x33A78BFA),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.group,
+                        color: AppTheme.foreground(context, Color(0xFFA78BFA)),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppText(
+                              'FindEZ Team — Active',
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (ProStatus.teamName != null)
+                              AppText(
+                                'Covered by ${ProStatus.teamName}',
+                                style: TextStyle(
+                                  color: AppTheme.foreground(
+                                    context,
+                                    Color(0x73FFFFFF),
+                                  ),
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_isPro)
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x0A30D158)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x3330D158),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: AppTheme.foreground(context, Color(0xFF30D158)),
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      AppText(
+                        'FindEZ Pro — Active',
+                        style: TextStyle(
+                          color: AppTheme.foreground(context, Colors.white),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.adaptive(
+                        context,
+                        const Color(0x14FFFFFF),
+                      ),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.adaptive(
+                                  context,
+                                  const Color(0x1AA78BFA),
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.group_outlined,
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFFA78BFA),
+                                ),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            AppText(
+                              'FindEZ Team',
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        AppText(
+                          'Share inventory with your household, business, lab, or team. Ask a team manager for a join code.',
+                          style: TextStyle(
+                            color: AppTheme.foreground(
+                              context,
+                              Color(0x73FFFFFF),
+                            ),
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => showJoinTeamDialog(context, widget.api),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              color: AppTheme.adaptive(
+                                context,
+                                const Color(0xFFA78BFA),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: AppText(
+                              'Enter join code',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppTheme.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
 
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: ListTile(
-                title: const AppText('Plans'),
-                subtitle: const AppText('Compare Free, Pro, Team and Business'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute(builder: (_) => const PlansPage()),
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ListTile(
+                  title: const AppText('Plans'),
+                  subtitle: const AppText(
+                    'Compare Free, Pro, Team and Business',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(builder: (_) => const PlansPage()),
+                  ),
                 ),
               ),
-            ),
+            ],
             const AppearanceSettings(),
             // ── Scanning ─────────────────────────────────────────────────────
             _sectionLabel('Scanning'),
