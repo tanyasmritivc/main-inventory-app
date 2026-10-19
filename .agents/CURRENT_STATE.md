@@ -1,3 +1,19 @@
+## App Store review submitted: 1.0.8 (95), October 18
+
+The user authorized public App Review submission with the supplied seven-image
+screenshot pack. Apple accepted submission 6750f743-3f1c-4fe7-afd2-f45950394c98 at
+2026-10-19 02:43:27.786 UTC. Version and submission are WAITING_FOR_REVIEW; Safari
+confirms the status. Eligible build 95 is selected. Detailed review/AI answers,
+release notes, twelve privacy data disclosures and the 13+ age override are saved.
+All seven iPhone uploads are Complete; six existing native iPad images are preserved.
+The dedicated sample reviewer login and authorized workspace read pass. MANUAL
+release remains selected; approval and public release are pending. Existing
+infrastructure and physical acceptance findings remain open. No binary, runtime,
+payment, agreement or customer inventory changes. See
+docs/plans/app-store-submission-20261018.md; private Apple receipts are in
+Documents/FindEZ/AppStore/submission-20261018. This supersedes the submission hold
+below and does not require another native build.
+
 ## Final submission audit — build 95 delivered; notification arrival confirmed
 
 Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.

@@ -1,3 +1,14 @@
+## App Store submission completed: 1.0.8 (95), October 18
+
+User-authorized submission 6750f743-3f1c-4fe7-afd2-f45950394c98 is WAITING_FOR_REVIEW,
+confirmed by Apple API and Safari. Seven supplied iPhone screenshots, detailed
+review answers, release notes, twelve privacy types and 13+ eligibility override
+are saved. Existing six iPad screenshots and sample review credentials are kept;
+reviewer login passes. Manual release is preserved. No code/binary or production
+database changes. Outstanding launch findings remain as documented in the final
+audit; submission is not approval or a public release. Receipt:
+docs/plans/app-store-submission-20261018.md. Documentation-only delivery.
+
 ## Final submission audit — build 95 delivered; notification arrival confirmed
 
 Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
