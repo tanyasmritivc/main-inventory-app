@@ -1,3 +1,14 @@
+## Chat latency localized to model gateway - October 19
+
+The two reported public-iOS prompts took 81.434 and 42.956 seconds to save
+answers. Authorized inventory context reads took 0.022 seconds. Synthetic direct
+gateway probes reproduced 34.965/43.319-second turns, with 27.846/35.846 seconds
+before the final-generation first event. Two diagnostic-only variants failed to
+improve latency and were not deployed. Public iOS 1.0.8 is build95, the same
+Apple-uploaded binary as TestFlight. The user says another person manages the
+gateway; queue/GPU/orchestration diagnosis needs that operator's logs. No app,
+configuration or customer-data changes. See docs/plans/chat-latency-20261019.md.
+
 ## Final submission security audit — build 95 delivery and hardware update
 
 Approved 059/060/061 remain deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and narrow proxy trust are live. 1,093 Python tests + 10 subtests and real cross-account/role/revocation/upload/deletion checks pass. Mobile 95 is installed and Apple-acknowledged; user confirmed camera/barcode/mic on 94 and notification arrival on 95. GPU HTTP and origin-port restriction remain launch blockers. Auth server Apple/Google nonce bypass flags remain enabled and require coordinated provider/older-client testing before enforcement. Remaining physical gates and current receipts: docs/plans/final-mobile-security-20261018.md. Public submission held. This supersedes historical pending entries below.
