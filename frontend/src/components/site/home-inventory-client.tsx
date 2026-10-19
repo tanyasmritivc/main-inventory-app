@@ -217,7 +217,7 @@ function InventoryStats({
   const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
 
   return (
-    <section className="inventory-stats" aria-label="Inventory totals">
+    <section className={`inventory-stats ${toolbarStyles.totals}`} aria-label="Inventory totals">
       <span><strong>{items.length.toLocaleString()}</strong> items</span>
       <span><strong>{totalUnits.toLocaleString()}</strong> units</span>
       <span><strong>{spaces.length.toLocaleString()}</strong> Spaces</span>
