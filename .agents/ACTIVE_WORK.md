@@ -1,6 +1,18 @@
-## October 19 web launch audit - active
+## October 19 website launch audit — deployed
 
-Web-only lane `fix/web-launch-audit-20261019`, based on b58d615 and the actual running web source captured from /home/ubuntu/findez-search-icons-20261018/candidate/frontend. Audit landing/product parity against mobile build95, auth/security, API-key UI, API documentation and connectors. No mobile changes, native builds or database changes. The user separately authorized the narrow server metadata correction in fix/web-item-fields-api-20261019 (PR130), now deployed and verified. Preserve existing runtime overlays and customer records; test writes use isolated QA records only. Final results will be in docs/plans/web-launch-audit-20261019.md.
+Web lane `fix/web-launch-audit-20261019` / PR131 is deployed through runtime commit
+`82cc668`; final CI run 39281842359 passed. Active service directory:
+`/home/ubuntu/findez-web-search-20261019/candidate/frontend`. Website 424 tests,
+40 API-documentation checks, 29 connector tests, packaged/live connector checks,
+production types/lint/build and Safari acceptance passed. Temporary QA keys/share
+revoked; synthetic inventories/workspace removed. No mobile source/binaries or
+production database changes. Separately authorized metadata schema fix is live
+in PR130 (1,100 backend tests plus 10 subtests passed).
+
+Public launch remains conditional on encrypting the API-to-FIND HTTP processing
+hop and verifying GPU performance/capacity. Dependency and live acceptance limits
+are recorded in `docs/plans/web-launch-audit-20261019.md`. Preserve unrelated
+production overlays; do not reset the VM checkout.
 
 ## Current brand favicons published (2026-10-18)
 
