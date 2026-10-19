@@ -1,6 +1,6 @@
-## Final submission security audit — October 18
+## Final submission security audit — build 95 delivery and hardware update
 
-Approved 059/060/061 deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and local-proxy trust deployed with rollback. 1,093 tests + 10 subtests, live cross-account/role/revocation/upload checks and disposable email-account deletion pass. GPU HTTP remains an explicit launch blocker; native hardware/provider/push gates remain pending. See `docs/plans/final-mobile-security-20261018.md`. Mobile build93 (hide Plans) is in progress in its separate lane.
+Approved 059/060/061 remain deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and narrow proxy trust are live. 1,093 Python tests + 10 subtests and real cross-account/role/revocation/upload/deletion checks pass. Mobile 95 is installed and Apple-acknowledged; user confirmed camera/barcode/mic on 94 and notification arrival on 95. GPU HTTP and origin-port restriction remain launch blockers. Auth server Apple/Google nonce bypass flags remain enabled and require coordinated provider/older-client testing before enforcement. Remaining physical gates and current receipts: docs/plans/final-mobile-security-20261018.md. Public submission held. This supersedes historical pending entries below.
 
 ## Final mobile audit — October 18
 
