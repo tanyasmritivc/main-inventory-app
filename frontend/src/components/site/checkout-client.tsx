@@ -1,4 +1,6 @@
 'use client';
+import { userFacingError } from '@/lib/user-facing-error';
+import Link from '@/components/site/inventory-link';
 import { canEditInventory } from '@/lib/inventory-selection';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -37,6 +39,8 @@ export function CheckoutClient() {
   const { confirmAction, showNotice } = useAppDialog();
   const [checkouts, setCheckouts] = useState<Checkout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [signedOut, setSignedOut] = useState(false);
   const [returning, setReturning] = useState<string | null>(null);
 
   const sortedCheckouts = useMemo(() => [...checkouts].sort((left, right) => {
@@ -55,13 +59,15 @@ export function CheckoutClient() {
   useEffect(() => { void load(); }, []);
 
   async function load() {
-    setLoading(true);
+    setLoading(true); setError(null); setSignedOut(false);
     try {
       const sb = createSupabaseBrowserClient();
       const { data: { session } } = await sb.auth.getSession();
-      if (!session) return;
+      if (!session) { setSignedOut(true); throw new Error('Sign in to view checked-out items.'); }
       const res = await getActiveCheckouts({ token: session.access_token });
       setCheckouts((res.checkouts ?? []) as Checkout[]);
+    } catch (reason) {
+      setError(userFacingError(reason, 'Could not load checked-out items. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +97,8 @@ export function CheckoutClient() {
           <button className="app-icon-button" aria-label="Refresh check-outs" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /></button>
         </header>
 
-        {loading ? (
+        {error && <div className="notice-error" role="alert">{error} {signedOut ? <Link className="product-button" href="/signin?redirect=/checkout">Sign in</Link> : <button className="product-button" onClick={() => void load()}>Try again</button>}</div>}
+        {error ? null : loading ? (
           <div className="bare-empty"><span>Loading…</span></div>
         ) : checkouts.length === 0 ? (
           <div className="bare-empty">
@@ -116,7 +123,7 @@ export function CheckoutClient() {
                 <article className={overdue ? 'is-overdue' : ''} key={checkoutId}>
                   <div className="checkout-item"><strong>{itemName}</strong><small>{location || 'No saved location'}</small></div>
                   <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#929292', color: '#ffffff' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
-                  <div className={`checkout-due ${overdue ? 'overdue' : ''}`}>{dueBackAt ? (overdue ? `Overdue · ${timeAgo(dueBackAt)}` : timeAgo(dueBackAt)) : 'No due date'}</div>
+                  <div className={`checkout-due ${overdue ? 'overdue' : ''}`}>{dueBackAt ? (overdue ? `Overdue · ${timeAgo(dueBackAt)}` : `Due ${new Date(dueBackAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`) : 'No due date'}</div>
                   <button className="product-button" type="button" onClick={() => void handleReturn(checkoutId, itemName)} disabled={returning === checkoutId || !canEditInventory()}><RotateCcw size={13} /> {returning === checkoutId ? 'Returning…' : 'Return'}</button>
                 </article>
               );

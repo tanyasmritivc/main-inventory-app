@@ -270,7 +270,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
       {pendingPhoto && <ProfilePhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onSave={changePhoto} />}
       {section === "profile" && <section className="settings-panel" id="profile">
         <header>
-          <h2>Profile</h2>
+          <h2>Personal details</h2>
         </header>
         <div className="settings-profile-row">
           <button
@@ -339,7 +339,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
               id="settings-role"
               value={editingRole}
               onChange={(event) => setEditingRole(event.target.value)}
-              placeholder="Build lead"
+              placeholder="Your role (optional)"
             />
           </div>
         </div>
@@ -396,7 +396,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
         </footer>
       </section>}
 
-      {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Appearance</h2></header>
+      {section === "appearance" && <section className="settings-panel" id="appearance"><header><h2>Theme</h2></header>
         <div className="settings-static-row">
           <span className="settings-appearance-label">
             Appearance<small>Follows your device unless you pick one.</small>
@@ -433,7 +433,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
 
       {section === "developer" && <section className="settings-panel" id="developer">
         <header>
-          <h2>Developer</h2>
+          <h2>API access</h2>
         </header>
         <Link className="settings-link-row" href="/settings/api-keys">
           <span className="settings-link-label">
@@ -453,7 +453,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
 
       {section === "help" && <section className="settings-panel" id="help">
         <header>
-          <h2>Help and information</h2>
+          <h2>Support and legal</h2>
         </header>
         <Link className="settings-link-row" href="/privacy">
           <span>Privacy policy</span>
@@ -470,7 +470,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
       </section>}
       {section === "account" && <section className="settings-panel" id="account">
         <header>
-          <h2>Account</h2>
+          <h2>Account management</h2>
         </header>
         <div className="settings-static-row">
           <span>Email</span>

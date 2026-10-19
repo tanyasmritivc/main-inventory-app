@@ -1,10 +1,10 @@
 .shell { min-height:100dvh; }
 .shell :global(.app-frame) { --font-main:var(--font-inter),Arial,sans-serif; }
-.flow { width:100%; max-width:1160px; margin:0 auto; padding:36px 32px 64px; font-family:var(--font-inter),Arial,sans-serif; color:var(--app-text,#171717); }
-.flow :global(.product-page-header) { align-items:center; gap:20px; margin-bottom:28px; }
+.flow { width:100%; max-width:1160px; margin:0 auto; padding:24px 0 48px; gap:20px; font-family:var(--font-inter),Arial,sans-serif; color:var(--app-text,#171717); }
+.flow :global(.product-page-header) { align-items:center; gap:20px; margin-bottom:4px; }
 .flow :global(h1) { font-size:26px; font-weight:600; letter-spacing:-.8px; line-height:1.25; }
 .eyebrow { display:block; margin:0 0 7px; font-size:12px; color:var(--app-muted,#737373); }
-.flow :global(.directory-search) { max-width:420px; height:38px; margin-bottom:24px; border-radius:7px; font-size:13px; }
+.flow :global(.directory-search) { max-width:420px; height:38px; margin-bottom:0; border-radius:7px; font-size:13px; }
 .flow :global(.product-button) { min-height:36px; padding:8px 13px; border:1px solid var(--app-border,#dedede); border-radius:7px; background:var(--app-surface,#fff); font-size:13px; font-weight:500; }
 .flow :global(.product-page-header .product-actions > .product-button:last-child) { background:#c2410c; border-color:#c2410c; color:white; }
 .flow :global(.context-card-grid) { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); gap:16px; }
@@ -27,4 +27,4 @@
 .flow :global(.context-person) { padding:18px 22px; border-bottom:1px solid var(--app-border,#ededed); }
 .flow :global(.context-person:last-child) { border-bottom:0; }
 .flow :global(.workspace-settings) { max-width:760px; border:1px solid var(--app-border,#dedede); border-radius:10px; padding:24px; }
-@media(max-width:700px) { .flow { padding:24px 16px 40px; } .flow :global(.product-page-header) { align-items:flex-start; flex-wrap:wrap; } .flow :global(.directory-search) { max-width:none; } }
+@media(max-width:700px) { .flow { padding:16px 0 32px; } .flow :global(.product-page-header) { align-items:flex-start; flex-wrap:wrap; } .flow :global(.directory-search) { max-width:none; } }

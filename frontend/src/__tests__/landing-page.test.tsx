@@ -12,14 +12,16 @@ let authChanged: (event: string, session: object | null) => void;
 jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({ auth: { getUser } }),
 }));
-jest.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "lab-geist" }),
-  Geist_Mono: () => ({ variable: "lab-mono" }),
+jest.mock("next/font/local", () => ({
+  __esModule: true,
+  default: ({ variable }: { variable: string }) => ({ variable: variable === "--fzl-geist" ? "lab-geist" : "lab-mono" }),
 }));
 jest.mock("@/components/site/landing-lab-engine", () => ({
   ...jest.requireActual("@/components/site/landing-lab-engine"),
   initLandingLab: () => () => {},
 }));
+jest.mock("@/components/site/hero-morph-engine", () => ({ ...jest.requireActual("@/components/site/hero-morph-engine"), init: () => () => {} }));
+jest.mock("@/components/site/landing-scenes-engine", () => ({ initLandingScenes: () => () => {} }));
 jest.mock("@/lib/supabase/browser", () => ({
   createSupabaseBrowserClient: () => ({
     auth: {
@@ -45,7 +47,7 @@ test("the homepage publishes the approved Lab design with its original destinati
   expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
   expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
   expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "stmt", "see", "graph", "zoom", "ask", "own", "who", "find", "vision", "app", "waitlist", "end"]) {
+  for (const id of ["hero", "graph", "zoom", "ask", "who", "app", "waitlist", "end"]) {
     expect(document.getElementById(id)).toBeTruthy();
   }
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
@@ -60,8 +62,10 @@ test("the homepage publishes the approved Lab design with its original destinati
   for (const link of screen.getAllByRole("link", { name: "Get started" })) {
     expect(link.getAttribute("href")).toBe("/signup");
   }
-  expect(screen.getByRole("link", { name: "Try FindEZ on the web" }).getAttribute("href")).toBe("/signup");
-  for (const link of screen.getAllByRole("link", { name: "Join the iPhone waitlist" })) expect(link.getAttribute("href")).toBe("#waitlist");
+  for (const link of screen.getAllByRole("link", { name: "Try FindEZ on the web" })) expect(link.getAttribute("href")).toBe("/signup");
+  expect(screen.queryByRole("button", { name: /Join waitlist/i })).toBeNull();
+  expect(screen.queryByText(/You are on the list/)).toBeNull();
+  expect(screen.getByRole("link", { name: "Get FindEZ for iPhone" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
 });
 
 test("the homepage preserves the signed-in Dashboard and follows session changes", async () => {

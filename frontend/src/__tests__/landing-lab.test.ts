@@ -11,7 +11,7 @@ const context = vm.createContext({ DCLogic: class {} });
 vm.runInContext(script + ";globalThis.Reference = Component;", context);
 const ReferenceClass = context.Reference as new () => Reference;
 function normalize(value: unknown): unknown {
-  if (typeof value === "string") return value.replaceAll("assets/", "/images/landing-lab/").replaceAll("font-family:'Geist Mono'", "font-family:var(--fzl-mono)").replaceAll("animation:vpulse", "animation:fzl-vpulse");
+  if (typeof value === "string") return value.replaceAll("Capture: every object in the photo becomes its own row", "Capture: review detected objects before saving them as items").replaceAll("assets/", "/images/landing-lab/").replaceAll("font-family:'Geist Mono'", "font-family:var(--fzl-mono)").replaceAll("animation:vpulse", "animation:fzl-vpulse");
   if (Array.isArray(value)) return Array.from(value, normalize);
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([, v]) => typeof v !== "function").map(([key, v]) => [key, normalize(v)]));
   return value;

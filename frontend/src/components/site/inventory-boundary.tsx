@@ -6,6 +6,7 @@ import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
 import { activeInventory, isInventoryPage, permissionFingerprint, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import { AppShell } from "@/components/site/app-shell";
+import { signInPath } from "@/lib/auth-paths";
 import { ApiError } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
@@ -71,7 +72,9 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
   if (!ready) return (
     <div className="interior-loading inventory-loading" role={error || sessionError ? "alert" : "status"}>
       <p>{error || sessionError || "Opening inventory..."}</p>
-      {(error || sessionError) && <Link href="/workspaces">Choose a workspace</Link>}
+      {sessionError || (!loading && !accountId) ?
+        <Link href={signInPath(pathname + (params.toString() ? `?${params}` : ""))}>Sign in again</Link> :
+        error && <Link href="/workspaces">Choose a workspace</Link>}
     </div>
   );
   return <AppShell inventory={required && verified?.accountId === accountId ? verified : undefined} key={required && verified ? permissionFingerprint(verified) : "account"}>

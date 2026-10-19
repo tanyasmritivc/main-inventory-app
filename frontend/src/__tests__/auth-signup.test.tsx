@@ -51,9 +51,9 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   const redirect = new URL(args.options.emailRedirectTo);
   expect(redirect.origin).toBe(window.location.origin);
   expect(redirect.pathname).toBe("/auth/callback");
-  expect(redirect.searchParams.get("next")).toBe("/inventory");
+  expect(redirect.searchParams.get("next")).toBe("/onboarding");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
-  expect(args.options.data.terms_version).toBe("2026-10-11");
+  expect(args.options.data.terms_version).toBe("2026-10-18");
   expect(args.options.data.eligibility_attested).toBe(true);
   expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(false);
 });
@@ -82,7 +82,7 @@ test("when signup returns a session the profile is saved and the user continues"
   upsert.mockResolvedValue({ error: null });
   await submitSignup();
 
-  await waitFor(() => expect(push).toHaveBeenCalledWith("/inventory"));
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/onboarding"));
   expect(from).toHaveBeenCalledWith("profiles");
   expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ id: "u1", first_name: "Ada", last_name: "Lovelace" }));
   expect(screen.queryByRole("alert")).toBeNull();
@@ -94,7 +94,7 @@ test("a profile save failure is shown instead of being swallowed", async () => {
   await submitSignup();
 
   expect((await screen.findByRole("alert")).textContent).toMatch(/profile details could not be saved/i);
-  expect(screen.getByRole("link", { name: "Continue to FindEZ" }).getAttribute("href")).toBe("/inventory");
+  expect(screen.getByRole("link", { name: "Continue to FindEZ" }).getAttribute("href")).toBe("/onboarding");
   expect(push).not.toHaveBeenCalled();
 });
 

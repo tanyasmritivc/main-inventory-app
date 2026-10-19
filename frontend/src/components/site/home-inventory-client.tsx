@@ -1,6 +1,8 @@
 "use client";
 import { privateImageSrc } from "@/lib/private-image";
+import { csvCell } from "@/lib/csv-export";
 
+import toolbarStyles from "./inventory-toolbar.module.css";
 import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
 import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
 import { useInventoryRouter } from "@/components/site/inventory-link";
@@ -215,7 +217,7 @@ function InventoryStats({
   const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
 
   return (
-    <section className="inventory-stats" aria-label="Inventory totals">
+    <section className={`inventory-stats ${toolbarStyles.totals}`} aria-label="Inventory totals">
       <span><strong>{items.length.toLocaleString()}</strong> items</span>
       <span><strong>{totalUnits.toLocaleString()}</strong> units</span>
       <span><strong>{spaces.length.toLocaleString()}</strong> Spaces</span>
@@ -411,11 +413,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }, [adoptRestock]);
 
   useEffect(() => {
-    if (!query.trim() || !token) return;
-    const timeout = window.setTimeout(() => { void load(undefined, query); }, 400);
-    return () => window.clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, token]);
+    if (!query.trim() || !token || selectedSpace) { setLoading(false); return; }
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setLoading(true); setError(null);
+      void searchItems({ token, query: query.trim() }).then((result) => {
+        if (active) setItems(result.items ?? []);
+      }).catch((reason) => {
+        if (active) setError(errorMessage(reason, 'Failed to search inventory'));
+      }).finally(() => { if (active) setLoading(false); });
+    }, 400);
+    return () => { active = false; window.clearTimeout(timeout); };
+  }, [query, token, selectedSpace]);
 
   useEffect(() => {
     if (!props.locationFilter?.trim()) return;
@@ -479,12 +488,14 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     setLoading(true);
     try {
       const t = token || (await refreshToken());
-      if (!t) return;
+      if (!t) { setError('Your session expired. Sign in again before saving.'); return false; }
       const res = await updateItem({ token: t, item_id: itemId, updates });
       setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
       setItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
+      return true;
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to update item'));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -515,7 +526,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   async function onSaveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editItemId) return;
-    await onUpdateItem(editItemId, {
+    const saved = await onUpdateItem(editItemId, {
       name: editDraft.name,
       category: editDraft.category,
       quantity: editDraft.quantity,
@@ -526,6 +537,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       purchase_source: editDraft.purchase_source ?? null,
       notes: editDraft.notes ?? null,
     });
+    if (!saved) return;
     setEditOpen(false);
     if (viewingSharedSpace) {
       await loadSharedSpace(viewingSharedSpace.shareId)
@@ -812,8 +824,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     try {
       const sourceItems = props.mode === 'inventory' && !query.trim() ? allItems : items;
       // Unsorted includes items with no space_id and items whose Space was deleted.
+      const needle = query.trim().toLocaleLowerCase();
       const base = selectedSpace
-        ? itemsInSpace(items ?? [], selectedSpace, spaceIndex)
+        ? itemsInSpace(allItems ?? [], selectedSpace, spaceIndex).filter((item) => !needle ||
+            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode]
+              .some((value) => typeof value === 'string' && value.toLocaleLowerCase().includes(needle)))
         : (sourceItems ?? []);
       if (!categoryFilter) return base;
       return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
@@ -906,8 +921,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   function exportCsv(rows: InventoryItem[], filename: string) {
     const fields: Array<keyof InventoryItem> = ['name', 'category', 'subcategory', 'quantity', 'location', 'brand', 'part_number', 'barcode', 'purchase_source', 'notes', 'created_at'];
-    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => escape(row[field])).join(','))].join('\n');
+    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url; link.download = `${filename.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase() || 'findez-inventory'}.csv`; link.click();
@@ -974,7 +988,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find')}</h1>
+          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Items')}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
         {!selectedSpace && !viewingSharedSpace && canEdit && (
@@ -990,9 +1004,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button
               type="button"
               onClick={() => setCreateSpaceOpen(true)}
-              className="product-button primary"
+              className={`product-button${props.mode === "spaces" ? " primary" : ""}`}
             >
-              + New Space
+              New Space
             </button>
           </div>
         )}
@@ -1046,19 +1060,23 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       {showInventoryTable ? (
         <div>
           {props.mode === 'inventory' && (
-            <div className="inventory-filter-row" aria-label="Filter inventory by category">
-              <button type="button" className={!categoryFilter ? 'is-active' : ''} onClick={() => setCategoryFilter('')}>All</button>
-              {categories.map((category) => <button type="button" className={categoryFilter === category ? 'is-active' : ''} key={category} onClick={() => setCategoryFilter(category)}>{category}</button>)}
+            <div className={toolbarStyles.filters}>
+              <label htmlFor="inventory-category">Category</label>
+              <select id="inventory-category" className="product-select" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}>
+                <option value="">All categories</option>
+                {categories.map(category => <option key={category} value={category}>{category}</option>)}
+              </select>
+              {categoryFilter && <button type="button" className="product-button" onClick={() => setCategoryFilter('')}>Clear filter</button>}
             </div>
           )}
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} {query.trim() ? 'matching' : ''} item{visibleItems.length === 1 ? '' : 's'}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid var(--light-line)' }}>
-            {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
+          <div className={toolbarStyles.tableHeader}>
+            {['Item', 'Category', 'Qty', 'Space'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
-            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
+            <div key={item.item_id} className={toolbarStyles.tableRow}>
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                 {item.image_url && <Image unoptimized width={42} height={42} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                 <div style={{ minWidth: 0 }}>
@@ -1364,8 +1382,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {/* Items table */}
           {visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
-              {canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>{query.trim() || categoryFilter ? 'No matching items in this Space' : 'No items in this space yet'}</p>
+              {query.trim() || categoryFilter ? <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Try another search or clear the filters.</p> : canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
             <>
@@ -1806,39 +1824,40 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           <form onSubmit={(e) => { void onSaveEdit(e); }} style={{ marginTop: 20 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Name *</label>
-                <input value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="edit-item-name" style={labelStyle}>Name *</label>
+                <input id="edit-item-name" value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Category *</label>
-                <input value={editDraft.category} onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="edit-item-category" style={labelStyle}>Category *</label>
+                <input id="edit-item-category" value={editDraft.category} onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Brand</label>
-                <input value={editDraft.brand ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-brand" style={labelStyle}>Brand</label>
+                <input id="edit-item-brand" value={editDraft.brand ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Part number</label>
-                <input value={editDraft.part_number ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-part_number" style={labelStyle}>Part number</label>
+                <input id="edit-item-part_number" value={editDraft.part_number ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Quantity *</label>
-                <input type="number" min={0} value={editDraft.quantity} onChange={(e) => setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} required />
+                <label htmlFor="edit-item-quantity" style={labelStyle}>Quantity *</label>
+                <input id="edit-item-quantity" type="number" min={0} value={editDraft.quantity} onChange={(e) => setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Location</label>
-                <input value={editDraft.location} onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-location" style={labelStyle}>Location</label>
+                <input id="edit-item-location" value={editDraft.location} onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} />
               </div>
             </div>
             <div style={{ marginTop: 14 }}>
-              <label style={labelStyle}>Notes</label>
-              <textarea
-                value={editDraft.notes ?? ''}
+              <label htmlFor="edit-item-notes" style={labelStyle}>Notes</label>
+                <textarea
+                id="edit-item-notes" value={editDraft.notes ?? ''}
                 onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
             </div>
+            {error && <p role="alert" style={{ color: 'var(--danger-ink)', marginTop: 12 }}>{error}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button type="button" onClick={() => setEditOpen(false)} style={cancelBtnStyle}>Cancel</button>
               <button type="submit" disabled={loading} style={{ ...primaryBtnStyle, opacity: loading ? 0.5 : 1 }}>Save</button>
@@ -1900,28 +1919,28 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Name *</label>
-                <input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required autoFocus />
+                <label htmlFor="create-item-name" style={labelStyle}>Name *</label>
+                <input id="create-item-name" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required autoFocus />
               </div>
               <div>
-                <label style={labelStyle}>Category *</label>
-                <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="create-item-category" style={labelStyle}>Category *</label>
+                <input id="create-item-category" value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Brand</label>
-                <input value={draft.brand ?? ''} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
+                <label htmlFor="create-item-brand" style={labelStyle}>Brand</label>
+                <input id="create-item-brand" value={draft.brand ?? ''} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Part number</label>
-                <input value={draft.part_number ?? ''} onChange={(e) => setDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
+                <label htmlFor="create-item-part_number" style={labelStyle}>Part number</label>
+                <input id="create-item-part_number" value={draft.part_number ?? ''} onChange={(e) => setDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Quantity</label>
-                <input type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} />
+                <label htmlFor="create-item-quantity" style={labelStyle}>Quantity</label>
+                <input id="create-item-quantity" type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Space *</label>
-                <select value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
+                <label htmlFor="create-item-location" style={labelStyle}>Space *</label>
+                <select id="create-item-location" value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
                   <option value="">Choose a Space</option>
                   {serverSpaces.filter((row) => row.name !== 'Unsorted').map((row) => <option key={row.id} value={row.name}>{row.name}</option>)}
                   <option value="Unsorted">Unsorted (only if chosen)</option>
@@ -1929,9 +1948,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               </div>
             </div>
             <div style={{ marginTop: 14 }}>
-              <label style={labelStyle}>Notes</label>
-              <textarea
-                value={draft.notes ?? ''}
+              <label htmlFor="create-item-notes" style={labelStyle}>Notes</label>
+                <textarea
+                id="create-item-notes" value={draft.notes ?? ''}
                 onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical' }}

@@ -44,7 +44,8 @@ test("the first screen chooses a workspace and the second opens an explicit inve
   const selected=await screen.findByRole("link",{name:/Workshop parts 1,105 items/});
   expect(selected.getAttribute("href")).toBe("/home?inventory=a");
   expect(activeInventory()).toBeNull();
-  expect(screen.getAllByRole("heading",{name:"Inventories"})).toHaveLength(1);
+  expect(screen.getByRole("heading",{name:"Personal",level:1})).toBeTruthy();
+  expect(screen.getByRole("searchbox",{name:"Search inventories"})).toBeTruthy();
 });
 
 test("creating another inventory refreshes its workspace and keeps the creation action visible",async()=>{

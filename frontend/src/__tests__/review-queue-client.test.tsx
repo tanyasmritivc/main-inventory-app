@@ -73,12 +73,17 @@ beforeEach(() => {
   confirmAction.mockResolvedValue(true);
 });
 
-test("shows the capture image and every user-facing evidence group", async () => {
+test("opens a compact row to inspect the capture and evidence", async () => {
+  const user = userEvent.setup();
   render(<ReviewQueueClient />);
 
-  expect(await screen.findByRole("heading", { name: review.name })).toBeTruthy();
+  const row = await screen.findByRole("button", { name: `Review ${review.name}` });
+  expect(row.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.queryByLabelText("Name")).toBeNull();
+  await user.click(row);
+  await user.click(screen.getByText("Capture information", { selector: "summary" }));
   expect(screen.getByRole("img", { name: `Captured ${review.name}` }).getAttribute("src")).toBe(review.image_url);
-  expect(screen.getByText("The identification confidence is low.")).toBeTruthy();
+  expect(screen.getAllByText("The identification confidence is low.")).toHaveLength(2);
   expect(screen.getByText("Visible shape and markings suggest a fastener.")).toBeTruthy();
   expect(screen.getByText("M4")).toBeTruthy();
   expect(screen.getByText("CODE_128")).toBeTruthy();
@@ -90,13 +95,52 @@ test("confirms a reviewed item and removes it from the queue", async () => {
   const user = userEvent.setup();
   render(<ReviewQueueClient />);
 
-  await user.click(await screen.findByRole("button", { name: "Confirm and add to Find" }));
+  await user.click(await screen.findByRole("button", { name: `Review ${review.name}` }));
+  await user.click(screen.getByRole("button", { name: "Confirm and save" }));
 
   await waitFor(() => expect(api.resolveReviewItem).toHaveBeenCalledWith({
     token: "web-token",
     reviewId: "review-1",
     item: expect.objectContaining({ location: "Drawer A", name: review.name }),
   }));
-  expect(await screen.findByText(`${review.name} was confirmed and added to Find.`)).toBeTruthy();
-  expect(screen.queryByRole("heading", { name: review.name })).toBeNull();
+  expect(await screen.findByText(`${review.name} was saved to your inventory.`)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: `Review ${review.name}` })).toBeNull();
+});
+
+
+test("bounds large queues to 25 rows and keeps edits when switching items and pages", async () => {
+  const user = userEvent.setup();
+  jest.mocked(api.getReviewItems).mockResolvedValue({
+    items: Array.from({ length: 100 }, (_, i) => ({ ...review, review_id: `review-${i}`, name: `Capture ${i}` })),
+    pending_count: 250,
+  });
+  render(<ReviewQueueClient />);
+  await screen.findByRole("button", { name: "Review Capture 0" });
+  expect(screen.getAllByRole("button", { name: /^Review Capture/ })).toHaveLength(25);
+  expect(screen.getByText("250 pending · 1–25 shown")).toBeTruthy();
+  expect(screen.getByText(/Showing the latest 100 captures/)).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Review Capture 0" }));
+  await user.clear(screen.getByLabelText("Brand"));
+  await user.type(screen.getByLabelText("Brand"), "Corrected brand");
+  await user.click(screen.getByRole("button", { name: "Review Capture 1" }));
+  expect(screen.getAllByLabelText("Name")).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.queryByRole("button", { name: "Review Capture 0" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Review Capture 25" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Previous" }));
+  await user.click(screen.getByRole("button", { name: "Review Capture 0" }));
+  expect((screen.getByLabelText("Brand") as HTMLInputElement).value).toBe("Corrected brand");
+  expect(api.resolveReviewItem).not.toHaveBeenCalled();
+});
+
+test("keeps the open correction and draft after a failed save", async () => {
+  const user = userEvent.setup();
+  jest.mocked(api.resolveReviewItem).mockRejectedValueOnce(new Error("Request failed"));
+  render(<ReviewQueueClient />);
+  await user.click(await screen.findByRole("button", { name: `Review ${review.name}` }));
+  await user.type(screen.getByLabelText("Notes"), "Check the head size");
+  await user.click(screen.getByRole("button", { name: "Confirm and save" }));
+  await waitFor(() => expect(api.resolveReviewItem).toHaveBeenCalled());
+  expect((screen.getByLabelText("Notes") as HTMLTextAreaElement).value).toBe("Check the head size");
+  expect(screen.getByRole("button", { name: `Review ${review.name}` }).getAttribute("aria-expanded")).toBe("true");
 });
