@@ -1,3 +1,7 @@
+## Final mobile-linked web audit — October 18
+
+Deployed Apple authorization revocation before account deletion, preserving account data on reauthentication/provider failures. The Edge Function uses the matching local Apple signing key through private server environment; native and website client IDs are allowlisted. The web forwards its Apple provider refresh token when available. Both Edge source copies match. AASA now includes personal invitations, access invitations and workspace links on both domains. All 392 web tests across 50 suites pass in aggregate (the initially omitted sparse-checkout design fixture was restored unchanged before its suite rerun), typecheck and scoped lint pass, production npm audit reports zero advisories, and the preserved production web candidate builds. Runtime files are hash-verified, 314 unrelated web files preserved. Account-deletion live method guard passes; actual Apple-provider authorization/revocation still needs a disposable native Apple account test.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
