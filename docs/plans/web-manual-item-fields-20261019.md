@@ -15,4 +15,4 @@ metadata. Ownership and catalog IDs remain outside the client request schema.
 Validation: 1,100 tests plus 10 subtests passed, including HTTP create/edit, legacy
 quantity-only writes, empty-field clearing and oversized metadata rejection.
 Runtime schema/routes/repository hashes match the source baseline.
-Deployment and live browser verification pending.
+Deployed the schema only to the existing API service on October 19, with a byte-for-byte backup and health-checked rollback. Live Safari edit/reopen verified Brand and Part number persistence on the isolated QA item. Deployment receipt: /home/ubuntu/findez-web-item-fields-20261019/receipt.json. No other backend files, database state or mobile artifacts were deployed.
