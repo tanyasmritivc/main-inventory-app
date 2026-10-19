@@ -240,18 +240,20 @@ def email_team_invite_route(
                 f"You are invited to join {details['team_name']} on FindEZ. "
                 f"Open {details['invite_url']} or enter join code {details['join_code']}."
             ),
-            html=f"""
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#090a0d;color:#f5f5f7;padding:40px 24px;">
-              <div style="max-width:520px;margin:auto;background:#171719;border:1px solid #303034;border-radius:22px;padding:32px;">
-                <p style="margin:0 0 10px;color:#a1a1aa;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">FindEZ team invitation</p>
-                <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Join {team_name}</h1>
-                <p style="margin:0 0 26px;color:#b6b6bd;font-size:16px;line-height:1.55;">Open FindEZ to join the team. If you do not have the app yet, the link will take you to the download page.</p>
-                <a href="{invite_url}" style="display:block;padding:14px 20px;border-radius:999px;background:#f5f5f7;color:#111113;text-align:center;text-decoration:none;font-weight:700;">Open invitation</a>
-                <p style="margin:24px 0 6px;color:#8e8e93;font-size:12px;text-align:center;">JOIN CODE</p>
-                <p style="margin:0;color:#f5f5f7;font-size:25px;letter-spacing:.22em;text-align:center;font-weight:700;">{join_code}</p>
-              </div>
-            </div>
-            """,
+            html=f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FindEZ invitation</title></head>
+<body style="margin:0;padding:0;width:100%;background:#f4f3ef;color:#24211d;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f3ef"><tr><td align="center" style="padding:32px 16px;">
+<!--[if mso]><table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:560px;"><tr><td style="padding:0 4px 24px;">
+<table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td width="40"><img src="https://findez.ai/favicon.png" width="32" height="32" alt="" style="display:block;border:0;border-radius:7px;"></td><td style="font-size:23px;font-weight:700;letter-spacing:-1px;color:#24211d;">FindEZ</td></tr></table>
+</td></tr><tr><td bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e4e0d9;border-top:3px solid #bc4800;border-radius:12px;padding:30px 24px 8px;">
+<p style="margin:0 0 12px;color:#8a4b24;font-size:12px;font-weight:700;line-height:1.5;">FindEZ team invitation</p><h1 style="margin:0 0 18px;color:#24211d;font-size:28px;font-weight:700;letter-spacing:-0.6px;line-height:1.25;overflow-wrap:break-word;">Join {team_name}</h1>
+<p style="margin:0 0 22px;color:#55534f;font-size:16px;line-height:1.65;overflow-wrap:break-word;">Open FindEZ to join the team. If you do not have the app yet, the link will take you to the download page.</p><table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:6px 0 28px;"><tr><td bgcolor="#bc4800" style="border-radius:8px;text-align:center;"><a href="{invite_url}" style="display:inline-block;padding:15px 24px;border:1px solid #bc4800;border-radius:8px;background:#bc4800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:1.4;text-decoration:none;text-align:center;mso-padding-alt:0;">Open invitation</a></td></tr></table><table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 0 26px;"><tr><td bgcolor="#f5f4f1" style="padding:18px 20px;border:1px solid #e8e5df;border-radius:8px;"><p style="margin:0 0 10px;color:#66615a;font-size:12px;line-height:1.5;">JOIN CODE</p><strong style="font-family:Consolas,Menlo,monospace;font-size:22px;line-height:1.4;letter-spacing:2px;color:#24211d;word-break:break-all;">{join_code}</strong></td></tr></table>
+</td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>
+""",
         )
     except HTTPException:
         raise
