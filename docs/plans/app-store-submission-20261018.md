@@ -11,6 +11,29 @@ Waiting for Review. The selected build is 95, delivery
 `375271f5-080e-429c-9054-8b42518280df`, source `ca5c195`. Release type remains
 `MANUAL`; approval will not automatically publish it.
 
+## October 19 reconciliation after interruption
+
+The user superseded the first iPad ZIP with findez-ipad-screenshots-2.zip. Seven
+2064x2752 RGB PNGs were verified and uploaded, in order, with matching checksums
+and Apple Complete state. The previous six iPad assets were backed up. Original
+submission 6750f743-3f1c-4fe7-afd2-f45950394c98 was withdrawn to unlock metadata;
+replacement 8e8db653-097f-4da8-b5f9-e3853519ce85 reached READY_FOR_REVIEW before
+the turn was interrupted. At that point the iPhone set and other metadata matched.
+
+When work resumed October19, a preservation guard rejected resubmission because
+the iPhone assets had changed outside this operation. No overwrite or submission
+mutation followed. Fresh Apple reads show version1.0.8/build95 is READY_FOR_SALE,
+all observed review submissions are COMPLETE, and a later submission
+cf2b12c3-7243-492e-b7e7-e2d5f57573b6 exists. The released iPad set contains five
+images and does not match this seven-file ZIP. Those later changes were not made
+by this operation and were preserved. Do not claim that the seven promotional
+iPad images are the currently released set. This observation supersedes the
+historical Waiting for Review state below.
+
+Private receipts: submission-20261018/ipad-update-v2, including the supplied
+manifest, original-asset backups, completed-upload receipt, queued review and
+current-release-observation.json. No binary was rebuilt for screenshots.
+
 ## Submitted information
 
 - All seven supplied iPhone PNGs, in numerical order, uploaded without edits.

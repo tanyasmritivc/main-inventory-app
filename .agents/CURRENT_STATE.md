@@ -1,3 +1,12 @@
+## App Store state reconciled October19
+
+Apple now reports 1.0.8/build95 READY_FOR_SALE after a later review workflow.
+The seven replacement iPad images were uploaded and queued before interruption;
+on resume, concurrent asset changes stopped our resubmission guard. The released
+set has five iPad images, not that ZIP. Preserve the later released assets.
+See docs/plans/app-store-submission-20261018.md for the historical and current
+receipts. No production app changes were made during reconciliation.
+
 ## App Store review submitted: 1.0.8 (95), October 18
 
 The user authorized public App Review submission with the supplied seven-image
