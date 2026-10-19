@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 
 import { LandingLab } from "@/components/site/landing-lab";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
 
-const geist = Geist({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-geist", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-mono", display: "swap" });
+const geist = localFont({
+  src: [{ path: "./fonts/geist-400.ttf", weight: "400" }, { path: "./fonts/geist-500.ttf", weight: "500" }],
+  variable: "--fzl-geist", display: "swap",
+});
+const mono = localFont({
+  src: [{ path: "./fonts/geist-mono-400.ttf", weight: "400" }, { path: "./fonts/geist-mono-500.ttf", weight: "500" }],
+  variable: "--fzl-mono", display: "swap",
+});
 
 export const metadata: Metadata = {
   title: { absolute: PUBLIC_SITE_TITLE },

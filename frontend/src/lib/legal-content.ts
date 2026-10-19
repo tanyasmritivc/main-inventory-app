@@ -1,8 +1,8 @@
 import type { LegalSection } from "@/components/site/legal-document";
 
-export const LEGAL_VERSION = "2026-10-11";
-export const LEGAL_EFFECTIVE_DATE = "October 11, 2026";
-export const PRIVACY_EFFECTIVE_DATE = "October 12, 2026";
+export const LEGAL_VERSION = "2026-10-18";
+export const LEGAL_EFFECTIVE_DATE = "October 18, 2026";
+export const PRIVACY_EFFECTIVE_DATE = "October 18, 2026";
 export const COOKIE_NOTICE_TEXT = "FindEZ uses cookies for sign-in and saves preferences and drafts on this device. No analytics or advertising cookies are enabled.";
 
 export const privacySections: LegalSection[] = [
@@ -22,6 +22,8 @@ export const privacySections: LegalSection[] = [
     "bullets": [
       "Account and profile information: email, account identifiers, sign-in method, name, optional profile fields, team role, and account eligibility and Terms acknowledgments.",
       "Optional setup answers: your intended use, inventory types, main goal, and whether you work alone or with others. Completed answers are linked to your account after sign-in, are not shared with Team members, and can be updated in Profile.",
+      "Setup drafts: the personal or team setup choices and organization, workspace, and inventory names you enter. Drafts can remain on your device before sign-in; completing setup creates the account resources you confirm.",
+      "Optional account memory: preferences you explicitly save and private location aliases for an inventory. Settings > Memory lets you review, edit, export, forget, or disable this memory. Disabling memory does not delete your inventory or conversation history.",
       "Workspace content: inventory names, quantities, physical locations you enter, barcodes, part numbers, Spaces, notes, documents, project kits, team tasks, and sharing permissions.",
       "Submitted content: the photos, spreadsheets, prompts, corrections, and other files you choose to upload. Files can include metadata, including location information embedded by the device that created them.",
       "Service information: IP addresses, request and error logs, timestamps, account activity, and device tokens used for phone notifications.",
@@ -52,7 +54,7 @@ export const privacySections: LegalSection[] = [
     "heading": "5. Who can receive information",
     "body": [
       "We do not sell personal information, use advertising trackers, or share personal information for cross-context behavioral advertising. No optional analytics or advertising cookies are enabled.",
-      "Authorized collaborators receive the content and activity permitted by Team or shared-Space access. Owners and managers can change membership and roles. Revoking access cannot retrieve copies someone has already exported.",
+      "Authorized collaborators receive the content and activity permitted by organization, workspace, inventory, or shared-Space access. New access invitations require the recipient to accept. Administrative authority and access to inventory contents are separate; restricted inventories and explicit No access settings can limit what an owner or administrator can read. Owners and authorized managers can change membership and roles. Revoking access cannot retrieve copies someone has already exported.",
       "Infrastructure, authentication, email, sign-in, payment, and push-notification providers handle information needed for their services. Apple receives device information needed to deliver iOS notifications. Support correspondence is handled through our contact mailbox. Provider protections and international arrangements must apply where required by law.",
       "We may disclose information to meet a legal obligation, investigate abuse, protect rights or safety, or complete a business transfer. We will provide any notice and choices required by applicable law."
     ]
@@ -61,7 +63,7 @@ export const privacySections: LegalSection[] = [
     "id": "cookies",
     "heading": "6. Cookies and device storage",
     "body": [
-      "The website uses authentication cookies to keep you signed in and refresh your session. It also stores the appearance and navigation settings you choose, unfinished Ask drafts, local purchase plans, and temporary sign-up or invitation information needed to finish a requested action. These are used for FindEZ features, not advertising or behavioral tracking.",
+      "The website uses authentication cookies to keep you signed in and refresh your session. It also stores the appearance and navigation settings you choose, unfinished Ask and setup drafts, local purchase plans, and temporary sign-up or invitation information needed to finish a requested action. These are used for FindEZ features, not advertising or behavioral tracking.",
       "The cookie notice stores its dismissal for this notice version. Dismissing it acknowledges the information; it is not agreement to Terms or consent to optional tracking.",
       "Sign out to end your account session. Browser controls can remove cookies and site storage, but doing so may sign you out and remove drafts or local purchase plans. Stored preferences and local plans otherwise remain until changed or cleared. Authentication cookie expiry and renewal follow the session configuration.",
       "The mobile app stores login state, selected preferences, and feature caches on the device. Use device or browser settings to manage stored data and permissions. If we introduce optional tracking, we will identify its purpose and providers and provide the required choices before enabling it."
@@ -80,7 +82,7 @@ export const privacySections: LegalSection[] = [
     "heading": "8. Retention and account deletion",
     "body": [
       "Account content is kept while needed to provide your account and requested features. The bell feed displays team notifications from the last 14 days; this is a display window, not a promise that underlying team activity is deleted after 14 days.",
-      "Delete account in Settings starts permanent deletion of your account and associated records and stored files controlled by FindEZ. Deletion can partially complete if a step fails; retry or contact us if it does not finish. Content owned by another account or organization, exported copies, and records that must be retained for legal or security purposes can remain.",
+      "Delete account in Settings starts permanent deletion of your account and associated records and stored files controlled by FindEZ. If you own a shared workspace or organization, the app can require you to transfer ownership or delete that resource first to protect collaborators. Account removal and stored-file cleanup can finish at different times; a failed deletion request displays an error, and you can retry or contact us for help. Content owned by another account or organization, exported copies, and records that must be retained for legal or security purposes can remain.",
       "Logs, operational backups, and transaction or dispute records may remain when needed for security, recovery, or legal obligations. We do not promise immediate removal from every backup. Contact us about a specific retention or deletion request."
     ]
   },
@@ -88,7 +90,7 @@ export const privacySections: LegalSection[] = [
     "id": "security",
     "heading": "9. Security and international processing",
     "body": [
-      "We use access controls and other safeguards, but no service is completely secure. Inventory photo links are currently accessible to anyone who has the URL. Documents use authenticated access and temporary links. Do not upload photos of identity documents, people, or other confidential or sensitive information to inventory photo features.",
+      "We use access controls and other safeguards, but no service is completely secure. FindEZ-hosted inventory photos require authenticated requests and current permission to the associated content; copying the stored photo URL alone does not grant access. Documents use authenticated access and temporary links. Authorized recipients may still save or export copies. Avoid uploading identity documents or other sensitive personal information to inventory photo features.",
       "Photo processing does not yet use encryption on every network connection. Submit only object images that do not contain confidential or personal information.",
       "We operate from the United States. Information may be processed in countries where our infrastructure or chosen providers operate. Applicable transfer protections and mandatory rights remain relevant; App Store availability does not itself establish compliance in every country."
     ]
@@ -131,7 +133,7 @@ export const termsSections: LegalSection[] = [
   {
     "heading": "2. What FindEZ provides",
     "body": [
-      "FindEZ helps record, identify, find, organize, and share inventory. It also provides team, document, project, and reminder tools. Features can change or be experimental. The service is an aid to record keeping and human decisions; it does not guarantee that an item is present, available, compatible, or safe."
+      "FindEZ helps record, identify, find, organize, and share inventory. It also provides organization and workspace collaboration, documents, project and reminder tools, optional account memory, and scoped API integrations. Features can change or be experimental. The service is an aid to record keeping and human decisions; it does not guarantee that an item is present, available, compatible, or safe."
     ]
   },
   {
@@ -145,7 +147,7 @@ export const termsSections: LegalSection[] = [
     "body": [
       "You retain ownership of your content. You grant AI Robots Inc a non-exclusive, worldwide, royalty-free permission to host, copy, process, transmit, and display it as needed to provide, secure, and support the service you request. This permission ends when content is deleted, subject to lawful retention, backups, and content owned by others.",
       "You must have the right to upload and share content. Do not upload confidential, regulated, export-controlled, infringing, or sensitive personal information unless you have authorization and the service is suitable. Inventory photo links and photo-processing limitations are explained in the Privacy Policy.",
-      "Team and Space permissions determine collaborator access. Review roles and keep invite codes confidential. Linking a Space does not transfer its ownership. Revoking access does not retrieve copies already made. Confirmed non-personal manufacturer facts may improve the shared parts catalog; private inventory details are not published as catalog entries."
+      "Organization, workspace, inventory, and shared-Space permissions determine collaborator access. Administrative control does not automatically grant access to restricted inventory contents. Review roles, accept invitations only for access you want, and keep invite codes confidential. Linking a Space does not transfer its ownership. Revoking access does not retrieve copies already made. Confirmed non-personal manufacturer facts may improve the shared parts catalog; private inventory details are not published as catalog entries."
     ]
   },
   {
@@ -159,7 +161,7 @@ export const termsSections: LegalSection[] = [
     "heading": "6. Privacy and connected services",
     "body": [
       "The Privacy Policy explains data handling, storage, permission choices, and privacy requests. It is a notice, not consent to unrelated processing.",
-      "Sign-in, payments, notifications, and assistants you connect can be subject to separate provider terms. You are responsible for choosing permissions for external assistants and keeping API keys secure. This does not remove obligations that the law places on FindEZ."
+      "Sign-in, payments, notifications, and assistants you connect can be subject to separate provider terms. You are responsible for choosing permissions for external assistants and keeping API keys secure. An integration key can allow software to read or modify the inventory within its current scope. Use the minimum required permissions, review automated changes, and revoke unused or compromised keys in Settings. Expiry, revocation, ownership changes, and inventory restrictions can stop an integration. API access does not include every feature of the FindEZ apps; the API documentation describes supported operations and limits. This does not remove obligations that the law places on FindEZ."
     ]
   },
   {
@@ -173,7 +175,7 @@ export const termsSections: LegalSection[] = [
     "heading": "8. Service changes and account closure",
     "body": [
       "We may maintain, update, or discontinue features. We do not promise uninterrupted operation or permanent storage. Keep appropriate copies of important records.",
-      "You can request permanent account deletion in Settings. We may suspend or end access for serious or repeated violations, security risks, legal requirements, or service discontinuation, with notice where practical. Content deletion and retention limits are described in the Privacy Policy."
+      "You can request permanent account deletion in Settings. Transfer or remove resources you own when the app requires this before deletion so other members are not left without an owner. We may suspend or end access for serious or repeated violations, security risks, legal requirements, or service discontinuation, with notice where practical. Content deletion and retention limits are described in the Privacy Policy."
     ]
   },
   {

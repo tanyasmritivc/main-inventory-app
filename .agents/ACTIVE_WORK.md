@@ -1,3 +1,7 @@
+## October 19 web launch audit - active
+
+Web-only lane `fix/web-launch-audit-20261019`, based on b58d615 and the actual running web source captured from /home/ubuntu/findez-search-icons-20261018/candidate/frontend. Audit landing/product parity against mobile build95, auth/security, API-key UI, API documentation and connectors. No mobile changes, native builds, backend deployment or database changes authorized in this lane. Preserve existing runtime overlays and customer records; test writes use isolated QA records only. Final results will be in docs/plans/web-launch-audit-20261019.md.
+
 ## Current brand favicons published (2026-10-18)
 
 Web runtime f087a84 (PR126) is live from

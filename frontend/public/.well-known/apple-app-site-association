@@ -2,11 +2,25 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["Y68YH9U95S.com.findez.app"],
+        "appIDs": [
+          "Y68YH9U95S.com.findez.app"
+        ],
         "components": [
           {
             "/": "/join/team/*",
             "comment": "FindEZ team invitations"
+          },
+          {
+            "/": "/join/*",
+            "comment": "Space and access invitations; the app validates each supported route and code"
+          },
+          {
+            "/": "/join",
+            "comment": "Space invitation with a code query"
+          },
+          {
+            "/": "/workspaces/*",
+            "comment": "Authenticated workspace links; access is checked in the app"
           }
         ]
       }
