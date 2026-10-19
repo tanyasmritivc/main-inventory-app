@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, UploadCloud } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 import { importSpreadsheet } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
@@ -15,9 +13,11 @@ type Props = {
 };
 
 export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
+  const router = useInventoryRouter();
   const [step, setStep] = useState<"upload" | "processing" | "success">("upload");
   const [error, setError] = useState<string | null>(null);
   const [insertedCount, setInsertedCount] = useState<number | null>(null);
+  const [failedCount, setFailedCount] = useState(0);
 
   async function importFile(file: File) {
     setError(null);
@@ -25,8 +25,12 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
 
     try {
       const data = await importSpreadsheet({ token, file, location: spaceName });
-      const inserted = typeof data.inserted === "number" ? data.inserted : 0;
+      if (!Number.isSafeInteger(data.inserted) || data.inserted < 0 || !Number.isSafeInteger(data.failures) || data.failures < 0) {
+        throw new Error("The import result could not be confirmed. Check your inventory before retrying to avoid duplicates.");
+      }
+      const inserted = data.inserted;
       setInsertedCount(inserted);
+      setFailedCount(data.failures);
       onSuccess(inserted);
       setStep("success");
     } catch (err: unknown) {
@@ -49,7 +53,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
             onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(0,0,0,0.15)"; el.style.background = "rgba(0,0,0,0.02)"; }}
           >
             <div style={{ fontSize: 28, color: "var(--light-muted)", lineHeight: 1 }}>↑</div>
-            <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 12 }}>Drop spreadsheet here or click to browse</div>
+            <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 12 }}>Choose a spreadsheet</div>
             <div style={{ fontSize: 12, color: "var(--light-muted)", marginTop: 6 }}>Excel (.xlsx, .xls), CSV, or JSON</div>
             <input
               type="file"
@@ -61,7 +65,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
               }}
             />
           </label>
-          {error ? <p style={{ fontSize: 13, color: "var(--danger-ink)", marginTop: 12 }}>{error}</p> : null}
+          {error ? <p role="alert" style={{ fontSize: 13, color: "var(--danger-ink)", marginTop: 12 }}>{error} Check your inventory before retrying an interrupted import to avoid duplicates.</p> : null}
         </div>
       ) : step === "processing" ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 0" }}>
@@ -74,11 +78,12 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(47,125,90,0.12)", border: "1px solid rgba(47,125,90,0.30)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "var(--success-ink)" }}>
             ✓
           </div>
-          <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "var(--ink)", marginTop: 16 }}>Import complete!</div>
+          <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "var(--ink)", marginTop: 16 }}>{failedCount ? "Import partially completed" : "Import complete!"}</div>
           <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 6 }}>{insertedCount ?? 0} items added to {spaceName}</div>
+          {failedCount > 0 && <p role="alert">{failedCount} rows were not saved. Review the imported items and retry only the missing rows to avoid duplicates.</p>}
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <DialogClose asChild>
-              <button type="button" style={{ background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "10px 22px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              <button type="button" onClick={() => router.push(`/inventory?space=${encodeURIComponent(spaceName)}`)} style={{ background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "10px 22px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 View Items
               </button>
             </DialogClose>
