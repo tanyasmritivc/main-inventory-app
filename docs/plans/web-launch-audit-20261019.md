@@ -5,21 +5,23 @@ processing connection prevents an unconditional public-launch security signoff.
 
 Scope: web app, landing page, API documentation, API-key management and downloadable
 connectors. Mobile source, binaries and App Store submission were untouched. The
-user separately approved the narrow shared API metadata fix in PR130. No production
-database migrations or permission changes were made during this web audit.
+user separately approved the shared API metadata and bounded checkout-query fixes
+in PR130. No production database migrations or permission changes were made during this web audit.
 
 ## Delivery
 
 - Website: [PR131](https://github.com/tanyasmritivc/main-inventory-app/pull/131),
-  runtime commit `82cc668`, deployed to findez.ai and www.findez.ai.
-- Shared API metadata fix: [PR130](https://github.com/tanyasmritivc/main-inventory-app/pull/130),
-  implementation `9eb444c`, receipt `ef5d1c9`, schema-only deployment verified healthy.
-- Final website CI: [run 39281842359](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39281842359)
-  completed successfully for runtime commit `82cc668`.
-- Active website directory: `/home/ubuntu/findez-web-search-20261019/candidate/frontend`.
-  The first release preserved 259 unrelated runtime files; the follow-up preserved
-  269. Both used source-hash guards, isolated builds, retained cached chunks, prior
-  service configuration backups and health-checked rollback.
+  runtime commit `54ed135`, deployed to findez.ai and www.findez.ai.
+- Shared API fixes: [PR130](https://github.com/tanyasmritivc/main-inventory-app/pull/130),
+  metadata implementation `9eb444c`, checkout repair `11f79c9`; both narrow deployments verified healthy.
+- Preceding runtime `b7d5a13` passed all five CI gates in
+  [run 39332332200](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39332332200).
+  Final compact Review runtime `54ed135` also passed all five gates in
+  [run 39333092847](https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39333092847).
+- Active website directory: `/home/ubuntu/findez-web-review-compact-20261019/candidate/frontend`.
+  The initial releases preserved 259 and 269 unrelated runtime files. The final
+  totals refinement preserved 272. All used source-hash guards, isolated builds,
+  retained cached chunks, configuration backups and health-checked rollback.
 - Private server receipts: `/home/ubuntu/findez-web-launch-20261019`,
   `/home/ubuntu/findez-web-search-20261019`, and
   `/home/ubuntu/findez-web-item-fields-20261019`.
@@ -60,14 +62,19 @@ production root checkout nor unrelated ongoing work was reset or overwritten.
    Released MCP/Actions contract sources and downloadable package are synchronized.
 9. Capture destination-load failures now surface an error; save progress no longer
    says it is detecting objects again.
+10. A further UI pass removed category-button clutter, duplicate headings and
+    background loading flicker, made Capture methods and totals visible on small
+    screens, improved document/review copy and fixed the large-inventory checkout
+    failure under separate approval. Review now uses compact, paginated rows with
+    one expandable correction panel instead of full-width expanded cards. See [UI release evidence](web-ui-polish-20261019.md).
 
 ## Validation completed
 
 | Area | Evidence and result |
 | --- | --- |
-| Website regressions | 53 suites / 424 tests passed. |
+| Website regressions | 54 suites / 431 tests passed. |
 | API documentation | 40 contract/example tests passed; published schema matches executable models. Test compatibility restored for current FastAPI fields. |
-| Approved server fix | 1,100 backend tests plus 10 subtests passed, including metadata create/update/clear/validation and legacy quantity updates. |
+| Approved server fix | 1,103 backend tests plus 10 subtests passed, including metadata create/update/clear/validation, legacy quantity updates and large-inventory checkout queries. |
 | Connectors | 29 tests, deterministic bundle check and standalone packaged protocol fixture passed. Eight tools exposed; no deletion tool. |
 | Production build | TypeScript, scoped ESLint and webpack production builds passed. Existing lint warnings remain; no lint errors. |
 | Live API keys | QA key creation, read/write separation, item create/patch, scope rejection, key-management rejection, revocation and revoked-key 401 passed. |
@@ -82,7 +89,7 @@ production root checkout nor unrelated ongoing work was reset or overwritten.
 | Responsive UI | Desktop product view and Safari 390px/820px layouts inspected; landing, API keys, connector documentation, import and settings navigation checked. Normal Safari view restored. |
 | Public/security | Legal/docs/download/association endpoints, response security headers, private-image path validation/anonymous denial, founder-proxy denial, anonymous API denial and untrusted CORS rejection passed. |
 
-The repository's final CI run succeeded after initially waiting for runners.
+The final runtime CI run succeeded across all five gates.
 CI's automated Flutter checks do not constitute a new mobile build or submission.
 No mobile source was changed in this branch.
 

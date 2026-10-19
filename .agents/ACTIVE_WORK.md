@@ -1,13 +1,22 @@
 ## October 19 website launch audit — deployed
 
 Web lane `fix/web-launch-audit-20261019` / PR131 is deployed through runtime commit
-`82cc668`; final CI run 39281842359 passed. Active service directory:
-`/home/ubuntu/findez-web-search-20261019/candidate/frontend`. Website 424 tests,
-40 API-documentation checks, 29 connector tests, packaged/live connector checks,
-production types/lint/build and Safari acceptance passed. Temporary QA keys/share
-revoked; synthetic inventories/workspace removed. No mobile source/binaries or
-production database changes. Separately authorized metadata schema fix is live
-in PR130 (1,100 backend tests plus 10 subtests passed).
+`54ed135`. Active service directory:
+`/home/ubuntu/findez-web-review-compact-20261019/candidate/frontend`. Website 431 tests
+in 54 suites passed; 40 API-documentation checks, 29 connector tests, packaged/live
+connector checks, production types/lint/build and Safari acceptance passed.
+Final compact Review runtime 54ed135 passed all five CI gates in run 39333092847.
+The preceding b7d5a13 also passed all five gates.
+Temporary QA keys/share revoked; synthetic inventories/workspace removed. No
+mobile source/binaries or production database changes. Separately authorized
+metadata and checkout-query fixes are live in PR130 (1,103 backend tests plus
+10 subtests passed). The 670-item dashboard now loads without its checkout error.
+
+The final UI pass clarified navigation, filters, headings, responsive tables,
+Capture methods, document rows, totals and landing copy. Review now uses 25 compact
+rows per page with one expanded correction; draft preservation is tested. Published layouts were
+verified in Safari at desktop and 390px/820px. Details:
+`docs/plans/web-ui-polish-20261019.md`.
 
 Public launch remains conditional on encrypting the API-to-FIND HTTP processing
 hop and verifying GPU performance/capacity. Dependency and live acceptance limits
