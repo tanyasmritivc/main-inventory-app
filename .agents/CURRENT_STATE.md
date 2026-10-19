@@ -1,3 +1,7 @@
+## October 18 final native corrections — build 94
+
+Physical build93 exposed failed legal-browser launching. Build94 moves plugin registration and the push channel into Flutter 3.41's implicit-engine callback for the existing UIScene setup. Legal pages prefer the system browser view with external fallback; failed support-mail launches show the contact address. Plans remain hidden. Full suite:659 pass plus one separately enabled production configuration gate; clean analysis;42 follow-up legal/profile tests pass. Signed build and physical re-verification are in progress; do not count pending camera/barcode/mic/provider/push/share-extension checks as passed.
+
 ## October 18 final mobile audit — build 93
 
 User requested hiding Plans. The mobile-only visibility flag removes Settings plan/pilot promotion and plan comparison from limit prompts; backend quotas remain enforced. All 655 tests pass (one config gate separately enabled and passing), 53 targeted tests pass, analysis clean. Build93 preserves build92 Apple nonce/deletion/privacy-manifest and restock-loading fixes. Signed export/upload and physical acceptance are in progress. GPU HTTP remains outside this lane and blocks unconditional public-launch signoff; camera/barcode/mic/provider/push acceptance remains pending.

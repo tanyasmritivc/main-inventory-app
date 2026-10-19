@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_error.dart';
+import '../../core/external_links.dart';
 import '../../core/account_deletion.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
@@ -171,9 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
         'body': 'Hi FindEZ team,\n\n',
       },
     );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
+    if (!await tryOpenExternalUrl(emailUri)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -216,9 +214,7 @@ class _SettingsPageState extends State<SettingsPage> {
         'body': 'Hi FindEZ team,\n\nI found an issue:\n\n',
       },
     );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
+    if (!await tryOpenExternalUrl(emailUri)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

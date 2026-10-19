@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/external_links.dart';
 import '../../core/account_deletion.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
@@ -267,9 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
         'body': 'Hi FindEZ team,\n\n',
       },
     );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else if (mounted) {
+    if (!await tryOpenExternalUrl(uri) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: AppText('Email us at info@findez.ai')),
       );
@@ -292,9 +291,7 @@ class _ProfilePageState extends State<ProfilePage> {
       path: 'info@findez.ai',
       queryParameters: {'subject': subject, 'body': body},
     );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else if (mounted) {
+    if (!await tryOpenExternalUrl(uri) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const AppText('Email us at info@findez.ai'),
