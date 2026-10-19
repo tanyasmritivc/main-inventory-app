@@ -158,7 +158,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         type: "signup", email: cleanEmail, options: { emailRedirectTo: authCallbackUrl() },
       });
       if (resendError) throw resendError;
-      setNotice("If this account still needs confirmation, a new link is on its way. Use the latest email and open it in this browser. If you already confirmed, sign in with your password.");
+      setNotice("If this account still needs confirmation, a new link is on its way. Use the latest email. You can open it on any device. If you already confirmed, sign in with your password.");
     } catch (reason) {
       setError(userFacingError(reason, "A new confirmation email could not be requested. Please try again."));
     } finally { setResendingConfirmation(false); }
@@ -229,7 +229,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         if (!data.session) {
           // Email confirmation is required. The profile fields travel in auth
           // metadata; keep them locally so AppShell can finish the profile after
-          // the user confirms in this browser.
+          // the user confirms their email.
           window.localStorage.setItem(PENDING_SIGNUP_PROFILE_KEY, JSON.stringify(profile));
           setNotice(`Check your email. We sent a confirmation link to ${cleanEmail}. Open it to finish creating your account.`);
           return;

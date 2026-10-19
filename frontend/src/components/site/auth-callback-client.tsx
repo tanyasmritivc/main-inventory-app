@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeAuthNext, resolveAuthCallback } from "@/lib/auth-callback";
 
 export function AuthCallbackClient({ code, next, errorCode }: { code: string | null; next: string; errorCode?: string | null }) {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const exchangeStarted = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
   const failed = Boolean(message);
@@ -18,7 +17,10 @@ export function AuthCallbackClient({ code, next, errorCode }: { code: string | n
 
     async function completeSignIn() {
       const fragment = new URLSearchParams(window.location.hash.slice(1));
-      const result = await resolveAuthCallback(supabase.auth, code, next, errorCode || fragment.get("error_code") || fragment.get("error"));
+      // Strip the code before constructing the client, preventing its automatic
+      // URL exchange from racing the explicit, receipt-checked exchange below.
+      window.history.replaceState({}, "", "/auth/callback");
+      const result = await resolveAuthCallback(createSupabaseBrowserClient().auth, code, next, errorCode || fragment.get("error_code") || fragment.get("error"));
       if (result.error) {
         // Remove spent codes and provider error fragments from browser history.
         window.history.replaceState({}, "", "/auth/callback");
@@ -29,7 +31,7 @@ export function AuthCallbackClient({ code, next, errorCode }: { code: string | n
     }
 
     void completeSignIn();
-  }, [code, next, errorCode, supabase]);
+  }, [code, next, errorCode]);
 
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--light-page)", color: "var(--text-primary)", padding: 24 }}>
