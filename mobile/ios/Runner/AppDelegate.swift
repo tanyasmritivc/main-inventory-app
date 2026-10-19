@@ -15,6 +15,9 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // iOS needs this delegate before launch finishes to deliver foreground
+    // presentation and notification-tap callbacks to the handlers below.
+    UNUserNotificationCenter.current().delegate = self
     if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
       pendingNotification = notification
     }
