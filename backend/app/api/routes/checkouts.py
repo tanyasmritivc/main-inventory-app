@@ -72,10 +72,12 @@ def _checkout_rows(item_ids, *, active=None, returned_after=None):
     client = get_supabase_admin()
     ids = list(dict.fromkeys(item_ids))
     rows = []
-    for offset in range(0, len(ids), 200):
+    # UUID filters are URL-encoded by PostgREST. Keep them below proxy URI limits.
+    batch_size = 50
+    for offset in range(0, len(ids), batch_size):
         page_offset = 0
         while True:
-            query = client.table("checkouts").select("*, items(name, location, category)").in_("item_id", ids[offset:offset + 200])
+            query = client.table("checkouts").select("*, items(name, location, category)").in_("item_id", ids[offset:offset + batch_size])
             if active is not None:
                 query = query.eq("is_active", active)
             if returned_after:
