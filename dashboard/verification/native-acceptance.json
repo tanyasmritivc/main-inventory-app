@@ -4,7 +4,7 @@
   "first_frame_confirmed_by_founder": true,
   "simulator_navigation": true,
   "native_keychain_write_read_clear": true,
-  "real_account_sign_in_on_phone": "Founder acceptance pending",
+  "real_account_sign_in_on_phone": "Founder confirmed email-code sign-in opens Overview on build 4",
   "existing_customer_app_unchanged": true,
   "redesigned_build": "1.0.0 (2)",
   "build2_release_install": true,
@@ -17,5 +17,8 @@
   "build3_founder_result": "First-load crash fixed; real saved session reported invalid refresh token",
   "build4_release_install": true,
   "build4_release_process_launch": true,
-  "build4_real_sign_in_result": "Founder confirmation pending"
+  "build4_real_sign_in_result": "Founder confirmed code arrives and Overview opens",
+  "build4_first_frame_confirmed_by_founder": true,
+  "build4_phone_lock_reopen_unlock": "Founder confirmed Overview returns",
+  "physical_eight_hour_soak": "Not performed; eight-hour cases use isolated widget fixtures"
 }

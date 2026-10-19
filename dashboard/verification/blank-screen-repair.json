@@ -13,5 +13,12 @@
   "public_health_status": 200,
   "public_anonymous_snapshot_status": 401,
   "customer_backend_and_app_unchanged": true,
-  "real_phone_login": "Awaiting founder confirmation"
+  "real_phone_login": "Founder confirmed email-code sign-in opens Overview",
+  "repeat_report_installed_build": "2",
+  "founder_clarification": "Had not downloaded build 4 when reporting the repeat blank screen",
+  "build4_testflight_availability": "Assigned to Founder Private; VALID and IN_BETA_TESTING",
+  "founder_identity_repair": "Obsolete missing Auth UUID relinked to the single verified authorized email account with backup and audit",
+  "real_phone_lock_reopen_unlock": "Founder confirmed Overview returns",
+  "additional_simulated_eight_hour_tests": 2,
+  "runtime_source_unchanged_in_followup": true
 }

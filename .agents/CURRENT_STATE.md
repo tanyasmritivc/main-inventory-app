@@ -1,4 +1,23 @@
-# October 18 dashboard blank-screen and expired-session repair
+# October 18 dashboard idle recovery and founder access confirmed
+
+The repeated blank screen was on installed build 2. Tanya clarified she had not
+downloaded build 4; this was not evidence of a build 4 regression or rollback.
+Build 4 had uploaded but had not been assigned to Founder Private. It is now
+VALID, IN_BETA_TESTING and installed on Tanya's iPhone. Founder verification also referenced an obsolete
+Auth UUID: the old account returned user_not_found, while the explicitly allowed
+email had exactly one current verified account. Relinked only the dashboard's
+private owner configuration after validating both identities, with a 0600 backup
+and audit record, and restarted only findez-dashboard. No password, customer
+data, backend environment or Vinod access change.
+
+Tanya confirmed that the email code arrives, Overview opens, and Overview returns
+after phone lock/reopen/unlock. Two additional fixture tests simulating eight
+hours backgrounded pass for renewable and revoked sessions. This is not a claim
+of an eight-hour physical-device soak. Runtime remains build 4 source e622b42;
+no replacement binary is needed for these tests and delivery/configuration
+receipts. No Git push or public App Store submission. See dashboard/README.md.
+
+# October 18 dashboard blank-screen and expired-session repair history
 
 Build 2 eagerly dereferenced an absent first authenticated snapshot, causing a
 null-check error after sign-in/unlock. A new regression reproduced this before
@@ -10,11 +29,10 @@ concurrent token rotations. Auth outages preserve valid sessions. No server,
 customer app, schema or Vinod access change. Sixteen tests, clean analysis and
 two native simulator journeys pass, including the exact saved-token error and
 fresh login. Build 4 installed and launched on Tanya's iPhone, and Apple acknowledged its
-validated internal-only upload. Source e622b42. Real fresh sign-in acceptance is
-still pending the founder's reply; no device success is inferred from simulator
-fixtures. Apple processing/group availability is unverified after upload
-acknowledgement, per the standing release policy. Build 3 uploaded but was not assigned
-to the private testing group. See dashboard/README.md and verification receipts.
+validated internal-only upload. Source e622b42. Initially, real fresh sign-in and
+Apple processing/group availability were unverified after acknowledgement.
+The follow-up above records actual availability and founder acceptance. Build 3
+uploaded but was not assigned to the private testing group.
 
 # October 18 private founder dashboard and light design
 

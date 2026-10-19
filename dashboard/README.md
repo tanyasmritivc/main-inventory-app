@@ -4,6 +4,30 @@ Separate iOS app: `com.findez.dashboard`, Apple app `6824178526`.
 This is the essential founder dashboard, with focused destinations for the later
 product vision. It does not claim every proposed business metric is connected.
 
+## Current delivery and device acceptance
+
+Current private beta: **1.0.0 (4)**, source `e622b42`, VALID and IN_BETA_TESTING in
+Founder Private. Build 4 is installed on Tanya's iPhone. Tanya confirmed that an
+email code arrives, sign-in opens Overview, and Overview returns after phone
+lock/reopen/unlock. See `verification/apple-build4-release.json` and
+`verification/native-acceptance.json`.
+
+The repeat report was on installed build 2. Tanya clarified she had not downloaded
+build 4; no rollback or new build 4 blank-screen regression was established.
+Build 4 had also uploaded without being assigned to the private group. That
+assignment is now corrected. Founder
+verification also pointed to an obsolete Auth UUID. After confirming the previous
+account was missing and the explicitly authorized email had one current verified
+account, only the private dashboard owner configuration was relinked. The prior
+configuration has a 0600 backup, the change is audited, and only the dashboard
+service restarted. Passwords, customer app/data and environment are unchanged.
+
+Two additional widget tests pass with simulated eight-hour background periods,
+covering renewable and revoked sessions followed by recovery. The phone check
+above is a real lock/reopen check, not an eight-hour physical-device soak. This
+follow-up changes tests and delivery/configuration receipts, not runtime source;
+it needs no replacement binary. No Git push or public App Store submission.
+
 ## Current experience
 
 The October 18 revision uses a light interface, Apple's system display font,
@@ -81,6 +105,8 @@ identifying the actual public routing path. Safe activation/auth receipts are in
 - Flutter analysis: clean. Sixteen tests pass, including exact minute refresh,
   foreground refresh, whole-snapshot replacement, coalescing, failure timestamp,
   open customer detail updates, light mode, Apple font, Bold Text and large text.
+  Two additional targeted eight-hour idle/resume tests pass against unchanged
+  build 4 runtime source. The last full-suite run was the prior sixteen tests.
 - Native iPhone 16e simulator journeys pass: password sign-in with delayed first
   snapshot, canceled unlock/recovery, overview, issue form, Customers,
   grouped navigation and Revenue. Native Keychain write/read/clear passes.
@@ -91,9 +117,8 @@ identifying the actual public routing path. Safe activation/auth receipts are in
 - Real public API: founder 200, anonymous 401, forged token 401, customer directory
   connected, isolated dashboard issue create/resolve successful. The temporary
   QA session was revoked; no sign-in email or customer inventory write occurred.
-- Signed release build 1 installed/launched on Tanya's iPhone and she confirmed
-  the sign-in screen. The redesigned build 2 also installed and launched successfully. Its visual
-  founder acceptance remains pending; simulator checks do not assert a real founder login/Face ID round trip.
+- Signed release build 4 is installed/launched on Tanya's iPhone. Tanya confirmed
+  real email-code sign-in and return to Overview after phone lock/reopen/unlock.
 
 ## Local commands and release
 
@@ -119,8 +144,9 @@ and external testing are disabled. Upload acknowledgement and processing/tester
 availability are separate states. Apple acknowledged build 2 upload and, after the founder explicitly requested
 TestFlight availability first, it was assigned to Founder Private. Apple reports
 VALID, IN_BETA_TESTING and autoNotifyEnabled true for this build. See
-`verification/apple-build2-release.json`. The helper `apple.rb beta-release` is
-restricted to build 2 and the founder-only group. Vinod's invitation, private-data
+`verification/apple-build2-release.json`. Build 4 now supersedes build 2 in the
+same group. The helper `apple.rb beta-release` is restricted to build 4 and the
+founder-only group. Vinod's invitation, private-data
 access and future-build notification setup were deferred by the founder; no such
 changes were applied. No App Store submission
 or Git push is part of this delivery.
@@ -172,6 +198,7 @@ Build 4 delivery: source `e622b42`, strict archive signatures and four native iO
 executables verified. Production API URL, first-load fix and session-expiry
 message are present in the release binary; fixture tokens are absent. The signed
 release installed/launched on Tanya's iPhone. Apple validated and acknowledged the
-internal-only upload. Processing/group availability is unverified after that
-acknowledgement. Real fresh sign-in acceptance is awaiting the founder's reply;
-this is not claimed from simulator fixtures. No Git push or public submission.
+internal-only upload. The later availability repair assigned it to Founder
+Private, where Apple reports VALID and IN_BETA_TESTING. Tanya confirmed real
+fresh sign-in and return to Overview after phone lock/reopen/unlock. No Git push
+or public submission.

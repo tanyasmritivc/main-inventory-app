@@ -614,4 +614,80 @@ void main() {
       api.dispose();
     },
   );
+  for (final rejected in [false, true]) {
+    testWidgets(
+      'eight-hour background resume with ${rejected ? 'revoked' : 'renewable'} session stays recoverable',
+      (tester) async {
+        var refreshes = 0;
+        var snapshots = 0;
+        final api =
+            SignInApi(
+                vault: MemoryVault(),
+                client: MockClient((request) async {
+                  if (request.url.queryParameters['grant_type'] ==
+                      'refresh_token') {
+                    refreshes++;
+                    return rejected
+                        ? http.Response(
+                            '{"msg":"Invalid refresh token: refresh token not found"}',
+                            400,
+                          )
+                        : http.Response(jsonEncode(sessionFixture()), 200);
+                  }
+                  if (request.url.queryParameters['grant_type'] == 'password') {
+                    return http.Response(jsonEncode(sessionFixture()), 200);
+                  }
+                  snapshots++;
+                  return http.Response(jsonEncode(fixture()), 200);
+                }),
+              )
+              ..session = sessionFixture()
+              ..data = fixture();
+        await tester.pumpWidget(FounderApp(api: api));
+        await tester.pumpAndSettle();
+        expect(find.text('Registered users').hitTestable(), findsOneWidget);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump(const Duration(hours: 8));
+        api.session!['expires_at'] = 0;
+        expect(refreshes, 0);
+        expect(snapshots, 0);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Your dashboard is locked').hitTestable(),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Unlock dashboard'));
+        await tester.pumpAndSettle();
+        expect(refreshes, 1);
+        if (rejected) {
+          expect(
+            find.text('Your session expired. Sign in again.').hitTestable(),
+            findsOneWidget,
+          );
+          expect(find.text('Open dashboard').hitTestable(), findsOneWidget);
+          await tester.enterText(
+            find.byType(TextField).last,
+            'isolated-fixture-password',
+          );
+          await tester.tap(find.text('Open dashboard'));
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Registered users').hitTestable(), findsOneWidget);
+        expect(snapshots, 1);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 }

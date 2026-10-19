@@ -1,0 +1,28 @@
+{
+  "current_db": {
+    "email_accounts": 1,
+    "verified_accounts": 1,
+    "owner_matches": true
+  },
+  "running_service": {
+    "service_role_claim": "service_role",
+    "service_role_expired": false,
+    "public_auth_settings_status": 200,
+    "owner_admin_lookup_status": 200,
+    "owner_email_matches": true,
+    "owner_email_verified": true
+  },
+  "current_env_file": {
+    "service_role_claim": "service_role",
+    "service_role_expired": false,
+    "public_auth_settings_status": 200,
+    "owner_admin_lookup_status": 200,
+    "owner_email_matches": true,
+    "owner_email_verified": true
+  },
+  "config_matches": {
+    "SUPABASE_URL": true,
+    "SUPABASE_ANON_KEY": true,
+    "SUPABASE_SERVICE_ROLE_KEY": true
+  }
+}

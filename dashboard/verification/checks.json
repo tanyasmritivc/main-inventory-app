@@ -29,5 +29,13 @@
   "expired_saved_refresh_token": "returns to sign-in and fresh login succeeds",
   "missing_absolute_expiry": "normalized",
   "concurrent_refresh_token_rotation": "single request",
-  "auth_outage": "preserves session and data"
+  "auth_outage": "preserves session and data",
+  "additional_idle_resume_tests": 2,
+  "eight_hour_renewable_session_fixture": "passed",
+  "eight_hour_revoked_session_fixture": "passed, returns to sign-in and recovers",
+  "idle_tests_run": "Only the two new targeted cases; prior full suite was sixteen tests",
+  "real_phone_email_code_sign_in": "Founder confirmed Overview opens",
+  "real_phone_lock_reopen_unlock": "Founder confirmed Overview returns",
+  "physical_eight_hour_soak": "Not performed",
+  "founder_identity_repair_receipt": "owner-relink-receipt.json"
 }

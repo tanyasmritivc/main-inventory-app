@@ -7,10 +7,12 @@
   "compiled_configuration_checked": true,
   "uploaded": true,
   "source_commit": "e622b42",
-  "processing": "Not checked after upload acknowledgement",
-  "private_group_assignment": "Pending Apple processing and assignment",
+  "processing": "VALID",
+  "internal_testflight": "IN_BETA_TESTING",
+  "private_group_assignment": "Founder Private",
   "physical_release_install": true,
   "physical_release_launch": true,
-  "real_phone_sign_in": "Founder confirmation pending",
+  "real_phone_sign_in": "Founder confirmed email-code sign-in opens Overview",
+  "real_phone_return_from_lock": "Founder confirmed Overview returns",
   "vinod_setup": "Still deferred"
 }

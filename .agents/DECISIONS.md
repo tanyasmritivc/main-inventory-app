@@ -1,3 +1,16 @@
+## 2026-10-18: Dashboard delivery and owner identity are independently verified
+
+An Apple upload acknowledgement does not assign a build to its private TestFlight
+group. Build 4 was uploaded while Founder Private still offered build 2. For an
+explicit availability repair, verify and assign the intended valid build without
+uploading another identical binary. Record actual device acceptance separately.
+
+Founder UUID authorization remains server-side. Relink an obsolete UUID only
+when the previous account is confirmed missing and the explicitly authorized
+email has exactly one current verified account, independently validated through
+Auth. Back up the private owner configuration and audit the change. Never weaken
+authorization to fix a sign-in error or change a customer's password for QA.
+
 ## 2026-10-18: Rejected dashboard refresh tokens require a new sign-in
 
 GoTrue can reject an expired/revoked refresh token with HTTP 400. Treat 400/401/403
