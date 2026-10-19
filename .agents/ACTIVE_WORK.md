@@ -1,3 +1,11 @@
+## Website item field persistence - October 19
+
+User approved a narrow shared-server fix after live web QA showed Brand and
+Part number silently discarded by add/update schemas. Branch
+fix/web-item-fields-api-20261019. Preserve all mobile source/binaries and runtime
+behavior outside item metadata. No database migration. Include existing manual
+subcategory/tags fields under the same bounded metadata contract.
+
 ## Final submission security audit — October 18
 
 Approved 059/060/061 deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and local-proxy trust deployed with rollback. 1,093 tests + 10 subtests, live cross-account/role/revocation/upload checks and disposable email-account deletion pass. GPU HTTP remains an explicit launch blocker; native hardware/provider/push gates remain pending. See `docs/plans/final-mobile-security-20261018.md`. Mobile build93 (hide Plans) is in progress in its separate lane.
