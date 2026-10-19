@@ -77,9 +77,9 @@ def test_ownership_transfer_requires_confirmation_and_exact_receipt(api, monkeyp
 def test_current_account_status_is_required_even_with_valid_jwt(monkeypatch, active, status):
     from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
-    from jose import jwt
+    import jwt
     from time import time
-    settings = SimpleNamespace(supabase_jwt_secret='unit-test-secret-for-permissions-only', supabase_jwt_audience='authenticated')
+    settings = SimpleNamespace(supabase_jwt_secret='unit-test-secret-for-permissions-only', supabase_jwt_audience='authenticated',supabase_public_url='https://placeholder.supabase.co',supabase_url='https://placeholder.supabase.co')
     monkeypatch.setattr(auth, 'get_settings', lambda:settings)
     monkeypatch.setattr(auth, '_get_cached_first_name', lambda _: (True,None))
     db = MagicMock()
@@ -89,7 +89,7 @@ def test_current_account_status_is_required_even_with_valid_jwt(monkeypatch, act
     @app.get('/protected')
     def protected(user=Depends(auth.get_current_user)):
         return {'user_id':user.user_id}
-    token = jwt.encode({'sub':ACTOR, 'aud':'authenticated', 'exp':int(time())+60},settings.supabase_jwt_secret,algorithm='HS256')
+    token = jwt.encode({'sub':ACTOR, 'aud':'authenticated', 'iss':'https://placeholder.supabase.co/auth/v1', 'iat':int(time()), 'exp':int(time())+60},settings.supabase_jwt_secret,algorithm='HS256')
     with TestClient(app) as client:
         assert client.get('/protected',headers={'Authorization':'Bearer '+token}).status_code == status
     db.rpc.assert_called_once_with('findez_actor_active', {'p_actor':ACTOR})

@@ -1,3 +1,11 @@
+## Final submission security audit — build 95 delivery and hardware update
+
+Approved 059/060/061 remain deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and narrow proxy trust are live. 1,093 Python tests + 10 subtests and real cross-account/role/revocation/upload/deletion checks pass. Mobile 95 is installed and Apple-acknowledged; user confirmed camera/barcode/mic on 94 and notification arrival on 95. GPU HTTP and origin-port restriction remain launch blockers. Auth server Apple/Google nonce bypass flags remain enabled and require coordinated provider/older-client testing before enforcement. Remaining physical gates and current receipts: docs/plans/final-mobile-security-20261018.md. Public submission held. This supersedes historical pending entries below.
+
+## Final mobile audit — October 18
+
+Final mobile submission audit: approved migration059 closes public counter/rate-limit RPCs; applied and verified October18. Reject blank Chat messages before inference. Isolated branch fix/api-final-security-20261018.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after

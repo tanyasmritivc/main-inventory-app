@@ -65,7 +65,7 @@ def members_with_names(rows):
         path = profile.get('avatar_path')
         if isinstance(path, str) and re.fullmatch(re.escape(str(uid)) + r'/avatar\.(?:jpg|jpeg|png|webp|heic|heif)', path):
             try:
-                url = create_profile_photo_signed_url(storage_path=path)
+                url = create_profile_photo_signed_url(storage_path=path, owner_id=uid)
             except Exception:
                 logger.warning('Member photo unavailable; using initials')
         presentation[uid] = {

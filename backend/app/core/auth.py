@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import jwt
+import jwt
 
 from app.core.config import get_settings
 from app.core.errors import unauthorized
@@ -18,9 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for", "")
-    if xff:
-        return xff.split(",")[0].strip()
+    # Uvicorn resolves forwarded addresses only from the configured local proxy.
+    # Raw forwarding headers are client-controlled and must not override it.
     return request.client.host if request.client else "unknown"
 
 
@@ -159,12 +158,15 @@ async def get_current_user(
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 audience=settings.supabase_jwt_audience,
-                options={"verify_iss": False},
+                issuer=str(settings.supabase_public_url or settings.supabase_url).rstrip("/") + "/auth/v1",
+                options={"require": ["exp", "iat", "iss", "sub", "aud"]},
             )
         except Exception:
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
     else:
+        if header_alg not in ("ES256", "RS256"):
+            raise unauthorized("Unsupported token algorithm")
         jwks_url = str(settings.supabase_jwks_url)
         jwks = await _jwks_cache.get(jwks_url)
 
@@ -194,10 +196,11 @@ async def get_current_user(
         try:
             claims = jwt.decode(
                 token,
-                jwk,
+                jwt.PyJWK.from_dict(jwk).key,
                 algorithms=["ES256", "RS256"],
                 audience=settings.supabase_jwt_audience,
-                options={"verify_iss": False},
+                issuer=str(settings.supabase_public_url or settings.supabase_url).rstrip("/") + "/auth/v1",
+                options={"require": ["exp", "iat", "iss", "sub", "aud"]},
             )
         except Exception:
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)

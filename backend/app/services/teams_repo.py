@@ -246,7 +246,7 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
         if profile.get("avatar_path"):
             try:
                 member["avatar_url"] = create_profile_photo_signed_url(
-                    storage_path=profile["avatar_path"]
+                    storage_path=profile["avatar_path"], owner_id=member["user_id"]
                 )
             except Exception:
                 logger.exception("Could not sign member avatar for %s", member.get("user_id"))

@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for", "")
-    if xff:
-        return xff.split(",")[0].strip()
+    # Uvicorn resolves forwarded addresses only from the configured local proxy.
+    # Raw forwarding headers are client-controlled and must not override it.
     return request.client.host if request.client else "unknown"
 
 
