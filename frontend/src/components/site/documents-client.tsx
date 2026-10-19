@@ -1,4 +1,5 @@
 "use client";
+import documentStyles from "./documents-list.module.css";
 import { activeInventory, canEditInventory } from "@/lib/inventory-selection";
 import Link from "@/components/site/inventory-link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -364,7 +365,7 @@ function DocumentsClientWorkspace({
         <div>
           <h1>Documents and notes</h1>
           <p>
-            {docs.length} files and notes
+            {docs.length} saved {docs.length === 1 ? "document" : "documents"}
             {itemFilter ? " attached to this item" : (activeInventory() ? " in this inventory" : " in your account")}.
           </p>
         </div>
@@ -481,8 +482,8 @@ function DocumentsClientWorkspace({
           </p>
         ) : (
           shown.map((d) => (
-            <div className="workspace-list-row" key={d.storage_path}>
-              <span className="workspace-actions">
+            <div className={`workspace-list-row ${documentStyles.row}`} key={d.storage_path}>
+              <span className={documentStyles.title}>
                 <FileText size={19} />
                 <span>
                   <button
@@ -500,9 +501,7 @@ function DocumentsClientWorkspace({
                     <strong>{d.display_name || d.filename}</strong>
                   </button>
                   <small>
-                    {documentKind(d) === "notes"
-                      ? "Note"
-                      : d.mime_type || "File"}
+                    {{ notes: "Note", pdfs: "PDF", images: "Image", files: "File" }[documentKind(d)]}
                     {d.created_at
                       ? ` · ${new Date(d.created_at).toLocaleDateString()}`
                       : ""}
@@ -510,7 +509,7 @@ function DocumentsClientWorkspace({
                   </small>
                 </span>
               </span>
-              <div className="workspace-actions">
+              <div className={`workspace-actions ${documentStyles.actions}`}>
                 <button
                   className="workspace-button"
                   disabled={working || !canEditInventory()}

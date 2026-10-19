@@ -121,7 +121,7 @@ export function ReviewQueueClient() {
   return (
     <section className="product-page review-page">
       <header className="product-page-header review-queue-header">
-        <div><h1>Review</h1><p>Uncertain captures wait here instead of becoming incorrect inventory.</p></div>
+        <div><h1>Review</h1><p>Check uncertain captures before adding them to your inventory.</p></div>
         <button type="button" className="product-button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} />Refresh</button>
       </header>
       {error && <div className="notice-error">{error}</div>}
@@ -153,7 +153,7 @@ export function ReviewQueueClient() {
               <label className="review-notes"><span>Notes</span><textarea disabled={!canEditInventory()} className="product-textarea" value={item.notes ?? ""} onChange={(event) => change(item.review_id, { notes: event.target.value || null })} /></label>
               <footer>
                 <button type="button" className="product-button danger" disabled={saving || !canEditInventory()} onClick={() => void dismiss(item)}><Trash2 size={15} />Dismiss</button>
-                <button type="button" className="product-button primary" disabled={saving || !canEditInventory()} onClick={() => void resolve(item)}><Check size={16} />{saving ? "Saving…" : "Confirm and add to Find"}</button>
+                <button type="button" className="product-button primary" disabled={saving || !canEditInventory()} onClick={() => void resolve(item)}><Check size={16} />{saving ? "Saving…" : "Confirm and save"}</button>
               </footer>
             </article>
           );

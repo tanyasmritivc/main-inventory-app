@@ -90,7 +90,7 @@ test("confirms a reviewed item and removes it from the queue", async () => {
   const user = userEvent.setup();
   render(<ReviewQueueClient />);
 
-  await user.click(await screen.findByRole("button", { name: "Confirm and add to Find" }));
+  await user.click(await screen.findByRole("button", { name: "Confirm and save" }));
 
   await waitFor(() => expect(api.resolveReviewItem).toHaveBeenCalledWith({
     token: "web-token",

@@ -1,4 +1,5 @@
 "use client";
+import scanStyles from "./scan-methods.module.css";
 import { privateImageSrc } from "@/lib/private-image";
 
 
@@ -207,7 +208,7 @@ export function ScanCenterClient() {
       {saved && <div className="notice-success">{saved}</div>}
       {!canWrite && <p className="workspace-muted">Inspect photos and barcodes. Saving requires Editor access.</p>}
 
-      <nav className="source-tabs" aria-label="Import method">
+      <nav className={`source-tabs ${scanStyles.methods}`} aria-label="Import method">
         {modes.filter(({id}) => canWrite || id === "photo" || id === "barcode").map(({ id, label, icon: Icon }) => (
           <button aria-pressed={mode === id} className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={16} /><span>{label}</span></button>
         ))}

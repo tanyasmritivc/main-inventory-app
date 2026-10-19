@@ -1071,7 +1071,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           )}
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} {query.trim() ? 'matching' : ''} item{visibleItems.length === 1 ? '' : 's'}</p>
           <div className={toolbarStyles.tableHeader}>
-            {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
+            {['Item', 'Category', 'Qty', 'Space'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
