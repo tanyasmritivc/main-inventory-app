@@ -90,9 +90,9 @@
 		B25E6EC187D4DB7486B84DB4 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1BC73A6B6E5A577A9FD9D2C /* Pods-ShareExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareExtension.profile.xcconfig"; path = "Target Support Files/Pods-ShareExtension/Pods-ShareExtension.profile.xcconfig"; sourceTree = "<group>"; };
 		F5AB84643A91DCA0890B0F64 /* Pods_ShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000000000000000000018 /* ShareExtension Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Debug.xcconfig; sourceTree = SOURCE_ROOT; };
-		A10000000000000000000019 /* ShareExtension Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Release.xcconfig; sourceTree = SOURCE_ROOT; };
-		A10000000000000000000020 /* ShareExtension Profile.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Profile.xcconfig; sourceTree = SOURCE_ROOT; };
+		F19400000000000000000001 /* ShareExtension Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		F19400000000000000000002 /* ShareExtension Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Release.xcconfig; sourceTree = SOURCE_ROOT; };
+		F19400000000000000000003 /* ShareExtension Profile.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ShareExtension/Profile.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -803,7 +803,7 @@
 		};
 		A10000000000000000000015 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A10000000000000000000018 /* ShareExtension Debug.xcconfig */;
+			baseConfigurationReference = F19400000000000000000001 /* ShareExtension Debug.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
@@ -825,7 +825,7 @@
 		};
 		A10000000000000000000016 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A10000000000000000000019 /* ShareExtension Release.xcconfig */;
+			baseConfigurationReference = F19400000000000000000002 /* ShareExtension Release.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
@@ -845,7 +845,7 @@
 		};
 		A10000000000000000000017 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A10000000000000000000020 /* ShareExtension Profile.xcconfig */;
+			baseConfigurationReference = F19400000000000000000003 /* ShareExtension Profile.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
