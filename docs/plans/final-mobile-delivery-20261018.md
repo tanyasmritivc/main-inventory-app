@@ -1,0 +1,13 @@
+# Final mobile delivery — October18,2026
+
+Build1.0.8(94), source`e639000`, is installed on the connected iPhone and Apple acknowledged upload`9ecd266d-911a-4147-93bb-8521bf239d46`. IPA SHA256`7bf55373b937ab206adf2c382291546222e4b107d994049150e12806ba5d28e5`. Signed IPA/archive and receipts are preserved in Documents/FindEZ/AppStore/1.0.8-build94. Processing/tester availability were not polled; public App Store submission is held.
+
+Plans and paid-plan promotion are hidden. Native plugin/push registration uses Flutter's implicit-engine callback for UIScene. Privacy/Terms prefer the system browser view with external fallback. Failed support-email launches expose the contact address. The share extension now inherits Flutter version/build settings rather than carrying the stale66 value.
+
+Validation:659 full Flutter tests; separately enabled production configuration gate;42 final focused legal/profile checks; clean analysis. All five CI gates39187235236 pass. Both archive/export contain31 verified iOS device executables; strict signing passes.24 privacy manifests, including both share-handler frameworks, purpose strings, matching app/extension94, HTTPS endpoints and anonymous client key verified.
+
+Physical passes: final archive install/launch, retained login, QA inventory, Plans hidden, Privacy/Terms opening, support-mail fallback, Memory/Documents/Lent items/Notifications screens. With explicit user approval, native notification permission and registration pass; Apple accepted the test alert. Warm/cold Safari invitation handoff reaches the app and rejects an invalid code without membership. Customer inventory remains untouched.
+
+Open gates are not passes: camera/barcode/microphone; visible background notification and cold tap; fresh Apple/Google login and disposable Apple-account revocation/deletion; fresh password recovery; Photos share-extension import; interrupted/offline upload recovery; VoiceOver. Safari's public JPEG share sheet opened, but Mirroring did not advance its horizontal destinations to FindEZ. Hardware results have been requested from the user. QA inventory is retained for those checks.
+
+Public-launch blockers remain in owner infrastructure: encrypt the API-to-FIND GPU hop, remove insecure HTTP override and rotate exposed inference credentials; restrict origin8000 to the actual ingress proxy after verifying routing. GPU configuration was preserved under the earlier instruction. Full backend/security evidence and owner checklist: API lane docs/plans/final-mobile-security-20261018.md (PR127). Web fixes:PR128; mobile:PR129. No unconditional production-ready signoff.
