@@ -1207,3 +1207,17 @@ After every clear/Review receipt is confirmed, replace Capture with Items filter
 to the saved Space and retain the selected inventory URL. Keep partial drafts and
 ignore obsolete inventory completions. The API retains private crop/original
 gallery records; no separate workspace-wide file publication or Dashboard edit.
+
+### October 19, 2026: email links must work across devices
+
+Use custom Auth templates for signup, recovery, magic links, invitations and
+email changes. Their one-time token hash travels in a fragment to the web
+`/auth/confirm` page, is removed from history, and is verified only after the
+recipient selects Continue. Email completion uses `verifyOtp`, never a browser's
+PKCE verifier or an unrelated existing session. Keep Google/Apple OAuth on PKCE
+and check the explicit exchange receipt. Recovery always opens `/reset-password`;
+other destinations must remain local. Preserve the email verification code for
+existing app flows. Do not revert templates to browser-bound email PKCE: users
+request links on desktop and open them on phones. The submitted mobile binary is
+unchanged; email links complete on the website and users can then sign in in the
+app. Existing sent emails cannot be rewritten.

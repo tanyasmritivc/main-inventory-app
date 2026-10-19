@@ -1,3 +1,15 @@
+## October 19 cross-device email links - deployed
+
+Lane `fix/web-email-links-20261019` / PR132, runtime `6d34999`, is deployed.
+Five existing Auth email flows now use `/auth/confirm` with a one-time token hash
+in the fragment and explicit verification before redirect. OAuth retains PKCE.
+User confirmed a fresh desktop-requested reset email opens the new-password form
+on iPhone. 464 web tests, scoped lint, types, production build and isolated
+GoTrue integration tests passed. CI receipt is recorded in
+`docs/plans/web-email-links-20261019.md`. No mobile changes, customer password
+changes, production database migrations or unrelated auth setting changes.
+Existing emails retain their old links; request a new email after deployment.
+
 ## October 19 website launch audit — deployed
 
 Web lane `fix/web-launch-audit-20261019` / PR131 is deployed through runtime commit
