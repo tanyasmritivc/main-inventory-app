@@ -14,7 +14,7 @@ export const PUBLIC_SITE_STRUCTURED_DATA = {
       "@id": `${PUBLIC_SITE_URL}/#organization`,
       name: "AI Robots Inc.",
       url: PUBLIC_SITE_URL,
-      logo: `${PUBLIC_SITE_URL}/images/findez-favicon.svg`,
+      logo: `${PUBLIC_SITE_URL}/apple-touch-icon.png`,
     },
     {
       "@type": "WebSite",

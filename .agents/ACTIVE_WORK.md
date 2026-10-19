@@ -1,3 +1,15 @@
+## Active: crawlable current brand favicons (2026-10-18)
+
+Web-only lane fix/web-search-icons-20261018 from66e922b. User reports the old
+search-result icon after the metadata update. Live site only advertises SVG and
+/favicon.ico returns404. Google current supported raster formats exclude SVG.
+Export PNG/ICO/Apple-touch icons from the existing current native1024px app mark,
+update metadata and public logo reference, preserve Search Console proof, current
+landing/auth/runtime and Dashboard. No new logo design, native or backend change.
+Verify actual exported frames and unauthenticated Googlebot-Image delivery on
+both hostnames. Do not promise immediate Google favicon replacement or repeatedly
+request the same homepage recrawl merely to accelerate its existing queue.
+
 ## Public search positioning published (2026-10-18)
 
 Web source `303bd45` (PR125) is live from

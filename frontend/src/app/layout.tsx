@@ -64,7 +64,12 @@ export const metadata: Metadata = {
     description: PUBLIC_SITE_DESCRIPTION,
   },
   icons: {
-    icon: "/images/findez-favicon.svg",
+    icon: [
+      { url: "/favicon.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
