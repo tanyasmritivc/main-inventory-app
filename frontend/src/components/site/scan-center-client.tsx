@@ -85,7 +85,7 @@ export function ScanCenterClient() {
     let active = true;
     if (token) getSpaces({ token, bindToToken: true }).then(rows => {
       if (active) setSpaces(rows.map(row => row.name));
-    }).catch(() => {});
+    }).catch((reason) => { if (active) setError(userFacingError(reason, "Destination Spaces could not be loaded. Refresh to try again.")); });
     return () => { active = false; };
   }, [token]);
 
@@ -228,7 +228,7 @@ export function ScanCenterClient() {
 
         {mode === "photo" && (
           <div className="photo-stage">
-            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || (canWrite && !space)}><UploadCloud size={22} /><strong>{working ? "Detecting objects and reading labels…" : "Choose photo"}</strong><span>{space || !canWrite ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
+            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || (canWrite && !space)}><UploadCloud size={22} /><strong>{working ? (items.length ? "Saving reviewed items…" : "Processing…") : "Choose photo"}</strong><span>{space || !canWrite ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">

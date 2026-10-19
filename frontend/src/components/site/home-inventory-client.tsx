@@ -479,12 +479,14 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     setLoading(true);
     try {
       const t = token || (await refreshToken());
-      if (!t) return;
+      if (!t) { setError('Your session expired. Sign in again before saving.'); return false; }
       const res = await updateItem({ token: t, item_id: itemId, updates });
       setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
       setItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
+      return true;
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to update item'));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -515,7 +517,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   async function onSaveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editItemId) return;
-    await onUpdateItem(editItemId, {
+    const saved = await onUpdateItem(editItemId, {
       name: editDraft.name,
       category: editDraft.category,
       quantity: editDraft.quantity,
@@ -526,6 +528,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       purchase_source: editDraft.purchase_source ?? null,
       notes: editDraft.notes ?? null,
     });
+    if (!saved) return;
     setEditOpen(false);
     if (viewingSharedSpace) {
       await loadSharedSpace(viewingSharedSpace.shareId)
@@ -1806,39 +1809,40 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           <form onSubmit={(e) => { void onSaveEdit(e); }} style={{ marginTop: 20 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Name *</label>
-                <input value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="edit-item-name" style={labelStyle}>Name *</label>
+                <input id="edit-item-name" value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Category *</label>
-                <input value={editDraft.category} onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="edit-item-category" style={labelStyle}>Category *</label>
+                <input id="edit-item-category" value={editDraft.category} onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Brand</label>
-                <input value={editDraft.brand ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-brand" style={labelStyle}>Brand</label>
+                <input id="edit-item-brand" value={editDraft.brand ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Part number</label>
-                <input value={editDraft.part_number ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-part_number" style={labelStyle}>Part number</label>
+                <input id="edit-item-part_number" value={editDraft.part_number ?? ''} onChange={(e) => setEditDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Quantity *</label>
-                <input type="number" min={0} value={editDraft.quantity} onChange={(e) => setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} required />
+                <label htmlFor="edit-item-quantity" style={labelStyle}>Quantity *</label>
+                <input id="edit-item-quantity" type="number" min={0} value={editDraft.quantity} onChange={(e) => setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Location</label>
-                <input value={editDraft.location} onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} />
+                <label htmlFor="edit-item-location" style={labelStyle}>Location</label>
+                <input id="edit-item-location" value={editDraft.location} onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} />
               </div>
             </div>
             <div style={{ marginTop: 14 }}>
-              <label style={labelStyle}>Notes</label>
-              <textarea
-                value={editDraft.notes ?? ''}
+              <label htmlFor="edit-item-notes" style={labelStyle}>Notes</label>
+                <textarea
+                id="edit-item-notes" value={editDraft.notes ?? ''}
                 onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
             </div>
+            {error && <p role="alert" style={{ color: 'var(--danger-ink)', marginTop: 12 }}>{error}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button type="button" onClick={() => setEditOpen(false)} style={cancelBtnStyle}>Cancel</button>
               <button type="submit" disabled={loading} style={{ ...primaryBtnStyle, opacity: loading ? 0.5 : 1 }}>Save</button>
@@ -1900,28 +1904,28 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Name *</label>
-                <input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required autoFocus />
+                <label htmlFor="create-item-name" style={labelStyle}>Name *</label>
+                <input id="create-item-name" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} style={inputStyle} required autoFocus />
               </div>
               <div>
-                <label style={labelStyle}>Category *</label>
-                <input value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
+                <label htmlFor="create-item-category" style={labelStyle}>Category *</label>
+                <input id="create-item-category" value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} style={inputStyle} required />
               </div>
               <div>
-                <label style={labelStyle}>Brand</label>
-                <input value={draft.brand ?? ''} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
+                <label htmlFor="create-item-brand" style={labelStyle}>Brand</label>
+                <input id="create-item-brand" value={draft.brand ?? ''} onChange={(e) => setDraft((d) => ({ ...d, brand: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Part number</label>
-                <input value={draft.part_number ?? ''} onChange={(e) => setDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
+                <label htmlFor="create-item-part_number" style={labelStyle}>Part number</label>
+                <input id="create-item-part_number" value={draft.part_number ?? ''} onChange={(e) => setDraft((d) => ({ ...d, part_number: e.target.value }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Quantity</label>
-                <input type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} />
+                <label htmlFor="create-item-quantity" style={labelStyle}>Quantity</label>
+                <input id="create-item-quantity" type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Space *</label>
-                <select value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
+                <label htmlFor="create-item-location" style={labelStyle}>Space *</label>
+                <select id="create-item-location" value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
                   <option value="">Choose a Space</option>
                   {serverSpaces.filter((row) => row.name !== 'Unsorted').map((row) => <option key={row.id} value={row.name}>{row.name}</option>)}
                   <option value="Unsorted">Unsorted (only if chosen)</option>
@@ -1929,9 +1933,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
               </div>
             </div>
             <div style={{ marginTop: 14 }}>
-              <label style={labelStyle}>Notes</label>
-              <textarea
-                value={draft.notes ?? ''}
+              <label htmlFor="create-item-notes" style={labelStyle}>Notes</label>
+                <textarea
+                id="create-item-notes" value={draft.notes ?? ''}
                 onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical' }}

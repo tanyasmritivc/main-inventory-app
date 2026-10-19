@@ -61,14 +61,14 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 <div className="wrap split" style={css("height:100%;grid-template-columns:minmax(0,.75fr) minmax(0,1.5fr);gap:40px")}>
 <div>
 <h2 className="h2" aria-label={siteNavigation ? memoryHeadline : undefined} style={css("margin-top:16px;color:#FFF;font-size:clamp(32px,3.4vw,50px)")}>{siteNavigation ? <span aria-hidden="true">{v.memoryLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`memoryLetters.${i}.style`}>{letter.t}</span>)}</span> : memoryHeadline}</h2>
-<p className="lede hide-s" style={css("color:#A3A3A3")}>{"The charger from your bench photo is not just a label anymore. FindEZ knows where it lives, when you bought it, the manual, which batteries it charges, the project it belongs to and when it was last seen."}</p>
+<p className="lede hide-s" style={css("color:#A3A3A3")}>{"Keep the charger from your bench photo with its saved location, notes and documents. Ask FindEZ about the details you have recorded. The illustration shows how that context can fit together."}</p>
 </div>
 <div className="float" style={css("position:relative;container-type:inline-size")}>
 <svg viewBox="0 0 1000 640" aria-hidden="true" style={css("display:block;width:100%;height:auto")}>
 {v.edges.map((e, i) => <Fragment key={i}><path d={e.d} data-lab-d={`edges.${i}.d`} pathLength="1" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.2" style={css(e.style)} data-lab-style={`edges.${i}.style`} data-lab-row={`edges.${i}`}></path></Fragment>)}
 <circle cx="500" cy="320" r="90" fill="none" stroke="rgba(232,89,12,.45)"><animate attributeName="r" values="90;210" dur="3s" repeatCount="indefinite"></animate><animate attributeName="opacity" values="1;0" dur="3s" repeatCount="indefinite"></animate></circle>
 </svg>
-<div role="img" aria-label="The battery charger from the bench photo, connected to where it lives, when it was bought, its manual and receipt, the batteries it charges, its project and when it was last seen" style={css("position:absolute;inset:0")}>
+<div role="img" aria-label="Illustrative item context: a charger connected to a saved location, purchase details, documents, compatibility notes, project and history" style={css("position:absolute;inset:0")}>
 {v.edges.map((e, i) => <Fragment key={i}><span style={css(e.lab)} data-lab-style={`edges.${i}.lab`} data-lab-row={`edges.${i}`}><span data-lab-text={`edges.${i}.rel`}>{e.rel}</span></span></Fragment>)}
 {v.nodes.map((n, i) => <Fragment key={i}><div style={css(n.box)} data-lab-style={`nodes.${i}.box`} data-lab-row={`nodes.${i}`}><div style={css(n.ks)} data-lab-style={`nodes.${i}.ks`}><span data-lab-text={`nodes.${i}.k`}>{n.k}</span></div><div style={css("font-size:1.6cqw;color:#FFF;margin-top:.35cqw;white-space:nowrap;letter-spacing:-.01em")}><span data-lab-text={`nodes.${i}.v`}>{n.v}</span></div></div></Fragment>)}
 <div style={css("position:absolute;left:33%;top:41%;width:34%;height:18%;box-sizing:border-box;background:#FFF;border-radius:1.4cqw;display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw")}>
@@ -85,6 +85,7 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 <div style={css(v.pinTop)} data-lab-style="pinTop">
 <div className="fzl-zoom-stage" data-landing-scene="zoom">
 <div className="wrap" style={css("padding-top:84px;text-align:center")}>
+<p className="mono">{"Example of a saved location path"}</p>
 <h2 className="h2" aria-label={locationHeadline} style={css("margin-top:14px")}><span aria-hidden="true">{v.locationLetters?.map((letter, i) => <span key={i} style={css(letter.style)} data-lab-style={`locationLetters.${i}.style`}>{letter.t}</span>)}</span></h2>
 </div>
 <div style={css(v.zoomBox)} data-lab-style="zoomBox">
@@ -202,25 +203,15 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 </section>
 <section id="waitlist" style={css("padding:12px 0")}>
 <div style={css(v.wlCard)} data-lab-style="wlCard">
-<h2 className="h2" style={css("margin:16px auto 0;max-width:16ch;color:#FFF")}>{"Be first on the iPhone app."}</h2>
-<p style={css("color:#A3A3A3;font-size:17px;line-height:1.55;max-width:460px;margin:16px auto 0")}>{"Join the waitlist and we will email you the day FindEZ lands on the App Store."}</p>
-
-<div style={css("display:flex;gap:8px;max-width:440px;margin:30px auto 0;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:10px;padding:6px 6px 6px 16px")} data-lab-show="notJoined" hidden={!v.notJoined}>
-<label htmlFor="em" style={css("position:absolute;left:-9999px")}>{"Email address"}</label>
-<input id="em" type="email" className="inp" placeholder="you@example.com" style={css("color:#FFF;font-size:16px;padding:10px 0")} defaultValue="" autoComplete="email" />
-<button type="button" className="btn" style={css("background:#FFF;color:#000;padding:11px 18px;font-size:14.5px")} data-lab-join="">{"Join waitlist"}</button>
-</div>
-<p style={css("color:#C9B79C;font-size:14px;margin:10px 0 0")} data-lab-show="emailErr" hidden={!v.emailErr}>{"Enter an email address like you@example.com."}</p>
-
-
-<div style={css("display:inline-flex;align-items:center;gap:10px;margin-top:30px;background:#1A1A1A;border-radius:10px;padding:14px 20px;font-size:16px;animation:fzl-pop .35s ease")} data-lab-show="joined" hidden={!v.joined}><span style={css("width:8px;height:8px;border-radius:50%;background:#E8590C")}></span>{"You are on the list. We will email "}<span data-lab-text="email">{v.email}</span>{" at launch."}</div>
-
+<h2 className="h2" style={css("margin:16px auto 0;max-width:16ch;color:#FFF")}>{"Your things, remembered. Anywhere."}</h2>
+<p style={css("color:#A3A3A3;font-size:17px;line-height:1.55;max-width:460px;margin:16px auto 0")}>{"Capture on your iPhone. Review, organize and ask on the web. Sign in with the same account to use your saved inventory on both."}</p>
+<a href="https://apps.apple.com/us/app/findez-ai/id6760401697" className="btn" style={css("background:#FFF;color:#000;margin-top:30px;padding:14px 20px")}>{"Get FindEZ for iPhone"}</a>
 </div>
 </section>
 <footer id="end" style={css("padding:110px 24px 28px")}>
 <div style={css("max-width:1200px;margin:0 auto")}>
 <h2 className="h2" style={css("max-width:16ch")}>{"Take a picture. FindEZ remembers."}</h2>
-<div style={css("display:flex;gap:10px;flex-wrap:wrap;margin-top:28px")}><a href="/signup" className="btn" style={css("background:#000;color:#FFF")}>{"Try FindEZ on the web"}</a><a href="#waitlist" className="btn" style={css("border:1px solid #E5E5E5")}>{"Join the iPhone waitlist"}</a></div>
+<div style={css("display:flex;gap:10px;flex-wrap:wrap;margin-top:28px")}><a href="/signup" className="btn" style={css("background:#000;color:#FFF")}>{"Try FindEZ on the web"}</a><a href="https://apps.apple.com/us/app/findez-ai/id6760401697" className="btn" style={css("border:1px solid #E5E5E5")}>{"Get the iPhone app"}</a></div>
 <svg viewBox="123 25 171 46" aria-hidden="true" style={css("display:block;width:100%;height:auto;margin:90px 0 28px;overflow:visible")}>
 <g transform="translate(124.8,69.12) scale(0.057942) translate(-90,0)">
 {v.letters.map((L, i) => <Fragment key={i}><path d={L.d} data-lab-d={`letters.${i}.d`} fill={L.fill} data-lab-fill={`letters.${i}.fill`} style={css(L.style)} data-lab-style={`letters.${i}.style`} data-lab-row={`letters.${i}`}></path></Fragment>)}

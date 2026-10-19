@@ -30,7 +30,7 @@ export function HeroMorph() {
         <div className="fzh-abs fzh-s2">
           <div className="fzh-eyebrow fzh-mono">Capture</div>
           <h2 className="fzh-h2">Take a picture.<br /><span className="fzh-orange">That is it.</span></h2>
-          <p className="fzh-body">No forms, no categories, no typing. FIND separates every object in the photo, counts it, and tells you how sure it is.</p>
+          <p className="fzh-body">FIND suggests objects, quantities and confidence from your photo. Review the results, choose a Space and save the items you want to remember.</p>
           <div className="fzh-stats">
             <div><div className="fzh-num fzh-found">0</div><div className="fzh-statlabel fzh-mono">Objects found</div></div>
             <div><div className="fzh-num fzh-orange fzh-needs">0</div><div className="fzh-statlabel fzh-mono">Needs a look</div></div>
@@ -46,7 +46,7 @@ export function HeroMorph() {
             </div>)}
           </div>
           <div className="fzh-lens" aria-hidden="true" />
-          <span className="fzh-corner fzh-mono fzh-hint">Move your cursor to scan</span>
+          <span className="fzh-corner fzh-mono fzh-hint">Explore an example capture</span>
           <span className="fzh-corner fzh-mono fzh-count">0 objects in view</span>
         </div>
 

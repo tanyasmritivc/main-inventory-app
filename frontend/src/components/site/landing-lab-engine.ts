@@ -35,7 +35,7 @@ export function landingLabValues(state: LabState = initialLabState, containedHer
     const benchBox = 'position:relative;border-radius:14px;overflow:hidden;background:#E2E2E2;margin-right:' + (narrow ? 0 : 110) + 'px';
     const pb = ss(c((S.seg - .5) / .4));
     const phoneB = 'position:absolute;right:0;bottom:-56px;width:172px;transform:translateY(' + ((1 - pb) * 90).toFixed(1) + 'px) rotate(' + ((1 - pb) * 8).toFixed(2) + 'deg);opacity:' + pb.toFixed(3);
-    const FAN = [['/images/landing-lab/app-capture.jpg', 'Capture', 'Capture: every object in the photo becomes its own row'],
+    const FAN = [['/images/landing-lab/app-capture.jpg', 'Capture', 'Capture: review detected objects before saving them as items'],
       ['/images/landing-lab/app-review.jpg', 'Review', 'Review: anything uncertain waits for your OK'],
       ['/images/landing-lab/app-home.jpg', 'Home', 'Home: what needs a decision and where things live'],
       ['/images/landing-lab/app-ask.jpg', 'Ask', 'Ask: plain questions answered from what you own']];

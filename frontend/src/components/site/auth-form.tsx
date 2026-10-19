@@ -289,7 +289,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         </h1>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
           {mode === "signup"
-            ? "Create your account, then continue in the FindEZ mobile app."
+            ? "Create your account to use FindEZ on the web and iPhone."
             : "Sign in to manage your FindEZ account."}
         </p>
 
