@@ -340,7 +340,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
         owner_profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', s['owner_user_id']).execute()
         owner_display = (owner_profile.data[0].get('display_name') or owner_email.split('@')[0]) if owner_profile.data else owner_email.split('@')[0]
         owner_data = owner_profile.data[0] if owner_profile.data else {}
-        owner_avatar_url = create_profile_photo_signed_url(storage_path=owner_data['avatar_path']) if owner_data.get('avatar_path') else ''
+        owner_avatar_url = create_profile_photo_signed_url(storage_path=owner_data['avatar_path'], owner_id=s['owner_user_id']) if owner_data.get('avatar_path') else ''
         result.append({
             'user_id': s['owner_user_id'],
             'display_name': owner_display,
@@ -371,7 +371,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
             profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', m['member_user_id']).execute()
             display = (profile.data[0].get('display_name') or email.split('@')[0]) if profile.data else email.split('@')[0]
             profile_data = profile.data[0] if profile.data else {}
-            avatar_url = create_profile_photo_signed_url(storage_path=profile_data['avatar_path']) if profile_data.get('avatar_path') else ''
+            avatar_url = create_profile_photo_signed_url(storage_path=profile_data['avatar_path'], owner_id=m['member_user_id']) if profile_data.get('avatar_path') else ''
             result.append({
                 'user_id': m['member_user_id'],
                 'member_id': m['member_id'],

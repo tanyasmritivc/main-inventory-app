@@ -46,6 +46,9 @@ def _external_storage_url(url: str, public_base_url: str | None) -> str:
 
 def _guess_content_type(filename: str) -> str:
     ct, _ = mimetypes.guess_type(filename)
+    # Arbitrary team attachments must not become executable browser content.
+    if ct in {"text/html", "image/svg+xml", "application/xhtml+xml", "application/javascript", "text/javascript", "text/xml", "application/xml"}:
+        return "application/octet-stream"
     return ct or "application/octet-stream"
 
 
@@ -159,7 +162,16 @@ def create_document_signed_url(*, storage_path: str) -> str:
     return url
 
 
-def create_profile_photo_signed_url(*, storage_path: str) -> str:
+def owned_profile_photo_path(storage_path: object, owner_id: str) -> bool:
+    import re
+    return isinstance(storage_path, str) and re.fullmatch(
+        re.escape(str(owner_id)) + r'/avatar\.(?:jpg|jpeg|png|webp|heic|heif)', storage_path
+    ) is not None
+
+
+def create_profile_photo_signed_url(*, storage_path: str, owner_id: str) -> str:
+    if not owned_profile_photo_path(storage_path, owner_id):
+        raise ValueError('Profile photo does not belong to this profile')
     settings = get_settings()
     signed = get_supabase_admin().storage.from_("profile-photos").create_signed_url(
         storage_path, settings.supabase_storage_signed_url_ttl_seconds

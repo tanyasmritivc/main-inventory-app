@@ -21,6 +21,7 @@ from app.services.ai_service import summarize_activity
 from app.services.storage import create_document_signed_url, document_path_in_scope, upload_document
 from app.services.supabase_client import get_supabase_admin
 from app.services.resource_access import require_inventory_write
+from app.services.document_validation import validate_document, MAX_DOCUMENT_BYTES
 
 router = APIRouter(tags=["inventory"])
 
@@ -63,22 +64,12 @@ async def upload_document_route(
     item_id: str | None = Form(None),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> UploadDocumentResponse:
-    raw = await file.read()
+    raw = await file.read(MAX_DOCUMENT_BYTES + 1)
     if not raw:
         raise bad_request("Empty file")
 
     filename = file.filename or "upload"
-    content_type = (file.content_type or "").lower()
-    allowed = {
-        "application/pdf",
-        "text/plain",
-        "image/png",
-        "image/jpg",
-        "image/jpeg",
-        "image/webp",
-    }
-    if content_type and content_type not in allowed:
-        raise bad_request("Unsupported file type")
+    content_type = validate_document(filename, file.content_type, raw)
 
     try:
         from app.services.inventory_scope import current_inventory
@@ -86,13 +77,12 @@ async def upload_document_route(
             get_supabase_admin().record('items','item_id',item_id.strip())
         stored = upload_document(user_id=user.user_id, filename=filename, content=raw)
 
-        mime = (file.content_type or "").lower()
-        file_type = "pdf" if (mime == "application/pdf" or filename.lower().endswith(".pdf")) else "image"
+        file_type = "pdf" if content_type == "application/pdf" else "text" if content_type == "text/plain" else "image"
 
         doc = create_document(
             user_id=user.user_id,
             filename=filename,
-            mime_type=file.content_type,
+            mime_type=content_type,
             storage_path=stored.path,
             file_type=file_type,
             size_bytes=len(raw),

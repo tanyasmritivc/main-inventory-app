@@ -1,3 +1,11 @@
+## Final submission security audit — October 18
+
+Approved 059/060/061 deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and local-proxy trust deployed with rollback. 1,093 tests + 10 subtests, live cross-account/role/revocation/upload checks and disposable email-account deletion pass. GPU HTTP remains an explicit launch blocker; native hardware/provider/push gates remain pending. See `docs/plans/final-mobile-security-20261018.md`. Mobile build93 (hide Plans) is in progress in its separate lane.
+
+## Final mobile audit — October 18
+
+Final mobile submission audit: approved migration059 closes public counter/rate-limit RPCs; applied and verified October18. Reject blank Chat messages before inference. Isolated branch fix/api-final-security-20261018.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
