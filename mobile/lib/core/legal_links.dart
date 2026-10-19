@@ -13,6 +13,27 @@ Uri legalDocumentUrl(LegalDocumentKind document) => Uri.https(
   document == LegalDocumentKind.privacy ? '/privacy' : '/terms',
 );
 
+/// Prefer the system browser view so legal content stays available when iOS
+/// cannot switch to an external browser. Preserve an external fallback.
+Future<bool> openLegalDocument(
+  Uri url, {
+  Future<bool> Function(Uri, LaunchMode)? launch,
+}) async {
+  final open =
+      launch ?? (Uri uri, LaunchMode mode) => launchUrl(uri, mode: mode);
+  for (final mode in [
+    LaunchMode.inAppBrowserView,
+    LaunchMode.externalApplication,
+  ]) {
+    try {
+      if (await open(url, mode)) return true;
+    } catch (_) {
+      // Try the other system-supported presentation, then show Retry/Copy.
+    }
+  }
+  return false;
+}
+
 /// Opens the public canonical document; no embedded duplicate can become stale.
 class LegalLinkPage extends StatefulWidget {
   const LegalLinkPage({super.key, required this.document, this.openUrl});
@@ -45,8 +66,7 @@ class _LegalLinkPageState extends State<LegalLinkPage> {
     try {
       final url = legalDocumentUrl(widget.document);
       final opened =
-          await (widget.openUrl?.call(url) ??
-              launchUrl(url, mode: LaunchMode.externalApplication));
+          await (widget.openUrl?.call(url) ?? openLegalDocument(url));
       if (!mounted) return;
       if (opened) {
         if (Navigator.of(context).canPop()) Navigator.of(context).pop();

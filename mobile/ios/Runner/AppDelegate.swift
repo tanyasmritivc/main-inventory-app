@@ -3,7 +3,7 @@ import UIKit
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var pushResult: FlutterResult?
   private var pushDartReady = false
   private var pushChannel: FlutterMethodChannel?
@@ -15,58 +15,65 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
-    if let registrar = registrar(forPlugin: "FindEZPushNotifications") {
-      let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
-      channel.setMethodCallHandler { [weak self] call, result in
-        switch call.method {
-        case "register":
-          self?.registerForPush(result: result)
-        case "authorizationStatus":
-          UNUserNotificationCenter.current().getNotificationSettings { settings in
-            let status: String
-            switch settings.authorizationStatus {
-            case .authorized: status = "authorized"
-            case .denied: status = "denied"
-            case .provisional: status = "provisional"
-            case .ephemeral: status = "ephemeral"
-            case .notDetermined: status = "notDetermined"
-            @unknown default: status = "notDetermined"
-            }
-            DispatchQueue.main.async { result(status) }
-          }
-        case "unregister":
-          self?.pushGeneration += 1
-          self?.pushTimeout?.cancel()
-          self?.pushTimeout = nil
-          self?.pushResult?(FlutterError(code: "registration_cancelled", message: "Registration was cancelled.", details: nil))
-          self?.pushResult = nil
-          self?.pendingNotification = nil
-          self?.pushDartReady = false
-          UIApplication.shared.unregisterForRemoteNotifications()
-          UIApplication.shared.applicationIconBadgeNumber = 0
-          UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-          UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-          result(nil)
-        case "getInitialNotification":
-          self?.pushDartReady = true
-          result(self?.pendingNotification)
-          self?.pendingNotification = nil
-        case "setBadgeCount":
-          let arguments = call.arguments as? [String: Any]
-          let count = arguments?["count"] as? Int ?? 0
-          UIApplication.shared.applicationIconBadgeNumber = max(0, count)
-          result(nil)
-        default:
-          result(FlutterMethodNotImplemented)
-        }
-      }
-      pushChannel = channel
-    }
+    // iOS needs this delegate before launch finishes to deliver foreground
+    // presentation and notification-tap callbacks to the handlers below.
+    UNUserNotificationCenter.current().delegate = self
     if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
       pendingNotification = notification
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // UIScene creates the implicit engine after application launch. Register
+  // plugins and custom channels on that engine, not the pre-scene registry.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    let registrar = engineBridge.applicationRegistrar
+    let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
+    channel.setMethodCallHandler { [weak self] call, result in
+      switch call.method {
+      case "register":
+        self?.registerForPush(result: result)
+      case "authorizationStatus":
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          let status: String
+          switch settings.authorizationStatus {
+          case .authorized: status = "authorized"
+          case .denied: status = "denied"
+          case .provisional: status = "provisional"
+          case .ephemeral: status = "ephemeral"
+          case .notDetermined: status = "notDetermined"
+          @unknown default: status = "notDetermined"
+          }
+          DispatchQueue.main.async { result(status) }
+        }
+      case "unregister":
+        self?.pushGeneration += 1
+        self?.pushTimeout?.cancel()
+        self?.pushTimeout = nil
+        self?.pushResult?(FlutterError(code: "registration_cancelled", message: "Registration was cancelled.", details: nil))
+        self?.pushResult = nil
+        self?.pendingNotification = nil
+        self?.pushDartReady = false
+        UIApplication.shared.unregisterForRemoteNotifications()
+        UIApplication.shared.applicationIconBadgeNumber = 0
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        result(nil)
+      case "getInitialNotification":
+        self?.pushDartReady = true
+        result(self?.pendingNotification)
+        self?.pendingNotification = nil
+      case "setBadgeCount":
+        let arguments = call.arguments as? [String: Any]
+        let count = arguments?["count"] as? Int ?? 0
+        UIApplication.shared.applicationIconBadgeNumber = max(0, count)
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    pushChannel = channel
   }
 
   private func registerForPush(result: @escaping FlutterResult) {

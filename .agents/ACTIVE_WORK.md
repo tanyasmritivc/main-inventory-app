@@ -1,3 +1,7 @@
+## Final submission audit — build 95 delivered; notification arrival confirmed
+
+Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
@@ -1361,3 +1365,6 @@ Lane fix/mobile-scan-original-return-20261018 from 3414fc0. Confirmed auto-extra
 saves return to Items in the current inventory; partial saves stay in Capture.
 Existing item gallery receives crop first/original second from backend. Preserve
 Dashboard layout and permissions. Verify both themes and deliver signed beta87.
+
+## October 18 final submission audit
+Active lane `fix/mobile-final-audit-20261018`: user requested hiding mobile Plans. Build 93 hides Settings plan/pilot promotion and the limit-sheet comparison link; server quotas and memberships remain unchanged. Build 92 delivery and backend security audit are recorded in the API lane report.

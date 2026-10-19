@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/legal_links.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   test('both legal documents use the public canonical HTTPS site', () {
@@ -12,6 +14,53 @@ void main() {
     expect(
       legalDocumentUrl(LegalDocumentKind.terms).toString(),
       'https://findez.ai/terms',
+    );
+  });
+  for (final throws in [false, true]) {
+    test(
+      'system browser falls back when unavailable: throws=$throws',
+      () async {
+        final modes = <LaunchMode>[];
+        final opened = await openLegalDocument(
+          legalDocumentUrl(LegalDocumentKind.privacy),
+          launch: (url, mode) async {
+            modes.add(mode);
+            if (mode == LaunchMode.inAppBrowserView) {
+              if (throws) throw PlatformException(code: 'unavailable');
+              return false;
+            }
+            return true;
+          },
+        );
+        expect(opened, isTrue);
+        expect(modes, [
+          LaunchMode.inAppBrowserView,
+          LaunchMode.externalApplication,
+        ]);
+      },
+    );
+  }
+  test('successful system browser does not launch twice', () async {
+    final modes = <LaunchMode>[];
+    expect(
+      await openLegalDocument(
+        legalDocumentUrl(LegalDocumentKind.terms),
+        launch: (url, mode) async {
+          modes.add(mode);
+          return true;
+        },
+      ),
+      isTrue,
+    );
+    expect(modes, [LaunchMode.inAppBrowserView]);
+  });
+  test('both browser failures return false for the retry page', () async {
+    expect(
+      await openLegalDocument(
+        legalDocumentUrl(LegalDocumentKind.terms),
+        launch: (_, _) async => false,
+      ),
+      isFalse,
     );
   });
   testWidgets(

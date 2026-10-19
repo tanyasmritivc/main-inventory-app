@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
 import 'app_theme.dart';
 import 'pro_status.dart';
+import 'plan_visibility.dart';
 import 'package:mobile/core/ui/app_text.dart';
 import '../features/profile/plans_page.dart';
 
@@ -75,7 +76,7 @@ class _LimitSheet extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               AppText(
-                'Free limit reached',
+                'Usage limit reached',
                 style: TextStyle(
                   color: AppTheme.textPrimary(context),
                   fontSize: 20,
@@ -97,7 +98,9 @@ class _LimitSheet extends StatelessWidget {
                 ),
               ),
               child: AppText(
-                reason!,
+                mobilePlansVisible
+                    ? reason!
+                    : 'This action has reached the current usage limit. Contact info@findez.ai if you need help.',
                 style: TextStyle(
                   color: AppTheme.foreground(context, Color(0xFFF59E0B)),
                   fontSize: 13,
@@ -105,54 +108,56 @@ class _LimitSheet extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBg(context),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.cardBorder(context)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.group_outlined,
-                      color: AppTheme.foreground(context, Color(0xFFA78BFA)),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    AppText(
-                      'FindEZ Team',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary(context),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+          if (mobilePlansVisible) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg(context),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.cardBorder(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.group_outlined,
+                        color: AppTheme.foreground(context, Color(0xFFA78BFA)),
+                        size: 16,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                AppText(
-                  'FindEZ Team brings shared inventory to your group. Learn more at findez.ai',
-                  style: TextStyle(
-                    color: AppTheme.textMuted(context),
-                    fontSize: 13,
-                    height: 1.45,
+                      const SizedBox(width: 8),
+                      AppText(
+                        'FindEZ Team',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  AppText(
+                    'FindEZ Team brings shared inventory to your group. Learn more at findez.ai',
+                    style: TextStyle(
+                      color: AppTheme.textMuted(context),
+                      fontSize: 13,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => Navigator.of(
-              context,
-            ).push<void>(MaterialPageRoute(builder: (_) => const PlansPage())),
-            child: const AppText('Compare plans'),
-          ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(builder: (_) => const PlansPage()),
+              ),
+              child: const AppText('Compare plans'),
+            ),
+          ],
           GestureDetector(
             onTap: () async {
               final joined = await _showJoinCodeDialog(context, api);

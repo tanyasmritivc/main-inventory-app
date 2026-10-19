@@ -1,3 +1,19 @@
+## Final submission audit — build 95 delivered; notification arrival confirmed
+
+Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
+
+## October 18 final native corrections — build 94
+
+Physical build93 exposed failed legal-browser launching. Build94 moves plugin registration and the push channel into Flutter 3.41's implicit-engine callback for the existing UIScene setup. Legal pages prefer the system browser view with external fallback; failed support-mail launches show the contact address. Plans remain hidden. Full suite:659 pass plus one separately enabled production configuration gate; clean analysis;42 follow-up legal/profile tests pass. Signed build and physical re-verification are in progress; do not count pending camera/barcode/mic/provider/push/share-extension checks as passed.
+
+## October 18 final mobile audit — build 93
+
+User requested hiding Plans. The mobile-only visibility flag removes Settings plan/pilot promotion and plan comparison from limit prompts; backend quotas remain enforced. All 655 tests pass (one config gate separately enabled and passing), 53 targeted tests pass, analysis clean. Build93 preserves build92 Apple nonce/deletion/privacy-manifest and restock-loading fixes. Signed export/upload and physical acceptance are in progress. GPU HTTP remains outside this lane and blocks unconditional public-launch signoff; camera/barcode/mic/provider/push acceptance remains pending.
+
+## Final mobile security audit — October 18, build 92 candidate
+
+Native Apple sign-in now binds a fresh SHA-256 nonce to the Supabase request. Apple-linked deletion requests fresh native authorization, verifies the active account, and sends the code to the server revocation flow. Both share-handler frameworks include their own app-group UserDefaults privacy manifest. All 655 mobile tests pass (one configuration test skipped in the general suite); the separately enabled production configuration test passes; analysis is clean. Build 92 signed delivery and exact-device acceptance are in progress. Runtime Apple deletion, blank-chat validation, AASA links, and approved migration 059 are deployed. GPU HTTP remains unchanged under the earlier user instruction and is a launch blocker.
+
 ## Chat actions and profile photos — delivered (2026-10-18)
 
 The user approved "Apply 057 and publish build 91." Migration 057 is applied after
