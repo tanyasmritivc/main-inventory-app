@@ -28,8 +28,11 @@ Verify normal and Googlebot-Image HTTP responses on both public hostnames:
 correct declared icon links/MIME types, exact asset bytes, PNG dimensions and
 ICO frames, no authentication/crawler block, plus retained canonical/JSON-LD/
 Search Console proof and protected product routes. Run full web tests, types,
-scoped lint, actual preserved production build and all five CI gates. Publication
-is pending those gates. The existing homepage indexing request is accepted;
+scoped lint, actual preserved production build and all five CI gates. Published source f087a84 (PR126) passes all five CI gates (39184358123). Final
+both-host HTTP checks pass, with 265 unrelated runtime/public files preserved.
+Release: /home/ubuntu/findez-search-icons-20261018/candidate/frontend. The current
+PNG/ICO/Apple-touch assets and declared links are live; Google cached result
+replacement remains unverified. The existing homepage indexing request is accepted;
 Google favicon refresh remains external and is not promised immediately.
 
 Reference: https://developers.google.com/search/docs/appearance/favicon-in-search.

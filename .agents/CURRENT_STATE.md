@@ -1,3 +1,30 @@
+## Current brand favicons published (2026-10-18)
+
+Web runtime f087a84 (PR126) is live from
+/home/ubuntu/findez-search-icons-20261018/candidate/frontend. The Google result
+icon is the website favicon. The prior source advertised only SVG and root
+/favicon.ico returned 404; Google's current supported list omits SVG. This was a
+separate compatibility gap missed by the preceding search-copy pass.
+
+The existing approved native 1024px mark is exported unchanged in design as PNG 96,
+ICO 16/32/48 and Apple-touch PNG 180. Metadata declares stable raster icon URLs and
+the public publisher logo points to PNG. Legacy SVG remains accessible. Native and
+public App Store artwork already use the current mark; no app icon redesign,
+backend/database/native code, Dashboard or customer-data changes.
+
+All 365 web tests/48 suites, types, scoped lint and the actual preserved production
+build pass. All five CI gates pass on f087a84, run39184358123. Isolated and final
+both-host checks verify exact asset bytes, MIME, dimensions/ICO frames, normal
+browser and Googlebot-Image access, declared icon links, search metadata/canonical,
+public identity JSON-LD, protected product routes and retained Google ownership/
+invitation association files. All 265 unrelated runtime/public files are preserved.
+
+The accepted homepage reindex request remains in Google's priority crawl queue;
+it was not repeated merely to accelerate it. Actual Google favicon replacement
+is external and remains unverified. Stable icon URLs should remain. Private
+release receipts: /home/ubuntu/findez-search-icons-20261018. See
+docs/plans/search-favicon.md. TestFlight91 remains the prior native upload.
+
 ## Public search positioning published (2026-10-18)
 
 Web source `303bd45` (PR125) is live from
