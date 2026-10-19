@@ -411,11 +411,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   }, [adoptRestock]);
 
   useEffect(() => {
-    if (!query.trim() || !token) return;
-    const timeout = window.setTimeout(() => { void load(undefined, query); }, 400);
-    return () => window.clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, token]);
+    if (!query.trim() || !token || selectedSpace) { setLoading(false); return; }
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setLoading(true); setError(null);
+      void searchItems({ token, query: query.trim() }).then((result) => {
+        if (active) setItems(result.items ?? []);
+      }).catch((reason) => {
+        if (active) setError(errorMessage(reason, 'Failed to search inventory'));
+      }).finally(() => { if (active) setLoading(false); });
+    }, 400);
+    return () => { active = false; window.clearTimeout(timeout); };
+  }, [query, token, selectedSpace]);
 
   useEffect(() => {
     if (!props.locationFilter?.trim()) return;
@@ -815,8 +822,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     try {
       const sourceItems = props.mode === 'inventory' && !query.trim() ? allItems : items;
       // Unsorted includes items with no space_id and items whose Space was deleted.
+      const needle = query.trim().toLocaleLowerCase();
       const base = selectedSpace
-        ? itemsInSpace(items ?? [], selectedSpace, spaceIndex)
+        ? itemsInSpace(allItems ?? [], selectedSpace, spaceIndex).filter((item) => !needle ||
+            [item.name, item.part_number, item.brand, item.category, item.notes, item.barcode]
+              .some((value) => typeof value === 'string' && value.toLocaleLowerCase().includes(needle)))
         : (sourceItems ?? []);
       if (!categoryFilter) return base;
       return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
@@ -1367,8 +1377,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
           {/* Items table */}
           {visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
-              {canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>{query.trim() || categoryFilter ? 'No matching items in this Space' : 'No items in this space yet'}</p>
+              {query.trim() || categoryFilter ? <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Try another search or clear the filters.</p> : canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
             <>

@@ -37,3 +37,13 @@ test('failed edits keep the labelled form and draft open until a confirmed save'
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit Item' })).toBeNull());
   expect(await screen.findByRole('button', { name: '001-QA' })).toBeTruthy();
 });
+test('Space part-number search is immediate and clearing restores the complete list', async () => {
+  jest.mocked(api.searchItems).mockResolvedValue({items:[{...item,part_number:'QA-001'}, {...item,item_id:'qa-other',name:'Bolt',part_number:'QA-002'}],parsed:{}});
+  render(<HomeInventoryClient mode="inventory" locationFilter="Shelf" />);
+  await screen.findByText('QA-001');
+  const search=screen.getByPlaceholderText('Search items…');
+  await userEvent.type(search,'QA-002');
+  expect(screen.queryByText('QA-001')).toBeNull();expect(screen.getByText('QA-002')).toBeTruthy();
+  await userEvent.clear(search);expect(screen.getByText('QA-001')).toBeTruthy();expect(screen.getByText('QA-002')).toBeTruthy();
+  expect(api.searchItems).toHaveBeenCalledTimes(1);
+});
