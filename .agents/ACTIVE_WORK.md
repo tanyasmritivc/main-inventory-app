@@ -1,6 +1,6 @@
-## Final submission audit — build94 delivered, user hardware acceptance pending
+## Final submission audit — build 95 delivered; notification arrival confirmed
 
-Lane fix/mobile-final-audit-20261018 delivered signed1.0.8(94), sourcee639000. Apple acknowledgment and all five CI gates pass. Physical legal links, Plans hiding, notification registration/APNs acceptance, and warm/cold invalid invitation handoff pass. The phone is in direct user use for camera/barcode/mic and visible-alert checks; do not interrupt Mirroring while in use. Remaining gates and owner GPU/origin-port work are recorded in docs/plans/final-mobile-delivery-20261018.md and API PR127's security report. Public submission held. Preserve customer records and the Release QA inventory for final hardware checks.
+Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
 
 ## Chat actions and profile photos — delivered (2026-10-18)
 

@@ -1,6 +1,6 @@
-## Build94 delivered — final acceptance remains partial
+## Final submission audit — build 95 delivered; notification arrival confirmed
 
-Apple ACK9ecd266d-911a-4147-93bb-8521bf239d46, sourcee639000, all five CI gates39187235236 pass. Signed artifacts preserved and installed. Legal links, support fallback, notification permission/registration/APNs acceptance and warm/cold invalid invitation handoff pass. See docs/plans/final-mobile-delivery-20261018.md for receipts and open hardware/provider/sharing/VoiceOver gates. Public submission held; GPU HTTP remains a launch blocker. Do not treat prior “in progress” entries below as current delivery status.
+Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
 
 ## October 18 final native corrections — build 94
 
