@@ -87,3 +87,25 @@ test("workspace overview shows only the current member's unfinished tasks and sa
  expect(screen.getByRole("link",{name:/Electrical/}).getAttribute("href")).toBe("/inventory-access-request/electrical");
  await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith("student","/inventory-workspaces/ftc/audit"));
 });
+
+test("session errors offer sign-in without an endless directory loader", () => {
+ jest.mocked(useApiSession).mockReturnValue({accountId:null,loading:false,error:"Your session has expired. Please sign in again."} as ReturnType<typeof useApiSession>);
+ render(<WorkspaceDirectory workspaceId="personal"/>);
+ expect(screen.getByRole("link",{name:"Sign in"}).getAttribute("href")).toBe("/signin?redirect=%2Fworkspaces%2Fpersonal");
+ expect(screen.queryByRole("status")).toBeNull();
+ expect(screen.queryByRole("button",{name:"Retry"})).toBeNull();
+});
+test("background permission refresh keeps the directory visible, but denial clears it", async () => {
+ jest.mocked(accountRequest).mockResolvedValue({workspace,inventories:[{...restricted,can_open:true,name:"Visible inventory"}],total:1,next_offset:null});
+ render(<WorkspaceDirectory workspaceId="ftc"/>);
+ await screen.findByRole("link",{name:/Visible inventory/});
+ let reject!: (reason: Error) => void;
+ jest.mocked(accountRequest).mockImplementation(()=>new Promise((_resolve,r)=>{reject=r;}));
+ fireEvent(window,new Event("focus"));
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledTimes(2));
+ expect(screen.getByRole("link",{name:/Visible inventory/})).toBeTruthy();
+ expect(screen.queryByRole("status")).toBeNull();
+ reject(new Error("Access removed"));
+ await screen.findByRole("alert");
+ expect(screen.queryByRole("link",{name:/Visible inventory/})).toBeNull();
+});

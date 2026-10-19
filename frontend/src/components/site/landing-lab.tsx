@@ -109,8 +109,8 @@ function HomepageLanding({ className = "", siteNavigation = false, initialSigned
 <section id="ask" style={css(v.askSec)} data-lab-style="askSec">
 <div className="wrap split">
 <div>
-<h2 className="h2" style={css("margin-top:16px")}>{"Ask the memory, not a chatbot."}</h2>
-<p className="lede">{"Every question goes to what FindEZ actually knows about your things. The answer shows what it used."}</p>
+<h2 className="h2" style={css("margin-top:16px")}>{"Ask about the things you saved."}</h2>
+<p className="lede">{"Ask what you have, how many are left or where you saved them. Follow the answer back to your inventory records."}</p>
 <p className="mono" style={css("color:#A3A3A3;margin-top:24px")}>{"Example conversations"}</p>
 </div>
 <div style={css(v.askCard)} data-lab-style="askCard">

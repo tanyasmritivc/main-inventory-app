@@ -2,9 +2,9 @@ export function LandingLearning() {
   return <section id="find" className="fzl-learning" data-landing-scene="learning" aria-labelledby="learning-title">
     <div className="fzl-learning-inner">
       <div className="fzl-learning-copy">
-        <h2 id="learning-title">Making our model better,<br /><span>day by day.</span></h2>
-        <p>FIND is built to keep getting better. We are refining recognition, improving clarity, and making everyday objects easier to understand.</p>
-        <p className="fzl-learning-inquiry">Have a question, a team use case or a business idea? Get in touch.</p>
+        <h2 id="learning-title">Bring your team’s<br /><span>inventory together.</span></h2>
+        <p>Give your team one place to capture items, record where they belong and check what’s available.</p>
+        <p className="fzl-learning-inquiry">Planning to use FindEZ at work? Talk to us about your team and setup.</p>
         <a className="fzl-learning-cta" href="mailto:info@findez.ai?subject=FindEZ%20business%20inquiry">
           Business inquiries<span aria-hidden="true">&#8599;</span>
         </a>
@@ -25,7 +25,7 @@ export function LandingLearning() {
           <path d="M184 208v-12a12 12 0 0 1 12-12h12m64 0h12a12 12 0 0 1 12 12v12m0 64v12a12 12 0 0 1-12 12h-12m-64 0h-12a12 12 0 0 1-12-12v-12" stroke="#E8590C" strokeWidth="2" />
           <text x="240" y="249" textAnchor="middle" className="fzl-learning-word">FIND</text>
         </svg>
-        <span className="fzl-learning-note">One improvement at a time.</span>
+        <span className="fzl-learning-note">Capture. Review. Find.</span>
       </div>
     </div>
   </section>;

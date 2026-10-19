@@ -224,7 +224,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     { label: "Workspace", route: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`, icon: ArrowLeft, section: "Workspace" },
     { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "Administration" },
   ] : inventory ? [
-    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Dashboard","/inventory":"Items","/spaces":"Locations","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
+    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Home","/inventory":"Items","/spaces":"Spaces","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
     { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
   ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
   const breadcrumbs = accountPage ? [{label:"Account",href:"/settings"}] : context?.breadcrumbs || (inventory ? [

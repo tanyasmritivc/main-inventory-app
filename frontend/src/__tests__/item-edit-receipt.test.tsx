@@ -47,3 +47,14 @@ test('Space part-number search is immediate and clearing restores the complete l
   await userEvent.clear(search);expect(screen.getByText('QA-001')).toBeTruthy();expect(screen.getByText('QA-002')).toBeTruthy();
   expect(api.searchItems).toHaveBeenCalledTimes(1);
 });
+
+test('category selector filters and clears without a wall of category buttons', async () => {
+ jest.mocked(api.searchItems).mockResolvedValue({items:[item,{...item,item_id:'second',name:'Cable',category:'Electronics'}],parsed:{}});
+ render(<HomeInventoryClient mode="inventory" />);
+ await screen.findByRole('button',{name:'Washer'});
+ await userEvent.selectOptions(screen.getByRole('combobox',{name:'Category'}),'Electronics');
+ expect(screen.queryByRole('button',{name:'Washer'})).toBeNull();
+ expect(screen.getByRole('button',{name:'Cable'})).toBeTruthy();
+ await userEvent.click(screen.getByRole('button',{name:'Clear filter'}));
+ expect(screen.getByRole('button',{name:'Washer'})).toBeTruthy();
+});

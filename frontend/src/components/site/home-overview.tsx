@@ -195,8 +195,9 @@ function HomeOverviewWorkspace() {
       {(sessionError || failures.length > 0) && (
         <div role="alert" className="workspace-error">
           {sessionError || `Could not load ${failures.join(", ")}.`}{" "}
-          <button
+          {sessionError ? <Link className="workspace-button" href="/signin?redirect=/home">Sign in</Link> : <button
             className="workspace-button"
+            disabled={loading}
             onClick={() => {
               setLoading(true);
               setFailures([]);
@@ -204,10 +205,10 @@ function HomeOverviewWorkspace() {
             }}
           >
             Try again
-          </button>
+          </button>}
         </div>
       )}
-      {loading && (
+      {loading && !sessionError && (
         <p role="status" className="workspace-muted">
           Loading your overview…
         </p>

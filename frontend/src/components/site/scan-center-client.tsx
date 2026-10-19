@@ -187,8 +187,8 @@ export function ScanCenterClient() {
     { id: "barcode", label: "Barcode", icon: Barcode },
     { id: "photo", label: "Photo", icon: Camera },
     { id: "manual", label: "Manual", icon: Plus },
-    { id: "spreadsheet", label: "Excel, CSV, JSON", icon: FileSpreadsheet },
-    { id: "bom", label: "BOM", icon: FolderKanban },
+    { id: "spreadsheet", label: "Spreadsheet", icon: FileSpreadsheet },
+    { id: "bom", label: "Bill of materials", icon: FolderKanban },
   ];
 
   const barcodeFields = Object.entries(barcodeResult ?? {}).filter(([, value]) => value == null || ["string", "number", "boolean"].includes(typeof value)).slice(0, 8);
@@ -198,8 +198,8 @@ export function ScanCenterClient() {
       <header className="product-page-header">
         <h1>Capture</h1>
         {canWrite && <div className="scan-destination">
-          <span>to</span>
-          <select id="scan-destination" className="product-select" disabled={working} value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
+          <label htmlFor="scan-destination">Save to</label>
+          <select id="scan-destination" className="product-select" disabled={working} value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted</option></select>
           <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
         </div>}
       </header>
@@ -209,7 +209,7 @@ export function ScanCenterClient() {
 
       <nav className="source-tabs" aria-label="Import method">
         {modes.filter(({id}) => canWrite || id === "photo" || id === "barcode").map(({ id, label, icon: Icon }) => (
-          <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={16} /><span>{label}</span></button>
+          <button aria-pressed={mode === id} className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={16} /><span>{label}</span></button>
         ))}
       </nav>
 

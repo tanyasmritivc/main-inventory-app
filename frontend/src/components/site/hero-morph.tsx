@@ -17,7 +17,7 @@ export function HeroMorph() {
       <div className="fzh-inner">
         <div className="fzh-abs fzh-text">
           <h1 className="fzh-h1">FindEZ gives the physical world <span className="fzh-orange">a memory.</span></h1>
-          <p className="fzh-sub">You don&apos;t organize your physical world for FindEZ. FindEZ organizes it for you.</p>
+          <p className="fzh-sub">Photograph your things, review the details and save where they belong. Ask FindEZ when you need them.</p>
           <div className="fzh-ctas">
             <a className="fzh-btn dark" href="/signup">Try FindEZ on the web</a>
             <a className="fzh-btn line" href="https://apps.apple.com/us/app/findez-ai/id6760401697">
@@ -29,8 +29,8 @@ export function HeroMorph() {
 
         <div className="fzh-abs fzh-s2">
           <div className="fzh-eyebrow fzh-mono">Capture</div>
-          <h2 className="fzh-h2">Take a picture.<br /><span className="fzh-orange">That is it.</span></h2>
-          <p className="fzh-body">FIND suggests objects, quantities and confidence from your photo. Review the results, choose a Space and save the items you want to remember.</p>
+          <h2 className="fzh-h2">Take a picture.<br /><span className="fzh-orange">Review. Save.</span></h2>
+          <p className="fzh-body">FindEZ suggests objects, quantities and confidence from your photo. Review the results, choose a Space and save the items you want to remember.</p>
           <div className="fzh-stats">
             <div><div className="fzh-num fzh-found">0</div><div className="fzh-statlabel fzh-mono">Objects found</div></div>
             <div><div className="fzh-num fzh-orange fzh-needs">0</div><div className="fzh-statlabel fzh-mono">Needs a look</div></div>

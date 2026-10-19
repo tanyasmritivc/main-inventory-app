@@ -115,18 +115,18 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const choosing = !workspaceId || view === "inventories";
   return <div className={styles.shell}><AppShell context={selectedWorkspace ? workspaceNavigation(selectedWorkspace, view) : undefined}>
     <section className={`product-page context-directory ${styles.flow}`}>
-      <header className="product-page-header"><div><span className={styles.eyebrow}>{workspaceId ? selectedWorkspace?.kind === "personal" ? "Personal" : "Workspace" : "Your workspaces"}</span><h1>{workspaceId && (choosing || view === "overview") ? page?.workspace.name || "Workspace" : workspaceId ? titles[view] : "All workspaces"}</h1></div>
+      <header className="product-page-header"><div><span className={styles.eyebrow}>{workspaceId ? selectedWorkspace?.kind === "personal" ? "Your inventories" : "Workspace" : "Your workspaces"}</span><h1>{workspaceId && (choosing || view === "overview") ? page?.workspace.name || selectedWorkspace?.name || "Workspace" : workspaceId ? titles[view] : "All workspaces"}</h1></div>
         <div className="product-actions">
           {accountId && selectedWorkspace?.kind === "team" && selectedWorkspace.owner_user_id === accountId && <WorkspaceManagementActions id={selectedWorkspace.workspace_id} name={selectedWorkspace.name} accountId={accountId} onRenamed={()=>setReload(v=>v+1)} onDeleted={()=>router.replace("/workspaces")} />}
           {!workspaceId && <button className="product-button" onClick={() => open("join")}>Join workspace</button>}
           {(choosing || view === "overview") && canCreate && <button className="product-button" onClick={() => open(workspaceId ? "inventory" : "workspace")}>New {workspaceId ? "inventory" : "workspace"}</button>}
         </div>
       </header>
-      {workspaceId && choosing && <h2 style={{fontSize:15,fontWeight:500,marginBottom:16}}>Inventories</h2>}
+
       {deletionNotice&&<p role="status">{deletionNotice}</p>}
       {choosing && <input className="product-input directory-search" type="search" aria-label={workspaceId ? "Search inventories" : "Search workspaces"} placeholder={workspaceId ? "Search inventories" : "Search workspaces"} value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} />}
-      {!mode && (error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
-      {loading ? <p className="workspace-muted" role="status">Loading...</p> : choosing ? <>
+      {!mode && (error || sessionError) && <div role="alert" className="notice-error">{error || sessionError} {sessionError ? <Link className="product-button" href={`/signin?redirect=${encodeURIComponent(workspaceId ? `/workspaces/${workspaceId}` : "/workspaces")}`}>Sign in</Link> : <button className="product-button" onClick={() => setReload((value) => value + 1)}>Retry</button>}</div>}
+      {sessionError ? null : loading && !page && !workspaces.length ? <p className="workspace-muted" role="status">{workspaceId ? "Loading inventories…" : "Loading workspaces…"}</p> : choosing ? <>
         <div className="context-card-grid">
           {workspaceId ? page?.inventories.map((inventory) => <div className="context-card context-inventory-card" key={inventory.inventory_id}>
             <Link className="context-card-link" href={directoryInventoryHref(inventory)}><strong>{inventory.name}</strong>{inventory.description && <span className="directory-description">{inventory.description}</span>}<span>{inventory.can_open === false ? "Access restricted" : typeof inventory.item_count === "number" ? `${inventory.item_count.toLocaleString()} items` : "Open inventory"}</span></Link>

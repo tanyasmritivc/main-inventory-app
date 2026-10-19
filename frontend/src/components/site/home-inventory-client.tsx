@@ -2,6 +2,7 @@
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
 
+import toolbarStyles from "./inventory-toolbar.module.css";
 import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
 import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
 import { useInventoryRouter } from "@/components/site/inventory-link";
@@ -987,7 +988,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find')}</h1>
+          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Items')}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
         {!selectedSpace && !viewingSharedSpace && canEdit && (
@@ -1003,9 +1004,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
             <button
               type="button"
               onClick={() => setCreateSpaceOpen(true)}
-              className="product-button primary"
+              className={`product-button${props.mode === "spaces" ? " primary" : ""}`}
             >
-              + New Space
+              New Space
             </button>
           </div>
         )}
@@ -1059,19 +1060,23 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
       {showInventoryTable ? (
         <div>
           {props.mode === 'inventory' && (
-            <div className="inventory-filter-row" aria-label="Filter inventory by category">
-              <button type="button" className={!categoryFilter ? 'is-active' : ''} onClick={() => setCategoryFilter('')}>All</button>
-              {categories.map((category) => <button type="button" className={categoryFilter === category ? 'is-active' : ''} key={category} onClick={() => setCategoryFilter(category)}>{category}</button>)}
+            <div className={toolbarStyles.filters}>
+              <label htmlFor="inventory-category">Category</label>
+              <select id="inventory-category" className="product-select" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}>
+                <option value="">All categories</option>
+                {categories.map(category => <option key={category} value={category}>{category}</option>)}
+              </select>
+              {categoryFilter && <button type="button" className="product-button" onClick={() => setCategoryFilter('')}>Clear filter</button>}
             </div>
           )}
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} {query.trim() ? 'matching' : ''} item{visibleItems.length === 1 ? '' : 's'}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid var(--light-line)' }}>
+          <div className={toolbarStyles.tableHeader}>
             {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
-            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
+            <div key={item.item_id} className={toolbarStyles.tableRow}>
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                 {item.image_url && <Image unoptimized width={42} height={42} src={privateImageSrc(item.image_url, accountId)} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
                 <div style={{ minWidth: 0 }}>
