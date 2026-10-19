@@ -74,12 +74,20 @@ def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email:
                   f'Or open {base}/join/access and enter code {code}. '
                   'Sign in with this email address. No access is granted until you accept. '
                   'This invitation expires in 7 days. If you did not expect it, you can decline or ignore it.'),
-            html=(f'<h1>Invitation to {html.escape(name)}</h1>'
-                  f'<p>{html.escape(scope.title())} access: {html.escape(role.title())}</p>'
-                  f'<p><a href="{html.escape(url, quote=True)}">Review invitation</a></p>'
-                  f'<p>Or enter code <strong>{code}</strong> at {html.escape(base)}/join/access.</p>'
-                  '<p>Sign in with this email address. You choose whether to accept. '
-                  'No access is granted until then. Expires in 7 days.</p>'),
+            html=(f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FindEZ invitation</title></head>
+<body style="margin:0;padding:0;width:100%;background:#f4f3ef;color:#24211d;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f4f3ef"><tr><td align="center" style="padding:32px 16px;">
+<!--[if mso]><table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:560px;"><tr><td style="padding:0 4px 24px;">
+<table role="presentation" border="0" cellspacing="0" cellpadding="0"><tr><td width="40"><img src="https://findez.ai/favicon.png" width="32" height="32" alt="" style="display:block;border:0;border-radius:7px;"></td><td style="font-size:23px;font-weight:700;letter-spacing:-1px;color:#24211d;">FindEZ</td></tr></table>
+</td></tr><tr><td bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e4e0d9;border-top:3px solid #bc4800;border-radius:12px;padding:30px 24px 8px;">
+<h1 style="margin:0 0 18px;color:#24211d;font-size:28px;font-weight:700;letter-spacing:-0.6px;line-height:1.25;overflow-wrap:break-word;">Invitation to {html.escape(name)}</h1>
+<p style="margin:0 0 22px;color:#55534f;font-size:16px;line-height:1.65;overflow-wrap:break-word;">{html.escape(scope.title())} access: {html.escape(role.title())}</p><table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:6px 0 28px;"><tr><td bgcolor="#bc4800" style="border-radius:8px;text-align:center;"><a href="{html.escape(url, quote=True)}" style="display:inline-block;padding:15px 24px;border:1px solid #bc4800;border-radius:8px;background:#bc4800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;line-height:1.4;text-decoration:none;text-align:center;mso-padding-alt:0;">Review invitation</a></td></tr></table><p style="margin:0 0 22px;color:#55534f;font-size:14px;line-height:1.65;overflow-wrap:break-word;">Or enter code <strong style="font-family:Consolas,Menlo,monospace;color:#24211d;">{code}</strong> at {html.escape(base)}/join/access.</p><p style="margin:0 0 22px;color:#55534f;font-size:14px;line-height:1.65;overflow-wrap:break-word;">Sign in with this email address. You choose whether to accept. No access is granted until then. Expires in 7 days.</p>
+</td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>
+"""),
             message_id=f"<access-invite-{invitation['invitation_id']}@findez.ai>",
         )
         sent = True

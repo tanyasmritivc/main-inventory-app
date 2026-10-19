@@ -1,3 +1,15 @@
+## October 19 email presentation refresh - deployed
+
+Lane `style/email-design-20261019` / PR133, runtime patch `ab9ba26`, is live.
+Five account templates and three sharing HTML bodies now use consistent FindEZ
+branding and responsive email-table layouts. Exact wording, links, placeholders,
+plain text, subjects and dynamic escaping are preserved. AST comparison verifies
+all Python logic outside the HTML is identical. No mobile or web page changes.
+Deployment preserved the current production API team-join fix and 426 unrelated
+runtime files; no database/configuration changes. Local tests, previews and all
+five CI gates passed (run39338571429).
+Details and CI receipt: `docs/plans/email-design-20261019.md`.
+
 ## October 19 cross-device email links - deployed
 
 Lane `fix/web-email-links-20261019` / PR132, runtime `6d34999`, is deployed.
