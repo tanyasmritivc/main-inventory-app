@@ -1,3 +1,11 @@
+## Keep a crawlable raster website favicon (2026-10-18)
+
+Use stable PNG/ICO website icon URLs with the existing approved app mark. Keep
+Apple-touch PNG and a raster public publisher logo aligned. SVG may remain for
+old links, but must not be the only advertised search icon. Verify actual MIME,
+dimensions, Googlebot-Image access and both public hostnames. Google controls its
+cached result icon; deployment and TestFlight uploads do not force replacement.
+
 ## Public search copy describes physical memory (2026-10-18)
 
 Keep the website title, search/social descriptions and App Store drafts aligned
