@@ -1,5 +1,6 @@
 "use client";
 import { privateImageSrc } from "@/lib/private-image";
+import { csvCell } from "@/lib/csv-export";
 
 import { activeInventory, assertInventory, canDeleteSpace, canEditInventory } from "@/lib/inventory-selection";
 import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
@@ -919,8 +920,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   function exportCsv(rows: InventoryItem[], filename: string) {
     const fields: Array<keyof InventoryItem> = ['name', 'category', 'subcategory', 'quantity', 'location', 'brand', 'part_number', 'barcode', 'purchase_source', 'notes', 'created_at'];
-    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => escape(row[field])).join(','))].join('\n');
+    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => csvCell(row[field])).join(','))].join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url; link.download = `${filename.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase() || 'findez-inventory'}.csv`; link.click();
