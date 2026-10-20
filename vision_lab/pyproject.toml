@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools==82.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "findez-vision-lab"
+version = "0.1.0"
+description = "Local dataset review and evaluation preparation for FindEZ"
+requires-python = ">=3.11"
+dependencies = ["Pillow==13.0.0"]
+
+[project.scripts]
+findez-vision = "findez_vision.cli:main"
+
+[tool.setuptools.package-data]
+findez_vision = ["web/*"]
+
+[tool.setuptools.packages.find]
+include = ["findez_vision*"]

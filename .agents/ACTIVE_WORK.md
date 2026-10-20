@@ -1,3 +1,22 @@
+## Vision Lab preparation - October 19 (local preparation complete, no deployment)
+
+Branch feat/vision-lab-local-20261019, isolated worktree findez-vision-lab-local.
+User requests local preparation before uncle-operated GPU changes, with beginner
+explanations of what and why. Explicitly NO deployment, production changes, GPU
+access/training, customer-data collection, or mobile changes. Implemented isolated
+Vision Lab: owned/synthetic image ingestion, polygon review, permission checks,
+split-leakage validation, offline evaluation/comparison, SAM train/validation
+export and read-only experiment preflight. 48 local tests and actual Chrome
+annotation save/reload/drawing checks passed. Guide, dataset contract, proposed
+production permission lifecycle and operator handoff are in vision_lab/.
+Tanya explicitly confirms the model identities in her plan; accept them.
+FIND source/configuration, immutable weight hashes and GPU environment/allocation
+remain operator inputs. No actual model accuracy or training results are claimed.
+Customer collection is designed, not implemented. Details: vision_lab/docs/VALIDATION.md.
+
+Source control and a local handoff archive are delivery artifacts only. Do not
+merge/deploy/promote or transfer data to the GPU until Tanya authorizes it.
+
 ## Organization agent management - October 19 (deployed)
 
 Scope: coordinated backend/web API-key UI, human approvals, documentation and connectors. User authorizes organization/inventory/Space/access management for external agents and inventory-bound Chat Space creation. Deletion requires explicit human confirmation; existing API keys retain their scopes. No mobile changes. The user explicitly approved migrations 062–066 after the fresh restore preserved 87 tables. Migrations 062–067 and API/web are deployed after explicit user approvals. Live HTTPS tests passed resource/item/member management, all four deletion types, wrong account/name/stale-preview denial, cancellation, revocation and cleanup. Migration 067 fixes PostgREST 14 retries of business conflicts. Runtime 305e3e0, follow-up a207eb7, PR134; final CI receipt is in the release report. Single implementation agent; see docs/plans/agent-management-20261019.md.

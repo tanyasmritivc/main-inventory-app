@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FindEZ Vision Lab</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body>
+<header><div class="brand"><span class="mark">F</span><div><strong>FindEZ Vision Lab</strong><span class="subtitle">Dataset review</span></div></div><span class="badge">Local preparation only</span></header>
+<main>
+<section class="intro"><div><h1>Teach with verified examples.</h1><p>Trace each visible object, check the label, then save your review.</p></div><p class="privacy">Images stay on this computer.<br>No model training or upload happens here.</p></section>
+<div id="notice" class="notice" role="status">Opening local dataset...</div>
+<div class="workspace">
+<aside class="samples"><h2>Images <span id="count"></span></h2><div id="samples"></div><div class="help"><strong>Why review?</strong><p>A prediction is a suggestion. Your corrected boundaries become the reference used to measure the model.</p></div></aside>
+<section class="editor" aria-label="Image annotation">
+<div class="toolbar"><div><h2 id="sample-title">Choose an image</h2><span id="sample-info"></span></div><button id="reload" class="quiet">Reload dataset</button></div>
+<div class="canvas-wrap"><canvas id="canvas" aria-label="Object boundary editor"></canvas></div>
+<p class="instructions">Click around one object's visible boundary. Finish the polygon to add it. Drag a saved point to adjust it.</p>
+<div class="tools"><button id="finish">Finish polygon</button><button id="undo" class="quiet">Undo point</button><button id="discard" class="quiet">Discard outline</button></div>
+<div class="help"><strong>Why separate objects?</strong> Two objects need two outlines, even when they touch. The evaluator checks whether the model separates them correctly. For holes or intricate masks, import a binary PNG through the dataset format.</div>
+</section>
+<aside class="details">
+<h2>Objects <span id="object-count"></span></h2><div id="objects"></div>
+<div id="fields" hidden>
+<label>Object name or category<input id="label" maxlength="200" placeholder="Example: motor"></label>
+<label>Verified identity <span class="optional">optional</span><input id="identity" maxlength="200" placeholder="Exact identity, or unknown"></label>
+<label>Visible text <span class="optional">optional</span><textarea id="ocr" maxlength="4000" placeholder="Transcribe exactly; leave empty if not annotated"></textarea></label>
+<button id="remove" class="danger">Remove selected object</button>
+</div>
+<div class="review">
+<label>Reviewer name<input id="reviewer" maxlength="200" placeholder="Who checked this annotation?"></label>
+<label class="check"><input id="checked" type="checkbox">I checked every visible object and corrected these labels.</label>
+<button id="save-draft" class="quiet wide">Save draft</button>
+<button id="verify" class="wide">Save as verified</button>
+<p>"Verified" records your review. It does not grant permission to train. Exports check the separate permission ledger.</p>
+</div>
+</aside>
+</div>
+<footer><span id="dataset-id"></span><span>Changes are saved only when you press Save. Ctrl/Cmd+S saves a draft.</span></footer>
+</main></body></html>

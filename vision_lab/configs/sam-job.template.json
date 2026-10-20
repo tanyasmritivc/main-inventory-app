@@ -1,0 +1,15 @@
+{
+  "mode": "sam_segmentation_experiment",
+  "production_access": false,
+  "model_license_reviewed": false,
+  "gpu_allocation_confirmed": false,
+  "environment_smoke_test_passed": false,
+  "upstream_checkout": null,
+  "upstream_commit": null,
+  "checkpoint": null,
+  "checkpoint_sha256": null,
+  "training_config": null,
+  "training_config_sha256": null,
+  "max_runtime_minutes": null,
+  "notes": "Operator fills verified facts. This template is intentionally blocked; plan never launches a job."
+}

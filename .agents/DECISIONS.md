@@ -1,3 +1,16 @@
+## Prepare vision learning locally before operator GPU work (2026-10-19)
+
+Tanya prohibits deployment until explicit authorization and confirms the models
+in her vision plan are exact. Keep Vision Lab isolated from app runtime. Start
+with owned/synthetic data, explicit local rights attestations, verified independent
+annotations and held-out evaluation. Preserve model-assisted label origin; human
+review alone does not resolve output-use restrictions. Exclude test data from
+training exports and never qualify a model using synthetic fixture scores.
+The uncle-operated GPU handoff must establish source/configuration, weight hashes,
+environment, capacity and an isolated baseline before a training recipe is run.
+Production consent/collection/revocation is a separate design milestone, not a
+capability of the local ledger. No automatic model promotion or deployment.
+
 ## Keep a crawlable raster website favicon (2026-10-18)
 
 Use stable PNG/ICO website icon URLs with the existing approved app mark. Keep

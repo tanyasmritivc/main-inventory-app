@@ -1,5 +1,21 @@
 # FindEZ test suite
 
+## Local Vision Lab
+
+Install the isolated environment in `vision_lab/README.md`, then run:
+
+```bash
+vision_lab/.venv/bin/python -m unittest discover -s vision_lab/tests
+node --check vision_lab/findez_vision/web/app.js
+```
+
+These tests use generated images and temporary loopback HTTP servers. They need
+no GPU, production API, database, customer images or credentials. The separate
+`vision-lab.yml` CI workflow tests Python 3.11 and 3.14 on Linux. Manual desktop
+review steps and limitations are in `vision_lab/docs/VALIDATION.md`.
+Do not treat synthetic scores as model benchmarks or run training/deployment as
+part of these checks.
+
 ## Shared catalog write permissions
 
 Run the backend suite and the PostgreSQL fixture before publishing migration 053.
