@@ -45,8 +45,8 @@ test("organization header uses the same menu and rename keeps the current name",
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 
-test("nonowners and Personal have no organization actions", async () => {
-  jest.mocked(accountRequest).mockResolvedValue({ organizations: [{ ...org, role: "admin", owner_user_id: "someone-else" }] } as never);
+test("members and Personal have no organization actions", async () => {
+  jest.mocked(accountRequest).mockResolvedValue({ organizations: [{ ...org, role: "member", owner_user_id: "someone-else" }] } as never);
   render(<OrganizationDirectory />);
   await screen.findByRole("link", { name: /Acme/ });
   expect(screen.getByRole("link", { name: /Personal/ })).toBeTruthy();
@@ -128,4 +128,12 @@ test("pending deletion cannot duplicate or apply a response after unmount", asyn
   view.unmount();
   await act(async () => { resolve({ deleted: true, organization_id: "acme" } as never); });
   expect(onDeleted).not.toHaveBeenCalled();
+});
+
+test("organization Admin can rename but cannot delete the organization", async () => {
+ jest.mocked(accountRequest).mockResolvedValue({organizations:[{...org,role:"admin",owner_user_id:"another"}]} as never);
+ render(<OrganizationDirectory/>);
+ await userEvent.click(await screen.findByRole("button", {name:"Organization actions for Acme"}));
+ expect(await screen.findByRole("menuitem",{name:"Rename"})).toBeTruthy();
+ expect(screen.queryByRole("menuitem",{name:"Delete"})).toBeNull();
 });

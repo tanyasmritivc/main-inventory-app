@@ -120,3 +120,11 @@ test("invalid link offers no opening or account mutation", async () => {
   expect(await screen.findByRole("alert")).toBeTruthy();
   expect(previewInvitation).not.toHaveBeenCalled(); expect(updateUser).not.toHaveBeenCalled();
 });
+
+test("invitation preview identifies the inviter and their saved photo",async()=>{
+ jest.mocked(previewInvitation).mockResolvedValue({kind:"space",name:"Garage",target_id:"space-123",permission:"view",already_joined:false,inviter:{user_id:"sender",display_name:"Grace",avatar_url:"https://api.test/grace.png"}});
+ render(<JoinInvitationClient kind="space" code="ABC123"/>);
+ await screen.findByText(/Invited by Grace/);
+ expect(document.querySelector('img[src="https://api.test/grace.png"]')).toBeTruthy();
+ expect(joinShare).not.toHaveBeenCalled();
+});

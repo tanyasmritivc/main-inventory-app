@@ -199,6 +199,8 @@ export async function searchItems(params: { token: string; query: string }) {
 export type InvitationPreview = {
   kind: "space" | "team"; name: string; target_id: string;
   permission: string; already_joined: boolean;
+  inviter?: {user_id: string; display_name: string; avatar_url?: string; avatar_color?: string};
+  inviter_label?: string;
 };
 export function previewInvitation({ token, kind, code }: { token: string; kind: "space" | "team"; code: string }) {
   return apiFetch<InvitationPreview>("/invitations/preview", { method: "POST", token, body: { kind, code } });
@@ -886,6 +888,7 @@ export type TeamBoardTask = {
   status: 'todo' | 'doing' | 'done';
   priority: 'normal' | 'high' | 'urgent';
   assigned_to?: string | null;
+  assigned_by?: string | null;
   due_at?: string | null;
   created_by?: string;
   created_at?: string;

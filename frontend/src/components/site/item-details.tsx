@@ -1,4 +1,10 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
+import { useApiSession } from "@/lib/use-api-session";
+import { accountRequest } from "@/lib/account-request";
+import { photoPath } from "@/lib/item-photos";
+import { purchaseSource, purchaseLink } from "@/lib/purchase-source";
+import { userFacingError } from "@/lib/user-facing-error";
 import { type InventoryItem, itemDisplayName } from "@/lib/api";
 import { type PhotoContext } from "@/lib/item-photos";
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
@@ -7,13 +13,49 @@ export function ItemDetails({
   context,
   canEdit,
   onChanged,
+  onEditingChange,
 }: {
   item: InventoryItem;
   context?: PhotoContext;
   canEdit: boolean;
   onChanged?: (item: InventoryItem) => void;
+  onEditingChange?: (editing: boolean) => void;
 }) {
+  const { accountId } = useApiSession();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const owner = useRef(accountId);
+  const generation = useRef(0);
+  const pending = useRef(false);
+  useEffect(() => { const epoch = ++generation.current; pending.current = false; owner.current = accountId; setBusy(false); setEditing(null); setError(""); return () => { generation.current = epoch + 1; owner.current = null; }; }, [accountId, item.item_id]);
+  useEffect(() => { onEditingChange?.(editing !== null); return () => onEditingChange?.(false); }, [editing, onEditingChange]);
+  const keys: Record<string, string> = {Name: "name", Category: "category", Location: "location", Quantity: "quantity", Brand: "brand", Barcode: "barcode", "Part number": "part_number", Subcategory: "subcategory", Notes: "notes", Tags: "tags", "Where to buy": "purchase_source"};
+  if (context?.kind === "shared" || context?.kind === "team") delete keys.Location;
+  async function save(field: string) {
+    if (!accountId || !canEdit || busy || pending.current) return;
+    const account = accountId, ticket = generation.current, value = draft.trim();
+    if ((field === "name" || field === "category") && !value) { setError("Enter a value."); return; }
+    if (field === "quantity" && (!/^\d+$/.test(value) || Number(value) > 100000)) { setError("Enter a whole number from 0 to 100000."); return; }
+    pending.current = true; setBusy(true); setError("");
+    try {
+      const updates = {[field]: field === "quantity" ? Number(value) : field === "tags" ? value.split(",").map(v => v.trim()).filter(Boolean) : value};
+      const path = context && context.kind !== "personal" ? photoPath(item.item_id, context).replace(/\/photos$/, "") : "/update_item";
+      const result = await accountRequest<{item: InventoryItem}>(account, path, { method: "PATCH", body: context?.kind === "shared" ? updates : {item_id: item.item_id, ...updates} });
+      if (owner.current !== account || generation.current !== ticket) return;
+      const savedValue = result?.item?.[field as keyof InventoryItem];
+      const confirmedValue = field === "category" || field === "location"
+        ? typeof savedValue === "string" && (field === "location" || savedValue.length > 0)
+        : JSON.stringify(savedValue) === JSON.stringify(updates[field]);
+      if (!result?.item || result.item.item_id !== item.item_id || !confirmedValue) throw new Error("The saved change could not be confirmed. Refresh before retrying.");
+      onChanged?.(result.item); setEditing(null);
+    } catch (reason) { if (owner.current === account && generation.current === ticket) setError(userFacingError(reason, "Could not save. Your changes are still here.")); }
+    finally { if (owner.current === account && generation.current === ticket) { pending.current = false; setBusy(false); } }
+  }
+  const source = purchaseSource(item);
   const fields = [
+    ["Name", item.name],
     ["Category", item.category],
     ["Location", item.location || "Unsorted"],
     ["Quantity", String(item.quantity)],
@@ -30,7 +72,7 @@ export function ItemDetails({
     ],
     ["Notes", item.notes],
     ["Tags", item.tags?.join(", ")],
-    ["Where to buy", item.purchase_source],
+    ["Where to buy", source],
   ];
   return (
     <div>
@@ -44,7 +86,7 @@ export function ItemDetails({
         }}
       >
         {fields
-          .filter(([, value]) => value)
+          .filter(([label, value]) => value || (canEdit && label && keys[label]))
           .map(([label, value]) => (
             <div key={label}>
               <dt className="workspace-muted" style={{ fontSize: 11 }}>
@@ -58,7 +100,11 @@ export function ItemDetails({
                   whiteSpace: "pre-wrap",
                 }}
               >
-                {value}
+                {editing === label ? <form onSubmit={event => { event.preventDefault(); void save(keys[label!]); }}>
+                  <input autoFocus aria-label={label!} className="workspace-input" value={draft} disabled={busy} type={label === "Quantity" ? "number" : "text"} min={label === "Quantity" ? 0 : undefined} step={label === "Quantity" ? 1 : undefined} maxLength={label === "Notes" ? 2000 : label === "Tags" ? 1000 : label === "Name" || label === "Location" || label === "Where to buy" ? 200 : 100} onChange={event => setDraft(event.target.value)} />
+                  {error && <p role="alert">{error}</p>}
+                  <div className="workspace-actions"><button className="workspace-button" disabled={busy} type="submit">{busy ? "Saving..." : "Save"}</button><button className="workspace-button" disabled={busy} type="button" onClick={() => { setEditing(null); setError(""); }}>Cancel</button></div>
+                </form> : canEdit && label && keys[label] ? <button type="button" aria-label={`Edit ${label}`} disabled={editing !== null} style={{border: 0, padding: 0, background: "none", color: "inherit", textAlign: "left", font: "inherit", cursor: "text", whiteSpace: "pre-wrap"}} onClick={() => { setEditing(label); setDraft(value || ""); setError(""); }}>{value || "Not set"}</button> : label === "Where to buy" && value && purchaseLink(value) ? <a href={purchaseLink(value)!} target="_blank" rel="noopener noreferrer">{value}</a> : value}
               </dd>
             </div>
           ))}

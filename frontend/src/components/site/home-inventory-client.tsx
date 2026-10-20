@@ -1,4 +1,5 @@
 "use client";
+import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
 
@@ -201,7 +202,7 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
     },
     { label: 'Notes', value: item.notes },
     { label: 'Tags', value: tags.length ? tags.join(', ') : null },
-    { label: 'Where to buy', value: item.purchase_source },
+    { label: 'Where to buy', value: purchaseSource(item) },
   ];
 }
 
@@ -233,6 +234,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const { accountId } = useApiSession();
   const restock = useRestock(accountId);
   const { adopt: adoptRestock } = restock;
+  const [detailEditing, setDetailEditing] = useState(false);
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
@@ -880,7 +882,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
+    if (spaceItems.some(i => purchaseSource(i))) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -963,7 +965,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
+    if (items.some(i => purchaseSource(i))) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -1261,7 +1263,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           {item.notes ?? '—'}
                         </div>
                       )
-                      const value = item[col.field]
+                      const value = col.field === 'purchase_source' ? purchaseSource(item) : item[col.field]
                       return (
                         <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
@@ -1276,28 +1278,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
-                      <ItemPhotoGallery itemId={item.item_id} context={{ kind: "shared", shareId: viewingSharedSpace.shareId }} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/>
-                      {itemDetailFields(item)
-                        .filter(f => f.value)
-                        .map(f => (
-                          <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
-                              {f.label}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
-                              {f.value}
-                            </div>
-                          </div>
-                        ))
-                      }
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
-                        {viewingSharedSpace?.permission === 'edit' && (
-                          <button
-                            onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }}
-                            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                            Edit item
-                          </button>
-                        )}
                         <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
@@ -1451,7 +1433,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                           {item.notes ?? '—'}
                         </div>
                       )
-                      const value = (item as unknown as Record<string, unknown>)[col.field]
+                      const value = col.field === 'purchase_source' ? purchaseSource(item) : (item as unknown as Record<string, unknown>)[col.field]
                       return (
                         <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
@@ -1473,20 +1455,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
-                      <ItemPhotoGallery itemId={item.item_id} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
-                      {itemDetailFields(item)
-                        .filter(f => f.value)
-                        .map(f => (
-                          <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
-                              {f.label}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
-                              {f.value}
-                            </div>
-                          </div>
-                        ))
-                      }
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails item={item} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
                         <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
@@ -1866,7 +1835,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

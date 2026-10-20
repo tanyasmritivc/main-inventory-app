@@ -9,6 +9,7 @@ export type AccessInvitation = {
   role: string;
   recipient_email?: string;
   invited_by_name?: string;
+  inviter?: {user_id: string; display_name: string; avatar_url?: string; avatar_color?: string};
   status: "pending" | "accepted" | "declined" | "cancelled" | "expired";
   expires_at: string;
   created_at: string;

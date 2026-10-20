@@ -3,6 +3,7 @@ export type InventoryWorkspace = {
   owner_user_id?: string;
   organization_id?: string | null;
   organization_name?: string;
+  organization_role?: "owner" | "admin" | "member" | null;
   name: string;
   kind: "personal" | "team";
   team_id: string | null;
@@ -58,4 +59,11 @@ export function inventoryHref(href: string, selected = selection): string {
   if (!isInventoryPage(url.pathname)) return href;
   url.searchParams.set("inventory", selected.inventory_id);
   return url.pathname + url.search + url.hash;
+}
+
+export function canRenameWorkspace(workspace: InventoryWorkspace) {
+  return workspace.kind === "team" && ["owner", "mentor", "member"].includes(workspace.role);
+}
+export function canAdministerWorkspace(workspace: InventoryWorkspace, accountId: string) {
+  return workspace.owner_user_id === accountId || ["owner", "admin"].includes(workspace.organization_role || "");
 }

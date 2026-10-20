@@ -2,6 +2,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { ItemDetails } from "@/components/site/item-details";
 import { type InventoryItem } from "@/lib/api";
+jest.mock("@/lib/use-api-session", () => ({useApiSession: () => ({accountId:"test"})}));
 jest.mock("@/components/site/item-photo-gallery", () => ({ ItemPhotoGallery: () => null }));
 
 test("saved import details retain exact labels, duplicate fields and structured values separately from live stock", () => {
