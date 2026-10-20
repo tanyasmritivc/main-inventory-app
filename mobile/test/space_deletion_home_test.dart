@@ -64,12 +64,36 @@ class _SpaceApi extends ApiClient {
   }
 
   @override
-  Future<bool> deleteSpace({required String spaceId}) async {
-    expect(spaceId, 'robot-room');
+  Future<Map<String, dynamic>> collaboration(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? query,
+  }) async {
+    expect(path, '/resource-removal/space/robot-room');
+    if (method == 'GET') {
+      return {
+        'kind': 'space',
+        'id': 'robot-room',
+        'name': 'Robot Room',
+        'items': 1,
+        'spaces': 0,
+        'inventories': 0,
+        'workspaces': 0,
+        'can_move': false,
+        'destinations': [],
+      };
+    }
     deletions++;
-    if (rejectDelete) return false;
+    if (rejectDelete) return {'deleted': false};
     deleted = true;
-    return true;
+    return {
+      'kind': 'space',
+      'id': 'robot-room',
+      'action': 'delete',
+      'deleted': true,
+      'moved': false,
+    };
   }
 
   @override
@@ -146,10 +170,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete Space'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('pending identifications'), findsOneWidget);
-    expect(find.textContaining('"Robot Room"'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.tap(find.byType(CheckboxListTile));
+    await tester.enterText(find.byType(TextFormField), 'Robot Room');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete space'));
     await tester.pumpAndSettle();
+    if (find.byType(AlertDialog).evaluate().isNotEmpty) {
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.byType(NavigationDestination).at(0));
     await tester.pumpAndSettle();
   }

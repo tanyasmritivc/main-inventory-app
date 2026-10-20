@@ -1,3 +1,14 @@
+## October 19 — explicit removal choices and protected Owner
+
+The user confirmed Admins cannot remove the organization Owner. Owner/Admin
+removal of other members automatically revokes descendant assignments; owned
+organization workspaces pass to the designated Owner. Removal confirmations offer
+keeping/moving descendants or deleting together instead of requiring empty
+containers. Existing owners and IDs are preserved during moves; destination
+permissions apply and old sharing is revoked. Organization deletion remains
+Owner-only; Viewers remain read-only. No unrelated Dashboard/layout changes.
+Do not use the founder account for QA; use isolated synthetic identities.
+
 ## Session recovery and full item photos (October 19)
 
 Expired access tokens must refresh without treating ordinary app inactivity as

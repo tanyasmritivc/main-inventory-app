@@ -1,3 +1,4 @@
+import '../workspaces/resource_removal.dart';
 import 'package:mobile/core/private_image.dart';
 import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/glass_control.dart';
@@ -3477,68 +3478,22 @@ class _InventoryPageState extends State<InventoryPage>
       return;
     }
     final owner = Supabase.instance.client.auth.currentUser?.id;
-    final spaceData = _spaces.firstWhere(
-      (s) => s['id'] == spaceId,
-      orElse: () => const {},
+    final changed = await confirmResourceRemoval(
+      context,
+      widget.api,
+      kind: 'space',
+      id: spaceId,
+      name: loc,
     );
-    final itemCount = (spaceData['item_count'] as num?)?.toInt() ?? 0;
-    final confirm = await showDialog<bool>(
-      useRootNavigator: false,
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppTheme.surface2(context),
-        title: AppText(
-          'Delete Space?',
-          style: TextStyle(color: AppTheme.foreground(context, Colors.white)),
-        ),
-        content: AppText(
-          itemCount > 0
-              ? 'The Space "$loc", its $itemCount saved item(s), and any pending identifications will be permanently deleted.'
-              : 'The Space "$loc" and any pending identifications will be permanently deleted.',
-          style: TextStyle(
-            color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const AppText('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: AppText(
-              'Delete',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0xFFFF453A)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    if (!mounted || !context.mounted) return;
-    if (Supabase.instance.client.auth.currentUser?.id != owner) return;
-    try {
-      final deleted = await widget.api.deleteSpace(spaceId: spaceId);
-      if (!deleted) throw StateError('Space deletion was not confirmed');
-      if (!mounted || Supabase.instance.client.auth.currentUser?.id != owner) {
-        return;
-      }
-      _itemsReadGeneration++;
-      _itemsLoad = null;
-      InventoryCache.removeSpace(spaceId, contextKey: widget.api.cacheKey);
-      widget.onSpaceDeleted?.call(spaceId);
-    } catch (e) {
-      if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: AppText('Couldn’t delete the space. Try again.'),
-          ),
-        );
-      }
+    if (!changed ||
+        !mounted ||
+        Supabase.instance.client.auth.currentUser?.id != owner) {
       return;
     }
+    _itemsReadGeneration++;
+    _itemsLoad = null;
+    InventoryCache.removeSpace(spaceId, contextKey: widget.api.cacheKey);
+    widget.onSpaceDeleted?.call(spaceId);
     if (mounted) {
       await _loadSpaces();
       await _loadItems();

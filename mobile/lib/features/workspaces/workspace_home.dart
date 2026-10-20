@@ -328,6 +328,7 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
         level: HierarchyLevel.organization,
         id: id,
         name: session.organizationName,
+        onOrganizationLeft: (_) => session.selectOrganization(null),
         onOpenWorkspace: (workspace) async {
           Navigator.of(context).pop();
           await session.selectOrganization(
