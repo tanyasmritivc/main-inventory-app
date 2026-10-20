@@ -31,3 +31,12 @@ test("saved import details retain exact labels, duplicate fields and structured 
   expect(container.querySelector("script")).toBeNull();
   expect(screen.getByText("7")).toBeTruthy();
 });
+
+ test("expanded rows show fields without repeating the item heading", () => {
+  const item: InventoryItem = { item_id: "test", name: "Bolt", category: "Hardware", quantity: 7, location: "Cabinet", created_at: "2026-10-14" };
+  const {rerender} = render(<ItemDetails item={item} canEdit={false} showTitle={false} />);
+  expect(screen.queryByRole("heading", {name:"Bolt"})).toBeNull();
+  expect(screen.getByText("Quantity")).toBeTruthy();
+  rerender(<ItemDetails item={item} canEdit={false} />);
+  expect(screen.getByRole("heading", {name:"Bolt"})).toBeTruthy();
+});

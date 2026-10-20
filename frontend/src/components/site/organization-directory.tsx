@@ -20,15 +20,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import styles from "./directory-design.module.css";
 import { WorkspaceManagementActions } from "./workspace-management-actions";
 import { TransferOwnership } from "./transfer-ownership";
+import { OrganizationLeaveDialog } from "./organization-leave-dialog";
 type Org = { organization_id: string; name: string; role: string; owner_user_id?: string };
 type Overview = { attachable?: { team_id: string; name: string }[]; organization: Org; workspaces: { team_id: string; name: string; owner_user_id?: string; can_open?: boolean }[]; members: (MemberIdentity & { display_name: string; role: string })[] };
-export function OrganizationActions({ organization, onRename, onDelete, disabled, canDelete=true }: {
- organization: OrganizationTarget; onRename: () => void; onDelete: () => void; disabled: boolean; canDelete?: boolean;
+export function OrganizationActions({ organization, onRename, onDelete, disabled, canDelete=true, canRename=true, onLeave }: {
+ organization: OrganizationTarget; onRename: () => void; onDelete: () => void; disabled: boolean; canDelete?: boolean; canRename?: boolean; onLeave?: () => void;
 }) {
  const openingDialog = useRef(false);
  return <div className="organization-actions"><DropdownMenu modal={false}>
   <DropdownMenuTrigger asChild><button type="button" className="organization-actions-trigger" aria-label={`Organization actions for ${organization.name}`} disabled={disabled}><MoreHorizontal size={19} aria-hidden="true" /></button></DropdownMenuTrigger>
-  <DropdownMenuContent align="end" className="organization-actions-menu" onCloseAutoFocus={(event) => { if (openingDialog.current) { event.preventDefault(); openingDialog.current = false; } }}><DropdownMenuItem onSelect={() => { openingDialog.current = true; onRename(); }}>Rename</DropdownMenuItem>{canDelete && <><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onSelect={() => { openingDialog.current = true; onDelete(); }}>Delete</DropdownMenuItem></>}</DropdownMenuContent>
+  <DropdownMenuContent align="end" className="organization-actions-menu" onCloseAutoFocus={(event) => { if (openingDialog.current) { event.preventDefault(); openingDialog.current = false; } }}>{canRename && <DropdownMenuItem onSelect={() => { openingDialog.current = true; onRename(); }}>Rename</DropdownMenuItem>}{onLeave && <DropdownMenuItem onSelect={() => { openingDialog.current = true; onLeave(); }}>Leave organization</DropdownMenuItem>}{canDelete && <><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onSelect={() => { openingDialog.current = true; onDelete(); }}>Delete</DropdownMenuItem></>}</DropdownMenuContent>
  </DropdownMenu></div>;
 }
 export function OrganizationDirectory({ organizationId, view = "workspaces" }: { organizationId?: string; view?: OrganizationView }) {
@@ -39,6 +40,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  const { accountId, error: sessionError } = useApiSession(), router = useRouter();
  const [organizations, setOrganizations] = useState<Org[]>([]), [overview, setOverview] = useState<Overview | null>(null);
  const [rename, setRename] = useState<RenameTarget | null>(null);
+ const [leaving, setLeaving] = useState<Org | null>(null);
  const [deleting, setDeleting] = useState<OrganizationTarget | null>(null);
  const [query, setQuery] = useState("");
  const [mode, setMode] = useState<"organization" | "workspace" | "member" | "attach" | null>(null);
@@ -50,7 +52,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  useLayoutEffect(() => { requireInventoryContext(false); selectInventory(null); }, []);
  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
  const base = organizationId ? `/organizations/${organizationId}` : "/organizations";
-  usePermissionRefresh(() => setRevision(v => v + 1), busy || !!mode);
+  usePermissionRefresh(() => setRevision(v => v + 1), busy || !!mode || !!leaving);
  useEffect(() => {
   if (!accountId) return;
   let active = true;
@@ -76,7 +78,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
   finally { if (live.current) setBusy(false); }
  }
  async function removeMember(id: string) {
-  if (!accountId || busy) return; setBusy(true); setError("");
+  if (!accountId || busy || !window.confirm("Remove this member and their access to every workspace and inventory in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.")) return; setBusy(true); setError("");
   try { await accountRequest(accountId, `${base}/members/${id}`, { method: "DELETE" }); if (live.current) setRevision((v) => v + 1); }
   catch (reason) { if (live.current) setError(userFacingError(reason, "The member could not be removed.")); }
   finally { if (live.current) setBusy(false); }
@@ -93,7 +95,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
  const context = organizationId ? organizationNavigation(organizationId, overview?.organization.name || "Organization", view) : undefined;
  return <div className={styles.shell}><AppShell context={context}><section className={`product-page context-directory ${styles.flow}`}>
   <header className="product-page-header"><div><span className={styles.eyebrow}>{organizationId ? "Organization" : "Your places"}</span><h1>{organizationId ? people ? "People" : overview?.organization.name || "Organization" : "Organizations"}</h1></div><div className="product-actions">
-   {accountId && overview && ["owner", "admin"].includes(overview.organization.role) && <OrganizationActions canDelete={overview.organization.owner_user_id === accountId} organization={overview.organization} disabled={busy} onRename={() => setRename({ kind: "organization", id: overview.organization.organization_id, name: overview.organization.name })} onDelete={() => setDeleting(overview.organization)} />}
+   {accountId && overview && <OrganizationActions canRename={["owner", "admin"].includes(overview.organization.role)} onLeave={()=>setLeaving(overview.organization)} canDelete={overview.organization.owner_user_id === accountId} organization={overview.organization} disabled={busy} onRename={() => setRename({ kind: "organization", id: overview.organization.organization_id, name: overview.organization.name })} onDelete={() => setDeleting(overview.organization)} />}
    {organizationId && overview && ["owner", "admin"].includes(overview.organization.role) && <TransferOwnership scope="organization" resourceId={organizationId} name={overview.organization.name} onTransferred={()=>setRevision(v=>v+1)} />}
    {!organizationId && <button className="product-button" onClick={() => open("organization")}>New organization</button>}
    {manager && <>{!people && !!overview?.attachable?.length && <button className="product-button" onClick={() => open("attach")}>Add existing workspace</button>}<button className="product-button" onClick={() => open(people ? "member" : "workspace")}>{people ? "Invite member" : "New workspace"}</button></>}
@@ -109,7 +111,7 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
    <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}>{ws.can_open === false ? <div className="context-card-link"><strong>{ws.name}</strong><span>Not assigned to this workspace</span></div> : <Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><strong>{ws.name}</strong><span>Workspace</span></Link>}{accountId && (ws.owner_user_id === accountId || ["owner", "admin"].includes(overview.organization.role)) && <div className={styles.actions}><WorkspaceManagementActions id={ws.team_id} name={ws.name} accountId={accountId} onRenamed={()=>setRevision(v=>v+1)} onDeleted={()=>setRevision(v=>v+1)} /></div>}</div>)}</div>
    {!overview?.workspaces.some((ws) => matches(ws.name)) && <div className={styles.empty}><h2>{query ? "No matching workspaces" : "No workspaces yet"}</h2><p>{query ? "Try another name." : manager ? "Create a workspace for your team or project." : "You have not been assigned to a workspace."}</p>{manager && !query && <button className="product-button" onClick={()=>open("workspace")}>Create workspace</button>}</div>}
   </> : <>
-   <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && ["owner", "admin"].includes(org.role) && <OrganizationActions canDelete={org.owner_user_id === accountId} organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>
+   <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && <OrganizationActions canRename={["owner", "admin"].includes(org.role)} onLeave={()=>setLeaving(org)} canDelete={org.owner_user_id === accountId} organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>
    {query && !matches("Personal") && !organizations.some((org) => matches(org.name)) && <p className="workspace-muted">No matching organizations.</p>}
   </>}
   {accountId && rename && <RenameResourceDialog key={`${rename.kind}:${rename.id}`} accountId={accountId} target={rename} onClose={() => setRename(null)} onSaved={(savedName) => {
@@ -118,6 +120,12 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
     setOverview((current) => current ? {...current,organization:{...current.organization,name:savedName}} : current);
    } else setOverview((current) => current ? {...current,workspaces:current.workspaces.map((ws) => ws.team_id === rename.id ? {...ws,name:savedName} : ws)} : current);
    setRename(null); setRevision((value) => value + 1);
+  }} />}
+  {accountId && leaving && <OrganizationLeaveDialog key={leaving.organization_id} accountId={accountId} organization={leaving} isOwner={leaving.owner_user_id===accountId} onClose={()=>setLeaving(null)} onLeft={()=>{
+   selectInventory(null);
+   setOrganizations(rows=>rows.filter(org=>org.organization_id!==leaving.organization_id));
+   setLeaving(null); window.dispatchEvent(new Event("findez-permissions-changed"));
+   if(organizationId) {setOverview(null);router.push("/organizations");} else setRevision(v=>v+1);
   }} />}
   {accountId && deleting && <OrganizationDeleteDialog key={deleting.organization_id} accountId={accountId} organization={deleting} onClose={() => setDeleting(null)} onDeleted={() => {
    setOrganizations((rows) => rows.filter((org) => org.organization_id !== deleting.organization_id));

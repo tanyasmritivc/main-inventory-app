@@ -67,3 +67,7 @@ export function canRenameWorkspace(workspace: InventoryWorkspace) {
 export function canAdministerWorkspace(workspace: InventoryWorkspace, accountId: string) {
   return workspace.owner_user_id === accountId || ["owner", "admin"].includes(workspace.organization_role || "");
 }
+
+export function canDeleteWorkspace(workspace: InventoryWorkspace, accountId: string) {
+  return workspace.kind === "team" && (["owner", "mentor"].includes(workspace.role) || canAdministerWorkspace(workspace, accountId));
+}
