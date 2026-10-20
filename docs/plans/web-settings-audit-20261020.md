@@ -1,6 +1,6 @@
 # Web settings and access audit - October 19, 2026
 
-Status: implementation and verification prepared; not yet published.
+Status: web fixes published. Shared Admin migration072 awaits explicit approval.
 
 ## Behavior
 
@@ -39,3 +39,16 @@ Status: implementation and verification prepared; not yet published.
 No founder account used for testing. No customer test writes. Existing production
 agent-management overlays must be preserved during release. Unauthenticated links
 and redirect checks do not prove real inbox delivery or every customer journey.
+
+## Delivery receipt
+
+- Source `2afb817`, PR142. All five CI gates passed (run39380122467).
+- 493 web tests/62 suites with coverage; types, changed-file lint and preserved
+  production-configured build passed.
+- 43 candidate route/auth checks and 30 Chromium component fixture cases passed.
+- Web activated at /home/ubuntu/findez-web-settings-20261020/candidate/frontend;
+  22 reviewed files changed, 267 unrelated runtime files preserved. Both public
+  hosts verified after activation. No database/native changes in this release.
+- Admin migration072 is ready in PR143 (455f97d), all CI gates passed
+  (run39380135827). Read-only live preflight passed. Approval is still pending;
+  do not report the Admin denial fixed in production until that migration applies.

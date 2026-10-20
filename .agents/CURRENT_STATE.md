@@ -1,17 +1,18 @@
-## October 19 - web settings and access audit prepared
+## October 19 - web settings audit published
 
-Branch `fix/web-organization-settings-audit-20261020` repairs Organization People
-row sizing, adds visible Organization Settings and actionable Workspace Settings,
-and introduces server-verified email status/resend plus a dismissible unverified
-account prompt. Workspace panels load only relevant services, surface failed
-invitations/files, and clear stale controls after denied refresh. Permission-change
-events refresh mounted access views. Workspace API calls retain the initiating
-credential rather than adopting another signed-in account.
+Web runtime `2afb817` (PR142) is live at
+`/home/ubuntu/findez-web-settings-20261020/candidate/frontend`. It changes 22
+reviewed files and preserves 267 unrelated runtime files, including the live agent
+management overlays. Both public hosts pass post-activation checks. 493 tests/62
+suites with coverage, types, scoped lint, production build, 30 light/dark browser
+scenarios, 43 route/auth checks and all five CI gates pass (run39380122467).
+Isolated Auth email confirmation/resend/recovery tests pass; no real email or
+customer test writes. Mobile and Dashboard layouts are unchanged.
 
-No mobile, customer Dashboard or landing layout changes. Shared Admin directory
-fix is migration 072 in the separate backend lane; user wants that fix on both
-clients. Production DB activation awaits explicit approval. See
-`docs/plans/web-settings-audit-20261020.md` for checks and scope limits.
+Organization Admin directory migration072 (PR143, CI run39380135827 green)
+remains prepared, NOT applied, pending explicit authorization. This shared fix is
+required for the reported Admin denial on both web and mobile; no new binary is
+needed. See `docs/plans/web-settings-audit-20261020.md`.
 
 ## October 19 — organization leave/removal update published
 
