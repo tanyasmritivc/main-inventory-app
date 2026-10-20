@@ -13,7 +13,10 @@ isolated storage. The excluded founder account is not used.
   These panels now scroll within their existing viewport.
 - Embedded Chat could resize twice for the keyboard. MainShell now owns that
   resize. At large text with the keyboard open, New chat becomes a labeled icon
-  so Back, the conversation and composer retain space.
+  and the composer uses one visible input line so Back and the conversation
+  retain space. Normal-size editing keeps its existing multiline composer.
+- Fallback avatar initials could be clipped by their circle at large text.
+  The initial scales down to fit its avatar without reducing surrounding text.
 
 The Dashboard layout, permissions, backend contracts and production data are
 unchanged. Native test corrections use proportional swipe distance, explicitly
@@ -44,7 +47,7 @@ production build. The production target remains `lib/main.dart`.
 
 ## Cross-stack checks completed
 
-- Full Flutter suite: 694 tests pass; the one normally skipped compiled-config
+- Full Flutter suite: 696 tests pass; the one normally skipped compiled-config
   test passes separately with production defines. Flutter analysis is clean.
 - Current backend lane: 1,145 Python tests pass.
 - Current web source branch: 493 tests and TypeScript pass.
@@ -65,8 +68,9 @@ product behavior to satisfy the stale tests.
 
 ## Remaining release gates
 
-Final mobile/native results, CI and signed build delivery are recorded below
-when completed. Simulator tests cannot establish real camera/barcode accuracy,
+The 159-case native flow suite passes on iPhone 16e/iOS 26.2. After the avatar
+follow-up, four targeted native light/dark checks pass. Final visual follow-up,
+CI and signed build delivery are recorded below when completed. Simulator tests cannot establish real camera/barcode accuracy,
 microphone recording, actual email/OAuth links, background APNs delivery,
 overnight session retention, provider capacity or spoken VoiceOver behavior.
 These remain physical-device/provider acceptance checks.

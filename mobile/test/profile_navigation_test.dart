@@ -418,7 +418,11 @@ void main() {
               .selectedIndex,
           index,
         );
-        await releaseAuditCapture?.call('tab-${brightness.name}-$index');
+        if (releaseAuditCapture != null) {
+          // Paint the page fade's final frame; Capture's shimmer never settles.
+          await tester.pump(const Duration(milliseconds: 300));
+          await releaseAuditCapture!('tab-${brightness.name}-$index');
+        }
       }
       await tester.tap(find.byType(NavigationDestination).at(0));
       await tester.pump();

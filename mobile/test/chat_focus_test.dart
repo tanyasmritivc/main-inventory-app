@@ -389,6 +389,18 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
         expect(find.byType(TextField).hitTestable(), findsOneWidget);
+        expect(tester.widget<TextField>(find.byType(TextField)).maxLines, 1);
+        expect(
+          tester
+              .getSize(
+                find.descendant(
+                  of: find.byType(ChatPage),
+                  matching: find.byType(ListView),
+                ),
+              )
+              .height,
+          greaterThanOrEqualTo(48),
+        );
         expect(find.byTooltip('New chat').hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);
         await releaseAuditCapture?.call(

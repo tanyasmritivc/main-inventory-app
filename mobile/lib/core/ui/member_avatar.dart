@@ -27,14 +27,20 @@ class MemberAvatar extends StatelessWidget {
   Widget get _fallback => ColoredBox(
     color: _color,
     child: Center(
-      child: AppText(
-        name.trim().isNotEmpty
-            ? name.trim().characters.first.toUpperCase()
-            : '?',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * 0.4,
-          fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.1),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: AppText(
+            name.trim().isNotEmpty
+                ? name.trim().characters.first.toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: size * 0.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     ),

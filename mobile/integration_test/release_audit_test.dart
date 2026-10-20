@@ -17,6 +17,7 @@ import '../test/chat_focus_test.dart' as chat;
 import '../test/chat_item_action_test.dart' as actions;
 import '../test/task_member_avatar_test.dart' as tasks;
 import '../test/account_deletion_test.dart' as account;
+import '../test/member_avatar_accessibility_test.dart' as avatar;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,8 @@ void main() {
         '${Directory.systemTemp.path}/findez-audit-$name.png',
       ).writeAsBytes(bytes);
       frame.dispose();
+      // Allow the host collector to preserve evidence before test-app cleanup.
+      await Future<void>.delayed(const Duration(seconds: 3));
     }
 
     chat.releaseAuditCapture = capture;
@@ -53,4 +56,5 @@ void main() {
   group('Native chat actions', actions.main);
   group('Native task attribution', tasks.main);
   group('Native account deletion', account.main);
+  group('Native avatar accessibility', avatar.main);
 }
