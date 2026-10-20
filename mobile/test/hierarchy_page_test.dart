@@ -233,7 +233,11 @@ void main() {
     expect(find.text('Member'), findsOneWidget);
     expect(find.text('New workspace'), findsNothing);
     expect(find.text('Invite organization member'), findsNothing);
-    expect(find.byTooltip('Actions'), findsNothing);
+    await tester.tap(find.byTooltip('Actions'));
+    await tester.pumpAndSettle();
+    expect(find.text('Leave organization'), findsOneWidget);
+    expect(find.text('Rename'), findsNothing);
+    expect(find.text('Delete organization'), findsNothing);
   });
 
   testWidgets(

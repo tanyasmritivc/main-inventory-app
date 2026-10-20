@@ -262,9 +262,27 @@ void main() {
           final original = fixture.respond;
           var deleted = false;
           fixture.respond = (r) async {
-            if (r.path == '/teams/ftc' && r.method == 'DELETE') {
+            if (r.path == '/resource-removal/workspace/ftc') {
+              if (r.method == 'GET') {
+                return {
+                  'kind': 'workspace',
+                  'id': 'ftc',
+                  'name': 'FTC ROBOTS',
+                  'items': 2,
+                  'spaces': 1,
+                  'inventories': 1,
+                  'workspaces': 0,
+                  'can_move': true,
+                  'destinations': [],
+                };
+              }
               deleted = true;
-              return {'deleted': true};
+              return {
+                'kind': 'workspace',
+                'id': 'ftc',
+                'action': 'delete',
+                'deleted': true,
+              };
             }
             final result = await original(r) as Map<String, dynamic>;
             if (r.path == '/organizations/org' && deleted) {
@@ -292,13 +310,14 @@ void main() {
           await settle(tester);
           await tester.tap(find.text('Delete workspace'));
           await settle(tester);
+          await tester.tap(find.byType(CheckboxListTile).last);
           await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
           await tester.pump();
           await tester.tap(find.widgetWithText(TextButton, 'Delete workspace'));
           await settle(tester);
           expect(
-            fixture.requests.where((r) => r.method == 'DELETE').single.path,
-            '/teams/ftc',
+            fixture.requests.where((r) => r.method == 'POST').single.path,
+            '/resource-removal/workspace/ftc',
           );
           expect(session.organizationId, 'org');
           expect(session.data, isNull);

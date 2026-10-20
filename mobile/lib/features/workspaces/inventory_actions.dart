@@ -3,6 +3,7 @@ import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/api_error.dart';
 import 'place_ui.dart';
+import 'resource_removal.dart';
 
 /// Management lives in the workspace directory, outside the working inventory.
 Future<void> manageDirectoryInventory(
@@ -42,8 +43,19 @@ Future<void> manageDirectoryInventory(
     ),
   );
   if (!context.mounted || action == null) return;
-  var entered = action == 'rename' ? name : '';
-  var deleteContents = false, busy = false;
+  if (action == 'delete') {
+    final changed = await confirmResourceRemoval(
+      context,
+      api,
+      kind: 'inventory',
+      id: inventory['inventory_id'].toString(),
+      name: name,
+    );
+    if (changed && context.mounted) await refresh();
+    return;
+  }
+  var entered = name;
+  var busy = false;
   String? error;
   final receipt = await showDialog<Map<String, dynamic>>(
     context: context,
@@ -52,45 +64,18 @@ Future<void> manageDirectoryInventory(
       builder: (dialog, update) => PopScope(
         canPop: !busy,
         child: AlertDialog(
-          title: Text(
-            action == 'rename' ? 'Rename inventory' : 'Delete inventory',
-          ),
+          title: const Text('Rename inventory'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (action == 'delete') ...[
-                  const Text(
-                    'Delete an empty inventory, or include its saved contents. Other inventories are preserved.',
-                  ),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Also permanently delete everything in this inventory',
-                    ),
-                    value: deleteContents,
-                    onChanged: busy
-                        ? null
-                        : (value) =>
-                              update(() => deleteContents = value == true),
-                  ),
-                  if (deleteContents)
-                    const Text(
-                      'Items, Spaces, documents, photos and inventory conversations will be removed. This cannot be undone. Files still referenced elsewhere are retained.',
-                    ),
-                  const SizedBox(height: 16),
-                ],
                 TextFormField(
                   initialValue: entered,
                   autofocus: true,
                   enabled: !busy,
                   maxLength: 100,
-                  decoration: InputDecoration(
-                    labelText: action == 'rename'
-                        ? 'Inventory name'
-                        : 'Type $name to confirm',
-                  ),
+                  decoration: InputDecoration(labelText: 'Inventory name'),
                   onChanged: (value) => update(() => entered = value),
                 ),
                 if (error != null)
@@ -112,11 +97,7 @@ Future<void> manageDirectoryInventory(
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed:
-                  busy ||
-                      (action == 'delete'
-                          ? entered != name
-                          : entered.trim().isEmpty)
+              onPressed: busy || entered.trim().isEmpty
                   ? null
                   : () async {
                       update(() {
@@ -126,20 +107,10 @@ Future<void> manageDirectoryInventory(
                       try {
                         final result = await api.collaboration(
                           '/inventories/${Uri.encodeComponent(inventory['inventory_id'].toString())}',
-                          method: action == 'delete' ? 'DELETE' : 'PATCH',
-                          data: {
-                            'name': action == 'delete'
-                                ? entered
-                                : entered.trim(),
-                            if (action == 'delete' && deleteContents)
-                              'delete_contents': true,
-                          },
+                          method: 'PATCH',
+                          data: {'name': entered.trim()},
                         );
-                        if (action == 'delete'
-                            ? result['deleted'] != true ||
-                                  result['inventory_id'] !=
-                                      inventory['inventory_id']
-                            : result['inventory'] is! Map) {
+                        if (result['inventory'] is! Map) {
                           throw const FormatException(
                             'The change could not be confirmed. Refresh before retrying.',
                           );
@@ -155,18 +126,7 @@ Future<void> manageDirectoryInventory(
                         }
                       }
                     },
-              style: action == 'delete'
-                  ? TextButton.styleFrom(
-                      foregroundColor: PlacePalette.of(context).destructive,
-                    )
-                  : null,
-              child: Text(
-                busy
-                    ? 'Saving...'
-                    : action == 'delete'
-                    ? 'Delete inventory'
-                    : 'Save',
-              ),
+              child: Text(busy ? 'Saving...' : 'Save'),
             ),
           ],
         ),
@@ -176,15 +136,6 @@ Future<void> manageDirectoryInventory(
   if (!context.mounted || receipt == null) return;
   try {
     await refresh();
-    if (context.mounted && receipt['file_cleanup_pending'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Inventory removed. File cleanup is pending and will retry automatically.',
-          ),
-        ),
-      );
-    }
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

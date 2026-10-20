@@ -1,3 +1,13 @@
+## Organization leave and removal choices — candidate (October 19)
+
+Scoped web/API/mobile branches `feat/organization-leave-*-20261020` are prepared.
+Admins cannot remove the organization Owner. Keep/move versus cascade deletion
+replaces empty-first prerequisites; web item rows expand without repeated titles.
+Use only synthetic test identities; the founder account is excluded from QA.
+Migration 069/070 production approval is pending. Build 97 is the matching client;
+96 remains the last acknowledged upload. See
+`docs/plans/organization-removal-choices-20261019.md` for behavior and evidence.
+
 ## Organization access and inline item update — live (2026-10-19)
 
 User approved “yes publish and apply 068.” Migration 068 and the reviewed web/API

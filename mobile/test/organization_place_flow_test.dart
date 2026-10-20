@@ -305,6 +305,34 @@ void main() {
           await tester.pumpWidget(const SizedBox());
         },
       );
+      testWidgets('leave organization clears selected and remembered organization', (tester) async {
+        role = 'member';
+        final previous = fixture.respond;
+        fixture.respond = (r) {
+          if (r.path == '/organizations/org/leave') {
+            hasWorkspace = false;
+            return {'left':true,'organization_id':'org'};
+          }
+          return previous(r);
+        };
+        await mount(tester,brightness:mode);
+        await organization(tester);
+        await tester.tap(find.byTooltip('Organization settings'));
+        await settle(tester);
+        await tester.tap(find.byTooltip('Actions'));
+        await settle(tester);
+        await tester.tap(find.text('Leave organization'));
+        await settle(tester);
+        await tester.tap(find.widgetWithText(TextButton,'Leave organization'));
+        await settle(tester);
+        expect(find.byType(HierarchyPage),findsNothing);
+        expect(session.organizationId,isNull);
+        expect(session.current,const LastPlace.personal());
+        expect(await session.store.readOrganization(),isNull);
+        expect(await session.store.read(),const LastPlace.personal());
+        expect(find.text('Retry'),findsNothing);
+        await tester.pumpWidget(const SizedBox());
+      });
       testWidgets(
         'organization viewer has no management writes and large text stays usable',
         (tester) async {
@@ -333,7 +361,7 @@ void main() {
           await settle(tester);
           expect(find.text('New workspace'), findsNothing);
           expect(find.text('Invite organization member'), findsNothing);
-          expect(find.byTooltip('Actions'), findsNothing);
+          expect(find.byTooltip('Actions'), findsOneWidget);
           await tester.tap(find.text('People'));
           await settle(tester);
           expect(find.text('Viewer'), findsOneWidget);

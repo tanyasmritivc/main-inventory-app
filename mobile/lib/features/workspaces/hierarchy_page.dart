@@ -1,4 +1,5 @@
 import 'invitation_page.dart';
+import 'organization_leave.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -62,6 +63,7 @@ class HierarchyPage extends StatefulWidget {
     this.panel,
     this.focusSearch = false,
     this.onOpenWorkspace,
+    this.onOrganizationLeft,
     this.organizationsOnly = false,
   });
   final ApiClient api;
@@ -73,6 +75,7 @@ class HierarchyPage extends StatefulWidget {
   final bool focusSearch;
   final Future<void> Function(String id)? onOpenWorkspace;
   final bool organizationsOnly;
+  final Future<void> Function(String id)? onOrganizationLeft;
   @override
   State<HierarchyPage> createState() => _HierarchyPageState();
 }
@@ -86,7 +89,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       _audit = [],
       _spaces = [];
   Object? _error;
-  bool _loading = true, _busy = false;
+  bool _loading = true, _busy = false, _leaving = false;
   Timer? _permissionTimer;
   int _generation = 0;
   String _query = '';
@@ -341,6 +344,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       id: id,
       name: name,
       organizationId: org,
+      onOrganizationLeft: widget.onOrganizationLeft,
     ),
   );
 
@@ -576,6 +580,24 @@ class _HierarchyPageState extends State<HierarchyPage>
     );
   }
 
+  Future<void> _leaveOrganization() async {
+    if (_busy || _leaving) return;
+    setState(() => _leaving = true);
+    final left = await confirmOrganizationLeave(
+      context,
+      widget.api,
+      id: widget.id!,
+      name: _resource['name'].toString(),
+      isOwner: _owner,
+    );
+    if (!mounted) return;
+    setState(() => _leaving = false);
+    if (left) {
+      Navigator.pop(context);
+      await widget.onOrganizationLeft?.call(widget.id!);
+    }
+  }
+
   Future<void> _deleteOrganization() async {
     final deleted = await confirmOrganizationDeletion(
       context,
@@ -587,7 +609,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _deleteWorkspace() async {
-    if (!_ownerAuthority || _busy) return;
+    if (!_manager || _busy) return;
     final deleted = await confirmWorkspaceDeletion(
       context,
       widget.api,
@@ -823,7 +845,7 @@ class _HierarchyPageState extends State<HierarchyPage>
       name.toString().toLowerCase().contains(_query.toLowerCase());
   Widget _menu(Map<String, VoidCallback> actions) => PopupMenuButton<String>(
     tooltip: 'Actions',
-    enabled: !_busy,
+    enabled: !_busy && !_leaving,
     onSelected: (action) => actions[action]!(),
     itemBuilder: (_) => actions.keys
         .map((name) => PopupMenuItem(value: name, child: AppText(name)))
@@ -849,7 +871,7 @@ class _HierarchyPageState extends State<HierarchyPage>
     }
     if (!await _confirm(
       'Remove member?',
-      'Remove this person from the organization? Workspace assignments must be removed first.',
+      'Remove this person and their access to all workspaces and inventories in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.',
     )) {
       return;
     }
@@ -1187,13 +1209,14 @@ class _HierarchyPageState extends State<HierarchyPage>
           ),
           actions: [
             NotificationBell(api: widget.api),
-            if (_data != null && !widget.focusSearch && _canRename)
+            if (_data != null && !widget.focusSearch && (_canRename || _org))
               _menu({
-                'Rename': () => _rename(),
+                if (_canRename) 'Rename': () => _rename(),
+                if (_org) 'Leave organization': _leaveOrganization,
                 if (_ownerAuthority && (_org || _workspace) && !_personal)
                   'Transfer ownership': _transferOwner,
                 if (_org && _owner) 'Delete organization': _deleteOrganization,
-                if (_workspace && _ownerAuthority && !_personal)
+                if (_workspace && _manager && !_personal)
                   'Delete workspace': _deleteWorkspace,
               }),
             AccountButton(api: widget.api),
@@ -1291,11 +1314,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                   trailing: RoleTag(
                     membershipRoleLabel(member['role'].toString()),
                   ),
-                  onTap:
-                      _manager &&
-                          member['role'] != 'owner' &&
-                          (!['admin', 'mentor'].contains(member['role']) ||
-                              _ownerAuthority)
+                  onTap: _manager && member['role'] != 'owner'
                       ? () => _workspaceMember(member)
                       : null,
                 ),
@@ -1505,7 +1524,7 @@ class _HierarchyPageState extends State<HierarchyPage>
             'Your role',
             detail: membershipRoleLabel(_resource['role']?.toString() ?? ''),
           ),
-          if (_ownerAuthority)
+          if (_manager)
             TextButton(
               onPressed: _busy ? null : _deleteWorkspace,
               style: TextButton.styleFrom(
@@ -1599,19 +1618,13 @@ class _HierarchyPageState extends State<HierarchyPage>
         ),
         detail:
             '${_org ? member['role'] : membershipRoleLabel(member['role'].toString())}${member['source'] == 'workspace' ? ' | inherited' : ''}',
-        onTap:
-            !_manager ||
-                member['role'] == 'owner' ||
-                (!_org &&
-                    !_inventory &&
-                    ['admin', 'mentor'].contains(member['role']) &&
-                    !_ownerAuthority)
+        onTap: !_manager || member['role'] == 'owner'
             ? null
             : () async {
                 if (_org) {
                   if (!await _confirm(
                     'Remove member?',
-                    'Remove this person from the organization? Workspace assignments must be removed first.',
+                    'Remove this person and their access to all workspaces and inventories in this organization? Shared content stays. Any workspaces they own transfer to the organization Owner.',
                   )) {
                     return;
                   }
@@ -1715,13 +1728,14 @@ class _HierarchyPageState extends State<HierarchyPage>
             ),
             actions: [
               NotificationBell(api: widget.api),
-              if (_data != null && _canRename)
+              if (_data != null && (_canRename || _org))
                 _menu({
-                  'Rename': () => _rename(),
+                  if (_canRename) 'Rename': () => _rename(),
+                  if (_org) 'Leave organization': _leaveOrganization,
                   if (_ownerAuthority && (_org || _workspace) && !_personal)
                     'Transfer ownership': _transferOwner,
                   if (_org && _owner) 'Delete': _deleteOrganization,
-                  if (_workspace && _ownerAuthority && !_personal)
+                  if (_workspace && _manager && !_personal)
                     'Delete workspace': _deleteWorkspace,
                 }),
               IconButton(
