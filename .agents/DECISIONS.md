@@ -1,3 +1,13 @@
+## October 19 - account deletion preserves shared contributions
+
+The user clarified that shared contributions and ordinary membership must not
+block account deletion. Only organization ownership requires a prior transfer.
+Migration 071 implements atomic shared-content custody preservation with Auth
+deletion and does not grant the deleted identity access. Organization workspaces
+pass to the organization Owner; independent shared workspaces stay with a
+remaining accepted member. Production activation is pending explicit approval.
+See `docs/plans/account-deletion-shared-content-20261019.md`.
+
 ## October 19 — explicit removal choices and protected Owner
 
 The user confirmed Admins cannot remove the organization Owner. Owner/Admin

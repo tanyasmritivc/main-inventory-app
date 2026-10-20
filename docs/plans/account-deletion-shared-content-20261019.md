@@ -41,6 +41,10 @@ binary, Dashboard/UI change, or user-account deletion is part of activation.
 ## Evidence
 
 - Full Python suite: 1,145 passed and 10 subtests passed.
+- All five CI test jobs pass on `e5e7f4de7daebb6909b1d75a8cf5e24c6a151987`,
+  run `39374088077` (PostgreSQL, Python, web, Flutter, connectors). Draft PR 141.
+  The retired Vercel preview integration fails separately; it is not the deployed
+  backend/web service and is not used for this release.
 - Full fresh composed PostgreSQL suite, including replay of 071, passed.
 - Synthetic Admin/Editor/Viewer journeys exercise the actual Auth DELETE,
   shared Spaces/bins/items/events/documents/tasks, private content, membership
