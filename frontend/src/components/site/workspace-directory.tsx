@@ -22,7 +22,9 @@ import { directoryInventoryHref, type DirectoryInventory } from "@/lib/workspace
 
 import styles from "./directory-design.module.css";
 import { InventoryManagementActions, DeleteInventoryDialog } from "./inventory-management-actions";
-import { TransferOwnership } from "./transfer-ownership";
+import { ResourceSettings } from "./resource-settings";
+import { RenameResourceDialog } from "./rename-resource-dialog";
+import { WorkspaceLeaveDialog } from "./workspace-leave-dialog";
 
 type InventoryPage = { workspace: InventoryWorkspace; inventories: DirectoryInventory[]; total: number; next_offset: number | null };
 type SharedSpace = { share_id: string; share_name: string; team_shares?: SharedSpace | SharedSpace[] };
@@ -41,6 +43,7 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
   const [reload, setReload] = useState(0), [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"inventory" | "workspace" | "join" | "rename" | null>(null);
   const [deleteWorkspace, setDeleteWorkspace] = useState(false);
+  const [renameWorkspace, setRenameWorkspace] = useState(false), [leaveWorkspace, setLeaveWorkspace] = useState(false);
   const [deletionNotice,setDeletionNotice]=useState("");
   const [deleting, setDeleting] = useState<DirectoryInventory | null>(null);
   const [renaming, setRenaming] = useState<DirectoryInventory | null>(null);
@@ -146,12 +149,14 @@ function WorkspaceDirectoryAccount({ workspaceId, view }: { workspaceId?: string
           {shared.filter((space) => space.share_name.toLowerCase().includes(query.toLowerCase())).map((space) => <Link className="context-card" href={`/sharing/${encodeURIComponent(space.share_id)}`} key={space.share_id}><strong>{space.share_name}</strong><span>Shared Space</span></Link>)}
         </div></section>}
       </> : workspaceId && page && <>
-        {view === "overview" ? <WorkspaceOverview workspace={page.workspace} inventories={page.inventories} /> : view === "settings" ? <section className="workspace-settings"><dl className="directory-rows"><div className="directory-row"><dt>Name</dt><dd>{page.workspace.name}</dd></div><div className="directory-row"><dt>Your role</dt><dd>{page.workspace.role === "mentor" ? "Admin" : page.workspace.role.charAt(0).toUpperCase() + page.workspace.role.slice(1)}</dd></div></dl><Link className="workspace-return" href={`/workspaces/${encodeURIComponent(workspaceId)}?view=people`}>Members, invitations and access requests</Link>{accountId && page.workspace.kind === "team" && canDeleteWorkspace(page.workspace, accountId) && <p style={{marginTop:24}}>{canAdministerWorkspace(page.workspace, accountId) && <TransferOwnership scope="workspace" resourceId={workspaceId} name={page.workspace.name} onTransferred={()=>setReload(v=>v+1)} />} <button className="product-button" style={{color:"#b42318"}} onClick={()=>setDeleteWorkspace(true)}>Delete workspace</button></p>}</section> : <>
+        {view === "overview" ? <WorkspaceOverview workspace={page.workspace} inventories={page.inventories} /> : view === "settings" ? <ResourceSettings scope="workspace" id={workspaceId} name={page.workspace.name} role={page.workspace.role} organization={page.workspace.organization_id ? {id:page.workspace.organization_id,name:page.workspace.organization_name || "Organization"} : undefined} canRename={canRenameWorkspace(page.workspace)} canTransfer={!!accountId && canAdministerWorkspace(page.workspace,accountId)} canDelete={!!accountId && canDeleteWorkspace(page.workspace,accountId)} isOwner={page.workspace.owner_user_id===accountId || page.workspace.role==="owner" && !page.workspace.organization_role} inheritedAdmin={["owner","admin"].includes(page.workspace.organization_role || "")} onRename={()=>setRenameWorkspace(true)} onDelete={()=>setDeleteWorkspace(true)} onLeave={()=>setLeaveWorkspace(true)} onTransferred={()=>setReload(v=>v+1)} /> : <>
         {(view === "board" || view === "files" || (view === "people" && !page.workspace.organization_id)) ? <TeamsClient selectedTeamId={workspaceId} panel={view === "people" ? "people" : view === "files" ? "files" : "board"} /> : <CollaborationPanel workspaceId={workspaceId} section={view === "people" ? "people" : view === "locations" ? "locations" : "activity"} />}
         {view === "people" && <AccessRequests workspaceId={workspaceId} />}
         </>}
       </>}
     </section>
+    {accountId && selectedWorkspace && renameWorkspace && <RenameResourceDialog accountId={accountId} target={{kind:"workspace",id:selectedWorkspace.workspace_id,name:selectedWorkspace.name}} onClose={()=>setRenameWorkspace(false)} onSaved={()=>{setRenameWorkspace(false);setReload(v=>v+1);}} />}
+    {accountId && selectedWorkspace && leaveWorkspace && <WorkspaceLeaveDialog accountId={accountId} workspace={selectedWorkspace} onClose={()=>setLeaveWorkspace(false)} onLeft={()=>{selectInventory(null);router.replace("/workspaces");}} />}
     {accountId && deleting && <DeleteInventoryDialog key={deleting.inventory_id} inventory={deleting} accountId={accountId} onClose={()=>setDeleting(null)} onDeleted={pending=>{setDeleting(null);setDeletionNotice(pending?"Inventory removed. File cleanup is pending and will retry automatically.":"Inventory removed.");setReload(value=>value+1);}} />}
     {accountId && selectedWorkspace && deleteWorkspace && <DeleteWorkspaceDialog id={selectedWorkspace.workspace_id} name={selectedWorkspace.name} accountId={accountId} onClose={()=>setDeleteWorkspace(false)} onDeleted={()=>router.replace("/workspaces")} />}
     <Dialog open={mode !== null} onOpenChange={(value) => { if (!value && !busy) setMode(null); }}><DialogContent className="workspace-dialog inventory-creation-dialog" aria-describedby={undefined}>

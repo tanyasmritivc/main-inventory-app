@@ -1,3 +1,18 @@
+## October 19 - web settings and access audit prepared
+
+Branch `fix/web-organization-settings-audit-20261020` repairs Organization People
+row sizing, adds visible Organization Settings and actionable Workspace Settings,
+and introduces server-verified email status/resend plus a dismissible unverified
+account prompt. Workspace panels load only relevant services, surface failed
+invitations/files, and clear stale controls after denied refresh. Permission-change
+events refresh mounted access views. Workspace API calls retain the initiating
+credential rather than adopting another signed-in account.
+
+No mobile, customer Dashboard or landing layout changes. Shared Admin directory
+fix is migration 072 in the separate backend lane; user wants that fix on both
+clients. Production DB activation awaits explicit approval. See
+`docs/plans/web-settings-audit-20261020.md` for checks and scope limits.
+
 ## October 19 — organization leave/removal update published
 
 Approved migrations 069/070 and matching API/web changes are live after fresh

@@ -913,109 +913,109 @@ export async function joinTeam({ token, code, bindToToken }: { token: string; co
 }
 
 export async function getTeamWorkspace({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ team: TeamData & { owner_user_id: string; join_code?: string }; role: TeamRole }>(`/teams/${teamId}/workspace`, { token });
+  return apiFetch<{ team: TeamData & { owner_user_id: string; join_code?: string }; role: TeamRole }>(`/teams/${teamId}/workspace`, { token, bindToToken: true });
 }
 
 export async function getTeamSpaces({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ spaces: TeamSpace[]; role: TeamRole }>(`/teams/${teamId}/spaces`, { token });
+  return apiFetch<{ spaces: TeamSpace[]; role: TeamRole }>(`/teams/${teamId}/spaces`, { token, bindToToken: true });
 }
 
 export async function createTeamSpace({ token, teamId, name }: { token: string; teamId: string; name: string }) {
-  return apiFetch<{ space: TeamSpace }>(`/teams/${teamId}/spaces`, { method: 'POST', token, body: { name } });
+  return apiFetch<{ space: TeamSpace }>(`/teams/${teamId}/spaces`, { method: 'POST', token, bindToToken: true, body: { name } });
 }
 
 export async function attachTeamSpace({ token, teamId, spaceId }: { token: string; teamId: string; spaceId: string }) {
-  return apiFetch<{ space: TeamSpace }>(`/teams/${teamId}/spaces/attach`, { method: 'POST', token, body: { space_id: spaceId } });
+  return apiFetch<{ space: TeamSpace }>(`/teams/${teamId}/spaces/attach`, { method: 'POST', token, bindToToken: true, body: { space_id: spaceId } });
 }
 
 export async function detachTeamSpace({ token, teamId, spaceId }: { token: string; teamId: string; spaceId: string }) {
-  return apiFetch<{ removed: boolean }>(`/teams/${teamId}/spaces/${spaceId}`, { method: 'DELETE', token });
+  return apiFetch<{ removed: boolean }>(`/teams/${teamId}/spaces/${spaceId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function getTeamSpaceItems({ token, teamId, spaceId }: { token: string; teamId: string; spaceId: string }) {
-  return apiFetch<{ space: TeamSpace; items: InventoryItem[]; role: TeamRole }>(`/teams/${teamId}/spaces/${spaceId}/items`, { token });
+  return apiFetch<{ space: TeamSpace; items: InventoryItem[]; role: TeamRole }>(`/teams/${teamId}/spaces/${spaceId}/items`, { token, bindToToken: true });
 }
 
 export async function addTeamSpaceItem({ token, teamId, spaceId, item }: { token: string; teamId: string; spaceId: string; item: Partial<InventoryItem> & { name: string; quantity: number } }) {
-  return apiFetch<{ item: InventoryItem }>(`/teams/${teamId}/spaces/${spaceId}/items`, { method: 'POST', token, body: item });
+  return apiFetch<{ item: InventoryItem }>(`/teams/${teamId}/spaces/${spaceId}/items`, { method: 'POST', token, bindToToken: true, body: item });
 }
 
 export async function updateTeamSpaceItem({ token, teamId, spaceId, itemId, updates }: { token: string; teamId: string; spaceId: string; itemId: string; updates: Partial<InventoryItem> }) {
-  return apiFetch<{ item: InventoryItem }>(`/teams/${teamId}/spaces/${spaceId}/items/${itemId}`, { method: 'PATCH', token, body: { item_id: itemId, ...updates } });
+  return apiFetch<{ item: InventoryItem }>(`/teams/${teamId}/spaces/${spaceId}/items/${itemId}`, { method: 'PATCH', token, bindToToken: true, body: { item_id: itemId, ...updates } });
 }
 
 export async function deleteTeamSpaceItem({ token, teamId, spaceId, itemId }: { token: string; teamId: string; spaceId: string; itemId: string }) {
-  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}/spaces/${spaceId}/items/${itemId}`, { method: 'DELETE', token });
+  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}/spaces/${spaceId}/items/${itemId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function getTeamMembers({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ members?: TeamMember[] } | TeamMember[]>(`/teams/${teamId}/members`, { token }).then((data) => Array.isArray(data) ? data : data.members ?? []);
+  return apiFetch<{ members?: TeamMember[] } | TeamMember[]>(`/teams/${teamId}/members`, { token, bindToToken: true }).then((data) => Array.isArray(data) ? data : data.members ?? []);
 }
 
 export async function updateTeamMemberRole({ token, teamId, userId, role }: { token: string; teamId: string; userId: string; role: TeamRole }) {
-  return apiFetch<{ updated: boolean }>(`/teams/${teamId}/members/${userId}`, { method: 'PATCH', token, body: { role } });
+  return apiFetch<{ updated: boolean }>(`/teams/${teamId}/members/${userId}`, { method: 'PATCH', token, bindToToken: true, body: { role } });
 }
 
 export async function removeTeamMember({ token, teamId, userId }: { token: string; teamId: string; userId: string }) {
-  return apiFetch<{ removed: boolean }>(`/teams/${teamId}/members/${userId}`, { method: 'DELETE', token });
+  return apiFetch<{ removed: boolean }>(`/teams/${teamId}/members/${userId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function rotateTeamJoinCode({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ join_code: string }>(`/teams/${teamId}/join-code/rotate`, { method: 'POST', token });
+  return apiFetch<{ join_code: string }>(`/teams/${teamId}/join-code/rotate`, { method: 'POST', token, bindToToken: true });
 }
 
 export async function getTeamInvite({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ team_name: string; join_code: string; invite_url: string }>(`/teams/${teamId}/invite`, { token });
+  return apiFetch<{ team_name: string; join_code: string; invite_url: string }>(`/teams/${teamId}/invite`, { token, bindToToken: true });
 }
 
 export async function emailTeamInvite({ token, teamId, email }: { token: string; teamId: string; email: string }) {
-  return apiFetch<{ sent: boolean; email: string }>(`/teams/${teamId}/invite`, { method: 'POST', token, body: { email: email.trim() } });
+  return apiFetch<{ sent: boolean; email: string }>(`/teams/${teamId}/invite`, { method: 'POST', token, bindToToken: true, body: { email: email.trim() } });
 }
 
 export async function leaveTeam({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ left: boolean }>(`/teams/${teamId}/leave`, { method: 'DELETE', token });
+  return apiFetch<{ left: boolean }>(`/teams/${teamId}/leave`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function deleteTeam({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}`, { method: 'DELETE', token });
+  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function getTeamBoard({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ tasks: TeamBoardTask[]; role: TeamRole }>(`/teams/${teamId}/board`, { token });
+  return apiFetch<{ tasks: TeamBoardTask[]; role: TeamRole }>(`/teams/${teamId}/board`, { token, bindToToken: true });
 }
 
 export async function createTeamBoardTask({ token, teamId, task }: { token: string; teamId: string; task: Partial<TeamBoardTask> & { title: string } }) {
-  return apiFetch<{ task: TeamBoardTask }>(`/teams/${teamId}/board`, { method: 'POST', token, body: task });
+  return apiFetch<{ task: TeamBoardTask }>(`/teams/${teamId}/board`, { method: 'POST', token, bindToToken: true, body: task });
 }
 
 export async function updateTeamBoardTask({ token, teamId, taskId, updates }: { token: string; teamId: string; taskId: string; updates: Partial<TeamBoardTask> & { clear_assignee?: boolean } }) {
-  return apiFetch<{ task: TeamBoardTask }>(`/teams/${teamId}/board/${taskId}`, { method: 'PATCH', token, body: updates });
+  return apiFetch<{ task: TeamBoardTask }>(`/teams/${teamId}/board/${taskId}`, { method: 'PATCH', token, bindToToken: true, body: updates });
 }
 
 export async function deleteTeamBoardTask({ token, teamId, taskId }: { token: string; teamId: string; taskId: string }) {
-  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}/board/${taskId}`, { method: 'DELETE', token });
+  return apiFetch<{ deleted: boolean }>(`/teams/${teamId}/board/${taskId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 export async function getTeamActivity({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ activity: ActivityEntry[] }>(`/teams/${teamId}/activity`, { token });
+  return apiFetch<{ activity: ActivityEntry[] }>(`/teams/${teamId}/activity`, { token, bindToToken: true });
 }
 
 export async function getTeamDocuments({ token, teamId }: { token: string; teamId: string }) {
-  return apiFetch<{ documents: TeamDocument[]; role: TeamRole }>(`/teams/${teamId}/documents`, { token });
+  return apiFetch<{ documents: TeamDocument[]; role: TeamRole }>(`/teams/${teamId}/documents`, { token, bindToToken: true });
 }
 
 export async function uploadTeamDocument({ token, teamId, file }: { token: string; teamId: string; file: File }) {
   const form = new FormData();
   form.append('file', file);
-  return apiFetch<{ document: TeamDocument }>(`/teams/${teamId}/documents`, { method: 'POST', token, body: form });
+  return apiFetch<{ document: TeamDocument }>(`/teams/${teamId}/documents`, { method: 'POST', token, bindToToken: true, body: form });
 }
 
 export async function openTeamDocument({ token, teamId, documentId }: { token: string; teamId: string; documentId: string }) {
-  return apiFetch<{ url: string }>(`/teams/${teamId}/documents/${documentId}/open`, { token });
+  return apiFetch<{ url: string }>(`/teams/${teamId}/documents/${documentId}/open`, { token, bindToToken: true });
 }
 
 export async function deleteTeamDocument({ token, teamId, documentId }: { token: string; teamId: string; documentId: string }) {
-  return apiFetch<void>(`/teams/${teamId}/documents/${documentId}`, { method: 'DELETE', token });
+  return apiFetch<void>(`/teams/${teamId}/documents/${documentId}`, { method: 'DELETE', token, bindToToken: true });
 }
 
 // ── Project kits / BOM readiness ─────────────────────────────────────────────

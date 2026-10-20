@@ -9,12 +9,12 @@ export type NavigationContext = {
   homeHref: string;
 };
 export type WorkspaceView = "overview" | "settings" | "inventories" | "people" | "locations" | "board" | "files" | "activity";
-export type OrganizationView = "workspaces" | "people";
+export type OrganizationView = "workspaces" | "people" | "settings";
 export function organizationNavigation(id: string, name: string, view: OrganizationView): NavigationContext {
   const home = `/organizations/${encodeURIComponent(id)}`;
   return { breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
-    activeRoute: view === "people" ? `${home}?view=people` : home,
-    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }] };
+    activeRoute: view === "workspaces" ? home : `${home}?view=${view}`,
+    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }, { label: "Settings", route: `${home}?view=settings`, icon: Settings, section: "Organization" }] };
 }
 export function workspaceNavigation(workspace: InventoryWorkspace, view: WorkspaceView): NavigationContext {
   const home = `/workspaces/${encodeURIComponent(workspace.workspace_id)}`;
