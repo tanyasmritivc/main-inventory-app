@@ -31,4 +31,13 @@ backup and function-drift guards passed; both effective-role guards are installe
 Service-only RPC grants and private image protection pass. API/database return
 200 and anonymous image requests return401. No customer data was updated.
 Private activation receipt: /home/ubuntu/findez-admin-directory-20261020/activation.json.
-Web settings2afb817 is live independently. Requested beta98 is being prepared.
+Web settings2afb817 is live independently. Requested beta98 is now Apple-acknowledged.
+
+## TestFlight delivery
+
+Apple acknowledged signed production1.0.9(98), delivery `7d00d31e-465a-4ca2-844b-536721d9a2f3`.
+All five CI gates pass (run39382888411), including693 Flutter tests and clean
+analysis; the skipped compiled-config gate was separately enabled and passed.
+The signed IPA/archive are preserved; SHA256 `3ba1466a8f7d442139227215ec8904c85ca38210faadfb330e4d9cad336af55b`.
+TestFlight processing and availability were not polled; physical-device acceptance
+remains pending. No public App Store submission was performed.
