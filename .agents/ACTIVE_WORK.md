@@ -1,3 +1,16 @@
+## October 20 - saved-photo Chat retrieval and App Store 99
+
+Published lane `fix/chat-saved-photo-search-20261020`, runtime5bc885d, PR146:
+backend-only current gallery comparison for photo questions. Conservative
+same/near-duplicate matches reach the existing model; arbitrary viewpoints are
+not claimed. No client/schema/provider or customer data changes;99 unrelated
+Python files preserved. 1,173 Python/API-doc tests plus10 subtests, a synthetic
+configured-model probe and all five CI jobs pass (39397356053).
+Apple accepted 1.0.9(99) submission a07e0629-8f1f-4043-ae87-d06fb06fe4c0 at
+2026-10-20T09:09:34.236Z: WAITING_FOR_REVIEW, automatic release after approval.
+Dedicated review login/links and unchanged five iPhone/five iPad assets verified.
+See `docs/plans/chat-saved-photo-search-20261020.md`.
+
 ## October 19 - effective Admin directory access published
 
 Migration 072 replaces two obsolete explicit workspace-membership checks in the
