@@ -1,9 +1,17 @@
-## Release 1.0.9 (96) follow-ups
+## Organization access and inline item update — live (2026-10-19)
 
-Added requested full-photo viewer and session-restoration fixes. Four auth race/
-revocation regressions and offline Retry gate pass; full/focused final mobile
-checks total 669 passing tests and clean analysis. Signed build and final CI are
-being prepared. Migration 068 still requires explicit production approval.
+User approved “yes publish and apply 068.” Migration 068 and the reviewed web/API
+release are live after a fresh private database backup. Admins access all resources
+within their organization; only Owners delete the organization. Viewers remain
+read-only. Inline item editing, original import fields and task/invite attribution
+are published. Deployment source hashes, attribution columns, permission precedence,
+API/database/site health and unauthorized photo/Chat checks pass.
+
+Mobile 1.0.9 (96), implementation efd7209, is signed, Apple-validated and
+upload acknowledged (ea38eaff-6bfa-4a30-8af2-6c65e2e43c4a). Processing/tester
+availability is unverified. Includes full-photo zoom/pan and session restoration. All three CI lanes
+pass; 670 mobile tests pass. Device acceptance remains pending.
+See docs/plans/organization-items-update-20261019.md for evidence and receipts.
 
 ## Organization access and inline item update — candidate (2026-10-19)
 
