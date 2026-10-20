@@ -507,8 +507,11 @@ class _WorkspaceHomeState extends State<WorkspaceHome>
                                 value: 'activity',
                                 child: Text('Activity'),
                               ),
-                              if (data.resource['owner_user_id'] ==
-                                  session.accountId)
+                              if ((data.resource['owner_user_id'] ==
+                                      session.accountId ||
+                                  ['owner', 'admin'].contains(
+                                    data.resource['organization_role'],
+                                  )))
                                 PopupMenuItem(
                                   value: 'delete',
                                   child: Text(

@@ -1,3 +1,20 @@
+## Session recovery and full item photos (October 19)
+
+Expired access tokens must refresh without treating ordinary app inactivity as
+sign-out. Use Supabase Flutter 2.16.0/GoTrue 2.26.0 recovery/race fixes; preserve
+saved sessions through retryable errors but honor genuine revocation. Do not
+extend JWT lifetime or disable token rotation. Item photos open full-screen via
+the existing private delivery path, with zoom/pan and Close for all readers.
+
+## 2026-10-19 — Organization administrators and inline items
+
+The user explicitly grants organization Admins access to all child resources,
+including restricted inventories. This replaces the earlier restricted-content
+exception for organization Owner/Admin only. Viewers stay read-only. Only Owner
+can delete the organization. Preserve personal/cross-organization isolation.
+Task assignment and invitation issuer attribution must reflect an actual recorded
+actor; do not invent missing historical attribution.
+
 ## One saved identity photo with explicit crop acceptance (2026-10-18)
 
 Use the Settings photo for authorized People/task/file/activity identities, with

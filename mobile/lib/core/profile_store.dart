@@ -12,11 +12,16 @@ class ProfileStore extends ChangeNotifier {
     : _ownerId =
           ownerId ?? (() => Supabase.instance.client.auth.currentUser?.id) {
     _owner = _ownerId();
-    _auth = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
-      if (_owner == _ownerId()) return;
-      _resetOwner();
-      if (_owner != null) unawaited(load());
-    });
+    _auth = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (_) {
+        if (_owner == _ownerId()) return;
+        _resetOwner();
+        if (_owner != null) unawaited(load());
+      },
+      onError: (Object error, StackTrace stack) {
+        // A transient refresh error must not discard the current profile.
+      },
+    );
   }
   final ApiClient api;
   final String? Function() _ownerId;

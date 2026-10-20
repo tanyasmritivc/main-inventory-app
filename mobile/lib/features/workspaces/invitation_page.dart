@@ -1,3 +1,4 @@
+import '../../core/ui/inviter_identity.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
@@ -184,6 +185,7 @@ class _AccessInvitationPageState extends State<AccessInvitationPage> {
                 ),
                 const SizedBox(height: 12),
                 AppText('${_invitation!['scope']} | ${_invitation!['role']}'),
+                InviterIdentity(invitation: _invitation!),
                 const SizedBox(height: 12),
                 AppText('Status: ${_invitation!['status']}'),
                 if (_invitation!['expires_at'] != null)

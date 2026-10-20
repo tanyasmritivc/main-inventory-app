@@ -36,7 +36,7 @@ void main() {
         });
     await Supabase.initialize(
       url: 'https://auth.test',
-      anonKey: 'test',
+      publishableKey: 'test',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient((request) async {
         if (request.url.path.endsWith('/token')) {

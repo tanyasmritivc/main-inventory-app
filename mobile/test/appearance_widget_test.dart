@@ -65,7 +65,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'test-key',
+      publishableKey: 'test-key',
     );
   });
   tearDownAll(() async => Supabase.instance.dispose());

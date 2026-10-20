@@ -1,3 +1,4 @@
+import '../../core/ui/inviter_identity.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -137,6 +138,7 @@ class _InvitationDialogState extends State<InvitationDialog> {
               ),
               const SizedBox(height: 14),
               if (_preview != null) ...[
+                InviterIdentity(invitation: _preview!),
                 AppText(
                   joined
                       ? 'You already have access. Open it to continue.'

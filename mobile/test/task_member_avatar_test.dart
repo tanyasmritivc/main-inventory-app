@@ -23,6 +23,7 @@ class TaskAvatarApi extends ApiClient {
         'title': 'Find the drill',
         'status': 'todo',
         'assigned_to': 'ada',
+        'assigned_by': 'grace',
         'created_by': 'ada',
       },
     ],
@@ -30,6 +31,11 @@ class TaskAvatarApi extends ApiClient {
   @override
   Future<List<Map<String, dynamic>>> getTeamMembers(String id) async => [
     {'user_id': 'ada', 'display_name': 'Ada', 'avatar_url': photo},
+    {
+      'user_id': 'grace',
+      'display_name': 'Grace',
+      'avatar_url': 'https://api.test/grace.png',
+    },
   ];
   @override
   Future<Map<String, dynamic>> getMyProfile() async => {};
@@ -61,6 +67,16 @@ void main() {
         );
         expect(saved(api.photo), findsOneWidget);
         expect(find.text('Assigned to Ada'), findsOneWidget);
+        expect(find.text('Assigned by Grace'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate(
+            (w) =>
+                w is MemberAvatar &&
+                w.name == 'Grace' &&
+                w.photoUrl == 'https://api.test/grace.png',
+          ),
+          findsOneWidget,
+        );
         await tester.tap(find.text('Find the drill'));
         await tester.pumpAndSettle();
         expect(find.text('Created by Ada'), findsOneWidget);

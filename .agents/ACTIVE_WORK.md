@@ -1,3 +1,26 @@
+## Release 1.0.9 (96) follow-ups
+
+Added requested full-photo viewer and session-restoration fixes. Four auth race/
+revocation regressions and offline Retry gate pass; full/focused final mobile
+checks total 669 passing tests and clean analysis. Signed build and final CI are
+being prepared. Migration 062 still requires explicit production approval.
+
+## Organization access and inline item update — candidate (2026-10-19)
+
+Active lane: findez-items-mobile-20261020. User explicitly superseded the old organization-admin
+restriction: Owners/Admins access all organization workspaces/inventories/Spaces,
+including custom No access. Only Owner deletes the organization. Other Viewers
+remain read-only; Editors can rename accessible workspaces/inventories and edit
+items. Personal and unrelated organizations remain isolated.
+
+Item rows open full details, editable fields save inline, original spreadsheet
+columns are displayed, purchasing destinations exclude vendor part numbers,
+and invitations/tasks show sender/assigner identities with photos.
+
+Migration 062 is a candidate only; production database approval is outstanding.
+Mobile target is 1.0.9 (96); Apple upload and device acceptance are not complete.
+See docs/plans/organization-items-update-20261019.md for validation and release gates.
+
 ## Final submission audit — build 95 delivered; notification arrival confirmed
 
 Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.

@@ -18,7 +18,6 @@ import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
 import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
-import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
 import '../scan/import_sheet_page.dart';
 import '../scan/bom_readiness_page.dart';
@@ -583,31 +582,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     _load();
   }
 
-  Future<void> _editItemRow(Map<String, dynamic> item) async {
-    final invItem = InventoryItem.fromJson(item);
-    final currentThreshold = _thresholds[invItem.itemId];
-    final result = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) =>
-          ItemEditorSheet(item: invItem, initialThreshold: currentThreshold),
-    );
-    if (result == null) return;
-    try {
-      await widget.api.updateItem(request: result.update);
-      await LowStockPrefs.setThreshold(
-        itemId: invItem.itemId,
-        threshold: result.threshold,
-      );
-      if (!mounted) return;
-      _load();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('Failed to update item.')),
-      );
-    }
-  }
+  Future<void> _editItemRow(Map<String, dynamic> item) => _showItemDetail(item);
 
   Future<void> _deleteItemRow(InventoryItem item) async {
     final ok = await showDialog<bool>(
@@ -871,7 +846,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final imageUrl = (invItem.imageUrl ?? '').trim();
 
     final rowChild = InkWell(
-      onTap: canEdit ? () => _editItemRow(item) : () => _showItemDetail(item),
+      onTap: () => _showItemDetail(item),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(

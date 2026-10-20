@@ -56,7 +56,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
-    anonKey: AppConfig.supabaseAnonKey,
+    publishableKey: AppConfig.supabaseAnonKey,
   );
 
   try {
@@ -112,14 +112,18 @@ class _MyAppState extends State<MyApp> {
     unawaited(_appearance.load());
     _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
     _initializeIncomingShares();
-    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((
-      state,
-    ) {
-      _tryPresentSharedSpreadsheet();
-      if (state.event == AuthChangeEvent.passwordRecovery) {
-        _presentPasswordRecovery();
-      }
-    });
+    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (state) {
+        _tryPresentSharedSpreadsheet();
+        if (state.event == AuthChangeEvent.passwordRecovery) {
+          _presentPasswordRecovery();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // LaunchAuthGate presents reconnect/retry without clearing the session.
+        debugPrint('Session refresh is temporarily unavailable.');
+      },
+    );
   }
 
   void _presentPasswordRecovery() {
@@ -419,8 +423,27 @@ class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
   bool _previewDismissed = false;
+  bool _retryingSession = false;
+  bool _sessionRetryFailed = false;
   Future<bool>? _onboardingCompletedFuture;
   String? _onboardingFutureForUserId;
+
+  Future<void> _retrySession() async {
+    if (_retryingSession) return;
+    setState(() {
+      _retryingSession = true;
+      _sessionRetryFailed = false;
+    });
+    try {
+      await Supabase.instance.client.auth.refreshSession().timeout(
+        const Duration(seconds: 20),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _sessionRetryFailed = true);
+    } finally {
+      if (mounted) setState(() => _retryingSession = false);
+    }
+  }
 
   void _bump() {
     setState(() {
@@ -445,9 +468,8 @@ class _AuthGateState extends State<LaunchAuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    // acceptable: no hasError branch on the auth stream — Supabase's
-    // onAuthStateChange stream does not emit errors in practice; any
-    // auth failure surfaces as a signed-out event instead.
+    // Refresh/network failures are stream errors, not proof of sign-out.
+    // Only the auth client's confirmed session state decides authentication.
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
@@ -465,6 +487,36 @@ class _AuthGateState extends State<LaunchAuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          if (session.isExpired &&
+              (snapshot.hasError || _sessionRetryFailed || _retryingSession)) {
+            return Scaffold(
+              body: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const AppText('Reconnect to continue'),
+                        const SizedBox(height: 12),
+                        const AppText(
+                          'Your sign-in is saved. Check your connection and try again.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _retryingSession ? null : _retrySession,
+                          child: AppText(
+                            _retryingSession ? 'Connecting...' : 'Retry',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
           // If the stream just delivered the initial cached session AND the
           // access token is already expired, Supabase is attempting a
           // background refresh. Show loading instead of MainShell so we

@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/app_theme.dart';
@@ -87,6 +91,7 @@ class _Api extends ApiClient {
   }
 }
 
+final _visualBoundary = GlobalKey();
 final _scroll = find.byKey(const ValueKey('item-detail-scroll'));
 final _handle = find.byKey(const ValueKey('item-detail-drag-handle'));
 final _notes = find.byKey(const ValueKey('item-detail-notes'));
@@ -107,29 +112,47 @@ Future<void> _open(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.create(brightness),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: scaler,
-          viewInsets: EdgeInsets.only(bottom: keyboard),
-          padding: const EdgeInsets.only(top: 47, bottom: 34),
+    RepaintBoundary(
+      key: _visualBoundary,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: const bool.fromEnvironment('FINDEZ_VISUAL_QA')
+            ? AppTheme.create(brightness).copyWith(
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    textStyle: const TextStyle(fontFamily: 'FindEZ-QA'),
+                  ),
+                ),
+                textTheme: AppTheme.create(
+                  brightness,
+                ).textTheme.apply(fontFamily: 'FindEZ-QA'),
+                primaryTextTheme: AppTheme.create(
+                  brightness,
+                ).primaryTextTheme.apply(fontFamily: 'FindEZ-QA'),
+              )
+            : AppTheme.create(brightness),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: scaler,
+            viewInsets: EdgeInsets.only(bottom: keyboard),
+            padding: const EdgeInsets.only(top: 47, bottom: 34),
+          ),
+          child: child!,
         ),
-        child: child!,
-      ),
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: TextButton(
-            onPressed: () => showItemDetailSheet(
-              context,
-              item: InventoryItem.fromJson(api.data),
-              api: api,
-              permission: permission,
-              shareId: shareId,
-              spaceName: 'Parts Room',
-              onThresholdChanged: onThresholdChanged,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showItemDetailSheet(
+                context,
+                item: InventoryItem.fromJson(api.data),
+                api: api,
+                permission: permission,
+                shareId: shareId,
+                spaceName: 'Parts Room',
+                onThresholdChanged: onThresholdChanged,
+              ),
+              child: const Text('Open info'),
             ),
-            child: const Text('Open info'),
           ),
         ),
       ),
@@ -160,8 +183,10 @@ Future<void> _pull(WidgetTester tester, {bool fromHandle = true}) async {
 }
 
 Future<void> _editNotes(WidgetTester tester, String text) async {
-  await tester.ensureVisible(find.text('Edit'));
-  await tester.tap(find.text('Edit'));
+  await tester.ensureVisible(
+    find.byKey(const ValueKey('item-detail-notes-display')),
+  );
+  await tester.tap(find.byKey(const ValueKey('item-detail-notes-display')));
   await tester.pumpAndSettle();
   await tester.enterText(_notes, text);
   await tester.pump();
@@ -189,6 +214,48 @@ void main() {
         expect(find.text('1 of 2'), findsOneWidget);
         await tester.drag(find.byType(PageView), const Offset(-300, 0));
         await tester.pumpAndSettle();
+        expect(find.text('2 of 2'), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('view-item-photo-1')));
+        await tester.pumpAndSettle();
+        expect(find.text('Photo 2 of 2'), findsOneWidget);
+        final viewer = tester.widget<InteractiveViewer>(
+          find.byKey(const ValueKey('full-item-photo')),
+        );
+        final image = find.descendant(
+          of: find.byKey(const ValueKey('full-item-photo')),
+          matching: find.byType(Image),
+        );
+        expect(tester.widget<Image>(image).fit, BoxFit.contain);
+        final center = tester.getCenter(
+          find.byKey(const ValueKey('full-item-photo')),
+        );
+        final left = await tester.startGesture(
+          center - const Offset(30, 0),
+          pointer: 1,
+        );
+        final right = await tester.startGesture(
+          center + const Offset(30, 0),
+          pointer: 2,
+        );
+        await left.moveTo(center - const Offset(90, 0));
+        await right.moveTo(center + const Offset(90, 0));
+        await tester.pump();
+        await left.up();
+        await right.up();
+        await tester.pumpAndSettle();
+        expect(
+          viewer.transformationController!.value.getMaxScaleOnAxis(),
+          greaterThan(1),
+        );
+        await tester.tap(find.text('Reset zoom'));
+        await tester.pump();
+        expect(viewer.transformationController!.value, Matrix4.identity());
+        await tester.tap(find.byTooltip('Previous photo'));
+        await tester.pumpAndSettle();
+        expect(find.text('Photo 1 of 2'), findsOneWidget);
+        await tester.tap(find.byTooltip('Close photo'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('full-item-photo')), findsNothing);
         expect(find.text('2 of 2'), findsOneWidget);
         expect(find.byTooltip('Delete photo'), findsNothing);
         expect(_scroll, findsOneWidget);
@@ -219,11 +286,90 @@ void main() {
       );
     }
   }
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} inline quantity keeps failed draft and saves confirmed value',
+      (tester) async {
+        final api = _Api();
+        await _open(tester, api, brightness: brightness);
+        final row = find.byKey(const ValueKey('edit-item-quantity'));
+        await tester.ensureVisible(row);
+        await tester.pumpAndSettle();
+        await tester.tap(row);
+        await tester.pumpAndSettle();
+        final input = find.byKey(const ValueKey('item-field-quantity'));
+        await tester.enterText(input, '12');
+        api.failSave = true;
+        await tester.tap(find.text('Save').last);
+        await tester.pumpAndSettle();
+        expect(input, findsOneWidget);
+        expect(tester.widget<TextField>(input).controller!.text, '12');
+        api.failSave = false;
+        await tester.tap(find.text('Save').last);
+        await tester.pumpAndSettle();
+        expect(input, findsNothing);
+        expect(api.data['quantity'], 12);
+        expect(api.data['name'], _data['name']);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets('${brightness.name} Viewer has no inline field controls', (
+      tester,
+    ) async {
+      final api = _Api();
+      await _open(tester, api, brightness: brightness, permission: 'view');
+      expect(find.byKey(const ValueKey('edit-item-name')), findsNothing);
+      expect(find.byKey(const ValueKey('edit-item-quantity')), findsNothing);
+      expect(api.writes, isEmpty);
+    });
+  }
+  testWidgets('inline item detail visual acceptance', (tester) async {
+    if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) return;
+    await tester.runAsync(() async {
+      final bytes = await File('/System/Library/Fonts/SFNS.ttf').readAsBytes();
+      for (final family in [
+        'FindEZ-QA',
+        'Roboto',
+        '.SF UI Text',
+        '.SF UI Display',
+      ]) {
+        await (FontLoader(
+          family,
+        )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+      }
+    });
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    for (final mode in Brightness.values) {
+      final api = _Api();
+      await _open(tester, api, brightness: mode);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('edit-item-quantity')),
+      );
+      await tester.tap(find.byKey(const ValueKey('edit-item-quantity')));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(_visualBoundary),
+        );
+        final image = await boundary.toImage(pixelRatio: 2);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await File(
+          '/private/tmp/findez-inline-item-${mode.name}.png',
+        ).writeAsBytes(bytes!.buffer.asUint8List());
+        image.dispose();
+      });
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    }
+  });
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'test',
+      publishableKey: 'test',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient((_) async => http.Response('{}', 200)),
     );

@@ -167,56 +167,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    if (widget.readOnly || !widget.api.canEdit) {
-      _showProductInfo(context, item);
-      return;
-    }
-    final currentThreshold = _thresholds[item.itemId];
-    final updates = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) =>
-          ItemEditorSheet(item: item, initialThreshold: currentThreshold),
-    );
-    if (updates == null) return;
-
-    try {
-      final updated = await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(
-        itemId: item.itemId,
-        threshold: updates.threshold,
-      );
-
-      final nextThresholds = Map<String, int>.from(_thresholds);
-      if (updates.threshold == null || updates.threshold! <= 0) {
-        nextThresholds.remove(item.itemId);
-      } else {
-        nextThresholds[item.itemId] = updates.threshold!;
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _thresholds = nextThresholds;
-        final idx = _items.indexWhere((e) => e.itemId == item.itemId);
-        if (idx != -1) {
-          _items[idx] = updated;
-        }
-        _changed = true;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: AppText('Inventory updated')));
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
-    }
+    _showProductInfo(context, item);
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
@@ -2379,63 +2330,15 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
-    if (!widget.api.canEdit) {
-      await showItemDetailSheet(
-        context,
-        item: item,
-        api: widget.api,
-        permission: 'view',
-        spaceName: item.location,
-      );
-      return;
-    }
-    final currentThreshold = _thresholds.value[item.itemId];
-    final updates = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) =>
-          ItemEditorSheet(item: item, initialThreshold: currentThreshold),
+    await showItemDetailSheet(
+      context,
+      item: item,
+      api: widget.api,
+      permission: widget.api.canEdit ? 'edit' : 'view',
+      spaceName: item.location,
+      initialThreshold: _thresholds.value[item.itemId],
     );
-    if (updates == null) return;
-
-    try {
-      await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(
-        itemId: item.itemId,
-        threshold: updates.threshold,
-      );
-      final next = Map<String, int>.from(_thresholds.value);
-      if (updates.threshold == null || updates.threshold! <= 0) {
-        next.remove(item.itemId);
-      } else {
-        next[item.itemId] = updates.threshold!;
-      }
-      _thresholds.value = next;
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: AppText('Saved')));
-      await _loadItems();
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: AppText('Connection issue. Please try again.'),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: AppText('Connection issue. Please try again.'),
-          ),
-        );
-      }
-    }
+    if (mounted) await _loadItems();
   }
 
   Future<void> _deleteItem(InventoryItem item) async {
