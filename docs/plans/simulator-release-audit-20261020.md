@@ -1,4 +1,4 @@
-# Simulator release audit — build 99 candidate
+# Simulator release audit — build 99 delivered
 
 The user requested comprehensive testing before App Store submission and allowed
 the simulator or iPhone Mirroring. This audit uses synthetic identities and
@@ -70,7 +70,7 @@ product behavior to satisfy the stale tests.
 
 The 159-case native flow suite passes on iPhone 16e/iOS 26.2. After the avatar
 follow-up, four targeted native light/dark checks pass. Final visual follow-up,
-CI and signed build delivery are recorded below when completed. Simulator tests cannot establish real camera/barcode accuracy,
+CI and signed build delivery are recorded below. Simulator tests cannot establish real camera/barcode accuracy,
 microphone recording, actual email/OAuth links, background APNs delivery,
 overnight session retention, provider capacity or spoken VoiceOver behavior.
 These remain physical-device/provider acceptance checks.
@@ -79,3 +79,27 @@ Public App Store submission has not been performed by this audit. Earlier
 infrastructure notes about the GPU transport/origin and provider nonce settings
 must be verified with the infrastructure owner before claiming launch readiness;
 this mobile UI audit does not silently change those systems.
+
+## Final delivery
+
+Runtime source `e219ac5a934b2eb9c04d2d03e7139432de0ecff0`, PR145. All five CI
+jobs pass in run39391119476. Final local Flutter coverage:696 passing tests,
+clean analysis; production configuration gate separately passed. The full native
+suite passes159 cases;12 subsequent targeted native checks pass (four avatar/profile,
+six confirmation/Chat, two final compact-Chat checks). Rendered iOS evidence was
+reviewed in both themes for deletion, Capture and compact Chat; native assertions
+cover avatar/profile behavior in both themes. These are synthetic fixtures, not
+real email/provider/camera acceptance.
+
+Signed production1.0.9(99) uses `lib/main.dart` and production HTTPS/anonymous
+configuration with visual-QA flags absent. Strict signing,32 archive and32 export
+iOS-device executables,24 privacy manifests and matching app/extension versions
+pass. Apple validation passed. Apple acknowledged upload with delivery
+`cc288dfb-0fc0-4ea3-8160-03962e8dfc5f`. IPA SHA256:
+`3868c1317e5aa03ce4e4d8f1bd1018e570f6399774665edd3914ee9e765150f0`.
+Archive, IPA, logs, screenshots and receipts are preserved in
+`~/Documents/FindEZ/AppStore/1.0.9-build99`.
+
+Stop at upload acknowledgment: processing/tester availability were not polled.
+No public App Store submission, production database change or customer QA writes.
+The physical-device/provider acceptance limits above remain open.
