@@ -1,3 +1,20 @@
+## October 20 — simulator audit and beta99 delivered
+
+User requested tests/fixes before App Store submission and allowed Simulator or
+Mirroring. The simulator audit found and fixed narrow large-text/keyboard issues
+in deletion dialogs, Capture status panels, focused Chat and avatar initials.
+Dashboard, permissions and production data remain unchanged. Synthetic identities
+only; the excluded founder account was not used.
+
+Final696 Flutter tests, clean analysis, separately enabled production config,
+159 native flow tests plus12 focused follow-ups,1,145 backend tests,495 deployed
+web tests with matching fixtures, SQL/concurrency and MCP/bundle checks pass.
+All five CI gates pass on runtimee219ac5, run39391119476, PR145. Apple acknowledged
+signed1.0.9(99), deliverycc288dfb-0fc0-4ea3-8160-03962e8dfc5f. Archive/IPA/evidence
+are preserved. TestFlight availability and physical-device acceptance are pending;
+public App Store submission was not performed. See
+`docs/plans/simulator-release-audit-20261020.md` for coverage and limits.
+
 ## October 19 - organization Admin access and beta98
 
 User approved migration072 and a new TestFlight build. The shared directory SQL

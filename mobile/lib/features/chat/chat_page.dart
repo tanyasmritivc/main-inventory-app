@@ -2577,6 +2577,11 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildHeader() {
+    // The parent Scaffold consumes MediaQuery's keyboard inset when it resizes.
+    final compact =
+        (View.of(context).viewInsets.bottom > 0 ||
+            MediaQuery.viewInsetsOf(context).bottom > 0) &&
+        MediaQuery.textScalerOf(context).scale(18) > 36;
     final title = AppText(
       key: const Key('ask-heading'),
       'Ask',
@@ -2604,7 +2609,19 @@ class _ChatPageState extends State<ChatPage>
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: MediaQuery.textScalerOf(context).scale(18) > 36
+      child: compact
+          ? Row(
+              children: [
+                if (widget.onBack != null) _buildBack(),
+                Expanded(child: title),
+                IconButton(
+                  tooltip: 'New chat',
+                  onPressed: _resetChat,
+                  icon: const Icon(Icons.add_comment_outlined),
+                ),
+              ],
+            )
+          : MediaQuery.textScalerOf(context).scale(18) > 36
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2823,13 +2840,19 @@ class _ChatPageState extends State<ChatPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final keyboardVisible =
+        View.of(context).viewInsets.bottom > 0 ||
+        MediaQuery.viewInsetsOf(context).bottom > 0;
+    final compactComposer =
+        keyboardVisible && MediaQuery.textScalerOf(context).scale(16) > 32;
     final canSend =
         !_pickingPhoto &&
         (_controller.text.trim().isNotEmpty || _photo != null) &&
         (!_sending || _canQueueFollowUp);
 
     return Scaffold(
+      // MainShell already resizes its PageView for the keyboard.
+      resizeToAvoidBottomInset: !widget.inPageView,
       backgroundColor: AppTheme.adaptive(context, const Color(0xFF09090B)),
 
       body: Container(
@@ -2993,7 +3016,7 @@ class _ChatPageState extends State<ChatPage>
                         controller: _controller,
                         focusNode: _focusNode,
                         minLines: 1,
-                        maxLines: 4,
+                        maxLines: compactComposer ? 1 : 4,
                         keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.newline,
                         onChanged: (_) => setState(() {}),
@@ -3005,7 +3028,8 @@ class _ChatPageState extends State<ChatPage>
                           ),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Ask a question',
+                          hintText: compactComposer ? 'Ask…' : 'Ask a question',
+                          hintMaxLines: 1,
                           isDense: true,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,

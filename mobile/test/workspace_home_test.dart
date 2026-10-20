@@ -313,7 +313,10 @@ void main() {
           await tester.tap(find.byType(CheckboxListTile).last);
           await tester.enterText(find.byType(TextFormField), 'FTC ROBOTS');
           await tester.pump();
-          await tester.tap(find.widgetWithText(TextButton, 'Delete workspace'));
+          final confirm = find.widgetWithText(TextButton, 'Delete workspace');
+          await tester.ensureVisible(confirm);
+          await tester.pumpAndSettle();
+          await tester.tap(confirm);
           await settle(tester);
           expect(
             fixture.requests.where((r) => r.method == 'POST').single.path,

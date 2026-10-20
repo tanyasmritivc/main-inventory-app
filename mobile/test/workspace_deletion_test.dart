@@ -5,6 +5,8 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/workspaces/resource_removal.dart';
 import 'support/hierarchy_fixture.dart';
 
+Future<void> Function(String)? releaseAuditCapture;
+
 void main() {
   final fixture = HierarchyFixture();
   setUpAll(fixture.initialize);
@@ -43,7 +45,10 @@ void main() {
             textScaler: TextScaler.linear(scale),
             viewInsets: EdgeInsets.only(bottom: keyboard),
           ),
-          child: child!,
+          child: RepaintBoundary(
+            key: const Key('release-audit-frame'),
+            child: child!,
+          ),
         ),
         home: Scaffold(
           body: Builder(
@@ -145,8 +150,12 @@ void main() {
         (tester) async {
           tester.view.physicalSize = const Size(375, 667);
           tester.view.devicePixelRatio = 1;
+          tester.view.padding = const FakeViewPadding(top: 62, bottom: 34);
+          tester.view.viewPadding = const FakeViewPadding(top: 62, bottom: 34);
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetPadding);
+          addTearDown(tester.view.resetViewPadding);
           fixture.respond = (r) => r.method == 'GET'
               ? preview('organization')
               : {
@@ -172,6 +181,8 @@ void main() {
           await tester.pumpAndSettle();
           final submit = find.widgetWithText(TextButton, 'Delete organization');
           await tester.ensureVisible(submit);
+          await tester.pumpAndSettle();
+          await releaseAuditCapture?.call('deletion-${theme.name}-$scale');
           await tester.tap(submit);
           await tester.pumpAndSettle();
           expect(changed, true);

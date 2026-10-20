@@ -2463,7 +2463,7 @@ class _ScanPageState extends State<ScanPage> {
                     ),
                     child: _loading
                         ? Center(
-                            child: Padding(
+                            child: SingleChildScrollView(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
                               ),
@@ -2576,7 +2576,7 @@ class _ScanPageState extends State<ScanPage> {
                                                           )),
                                                   errorBuilder: (context, error) {
                                                     return Center(
-                                                      child: Padding(
+                                                      child: SingleChildScrollView(
                                                         padding:
                                                             const EdgeInsets.all(
                                                               20,
