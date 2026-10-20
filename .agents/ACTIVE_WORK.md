@@ -10,7 +10,7 @@ Item rows open full details, editable fields save inline, original spreadsheet
 columns are displayed, purchasing destinations exclude vendor part numbers,
 and invitations/tasks show sender/assigner identities with photos.
 
-Migration 062 is a candidate only; production database approval is outstanding.
+Migration 068 is a candidate only; production database approval is outstanding.
 Mobile target is 1.0.9 (96); Apple upload and device acceptance are not complete.
 See docs/plans/organization-items-update-20261019.md for validation and release gates.
 
