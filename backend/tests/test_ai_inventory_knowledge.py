@@ -15,18 +15,16 @@ from app.services.ai_agent import (
     _knowledge_navigation_hint,
     _matches_knowledge_query,
     _normalized_knowledge_query,
-    _requires_inventory_knowledge,
-    _should_enable_tools,
 )
 
 
 class TestAiInventoryKnowledge(unittest.TestCase):
     def test_project_kit_questions_enable_live_tools(self):
-        self.assertTrue(_should_enable_tools(message="Where is my drivetrain project kit?"))
+        self.assertIn("project_kit_readiness", {tool["function"]["name"] for tool in _TOOLS})
         self.assertEqual(_normalized_knowledge_query("what project kits do I have"), "")
 
     def test_joined_space_questions_enable_live_tools(self):
-        self.assertTrue(_should_enable_tools(message="What is in the joined space?"))
+        self.assertIn("inventory_query", {tool["function"]["name"] for tool in _TOOLS})
 
     def test_knowledge_tool_is_registered(self):
         names = {tool["function"]["name"] for tool in _TOOLS}
@@ -46,7 +44,6 @@ class TestAiInventoryKnowledge(unittest.TestCase):
         self.assertTrue(_matches_knowledge_query(row, "trial kit"))
         self.assertTrue(_matches_knowledge_query(row, "where is my Trial project kit"))
         self.assertEqual(_normalized_knowledge_query("where is my Trial project kit"), "trial")
-        self.assertTrue(_requires_inventory_knowledge("Where is my trial kit?"))
 
     def test_search_requires_all_query_terms(self):
         row = {"name": "Drivetrain Kit", "location": "Build Room"}

@@ -34,8 +34,8 @@ test('downloadable extension runs standalone and supports writes without a delet
   t.after(() => client.close());
   await client.connect(transport);
   const { tools } = await client.listTools();
-  assert.equal(tools.length, 8);
-  assert.ok(!tools.some((tool) => /delete|revoke/.test(tool.name)));
+  assert.equal(tools.length, 15);
+  assert.ok(!tools.some((tool) => /confirm|revoke/.test(tool.name)));
   const item = { name: 'Washer', quantity: 4, location: 'Shelf B' };
   const result = await client.callTool({ name: 'findez_create_item', arguments: item });
   assert.ok(!result.isError, JSON.stringify(result));

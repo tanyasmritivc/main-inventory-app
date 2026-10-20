@@ -77,6 +77,10 @@ def clean_inventory_files(inventory_id: str) -> bool:
     return _clean_files('app_inventory_deletions', 'inventory_id', inventory_id)
 
 
+def clean_agent_files(approval_id: str) -> bool:
+    return _clean_files('api_agent_file_deletions', 'approval_id', approval_id)
+
+
 def clean_account_files(actor: str) -> bool:
     client = get_supabase_raw()
     try:
@@ -154,6 +158,9 @@ async def retry_inventory_file_cleanup():
             rows = await asyncio.to_thread(lambda: client.table('app_inventory_deletions').select('inventory_id').eq('completed', False).order('created_at').limit(10).execute().data)
             for row in rows or []:
                 await asyncio.to_thread(clean_inventory_files, row['inventory_id'])
+            agent_jobs = await asyncio.to_thread(lambda: client.table('api_agent_file_deletions').select('approval_id').eq('completed', False).order('created_at').limit(10).execute().data)
+            for row in agent_jobs or []:
+                await asyncio.to_thread(clean_agent_files, row['approval_id'])
             accounts = await asyncio.to_thread(lambda: client.table('app_account_deletions').select('actor_id').eq('completed', False).order('created_at').limit(10).execute().data)
             for row in accounts or []:
                 await asyncio.to_thread(clean_account_files, row['actor_id'])

@@ -1,6 +1,6 @@
 import time
 
-from jose import jwt
+import jwt
 from postgrest import SyncPostgrestClient
 
 from app.core.api_key_auth import APIKeyPrincipal
@@ -27,6 +27,7 @@ def create_api_key_rls_client(principal: APIKeyPrincipal) -> SyncPostgrestClient
         "exp": now + 90,
         "api_key_id": principal.key_id,
         "api_org_id": principal.org_id,
+        "api_organization_id": principal.organization_id,
         "api_workspace_id": principal.workspace_id,
         "api_scopes": sorted(principal.scopes),
     }

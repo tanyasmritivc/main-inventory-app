@@ -193,6 +193,9 @@ class InventoryQuery:
 
     def delete(self, **kwargs):
         self.client.require_editor(self.table)
+        if self.table == 'spaces':
+            from app.services.permissions import require_inventory_action
+            require_inventory_action(self.client.scope.role, 'delete_space')
         self.operation = 'delete'
         self.query = self.query.delete(**kwargs).eq('inventory_id', self.client.scope.inventory_id)
         if self.table in PRIVATE and self.table != 'messages':

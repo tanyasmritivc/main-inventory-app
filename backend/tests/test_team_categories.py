@@ -48,6 +48,16 @@ class Query:
 def api():
     db = SimpleNamespace(rows={'teams': [], 'team_memberships': []}, writes=[])
     db.table = lambda name: Query(db, name)
+    def rpc(name, args):
+        assert name == 'findez_create_legacy_workspace'
+        assert args['p_actor'] == 'owner'
+        data = args['p_data']
+        team = {**data, 'team_id':'team-1', 'owner_user_id':'owner', 'plan':None}
+        db.rows['teams'].append(team)
+        db.rows['team_memberships'].append({'team_id':'team-1','user_id':'owner','role':'owner'})
+        db.writes.append(('atomic_workspace',team))
+        return SimpleNamespace(execute=lambda:SimpleNamespace(data=team))
+    db.rpc = rpc
     app = FastAPI()
     app.include_router(teams.router)
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(user_id='owner')

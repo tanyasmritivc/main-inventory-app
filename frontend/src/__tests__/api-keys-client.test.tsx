@@ -8,7 +8,7 @@ import { useApiSession } from '@/lib/use-api-session';
 
 jest.mock('@/lib/integration-api', () => ({
   ...jest.requireActual('@/lib/integration-api'),
-  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(),
+  listIntegrationKeys: jest.fn(), listKeyWorkspaces: jest.fn(), listKeyOrganizations: jest.fn(),
   createIntegrationKey: jest.fn(), revokeIntegrationKey: jest.fn(), testIntegrationKey: jest.fn(),
 }));
 jest.mock('@/lib/use-api-session');
@@ -27,6 +27,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   getSession.mockResolvedValue({ data: { session: { access_token: 'fresh-web-session', user: { id: 'account-a' } } } });
   jest.mocked(useApiSession).mockReturnValue({ token: 'web-session', accountId: 'account-a', loading: false, error: null, supabase: { auth: { getSession } } } as unknown as ReturnType<typeof useApiSession>);
+  jest.mocked(api.listKeyOrganizations).mockResolvedValue({ organizations: [] });
   jest.mocked(api.listIntegrationKeys).mockResolvedValue({ keys: [] });
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [{ team_id: 'team-1', name: 'Robotics team' }] });
   jest.mocked(api.createIntegrationKey).mockResolvedValue({ ...metadata, key: rawKey });
@@ -104,7 +105,7 @@ test('successful revocation updates the key status', async () => {
 test('owners with no teams receive an actionable setup path', async () => {
   jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [] });
   render(<ApiKeysClient />);
-  expect(await screen.findByText('Create a workspace to use integrations')).toBeTruthy();
+  expect(await screen.findByText('Create a workspace or organization to use integrations')).toBeTruthy();
   expect(screen.getByRole('link', { name: 'Open your workspaces →' }).getAttribute('href')).toBe('/home');
   expect(screen.queryByRole('button', { name: 'Create key' })).toBeNull();
 });
@@ -144,4 +145,26 @@ test('revoking the new key removes its one-time secret', async () => {
   jest.mocked(api.revokeIntegrationKey).mockResolvedValue({ revoked: true, revoked_at: '2026-10-18T00:00:00Z' });
   await user.click(screen.getByRole('button', { name: 'Revoke Team spreadsheet' }));
   await screen.findByText('Revoked'); expect(screen.queryByDisplayValue(rawKey)).toBeNull();
+});
+
+test('organization management is bound and deletion permissions start disabled', async () => {
+  jest.mocked(api.listKeyOrganizations).mockResolvedValue({ organizations: [{ organization_id: 'org-1', name: 'Robotics org', role: 'owner' }] });
+  const user = userEvent.setup(); render(<ApiKeysClient />);
+  await user.selectOptions(await screen.findByLabelText('Access'), 'org:org-1');
+  const itemDelete = screen.getByRole('checkbox', { name: /Request item deletion/ });
+  expect((itemDelete as HTMLInputElement).checked).toBe(false);
+  await user.click(screen.getByRole('checkbox', { name: /Manage inventories and Spaces/ }));
+  await user.click(itemDelete);
+  await createKey(user);
+  expect(api.createIntegrationKey).toHaveBeenCalledWith('fresh-web-session', expect.objectContaining({
+    organization_id: 'org-1', workspace_id: null,
+    scopes: ['org:read', 'structure:read', 'structure:write', 'items:delete'],
+  }));
+});
+
+test('organization owner can create a management key before creating workspaces', async () => {
+  jest.mocked(api.listKeyWorkspaces).mockResolvedValue({ workspaces: [] });
+  jest.mocked(api.listKeyOrganizations).mockResolvedValue({ organizations: [{ organization_id: 'org-1', name: 'New org', role: 'owner' }] });
+  const user = userEvent.setup(); render(<ApiKeysClient />); await createKey(user);
+  expect(api.createIntegrationKey).toHaveBeenCalledWith('fresh-web-session', expect.objectContaining({ organization_id: 'org-1', workspace_id: null, scopes: ['org:read', 'structure:read'] }));
 });

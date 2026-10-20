@@ -4,7 +4,8 @@ import re
 
 
 READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
-                        'inventory_recall', 'documents_list', 'list_spaces'))
+                        'inventory_recall', 'documents_list', 'list_spaces',
+                        'inventory_query', 'project_kit_readiness'))
 SAFE_EDIT_FIELDS = frozenset(('name', 'category', 'location', 'notes'))
 _ACTION = r'^\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:move|rename|change|set|update|edit|add|delete|remove|create|increase|decrease|restock|log)\b'
 
@@ -24,6 +25,9 @@ def _valid(value, schema):
         return (not (set(value) - set(properties))
                 and all(key in value for key in schema.get('required', []))
                 and all(_valid(v, properties[k]) for k, v in value.items()))
+    if kind == 'array':
+        return (isinstance(value, list) and len(value) <= schema.get('maxItems', 12)
+                and all(_valid(item, schema['items']) for item in value))
     if kind == 'string':
         return isinstance(value, str) and len(value) <= 2000 and ('enum' not in schema or value in schema['enum'])
     if kind == 'integer':
@@ -44,9 +48,22 @@ def rejection(*, tool_name, args, definitions, enabled, message, trace):
     scope = current_inventory.get()
     if scope is not None and not scope.can_edit:
         return 'You have view-only access to this inventory. No change was made.'
+    if tool_name in ('inventory_propose_add', 'inventory_propose_delete'):
+        return None  # A proposal is read-only; confirmation has a separate server transaction.
+    if tool_name == 'create_space':
+        if scope is None:
+            return 'Select an inventory before creating a Space. No change was made.'
+        name = args.get('name', '').strip()
+        prefix = r'\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:create|add|make)\s+(?:a\s+)?(?:new\s+)?space\s+(?:(?:called|named)\s+|:\s*)?'
+        pattern = prefix + r'["\']?' + re.escape(name) + r'["\']?(?:\s+in (?:this|the current|the selected) inventory)?[.!?]?\s*'
+        if not name or len(name) > 100 or not re.fullmatch(pattern, message, re.I):
+            return 'Please request one exact name, for example: Create a Space called Garage. It will be created in the selected inventory. No change was made.'
+        if any(entry.get('tool') not in READ_TOOLS for entry in trace):
+            return 'Only one Space creation is allowed per request. No further change was made.'
+        return None
     # These established write services do not have durable chat request receipts
     # or atomic quantity/event updates. A model cannot manufacture confirmation.
-    if tool_name in ('inventory_add_item', 'inventory_log_event', 'create_space'):
+    if tool_name in ('inventory_add_item', 'inventory_log_event'):
         return 'Use Capture or the item editor to confirm this change safely. Chat cannot safely retry this operation, so no change was made.'
     if tool_name in ('inventory_delete_item', 'inventory_delete_by_filter'):
         return 'Deletion needs a reviewed selection and confirmation. Open the item or inventory editor to confirm deletion. No items were deleted.'
@@ -64,6 +81,8 @@ def rejection(*, tool_name, args, definitions, enabled, message, trace):
     for entry in trace:
         if entry.get('tool') == 'inventory_search' and isinstance(entry.get('result'), list):
             matches = entry['result']
+        elif entry.get('tool') == 'inventory_query' and isinstance(entry.get('result'), dict):
+            matches = entry['result'].get('items', []) if entry['result'].get('complete') else []
         elif entry.get('tool') == 'inventory_knowledge_search' and isinstance(entry.get('result'), dict):
             result = entry['result']
             matches = (result.get('personal_items') or []) + (result.get('shared_and_joined_items') or [])
@@ -94,30 +113,23 @@ def fingerprint(tool_name, args):
     return tool_name + ':' + json.dumps(args, sort_keys=True, separators=(',', ':'))
 
 
-def failure_answer(trace):
-    for entry in reversed(trace):
-        result = entry.get('result')
-        if isinstance(result, dict) and result.get('error'):
-            # This is a server-created public message, never a provider exception.
-            return result.get('message') or 'The operation could not be confirmed. Refresh the record before retrying.'
-    return None
-
-
-def action_answer(message, trace):
-    failure = failure_answer(trace)
-    if not mutation_requested(message):
-        return failure
-    for entry in reversed(trace):
-        result = entry.get('result')
-        if entry.get('tool') == 'inventory_update_item' and isinstance(result, dict) and result.get('item_id'):
-            clean = lambda value: re.sub(r'[\x00-\x1f`*\[\]<>]', ' ', str(value or ''))[:200]
-            fields = entry.get('args', {}).get('updates', {})
-            saved = '; '.join(f'{key}: {clean(result.get(key))}' for key in fields if key in SAFE_EDIT_FIELDS)
-            answer = f"Saved {clean(result.get('name'))}. {saved}. This confirms a saved edit, not a physical sighting."
-            return answer + (' Additional operation: ' + failure if failure else '')
-    if failure:
-        return failure
-    return 'No inventory change was confirmed. Please give the exact saved item name and new value, or use the item editor.'
+def validate_model_answer(message, trace, text):
+    """Reject false action claims; never substitute scripted assistant prose."""
+    writes = [entry for entry in trace if entry.get('tool') not in READ_TOOLS]
+    if not mutation_requested(message) and not writes:
+        return
+    confirmed = any(entry.get('tool') == 'inventory_update_item'
+                    and isinstance(entry.get('result'), dict)
+                    and entry['result'].get('item_id') and not entry['result'].get('error')
+                    for entry in writes)
+    confirmed = confirmed or any(entry.get('tool') == 'create_space'
+        and isinstance(entry.get('result'), dict) and entry['result'].get('confirmed') is True
+        and entry['result'].get('id') and not entry['result'].get('error') for entry in writes)
+    if confirmed:
+        return
+    claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|attached|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)
+    if claims:
+        raise RuntimeError('The model claimed an action without a confirmed receipt')
 
 
 def provider_data(value):

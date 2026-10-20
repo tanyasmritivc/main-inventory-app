@@ -75,3 +75,17 @@ def test_account_cleanup_waits_for_identity_removal_and_resumes_from_receipt():
         assert cleanup.clean_account_files('actor')
     client.storage.from_.assert_any_call('profile-photos')
     client.storage.from_.return_value.remove.assert_called_once_with(['actor/avatar.jpg'])
+
+
+def test_agent_deletion_cleanup_preserves_shared_files_and_retries_storage_failures():
+    files = [{'kind': 'image', 'url': 'https://host/storage/v1/object/public/item-images/actor/photo.jpg', 'owner': 'actor'},
+             {'kind': 'document', 'path': 'actor/docs/manual.pdf', 'owner': 'actor'}]
+    client = fake(files, referenced=True, failure=True)
+    original = client.table.side_effect
+    client.table.side_effect = lambda name: original('app_inventory_deletions' if name == 'api_agent_file_deletions' else name)
+    with patch.object(cleanup, 'get_supabase_raw', return_value=client), patch.object(cleanup, 'get_settings', return_value=SimpleNamespace(supabase_storage_bucket='item-images')):
+        assert not cleanup.clean_agent_files('approval')
+        client.storage.from_.return_value.remove.side_effect = None
+        assert cleanup.clean_agent_files('approval')
+    assert all(call.args == ('documents',) for call in client.storage.from_.call_args_list)
+    assert all(call.args == (['actor/docs/manual.pdf'],) for call in client.storage.from_.return_value.remove.call_args_list)

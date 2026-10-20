@@ -32,6 +32,7 @@ class APIModel(BaseModel):
 class CreateKeyRequest(APIModel):
     name: str = Field(min_length=1, max_length=100)
     workspace_id: UUID | None = None
+    organization_id: UUID | None = None
     scopes: list[str] = Field(min_length=1, max_length=8)
     expires_at: datetime | None = None
 
@@ -46,6 +47,7 @@ class CreateKeyRequest(APIModel):
 
 class APIItemCreate(APIModel):
     workspace_id: UUID | None = None
+    inventory_id: UUID | None = None
     name: str = Field(min_length=1, max_length=200)
     category: str = Field(default="Other", min_length=1, max_length=100)
     quantity: int = Field(default=1, ge=0, le=100000)
@@ -112,7 +114,7 @@ class APIBulkRequest(APIModel):
 
 
 class InventoryFilter(APIModel):
-    field: Literal["name", "category", "location", "brand", "part_number", "barcode", "quantity", "source_system", "external_id"]
+    field: Literal["name", "category", "location", "brand", "part_number", "barcode", "quantity", "source_system", "external_id", "inventory_id"]
     op: Literal["eq", "neq", "gt", "gte", "lt", "lte"] = "eq"
     value: StrictStr | StrictInt
 
@@ -136,7 +138,7 @@ class InventoryQuery(APIModel):
 
 
 ITEM_COLUMNS = (
-    "item_id,workspace_id,name,category,quantity,location,image_url,barcode,"
+    "item_id,workspace_id,inventory_id,space_id,name,category,quantity,location,image_url,barcode,"
     "purchase_source,notes,brand,part_number,source_system,external_id,created_at"
 )
 
@@ -161,8 +163,9 @@ def _assert_org_exists(request: Request, user_id: str) -> None:
 def create_key(payload: CreateKeyRequest, request: Request, response: Response, user: AuthenticatedUser = Depends(get_current_user)):
     response.headers["Cache-Control"] = "no-store"
     workspace_id = str(payload.workspace_id) if payload.workspace_id else None
+    organization_id = str(payload.organization_id) if payload.organization_id else None
     try:
-        scopes = validate_scopes(workspace_id=workspace_id, scopes=payload.scopes)
+        scopes = validate_scopes(workspace_id=workspace_id, scopes=payload.scopes, organization_id=organization_id)
     except ValueError as exc:
         raise api_error(request, 400, str(exc), "Scopes do not match the requested key type.")
     if payload.expires_at:
@@ -174,7 +177,11 @@ def create_key(payload: CreateKeyRequest, request: Request, response: Response, 
     else:
         expires_at = None
 
-    if workspace_id:
+    if organization_id:
+        from app.api.routes.collaboration import organization
+        if organization(organization_id, user.user_id)['role'] not in ('owner', 'admin'):
+            raise api_error(request, 403, 'organization_admin_required', 'Only an organization owner or admin can issue management keys.')
+    elif workspace_id:
         _assert_workspace_owned(request, user.user_id, workspace_id)
     else:
         _assert_org_exists(request, user.user_id)
@@ -183,6 +190,7 @@ def create_key(payload: CreateKeyRequest, request: Request, response: Response, 
     raw_key = generate_api_key(environment)
     record = {
         "workspace_id": workspace_id,
+        "organization_id": organization_id,
         "org_id": user.user_id,
         "name": payload.name,
         "key_prefix": raw_key[:20],
@@ -205,7 +213,7 @@ def list_keys(request: Request, response: Response, user: AuthenticatedUser = De
     response.headers["Cache-Control"] = "no-store"
     try:
         rows = get_supabase_admin().table("api_keys").select(
-            "id,workspace_id,name,key_prefix,scopes,created_at,last_used_at,expires_at,revoked_at"
+            "id,workspace_id,organization_id,name,key_prefix,scopes,created_at,last_used_at,expires_at,revoked_at"
         ).eq("org_id", user.user_id).order("created_at", desc=True).execute().data or []
         return {"keys": rows}
     except Exception:
@@ -225,11 +233,18 @@ def key_workspaces(request: Request, user: AuthenticatedUser = Depends(get_curre
         raise api_error(request, 503, "workspace_list_unavailable", "Your workspaces could not be loaded.")
 
 
+@router.get("/keys/organizations")
+def key_organizations(user: AuthenticatedUser = Depends(get_current_user)):
+    from app.api.routes.collaboration import organizations
+    result = organizations(user)
+    return {'organizations': [row for row in result['organizations'] if row['role'] in ('owner', 'admin')]}
+
+
 @router.get("/whoami")
 def whoami(principal: APIKeyPrincipal = Depends(require_api_scope(None))):
     # Even write-only credentials can verify their connection without reading
     # inventory or making a test write. The dependency enforces the same budget.
-    return {"key_id": principal.key_id, "workspace_id": principal.workspace_id, "scopes": sorted(principal.scopes)}
+    return {"key_id": principal.key_id, "workspace_id": principal.workspace_id, "organization_id": principal.organization_id, "scopes": sorted(principal.scopes)}
 
 
 @router.delete("/keys/{key_id}")
@@ -260,7 +275,7 @@ def _write_workspace(request: Request, principal: APIKeyPrincipal, requested: UU
 
 def _item_payload(item: APIItemCreate, principal: APIKeyPrincipal, request: Request) -> dict:
     workspace_id = _write_workspace(request, principal, item.workspace_id)
-    data = item.model_dump(exclude={"workspace_id"}, exclude_none=True)
+    data = item.model_dump(mode="json", exclude={"workspace_id"}, exclude_none=True)
     data.update({"workspace_id": workspace_id, "user_id": principal.key_id})
     return data
 
@@ -271,6 +286,8 @@ def _data_failure(request: Request, action: str, error: Exception) -> HTTPExcept
         return api_error(request, 403, "workspace_access_denied", "The key cannot access that workspace.")
     if isinstance(error, APIError) and str(getattr(error, "code", "")) == "22023":
         return api_error(request, 400, "invalid_inventory_request", "Check the query or use the exact name of a Space linked to this team.")
+    if isinstance(error, APIError) and str(getattr(error, "code", "")) in {"23514", "23503"}:
+        return api_error(request, 400, "invalid_inventory_request", "The item could not be saved in that inventory. Use a Space in the same inventory and check the supplied fields.")
     if isinstance(error, APIError) and str(getattr(error, "code", "")) in {"23505", "21000"}:
         return api_error(request, 409, "duplicate_external_id", "External identities must be unique within a workspace. Use bulk import to update existing items.")
     return api_error(request, 503, "database_unavailable", "The inventory service is temporarily unavailable.")

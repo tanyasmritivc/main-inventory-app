@@ -1221,3 +1221,15 @@ existing app flows. Do not revert templates to browser-bound email PKCE: users
 request links on desktop and open them on phones. The submitted mobile binary is
 unchanged; email links complete on the website and users can then sign in in the
 app. Existing sent emails cannot be rewritten.
+
+
+### October 19, 2026: explicit organization delegation and human deletion review
+
+Bind new management API keys to one actual organization, with opt-in structure,
+membership and deletion scopes. Keep legacy keys unchanged. Recheck current actor
+roles, inventory restrictions and key revocation in transactional SQL. Use stable
+request IDs and durable receipts for management retries. API keys may prepare
+permanent deletions but cannot confirm them: the signed-in key owner must review
+the saved impact and type the exact resource name in FindEZ. Expired or changed
+previews require a new request. Chat Space creation requires an explicit named
+request and the selected editable inventory. No submitted mobile app changes.

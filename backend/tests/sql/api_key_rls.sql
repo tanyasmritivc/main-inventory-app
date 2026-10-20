@@ -208,3 +208,25 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir ../../supabase/migrations/052_invitation_push_target.sql
 \ir invitation_push_target.sql
 \ir catalog_write_permissions.sql
+\ir resource_permissions.sql
+
+\ir private_item_images.sql
+\ir capture_original_gallery.sql
+
+\ir chat_item_actions.sql
+
+-- New delegated capabilities retain all preceding legacy behavior.
+-- The composed fixture supplies this pre-migration legacy sharing table;
+-- production already has it (verified by the fresh restore rehearsal).
+CREATE TABLE public.team_members(share_id uuid REFERENCES public.team_shares(share_id) ON DELETE CASCADE,member_user_id uuid REFERENCES auth.users(id),PRIMARY KEY(share_id,member_user_id));
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
+\ir ../../supabase/migrations/058_api_inventory_compatibility.sql
+\ir ../../supabase/migrations/060_personal_space_sharing.sql
+\ir ../../supabase/migrations/062_agent_space_creation.sql
+\ir ../../supabase/migrations/063_organization_agent_keys.sql
+\ir ../../supabase/migrations/064_agent_management.sql
+\ir ../../supabase/migrations/065_agent_delete_approvals.sql
+\ir ../../supabase/migrations/066_api_inventory_identity.sql
+\ir ../../supabase/migrations/067_agent_approval_conflict.sql
+\ir agent_management.sql
+\ir agent_management_rls.sql

@@ -25,6 +25,8 @@ from app.api.routes.team_workspace import router as team_workspace_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.push import router as push_router
 from app.api.routes.api_v1 import router as api_v1_router
+from app.api.routes.agent_management import router as agent_management_router
+from app.api.routes.agent_approvals import router as agent_approvals_router
 from app.api.routes.review import router as review_router
 from app.api.routes.invitations import router as invitations_router
 
@@ -55,6 +57,8 @@ api_router.include_router(team_workspace_router)
 api_router.include_router(notifications_router)
 api_router.include_router(push_router)
 api_router.include_router(api_v1_router)
+api_router.include_router(agent_management_router)
+api_router.include_router(agent_approvals_router)
 api_router.include_router(review_router)
 api_router.include_router(invitations_router)
 
@@ -80,3 +84,6 @@ for scoped_feature_router in (
 ):
     scoped_router.include_router(scoped_feature_router)
 api_router.include_router(scoped_router)
+
+from app.api.routes.private_images import router as private_images_router
+api_router.include_router(private_images_router)

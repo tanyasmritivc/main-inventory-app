@@ -52,21 +52,6 @@ def project_answer_context(detail: dict) -> dict:
     }
 
 
-def project_answer_text(detail: dict) -> str:
-    items = detail.get('items') or []
-    if not items:
-        return 'This project has no requirements yet. Add its parts list to check what you need.'
-    ready = sum(_count(row.get('available_quantity')) >= _count(row.get('required_quantity')) for row in items)
-    missing = [row for row in items if _count(row.get('available_quantity')) < _count(row.get('required_quantity'))]
-    intro = f'You have enough stock for {ready} of the {len(items)} required parts.'
-    if not missing:
-        return f'{intro} Everything on this parts list is available.'
-    shortages = '; '.join(
-        f"{_text(row.get('name'))}: {_count(row.get('available_quantity'))} of {_count(row.get('required_quantity'))} available"
-        for row in missing[:5]
-    )
-    remaining = f' There are {len(missing) - 5} more shortages in the list.' if len(missing) > 5 else ''
-    return f'{intro} You still need {shortages}.{remaining}'
 
 
 def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
@@ -74,6 +59,7 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
     rows: list[dict] = []
     seen_sources: set[tuple[str, str]] = set()
     seen_items: set[str] = set()
+    incomplete = False
 
     def source(kind: str, label: str, detail: str) -> None:
         key = (kind, label)
@@ -125,6 +111,10 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
                 source('project', _text(kit.get('name')) or 'Project kit', 'Project requirements and location checked')
             if result.get('spaces'):
                 source('spaces', 'Spaces', 'Accessible inventory locations checked')
+        elif tool == 'inventory_query' and isinstance(result, dict):
+            inventory(result.get('items') or [], show_rows=True)
+            incomplete = incomplete or result.get('complete') is not True
+            source('inventory', 'Inventory query', 'Current authorized records checked' if result.get('complete') else 'Partial authorized records checked')
         elif tool == 'inventory_search' and isinstance(result, list):
             inventory(result, show_rows=True)
             if not result:
@@ -146,6 +136,6 @@ def answer_context_from_reads(context: dict, tool_trace: list[dict]) -> dict:
     return {
         'sources': sources[:20],
         'rows': rows[:100],
-        'rows_truncated': len(rows) > 100,
+        'rows_truncated': incomplete or len(rows) > 100,
         'checked_at': datetime.now(timezone.utc).isoformat(),
     }

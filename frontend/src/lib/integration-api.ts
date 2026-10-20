@@ -1,14 +1,15 @@
 import { apiBase } from "@/lib/api";
 
-export type KeyScope = "items:read" | "items:write" | "import:write" | "workspace:read" | "org:read" | "org:write";
+export type KeyScope = "items:read" | "items:write" | "import:write" | "workspace:read" | "org:read" | "org:write" | "structure:read" | "structure:write" | "structure:delete" | "members:read" | "members:write" | "items:delete";
 export type IntegrationKey = {
-  id: string; workspace_id: string | null; name: string; key_prefix: string;
+  id: string; organization_id?: string | null; workspace_id: string | null; name: string; key_prefix: string;
   scopes: KeyScope[]; created_at: string; last_used_at: string | null;
   expires_at: string | null; revoked_at: string | null;
 };
+export type KeyOrganization = { organization_id: string; name: string; role: "owner" | "admin" };
 export type KeyWorkspace = { team_id: string; name: string };
 export type CreateIntegrationKey = {
-  name: string; workspace_id: string | null; scopes: KeyScope[]; expires_at: string | null;
+  name: string; workspace_id: string | null; organization_id?: string | null; scopes: KeyScope[]; expires_at: string | null;
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -76,7 +77,11 @@ export async function testIntegrationKey(key: string): Promise<string> {
     await request("/workspaces/summary", key);
     return "Connected. Workspace access verified.";
   }
-  return "Key authentication passed. Write permissions were not exercised.";
+  if (identity.scopes.includes("structure:read")) {
+    await request("/organization", key);
+    return "Connected. Organization directory access verified.";
+  }
+  return "Key authentication passed. Write and deletion permissions were not exercised.";
 }
 
 export function integrationKeyStatus(key: Pick<IntegrationKey, "revoked_at" | "expires_at">): "Active" | "Expired" | "Revoked" {
@@ -84,3 +89,5 @@ export function integrationKeyStatus(key: Pick<IntegrationKey, "revoked_at" | "e
   if (key.expires_at && Date.parse(key.expires_at) <= Date.now()) return "Expired";
   return "Active";
 }
+
+export const listKeyOrganizations = (token: string) => request<{ organizations: KeyOrganization[] }>("/keys/organizations", token);

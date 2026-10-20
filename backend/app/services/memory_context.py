@@ -55,15 +55,3 @@ def personalize(answer, preferences):
     answer=dict(answer)
     answer['assistant_message']=present(answer.get('assistant_message') or '',preferences,bool((answer.get('answer_context') or {}).get('rows')))
     return answer
-
-
-def preference_question(message, preferences):
-    import re
-    text=message.casefold()
-    if not re.search(r'\b(forget|save|change|prefer)\b',text) and re.search(r'\b(what (?:do you |have you )?(?:know|remember) about me|my (?:saved )?preferences)\b',text):
-        facts=[f"{key.replace('_',' ')}: {preferences[key]}" for key in ('answer_length','answer_format') if key in preferences]
-        return {'tool':None,'result':None,'answer_context':None,
-                'assistant_message':('Saved preferences: '+ '; '.join(facts)+'.' if facts else 'No active saved answer preferences are available.')+' Review or change personalization in Settings > Memory.'}
-    if re.search(r'\b(remember|forget|save|change|prefer)\b',text) and re.search(r'\b(preferences?|personalization|answer (?:length|format)|reply (?:length|format)|(?:brief|short|detailed) (?:answers|replies))\b',text):
-        return {'tool':None,'result':None,'answer_context':None,'assistant_message':'Manage preferences in Settings > Memory. Nothing was saved or forgotten from this message.'}
-    return None

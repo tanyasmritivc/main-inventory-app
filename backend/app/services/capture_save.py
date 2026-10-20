@@ -8,6 +8,7 @@ from app.services.catalog_service import verified_catalog_id_for_identity
 from app.services.items_repo import _resolve_space_id, invalidate_inventory_cache
 from app.services.supabase_client import get_supabase_admin
 from app.services.inventory_scope import current_inventory
+from app.services.item_photos import retain_capture_original
 
 
 _FIELDS = (
@@ -113,4 +114,14 @@ def save_capture_items(*, user_id: str, items: list[dict], max_new_items: int | 
             else:
                 failures.append({'index': index, 'reason': 'Saving could not be confirmed. Your draft is safe to retry.'})
         invalidate_inventory_cache(user_id)
+    # Saving the crop alone is not a completed capture. Keep the stable item ID
+    # on a gallery failure, report the draft unconfirmed, and repair on retry.
+    for index, row in list(accepted.items()):
+        try:
+            retain_capture_original(user_id=user_id, item=row,
+                                    source_frame_url=items[index].get('source_frame_url'))
+        except Exception:
+            logger.warning('Original capture photo could not be confirmed')
+            accepted.pop(index)
+            failures.append({'index': index, 'reason': 'The item was saved, but its original photo could not be confirmed. Retry this draft to finish saving.'})
     return [accepted[index] for index in sorted(accepted)], sorted(failures, key=lambda row: row['index'])

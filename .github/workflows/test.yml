@@ -40,6 +40,9 @@ jobs:
         run: |
           psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
           FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/catalog_write_concurrency.py
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/resource_permission_concurrency.py
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/chat_item_action_concurrency.py
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/agent_management_concurrency.py
           createdb findez_memory_tests
           PGDATABASE=findez_memory_tests psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/account_memory.sql
 

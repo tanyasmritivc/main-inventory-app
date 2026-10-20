@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from app.api.routes import api_v1
+from app.api.routes import api_v1, agent_management
 from backend.tests.test_integration_api_flow import api, bearer, create  # noqa: F401
 from api_reference import ENDPOINTS, ERRORS, ITEM, ITEM_ID, OUTPUT, ROOT, build_spec, serialized_spec
 
@@ -43,7 +43,7 @@ def documented_bodies():
 @pytest.mark.parametrize("identity,body", list(documented_bodies()))
 def test_documented_json_requests_pass_real_request_validation(identity, body):
     method, path = identity.split(" ")
-    route = next(route for route in api_v1.router.routes if route.path == path and method in route.methods)
+    route = next(route for route in [*api_v1.router.routes, *agent_management.router.routes] if route.path == path and method in route.methods)
     TypeAdapter(route.body_field.field_info.annotation).validate_python(body)
 
 
@@ -91,7 +91,7 @@ def _prepare_data(api):
     api.data.rpc.side_effect = rpc
 
 
-@pytest.mark.parametrize("identity", [identity for identity in ENDPOINTS if "/keys" not in identity and "/whoami" not in identity])
+@pytest.mark.parametrize("identity", [identity for identity in ENDPOINTS if "/keys" not in identity and "/whoami" not in identity and "/organization" not in identity])
 def test_documented_inventory_examples_reach_handlers_with_expected_response(api, monkeypatch, identity):
     """Execute request examples through HTTP. SQL behavior has the real RLS suite."""
     annotation = ENDPOINTS[identity]
@@ -111,7 +111,7 @@ def test_docs_key_management_example_issues_lists_verifies_and_revokes(api):
     issued = response.json()
     assert set(issued) == set(ENDPOINTS["POST /api/v1/keys"]["example"])
     identity = api.client.get("/api/v1/whoami", headers=bearer(issued["key"])).json()
-    assert identity == {"key_id": issued["id"], "workspace_id": issued["workspace_id"], "scopes": issued["scopes"]}
+    assert identity == {"key_id": issued["id"], "workspace_id": issued["workspace_id"], "organization_id": issued["organization_id"], "scopes": issued["scopes"]}
     listed = api.client.get("/api/v1/keys", headers=bearer("web-session"))
     assert listed.status_code == 200
     assert set(listed.json()["keys"][0]) == set(ENDPOINTS["GET /api/v1/keys"]["example"]["keys"][0])
