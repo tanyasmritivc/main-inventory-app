@@ -5,7 +5,9 @@ block account deletion. Only organization ownership requires a prior transfer.
 Migration 071 implements atomic shared-content custody preservation with Auth
 deletion and does not grant the deleted identity access. Organization workspaces
 pass to the organization Owner; independent shared workspaces stay with a
-remaining accepted member. Production activation is pending explicit approval.
+remaining accepted member. The user's explicit “yes” authorized production 071
+and matching cleanup activation; both are now live. No customer account deletion
+was authorized or performed as deployment QA.
 See `docs/plans/account-deletion-shared-content-20261019.md`.
 
 ## October 19 — explicit removal choices and protected Owner

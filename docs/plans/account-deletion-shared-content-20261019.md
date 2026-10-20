@@ -1,7 +1,7 @@
 # Account deletion with shared contributions
 
-Status: implemented and tested; migration 071 and the API cleanup overlay are
-prepared, not activated. Production database changes require explicit approval.
+Status: published after the user's explicit approval. Migration 071 and the
+production-compatible API cleanup overlay are live for existing web/mobile clients.
 
 The user reported the `SHARED_RECORDS` blocker and specified that only
 organization ownership should require transfer before account deletion.
@@ -61,14 +61,24 @@ binary, Dashboard/UI change, or user-account deletion is part of activation.
 
 Private release preparation is under
 `/home/ubuntu/findez-account-delete-20261020`. The local production-compatible
-overlay is `/private/tmp/findez-account-candidate-cleanup.py`. No production
-schema, runtime or customer data has been changed by this task.
+overlay is `/private/tmp/findez-account-candidate-cleanup.py`. Production schema
+and cleanup runtime are updated; no customer account was deleted during activation.
 
 ## Activation
 
-After explicit approval, take a fresh backup, verify source/function hashes and
-the restore receipt, apply 071 atomically, install only the reviewed cleanup
-overlay and restart the API. Verify health, DB connectivity and anonymous-access
-denial. Do not run destructive QA against real user accounts.
+The user approved activation with “yes”. The guarded activation verified
+source/function hashes and the restore receipt, took a fresh database backup,
+installed the reviewed compatible cleanup overlay, restarted the API and applied
+071 atomically. Unrelated runtime changes were preserved.
 
-Apple upload and end-user/device deletion acceptance are not claimed.
+Remote `activation.json` and `migration-071.json` record success:
+- API `/health` and `/health/db`: HTTP 200.
+- Web `/signin`: HTTP 200.
+- Anonymous private-image request: HTTP 401; item-images remains private.
+- Migration SHA-256:
+  `233ddafefe646e6233615b42a281c67205dceb41769a0c617963f7ff48de3f89`.
+- Fresh backup retained; no customer accounts deleted.
+
+Existing web/mobile deletion endpoints use the fix without a new binary.
+End-user/device deletion acceptance is not claimed; the user can retry their
+own confirmed deletion. Organization Owners must still transfer ownership first.

@@ -1,10 +1,14 @@
-## October 19 - account deletion fix prepared
+## October 19 - account deletion fix published
 
 Migration 071 removes the shared-contribution blocker and preserves shared
 content atomically with Auth deletion. Organization Owners must transfer first.
 Task/invite attribution FK restoration is fixed too. Full Python and composed
 SQL tests pass; a private restore verifies all 90 existing tables are unchanged.
-Activation awaits explicit database approval. No real user account was tested.
+User approved activation; 071 and the compatible cleanup overlay are live after
+fresh backup and source-drift checks. API/DB/web health pass; anonymous image
+access is denied and photos remain private. No real user account was tested or
+deleted. Existing web/mobile clients use the fix without a new binary; user
+deletion acceptance remains unverified.
 See `docs/plans/account-deletion-shared-content-20261019.md`.
 
 ## October 19 — organization leave/removal update published
