@@ -58,5 +58,14 @@ and redirect checks do not prove real inbox delivery or every customer journey.
 User approved migration072 and requested TestFlight. Guarded activation and fresh
 backup passed; the two old membership checks now use effective workspace roles.
 API/database health and anonymous private-photo denial pass. Existing mobile and
-web clients receive the fix immediately; requested beta98 is being prepared.
+web clients receive the fix immediately; requested beta98 is now Apple-acknowledged.
 No customer data was changed. This supersedes the earlier pending status.
+
+## TestFlight delivery
+
+Apple acknowledged signed production1.0.9(98), delivery `7d00d31e-465a-4ca2-844b-536721d9a2f3`.
+All five CI gates pass (run39382888411), including693 Flutter tests and clean
+analysis; the skipped compiled-config gate was separately enabled and passed.
+The signed IPA/archive are preserved; SHA256 `3ba1466a8f7d442139227215ec8904c85ca38210faadfb330e4d9cad336af55b`.
+TestFlight processing and availability were not polled; physical-device acceptance
+remains pending. No public App Store submission was performed.
