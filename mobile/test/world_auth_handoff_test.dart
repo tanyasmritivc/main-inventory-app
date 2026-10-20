@@ -191,7 +191,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://auth.test',
-      anonKey: 'synthetic-only',
+      publishableKey: 'synthetic-only',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient((request) async {
         final path = request.url.path;

@@ -271,6 +271,16 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                 ),
                 child: _identity(task['assigned_to'].toString(), 'Assigned to'),
               ),
+            if (task['assigned_to'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: task['assigned_by'] == null
+                    ? const AppText('Assigned by: not recorded')
+                    : _identity(task['assigned_by'].toString(), 'Assigned by'),
+              ),
             if (task['created_by'] != null)
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -513,6 +523,15 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                         fontSize: 13,
                       ),
                     ),
+                    if (task['assigned_to'] != null) ...[
+                      const SizedBox(height: 8),
+                      task['assigned_by'] == null
+                          ? const AppText('Assigned by: not recorded')
+                          : _identity(
+                              task['assigned_by'].toString(),
+                              'Assigned by',
+                            ),
+                    ],
                     if ((task['assigned_to'] ?? task['created_by']) !=
                         null) ...[
                       const SizedBox(height: 8),

@@ -1,3 +1,36 @@
+## Organization access and inline item update — live (2026-10-19)
+
+User approved “yes publish and apply 068.” Migration 068 and the reviewed web/API
+release are live after a fresh private database backup. Admins access all resources
+within their organization; only Owners delete the organization. Viewers remain
+read-only. Inline item editing, original import fields and task/invite attribution
+are published. Deployment source hashes, attribution columns, permission precedence,
+API/database/site health and unauthorized photo/Chat checks pass.
+
+Mobile 1.0.9 (96), implementation efd7209, is signed, Apple-validated and
+upload acknowledged (ea38eaff-6bfa-4a30-8af2-6c65e2e43c4a). Processing/tester
+availability is unverified. Includes full-photo zoom/pan and session restoration. All three CI lanes
+pass; 670 mobile tests pass. Device acceptance remains pending.
+See docs/plans/organization-items-update-20261019.md for evidence and receipts.
+
+## Organization access and inline item update — candidate (2026-10-19)
+
+Active lane: findez-items-mobile-20261020. User explicitly superseded the old organization-admin
+restriction: Owners/Admins access all organization workspaces/inventories/Spaces,
+including custom No access. Only Owner deletes the organization. Other Viewers
+remain read-only; Editors can rename accessible workspaces/inventories and edit
+items. Personal and unrelated organizations remain isolated.
+
+Item rows open full details, editable fields save inline, original spreadsheet
+columns are displayed, purchasing destinations exclude vendor part numbers,
+and invitations/tasks show sender/assigner identities with photos.
+
+Migration 068 is a candidate only; production database approval is outstanding.
+Mobile 1.0.9 (96) is signed; all three final CI lanes pass. Apple upload and device
+acceptance are not complete. Isolated live-copy migration rehearsal preserves all
+original values across 90 tables. Session restoration and full-photo zoom are included.
+See docs/plans/organization-items-update-20261019.md for validation and release gates.
+
 ## Final submission audit — build 95 delivered; notification arrival confirmed
 
 Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.

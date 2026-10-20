@@ -2205,6 +2205,10 @@ class UpdateItemRequest {
     this.imageUrl,
     this.barcode,
     this.purchaseSource,
+    this.brand,
+    this.partNumber,
+    this.subcategory,
+    this.tags,
     this.notes,
   });
 
@@ -2216,6 +2220,10 @@ class UpdateItemRequest {
   final String? imageUrl;
   final String? barcode;
   final String? purchaseSource;
+  final String? brand;
+  final String? partNumber;
+  final String? subcategory;
+  final List<String>? tags;
   final String? notes;
 
   Map<String, dynamic> toJson() {
@@ -2228,6 +2236,10 @@ class UpdateItemRequest {
       if (imageUrl != null) 'image_url': imageUrl,
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
+      if (brand != null) 'brand': brand,
+      if (partNumber != null) 'part_number': partNumber,
+      if (subcategory != null) 'subcategory': subcategory,
+      if (tags != null) 'tags': tags,
       if (notes != null) 'notes': notes,
     };
   }

@@ -79,7 +79,7 @@ void main() {
         '${base64Url.encode(utf8.encode('{"alg":"HS256"}'))}.${base64Url.encode(utf8.encode(jsonEncode({'sub': 'user-1', 'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600})))}.signature';
     await Supabase.initialize(
       url: 'https://auth.test',
-      anonKey: 'test',
+      publishableKey: 'test',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient(
         (request) async => http.Response(

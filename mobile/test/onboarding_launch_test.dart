@@ -145,7 +145,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://auth.test',
-      anonKey: 'test',
+      publishableKey: 'test',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient((request) async {
         final user = {
@@ -339,6 +339,43 @@ void main() {
       await tester.pump();
     },
   );
+
+  testWidgets('offline refresh keeps saved sign-in and offers retry', (
+    tester,
+  ) async {
+    final auth = Supabase.instance.client.auth;
+    await auth.signInWithPassword(
+      email: 'test@example.test',
+      password: 'test-only',
+    );
+    auth.stopAutoRefresh();
+    final saved = auth.currentSession!.toJson();
+    String encode(Object data) =>
+        base64Url.encode(utf8.encode(jsonEncode(data))).replaceAll('=', '');
+    saved['access_token'] =
+        '${encode({'alg': 'HS256'})}.${encode({'sub': auth.currentUser!.id, 'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 - 3600})}.signature';
+    await auth.setInitialSession(jsonEncode(saved));
+    await tester.pumpWidget(_gate(_Api()));
+    await tester.pump();
+    // Inject the SDK stream error without a real network outage.
+    // ignore: invalid_use_of_internal_member
+    auth.notifyException(
+      AuthRetryableFetchException(
+        message: 'Temporary connection failure',
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Reconnect to continue'), findsOneWidget);
+    expect(find.byType(AuthPage), findsNothing);
+    expect(auth.currentSession, isNotNull);
+    await tester.tap(find.text('Retry'));
+    await settleHome(tester);
+    expect(auth.currentSession!.isExpired, isFalse);
+    expect(find.text('Reconnect to continue'), findsNothing);
+    expect(find.byType(AuthPage), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    auth.stopAutoRefresh();
+  });
 
   for (final kind in ['space', 'team']) {
     testWidgets('$kind invitation survives pre-auth onboarding and restart', (

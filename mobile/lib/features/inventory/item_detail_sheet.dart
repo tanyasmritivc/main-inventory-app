@@ -19,6 +19,7 @@ import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import 'item_detail_drag_sheet.dart';
+import 'item_photo_viewer.dart';
 import 'imported_item_details.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -49,7 +50,7 @@ Future<void> showItemDetailSheet(
     builder: (_) => _ItemDetailSheet(
       item: item,
       api: api,
-      permission: api.canEdit ? permission : 'view',
+      permission: shareId != null || api.canEdit ? permission : 'view',
       shareId: shareId,
       initialThreshold: initialThreshold,
       spaceName: spaceName,
@@ -86,6 +87,11 @@ class _ItemDetailSheet extends StatefulWidget {
 
 class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   late InventoryItem _item;
+  final _fieldController = TextEditingController();
+  String? _editingField;
+  String? _fieldError;
+  bool _fieldSaving = false;
+
   late final TextEditingController _notesCtrl;
   late final TextEditingController _purchaseSourceCtrl;
   late final TextEditingController _thresholdCtrl;
@@ -168,6 +174,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   void dispose() {
+    _fieldController.dispose();
     _thresholdDebounce?.cancel();
     // All user dismissals flush edits before popping. Never start a write
     // from dispose, where failures cannot be shown and accounts may have changed.
@@ -351,8 +358,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final notes = _notesCtrl.text.trim();
     setState(() => _notesSaving = true);
     try {
-      final updated = await widget.api.updateItem(
-        request: UpdateItemRequest(itemId: widget.item.itemId, notes: notes),
+      final updated = await _updateDetails(
+        UpdateItemRequest(itemId: widget.item.itemId, notes: notes),
       );
       if (!mounted) return false;
       setState(() {
@@ -449,11 +456,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Future<bool> _persistPurchaseSource(String source) async {
     try {
-      final updated = await widget.api.updateItem(
-        request: UpdateItemRequest(
-          itemId: widget.item.itemId,
-          purchaseSource: source,
-        ),
+      final updated = await _updateDetails(
+        UpdateItemRequest(itemId: widget.item.itemId, purchaseSource: source),
       );
       _lastSavedPurchaseSource = source;
       if (mounted) {
@@ -473,6 +477,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Future<bool> _requestClose() async {
     if (_closing || ModalRoute.of(context)?.isCurrent != true) return false;
+    if (_editingField != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Save or cancel the field you are editing first.'),
+        ),
+      );
+      return false;
+    }
     if (_notesSaving ||
         _photoSaving ||
         _checkingOut ||
@@ -1111,6 +1123,150 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  Future<void> _detailWrites = Future.value();
+  Future<InventoryItem> _updateDetails(UpdateItemRequest request) async {
+    final previous = _detailWrites;
+    final done = Completer<void>();
+    _detailWrites = done.future;
+    await previous;
+    try {
+      return await (widget.shareId == null
+          ? widget.api.updateItem(request: request)
+          : widget.api.updateSharedItem(
+              shareId: widget.shareId!,
+              request: request,
+            ));
+    } finally {
+      done.complete();
+    }
+  }
+
+  void _beginField(String field, String value) {
+    if (widget.permission != 'edit' ||
+        (widget.shareId == null && !widget.api.canEdit) ||
+        _editingField != null ||
+        _closing) {
+      return;
+    }
+    setState(() {
+      _editingField = field;
+      _fieldController.text = value;
+      _fieldError = null;
+    });
+  }
+
+  Future<void> _saveField() async {
+    final field = _editingField;
+    if (field == null || _fieldSaving) return;
+    final value = _fieldController.text.trim();
+    final quantity = int.tryParse(value);
+    if ((field == 'name' || field == 'category') && value.isEmpty ||
+        field == 'quantity' &&
+            (quantity == null || quantity < 0 || quantity > 100000)) {
+      setState(
+        () => _fieldError = field == 'quantity'
+            ? 'Enter a whole number from 0 to 100000.'
+            : 'Enter a value.',
+      );
+      return;
+    }
+    setState(() {
+      _fieldSaving = true;
+      _fieldError = null;
+    });
+    try {
+      final updated = await _updateDetails(
+        UpdateItemRequest(
+          itemId: _item.itemId,
+          name: field == 'name' ? value : null,
+          category: field == 'category' ? value : null,
+          location: field == 'location' ? value : null,
+          quantity: field == 'quantity' ? quantity : null,
+          brand: field == 'brand' ? value : null,
+          partNumber: field == 'part_number' ? value : null,
+          barcode: field == 'barcode' ? value : null,
+          subcategory: field == 'subcategory' ? value : null,
+          tags: field == 'tags'
+              ? value
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList()
+              : null,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _item = updated;
+        _editingField = null;
+      });
+      InventoryCache.updateItem(updated, contextKey: widget.api.cacheKey);
+      widget.onItemUpdated?.call(updated);
+    } catch (error) {
+      if (mounted) setState(() => _fieldError = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _fieldSaving = false);
+    }
+  }
+
+  Widget _editableRow(String label, String value, String field) {
+    if (_editingField == field) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: ValueKey('item-field-$field'),
+              controller: _fieldController,
+              autofocus: true,
+              enabled: !_fieldSaving,
+              keyboardType: field == 'quantity'
+                  ? TextInputType.number
+                  : TextInputType.text,
+              maxLength: field == 'name' || field == 'location'
+                  ? 200
+                  : field == 'tags'
+                  ? 1000
+                  : 100,
+              decoration: InputDecoration(
+                labelText: label,
+                errorText: _fieldError,
+              ),
+              onSubmitted: (_) => unawaited(_saveField()),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: _fieldSaving
+                      ? null
+                      : () => setState(() {
+                          _editingField = null;
+                          _fieldError = null;
+                        }),
+                  child: const AppText('Cancel'),
+                ),
+                TextButton(
+                  onPressed: _fieldSaving ? null : _saveField,
+                  child: AppText(_fieldSaving ? 'Saving...' : 'Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    final row = _infoRow(label, value.isEmpty ? 'Not set' : value);
+    if (widget.permission != 'edit') return row;
+    return Semantics(
+      button: true,
+      key: ValueKey('edit-item-$field'),
+      label: 'Edit $label',
+      child: InkWell(onTap: () => _beginField(field, value), child: row),
+    );
+  }
+
   Widget _infoRow(String label, String value) {
     final largeText = MediaQuery.textScalerOf(context).scale(14) > 24;
     final labelText = AppText(
@@ -1515,41 +1671,61 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             const Color(0xFF171717),
                           ),
                         ),
-                        PrivateImage(
-                          photo.imageUrl,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) =>
-                              progress == null
-                              ? child
-                              : const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                          errorBuilder: (_, _, _) => Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.broken_image_outlined,
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Color(0x66FFFFFF),
-                                  ),
-                                  size: 32,
-                                ),
-                                SizedBox(height: 6),
-                                AppText(
-                                  'Photo unavailable',
-                                  style: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Color(0x66FFFFFF),
+                        Semantics(
+                          button: true,
+                          label: 'View full photo ${index + 1}',
+                          child: GestureDetector(
+                            key: ValueKey('view-item-photo-$index'),
+                            onTap: () =>
+                                Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                ).push<void>(
+                                  MaterialPageRoute(
+                                    fullscreenDialog: true,
+                                    builder: (_) => ItemPhotoViewer(
+                                      photos: List.unmodifiable(_photos),
+                                      initialIndex: index,
                                     ),
-                                    fontSize: 12,
                                   ),
                                 ),
-                              ],
+                            child: PrivateImage(
+                              photo.imageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                  ? child
+                                  : const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                              errorBuilder: (_, _, _) => Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.broken_image_outlined,
+                                      color: AppTheme.foreground(
+                                        context,
+                                        Color(0x66FFFFFF),
+                                      ),
+                                      size: 32,
+                                    ),
+                                    SizedBox(height: 6),
+                                    AppText(
+                                      'Photo unavailable',
+                                      style: TextStyle(
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Color(0x66FFFFFF),
+                                        ),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1764,30 +1940,48 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
                 child: Column(
                   children: [
-                    _infoRow('Category', item.category),
+                    _editableRow(
+                      item.displayDescription == null ? 'Name' : 'Description',
+                      item.name,
+                      'name',
+                    ),
                     _divider(),
-                    _infoRow('Location', item.location),
+                    _editableRow(
+                      'Part number',
+                      item.partNumber ?? '',
+                      'part_number',
+                    ),
                     _divider(),
-                    _infoRow('Quantity', '${item.quantity}'),
-                    if (item.brand != null && item.brand!.isNotEmpty) ...[
+                    _editableRow('Category', item.category, 'category'),
+                    _divider(),
+                    if (widget.shareId == null)
+                      _editableRow('Location', item.location, 'location')
+                    else
+                      _infoRow('Location', item.location),
+                    _divider(),
+                    _editableRow('Quantity', '${item.quantity}', 'quantity'),
+                    if (canEdit || (item.brand?.isNotEmpty ?? false)) ...[
                       _divider(),
-                      _infoRow('Brand', item.brand!),
+                      _editableRow('Brand', item.brand ?? '', 'brand'),
                     ],
-                    if (item.barcode != null && item.barcode!.isNotEmpty) ...[
+                    if (canEdit || (item.barcode?.isNotEmpty ?? false)) ...[
                       _divider(),
-                      _infoRow('Barcode', item.barcode!),
+                      _editableRow('Barcode', item.barcode ?? '', 'barcode'),
                     ],
-                    if (item.displayDescription != null) ...[
+                    if (canEdit || (item.subcategory?.isNotEmpty ?? false)) ...[
                       _divider(),
-                      _infoRow('Description', item.displayDescription!),
-                    ],
-                    if (item.subcategory != null &&
-                        item.subcategory!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Subcategory', item.subcategory!),
+                      _editableRow(
+                        'Subcategory',
+                        item.subcategory ?? '',
+                        'subcategory',
+                      ),
                     ],
                     _divider(),
                     _infoRow('Date added', _formatDate(item.createdAt)),
+                    if (canEdit || (item.tags?.isNotEmpty ?? false)) ...[
+                      _divider(),
+                      _editableRow('Tags', item.tags?.join(', ') ?? '', 'tags'),
+                    ],
                     if (item.confidence != null) ...[
                       _divider(),
                       _infoRow(
@@ -2052,20 +2246,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   ),
                                 ),
                               )
-                            : GestureDetector(
-                                onTap: () =>
-                                    setState(() => _isEditingNotes = true),
-                                child: AppText(
-                                  'Edit',
-                                  style: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Color(0x73FFFFFF),
-                                    ),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
+                            : const SizedBox.shrink(),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -2120,22 +2301,30 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               ),
                             ),
                           )
-                        : AppText(
-                            _notesCtrl.text.isNotEmpty
-                                ? _notesCtrl.text
-                                : 'Tap Edit to add notes...',
-                            style: TextStyle(
-                              color: _notesCtrl.text.isNotEmpty
-                                  ? AppTheme.foreground(
-                                      context,
-                                      const Color(0x73FFFFFF),
-                                    )
-                                  : AppTheme.foreground(
-                                      context,
-                                      const Color(0x33FFFFFF),
-                                    ),
-                              fontSize: 14,
-                              height: 1.5,
+                        : InkWell(
+                            key: const ValueKey('item-detail-notes-display'),
+                            onTap: canEdit
+                                ? () => setState(() => _isEditingNotes = true)
+                                : null,
+                            child: AppText(
+                              _notesCtrl.text.isNotEmpty
+                                  ? _notesCtrl.text
+                                  : (canEdit
+                                        ? 'Tap to add notes...'
+                                        : 'No notes'),
+                              style: TextStyle(
+                                color: _notesCtrl.text.isNotEmpty
+                                    ? AppTheme.foreground(
+                                        context,
+                                        const Color(0x73FFFFFF),
+                                      )
+                                    : AppTheme.foreground(
+                                        context,
+                                        const Color(0x33FFFFFF),
+                                      ),
+                                fontSize: 14,
+                                height: 1.5,
+                              ),
                             ),
                           ),
                   ),

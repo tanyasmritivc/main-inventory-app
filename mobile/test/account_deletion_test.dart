@@ -22,7 +22,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://auth.test',
-      anonKey: 'test',
+      publishableKey: 'test',
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       httpClient: MockClient((r) async {
         if (r.url.path.endsWith('delete-user')) {

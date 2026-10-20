@@ -111,6 +111,15 @@ class _HierarchyPageState extends State<HierarchyPage>
           _resource['role'],
         );
   bool get _owner => _resource['owner_user_id'] == widget.api.accountId;
+  bool get _organizationAdmin => (_org
+      ? ['owner', 'admin'].contains(_resource['role'])
+      : ['owner', 'admin'].contains(_resource['organization_role']));
+  bool get _ownerAuthority => _owner || _organizationAdmin;
+  bool get _canRename => _org
+      ? _organizationAdmin
+      : _inventory
+      ? _resource['can_rename'] == true
+      : ['owner', 'mentor', 'member'].contains(_resource['role']);
   String get _scope => _org
       ? 'organization'
       : _inventory
@@ -578,7 +587,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _deleteWorkspace() async {
-    if (!_owner || _busy) return;
+    if (!_ownerAuthority || _busy) return;
     final deleted = await confirmWorkspaceDeletion(
       context,
       widget.api,
@@ -647,7 +656,7 @@ class _HierarchyPageState extends State<HierarchyPage>
     if (!mounted || email == null) return;
     final role = await _choose('Organization role', {
       'member': 'Member',
-      if (_resource['role'] == 'owner') 'admin': 'Admin',
+      if (_ownerAuthority) 'admin': 'Admin',
     });
     if (!mounted || role == null) return;
     await _mutate('$_base/members', data: {'email': email, 'role': role});
@@ -665,7 +674,7 @@ class _HierarchyPageState extends State<HierarchyPage>
     final role = await _choose('Role', {
       'viewer': 'Viewer',
       'editor': 'Editor',
-      if (_inventory || _resource['role'] == 'owner') 'admin': 'Admin',
+      if (_inventory || _ownerAuthority) 'admin': 'Admin',
       'none': _inventory ? 'No access' : 'Remove from workspace',
       if (_inventory) 'inherit': 'Use workspace role',
     });
@@ -689,7 +698,7 @@ class _HierarchyPageState extends State<HierarchyPage>
     final role = await _choose('Role', {
       'viewer': 'Viewer',
       'editor': 'Editor',
-      if (_resource['role'] == 'owner') 'admin': 'Admin',
+      if (_ownerAuthority) 'admin': 'Admin',
       'none': 'Remove from workspace',
     });
     if (!mounted || role == null) return;
@@ -822,7 +831,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   );
 
   Future<void> _organizationMember(Map<String, dynamic> member) async {
-    if (_owner) {
+    if (_ownerAuthority) {
       final role = await _choose('Organization role', {
         'member': 'Member',
         'admin': 'Admin',
@@ -858,7 +867,7 @@ class _HierarchyPageState extends State<HierarchyPage>
   }
 
   Future<void> _transferOwner() async {
-    if (!_owner || _busy || !_org && !_workspace || _personal) return;
+    if (!_ownerAuthority || _busy || !_org && !_workspace || _personal) return;
     final confirmed = await confirmOwnershipTransfer(
       context,
       widget.api,
@@ -1178,17 +1187,13 @@ class _HierarchyPageState extends State<HierarchyPage>
           ),
           actions: [
             NotificationBell(api: widget.api),
-            if (_data != null &&
-                !widget.focusSearch &&
-                (_org && _owner ||
-                    _workspace && _owner && !_personal ||
-                    _inventory && _resource['can_rename'] == true))
+            if (_data != null && !widget.focusSearch && _canRename)
               _menu({
                 'Rename': () => _rename(),
-                if (_owner && (_org || _workspace) && !_personal)
+                if (_ownerAuthority && (_org || _workspace) && !_personal)
                   'Transfer ownership': _transferOwner,
                 if (_org && _owner) 'Delete organization': _deleteOrganization,
-                if (_workspace && _owner && !_personal)
+                if (_workspace && _ownerAuthority && !_personal)
                   'Delete workspace': _deleteWorkspace,
               }),
             AccountButton(api: widget.api),
@@ -1290,7 +1295,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                       _manager &&
                           member['role'] != 'owner' &&
                           (!['admin', 'mentor'].contains(member['role']) ||
-                              _owner)
+                              _ownerAuthority)
                       ? () => _workspaceMember(member)
                       : null,
                 ),
@@ -1494,13 +1499,13 @@ class _HierarchyPageState extends State<HierarchyPage>
           _row(
             'Workspace name',
             detail: _resource['name']?.toString(),
-            onTap: _owner ? () => _rename() : null,
+            onTap: _canRename ? () => _rename() : null,
           ),
           _row(
             'Your role',
             detail: membershipRoleLabel(_resource['role']?.toString() ?? ''),
           ),
-          if (_owner)
+          if (_ownerAuthority)
             TextButton(
               onPressed: _busy ? null : _deleteWorkspace,
               style: TextButton.styleFrom(
@@ -1600,7 +1605,7 @@ class _HierarchyPageState extends State<HierarchyPage>
                 (!_org &&
                     !_inventory &&
                     ['admin', 'mentor'].contains(member['role']) &&
-                    !_owner)
+                    !_ownerAuthority)
             ? null
             : () async {
                 if (_org) {
@@ -1710,16 +1715,13 @@ class _HierarchyPageState extends State<HierarchyPage>
             ),
             actions: [
               NotificationBell(api: widget.api),
-              if (_data != null &&
-                  (_org && _owner ||
-                      _workspace && _owner && !_personal ||
-                      _inventory && _resource['can_rename'] == true))
+              if (_data != null && _canRename)
                 _menu({
                   'Rename': () => _rename(),
-                  if (_owner && (_org || _workspace) && !_personal)
+                  if (_ownerAuthority && (_org || _workspace) && !_personal)
                     'Transfer ownership': _transferOwner,
                   if (_org && _owner) 'Delete': _deleteOrganization,
-                  if (_workspace && _owner && !_personal)
+                  if (_workspace && _ownerAuthority && !_personal)
                     'Delete workspace': _deleteWorkspace,
                 }),
               IconButton(

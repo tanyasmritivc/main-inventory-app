@@ -227,11 +227,16 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
   void initState() {
     super.initState();
     _ctrl = TextEditingController();
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
-      if (s.event == AuthChangeEvent.signedOut && mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    });
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (s) {
+        if (s.event == AuthChangeEvent.signedOut && mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      },
+      onError: (Object error, StackTrace stack) {
+        // Keep the invitation draft through transient session refresh failures.
+      },
+    );
   }
 
   @override

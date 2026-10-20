@@ -425,7 +425,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
-      anonKey: 'test-anon-key',
+      publishableKey: 'test-anon-key',
       httpClient: MockClient((request) async {
         if (request.url.path.endsWith('/delete-user')) _deleteRequests++;
         return http.Response('{}', 200);
