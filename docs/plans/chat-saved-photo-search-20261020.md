@@ -39,7 +39,14 @@ per question, with partial coverage disclosed. No new database migration.
   correctly named fictional QA-PN-F117 and QA Fastener DB from the saved-photo
   match despite a different detected label. All inventory/Storage reads and
   writes were mocked; no customer data was used or changed.
-- CI, selective deployment and App Store receipt: pending.
+- All five CI jobs pass on runtime `5bc885d0999394a23f92e3e4facbe8b3747d1119`,
+  run39397356053 (PR146).
+- The two-file backend overlay is live; source hashes match the tested candidate.
+  All99 unrelated Python files are unchanged. API/database health pass, and
+  anonymous private-photo/Chat requests are denied (401).
+- Dedicated Apple review login/workspace read, public privacy/terms/support/API
+  links and inherited screenshot checksums pass. The excluded founder account
+  was not used.
 
 ## App Store release
 
@@ -51,3 +58,15 @@ this update and its limits. Apple review approval is not guaranteed. Existing
 native audit evidence and physical-device/provider limitations are recorded in
 `docs/plans/simulator-release-audit-20261020.md` on the mobile release lane.
 Private receipts: `~/Documents/FindEZ/AppStore/submission-20261020`.
+
+## Final submission receipt
+
+Apple acknowledged submission `a07e0629-8f1f-4043-ae87-d06fb06fe4c0` at
+2026-10-20T09:09:34.236Z. Both review submission and version1.0.9 are
+`WAITING_FOR_REVIEW`; build99 is selected and release type is `AFTER_APPROVAL`.
+No new iOS binary was necessary for photo matching. This is a submitted update,
+not an Apple approval or a claim that the update is already publicly available.
+The accepted five iPhone/five iPad screenshots are preserved, with complete
+processing and unchanged checksums. Review notes and release notes describe the
+cumulative build99 update and conservative photo matching without promising
+arbitrary viewpoint recognition. No customer inventory was used for testing.
