@@ -1,3 +1,13 @@
+## October 19 — organization leave/removal update published
+
+Approved migrations 069/070 and matching API/web changes are live after fresh
+backup and passing health/access checks. Apple acknowledged signed 1.0.9 (97);
+processing, TestFlight availability and device acceptance remain unverified.
+Admins cannot remove the organization Owner; removal offers keep/move or delete
+choices. The web item expansion omits duplicate headings. No unrelated Dashboard
+changes or founder-account testing. See
+`docs/plans/organization-removal-choices-20261019.md` for exact evidence.
+
 ## Final submission security audit — October 18
 
 Approved 059/060/061 deployed after separate fresh 87-table restore rehearsals. Patched JWT/dependencies/avatar/checkout/document boundaries and local-proxy trust deployed with rollback. 1,093 tests + 10 subtests, live cross-account/role/revocation/upload checks and disposable email-account deletion pass. GPU HTTP remains an explicit launch blocker; native hardware/provider/push gates remain pending. See `docs/plans/final-mobile-security-20261018.md`. Mobile build93 (hide Plans) is in progress in its separate lane.
