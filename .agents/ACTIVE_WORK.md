@@ -4,6 +4,7 @@ Scoped web/API/mobile branches `feat/organization-leave-*-20261020` are prepared
 Admins cannot remove the organization Owner. Keep/move versus cascade deletion
 replaces empty-first prerequisites; web item rows expand without repeated titles.
 Use only synthetic test identities; the founder account is excluded from QA.
+All CI lanes pass. Signed build 97 is Apple-validated and preserved.
 Migration 069/070 production approval is pending. Build 97 is the matching client;
 96 remains the last acknowledged upload. See
 `docs/plans/organization-removal-choices-20261019.md` for behavior and evidence.
