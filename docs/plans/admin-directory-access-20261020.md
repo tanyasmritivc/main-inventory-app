@@ -23,3 +23,9 @@ remain private. No production customer records mutated during testing.
 Private rehearsal receipt: /home/ubuntu/findez-admin-directory-20261020/rehearsal.json.
 Database activation requires explicit user authorization, fresh backup and a live
 function hash guard. Preserve migration071 and all unrelated live API overlays.
+
+CI receipt: all five gates pass on 455f97d (run39380135827), PR143. Live read-only
+activation preflight passes. Guarded script is /tmp/findez-directory-activate.py
+on the VM; --activate remains blocked on explicit migration072 approval. Web
+settings fixes published independently as 2afb817; they do not remove this SQL
+permission check until072 is applied.
