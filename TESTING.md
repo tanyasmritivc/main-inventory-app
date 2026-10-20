@@ -1,5 +1,14 @@
 # FindEZ test suite
 
+## Native iOS release audit
+
+Run `flutter test integration_test/release_audit_test.dart -d <simulator-id>
+--no-pub --reporter expanded` from `mobile/` to exercise the current hierarchy,
+removal dialogs, item sheets, profile, Chat, attribution and account flows using
+actual iOS rendering and synthetic APIs. See
+`docs/plans/simulator-release-audit-20261020.md` for optional native screenshots,
+the full cross-stack audit and the distinction from physical-device acceptance.
+
 ## Responsive onboarding
 
 Run the full Flutter suite and analysis before release. world_responsive_test.dart

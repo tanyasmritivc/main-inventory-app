@@ -18,10 +18,13 @@ import 'package:mobile/core/pro_status.dart';
 import 'package:mobile/features/inventory/inventory_page.dart';
 import 'package:mobile/features/profile/profile_hub_page.dart';
 import 'package:mobile/features/profile/profile_page.dart';
+import 'package:mobile/features/profile/profile_editor_page.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/features/scan/scan_page.dart';
 
 int _deleteRequests = 0;
+
+Future<void> Function(String)? releaseAuditCapture;
 
 class _ProfileApi extends ApiClient {
   _ProfileApi({this.fail = false, this.pending})
@@ -377,8 +380,12 @@ void main() {
     ) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1;
+      tester.view.padding = const FakeViewPadding(top: 62, bottom: 34);
+      tester.view.viewPadding = const FakeViewPadding(top: 62, bottom: 34);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.create(brightness),
@@ -386,7 +393,10 @@ void main() {
             data: MediaQuery.of(
               context,
             ).copyWith(textScaler: const TextScaler.linear(2.6)),
-            child: child!,
+            child: RepaintBoundary(
+              key: const Key('release-audit-frame'),
+              child: child!,
+            ),
           ),
           home: MainShell(api: _ProfileApi()),
         ),
@@ -408,6 +418,7 @@ void main() {
               .selectedIndex,
           index,
         );
+        await releaseAuditCapture?.call('tab-${brightness.name}-$index');
       }
       await tester.tap(find.byType(NavigationDestination).at(0));
       await tester.pump();
@@ -418,6 +429,7 @@ void main() {
       expect(find.text('Account'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
       expect(tester.takeException(), isNull);
+      await releaseAuditCapture?.call('account-${brightness.name}');
       await tester.pumpWidget(const SizedBox());
     });
   }
@@ -754,18 +766,16 @@ void main() {
   testWidgets(
     'profile photo picker denial shows a safe error without losing details',
     (tester) async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            const MethodChannel('plugins.flutter.io/image_picker'),
-            (_) async => throw PlatformException(
-              code: 'photo_access_denied',
-              message: 'SECRET picker detail',
-            ),
-          );
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.dark(),
-          home: ProfilePage(api: _ProfileApi(), accountOnly: true),
+          home: ProfileEditorPage(
+            api: _ProfileApi(),
+            pickPhoto: () async => throw PlatformException(
+              code: 'photo_access_denied',
+              message: 'SECRET picker detail',
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();

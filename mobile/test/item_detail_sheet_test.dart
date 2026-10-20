@@ -400,7 +400,22 @@ void main() {
       httpClient: MockClient((_) async => http.Response('{}', 200)),
     );
   });
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  const notifications = MethodChannel(
+    'dexterous.com/flutter/local_notifications',
+  );
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(notifications, (call) async {
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestPermissions') return false;
+          throw StateError('Unexpected notification method: ${call.method}');
+        });
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(notifications, null);
+  });
 
   testWidgets('accepted dismissal never restores sheet height during route exit', (
     tester,
@@ -426,7 +441,7 @@ void main() {
     final scroll = find.byKey(const ValueKey('exit-scroll'));
     await tester.dragFrom(
       tester.getTopLeft(scroll) + const Offset(100, 30),
-      const Offset(0, 250),
+      Offset(0, tester.getSize(scroll).height * 0.35 + 30),
     );
     await tester.pump();
     final sheet = tester
@@ -671,6 +686,12 @@ void main() {
     await tester.ensureVisible(field);
     await tester.enterText(field, '5');
     await _pull(tester);
+    // Saving also awaits the native notification-permission response (denied
+    // above); settling frames alone need not wait for that acknowledgment.
+    for (var attempt = 0; attempt < 50 && reported == null; attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pumpAndSettle();
     expect(_scroll, findsNothing);
     expect(reported, 5);
     expect((await LowStockPrefs.loadAll())['test-cable'], 5);

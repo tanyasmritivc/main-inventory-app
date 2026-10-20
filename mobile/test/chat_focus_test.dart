@@ -21,6 +21,8 @@ import 'package:mobile/features/shell/main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+Future<void> Function(String)? releaseAuditCapture;
+
 class _FocusApi extends ApiClient {
   _FocusApi({
     this.pending,
@@ -358,44 +360,55 @@ void main() {
     );
   }
 
-  testWidgets(
-    'Back returns to Find and remains reachable with large text and keyboard',
-    (tester) async {
-      tester.view.physicalSize = const Size(320, 568);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.view.resetViewInsets);
-      await _mount(
-        tester,
-        _FocusApi(fail: true),
-        scale: 2.6,
-        reduceMotion: true,
-      );
-      await _tab(tester, 3);
-      await _tab(tester, 2);
-      await _send(tester, 'Where is my drill?');
-      await tester.pumpAndSettle();
-      expect(find.byType(HomeNavigation), findsNothing);
-      tester.view.viewInsets = const FakeViewPadding(bottom: 220);
-      await tester.pumpAndSettle();
-      expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
-      expect(find.byType(TextField).hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pumpAndSettle();
-      tester.view.resetViewInsets();
-      await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<HomeNavigation>(find.byType(HomeNavigation))
-            .selectedIndex,
-        3,
-      );
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} Back returns to Find and remains reachable with large text and keyboard',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1;
+        tester.view.padding = const FakeViewPadding(top: 62, bottom: 34);
+        tester.view.viewPadding = const FakeViewPadding(top: 62, bottom: 34);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewPadding);
+        addTearDown(tester.view.resetViewInsets);
+        await _mount(
+          tester,
+          _FocusApi(fail: true),
+          brightness: brightness,
+          scale: 2.6,
+          reduceMotion: true,
+        );
+        await _tab(tester, 3);
+        await _tab(tester, 2);
+        await _send(tester, 'Where is my drill?');
+        await tester.pumpAndSettle();
+        expect(find.byType(HomeNavigation), findsNothing);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 220);
+        await tester.pumpAndSettle();
+        expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
+        expect(find.byType(TextField).hitTestable(), findsOneWidget);
+        expect(find.byTooltip('New chat').hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await releaseAuditCapture?.call(
+          'chat-${brightness.name}-large-text-keyboard',
+        );
+        await tester.tap(find.byTooltip('Back'));
+        await tester.pumpAndSettle();
+        tester.view.resetViewInsets();
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<HomeNavigation>(find.byType(HomeNavigation))
+              .selectedIndex,
+          3,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 
   testWidgets('Back stays pinned while a long reply scrolls', (tester) async {
     await _mount(

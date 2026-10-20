@@ -205,33 +205,43 @@ class _RemovalState extends State<_RemovalDialog> {
               onChanged: (value) => setState(() => entered = value),
             ),
           ],
+          const SizedBox(height: 24),
+          // Keep actions in the same scrollable area as the choices. Pinned
+          // AlertDialog actions can consume the entire viewport with iOS safe
+          // areas, large text and the keyboard visible.
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed:
+                    busy ||
+                        preview == null ||
+                        action == null ||
+                        entered != widget.name ||
+                        action == 'move' &&
+                            (widget.kind == 'space' ||
+                                widget.kind == 'inventory') &&
+                            destination.isEmpty
+                    ? null
+                    : save,
+                child: Text(
+                  busy
+                      ? 'Saving…'
+                      : action == 'move'
+                      ? 'Move and continue'
+                      : 'Delete ${widget.kind}',
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: busy ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed:
-              busy ||
-                  preview == null ||
-                  action == null ||
-                  entered != widget.name ||
-                  action == 'move' &&
-                      (widget.kind == 'space' || widget.kind == 'inventory') &&
-                      destination.isEmpty
-              ? null
-              : save,
-          child: Text(
-            busy
-                ? 'Saving…'
-                : action == 'move'
-                ? 'Move and continue'
-                : 'Delete ${widget.kind}',
-          ),
-        ),
-      ],
     ),
   );
 }

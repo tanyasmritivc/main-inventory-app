@@ -1,3 +1,14 @@
+## October 20 — native simulator release audit (candidate)
+
+Active lane `fix/simulator-release-audit-20261020`. User requested tests and fixes
+before App Store submission and allowed Simulator/iPhone Mirroring. Synthetic
+identities only; the excluded founder account is not used. Native iOS testing
+found large-text/keyboard issues in removal dialogs, Capture status panels and
+focused Chat. These are narrowly fixed; Dashboard and permission behavior remain.
+Cross-stack backend/web/SQL/connector checks pass. Final native/Flutter checks,
+signed build99 and CI are in progress. No public submission or database change.
+See `docs/plans/simulator-release-audit-20261020.md` for evidence and limits.
+
 ## October 19 - organization Admin access and beta98
 
 User approved migration072 and a new TestFlight build. The shared directory SQL
