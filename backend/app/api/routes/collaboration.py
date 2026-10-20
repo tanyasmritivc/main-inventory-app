@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Literal
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field, StrictBool, field_validator
 from postgrest.exceptions import APIError
 
@@ -181,6 +181,28 @@ def delete_empty_organization(organization_id: UUID, body: Name, user: Authentic
     return {'deleted': True, 'organization_id': str(organization_id)}
 
 
+@router.delete('/organizations/{organization_id}/leave')
+def leave_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = get_supabase_raw().rpc('findez_leave_organization', {
+            'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'You do not belong to this organization.'),
+                  'P0002': (404, 'Organization not found.'),
+                  '23514': (409, 'Transfer organization ownership before leaving.'),
+                  '23503': (409, 'Transfer ownership of your workspaces in this organization before leaving.'),
+                  '40001': (409, 'The organization changed. Reopen the confirmation and try again.'),
+                  '40P01': (409, 'The organization is being updated. Try again.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message) from None
+        raise
+    if not isinstance(result, dict) or result.get('left') is not True or result.get('organization_id') != str(organization_id):
+        raise HTTPException(503, 'Leaving could not be confirmed. Refresh before retrying.')
+    return {'left': True, 'organization_id': str(organization_id)}
+
+
 @router.post('/organizations/{organization_id}/members')
 def add_organization_member(organization_id: UUID, body: OrganizationMember, user: AuthenticatedUser = Depends(get_current_user)):
     return invite_or_change(user.user_id, 'organization', str(organization_id), body.role, email=body.email)
@@ -195,7 +217,12 @@ def change_organization_role(organization_id: UUID, member_id: UUID, body: Organ
 
 @router.delete('/organizations/{organization_id}/members/{member_id}')
 def remove_organization_member(organization_id: UUID, member_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
-    return manage(user.user_id, 'organization_member', {'organization_id': str(organization_id), 'user_id': str(member_id), 'role': 'none'})
+    result = _removal_rpc('findez_remove_organization_member', {
+        'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_member': str(member_id),
+    })
+    if not isinstance(result, dict) or result.get('removed') is not True or result.get('user_id') != str(member_id):
+        raise HTTPException(503, 'Member removal could not be confirmed. Refresh before retrying.')
+    return result
 
 
 @router.post('/organizations/{organization_id}/workspaces')
@@ -334,3 +361,56 @@ def workspace_audit(workspace_id: UUID, user: AuthenticatedUser = Depends(get_cu
                 raise
         visible.append(row)
     return {'activity': visible}
+
+
+RemovalKind = Literal['organization', 'workspace', 'inventory', 'space']
+
+
+def _removal_rpc(function, params):
+    try:
+        return get_supabase_raw().rpc(function, params).execute().data
+    except APIError as exc:
+        errors = {
+            '42501': (403, 'You cannot make this change. Admins cannot remove the organization Owner.'),
+            'P0002': (404, 'This resource is no longer available.'),
+            '22023': (409, 'Choose an available destination and reopen the confirmation.'),
+            '40001': (409, 'The resource changed. Reopen the confirmation.'),
+            '40P01': (409, 'Another update is in progress. Try again.'),
+            '23505': (409, 'A destination already uses this name. Choose another destination.'),
+            '23514': (409, 'The contents changed. Reopen the confirmation before trying again.'),
+            '23503': (409, 'The contents changed. Reopen the confirmation before trying again.'),
+            'PGRST202': (503, 'This update is not available yet. Please try again later.'),
+        }
+        status, message = errors.get(exc.code, (503, 'The change could not be saved. Please try again.'))
+        raise HTTPException(status, message) from None
+
+
+class ResourceRemoval(Name):
+    action: Literal['move', 'delete']
+    destination_id: UUID | None = None
+    model_config = {'extra': 'forbid'}
+
+
+@router.get('/resource-removal/{kind}/{resource_id}')
+def removal_preview(kind: RemovalKind, resource_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    result = _removal_rpc('findez_removal_preview', {'p_actor': user.user_id, 'p_kind': kind, 'p_id': str(resource_id)})
+    if not isinstance(result, dict) or result.get('id') != str(resource_id) or result.get('kind') != kind:
+        raise HTTPException(503, 'The contents could not be checked. Try again.')
+    return result
+
+
+@router.post('/resource-removal/{kind}/{resource_id}')
+def remove_resource(kind: RemovalKind, resource_id: UUID, body: ResourceRemoval, background_tasks: BackgroundTasks,
+                    user: AuthenticatedUser = Depends(get_current_user)):
+    result = _removal_rpc('findez_remove_resource', {
+        'p_actor': user.user_id, 'p_kind': kind, 'p_id': str(resource_id), 'p_name': body.name,
+        'p_action': body.action, 'p_destination': str(body.destination_id) if body.destination_id else None,
+    })
+    if not isinstance(result, dict) or result.get('id') != str(resource_id) or result.get('kind') != kind or result.get('action') != body.action or result.get('deleted') is not True and result.get('moved') is not True:
+        raise HTTPException(503, 'The change could not be confirmed. Refresh before retrying.')
+    from app.services.items_repo import invalidate_inventory_cache
+    invalidate_inventory_cache(user.user_id)
+    from app.services.deletion_cleanup import clean_inventory_files
+    for inventory_id in result.get('cleanup_inventories', []):
+        background_tasks.add_task(clean_inventory_files, str(UUID(inventory_id)))
+    return result

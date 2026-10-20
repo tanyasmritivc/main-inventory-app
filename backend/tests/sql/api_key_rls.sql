@@ -216,3 +216,6 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir chat_item_actions.sql
 
 \ir organization_admin_access.sql
+\ir organization_leave.sql
+
+\ir resource_removal.sql

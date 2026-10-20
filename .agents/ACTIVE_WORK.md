@@ -1,3 +1,14 @@
+## Organization leave and removal choices — delivered (October 19)
+
+Scoped web/API/mobile branches `feat/organization-leave-*-20261020` are prepared.
+Admins cannot remove the organization Owner. Keep/move versus cascade deletion
+replaces empty-first prerequisites; web item rows expand without repeated titles.
+Use only synthetic test identities; the founder account is excluded from QA.
+All CI lanes pass. User-approved migrations 069/070 and matching API/web are live.
+Apple acknowledged signed build 97, delivery f7f277d6-3bda-4182-a4cd-1d27c3dc21d4.
+Stop at acknowledgment: processing, tester availability and device acceptance
+remain unverified. See `docs/plans/organization-removal-choices-20261019.md`.
+
 ## Organization access and inline item update — live (2026-10-19)
 
 User approved “yes publish and apply 068.” Migration 068 and the reviewed web/API

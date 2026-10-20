@@ -298,7 +298,7 @@ def update_member_role(
 
 def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str) -> bool:
     """
-    Remove a member. owner/mentor can remove member/viewer; owner cannot be removed.
+    Remove a member. owner/mentor can remove non-owner members; owner cannot be removed.
     Returns False (idempotent) if target is already gone.
     Raises PermissionError with a status key as message.
     """
@@ -321,7 +321,7 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
     target_row = target_resp.data[0]
     if target_row["role"] == "owner":
         raise PermissionError("CANNOT_REMOVE_OWNER")
-    if caller_role not in ("owner", "mentor") or (target_row["role"] == "mentor" and caller_role != "owner"):
+    if caller_role not in ("owner", "mentor"):
         raise PermissionError("INSUFFICIENT_ROLE")
 
     _permission_change(
