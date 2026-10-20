@@ -1,6 +1,6 @@
 # Organization agents and Chat Spaces — October 19, 2026
 
-Status: implemented and undergoing final release checks; not deployed. User explicitly approved production migrations 062–066 in this conversation; deployment pending final checks.
+Status: migrations 062–066, API and website are deployed. Live verification found one approval rejection compatibility issue; tested follow-up migration 067 awaits explicit production approval. Do not describe the deletion workflow as release-verified yet.
 
 ## User-authorized behavior
 
@@ -34,12 +34,26 @@ Fresh read-only production backup restored into a network-disabled PostgreSQL co
 - Web key/approval/auth guard tests passed, including account changes, expiry/revocation, exact-name confirmation, uncertain decisions and receipt validation.
 - ESLint: zero errors; 51 pre-existing/consistent warnings, mainly image and ref conventions.
 
-## Release work still pending
+## Release verification
 
-Combined SQL fixture and all four concurrency suites passed. All 58 web suites / 473 tests passed. Local production build passed with synthetic public build configuration; production candidate is built separately with the existing private configuration. Browser previews verified desktop and 390px phone layouts, exact-name gating, cancellation, and read-only key defaults. Commit/push and CI, approved migration application, guarded API/web deployment, live synthetic verification and QA cleanup remain in progress.
+Combined SQL fixture and all four concurrency suites passed. All 58 web suites / 473 tests passed. Local production build passed with synthetic public build configuration; production candidate is built separately with the existing private configuration. Browser previews verified desktop and 390px phone layouts, exact-name gating, cancellation, and read-only key defaults. Commit/push, CI, approved migrations 062–066 and guarded API/web deployment are complete. See the live verification and 067 follow-up below.
 
 The web branch now contains the already-deployed API runtime baseline from 11f79c9 plus the deployed email HTML overlay. It also records already-applied migration 058 from the release API branch. Earlier release branches had diverged; this synchronizes the tested runtime sources for one coherent feature PR. It does not introduce mobile changes or reapply historical production migrations.
 
 Rollback: restore prior API/web source/build if needed. The additive tables/column can remain; do not discard approvals/audit receipts or restore an entire database over subsequent customer activity. The updated RLS retains the old key contract.
 
 Approval requirement: AGENTS.md states, “Public App Store submission and production database changes still require explicit authorization.” Approval requested here applies only to production migrations 062–066.
+
+## Live deployment and follow-up migration 067
+
+Runtime 305e3e0 is deployed. Guarded deployment retained unrelated source and prior web static chunks. Fresh production backup is retained at /home/ubuntu/findez-agent-management-20261019/release/database-before.dump. All five CI gates passed: https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39353836855. PR: https://github.com/tanyasmritivc/main-inventory-app/pull/134. Published connector bytes and both API health endpoints pass. Mobile source was not changed; CI's existing Flutter job ran automatically.
+
+Live HTTPS synthetic tests passed new organization key issuance, read-only and same-owner cross-organization denials, workspace/inventory/Space creation, duplicate request receipts, item create/read/update with inventory identity, membership role change/removal, and denial of API-key or wrong-account confirmation. Disposable accounts, keys and organizations were cleaned after each run; no invitation email was sent.
+
+The wrong-name rejection exposed a PostgREST v14.12 compatibility defect: deliberately raising SQLSTATE 40001 makes its transaction runner retry indefinitely. The same risk applies to stale previews. The SQL safety condition blocks deletion, but the HTTP response times out. Official explanation: https://supabase.com/docs/guides/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b .
+
+**Migration 067 changes only that one function's business-conflict error from 40001 to 23514**, which the existing API already maps to HTTP 409. The function text was compared before/after in the isolated restored database: no other behavior changed. No table or customer-data update, privilege change, or new capability. Migration replay and the full management SQL suite pass. A copy of the exact production PostgREST binary ran inside the network-isolated restore: wrong-name rejection returned in 0.086s, stale-preview rejection in 0.041s, and correct-name confirmation deleted the synthetic empty workspace. Private evidence: /home/ubuntu/findez-agent-management-20261019/067-rehearsal.json.
+
+067 requires separate approval under the same AGENTS.md production-database rule. Once approved: back up, apply only 067, finish all four live deletion types and key-revocation checks, then record cleanup. Claude/ChatGPT host-application acceptance is distinct from the passed MCP SDK, Actions contract and published-artifact tests; users must update their installed extension/Actions schema and create a new opt-in organization key.
+
+Further live verification on the deployed 062–066 version passed valid human-confirmed deletion for item, Space, inventory and empty workspace, polling confirmed receipts, and immediate API-key revocation. The wrong-name and stale-preview rejection remains pending 067. All synthetic accounts/resources from these runs were removed.

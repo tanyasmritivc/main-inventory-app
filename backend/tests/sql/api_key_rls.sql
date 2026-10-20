@@ -227,5 +227,6 @@ ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
 \ir ../../supabase/migrations/064_agent_management.sql
 \ir ../../supabase/migrations/065_agent_delete_approvals.sql
 \ir ../../supabase/migrations/066_api_inventory_identity.sql
+\ir ../../supabase/migrations/067_agent_approval_conflict.sql
 \ir agent_management.sql
 \ir agent_management_rls.sql

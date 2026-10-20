@@ -106,10 +106,10 @@ BEGIN
  BEGIN PERFORM public.findez_agent_confirm_delete(stranger,(approval->>'id')::uuid,'confirm','Test part');
   RAISE EXCEPTION 'stranger confirmed'; EXCEPTION WHEN no_data_found THEN NULL; END;
  BEGIN PERFORM public.findez_agent_confirm_delete(actor,(approval->>'id')::uuid,'confirm','Wrong name');
-  RAISE EXCEPTION 'wrong name'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+  RAISE EXCEPTION 'wrong name'; EXCEPTION WHEN check_violation THEN NULL; END;
  UPDATE public.items SET quantity=3 WHERE item_id=item;
  BEGIN PERFORM public.findez_agent_confirm_delete(actor,(approval->>'id')::uuid,'confirm','Test part');
-  RAISE EXCEPTION 'stale preview'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+  RAISE EXCEPTION 'stale preview'; EXCEPTION WHEN check_violation THEN NULL; END;
  approval:=public.findez_agent_prepare_delete(key,gen_random_uuid(),'item',item);
  UPDATE public.api_agent_delete_approvals SET expires_at=now()-interval '1 second' WHERE id=(approval->>'id')::uuid;
  BEGIN PERFORM public.findez_agent_confirm_delete(actor,(approval->>'id')::uuid,'confirm','Test part');
