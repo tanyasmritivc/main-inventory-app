@@ -1,3 +1,13 @@
+## October 19 — organization leave/removal update published
+
+Approved migrations 069/070 and matching API/web changes are live after fresh
+backup and passing health/access checks. Apple acknowledged signed 1.0.9 (97);
+processing, TestFlight availability and device acceptance remain unverified.
+Admins cannot remove the organization Owner; removal offers keep/move or delete
+choices. The web item expansion omits duplicate headings. No unrelated Dashboard
+changes or founder-account testing. See
+`docs/plans/organization-removal-choices-20261019.md` for exact evidence.
+
 ## Final submission audit — build 95 delivered; notification arrival confirmed
 
 Signed 1.0.8 (95), source ca5c195, is installed and acknowledged by Apple (375271f5-080e-429c-9054-8b42518280df). All five CI gates 39188238121 pass. Native notification-center delegate registration fixed; user confirmed visible arrival. Camera/barcode/Ask microphone happy paths were user-confirmed on 94. Plans remain hidden. See docs/plans/final-mobile-delivery-20261018.md for completed checks and remaining provider, recovery, share-extension, offline, VoiceOver and cold-tap acceptance. GPU HTTP/origin restriction remain launch blockers; legacy server nonce bypass needs coordinated provider testing. Processing/tester availability not polled; public submission held. This supersedes historical candidate/pending entries below.
