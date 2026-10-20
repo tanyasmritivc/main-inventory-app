@@ -1,6 +1,6 @@
 # Web settings and access audit - October 19, 2026
 
-Status: web fixes published. Shared Admin migration072 awaits explicit approval.
+Status: web fixes and user-approved shared Admin migration072 are published.
 
 ## Behavior
 
@@ -52,3 +52,11 @@ and redirect checks do not prove real inbox delivery or every customer journey.
 - Admin migration072 is ready in PR143 (455f97d), all CI gates passed
   (run39380135827). Read-only live preflight passed. Approval is still pending;
   do not report the Admin denial fixed in production until that migration applies.
+
+## Approved Admin activation
+
+User approved migration072 and requested TestFlight. Guarded activation and fresh
+backup passed; the two old membership checks now use effective workspace roles.
+API/database health and anonymous private-photo denial pass. Existing mobile and
+web clients receive the fix immediately; requested beta98 is being prepared.
+No customer data was changed. This supersedes the earlier pending status.

@@ -10,9 +10,9 @@ Isolated Auth email confirmation/resend/recovery tests pass; no real email or
 customer test writes. Mobile and Dashboard layouts are unchanged.
 
 Organization Admin directory migration072 (PR143, CI run39380135827 green)
-remains prepared, NOT applied, pending explicit authorization. This shared fix is
-required for the reported Admin denial on both web and mobile; no new binary is
-needed. See `docs/plans/web-settings-audit-20261020.md`.
+is now applied after explicit authorization, a fresh backup and guarded function
+checks. API/database health and private-photo denial pass. The shared fix applies
+to existing web and mobile clients; requested beta98 is being prepared. See `docs/plans/web-settings-audit-20261020.md`.
 
 ## October 19 — organization leave/removal update published
 
