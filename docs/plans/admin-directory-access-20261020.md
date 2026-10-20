@@ -1,6 +1,6 @@
 # Organization Admin workspace directory access
 
-Status: prepared and tested; production migration 072 not yet applied.
+Status: user-approved migration 072 is live for web and mobile.
 
 The route-level workspace lookup recognized inherited organization administration,
 but migration 046's directory RPC required a physical team_memberships row for
@@ -26,6 +26,9 @@ function hash guard. Preserve migration071 and all unrelated live API overlays.
 
 CI receipt: all five gates pass on 455f97d (run39380135827), PR143. Live read-only
 activation preflight passes. Guarded script is /tmp/findez-directory-activate.py
-on the VM; --activate remains blocked on explicit migration072 approval. Web
-settings fixes published independently as 2afb817; they do not remove this SQL
-permission check until072 is applied.
+on the VM. User approved activation and requested a TestFlight build. A fresh
+backup and function-drift guards passed; both effective-role guards are installed.
+Service-only RPC grants and private image protection pass. API/database return
+200 and anonymous image requests return401. No customer data was updated.
+Private activation receipt: /home/ubuntu/findez-admin-directory-20261020/activation.json.
+Web settings2afb817 is live independently. Requested beta98 is being prepared.
