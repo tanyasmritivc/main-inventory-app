@@ -24,6 +24,7 @@ import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 import { AccountMenu } from "./account-menu";
+import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
@@ -240,6 +241,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   );
   return (
     <AppThemeProvider>
+      {!accountPage && <AccountVerification prompt />}
       <div
         className={`app-frame ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >

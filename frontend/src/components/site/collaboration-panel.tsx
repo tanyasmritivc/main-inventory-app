@@ -55,8 +55,8 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
       if (!live) return;
       setData(result); setPolicy(result.inventory?.access_mode === "restricted" ? "restricted" : "workspace");
       setError("");
-    }).catch((reason) => { if (live) setError(userFacingError(reason, "Access could not be loaded.")); });
-    if (section === "all" || section === "activity") void accountRequest<{ activity: typeof activity }>(accountId, `${base}/audit`).then((result) => { if (live) setActivity(result.activity); }).catch((reason) => { if (live) setError(userFacingError(reason, "Activity could not be loaded.")); });
+    }).catch((reason) => { if (live) { setData(null); setActivity([]); setDelivery(null); setError(userFacingError(reason, "Access could not be loaded.")); } });
+    if (section === "all" || section === "activity") void accountRequest<{ activity: typeof activity }>(accountId, `${base}/audit`).then((result) => { if (live) setActivity(result.activity); }).catch((reason) => { if (live) { setActivity([]); setError(userFacingError(reason, "Activity could not be loaded.")); } });
     return () => { live = false; };
   }, [accountId, base, inventoryId, revision, section]);
   async function save(path: string, method: "POST" | "PUT" | "PATCH", body: Record<string, unknown>) {
@@ -76,7 +76,7 @@ function AccessPanel({ workspaceId, inventoryId, section }: { workspaceId?: stri
   const invites = memberId && (!existing || existing.role === "none") && memberRole !== "none";
   return <div className={`collaboration-sections ${section !== "all" ? "context-single-section" : ""}`}>
     {error && <p role="alert" className="notice-error">{error} <button className="product-button" onClick={() => setRevision((v) => v + 1)}>Retry</button></p>}
-    {!data ? <p role="status">Loading access...</p> : <>
+    {!data ? !error && <p role="status">Loading access...</p> : <>
       {show("policy") && inventoryId && manager && <section>{section === "all" && <h2>Inventory access</h2>}
         <form className="collaboration-form" onSubmit={(e) => submit(e, `${base}/access`, "PATCH", { access_mode: policy, default_role: "viewer" })}>
           <label>Access<select className="product-select" value={policy} onChange={(e) => setPolicy(e.target.value)}><option value="workspace">Inherited workspace access</option><option value="restricted">Custom access</option></select></label>

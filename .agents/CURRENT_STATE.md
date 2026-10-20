@@ -1,3 +1,19 @@
+## October 19 - web settings audit published
+
+Web runtime `2afb817` (PR142) is live at
+`/home/ubuntu/findez-web-settings-20261020/candidate/frontend`. It changes 22
+reviewed files and preserves 267 unrelated runtime files, including the live agent
+management overlays. Both public hosts pass post-activation checks. 493 tests/62
+suites with coverage, types, scoped lint, production build, 30 light/dark browser
+scenarios, 43 route/auth checks and all five CI gates pass (run39380122467).
+Isolated Auth email confirmation/resend/recovery tests pass; no real email or
+customer test writes. Mobile and Dashboard layouts are unchanged.
+
+Organization Admin directory migration072 (PR143, CI run39380135827 green)
+is now applied after explicit authorization, a fresh backup and guarded function
+checks. API/database health and private-photo denial pass. The shared fix applies
+to existing web and mobile clients; requested beta98 is being prepared. See `docs/plans/web-settings-audit-20261020.md`.
+
 ## October 19 — organization leave/removal update published
 
 Approved migrations 069/070 and matching API/web changes are live after fresh

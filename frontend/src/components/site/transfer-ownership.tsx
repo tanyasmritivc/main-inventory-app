@@ -20,7 +20,7 @@ export function TransferOwnership({ scope, resourceId, name, onTransferred }: {
     let live = true;
     setTarget(""); setConfirmation(""); setMembers([]); setError("");
     void accountRequest<{members:typeof members}>(accountId, `${base}${scope === "workspace" ? "/overview" : ""}`)
-      .then(result => { if (live) setMembers(result.members.filter(m => m.user_id !== accountId)); })
+      .then(result => { if (live) setMembers(result.members.filter(m => (m as {role?:string}).role !== "owner")); })
       .catch(reason => { if (live) setError(userFacingError(reason, "Members could not be loaded.")); });
     return () => { live = false; };
   }, [open, accountId, base, scope]);
@@ -41,9 +41,9 @@ export function TransferOwnership({ scope, resourceId, name, onTransferred }: {
   }
   return <>
     <button className="product-button" onClick={() => setOpen(true)}>Transfer ownership</button>
-    <Dialog open={open} onOpenChange={value => { if (!busy) setOpen(value); }}><DialogContent>
+    <Dialog open={open} onOpenChange={value => { if (!busy) setOpen(value); }}><DialogContent className="workspace-dialog">
       <DialogTitle>Transfer {scope} ownership</DialogTitle>
-      <DialogDescription>The selected member becomes Owner and you become Admin. Restricted inventory access stays unchanged.</DialogDescription>
+      <DialogDescription>The selected member becomes Owner and the previous Owner becomes Admin. Organization Owners and Admins retain access to all organization workspaces and inventories.</DialogDescription>
       <form onSubmit={event => void transfer(event)} className="collaboration-form">
         <label>New owner<select required className="product-select" value={target} onChange={event => setTarget(event.target.value)} disabled={busy}>
           <option value="">Choose a current member</option>{members.map(member => <option key={member.user_id} value={member.user_id}>{member.display_name}</option>)}

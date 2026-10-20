@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockBrowserTopLayer } from "./mock-browser-top-layer";
 mockBrowserTopLayer();
@@ -154,4 +154,16 @@ test("workspace creator can rename an assigned workspace from its organization",
  await userEvent.click(screen.getByRole("button",{name:"Save"}));
  expect(await screen.findByRole("link",{name:/November/})).toBeTruthy();
  expect(accountRequest).toHaveBeenCalledWith("owner","/inventory-workspaces/client",{method:"PATCH",body:{name:"November"}});
+});
+
+
+test("permission changes immediately remove stale access controls and member data on denial",async()=>{
+ render(<CollaborationPanel inventoryId="tools" section="people"/>);
+ await screen.findByText("Alex",{selector:"span"});
+ jest.mocked(accountRequest).mockRejectedValue(new Error("Access removed."));
+ fireEvent(window,new Event("findez-permissions-changed"));
+ await screen.findByRole("alert");
+ expect(screen.queryByText("Alex",{selector:"span"})).toBeNull();
+ expect(screen.queryByRole("button",{name:"Save role"})).toBeNull();
+ expect(screen.queryByText("Loading access...")).toBeNull();
 });
