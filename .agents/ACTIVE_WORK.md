@@ -1,3 +1,19 @@
+## Organization access and inline item update — candidate (2026-10-19)
+
+Active lane: findez-items-web-20261020. User explicitly superseded the old organization-admin
+restriction: Owners/Admins access all organization workspaces/inventories/Spaces,
+including custom No access. Only Owner deletes the organization. Other Viewers
+remain read-only; Editors can rename accessible workspaces/inventories and edit
+items. Personal and unrelated organizations remain isolated.
+
+Item rows open full details, editable fields save inline, original spreadsheet
+columns are displayed, purchasing destinations exclude vendor part numbers,
+and invitations/tasks show sender/assigner identities with photos.
+
+Migration 062 is a candidate only; production database approval is outstanding.
+Mobile target is 1.0.9 (96); Apple upload and device acceptance are not complete.
+See docs/plans/organization-items-update-20261019.md for validation and release gates.
+
 ## October 19 email presentation refresh - deployed
 
 Lane `style/email-design-20261019` / PR133, runtime patch `ab9ba26`, is live.

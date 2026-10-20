@@ -1,3 +1,12 @@
+## 2026-10-19 — Organization administrators and inline items
+
+The user explicitly grants organization Admins access to all child resources,
+including restricted inventories. This replaces the earlier restricted-content
+exception for organization Owner/Admin only. Viewers stay read-only. Only Owner
+can delete the organization. Preserve personal/cross-organization isolation.
+Task assignment and invitation issuer attribution must reflect an actual recorded
+actor; do not invent missing historical attribution.
+
 ## Keep a crawlable raster website favicon (2026-10-18)
 
 Use stable PNG/ICO website icon URLs with the existing approved app mark. Keep
