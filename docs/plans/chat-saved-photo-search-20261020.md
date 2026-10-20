@@ -30,8 +30,8 @@ per question, with partial coverage disclosed. No new database migration.
 
 ## Validation
 
-- 81 focused photo tests pass, including 27 new retrieval cases.
-- Full Python/API-documentation suite: 1,172 pass plus 10 subtests.
+- 82 focused photo tests pass, including 28 new retrieval cases.
+- Full Python/API-documentation suite: 1,173 pass plus 10 subtests.
 - Synthetic pixel transforms, unrelated images, late gallery additions, deletion,
   concurrent removal, revocation, actor-vs-owner authorization, private locators,
   cache revocation, corruption, timeouts and bounded coverage are covered.

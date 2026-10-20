@@ -65,6 +65,7 @@ def test_unrelated_photos_and_uniform_backgrounds_are_not_similar():
 @pytest.mark.parametrize('url',[
     'https://evil.test/storage/v1/object/public/item-images/'+PATH,
     'http://169.254.169.254/latest/meta-data',
+    'https://[broken-host/photo.jpg',
     URL.replace('item-images','documents'), URL.replace('later.jpg','../secret.jpg'),
     URL.replace('later.jpg','%252e%252e/secret.jpg'),
     URL.replace('https://','https://user:pass@'),

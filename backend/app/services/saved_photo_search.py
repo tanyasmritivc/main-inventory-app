@@ -85,7 +85,10 @@ def storage_path(url: object) -> str | None:
     if not isinstance(url, str):
         return None
     settings = get_settings()
-    parsed = urlsplit(url)
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return None
     origins = {urlsplit(str(base)).netloc for base in (settings.supabase_url, settings.supabase_public_url) if base}
     if parsed.scheme not in ('http','https') or parsed.netloc not in origins or parsed.username or parsed.password:
         return None
