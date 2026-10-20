@@ -91,3 +91,18 @@ unrelated live runtime, environment, dependencies and configuration are preserve
 Activation script defaults to read-only preflight. Migrations 069/070 remain
 pending explicit approval, runtime is not activated, and build 97 is not uploaded.
 No founder-account testing or customer test writes were performed.
+
+## Approved activation and Apple upload
+
+User requested “build on testflight” after the combined migration/publication
+approval request. Migrations 069/070 applied together atomically after a fresh
+private backup. The matching two-file API overlay and ten-file web release are
+live; API/database/web health passes and unauthenticated resource/private-photo
+access returns 401. No customer QA writes or existing-content rewrite.
+
+Apple acknowledged production 1.0.9 (97), delivery `f7f277d6-3bda-4182-a4cd-1d27c3dc21d4`.
+The signed IPA/archive and acknowledgment are preserved in
+`Documents/FindEZ/AppStore/1.0.9-build97`. TestFlight processing and tester
+availability have not been polled; physical-device acceptance remains pending.
+Public App Store submission was not performed. This receipt supersedes earlier
+candidate/pending notes above. The founder account was not used for testing.

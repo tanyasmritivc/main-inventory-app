@@ -1,3 +1,13 @@
+## October 19 — organization leave/removal update published
+
+Approved migrations 069/070 and matching API/web changes are live after fresh
+backup and passing health/access checks. Apple acknowledged signed 1.0.9 (97);
+processing, TestFlight availability and device acceptance remain unverified.
+Admins cannot remove the organization Owner; removal offers keep/move or delete
+choices. The web item expansion omits duplicate headings. No unrelated Dashboard
+changes or founder-account testing. See
+`docs/plans/organization-removal-choices-20261019.md` for exact evidence.
+
 ## Current brand favicons published (2026-10-18)
 
 Web runtime f087a84 (PR126) is live from
