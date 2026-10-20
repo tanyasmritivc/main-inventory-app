@@ -19,38 +19,39 @@ it. Historical unknown attribution is labelled not recorded. Invitations show th
 sender's current display name and saved photo. Old workspace codes without an issuer
 record identify the Workspace owner rather than inventing a historical inviter.
 
-Validation so far: 1,106 root Python tests plus 10 subtests; 467 web tests/58 suites;
-663 full Flutter tests (one separately enabled configuration test); 31 focused
-final detail/task checks; clean Flutter analysis and TypeScript; changed-file ESLint
-has no errors. Production-config gate passes. Full PostgreSQL fixture and migration
-replay pass in a network-isolated disposable PostgreSQL 17 container. Real
-permission revocation and duplicate Chat confirmation races pass. MCP tests,
-committed bundle comparison and bundle smoke pass with lockfile-installed deps.
+Validation: 1,106 root Python tests plus 10 subtests; 467 web tests/58 suites;
+final mobile CI passes, including session-restoration regressions and the single
+inline description form for part-number items. Clean Flutter analysis/TypeScript,
+light/dark inline renders, full-photo pinch/pan/reset/navigation, failed-write draft
+preservation, and private-photo checks pass. Full PostgreSQL fixtures, migration
+replay, permission-revocation/catalog races and duplicate Chat confirmation pass.
+MCP tests, bundle comparison and smoke pass with lockfile-installed dependencies.
+
+Final implementation CI is green for API a85e6ae (39362236523), web 370776a
+(39360688924), and mobile efd7209 (39362121554). The staged runtime preserves
+all unrelated live changes, including idempotent invitation delivery. Real Next.js
+production build and nine route checks pass. The merged backend passes 1,064 tests
+plus 10 subtests; two existing Chat fixtures also fail against unchanged live code.
+Those unrelated behaviors were preserved.
+
+A fresh network-isolated PostgreSQL 17 restore passed migration 068 twice. All
+original values across 90 tables stayed unchanged; item-images remained private.
+Prepared activation includes fresh backup, exact source hashes, bounded SQL locks,
+health checks, and runtime rollback. Read-only deployment preflight passes.
+
+Mobile 1.0.9 (96) from efd7209 is signed and preserved. All 31 archive and 31 export
+device executables, strict signing, 24 privacy manifests and production HTTPS
+configuration pass. IPA SHA256:
+21e61075342402a3f7a8a47b9511f9924e48238fa7dd1ffca61649abf9b9a6a3.
+Apple validation passed; upload and physical-device acceptance are pending.
+
+Session restoration: production has no configured inactivity/timebox expiry. The
+one-hour access token should refresh. The SDK update fixes stale/concurrent token
+recovery; transient network failure retains the saved session and presents Retry.
+Genuine revoked sessions still sign out. Historical logout causality is unconfirmed.
 
 Release is not activated. Migration 068 requires explicit production approval per
-AGENTS.md. Staging preserves current live source and invitation delivery idempotency.
-Signed 1.0.9 (96), Apple acknowledgment, CI, staging production build, and physical
-device acceptance remain pending. No public App Store submission is authorized.
-
-
-Follow-up requests in this release: item photos open a full-screen authenticated
-viewer with contain sizing, pinch zoom/pan, Reset, photo navigation and Close.
-Both themes pass real gesture tests and inline-field render inspection.
-
-Session restoration: no inactivity timeout is configured in the auth service;
-access tokens expire after one hour and should refresh. Supabase Flutter is now
-pinned to 2.16.0 (GoTrue 2.26.0), which includes stale startup recovery and refresh
-race fixes missing from 2.12.1/2.19.0. Auth stream network errors retain the saved
-session and show a bounded Retry path. Four SDK regression tests cover persisted
-expiry, stale token reuse, concurrent account change and genuine revocation; the
-startup widget test covers offline Retry without showing sign-in. The precise
-cause of the user's historical logout is not proven; device acceptance remains.
-The new SDK uses the renamed publishableKey argument with the same existing anon
-key; no provider, account or server session policy is changed.
-
-Final mobile validation: 661 tests passed in the full run; one file was edited
-while the run was collecting it and had a test-only constructor error. After
-correction all eight tests in that file pass (669 total), and analysis is clean.
-CI will run the complete final source. Web and API review PRs are 136 and 135.
-Staged real web build passes. Two staged Chat fixture failures also reproduce
-against unchanged live code; no Chat behavior was changed to hide them.
+AGENTS.md. No public App Store submission is authorized. Private staging/receipts:
+/home/ubuntu/findez-organization-update-20261020. Local signed artifacts:
+Documents/FindEZ/AppStore/1.0.9-build96. An earlier signed candidate is preserved in
+initial-validated-candidate and must not be uploaded.

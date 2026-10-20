@@ -18,7 +18,9 @@ columns are displayed, purchasing destinations exclude vendor part numbers,
 and invitations/tasks show sender/assigner identities with photos.
 
 Migration 068 is a candidate only; production database approval is outstanding.
-Mobile target is 1.0.9 (96); Apple upload and device acceptance are not complete.
+Mobile 1.0.9 (96) is signed; all three final CI lanes pass. Apple upload and device
+acceptance are not complete. Isolated live-copy migration rehearsal preserves all
+original values across 90 tables. Session restoration and full-photo zoom are included.
 See docs/plans/organization-items-update-20261019.md for validation and release gates.
 
 ## Final submission audit — build 95 delivered; notification arrival confirmed
