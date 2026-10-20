@@ -14,6 +14,14 @@ const operations = [
   ['findez_create_item', 'post', '/api/v1/items', 'Add inventory item', 'Create one item in an existing linked Space using its exact location name. Confirm the destination and values with the user. POST is not safe to retry blindly after a timeout: check for an existing item first.'],
   ['findez_update_item', 'patch', '/api/v1/items/{item_id}', 'Update inventory item', 'Update only supplied fields on an existing item. Resolve its item_id from inventory first and confirm changes. Quantity is an absolute value, not an increment. Null clears nullable fields. Location changes stay in the same inventory and workspace. Private photo downloads are not part of this API.'],
   ['findez_bulk_upsert', 'post', '/api/v1/items/bulk', 'Import or sync inventory', 'Create or replace rows by workspace_id, source_system and external_id. Confirm the batch. Send intended quantity and category every time; omitted fields use create defaults. Stable identities prevent duplicates. Omitted rows are never deleted.'],
+  ['findez_organization', 'get', '/api/v1/organization', 'Read organization', 'Read the organization bound to the key. Requires structure:read. Use its ID for workspace creation; organization access does not bypass inventory permissions.'],
+  ['findez_directory', 'get', '/api/v1/organization/directory', 'Find workspaces, inventories and Spaces', 'Discover actual IDs, including empty Spaces. kind=workspace lists organization workspaces; inventory needs parent workspace UUID; space needs parent inventory UUID. Follow next_offset until null. Requires structure:read.'],
+  ['findez_members', 'get', '/api/v1/organization/members', 'Read members and roles', 'Read current membership for an organization, workspace or inventory. Use returned user IDs for role changes or revocation. Requires members:read.'],
+  ['findez_invitations', 'get', '/api/v1/organization/invitations', 'Read pending invitations', 'Read pending recipient-bound invitations for an authorized organization, workspace or inventory. Requires members:read. A pending invitation does not grant access.'],
+  ['findez_manage_organization', 'post', '/api/v1/organization/actions', 'Manage organization resources and access', 'Create/rename workspaces, inventories and Spaces; move Spaces; invite people, change roles or revoke access. Requires structure:write or members:write. Use a fresh request_id; retry identical values with the same ID. Confirm intended changes first. Does not delete contents.'],
+  ['findez_prepare_deletion', 'post', '/api/v1/organization/deletions', 'Request a deletion for human review', 'Prepare a permanent deletion preview. Requires items:delete or structure:delete. Show the preview and approval_url to the human key owner. Only that person can confirm in FindEZ. This tool does not delete anything; poll status after human confirmation.'],
+  ['findez_deletion_status', 'get', '/api/v1/organization/deletions/{approval_id}', 'Check deletion status', 'Check a deletion request made by this key. Claim deletion only when status is confirmed and receipt.deleted is true. Pending or expired requests are not deleted. The API key cannot confirm deletion.'],
+
 ];
 
 function resolve(node) {
@@ -31,7 +39,7 @@ function resolve(node) {
 const tools = [];
 const actions = {
   openapi: '3.1.0',
-  info: { title: 'FindEZ inventory assistant', version: '1.0.0', description: 'Read, add, update, and bulk-sync Team inventory using a FindEZ API key. No delete or key-management operations.' },
+  info: { title: 'FindEZ inventory assistant', version: '1.1.0', description: 'Manage authorized FindEZ inventory and organization resources. Permanent deletion requires human review and confirmation in FindEZ.' },
   servers: spec.servers.map(({ url }) => ({ url })),
   security: [{ IntegrationKey: [] }],
   paths: {},
@@ -40,7 +48,7 @@ const actions = {
 for (const [name, method, path, title, description] of operations) {
   const source = spec.paths[path]?.[method];
   if (!source?.security.some((entry) => 'IntegrationKey' in entry)) throw new Error(`Missing integration operation: ${name}`);
-  const readOnly = !['findez_create_item', 'findez_update_item', 'findez_bulk_upsert'].includes(name);
+  const readOnly = !['findez_create_item', 'findez_update_item', 'findez_bulk_upsert', 'findez_manage_organization', 'findez_prepare_deletion'].includes(name);
   const body = source.requestBody?.content['application/json'].schema;
   const parameters = source.parameters ?? [];
   const inputSchema = { type: 'object', properties: {}, additionalProperties: false };
@@ -59,13 +67,13 @@ for (const [name, method, path, title, description] of operations) {
   if (required.length) inputSchema.required = required;
   tools.push({
     name, title, description, inputSchema,
-    annotations: { readOnlyHint: readOnly, destructiveHint: ['patch'].includes(method) || name === 'findez_bulk_upsert', idempotentHint: readOnly || method === 'patch' || name === 'findez_bulk_upsert', openWorldHint: true },
+    annotations: { readOnlyHint: readOnly, destructiveHint: ['patch'].includes(method) || ['findez_bulk_upsert', 'findez_manage_organization', 'findez_prepare_deletion'].includes(name), idempotentHint: readOnly || method === 'patch' || ['findez_bulk_upsert', 'findez_manage_organization', 'findez_prepare_deletion'].includes(name), openWorldHint: name === 'findez_manage_organization' },
     method: method.toUpperCase(), path,
     parameters: parameters.map(({ name, in: location }) => ({ name, in: location })),
     scope: source['x-required-scope'] ?? null,
   });
   const operation = {
-    operationId: name, summary: title, description,
+    operationId: name, summary: title, description: description.slice(0, 300),
     security: [{ IntegrationKey: [] }],
     'x-openai-isConsequential': !readOnly,
     ...(parameters.length ? { parameters: structuredClone(parameters) } : {}),
@@ -122,4 +130,4 @@ for (const [path, content] of outputs) {
     await writeFile(path, content);
   }
 }
-console.log(`${process.argv.includes('--check') ? 'Checked' : 'Generated'} ${tools.length} inventory tools and ChatGPT Actions; no delete operations.`);
+console.log(`${process.argv.includes('--check') ? 'Checked' : 'Generated'} ${tools.length} tools and ChatGPT Actions; deletion confirmation remains human-only.`);

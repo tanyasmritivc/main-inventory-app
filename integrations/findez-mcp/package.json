@@ -1,9 +1,9 @@
 {
   "name": "findez-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "FindEZ inventory tools for MCP clients and ChatGPT Actions. No delete operations.",
+  "description": "Manage authorized FindEZ inventory, organization resources and access. Permanent deletion requires human confirmation in FindEZ.",
   "engines": {
     "node": ">=20.10.0"
   },

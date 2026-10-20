@@ -51,19 +51,22 @@ def decorate(invitation: dict) -> dict:
     return {**invitation, 'name': invitation['resource_name'], 'destination': destination}
 
 
-def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email: str | None = None, member_id: str | None = None) -> dict:
-    code = ''.join(secrets.choice(ALPHABET) for _ in range(12))
+def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email: str | None = None, member_id: str | None = None, _save=None, _code: str | None = None) -> dict:
+    code = _code or ''.join(secrets.choice(ALPHABET) for _ in range(12))
     data = {'scope': scope, 'resource_id': resource, 'role': role, 'code_hash': code_hash(code)}
     data.update({'user_id': member_id} if member_id else {'email': email})
-    saved = invitation_rpc(actor, 'change' if member_id else 'create', data)
+    saved = _save(data) if _save else invitation_rpc(actor, 'change' if member_id else 'create', data)
     if 'invitation_id' not in saved:
         return saved
-    from app.services.push_notifications import enqueue_invitation
-    enqueue_invitation(saved['invitation_id'])
+    skip_delivery = saved.pop('_skip_delivery', False)
     invitation = decorate(saved)
     base = str(get_settings().frontend_url).rstrip('/')
     url = f'{base}/join/access?code={code}'
     name = invitation['name']
+    if skip_delivery:
+        return {'invitation': invitation, 'code': code, 'invite_url': url, 'email_sent': None, 'delivery_status': 'not_retried'}
+    from app.services.push_notifications import enqueue_invitation
+    enqueue_invitation(saved['invitation_id'])
     sent = False
     try:
         send_transactional_email(

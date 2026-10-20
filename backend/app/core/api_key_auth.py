@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 API_KEY_PATTERN = re.compile(r"^findez_(live|test)_sk_([A-Za-z0-9_-]{32})$")
 WORKSPACE_SCOPES = frozenset({"items:read", "items:write", "import:write", "workspace:read"})
 GLOBAL_SCOPES = frozenset({"org:read", "org:write"})
-ALL_SCOPES = WORKSPACE_SCOPES | GLOBAL_SCOPES
+MANAGEMENT_SCOPES = frozenset({"structure:read", "structure:write", "structure:delete", "members:read", "members:write", "items:delete"})
+ORGANIZATION_SCOPES = GLOBAL_SCOPES | MANAGEMENT_SCOPES
+ALL_SCOPES = WORKSPACE_SCOPES | ORGANIZATION_SCOPES
 
 _hasher = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1)
 _dummy_hash = _hasher.hash("findez-invalid-key-timing-padding")
@@ -32,6 +34,7 @@ class APIKeyPrincipal:
     org_id: str
     scopes: frozenset[str]
     created_by: str
+    organization_id: str | None = None
 
     def allows(self, required_scope: str) -> bool:
         if required_scope in self.scopes:
@@ -60,11 +63,13 @@ def verify_api_key(raw_key: str, key_hash: str) -> bool:
         return False
 
 
-def validate_scopes(*, workspace_id: str | None, scopes: list[str]) -> frozenset[str]:
+def validate_scopes(*, workspace_id: str | None, scopes: list[str], organization_id: str | None = None) -> frozenset[str]:
     normalized = frozenset(scope.strip() for scope in scopes if scope.strip())
     if not normalized or not normalized.issubset(ALL_SCOPES):
         raise ValueError("invalid_scope")
-    allowed = WORKSPACE_SCOPES if workspace_id else GLOBAL_SCOPES
+    if workspace_id and organization_id:
+        raise ValueError("scope_type_mismatch")
+    allowed = ORGANIZATION_SCOPES if organization_id else (WORKSPACE_SCOPES if workspace_id else GLOBAL_SCOPES)
     if not normalized.issubset(allowed):
         raise ValueError("scope_type_mismatch")
     return normalized
@@ -121,7 +126,7 @@ def authenticate_api_key(
     prefix = raw_key[:20]
     try:
         rows = get_supabase_admin().table("api_keys").select(
-            "id,workspace_id,org_id,key_hash,scopes,created_by,last_used_at,expires_at,revoked_at"
+            "id,workspace_id,organization_id,org_id,key_hash,scopes,created_by,last_used_at,expires_at,revoked_at"
         ).eq("key_prefix", prefix).execute().data or []
     except Exception:
         logger.exception("API key lookup failed correlation_id=%s", getattr(request.state, "correlation_id", "unknown"))
@@ -160,7 +165,16 @@ def authenticate_api_key(
         org_id=str(matched["org_id"]),
         scopes=frozenset(matched.get("scopes") or []),
         created_by=str(matched["created_by"]),
+        organization_id=str(matched["organization_id"]) if matched.get("organization_id") else None,
     )
+    if principal.organization_id:
+        try:
+            roles = get_supabase_admin().table('app_organization_members').select('role').eq(
+                'organization_id', principal.organization_id).eq('user_id', principal.org_id).execute().data or []
+        except Exception:
+            raise api_error(request, 503, 'authentication_unavailable', 'Organization access could not be verified.') from None
+        if not roles or roles[0].get('role') not in ('owner', 'admin'):
+            raise api_error(request, 403, 'organization_access_revoked', 'The key owner no longer administers this organization.')
     request.state.api_key = principal
 
     last_used = matched.get("last_used_at")

@@ -1,3 +1,7 @@
+## Organization agent management - October 19 (active)
+
+Scope: coordinated backend/web API-key UI, human approvals, documentation and connectors. User authorizes organization/inventory/Space/access management for external agents and inventory-bound Chat Space creation. Deletion requires explicit human confirmation; existing API keys retain their scopes. No mobile changes. The user explicitly approved migrations 062–066 after the fresh restore preserved 87 tables. Deployment is being prepared. Single implementation agent; see docs/plans/agent-management-20261019.md.
+
 ## October 19 email presentation refresh - deployed
 
 Lane `style/email-design-20261019` / PR133, runtime patch `ab9ba26`, is live.

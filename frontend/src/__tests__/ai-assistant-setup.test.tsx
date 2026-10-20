@@ -10,7 +10,7 @@ test('assistant setup exposes both downloads, full inventory permissions and pla
   expect(screen.getByRole('link', { name: 'download the Actions schema' }).getAttribute('href')).toBe('/docs/api/chatgpt-actions.json');
   expect(screen.getByText('Create and update items')).toBeTruthy();
   expect(screen.getByText('Bulk import')).toBeTruthy();
-  expect(screen.getByText('Neither includes a delete action.')).toBeTruthy();
+  expect(screen.getByText(/Deletion requires the key owner to approve/)).toBeTruthy();
   expect(screen.getByText('Only me')).toBeTruthy();
   expect(screen.getByText('Desktop chat')).toBeTruthy();
 });
@@ -23,8 +23,10 @@ test('copies schema URL and instructions without asking for or embedding a real 
   expect(copy).toHaveBeenLastCalledWith('https://findez.ai/docs/api/chatgpt-actions.json');
   await user.click(screen.getByRole('button', { name: 'Copy FindEZ assistant instructions' }));
   expect(copy).toHaveBeenLastCalledWith(assistantInstructions);
-  expect(assistantInstructions).toContain('Do not simulate deletion');
+  expect(assistantInstructions).toContain('Never simulate deletion');
   expect(assistantInstructions).toContain('obtain confirmation');
+  expect(assistantInstructions).toContain('Never open or confirm the review link on their behalf');
+  expect(assistantInstructions).toContain('receipt.deleted=true');
   expect(container.querySelector('input')).toBeNull();
   expect(container.textContent).not.toMatch(/findez_(live|test)_sk_[A-Za-z0-9_-]{32}/);
 });

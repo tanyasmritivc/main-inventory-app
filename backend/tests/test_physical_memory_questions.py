@@ -213,7 +213,11 @@ def test_interrupted_stream_and_background_memory_keep_scope_and_cleanup():
 @pytest.mark.parametrize('streaming', [False, True])
 def test_every_previous_question_family_reaches_model_without_answer_shortcuts(case, memory, streaming):
     if case.get('kind') == 'tool':
-        assert rejection(tool_name=case['tool'], args=case['args'], definitions=ai_agent._TOOLS, enabled=True, message=case['question'], trace=[])
+        denied = rejection(tool_name=case['tool'], args=case['args'], definitions=ai_agent._TOOLS, enabled=True, message=case['question'], trace=[])
+        if case['tool'] == 'create_space':
+            assert denied is None  # Explicit creation now has an atomic receipt.
+        else:
+            assert denied
     expected = 'Model response for ' + case['id']
     create = Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=expected, tool_calls=[]))]))
     if case.get('kind') == 'provider':

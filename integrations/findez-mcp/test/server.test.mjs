@@ -25,9 +25,10 @@ test('SDK handshake discovers exactly the inventory surface and correctly marks 
   const client = await connect(t, () => { throw new Error('Discovery must not read inventory'); });
   assert.equal(client.getServerVersion().name, 'findez');
   const { tools } = await client.listTools();
-  assert.equal(tools.length, 8);
-  assert.equal(tools.filter((tool) => !tool.annotations.readOnlyHint).length, 3);
-  assert.ok(tools.every((tool) => !/delete|revoke|keys/.test(tool.name)));
+  assert.equal(tools.length, 15);
+  assert.equal(tools.filter((tool) => !tool.annotations.readOnlyHint).length, 5);
+  assert.ok(tools.every((tool) => !/confirm|keys/.test(tool.name)));
+  assert.equal(tools.find((tool) => tool.name === 'findez_prepare_deletion').annotations.destructiveHint, true);
   assert.ok(tools.every((tool) => tool.inputSchema.additionalProperties === false));
   assert.equal(tools.find((tool) => tool.name === 'findez_query_inventory').annotations.readOnlyHint, true);
   assert.equal(tools.find((tool) => tool.name === 'findez_create_item').annotations.idempotentHint, false);
@@ -44,6 +45,15 @@ const cases = [
   ['findez_create_item', { name: 'Motor', location: 'Shelf B', quantity: 4, workspace_id: teamId }, 'POST', '/api/v1/items', { name: 'Motor', location: 'Shelf B', quantity: 4, workspace_id: teamId }, { item: { item_id: itemId, name: 'Motor', quantity: 4 } }],
   ['findez_update_item', { item_id: itemId, changes: { quantity: 0, notes: null } }, 'PATCH', `/api/v1/items/${itemId}`, { quantity: 0, notes: null }, { updated: true, item_id: itemId }],
   ['findez_bulk_upsert', { items: [{ name: 'Motor', location: 'Shelf B', quantity: 9, category: 'Hardware', source_system: 'erp', external_id: 'motor-1' }] }, 'POST', '/api/v1/items/bulk', { items: [{ name: 'Motor', location: 'Shelf B', quantity: 9, category: 'Hardware', source_system: 'erp', external_id: 'motor-1' }] }, { processed: 1 }],
+
+  ['findez_organization', {}, 'GET', '/api/v1/organization', undefined, {organization: {organization_id: teamId}}],
+  ['findez_directory', {kind: 'space', parent_id: teamId, offset: 10, page_size: 10}, 'GET', `/api/v1/organization/directory?kind=space&parent_id=${teamId}&offset=10&page_size=10`, undefined, {resources: [], next_offset: null}],
+  ['findez_members', {kind: 'organization', resource_id: teamId}, 'GET', `/api/v1/organization/members?kind=organization&resource_id=${teamId}`, undefined, {members: []}],
+  ['findez_invitations', {kind: 'workspace', resource_id: teamId}, 'GET', `/api/v1/organization/invitations?kind=workspace&resource_id=${teamId}`, undefined, {invitations: []}],
+  ['findez_manage_organization', {operation: 'space_create', request_id: itemId, kind: 'inventory', resource_id: teamId, name: 'Shelf'}, 'POST', '/api/v1/organization/actions', {operation: 'space_create', request_id: itemId, kind: 'inventory', resource_id: teamId, name: 'Shelf'}, {request_id: itemId, result: {id: itemId, confirmed: true}}],
+  ['findez_prepare_deletion', {request_id: itemId, kind: 'space', resource_id: teamId}, 'POST', '/api/v1/organization/deletions', {request_id: itemId, kind: 'space', resource_id: teamId}, {id: itemId, status: 'pending', approval_url: `https://findez.ai/agent-approvals/${itemId}`}],
+  ['findez_deletion_status', {approval_id: itemId}, 'GET', `/api/v1/organization/deletions/${itemId}`, undefined, {id: itemId, status: 'confirmed', receipt: {deleted: true}}],
+
 ];
 for (const [name, args, method, path, body, output] of cases) {
   test(`${name} sends the exact API contract with private Bearer authentication`, async (t) => {
@@ -68,7 +78,7 @@ for (const [name, args, method, path, body, output] of cases) {
 test('repeat imports preserve stable identity and never manufacture a new ID', async (t) => {
   const sent = [];
   const client = await connect(t, async (_, options) => { sent.push(JSON.parse(options.body)); return json({ processed: 1 }); });
-  const args = cases.at(-1)[1];
+  const args = cases.find(([name]) => name === 'findez_bulk_upsert')[1];
   await client.callTool({ name: 'findez_bulk_upsert', arguments: args });
   await client.callTool({ name: 'findez_bulk_upsert', arguments: args });
   assert.deepEqual(sent, [args, args]);
@@ -79,6 +89,9 @@ test('delete, key management, arbitrary destinations and malformed writes never 
   const client = await connect(t, async () => { calls++; return json({}); });
   for (const [name, args] of [
     ['findez_delete_item', { item_id: itemId }],
+    ['findez_confirm_deletion', {approval_id: itemId}],
+    ['findez_prepare_deletion', {request_id: itemId, kind: 'organization', resource_id: teamId}],
+    ['findez_manage_organization', {operation: 'delete_everything', request_id: itemId, kind: 'organization', resource_id: teamId}],
     ['findez_revoke_key', { key_id: itemId }],
     ['findez_create_key', {}],
     ['findez_list_items', { url: 'https://example.com', method: 'DELETE' }],
@@ -178,13 +191,13 @@ test('missing, malformed and non-production credentials fail without echoing a s
 test('Actions import uses only key-auth inventory operations and makes writes consequential', async () => {
   const spec = JSON.parse(await readFile(new URL('../../../frontend/public/docs/api/chatgpt-actions.json', import.meta.url), 'utf8'));
   const operations = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, op]) => ({ path, method, ...op })));
-  assert.equal(operations.length, 8);
+  assert.equal(operations.length, 15);
   assert.ok(operations.every((op) => op.method !== 'delete' && !op.path.includes('/keys')));
   assert.deepEqual(spec.servers, [{ url: 'https://findez.openstack.ftctools.com' }]);
   assert.deepEqual(Object.keys(spec.components.securitySchemes), ['IntegrationKey']);
   assert.ok(!Object.keys(spec.components.schemas).some((name) => /Key|UserSession/.test(name)));
   assert.ok(operations.every((op) => op.description.length <= 300 && op.summary.length <= 300));
-  assert.equal(operations.filter((op) => op['x-openai-isConsequential']).length, 3);
+  assert.equal(operations.filter((op) => op['x-openai-isConsequential']).length, 5);
   assert.equal(operations.find((op) => op.path === '/api/v1/query')['x-openai-isConsequential'], false);
   assert.equal(spec.paths['/api/v1/items'].get.parameters.find((p) => p.name === 'page_size').required, true);
   assert.equal(spec.components.schemas.InventoryQuery.properties.page_size.maximum, 10);

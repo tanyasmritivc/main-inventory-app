@@ -6,9 +6,9 @@ import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { apiBase } from "@/lib/api";
 import {
-  createIntegrationKey, integrationKeyStatus, listIntegrationKeys, listKeyWorkspaces,
+  createIntegrationKey, integrationKeyStatus, listIntegrationKeys, listKeyWorkspaces, listKeyOrganizations,
   revokeIntegrationKey, testIntegrationKey,
-  type IntegrationKey, type KeyScope, type KeyWorkspace,
+  type IntegrationKey, type KeyScope, type KeyWorkspace, type KeyOrganization,
 } from "@/lib/integration-api";
 import styles from "./api-keys-client.module.css";
 
@@ -21,6 +21,16 @@ const WORKSPACE_SCOPES: { value: KeyScope; title: string; detail: string }[] = [
 const ORG_SCOPES: typeof WORKSPACE_SCOPES = [
   { value: "org:read", title: "Read all owned workspaces", detail: "Read inventory and summaries across workspaces you own." },
   { value: "org:write", title: "Write to all owned workspaces", detail: "Create, update, and bulk import items across workspaces you own." },
+];
+const MANAGEMENT_SCOPES: typeof WORKSPACE_SCOPES = [
+  { value: "org:read", title: "Read items", detail: "Read authorized inventory within this organization." },
+  { value: "org:write", title: "Create and update items", detail: "Add, edit and bulk import inventory." },
+  { value: "structure:read", title: "Read organization directory", detail: "Find workspaces, inventories and Spaces, including empty ones." },
+  { value: "structure:write", title: "Manage inventories and Spaces", detail: "Create, rename and organize resources you can manage." },
+  { value: "members:read", title: "Read members and invitations", detail: "See roles and pending invitations in authorized resources." },
+  { value: "members:write", title: "Manage access", detail: "Invite people, change roles and revoke access. New members must accept." },
+  { value: "items:delete", title: "Request item deletion", detail: "Requires your review and confirmation in FindEZ before deletion." },
+  { value: "structure:delete", title: "Request Space, inventory or workspace deletion", detail: "Requires your review and confirmation in FindEZ before deletion." },
 ];
 const message = (error: unknown) => error instanceof Error ? error.message : "The request failed. Please try again.";
 const date = (value: string | null) => value ? new Date(value).toLocaleString() : "Never";
@@ -39,6 +49,7 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
   const { token, accountId, loading: sessionLoading, error: sessionError, supabase } = session;
   const { confirmAction } = useAppDialog();
   const [keys, setKeys] = useState<IntegrationKey[]>([]);
+  const [organizations, setOrganizations] = useState<KeyOrganization[]>([]);
   const [workspaces, setWorkspaces] = useState<KeyWorkspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -59,6 +70,7 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
   const mutationLock = useRef(false);
   const active = useRef(true);
   const loadGeneration = useRef(0);
+  const selectedAccess = useRef("");
   const [secretId, setSecretId] = useState<string | null>(null);
   useEffect(() => {
     active.current = true;
@@ -77,10 +89,17 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
     setLoading(true); setLoadError(null);
     try {
       const currentToken = await freshToken();
-      const [keyData, workspaceData] = await Promise.all([listIntegrationKeys(currentToken), listKeyWorkspaces(currentToken)]);
+      const [keyData, workspaceData, organizationData] = await Promise.all([listIntegrationKeys(currentToken), listKeyWorkspaces(currentToken), listKeyOrganizations(currentToken)]);
       if (!active.current || generation !== loadGeneration.current) return;
-      setKeys(keyData.keys); setWorkspaces(workspaceData.workspaces);
-      setWorkspace((current) => current === "organization" || workspaceData.workspaces.some((entry) => entry.team_id === current) ? current : workspaceData.workspaces[0]?.team_id || "");
+      setKeys(keyData.keys); setWorkspaces(workspaceData.workspaces); setOrganizations(organizationData.organizations);
+      const current = selectedAccess.current;
+      const valid = current === "organization" && workspaceData.workspaces.length > 0
+        || organizationData.organizations.some((entry) => `org:${entry.organization_id}` === current)
+        || workspaceData.workspaces.some((entry) => entry.team_id === current);
+      const next = valid ? current : workspaceData.workspaces[0]?.team_id || (organizationData.organizations[0] ? `org:${organizationData.organizations[0].organization_id}` : "");
+      if (next !== current) setScopes(next.startsWith("org:") ? ["org:read", "structure:read"] : next === "organization" ? ["org:read"] : ["items:read", "workspace:read"]);
+      selectedAccess.current = next;
+      setWorkspace(next);
     } catch (reason) { if (active.current && generation === loadGeneration.current) setLoadError(message(reason)); }
     finally { if (active.current && generation === loadGeneration.current) setLoading(false); }
   }, [token, freshToken]);
@@ -88,8 +107,9 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
   useEffect(() => { if (secret) secretRef.current?.focus(); }, [secret]);
 
   function chooseWorkspace(value: string) {
+    selectedAccess.current = value;
     setWorkspace(value);
-    setScopes(value === "organization" ? ["org:read"] : ["items:read", "workspace:read"]);
+    setScopes(value.startsWith("org:") ? ["org:read", "structure:read"] : value === "organization" ? ["org:read"] : ["items:read", "workspace:read"]);
   }
 
   async function create(event: FormEvent) {
@@ -98,7 +118,8 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
     mutationLock.current = true; setBusy(true); setError(null); setNotice(null);
     try {
       const result = await createIntegrationKey(await freshToken(), {
-        name: name.trim(), workspace_id: workspace === "organization" ? null : workspace,
+        name: name.trim(), workspace_id: workspace === "organization" || workspace.startsWith("org:") ? null : workspace,
+        organization_id: workspace.startsWith("org:") ? workspace.slice(4) : null,
         scopes, expires_at: expiry === "never" ? null : new Date(Date.now() + Number(expiry) * 86400000).toISOString(),
       });
       if (!active.current) return;
@@ -146,7 +167,7 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
   return <div className={styles.page}>
     <Link href="/settings" className={styles.back}>← Settings</Link>
     <h1>API keys</h1>
-    <p className={styles.intro}>Connect a spreadsheet, automation, or AI assistant to your workspace inventory.</p>
+    <p className={styles.intro}>Connect a spreadsheet, automation or AI assistant to FindEZ. Choose exactly what it can access.</p>
     <p><Link className={styles.link} href="/docs/api">Read the API documentation →</Link></p>
     <p><Link className={styles.link} href="/docs/api#ai-assistants">Connect Claude or ChatGPT →</Link></p>
     {sessionError && <p role="alert" className={styles.error}>{sessionError} <Link href="/signin?redirect=/settings/api-keys">Sign in</Link></p>}
@@ -169,9 +190,9 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
     </section>}
 
     {!loading && !sessionLoading && !sessionError && !loadError && <>
-      {!workspaces.length ? <section className={styles.card}>
-        <h2>Create a workspace to use integrations</h2>
-        <p>API keys access authorized inventory in owned workspaces. Create a workspace, open an inventory in it, and add a Space. Only the workspace owner can issue keys. Personal inventories and workspaces you only belong to are not available through this API.</p>
+      {!workspaces.length && !organizations.length ? <section className={styles.card}>
+        <h2>Create a workspace or organization to use integrations</h2>
+        <p>Workspace owners can issue inventory keys. Organization owners and admins can issue keys for organization management. Create one from Home to get started.</p>
         <Link className={styles.link} href="/home">Open your workspaces →</Link>
       </section> : !secret && <form className={styles.card} onSubmit={(event) => void create(event)}>
         <h2>Create an API key</h2>
@@ -180,19 +201,20 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
         <div className={styles.fields}>
           <div><label htmlFor="key-workspace">Access</label><select id="key-workspace" value={workspace} onChange={(event) => chooseWorkspace(event.target.value)}>
             {workspaces.map((entry) => <option key={entry.team_id} value={entry.team_id}>{entry.name}</option>)}
-            <option value="organization">All workspaces I own</option>
+            {workspaces.length > 0 && <option value="organization">All workspaces I own (inventory only)</option>}
+            {organizations.map((entry) => <option key={entry.organization_id} value={`org:${entry.organization_id}`}>Organization: {entry.name}</option>)}
           </select></div>
           <div><label htmlFor="key-expiry">Expires in</label><select id="key-expiry" value={expiry} onChange={(event) => setExpiry(event.target.value)}>
             <option value="30">30 days</option><option value="90">90 days</option><option value="365">1 year</option><option value="never">Never</option>
           </select></div>
         </div>
         <fieldset><legend>Permissions</legend>
-          {(workspace === "organization" ? ORG_SCOPES : WORKSPACE_SCOPES).map((scope) => <label key={scope.value} className={styles.permission}>
+          {(workspace.startsWith("org:") ? MANAGEMENT_SCOPES : workspace === "organization" ? ORG_SCOPES : WORKSPACE_SCOPES).map((scope) => <label key={scope.value} className={styles.permission}>
             <input type="checkbox" checked={scopes.includes(scope.value)} onChange={(event) => setScopes((current) => event.target.checked ? [...current, scope.value] : current.filter((value) => value !== scope.value))} />
             <span>{scope.title}<small>{scope.detail}</small></span>
           </label>)}
         </fieldset>
-        <p className={styles.hint}>Read access is selected by default. Writes use the exact name of an existing linked Space.</p>
+        <p className={styles.hint}>Read access is selected by default. Organization keys stay within the selected organization and your current permissions. Existing keys do not gain new access.</p>
         <button className={styles.primary} disabled={busy || !name.trim() || !scopes.length || !workspace}>{busy ? "Creating…" : "Create key"}</button>
       </form>}
 
@@ -202,7 +224,7 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
         {keys.map((key) => <article key={key.id} className={styles.key}>
           <div className={styles.sectionHeading}><strong>{key.name}</strong><span>{integrationKeyStatus(key)}</span></div>
           <code>{key.key_prefix}…</code>
-          <p>{key.workspace_id ? workspaces.find((entry) => entry.team_id === key.workspace_id)?.name ?? "Unavailable workspace" : "All workspaces you own"}</p>
+          <p>{key.organization_id ? organizations.find((entry) => entry.organization_id === key.organization_id)?.name ?? "Unavailable organization" : key.workspace_id ? workspaces.find((entry) => entry.team_id === key.workspace_id)?.name ?? "Unavailable workspace" : "All workspaces you own"}</p>
           <p className={styles.scopes}>{key.scopes.join(" · ")}</p>
           <dl><div><dt>Created</dt><dd>{date(key.created_at)}</dd></div><div><dt>Last used</dt><dd>{date(key.last_used_at)}</dd></div><div><dt>Expires</dt><dd>{date(key.expires_at)}</dd></div></dl>
           {!key.revoked_at && <button className={styles.danger} disabled={busy} onClick={() => void revoke(key)}>Revoke {key.name}</button>}
@@ -215,7 +237,7 @@ function AccountApiKeys({ session }: { session: ReturnType<typeof useApiSession>
       <p>Use a key with read permission. Replace <code>YOUR_API_KEY</code> and the example part number with your values.</p>
       <pre>{example}</pre>
       <p><code>count</code> counts matching item records; <code>sum_quantity</code> adds their quantities. Omit <code>aggregate</code> to return a paginated item list.</p>
-      <p className={styles.hint}>Use the <Link href="/docs/api#ai-assistants">Claude Desktop extension or ChatGPT Actions setup</Link> to read, add, update, and import inventory. Enable the matching permissions when creating your key. Neither connection includes deletion.</p>
+      <p className={styles.hint}>Use the <Link href="/docs/api#ai-assistants">Claude Desktop extension or ChatGPT Actions setup</Link> to work with your inventory and organization. Select an organization and enable the permissions your agent needs. Deletion requests open a separate review page for your confirmation.</p>
     </section>
   </div>;
 }

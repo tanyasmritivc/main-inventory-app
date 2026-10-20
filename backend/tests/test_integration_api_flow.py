@@ -321,3 +321,34 @@ def test_patch_rejects_null_required_fields_or_workspace_change(api, body):
     response = api.client.patch(f"/api/v1/items/{uuid4()}", headers=bearer(key), json=body)
     assert response.status_code == 422
     api.factory.assert_not_called()
+
+
+def test_organization_key_issue_authentication_role_revocation_and_key_revocation(api, monkeypatch):
+    from app.api.routes import collaboration
+    org = '60000000-0000-0000-0000-000000000001'
+    api.rows['app_organization_members'] = [{'organization_id': org, 'user_id': OWNER, 'role': 'owner'}]
+    calls = []
+    def organization(resource, actor):
+        calls.append((resource, actor))
+        return {'role': 'owner'}
+    monkeypatch.setattr(collaboration, 'organization', organization)
+    issued = create(api, workspace_id=None, organization_id=org, scopes=['structure:read', 'structure:write']).json()
+    assert calls == [(org, OWNER)]
+    assert issued['organization_id'] == org and issued['workspace_id'] is None
+    identity = api.client.get('/api/v1/whoami', headers=bearer(issued['key']))
+    assert identity.status_code == 200 and identity.json()['organization_id'] == org
+    assert api.client.get('/api/v1/items', headers=bearer(issued['key'])).status_code == 403
+    api.rows['app_organization_members'][0]['role'] = 'member'
+    denied = api.client.get('/api/v1/whoami', headers=bearer(issued['key']))
+    assert denied.status_code == 403 and denied.json()['detail']['code'] == 'organization_access_revoked'
+    api.rows['app_organization_members'][0]['role'] = 'owner'
+    assert api.client.delete(f"/api/v1/keys/{issued['id']}", headers=bearer('web-session')).status_code == 200
+    assert api.client.get('/api/v1/whoami', headers=bearer(issued['key'])).status_code == 401
+
+
+def test_non_admin_cannot_issue_organization_key(api, monkeypatch):
+    from app.api.routes import collaboration
+    monkeypatch.setattr(collaboration, 'organization', lambda *_: {'role': 'member'})
+    response = create(api, workspace_id=None, organization_id=OTHER, scopes=['members:write'])
+    assert response.status_code == 403
+    assert not api.rows['api_keys']

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "FindEZ inventory assistant",
-    "version": "1.0.0",
-    "description": "Read, add, update, and bulk-sync Team inventory using a FindEZ API key. No delete or key-management operations."
+    "version": "1.1.0",
+    "description": "Manage authorized FindEZ inventory and organization resources. Permanent deletion requires human review and confirmation in FindEZ."
   },
   "servers": [
     {
@@ -387,6 +387,437 @@
           }
         }
       }
+    },
+    "/api/v1/organization": {
+      "get": {
+        "operationId": "findez_organization",
+        "summary": "Read organization",
+        "description": "Read the organization bound to the key. Requires structure:read. Use its ID for workspace creation; organization access does not bypass inventory permissions.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": false,
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/directory": {
+      "get": {
+        "operationId": "findez_directory",
+        "summary": "Find workspaces, inventories and Spaces",
+        "description": "Discover actual IDs, including empty Spaces. kind=workspace lists organization workspaces; inventory needs parent workspace UUID; space needs parent inventory UUID. Follow next_offset until null. Requires structure:read.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": false,
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "workspace",
+                "inventory",
+                "space"
+              ],
+              "type": "string"
+            },
+            "description": ""
+          },
+          {
+            "name": "parent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": ""
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": ""
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "default": 10
+            },
+            "description": "Maximum records in a page, from 1 to 100."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/members": {
+      "get": {
+        "operationId": "findez_members",
+        "summary": "Read members and roles",
+        "description": "Read current membership for an organization, workspace or inventory. Use returned user IDs for role changes or revocation. Requires members:read.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": false,
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "organization",
+                "workspace",
+                "inventory"
+              ],
+              "type": "string"
+            },
+            "description": ""
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": ""
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": ""
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "default": 10
+            },
+            "description": "Maximum records in a page, from 1 to 100."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/invitations": {
+      "get": {
+        "operationId": "findez_invitations",
+        "summary": "Read pending invitations",
+        "description": "Read pending recipient-bound invitations for an authorized organization, workspace or inventory. Requires members:read. A pending invitation does not grant access.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": false,
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "organization",
+                "workspace",
+                "inventory"
+              ],
+              "type": "string"
+            },
+            "description": ""
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": ""
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": ""
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "default": 10
+            },
+            "description": "Maximum records in a page, from 1 to 100."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/actions": {
+      "post": {
+        "operationId": "findez_manage_organization",
+        "summary": "Manage organization resources and access",
+        "description": "Create/rename workspaces, inventories and Spaces; move Spaces; invite people, change roles or revoke access. Requires structure:write or members:write. Use a fresh request_id; retry identical values with the same ID. Confirm intended changes first. Does not delete contents.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": true,
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/deletions": {
+      "post": {
+        "operationId": "findez_prepare_deletion",
+        "summary": "Request a deletion for human review",
+        "description": "Prepare a permanent deletion preview. Requires items:delete or structure:delete. Show the preview and approval_url to the human key owner. Only that person can confirm in FindEZ. This tool does not delete anything; poll status after human confirmation.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": true,
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organization/deletions/{approval_id}": {
+      "get": {
+        "operationId": "findez_deletion_status",
+        "summary": "Check deletion status",
+        "description": "Check a deletion request made by this key. Claim deletion only when status is confirmed and receipt.deleted is true. Pending or expired requests are not deleted. The API key cannot confirm deletion.",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "x-openai-isConsequential": false,
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagementResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -406,6 +837,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "workspace_id": {
             "type": [
               "string",
@@ -422,6 +860,7 @@
         },
         "required": [
           "key_id",
+          "organization_id",
           "workspace_id",
           "scopes"
         ]
@@ -509,6 +948,20 @@
             "type": "integer",
             "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
           },
+          "inventory_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Inventory UUID. Supply it when creating or importing into a specific inventory, particularly when multiple inventories have identically named Spaces. Query filters may match it exactly."
+          },
+          "space_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Read-only Space UUID of the stored item."
+          },
           "location": {
             "type": "string",
             "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
@@ -518,7 +971,7 @@
               "string",
               "null"
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
           },
           "barcode": {
             "type": [
@@ -580,6 +1033,8 @@
           "name",
           "category",
           "quantity",
+          "inventory_id",
+          "space_id",
           "location",
           "image_url",
           "barcode",
@@ -605,6 +1060,18 @@
               }
             ],
             "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
+          },
+          "inventory_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inventory UUID. Supply it when creating or importing into a specific inventory, particularly when multiple inventories have identically named Spaces. Query filters may match it exactly."
           },
           "name": {
             "type": "string",
@@ -642,7 +1109,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
           },
           "barcode": {
             "anyOf": [
@@ -762,6 +1229,20 @@
                 "type": "integer",
                 "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
               },
+              "inventory_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Inventory UUID. Supply it when creating or importing into a specific inventory, particularly when multiple inventories have identically named Spaces. Query filters may match it exactly."
+              },
+              "space_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Read-only Space UUID of the stored item."
+              },
               "location": {
                 "type": "string",
                 "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
@@ -771,7 +1252,7 @@
                   "string",
                   "null"
                 ],
-                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
+                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
               },
               "barcode": {
                 "type": [
@@ -918,7 +1399,8 @@
               "barcode",
               "quantity",
               "source_system",
-              "external_id"
+              "external_id",
+              "inventory_id"
             ],
             "description": "One of the listed item fields. Text and quantity have different operator/value rules."
           },
@@ -1159,7 +1641,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
           },
           "barcode": {
             "anyOf": [
@@ -1299,6 +1781,18 @@
             ],
             "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
           },
+          "inventory_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inventory UUID. Supply it when creating or importing into a specific inventory, particularly when multiple inventories have identically named Spaces. Query filters may match it exactly."
+          },
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -1335,7 +1829,7 @@
                 "type": "null"
               }
             ],
-            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. FindEZ-hosted photos require authenticated app access; integration keys cannot download or sign them. Omit this field for text-only syncs. Existing photo references survive ordinary text/quantity patches; attaching a new private photo requires the FindEZ app."
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
           },
           "barcode": {
             "anyOf": [
@@ -1428,6 +1922,225 @@
         },
         "required": [
           "processed"
+        ]
+      },
+      "ManagementResult": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Action-specific directory, receipt or approval result; see this operation and its examples."
+      },
+      "OrganizationAction": {
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "organization_rename",
+              "workspace_create",
+              "workspace_rename",
+              "inventory_create",
+              "inventory_rename",
+              "space_create",
+              "space_rename",
+              "space_move",
+              "inventory_policy",
+              "member_invite",
+              "member_change",
+              "member_remove",
+              "invitation_cancel",
+              "location_create",
+              "location_attach"
+            ]
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Fresh UUID for a new action. Reuse it with identical values after a timeout; successful retries return the saved receipt."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "workspace",
+              "inventory",
+              "space"
+            ],
+            "description": "Parent kind for creation: organization for workspace_create; workspace for inventory_create/location_create; inventory for space_create. For rename/move, use the target kind. For membership actions, use organization/workspace/inventory."
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Exact UUID from the directory: the parent for create, target for rename/move/policy/location_attach, or membership resource for invite/change/remove/cancel."
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for every create/rename operation; omit for other operations."
+          },
+          "access_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "workspace",
+                  "restricted"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required with default_role for inventory_policy; optional for inventory_create. workspace inherits membership; restricted requires individual grants."
+          },
+          "default_role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "viewer",
+                  "editor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for inventory_policy, with access_mode."
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 254,
+                "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for member_invite. The recipient must accept before receiving access."
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for member_change and member_remove; resolve from members, never guess."
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "admin",
+                  "editor",
+                  "viewer",
+                  "inherit"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required for member_invite/member_change. Organization: member/admin. Workspace or inventory: viewer/editor/admin. Inventory member_change also permits inherit."
+          },
+          "inventory_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for space_move: destination inventory in the same workspace."
+          },
+          "invitation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for invitation_cancel; obtain from invitations."
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional only for location_create: parent physical location UUID in this workspace."
+          },
+          "location_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required only for location_attach: physical location UUID in this inventory workspace."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation",
+          "request_id",
+          "kind",
+          "resource_id"
+        ]
+      },
+      "DeletePreview": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "item",
+              "space",
+              "inventory",
+              "workspace"
+            ]
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "kind",
+          "resource_id"
         ]
       }
     }
