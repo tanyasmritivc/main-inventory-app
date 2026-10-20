@@ -134,41 +134,41 @@ def join_team(*, user_id: str, code: str) -> dict:
 
 
 def list_user_teams(*, user_id: str) -> list[dict]:
-    """Return all teams the user belongs to, with their role."""
-    supabase = get_supabase_admin()
-    members_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships")
-        .select("team_id, role, joined_at")
-        .eq("user_id", user_id)
-        .execute()
-    )
-    if not (members_resp.data or []):
-        return []
-
-    team_ids = [m["team_id"] for m in members_resp.data]
-    teams_resp = supabase_execute_with_retry(
-        lambda: supabase.table("teams")
-        .select("team_id, name, program, custom_category, plan, plan_expires_at, join_code, owner_user_id, created_at, organization_id")
-        .in_("team_id", team_ids)
-        .execute()
-    )
-    team_map = {t["team_id"]: t for t in (teams_resp.data or [])}
-
-    organization_ids = list({t['organization_id'] for t in team_map.values() if t.get('organization_id')})
-    memberships = supabase.table('app_organization_members').select('organization_id').eq('user_id', user_id).in_('organization_id', organization_ids).execute().data if organization_ids else []
-    allowed_organizations = {m['organization_id'] for m in memberships or []}
-
+    """Explicit memberships plus automatic organization administration access."""
+    raw = get_supabase_admin()
+    members = raw.table('team_memberships').select('team_id,role,joined_at').eq('user_id', user_id).execute().data or []
+    parents = raw.table('app_organization_members').select('organization_id,role').eq('user_id', user_id).execute().data or []
+    parent_roles = {p['organization_id']: p['role'] for p in parents}
+    ids = [m['team_id'] for m in members]
+    fields = 'team_id,name,program,custom_category,plan,plan_expires_at,join_code,owner_user_id,created_at,organization_id'
+    teams = raw.table('teams').select(fields).in_('team_id', ids).execute().data or [] if ids else []
+    managed = [p['organization_id'] for p in parents if p['role'] in ('owner', 'admin')]
+    if managed:
+        teams += raw.table('teams').select(fields).in_('organization_id', managed).execute().data or []
+    explicit = {m['team_id']: m for m in members}
     result = []
-    for m in members_resp.data:
-        t = team_map.get(m["team_id"])
-        if t and t.get('organization_id') and t['organization_id'] not in allowed_organizations:
+    for team in {t['team_id']: t for t in teams}.values():
+        parent = parent_roles.get(team.get('organization_id'))
+        if team.get('organization_id') and not parent:
             continue
-        if t:
-            t = dict(t)
-            if m["role"] not in ("owner", "mentor"):
-                t.pop("join_code", None)
-            result.append({**t, "role": m["role"], "joined_at": m["joined_at"]})
+        member = explicit.get(team['team_id'], {})
+        role = ('owner' if parent == 'owner' else 'mentor') if parent in ('owner', 'admin') else member.get('role')
+        if role is None:
+            continue
+        row = {**team, 'role': role, 'organization_role': parent, 'joined_at': member.get('joined_at')}
+        if role not in ('owner', 'mentor'):
+            row.pop('join_code', None)
+        result.append(row)
     return result
+
+
+def _effective_membership(raw, team_id, actor):
+    from app.services.permissions import workspace_membership
+    from fastapi import HTTPException
+    try:
+        return workspace_membership(raw, team_id, actor)
+    except HTTPException:
+        raise PermissionError('NOT_MEMBER') from None
 
 
 def _require_workspace_parent(raw, team_id, actor_id):
@@ -187,15 +187,7 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
     """
     supabase = get_supabase_admin()
     _require_workspace_parent(supabase, team_id, user_id)
-    caller_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships")
-        .select("role")
-        .eq("team_id", team_id)
-        .eq("user_id", user_id)
-        .execute()
-    )
-    if not (caller_resp.data or []):
-        raise PermissionError("NOT_MEMBER")
+    caller = _effective_membership(supabase, team_id, user_id)
 
     resp = supabase_execute_with_retry(
         lambda: supabase.table("team_memberships")
@@ -205,6 +197,11 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
         .execute()
     )
     members = resp.data or []
+    team = supabase.table('teams').select('organization_id').eq('team_id', team_id).limit(1).execute().data or []
+    if team and team[0].get('organization_id'):
+        parents = supabase.table('app_organization_members').select('user_id,role').eq('organization_id', team[0]['organization_id']).execute().data or []
+        from app.services.permissions import workspace_roster
+        members = workspace_roster(members, parents)
     user_ids = [row["user_id"] for row in members if row.get("user_id")]
     if not user_ids:
         return members
@@ -269,16 +266,8 @@ def update_member_role(
     supabase = get_supabase_admin()
     _require_workspace_parent(supabase, team_id, requesting_user_id)
 
-    caller_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships")
-        .select("role")
-        .eq("team_id", team_id)
-        .eq("user_id", requesting_user_id)
-        .execute()
-    )
-    if not (caller_resp.data or []):
-        raise PermissionError("NOT_MEMBER")
-    caller_role = caller_resp.data[0]["role"]
+    caller = _effective_membership(supabase, team_id, requesting_user_id)
+    caller_role = "owner" if caller.get("organization_role") in ("owner", "admin") else caller["role"]
 
     target_resp = supabase_execute_with_retry(
         lambda: supabase.table("team_memberships")
@@ -316,16 +305,8 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
     supabase = get_supabase_admin()
     _require_workspace_parent(supabase, team_id, requesting_user_id)
 
-    caller_resp = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships")
-        .select("role")
-        .eq("team_id", team_id)
-        .eq("user_id", requesting_user_id)
-        .execute()
-    )
-    if not (caller_resp.data or []):
-        raise PermissionError("NOT_MEMBER")
-    caller_role = caller_resp.data[0]["role"]
+    caller = _effective_membership(supabase, team_id, requesting_user_id)
+    caller_role = "owner" if caller.get("organization_role") in ("owner", "admin") else caller["role"]
 
     target_resp = supabase_execute_with_retry(
         lambda: supabase.table("team_memberships")
@@ -387,16 +368,12 @@ def rotate_join_code(*, requesting_user_id: str, team_id: str) -> str:
     ).data or []
     if not team:
         raise ValueError("TEAM_NOT_FOUND")
-    membership = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships").select("role").eq(
-            "team_id", team_id
-        ).eq("user_id", requesting_user_id).limit(1).execute()
-    ).data or []
+    membership = [_effective_membership(supabase, team_id, requesting_user_id)]
     if not membership or membership[0]["role"] not in ("owner", "mentor"):
         raise PermissionError("MANAGER_ONLY")
     code = _unique_join_code()
     supabase_execute_with_retry(
-        lambda: supabase.table("teams").update({"join_code": code}).eq(
+        lambda: supabase.table("teams").update({"join_code": code, "join_code_created_by": requesting_user_id}).eq(
             "team_id", team_id
         ).execute()
     )
@@ -414,11 +391,7 @@ def get_team_invitation(*, requesting_user_id: str, team_id: str) -> dict:
     ).data or []
     if not team:
         raise ValueError("TEAM_NOT_FOUND")
-    membership = supabase_execute_with_retry(
-        lambda: supabase.table("team_memberships").select("role").eq(
-            "team_id", team_id
-        ).eq("user_id", requesting_user_id).limit(1).execute()
-    ).data or []
+    membership = [_effective_membership(supabase, team_id, requesting_user_id)]
     if not membership or membership[0]["role"] not in ("owner", "mentor"):
         raise PermissionError("MANAGER_ONLY")
     return team[0]
@@ -434,7 +407,7 @@ def delete_team(*, requesting_user_id: str, team_id: str) -> bool:
     ).data or []
     if not team:
         return False
-    if team[0]["owner_user_id"] != requesting_user_id:
+    if team[0]["owner_user_id"] != requesting_user_id and _effective_membership(supabase, team_id, requesting_user_id).get("organization_role") not in ("owner", "admin"):
         raise PermissionError("OWNER_ONLY")
     result = supabase.rpc('findez_delete_inventory_team', {
         'p_team_id':team_id,'p_actor_id':requesting_user_id,

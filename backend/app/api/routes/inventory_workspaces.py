@@ -26,16 +26,14 @@ def _workspace(workspace_id, actor_id):
     except ValueError:
         raise HTTPException(404, 'Workspace not found.')
     client = get_supabase_raw()
-    members = client.table('team_memberships').select('role').eq('team_id', workspace_id).eq('user_id', actor_id).limit(1).execute().data or []
-    if not members:
-        raise HTTPException(403, 'You do not have access to this workspace.')
+    membership = permissions.workspace_membership(client, workspace_id, actor_id)
     teams = client.table('teams').select('team_id,name,owner_user_id,organization_id').eq('team_id', workspace_id).limit(1).execute().data or []
     if not teams:
         raise HTTPException(404, 'Workspace not found.')
     if teams[0].get('organization_id') and not (client.table('app_organization_members').select('role').eq('organization_id', teams[0]['organization_id']).eq('user_id', actor_id).limit(1).execute().data or []):
         raise HTTPException(403, 'Organization membership is required for this workspace.')
     orgs = client.table('app_organizations').select('name').eq('organization_id', teams[0]['organization_id']).execute().data if teams[0].get('organization_id') else []
-    return {'workspace_id': workspace_id, 'kind': 'team', 'team_id': workspace_id, 'name': teams[0]['name'], 'owner_user_id': teams[0]['owner_user_id'], 'role': members[0]['role'], 'organization_id': teams[0].get('organization_id'), 'organization_name': orgs[0]['name'] if orgs else None}
+    return {'workspace_id': workspace_id, 'kind': 'team', 'team_id': workspace_id, 'name': teams[0]['name'], 'owner_user_id': teams[0]['owner_user_id'], 'role': membership['role'], 'organization_role': membership.get('organization_role'), 'organization_id': teams[0].get('organization_id'), 'organization_name': orgs[0]['name'] if orgs else None}
 
 
 def _inventory(inventory_id, actor_id, *, administration=False):
@@ -58,7 +56,7 @@ def _inventory(inventory_id, actor_id, *, administration=False):
             'can_open': role is not None,
             'can_edit': role in permissions.EDIT_ROLES,
             'can_delete_space': role in permissions.ADMIN_ROLES,
-            'can_rename': can_manage, 'can_manage': can_manage}
+            'can_rename': permissions.can_rename_inventory(inventory, workspace, role), 'can_manage': can_manage}
 
 
 def inventory_role(inventory, workspace, actor_id, grants=None):
@@ -68,14 +66,14 @@ def inventory_role(inventory, workspace, actor_id, grants=None):
 
 
 def can_rename_inventory(inventory, workspace, actor_id, grants=()):
-    return permissions.can_administer_inventory(inventory, workspace, inventory_role(inventory, workspace, actor_id, grants))
+    return permissions.can_rename_inventory(inventory, workspace, inventory_role(inventory, workspace, actor_id, grants))
 
 
 
 @router.get('/inventory-workspaces')
 def list_inventory_workspaces(user: AuthenticatedUser = Depends(get_current_user)):
     workspaces = [_workspace('personal', user.user_id)]
-    workspaces += [{'workspace_id': team['team_id'], 'team_id': team['team_id'], 'kind': 'team', 'name': team['name'], 'owner_user_id': team['owner_user_id'], 'role': team['role']} for team in list_user_teams(user_id=user.user_id)]
+    workspaces += [{'workspace_id': team['team_id'], 'team_id': team['team_id'], 'kind': 'team', 'name': team['name'], 'owner_user_id': team['owner_user_id'], 'role': team['role'], 'organization_role': team.get('organization_role'), 'organization_id': team.get('organization_id')} for team in list_user_teams(user_id=user.user_id)]
     return {'workspaces': workspaces}
 
 
@@ -105,7 +103,7 @@ def list_workspace_inventories(workspace_id: str, q: str = Query('', max_length=
             continue
         row = {**inv, 'role': role, 'can_open': role is not None,
                'can_edit': role in permissions.EDIT_ROLES,
-               'can_rename': can_manage, 'can_manage': can_manage}
+               'can_rename': permissions.can_rename_inventory(inv, workspace, role), 'can_manage': can_manage}
         if role is None:
             row.pop('item_count', None)
         visible.append(row)
@@ -128,9 +126,16 @@ class CreateInventory(NewInventory):
 @router.patch('/inventory-workspaces/{workspace_id}')
 def rename_workspace(workspace_id: UUID, body: NewInventory, user: AuthenticatedUser = Depends(get_current_user)):
     workspace = _workspace(str(workspace_id), user.user_id)
-    if workspace['owner_user_id'] != user.user_id:
-        raise HTTPException(403, 'Only the workspace owner can rename it.')
-    rows = get_supabase_raw().table('teams').update({'name': body.name}).eq('team_id', str(workspace_id)).eq('owner_user_id', user.user_id).execute().data or []
+    if permissions.workspace_role(workspace['role']) not in permissions.EDIT_ROLES:
+        raise HTTPException(403, 'You have view-only access to this workspace.')
+    query = get_supabase_raw().table('teams').update({'name': body.name}).eq('team_id', str(workspace_id))
+    query.headers = {**query.headers, 'x-findez-actor': user.user_id}
+    try:
+        rows = query.execute().data or []
+    except APIError as exc:
+        if exc.code == '42501':
+            raise HTTPException(403, 'Your permission changed. Refresh and try again.') from None
+        raise
     if not rows:
         raise HTTPException(409, 'The workspace changed. Refresh before trying again.')
     return {'workspace': {**workspace, 'name': rows[0]['name']}}

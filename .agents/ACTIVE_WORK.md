@@ -1,3 +1,18 @@
+## Organization access and inline item update — live (2026-10-19)
+
+User approved “yes publish and apply 068.” Migration 068 and the reviewed web/API
+release are live after a fresh private database backup. Admins access all resources
+within their organization; only Owners delete the organization. Viewers remain
+read-only. Inline item editing, original import fields and task/invite attribution
+are published. Deployment source hashes, attribution columns, permission precedence,
+API/database/site health and unauthorized photo/Chat checks pass.
+
+Mobile 1.0.9 (96), implementation efd7209, is signed, Apple-validated and
+upload acknowledged (ea38eaff-6bfa-4a30-8af2-6c65e2e43c4a). Processing/tester
+availability is unverified. Includes full-photo zoom/pan and session restoration. All three CI lanes
+pass; 670 mobile tests pass. Device acceptance remains pending.
+See docs/plans/organization-items-update-20261019.md for evidence and receipts.
+
 ## Website item field persistence - October 19
 
 User approved a narrow shared-server fix after live web QA showed Brand and

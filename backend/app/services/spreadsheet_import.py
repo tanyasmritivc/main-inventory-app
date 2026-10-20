@@ -166,7 +166,7 @@ def infer_import_mapping(headers: list[str]) -> dict | None:
                                      'dimension', 'screw length', 'shaft size'),
         'brand_column': column('brand', 'manufacturer', 'vendor', 'vendor name', 'supplier'),
         'purchase_source_column': column('purchase source', 'source',
-                                         'vendor part number', 'vendor part #', 'supplier code'),
+                                         'supplier url', 'purchase url', 'product url', 'where to buy'),
         'notes_columns': [],
         'category': 'Supplies',
     }

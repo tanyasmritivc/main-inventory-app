@@ -27,7 +27,7 @@ def test_workbook_maps_each_sheet_and_preserves_duplicate_and_blank_headers():
     assert len(items) == 2
     assert items[0]['quantity'] == 0
     assert items[0]['part_number'] == 'PN-F1'
-    assert items[0]['purchase_source'] == '0012'
+    assert items[0]['purchase_source'] is None  # Vendor part numbers are not purchasing destinations.
     assert items[0]['brand'] == 'Acme'
     assert items[0]['import_data']['fields'] == [
         {'name': '8', 'value': 'PN-F1'}, {'name': 'Shaft', 'value': 'Screw'},

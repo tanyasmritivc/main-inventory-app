@@ -58,6 +58,7 @@ class DB:
             'teams': [{'team_id': 'team-1', 'name': 'Robotics', 'join_code': 'TEAM23', 'owner_user_id': 'owner', 'program': 'ftc'}],
             'team_memberships': [],
             'app_organization_members': [],
+            'profiles': [{'id':'owner','display_name':'Inviting Person'}, {'id':'outsider','display_name':'Private Person'}],
         }
         self.writes, self.selections = [], []
 
@@ -96,9 +97,14 @@ def test_preview_requires_sign_in_and_does_not_join_or_expose_inventory(api, db)
     result = preview(api)
     assert result.status_code == 200
     assert result.headers['cache-control'] == 'no-store'
-    assert result.json() == {'kind': 'space', 'name': 'Garage', 'target_id': 'space-1', 'permission': 'view', 'already_joined': False}
+    payload = result.json()
+    assert payload.pop('inviter_label') == 'Invited by'
+    inviter = payload.pop('inviter')
+    assert inviter['display_name'] == 'Inviting Person'
+    assert inviter['user_id'] == 'owner'
+    assert payload == {'kind': 'space', 'name': 'Garage', 'target_id': 'space-1', 'permission': 'view', 'already_joined': False}
     assert db.writes == []
-    assert not any(table in ('items', 'profiles', 'documents') for table, _ in db.selections)
+    assert not any(table in ('items', 'documents') for table, _ in db.selections)
 
 
 @pytest.mark.parametrize('code', ['bad', 'ABC123extra', 'ABC!23', 'abc123', '../ABC', 'ABC%23'])
