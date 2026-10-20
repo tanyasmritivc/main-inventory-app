@@ -1,7 +1,7 @@
 -- Disposable database only. Run after the previous permission-policy fixtures.
 \ir ../../supabase/migrations/022_team_board.sql
-\ir ../../supabase/migrations/062_organization_admin_access.sql
-\ir ../../supabase/migrations/062_organization_admin_access.sql
+\ir ../../supabase/migrations/068_organization_admin_access.sql
+\ir ../../supabase/migrations/068_organization_admin_access.sql
 CREATE OR REPLACE FUNCTION pg_temp.check_org_access(ok boolean,label text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF ok IS DISTINCT FROM true THEN RAISE EXCEPTION 'FAILED: %',label; END IF; END $$;
 SELECT set_config('request.jwt.claims','{}',false);
 SELECT set_config('request.headers','{}',false);
