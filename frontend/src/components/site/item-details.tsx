@@ -14,12 +14,14 @@ export function ItemDetails({
   canEdit,
   onChanged,
   onEditingChange,
+  showTitle = true,
 }: {
   item: InventoryItem;
   context?: PhotoContext;
   canEdit: boolean;
   onChanged?: (item: InventoryItem) => void;
   onEditingChange?: (editing: boolean) => void;
+  showTitle?: boolean;
 }) {
   const { accountId } = useApiSession();
   const [editing, setEditing] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export function ItemDetails({
   ];
   return (
     <div>
-      <h2>{itemDisplayName(item)}</h2>
+      {showTitle && <h2>{itemDisplayName(item)}</h2>}
       <dl
         style={{
           display: "grid",

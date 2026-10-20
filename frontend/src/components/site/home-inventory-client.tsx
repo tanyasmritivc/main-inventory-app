@@ -22,8 +22,6 @@ import {
   checkoutItem,
   createSpace,
   deleteItem,
-  deleteShare,
-  deleteSpace,
   extractFromImageMulti,
   getActiveCheckouts,
   getJoinedShares,
@@ -56,6 +54,7 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 // ── Style constants ──────────────────────────────────────────────────────────
 import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
+import { ResourceRemovalDialog } from "./resource-removal-dialog";
 import { ItemDetails } from "@/components/site/item-details";
 import { useApiSession } from "@/lib/use-api-session";
 import { useRestock } from "@/lib/use-restock";
@@ -232,6 +231,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
   const router = useInventoryRouter();
   const { confirmAction, promptValue } = useAppDialog();
   const { accountId } = useApiSession();
+  const [removingSpace,setRemovingSpace] = useState<Space|null>(null);
   const restock = useRestock(accountId);
   const { adopt: adoptRestock } = restock;
   const [detailEditing, setDetailEditing] = useState(false);
@@ -722,40 +722,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
 
   async function onDeleteSpace(space: Space) {
     if (!canDeleteSpace()) { setError("Only inventory owners and admins can delete a Space."); return; }
-    const inventory=activeInventory();
-    let itemCount: number;
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const current = (await getSpaces({ token: t })).find(row => row.id === space.id);
-      if (!current || typeof current.item_count !== "number") throw new Error("Refresh the Space before deleting it.");
-      itemCount = current.item_count;
-    } catch (reason) { setError(errorMessage(reason, "Could not check the Space's contents.")); return; }
-    if (activeInventory()!==inventory) return;
-    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: `This Space contains ${itemCount} saved ${itemCount === 1 ? "item" : "items"}. The Space, its items, and any pending identifications will be permanently deleted.`, confirmLabel: 'Delete Space', danger: true })) return;
-    if (activeInventory()!==inventory) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const matchingShares = myShares.filter(
-        (share) => normalizeLocation(share.share_name).toLowerCase() === normalizeLocation(space.name).toLowerCase(),
-      );
-      await Promise.all(matchingShares.map((share) => deleteShare({ token: t, share_id: share.share_id ?? share.id })));
-      await deleteSpace({ token: t, spaceId: space.id });
-      setMyShares((current) => current.filter((share) => !matchingShares.includes(share)));
-      if (selectedSpace === space.name) {
-        setSelectedSpace(null);
-        setCategoryFilter('');
-        setQuery('');
-      }
-      await refreshAll(t);
-    } catch (err: unknown) {
-      setError(errorMessage(err, 'Failed to delete space'));
-    } finally {
-      setLoading(false);
-    }
+    setRemovingSpace(space);
   }
 
   function openSpreadsheet(spaceName: string) {
@@ -1275,10 +1242,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
                     <div style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {itemDisplayName(item)}
-                      </div>
-                      <div style={{gridColumn: "1 / -1"}}><ItemDetails item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item as InventoryItem} context={{kind: "shared", shareId: viewingSharedSpace.shareId}} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
                         <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
@@ -1452,10 +1416,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
                       gap: '12px 24px',
                       marginBottom: 4,
                     }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {itemDisplayName(item)}
-                      </div>
-                      <div style={{gridColumn: "1 / -1"}}><ItemDetails item={item} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></div>
+                      <div style={{gridColumn: "1 / -1"}}><ItemDetails showTitle={false} item={item} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/></div>
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
                         <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
@@ -1835,6 +1796,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         </DialogContent>
       </Dialog>
 
+      {accountId && removingSpace && <ResourceRemovalDialog kind="space" id={removingSpace.id} name={removingSpace.name} accountId={accountId} onClose={()=>setRemovingSpace(null)} onDone={()=>{setRemovingSpace(null);setSelectedSpace(null);setCategoryFilter('');setQuery('');void refreshToken().then(async t=>{if(t)await refreshAll(t);});}}/>}
       <Dialog open={!!detailItem} onOpenChange={open => { if (!open && !detailEditing) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onEditingChange={setDetailEditing} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
