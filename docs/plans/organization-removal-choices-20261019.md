@@ -73,3 +73,21 @@ Stage/restore/build evidence: `/home/ubuntu/findez-org-leave-20261020`.
 Native artifacts: `Documents/FindEZ/AppStore/1.0.9-build97`.
 Production deployment, TestFlight acknowledgment, availability and device
 acceptance must be reported separately; public App Store submission is not included.
+
+## Final candidate receipt
+
+All five CI gates pass in API run 39369751891, web run 39369763939 and mobile run
+39369776231. Runtime commits: API 5a86c39, web 61f742e, mobile 397490d. Draft PRs
+138/139/140 are stacked on the prior released lanes. The full fresh SQL suite
+also passes. The temporary test containers were removed after saving evidence.
+
+Signed production 1.0.9 (97) is Apple-validated, with 31 archive and 31 exported
+iOS executables verified, strict signing, 24 privacy manifests and the production
+HTTPS/anonymous configuration checked. Archive and IPA are preserved. IPA SHA256:
+`80a237b2e0c742c9992758b64ce5b3940209234ba8114b006dea87b6b6203e89`.
+
+Release preflight confirms exactly two API runtime files and ten web files change;
+unrelated live runtime, environment, dependencies and configuration are preserved.
+Activation script defaults to read-only preflight. Migrations 069/070 remain
+pending explicit approval, runtime is not activated, and build 97 is not uploaded.
+No founder-account testing or customer test writes were performed.
