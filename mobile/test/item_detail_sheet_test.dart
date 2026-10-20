@@ -323,6 +323,32 @@ void main() {
       expect(api.writes, isEmpty);
     });
   }
+  testWidgets('part-number item edits its description in one inline form', (
+    tester,
+  ) async {
+    final api = _Api();
+    api.data['part_number'] = 'PN-F117';
+    await _open(tester, api);
+    final field = find.byKey(const ValueKey('edit-item-name'));
+    await tester.ensureVisible(field);
+    expect(field, findsOneWidget);
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    expect(
+      find.widgetWithText(TextField, 'servo extension cable'),
+      findsOneWidget,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'servo extension cable'),
+      'M10x30 Screw',
+    );
+    await tester.tap(find.text('Save').first);
+    await tester.pumpAndSettle();
+    expect(api.writes.single.name, 'M10x30 Screw');
+    expect(api.data['part_number'], 'PN-F117');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('inline item detail visual acceptance', (tester) async {
     if (!const bool.fromEnvironment('FINDEZ_VISUAL_QA')) return;
     await tester.runAsync(() async {

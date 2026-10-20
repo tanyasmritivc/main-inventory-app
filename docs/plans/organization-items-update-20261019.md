@@ -27,7 +27,7 @@ replay pass in a network-isolated disposable PostgreSQL 17 container. Real
 permission revocation and duplicate Chat confirmation races pass. MCP tests,
 committed bundle comparison and bundle smoke pass with lockfile-installed deps.
 
-Release is not activated. Migration 062 requires explicit production approval per
+Release is not activated. Migration 068 requires explicit production approval per
 AGENTS.md. Staging preserves current live source and invitation delivery idempotency.
 Signed 1.0.9 (96), Apple acknowledgment, CI, staging production build, and physical
 device acceptance remain pending. No public App Store submission is authorized.

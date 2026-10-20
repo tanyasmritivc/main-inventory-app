@@ -1940,7 +1940,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
                 child: Column(
                   children: [
-                    _editableRow('Name', item.name, 'name'),
+                    _editableRow(
+                      item.displayDescription == null ? 'Name' : 'Description',
+                      item.name,
+                      'name',
+                    ),
                     _divider(),
                     _editableRow(
                       'Part number',
@@ -1963,14 +1967,6 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     if (canEdit || (item.barcode?.isNotEmpty ?? false)) ...[
                       _divider(),
                       _editableRow('Barcode', item.barcode ?? '', 'barcode'),
-                    ],
-                    if (item.displayDescription != null) ...[
-                      _divider(),
-                      _editableRow(
-                        'Description',
-                        item.displayDescription!,
-                        'name',
-                      ),
                     ],
                     if (canEdit || (item.subcategory?.isNotEmpty ?? false)) ...[
                       _divider(),
