@@ -22,6 +22,9 @@ No customer account is used for QA, particularly the excluded founder account.
 - Existing inventory IDs and shared items, tasks, files and photo paths remain.
   Space/bin custody transfers to the surviving inventory owner to prevent their
   Auth CASCADE foreign keys from erasing shared descendants.
+  Historical duplicate names receive a stable ID suffix only when custody would
+  otherwise collide; both records and linked items remain, item locations follow
+  renamed Spaces, and the original/new names are recorded in the access audit.
 - Historical creator UUIDs remain attribution only; the profile, login,
   memberships, private inventory/history and private documents/reviews are removed.
   Created API keys are revoked. Shared content does not become personal data of

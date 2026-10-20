@@ -30,6 +30,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.findez_preserve_shared_account_content() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE ws record; successor uuid; prior_headers text; prior_claims text; ready jsonb;
+ rec record; saved_name text; suffix integer;
 BEGIN
  ready:=public.findez_prepare_account_deletion(OLD.id);
  IF ready->>'ready' IS DISTINCT FROM 'true' THEN
@@ -73,10 +74,32 @@ BEGIN
   WHERE i.team_id=t.team_id AND i.owner_user_id=OLD.id AND t.owner_user_id<>OLD.id;
  -- These two creator columns have Auth CASCADE FKs; use the surviving inventory
  -- owner as custodian so the FK cannot erase the Space and its items/bins.
- UPDATE public.spaces s SET user_id=i.owner_user_id FROM public.app_inventories i
-  WHERE s.inventory_id=i.inventory_id AND s.user_id=OLD.id AND i.owner_user_id<>OLD.id;
- UPDATE public.bins b SET user_id=i.owner_user_id FROM public.app_inventories i
-  WHERE b.inventory_id=i.inventory_id AND b.user_id=OLD.id AND i.owner_user_id<>OLD.id;
+ FOR rec IN SELECT s.*,i.owner_user_id AS custodian FROM public.spaces s JOIN public.app_inventories i USING(inventory_id)
+  WHERE s.user_id=OLD.id AND i.owner_user_id<>OLD.id ORDER BY s.id FOR UPDATE OF s LOOP
+  saved_name:=rec.name; suffix:=0;
+  WHILE EXISTS(SELECT 1 FROM public.spaces s WHERE s.inventory_id=rec.inventory_id AND s.id<>rec.id AND lower(btrim(s.name))=lower(btrim(saved_name))) LOOP
+   suffix:=suffix+1; saved_name:=left(rec.name,60)||' ('||rec.id::text||CASE WHEN suffix>1 THEN '-'||suffix ELSE '' END||')';
+  END LOOP;
+  UPDATE public.spaces SET user_id=rec.custodian,name=saved_name WHERE id=rec.id;
+  IF saved_name<>rec.name THEN
+   UPDATE public.items SET location=saved_name WHERE space_id=rec.id;
+   UPDATE public.team_shares SET share_name=saved_name WHERE space_id=rec.id;
+   INSERT INTO public.app_access_audit(actor_id,inventory_id,action,target_id,changes)
+    VALUES(OLD.id,rec.inventory_id,'account_delete_space_custody',rec.id,jsonb_build_object('previous_name',rec.name,'name',saved_name));
+  END IF;
+ END LOOP;
+ FOR rec IN SELECT b.*,i.owner_user_id AS custodian FROM public.bins b JOIN public.app_inventories i USING(inventory_id)
+  WHERE b.user_id=OLD.id AND i.owner_user_id<>OLD.id ORDER BY b.id FOR UPDATE OF b LOOP
+  saved_name:=rec.name; suffix:=0;
+  WHILE EXISTS(SELECT 1 FROM public.bins b WHERE b.space_id=rec.space_id AND b.user_id=rec.custodian AND b.id<>rec.id AND lower(btrim(b.name))=lower(btrim(saved_name))) LOOP
+   suffix:=suffix+1; saved_name:=left(rec.name,60)||' ('||rec.id::text||CASE WHEN suffix>1 THEN '-'||suffix ELSE '' END||')';
+  END LOOP;
+  UPDATE public.bins SET user_id=rec.custodian,name=saved_name WHERE id=rec.id;
+  IF saved_name<>rec.name THEN
+   INSERT INTO public.app_access_audit(actor_id,inventory_id,action,target_id,changes)
+    VALUES(OLD.id,rec.inventory_id,'account_delete_bin_custody',rec.id,jsonb_build_object('previous_name',rec.name,'name',saved_name));
+  END IF;
+ END LOOP;
  UPDATE public.team_shares s SET owner_user_id=i.owner_user_id FROM public.app_inventories i
   WHERE s.inventory_id=i.inventory_id AND s.owner_user_id=OLD.id AND i.owner_user_id<>OLD.id;
  -- Historical creator UUIDs on items, files, tasks/events remain attribution,

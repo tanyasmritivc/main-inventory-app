@@ -4,6 +4,7 @@ BEGIN;
 ALTER TABLE public.team_memberships ADD COLUMN IF NOT EXISTS joined_at timestamptz DEFAULT now();
 ALTER TABLE public.spaces ADD CONSTRAINT account_qa_space_auth FOREIGN KEY(user_id) REFERENCES auth.users(id) ON DELETE CASCADE NOT VALID;
 ALTER TABLE public.bins ADD CONSTRAINT account_qa_bin_auth FOREIGN KEY(user_id) REFERENCES auth.users(id) ON DELETE CASCADE NOT VALID;
+CREATE UNIQUE INDEX IF NOT EXISTS bins_user_space_name_ci_idx ON public.bins(user_id,space_id,lower(btrim(name)));
 ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS file_type text, ADD COLUMN IF NOT EXISTS mime_type text, ADD COLUMN IF NOT EXISTS size_bytes bigint;
 SELECT set_config('request.jwt.claims','{}',true);
 SELECT set_config('request.headers','{}',true);
@@ -23,7 +24,12 @@ BEGIN
  INSERT INTO public.team_memberships(team_id,user_id,role) VALUES(ws,b,'member');
  inv:=(public.findez_create_inventory(a,ws,'Shared parts','workspace')->>'inventory_id')::uuid;
  INSERT INTO public.spaces(user_id,inventory_id,name) VALUES(b,inv,'Contributor shelf') RETURNING id INTO s;
+ -- Reproduce historical same-name rows allowed by the owner-qualified index.
+ ALTER TABLE public.spaces DISABLE TRIGGER spaces_assign_inventory;
+ INSERT INTO public.spaces(user_id,inventory_id,name) VALUES(a,inv,'Contributor shelf');
+ ALTER TABLE public.spaces ENABLE TRIGGER spaces_assign_inventory;
  INSERT INTO public.bins(user_id,inventory_id,space_id,name) VALUES(b,inv,s,'Contributor bin') RETURNING id INTO bi;
+ INSERT INTO public.bins(user_id,inventory_id,space_id,name) VALUES(a,inv,s,'Contributor bin');
  photo:='https://storage.invalid/storage/v1/object/public/item-images/'||b||'/shared.jpg';
  INSERT INTO public.items(user_id,inventory_id,space_id,name,category,quantity,location,image_url) VALUES(b,inv,s,'Shared item','Tools',7,'Contributor shelf',photo) RETURNING item_id INTO it;
  INSERT INTO public.item_events(item_id,user_id,inventory_id,event_type,content,image_url) VALUES(it,b,inv,'photo','Original',photo);
@@ -59,7 +65,10 @@ BEGIN
  PERFORM pg_temp.account_check(public.findez_finish_account_deletion(b),'durable cleanup finishes');
  PERFORM pg_temp.account_check(public.findez_finish_account_deletion(b),'cleanup can safely retry');
  PERFORM pg_temp.account_check(EXISTS(SELECT 1 FROM public.spaces WHERE id=s AND user_id=a),'shared Space survives Auth cascade');
+ PERFORM pg_temp.account_check((SELECT count(*)=2 FROM public.spaces WHERE inventory_id=inv),'historical same-name Spaces remain separate');
+ PERFORM pg_temp.account_check((SELECT i.location=s.name FROM public.items i JOIN public.spaces s ON s.id=i.space_id WHERE i.item_id=it),'item location follows disambiguated Space');
  PERFORM pg_temp.account_check(EXISTS(SELECT 1 FROM public.bins WHERE id=bi AND user_id=a),'shared bin survives Auth cascade');
+ PERFORM pg_temp.account_check((SELECT count(*)=2 FROM public.bins WHERE space_id=s),'same-name bins are retained separately without blocking deletion');
  PERFORM pg_temp.account_check(EXISTS(SELECT 1 FROM public.items WHERE item_id=it AND quantity=7 AND image_url=photo AND user_id=b),'item and creator attribution survive');
  PERFORM pg_temp.account_check(EXISTS(SELECT 1 FROM public.item_events WHERE item_id=it AND image_url=photo),'original photo survives cleanup');
  PERFORM pg_temp.account_check(EXISTS(SELECT 1 FROM public.documents WHERE document_id=doc AND storage_path=b||'/docs/shared.pdf' AND user_id=b),'shared document path/uploader preserved');
