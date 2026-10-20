@@ -6,9 +6,13 @@ explanations of what and why. Explicitly NO deployment, production changes, GPU
 access/training, customer-data collection, or mobile changes. Implemented isolated
 Vision Lab: owned/synthetic image ingestion, polygon review, permission checks,
 split-leakage validation, offline evaluation/comparison, SAM train/validation
-export and read-only experiment preflight. 48 local tests and actual Chrome
+export and read-only experiment preflight. 57 local tests and actual Chrome
 annotation save/reload/drawing checks passed. Guide, dataset contract, proposed
 production permission lifecycle and operator handoff are in vision_lab/.
+The browser now accepts local JPEG/PNG imports and macOS HEIC conversion.
+Actual Chrome file-picker HEIC import passed in an isolated dataset. Existing
+annotations are preserved; imports are drafts with provisional splits and no
+training grants. New photo groups need review before experiment split assignment.
 Tanya explicitly confirms the model identities in her plan; accept them.
 FIND source/configuration, immutable weight hashes and GPU environment/allocation
 remain operator inputs. No actual model accuracy or training results are claimed.

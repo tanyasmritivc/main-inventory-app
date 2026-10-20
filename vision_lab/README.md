@@ -81,6 +81,48 @@ shell error or an automatic deployment gate.
 
 ## Use your own photos
 
+### Add photos in the browser
+
+With the local editor running:
+
+1. Save any current edits using **Save draft**.
+2. Click **Add photos**, then **Choose your photos**. Select up to 20 files.
+   JPEG and PNG work everywhere; on macOS, HEIC is converted locally using the
+   system image converter. On Windows, export HEIC as JPEG or PNG first.
+   Each photo must be at most 32 MB and 16 megapixels.
+3. Expand **Photo group** and enter a short name such as `desk_objects_01`.
+   Use the same group for different views of the same physical objects, even
+   across later imports. This prevents related images entering different splits.
+4. Check the ownership/content box only after checking the photos. Click
+   **Add selected photos**. Copies are saved locally as drafts; your original
+   files and existing annotations stay unchanged.
+5. Select a photo. Click points around one object's visible edge, then click
+   **Finish polygon**. Use more points around curves; drag saved points to adjust.
+6. Enter a simple name, such as `Dry-erase marker`. Exact identity and visible
+   text are optional. Transcribe only text you can actually read on that object.
+7. Repeat for each visible object and click **Save draft** regularly.
+8. Only after checking the whole photo, enter your reviewer name, check the
+   review box and click **Save as verified**. One outlined object in a crowded
+   scene is still an incomplete draft.
+
+Start with two or three clearly visible objects on a plain surface. Take a few
+angles, then repeat with different physical objects. A first batch of 30 reviewed
+photos is a workflow pilot, not a guarantee that a model can improve.
+
+An example is the photo **plus its checked outlines and descriptions**. Saving
+keeps it across browser refreshes; unsaved edits are not persistent. Back up the
+whole dataset folder, including `dataset.json`, `images/` and `.history/`.
+There is no cloud sync.
+
+Browser imports receive a provisional `train` split. Before any experiment,
+review capture groups and physical-object relationships, then assign separate
+training, validation and test sets. Do not treat the default split as a finished
+benchmark. Verification does not grant training permission. The assistant-drawn
+demonstration retains model-assisted provenance and is not an eligible training
+example under the current export rules.
+
+### Command-line ingestion and export
+
 Start with a small set of objects you own, without people, addresses, private
 screens or other people's documents. Do not export customer inventory images.
 Photograph different objects and conditions; ten views of the same motor are

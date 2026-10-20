@@ -4,10 +4,23 @@
 <body>
 <header><div class="brand"><span class="mark">F</span><div><strong>FindEZ Vision Lab</strong><span class="subtitle">Dataset review</span></div></div><span class="badge">Local preparation only</span></header>
 <main>
-<section class="intro"><div><h1>Teach with verified examples.</h1><p>Trace each visible object, check the label, then save your review.</p></div><p class="privacy">Images stay on this computer.<br>No model training or upload happens here.</p></section>
+<section class="intro"><div><h1>Prepare your examples.</h1><p>Add a photo, outline its objects, then save your work.</p></div><p class="privacy">Photos stay on this computer.<br>No training or cloud upload happens here.</p></section>
 <div id="notice" class="notice" role="status">Opening local dataset...</div>
 <div class="workspace">
-<aside class="samples"><h2>Images <span id="count"></span></h2><div id="samples"></div><div class="help"><strong>Why review?</strong><p>A prediction is a suggestion. Your corrected boundaries become the reference used to measure the model.</p></div></aside>
+<aside class="samples">
+<h2>Images <span id="count"></span></h2>
+<button id="show-import" class="quiet wide">Add photos</button>
+<section id="import-panel" hidden aria-label="Add photos">
+<label>Choose your photos<input id="photo-files" type="file" multiple accept=".jpg,.jpeg,.png,.heic,.heif"></label>
+<p id="photo-formats" class="instructions">JPEG and PNG. Up to 32 MB and 16 megapixels each.</p>
+<details><summary>Photo group</summary><label>Group name<input id="photo-group" value="my_photos" maxlength="80" pattern="[A-Za-z0-9][A-Za-z0-9_-]*"></label><p class="instructions">Keep the same group for photos of the same objects. We arrange training and test groups before an experiment.</p></details>
+<label class="check"><input id="photo-owned" type="checkbox">These are my photos. I checked them for private information.</label>
+<button id="import-photos" class="wide" disabled>Add selected photos</button>
+<p class="instructions">Saved on this computer as drafts. Adding photos does not grant permission to train.</p>
+</section>
+<div id="samples"></div>
+<div class="help"><strong>What is an example?</strong><p>Your photo plus the object outlines and descriptions you check. Save a draft as you work.</p></div>
+</aside>
 <section class="editor" aria-label="Image annotation">
 <div class="toolbar"><div><h2 id="sample-title">Choose an image</h2><span id="sample-info"></span></div><button id="reload" class="quiet">Reload dataset</button></div>
 <div class="canvas-wrap"><canvas id="canvas" aria-label="Object boundary editor"></canvas></div>

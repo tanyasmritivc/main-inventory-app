@@ -144,7 +144,7 @@ def execute(a):
     if a.command == "serve":
         from .server import make_server
         server = make_server(a.dataset, a.port)
-        print(f"Local review: http://127.0.0.1:{server.server_port}\nCtrl+C stops the server. No uploads or production access.", flush=True)
+        print(f"Local review: http://127.0.0.1:{server.server_port}\nCtrl+C stops the server. No cloud uploads or production access.", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

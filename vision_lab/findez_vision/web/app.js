@@ -13,6 +13,9 @@ function buttons() {
   $("finish").disabled=blocked || draft.length<3;
   $("undo").disabled=blocked || !draft.length;
   $("discard").disabled=blocked || !draft.length;
+  $("show-import").disabled=busy;
+  for(const id of ["photo-files","photo-owned","photo-group"]) $(id).disabled=busy;
+  $("import-photos").disabled=busy || dirty || !$("photo-owned").checked || !$("photo-files").files.length;
 }
 function draw() {
   if (!image) return;
@@ -49,7 +52,7 @@ function sampleList() {
   $("count").textContent=state.dataset.samples.length;$("samples").replaceChildren();
   state.dataset.samples.forEach(s=>{
     const b=document.createElement("button");b.className="sample"+(s.id===sample?.id?" active":"");
-    const title=document.createElement("span");title.textContent=s.id;
+    const title=document.createElement("span");title.textContent=s.display_name||s.id;
     const detail=document.createElement("small");detail.textContent=`${s.split} \u00b7 ${s.annotation.status}`;
     b.append(title,detail);b.onclick=()=>openSample(s);$("samples").append(b);
   });
@@ -58,7 +61,7 @@ async function openSample(next) {
   if (busy || (dirty && !confirm("Discard unsaved annotation edits?"))) return;
   sample=next;annotation=structuredClone(next.annotation);draft=[];selected=-1;dirty=false;dragging=null;
   readOnly=annotation.objects.some(o=>"mask" in o);
-  $("sample-title").textContent=sample.id;
+  $("sample-title").textContent=sample.display_name||sample.id;
   $("sample-info").textContent=`${sample.image.width} \u00d7 ${sample.image.height} \u00b7 ${sample.split} \u00b7 ${sample.provenance.source_type}`;
   $("reviewer").value=annotation.reviewer||"";$("checked").checked=false;
   image=null;const incoming=new Image();const id=sample.id;
@@ -116,15 +119,67 @@ async function save(status) {
   }catch(e){notice(e.message,true);}finally{busy=false;buttons();}
 }
 $("save-draft").onclick=()=>save("draft");$("verify").onclick=()=>save("verified");
-async function load() {
+async function load(preferredId) {
   if(busy||(dirty&&!confirm("Discard unsaved edits and reload?")))return;
+  busy=true;buttons();
   try{const r=await fetch("/session");if(!r.ok)throw new Error("Unable to open dataset");
     state=await r.json();dirty=false;$("dataset-id").textContent="Dataset: "+state.dataset.id;
-    await openSample(state.dataset.samples[0]);
-  }catch(e){notice(e.message,true);}
+    $("photo-formats").textContent=(state.supports_heic?"JPEG, PNG and HEIC.":"JPEG and PNG. Export HEIC photos as JPEG first.")+" Up to 32 MB and 16 megapixels each.";
+    $("photo-files").accept=state.supports_heic?".jpg,.jpeg,.png,.heic,.heif":".jpg,.jpeg,.png";
+    busy=false;
+    await openSample(state.dataset.samples.find(s=>s.id===preferredId)||state.dataset.samples[0]);
+    return true;
+  }catch(e){notice(e.message,true);return false;}finally{busy=false;buttons();}
 }
-$("reload").onclick=load;
-window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});
+$("reload").onclick=()=>load(sample?.id);
+$("show-import").onclick=()=>{
+  if(dirty){notice("Save your current draft before adding photos.",true);return;}
+  $("import-panel").hidden=!$("import-panel").hidden;
+  buttons();
+};
+for(const id of ["photo-files","photo-owned"]) $(id).onchange=buttons;
+function fileBase64(file) {
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result).split(",")[1]);
+    reader.onerror=()=>reject(new Error("Could not read "+file.name));
+    reader.readAsDataURL(file);
+  });
+}
+$("import-photos").onclick=async()=>{
+  if(busy||dirty||!$("photo-owned").checked)return;
+  const files=Array.from($("photo-files").files);
+  if(!files.length)return;
+  if(files.length>20){notice("Choose up to 20 photos at a time.",true);return;}
+  const group=$("photo-group").value.trim();
+  if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/.test(group)){
+    notice("Use letters, numbers, underscores or hyphens for the photo group.",true);return;
+  }
+  busy=true;buttons();let added=0,lastId=sample?.id,error="";
+  try {
+    for(const file of files) {
+      if(file.size>32000000)throw new Error(file.name+": choose a file smaller than 32 MB.");
+      notice(`Adding photo ${added+1} of ${files.length}: ${file.name}`);
+      const response=await fetch("/images",{
+        method:"POST",headers:{"Content-Type":"application/json","X-Vision-Token":state.token},
+        body:JSON.stringify({revision:state.revision,request_id:crypto.randomUUID().replaceAll("-",""),
+          name:file.name,group_id:group,owned_photo_checked:true,image_base64:await fileBase64(file)})
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(file.name+": "+(result.error||"Import failed"));
+      state.revision=result.revision;lastId=result.sample.id;added++;
+    }
+  }catch(e){error=e.message;}
+  finally{
+    busy=false;$("photo-files").value="";$("photo-owned").checked=false;buttons();
+  }
+  if(await load(lastId)){
+    $("import-panel").hidden=added>0&&!error;
+    notice(error?`${added} photo(s) added. ${error} Earlier successful imports are saved.`:
+      `${added} photo(s) saved locally. Start by outlining one object, then save a draft.`,Boolean(error));
+  }
+};
+window.addEventListener("beforeunload",e=>{if(dirty||busy){e.preventDefault();e.returnValue="";}});
 window.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="s"){e.preventDefault();save("draft");}});
 window.addEventListener("resize",draw);
 load();

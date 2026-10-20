@@ -124,6 +124,24 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.save(payload)[0], 404)
         self.assertEqual(self.save(payload, {"Content-Length":"1000001"})[0], 413)
 
+    def test_browser_import_and_existing_annotation_persistence(self):
+        from test_imports import photo_body
+        payload = {**photo_body(), "revision":self.session["revision"]}
+        headers = {"Content-Type":"application/json", "Origin":"http://"+self.host,
+                   "X-Vision-Token":self.session["token"]}
+        status, _, body = self.request("POST", "/images", json.dumps(payload), headers)
+        self.assertEqual(status, 200, body)
+        result = json.loads(body)
+        self.assertFalse(result["permission_granted"])
+        data = read_json(self.root/"dataset.json")
+        self.assertEqual(len(data["samples"]), 5)
+        self.assertEqual(data["samples"][0], self.session["dataset"]["samples"][0])
+        self.assertEqual(self.request("GET", "/image/"+result["sample"]["id"])[0], 200)
+        self.assertEqual(self.request("POST", "/images", json.dumps(payload), headers)[0], 409)
+        payload["revision"] = result["revision"]
+        self.assertEqual(self.request("POST", "/images", json.dumps(payload),
+                                     {**headers,"Origin":"https://evil.test"})[0], 403)
+
 
 if __name__ == "__main__":
     unittest.main()

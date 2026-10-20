@@ -1,7 +1,6 @@
-"""Loopback-only annotation UI. No production credentials, proxying or uploads."""
+"""Loopback-only annotation UI. No production credentials, proxying or cloud uploads."""
 import hmac
 import json
-import os
 import secrets
 import threading
 from datetime import datetime, timezone
@@ -10,6 +9,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from .data import Invalid, digest, load_dataset, read_json, safe_file, validate_annotation, validate_dataset
+from .imports import add_photo, save_dataset, supports_heic
 
 
 def make_server(dataset_path, port=8790):
@@ -58,7 +58,8 @@ def make_server(dataset_path, port=8790):
                 if path == "/session":
                     with lock:
                         data = load_dataset(dataset_path)
-                    return self.respond(200, {"dataset": data, "revision": digest(data), "token": token})
+                    return self.respond(200, {"dataset": data, "revision": digest(data), "token": token,
+                                              "supports_heic": supports_heic()})
                 if path.startswith("/image/"):
                     sid = unquote(path.removeprefix("/image/"))
                     data = read_json(dataset_path)
@@ -74,12 +75,13 @@ def make_server(dataset_path, port=8790):
             if (not self.host_allowed() or self.headers.get("Origin") != self.origin or
                 not hmac.compare_digest(self.headers.get("X-Vision-Token", ""), token)):
                 return self.respond(403, {"error": "Local session check failed. Reload this page."})
-            if self.path != "/annotation" or self.headers.get("Content-Type") != "application/json":
+            if self.path not in ("/annotation", "/images") or self.headers.get("Content-Type") != "application/json":
                 return self.respond(400, {"error": "Unsupported request"})
             try:
                 size = int(self.headers.get("Content-Length", "0"))
-                if not 0 < size <= 1_000_000:
-                    return self.respond(413, {"error": "Annotation is too large"})
+                limit = 44_000_000 if self.path == "/images" else 1_000_000
+                if not 0 < size <= limit:
+                    return self.respond(413, {"error": "Photo or annotation is too large"})
                 body = json.loads(self.rfile.read(size))
                 if not isinstance(body, dict):
                     raise Invalid("Expected an annotation object")
@@ -87,6 +89,11 @@ def make_server(dataset_path, port=8790):
                     data = load_dataset(dataset_path)
                     if body.get("revision") != digest(data):
                         return self.respond(409, {"error": "Another edit changed this dataset. Reload before saving."})
+                    if self.path == "/images":
+                        added = add_photo(dataset_path, data, body)
+                        updated = load_dataset(dataset_path)
+                        return self.respond(200, {"sample": added, "revision": digest(updated),
+                                                  "permission_granted": False})
                     sample = next((s for s in data["samples"] if s["id"] == body.get("sample_id")), None)
                     if sample is None:
                         return self.respond(404, {"error": "Sample not found"})
@@ -104,24 +111,9 @@ def make_server(dataset_path, port=8790):
                     before = json.loads(json.dumps(data))
                     sample["annotation"] = annotation
                     validate_dataset(data, dataset_path.parent)
-                    history = dataset_path.parent/".history"
-                    history.mkdir(exist_ok=True)
-                    backup = history/(digest(before)+".json")
-                    if not backup.exists():
-                        with backup.open("x") as stream:
-                            json.dump(before, stream, indent=2)
-                    temp = dataset_path.with_name("."+dataset_path.name+"."+secrets.token_hex(8)+".tmp")
-                    try:
-                        with temp.open("x") as stream:
-                            json.dump(data, stream, indent=2, allow_nan=False)
-                            stream.write("\n")
-                            stream.flush()
-                            os.fsync(stream.fileno())
-                        os.replace(temp, dataset_path)
-                    finally:
-                        temp.unlink(missing_ok=True)
+                    save_dataset(dataset_path, before, data)
                 self.respond(200, {"revision": digest(data), "annotation": annotation})
             except (Invalid, ValueError, TypeError, OSError) as exc:
-                self.respond(400, {"error": str(exc) if isinstance(exc, Invalid) else "Invalid annotation; nothing was saved."})
+                self.respond(400, {"error": str(exc) if isinstance(exc, Invalid) else "Invalid photo or annotation; nothing was saved."})
 
     return ThreadingHTTPServer(("127.0.0.1", port), Handler)

@@ -8,7 +8,7 @@ Scope: isolated `vision_lab/`, its CI workflow and repository documentation.
 Environment: macOS, Python 3.14.6, Pillow 13.0.0, setuptools 82.0.1.
 Editable package installation succeeded with dependencies pinned.
 
-- 48 unittest cases, including loopback HTTP integration tests.
+- 57 unittest cases, including loopback HTTP integration tests.
 - JavaScript syntax check and Python module compilation.
 - Synthetic CLI workflow: create demo, validate, evaluate correct/merged
   predictions, export SAM snapshot, recheck snapshot, compare and preflight.
@@ -16,7 +16,11 @@ Editable package installation succeeded with dependencies pinned.
   enter reviewer and verify; reload and observe persistence; draw a new polygon,
   finish it and save as draft. Browser testing used a separate synthetic dataset.
 - Source inspection for transport/process operations: only loopback HTTP,
-  local Git metadata checks and optional local `nvidia-smi` inspection.
+  local Git metadata checks, macOS HEIC conversion and optional local
+  `nvidia-smi` inspection.
+- Actual Chrome file picker: imported the supplied 4032 x 3024 HEIC photo into
+  an isolated QA dataset, observed the new draft and rendered image, with the
+  four existing synthetic samples retained. No remote upload or training grant.
 
 ## What the tests exercise
 
@@ -31,6 +35,7 @@ Editable package installation succeeded with dependencies pinned.
 | Export | Train/validation only, per-instance PNG IDs preserved through upstream-style palette conversion, checksums and current permissions rechecked, extra/missing files denied |
 | Browser HTTP | Loopback binding, hostile Host/Origin/token rejection, stale-save conflict, history/persistence, invalid save leaves file unchanged, no arbitrary-file route, binary-mask samples read-only |
 | Local workflow | Ingest normalizes orientation/strips metadata; assembly copies data and rejects leakage; grant needs attestation; withdrawal invalidates recheck against the new ledger |
+| Browser photo import | Preserves existing annotations; normalizes orientation and strips metadata; requires ownership/content check; rejects duplicate photos, unsafe inputs and stale revisions; failed writes remove only the new image; Unicode names remain display text; no training grant |
 
 ## Synthetic demonstration
 

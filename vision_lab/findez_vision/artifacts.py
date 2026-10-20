@@ -15,7 +15,7 @@ def write_json(path, value):
     path = Path(path)
     require(not path.exists(), f"Refusing to overwrite {path.name}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("x") as stream:
+    with path.open("x", encoding="utf-8") as stream:
         json.dump(value, stream, indent=2, ensure_ascii=False, allow_nan=False)
         stream.write("\n")
 

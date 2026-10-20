@@ -38,7 +38,7 @@ def read_json(path):
         return obj
     def constant(value):
         raise Invalid(f"Non-finite JSON value: {value}")
-    return json.loads(path.read_text(), object_pairs_hook=pairs, parse_constant=constant)
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=pairs, parse_constant=constant)
 
 
 def digest(value):
