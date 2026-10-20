@@ -49,13 +49,13 @@ def organization(org_id, actor):
     return {**orgs[0], 'role': rows[0]['role']}
 
 
-def members_with_names(rows):
+def members_with_names(rows, raw=None):
     # Callers have already authorized the parent and selected its member IDs.
     # Return only presentation fields, never profile paths or arbitrary profiles.
     import re
     from app.services.storage import create_profile_photo_signed_url
     ids = list({r['user_id'] for r in rows})
-    profiles = get_supabase_raw().table('profiles').select('id,display_name,first_name,last_name,avatar_path,avatar_color').in_('id', ids).execute().data if ids else []
+    profiles = (raw or get_supabase_raw()).table('profiles').select('id,display_name,first_name,last_name,avatar_path,avatar_color').in_('id', ids).execute().data if ids else []
     presentation = {}
     for profile in profiles or []:
         uid = profile['id']
@@ -136,7 +136,7 @@ def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depen
     if org['role'] not in ('owner', 'admin'):
         query = query.in_('team_id', ids)
     workspaces = query.order('name').execute().data if ids or org['role'] in ('owner', 'admin') else []
-    workspaces = [{**w, 'can_open': w['team_id'] in ids} for w in workspaces or []]
+    workspaces = [{**w, 'can_open': w['team_id'] in ids or org['role'] in ('owner', 'admin')} for w in workspaces or []]
     members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', str(organization_id)).execute().data or []
     attachable = raw.table('teams').select('team_id,name').eq('owner_user_id', user.user_id).is_('organization_id', 'null').execute().data if org['role'] in ('owner', 'admin') else []
     return {'organization': org, 'workspaces': workspaces or [], 'members': members_with_names(members), 'attachable': attachable or []}
@@ -145,9 +145,16 @@ def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depen
 @router.patch('/organizations/{organization_id}')
 def rename_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
     org = organization(organization_id, user.user_id)
-    if org['owner_user_id'] != user.user_id:
-        raise HTTPException(403, 'Only the organization owner can rename it.')
-    rows = get_supabase_raw().table('app_organizations').update({'name': body.name}).eq('organization_id', str(organization_id)).eq('owner_user_id', user.user_id).execute().data or []
+    if org['role'] not in ('owner', 'admin'):
+        raise HTTPException(403, 'Only organization owners and admins can rename it.')
+    query = get_supabase_raw().table('app_organizations').update({'name': body.name}).eq('organization_id', str(organization_id))
+    query.headers = {**query.headers, 'x-findez-actor': user.user_id}
+    try:
+        rows = query.execute().data or []
+    except APIError as exc:
+        if exc.code == '42501':
+            raise HTTPException(403, 'Your permission changed. Refresh and try again.') from None
+        raise
     if not rows:
         raise HTTPException(409, 'The organization changed. Refresh before trying again.')
     return {'organization': {**rows[0], 'role': org['role']}}
@@ -209,6 +216,10 @@ def workspace_overview(workspace_id: UUID, user: AuthenticatedUser = Depends(get
     candidates = []
     if workspace.get('organization_id') and workspace['role'] in ('owner', 'mentor'):
         candidates = raw.table('app_organization_members').select('user_id,role').eq('organization_id', workspace['organization_id']).execute().data or []
+    if workspace.get('organization_id'):
+        parent_members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', workspace['organization_id']).execute().data or []
+        from app.services.permissions import workspace_roster
+        members = workspace_roster(members, parent_members)
     # Physical location library is administration-only; inventory users see only
     # explicit attachments through the scoped Spaces route.
     locations = raw.table('app_physical_locations').select('*').eq('team_id', str(workspace_id)).order('created_at').execute().data if workspace['role'] in ('owner','mentor') else []
@@ -223,10 +234,13 @@ def inventory_access(inventory_id: UUID, user: AuthenticatedUser = Depends(get_c
     raw = get_supabase_raw()
     members = raw.table('team_memberships').select('user_id,role').eq('team_id', inv['team_id']).execute().data or []
     grants = raw.table('app_inventory_members').select('user_id,inventory_id,role').eq('inventory_id', str(inventory_id)).execute().data or []
+    organization_members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', inv['workspace']['organization_id']).execute().data or [] if inv['workspace'].get('organization_id') else []
+    known = {m['user_id'] for m in members}
+    members += [{'user_id': m['user_id'], 'role': 'owner' if m['role'] == 'owner' else 'mentor'} for m in organization_members if m['role'] in ('owner', 'admin') and m['user_id'] not in known]
     effective = []
     for member in members:
         override = next((g for g in grants if g['user_id'] == member['user_id']), None)
-        role = inventory_role(inv, {**inv['workspace'], 'role': member['role']}, member['user_id'], [override] if override else [])
+        role = inventory_role(inv, {**inv['workspace'], 'role': member['role'], 'organization_role': next((m['role'] for m in organization_members if m['user_id'] == member['user_id']), None)}, member['user_id'], [override] if override else [])
         if role or inv['can_manage']:
             effective.append({**member, 'workspace_role': member['role'], 'role': role or 'none',
                 'override': override['role'] if override else 'inherit', 'source': 'inventory' if override else 'workspace'})
@@ -248,7 +262,7 @@ def _transfer_owner(scope, resource, body, user):
             'p_target': str(body.user_id), 'p_name': body.name,
         }).execute().data
     except APIError as exc:
-        errors = {'42501': (403, 'Only the current owner can transfer ownership.'),
+        errors = {'42501': (403, 'Only the owner or an organization administrator can transfer ownership.'),
                   '23514': (422, 'Choose a current member with a confirmed, active account.'),
                   '22023': (409, 'The name changed. Reopen the transfer confirmation.'),
                   '40P01': (409, 'Permissions are being updated. Try again.'),

@@ -1,7 +1,7 @@
 
 import logging
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -40,6 +40,10 @@ class InviteMemberRequest(BaseModel):
 class UpdateSharedItemRequest(BaseModel):
     name: str | None = Field(default=None, max_length=200)
     category: str | None = Field(default=None, max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(default=None, max_length=20)
     quantity: int | None = Field(default=None, ge=0, le=100000)
     image_url: str | None = Field(default=None, max_length=2000)
     barcode: str | None = Field(default=None, max_length=100)

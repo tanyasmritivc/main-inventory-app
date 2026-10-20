@@ -46,7 +46,7 @@ class Query:
 
 @pytest.fixture
 def api():
-    db = SimpleNamespace(rows={'teams': [], 'team_memberships': []}, writes=[])
+    db = SimpleNamespace(rows={'teams': [], 'team_memberships': [], 'app_organization_members': []}, writes=[])
     db.table = lambda name: Query(db, name)
     def rpc(name, args):
         assert name == 'findez_create_legacy_workspace'

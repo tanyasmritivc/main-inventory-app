@@ -33,11 +33,11 @@ def test_org_and_workspace_owners_rename_only_the_name(api):
     assert client.get(f'/inventory-workspaces/{TEAM}/inventories').json()['workspace']['name'] == 'October Client'
 
 
-def test_nonowners_cannot_rename_even_if_they_are_managers(api):
+def test_viewers_and_outsiders_cannot_rename(api):
     client, db = api
     org = organization(db)
     db.rows['team_memberships'][1]['role'] = 'mentor'
-    for actor in (MEMBER, VIEWER, OTHER):
+    for actor in (VIEWER, OTHER):
         for path in (f'/organizations/{org}', f'/inventory-workspaces/{TEAM}'):
             response = client.patch(path, json={'name': 'Forbidden'}, headers={'x-test-actor': actor})
             assert response.status_code == 403, response.text
@@ -49,6 +49,7 @@ def test_inventory_creation_does_not_grant_rename_after_demotion(api):
     client, db = api
     inv = next(row for row in db.rows['app_inventories'] if row['inventory_id'] == TEAM_INV)
     inv['created_by_user_id'] = MEMBER
+    db.rows['team_memberships'][1]['role'] = 'viewer'
     db.rows['app_inventory_members'] = []
     before = deepcopy(db.rows)
     headers = {'x-test-actor': MEMBER}
@@ -90,9 +91,20 @@ def test_unconfirmed_owner_write_is_not_reported_as_saved(api):
     def table(name):
         query = raw(name)
         def update(data):
-            return SimpleNamespace(eq=lambda *_: SimpleNamespace(eq=lambda *_: SimpleNamespace(execute=lambda: SimpleNamespace(data=[]))))
+            query.headers = {}
+            query.execute = lambda: SimpleNamespace(data=[])
+            return query
         query.update = update
         return query
     db.table = table
     assert client.patch(f'/organizations/{org}', json={'name': 'Acme2'}).status_code == 409
     assert client.patch(f'/inventory-workspaces/{TEAM}', json={'name': 'Tools'}).status_code == 409
+
+
+def test_admin_and_editor_can_rename_within_their_scope(api):
+    client, db = api
+    org = organization(db)
+    headers = {'x-test-actor': MEMBER}
+    assert client.patch(f'/organizations/{org}', headers=headers, json={'name':'Renamed org'}).status_code == 200
+    assert client.patch(f'/inventory-workspaces/{TEAM}', headers=headers, json={'name':'Renamed workspace'}).status_code == 200
+    assert client.patch(f'/inventories/{TEAM_INV}', headers=headers, json={'name':'Renamed inventory'}).status_code == 200
