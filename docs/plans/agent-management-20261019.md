@@ -1,6 +1,6 @@
 # Organization agents and Chat Spaces — October 19, 2026
 
-Status: migrations 062–066, API and website are deployed. Live verification found one approval rejection compatibility issue; tested follow-up migration 067 awaits explicit production approval. Do not describe the deletion workflow as release-verified yet.
+Status: deployed and live-verified. User explicitly approved migrations 062–066 and follow-up 067; all are applied. API/web runtime is 305e3e0, with database compatibility correction a207eb7. No mobile changes.
 
 ## User-authorized behavior
 
@@ -54,6 +54,18 @@ The wrong-name rejection exposed a PostgREST v14.12 compatibility defect: delibe
 
 **Migration 067 changes only that one function's business-conflict error from 40001 to 23514**, which the existing API already maps to HTTP 409. The function text was compared before/after in the isolated restored database: no other behavior changed. No table or customer-data update, privilege change, or new capability. Migration replay and the full management SQL suite pass. A copy of the exact production PostgREST binary ran inside the network-isolated restore: wrong-name rejection returned in 0.086s, stale-preview rejection in 0.041s, and correct-name confirmation deleted the synthetic empty workspace. Private evidence: /home/ubuntu/findez-agent-management-20261019/067-rehearsal.json.
 
-067 requires separate approval under the same AGENTS.md production-database rule. Once approved: back up, apply only 067, finish all four live deletion types and key-revocation checks, then record cleanup. Claude/ChatGPT host-application acceptance is distinct from the passed MCP SDK, Actions contract and published-artifact tests; users must update their installed extension/Actions schema and create a new opt-in organization key.
+The user separately approved 067 under the same AGENTS.md rule. A fresh backup was retained, the migration applied, and the live function was verified byte-for-byte against the rehearsed definition. Claude/ChatGPT host-application acceptance is distinct from the passed MCP SDK, Actions contract and published-artifact tests; users must update their installed extension/Actions schema and create a new opt-in organization key.
 
-Further live verification on the deployed 062–066 version passed valid human-confirmed deletion for item, Space, inventory and empty workspace, polling confirmed receipts, and immediate API-key revocation. The wrong-name and stale-preview rejection remains pending 067. All synthetic accounts/resources from these runs were removed.
+Further live verification on the deployed 062–066 version passed valid human-confirmed deletion for item, Space, inventory and empty workspace, polling confirmed receipts, and immediate API-key revocation. After 067, wrong-name rejection passed for all four resource types; stale item previews returned a prompt conflict, cancellation succeeded, and a freshly prepared preview confirmed successfully. All synthetic accounts/resources from these runs were removed.
+
+## Final release receipt
+
+- Production migration receipts: release/migrated.json and 067-applied.json under the private server release directory. Backups are retained; no full-database rollback was performed.
+- Live synthetic HTTPS workflow: organization-bound key creation, authority/scope denial, organization discovery, workspace/inventory/Space creation, duplicate request receipt, item edits and identity, member role changes/removal, all four human-confirmed deletion types, wrong-account/API-key confirmation denial, wrong-name/stale-preview rejection, cancellation, fresh-preview confirmation, polling, and revoked-key denial passed. Evidence: live-qa.json. No invitation emails were sent.
+- All task-created production QA accounts, organizations and keys were removed. Eight task-owned isolated database containers and the local preview server were stopped/removed; private backup and verification receipts remain.
+- Connector 1.1.0 download matches the tested artifact. MCP SDK contract tests (36), standalone extension execution, Actions schema validation and published deployment checks pass. An actual stdio SDK client also ran the production connector against a fresh live organization key: 15-tool discovery, authentication, organization/directory reads, workspace creation, idempotent retry, deletion preview and status polling passed. Human-session cancellation and bounded synthetic cleanup passed. Evidence: live-mcp-qa.json. Actual setup and conversations inside Claude Desktop/ChatGPT were not performed in this pass. Existing installations must be updated, then configured with a newly issued organization key and explicit permissions.
+- No customer key gained scopes or an organization binding. Billing, account deletion, ownership transfer, document uploads and key administration remain outside agent delegation.
+
+Separate pre-existing functions in migrations 047/048/054 also use serialization_failure for some business/race conditions. They were not changed by this narrowly scoped follow-up. The newly added agent approval function no longer uses that retry-triggering error.
+
+Final runtime/database CI: all five gates passed on a207eb7, https://github.com/tanyasmritivc/main-inventory-app/actions/runs/39354859895. Subsequent release-receipt edits are documentation only and require no new deployment or mobile binary.
