@@ -1,3 +1,13 @@
+## October 19 - effective Admin directory access prepared
+
+Migration 072 replaces two obsolete explicit workspace-membership checks in the
+workspace directory RPC with the centralized effective workspace role. This fixes
+Organization Admin access for both web and mobile without native code changes.
+The exact denial reproduced on an isolated live-schema restore; applying twice
+preserved all customer values across 90 tables. Full SQL and HTTP-to-real-SQL
+regressions pass for Owner/Admin, restricted Viewer, outsider and demotion.
+Production application awaits explicit migration authorization.
+
 ## October 19 - account deletion fix published
 
 Migration 071 removes the shared-contribution blocker and preserves shared
