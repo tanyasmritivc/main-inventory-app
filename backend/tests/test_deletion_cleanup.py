@@ -75,3 +75,20 @@ def test_account_cleanup_waits_for_identity_removal_and_resumes_from_receipt():
         assert cleanup.clean_account_files('actor')
     client.storage.from_.assert_any_call('profile-photos')
     client.storage.from_.return_value.remove.assert_called_once_with(['actor/avatar.jpg'])
+
+
+def test_cleanup_keeps_departed_members_team_files_and_chat_photos():
+    client = fake([])
+    original = client.table.side_effect
+    def table(name):
+        q = original(name)
+        if name == 'team_documents':
+            q.execute.return_value = SimpleNamespace(data=[{'storage_path': 'departed/docs/shared.pdf'}])
+        if name == 'messages':
+            q.execute.return_value = SimpleNamespace(data=[{'content': 'Retained conversation', 'answer_context': {'photo_path': 'departed/chat.jpg'}}])
+        return q
+    client.table.side_effect = table
+    with patch.object(cleanup, 'get_settings', return_value=SimpleNamespace(supabase_storage_bucket='item-images')):
+        images, documents, _ = cleanup._references(client)
+    assert 'departed/docs/shared.pdf' in documents
+    assert 'departed/chat.jpg' in images

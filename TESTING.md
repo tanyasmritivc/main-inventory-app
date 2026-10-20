@@ -35,6 +35,12 @@ See `docs/plans/catalog-write-permissions.md` for results and activation boundar
 
 ## Confirmed deletion and account categories
 
+The composed SQL suite includes migration 071 and
+`account_deletion_shared_content.sql`. It exercises real Auth deletion for
+Admin/Editor/Viewer contributors, owner transfer, private/shared preservation,
+task/invite attribution FKs, stale preparation and rollback. Run only in a
+disposable database. Also run `test_deletion_cleanup.py` for shared file safety.
+
 Run the full backend, web and Flutter suites before release. Focus on
 `test_inventory_delete.py`, `test_deletion_cleanup.py`,
 `account-deletion-service.test.ts`, `workspace-profile.test.tsx`,

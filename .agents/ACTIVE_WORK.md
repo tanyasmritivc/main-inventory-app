@@ -1,3 +1,13 @@
+## Account deletion with shared contributions - prepared (October 19)
+
+Branch `fix/account-deletion-shared-records-20261020`: remove the shared-record
+blocker while preserving shared content atomically with Auth identity deletion.
+Organization owners must transfer first. Database activation requires review and
+explicit authorization. Only disposable synthetic identities are used for QA.
+Full Python/composed SQL and isolated real-schema journeys pass; 90 original
+tables remain unchanged by migration replay. See
+`docs/plans/account-deletion-shared-content-20261019.md`.
+
 ## Organization leave and removal choices — delivered (October 19)
 
 Scoped web/API/mobile branches `feat/organization-leave-*-20261020` are prepared.
