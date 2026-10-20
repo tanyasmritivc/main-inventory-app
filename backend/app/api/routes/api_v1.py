@@ -271,6 +271,8 @@ def _data_failure(request: Request, action: str, error: Exception) -> HTTPExcept
         return api_error(request, 403, "workspace_access_denied", "The key cannot access that workspace.")
     if isinstance(error, APIError) and str(getattr(error, "code", "")) == "22023":
         return api_error(request, 400, "invalid_inventory_request", "Check the query or use the exact name of a Space linked to this team.")
+    if isinstance(error, APIError) and str(getattr(error, "code", "")) in {"23514", "23503"}:
+        return api_error(request, 400, "invalid_inventory_request", "The item could not be saved in that inventory. Use a Space in the same inventory and check the supplied fields.")
     if isinstance(error, APIError) and str(getattr(error, "code", "")) in {"23505", "21000"}:
         return api_error(request, 409, "duplicate_external_id", "External identities must be unique within a workspace. Use bulk import to update existing items.")
     return api_error(request, 503, "database_unavailable", "The inventory service is temporarily unavailable.")

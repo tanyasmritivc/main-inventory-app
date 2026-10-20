@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.services import capture_save, items_repo
+from app.services import capture_save, items_repo, item_photos
 from app.api.routes import items as routes
 from app.core.auth import AuthenticatedUser
 from app.schemas.inventory import BulkCreateRequest
@@ -16,18 +16,22 @@ from fastapi import HTTPException
 class Store:
     def __init__(self):
         self.rows = []
+        self.events = []
+        self.photo_failure = False
+        self.photo_response_lost = False
         self.insert_calls = 0
         self.fail_before = False
         self.fail_after = False
 
     def table(self, name):
-        assert name == 'items'
-        return Query(self)
+        assert name in ('items', 'item_events')
+        return Query(self, name)
 
 
 class Query:
-    def __init__(self, store):
+    def __init__(self, store, table='items'):
         self.store, self.filters, self.payload = store, [], None
+        self.table = table
 
     def select(self, *_args, **_kwargs):
         return self
@@ -48,6 +52,16 @@ class Query:
         return self
 
     def execute(self):
+        if self.table == 'item_events':
+            if self.payload is not None:
+                if self.store.photo_failure:
+                    raise ConnectionError('Photo unavailable')
+                if any(row['event_id'] == self.payload['event_id'] for row in self.store.events):
+                    raise ValueError('Duplicate photo')
+                self.store.events.append(deepcopy(self.payload))
+                if self.store.photo_response_lost:
+                    raise ConnectionError('Photo response lost after commit')
+            return SimpleNamespace(data=deepcopy([row for row in self.store.events if all(check(row) for check in self.filters)]))
         if self.payload is not None:
             self.store.insert_calls += 1
             if self.store.fail_before:
@@ -74,6 +88,7 @@ def store():
     database = Store()
     items_repo._INVENTORY_CACHE.clear()
     with patch.object(capture_save, 'get_supabase_admin', return_value=database), \
+         patch.object(item_photos, 'get_supabase_admin', return_value=database), \
          patch.object(items_repo, 'get_supabase_admin', return_value=database), \
          patch.object(capture_save, '_resolve_space_id', side_effect=lambda **kw: 'space-' + kw['location']), \
          patch.object(capture_save, 'verified_catalog_id_for_identity', return_value=None):
@@ -115,6 +130,47 @@ def test_lost_response_is_resolved_from_actual_persisted_rows(store):
     assert len(inserted) == 1 and not failures
     assert capture_save.save_capture_items(user_id='owner', items=[draft()])[0] == inserted
     assert len(store.rows) == 1
+
+
+def test_original_is_second_for_each_crop_without_duplicate_uploads(store):
+    source = 'https://storage.test/original.jpg'
+    inputs = [draft(source_frame_url=source),
+              {**draft(source_frame_url=source), 'client_request_id': 'b', 'image_url': 'https://storage.test/crop-b.jpg'}]
+    saved, failures = capture_save.save_capture_items(user_id='owner', items=inputs)
+    assert len(saved) == 2 and not failures
+    assert len(store.events) == 2
+    assert {event['image_url'] for event in store.events} == {source}
+    for row in saved:
+        events = [e for e in store.events if e['item_id'] == row['item_id']]
+        assert [p['image_url'] for p in item_photos._photos_for_item(item=row, events=events)] == [row['image_url'], source]
+    capture_save.save_capture_items(user_id='owner', items=inputs)
+    assert len(store.rows) == len(store.events) == 2
+
+
+def test_failed_original_retains_draft_and_retry_repairs_without_duplicate_item(store):
+    inputs = [draft(source_frame_url='https://storage.test/original.jpg')]
+    store.photo_failure = True
+    saved, failures = capture_save.save_capture_items(user_id='owner', items=inputs)
+    assert not saved and failures[0]['index'] == 0
+    assert len(store.rows) == 1 and not store.events
+    store.photo_failure = False
+    store.photo_response_lost = True
+    saved, failures = capture_save.save_capture_items(user_id='owner', items=inputs, max_new_items=0)
+    assert len(saved) == 1 and not failures
+    assert len(store.rows) == len(store.events) == 1
+
+
+def test_retry_cannot_replace_the_saved_original(store):
+    capture_save.save_capture_items(user_id='owner', items=[draft(source_frame_url='original-a.jpg')])
+    saved, failures = capture_save.save_capture_items(user_id='owner', items=[draft(source_frame_url='original-b.jpg')])
+    assert not saved and failures[0]['index'] == 0
+    assert [event['image_url'] for event in store.events] == ['original-a.jpg']
+
+
+def test_fallback_to_full_frame_appears_once(store):
+    source = draft()['image_url']
+    saved, failures = capture_save.save_capture_items(user_id='owner', items=[draft(source_frame_url=source)])
+    assert len(saved) == 1 and not failures and not store.events
 
 
 def test_uncommitted_failure_never_returns_synthetic_success(store):

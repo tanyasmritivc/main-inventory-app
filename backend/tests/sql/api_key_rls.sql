@@ -208,3 +208,9 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir ../../supabase/migrations/052_invitation_push_target.sql
 \ir invitation_push_target.sql
 \ir catalog_write_permissions.sql
+\ir resource_permissions.sql
+
+\ir private_item_images.sql
+\ir capture_original_gallery.sql
+
+\ir chat_item_actions.sql

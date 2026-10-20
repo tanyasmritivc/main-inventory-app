@@ -57,6 +57,7 @@ class DB:
             'team_members': [],
             'teams': [{'team_id': 'team-1', 'name': 'Robotics', 'join_code': 'TEAM23', 'owner_user_id': 'owner', 'program': 'ftc'}],
             'team_memberships': [],
+            'app_organization_members': [],
         }
         self.writes, self.selections = [], []
 
@@ -178,3 +179,29 @@ def test_team_acceptance_is_idempotent_and_keeps_existing_privileged_role(db):
 @pytest.mark.parametrize('expires', ['not-a-date', '2000-01-01', '2000-01-01T00:00:00Z'])
 def test_invalid_expiry_fails_closed(expires):
     assert not sharing_service.invitation_is_current({'is_active': True, 'expires_at': expires})
+
+
+def test_organization_workspace_code_requires_parent_consent_without_writing(db):
+    db.rows['teams'][0]['organization_id'] = 'org-a'
+    with patch.object(teams_repo, 'get_supabase_admin', return_value=db):
+        with pytest.raises(ValueError, match='Accept your organization invitation first'):
+            teams_repo.join_team(user_id='recipient', code='TEAM23')
+        assert db.writes == []
+        db.rows['app_organization_members'].append({'organization_id': 'org-a', 'user_id': 'recipient'})
+        joined = teams_repo.join_team(user_id='recipient', code='team23')
+        assert joined['team_id'] == 'team-1'
+        assert joined['organization_id'] == 'org-a'
+        assert len(db.writes) == 1
+        teams_repo.join_team(user_id='recipient', code='TEAM23')
+        assert len(db.writes) == 1
+
+
+def test_workspace_parent_race_returns_actionable_error():
+    from app.api.routes import teams
+    from postgrest.exceptions import APIError
+    with patch.object(teams.teams_repo, 'join_team', side_effect=APIError({'code': '23514', 'message': 'private internal constraint'})):
+        with pytest.raises(HTTPException) as caught:
+            teams.join_team_route(teams.JoinTeamRequest(code='TEAM23'), AuthenticatedUser(user_id='recipient'))
+        assert caught.value.status_code == 422
+        assert 'organization invitation first' in caught.value.detail
+        assert 'constraint' not in caught.value.detail

@@ -1,9 +1,10 @@
 """Organization administration and inventory-specific access, backed by audited RPCs."""
 from uuid import UUID
 from typing import Literal
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 from postgrest.exceptions import APIError
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -12,6 +13,7 @@ from app.api.routes.inventory_workspaces import _workspace, _inventory, inventor
 from app.services.access_invitations import invite_or_change
 
 router = APIRouter(tags=['collaboration'])
+logger = logging.getLogger(__name__)
 
 
 def manage(actor, action, data):
@@ -48,10 +50,29 @@ def organization(org_id, actor):
 
 
 def members_with_names(rows):
+    # Callers have already authorized the parent and selected its member IDs.
+    # Return only presentation fields, never profile paths or arbitrary profiles.
+    import re
+    from app.services.storage import create_profile_photo_signed_url
     ids = list({r['user_id'] for r in rows})
-    profiles = get_supabase_raw().table('profiles').select('id,display_name,first_name,last_name').in_('id', ids).execute().data if ids else []
-    names = {p['id']: p.get('display_name') or ' '.join(filter(None, [p.get('first_name'), p.get('last_name')])) or 'Member' for p in profiles or []}
-    return [{**r, 'display_name': names.get(r['user_id'], 'Member')} for r in rows]
+    profiles = get_supabase_raw().table('profiles').select('id,display_name,first_name,last_name,avatar_path,avatar_color').in_('id', ids).execute().data if ids else []
+    presentation = {}
+    for profile in profiles or []:
+        uid = profile['id']
+        if uid not in ids:
+            continue
+        url = ''
+        path = profile.get('avatar_path')
+        if isinstance(path, str) and re.fullmatch(re.escape(str(uid)) + r'/avatar\.(?:jpg|jpeg|png|webp|heic|heif)', path):
+            try:
+                url = create_profile_photo_signed_url(storage_path=path, owner_id=uid)
+            except Exception:
+                logger.warning('Member photo unavailable; using initials')
+        presentation[uid] = {
+            'display_name': profile.get('display_name') or ' '.join(filter(None, [profile.get('first_name'), profile.get('last_name')])) or 'Member',
+            'avatar_color': profile.get('avatar_color') or '#636366', 'avatar_url': url,
+        }
+    return [{**row, **presentation.get(row['user_id'], {'display_name': 'Member', 'avatar_color': '#636366', 'avatar_url': ''})} for row in rows]
 
 
 class Name(BaseModel):
@@ -66,6 +87,10 @@ class Name(BaseModel):
 class OrganizationMember(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     role: Literal['member', 'admin'] = 'member'
+
+
+class OrganizationRole(BaseModel):
+    role: Literal['member', 'admin']
 
 
 class Role(BaseModel):
@@ -104,10 +129,14 @@ def create_organization(body: Name, user: AuthenticatedUser = Depends(get_curren
 def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
     org = organization(organization_id, user.user_id)
     raw = get_supabase_raw()
-    # Even organization owners see workspace data only when explicitly assigned.
+    # Organization administration can discover workspace names, not contents.
     memberships = raw.table('team_memberships').select('team_id,role').eq('user_id', user.user_id).execute().data or []
     ids = [m['team_id'] for m in memberships]
-    workspaces = raw.table('teams').select('team_id,name,organization_id,owner_user_id').eq('organization_id', str(organization_id)).in_('team_id', ids).order('name').execute().data if ids else []
+    query = raw.table('teams').select('team_id,name,organization_id,owner_user_id').eq('organization_id', str(organization_id))
+    if org['role'] not in ('owner', 'admin'):
+        query = query.in_('team_id', ids)
+    workspaces = query.order('name').execute().data if ids or org['role'] in ('owner', 'admin') else []
+    workspaces = [{**w, 'can_open': w['team_id'] in ids} for w in workspaces or []]
     members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', str(organization_id)).execute().data or []
     attachable = raw.table('teams').select('team_id,name').eq('owner_user_id', user.user_id).is_('organization_id', 'null').execute().data if org['role'] in ('owner', 'admin') else []
     return {'organization': org, 'workspaces': workspaces or [], 'members': members_with_names(members), 'attachable': attachable or []}
@@ -150,6 +179,13 @@ def add_organization_member(organization_id: UUID, body: OrganizationMember, use
     return invite_or_change(user.user_id, 'organization', str(organization_id), body.role, email=body.email)
 
 
+@router.put('/organizations/{organization_id}/members/{member_id}')
+def change_organization_role(organization_id: UUID, member_id: UUID, body: OrganizationRole, user: AuthenticatedUser = Depends(get_current_user)):
+    return manage(user.user_id, 'organization_member', {
+        'organization_id': str(organization_id), 'user_id': str(member_id), 'role': body.role,
+    })
+
+
 @router.delete('/organizations/{organization_id}/members/{member_id}')
 def remove_organization_member(organization_id: UUID, member_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
     return manage(user.user_id, 'organization_member', {'organization_id': str(organization_id), 'user_id': str(member_id), 'role': 'none'})
@@ -181,9 +217,9 @@ def workspace_overview(workspace_id: UUID, user: AuthenticatedUser = Depends(get
 
 @router.get('/inventories/{inventory_id}/access')
 def inventory_access(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
-    inv = _inventory(str(inventory_id), user.user_id)
+    inv = _inventory(str(inventory_id), user.user_id, administration=True)
     if not inv.get('team_id'):
-        return {'inventory': inv, 'members': [{'user_id': user.user_id, 'role': 'owner', 'source': 'personal', 'display_name': 'You'}], 'candidates': [], 'locations': []}
+        return {'inventory': inv, 'members': members_with_names([{'user_id': user.user_id, 'role': 'owner', 'source': 'personal'}]), 'candidates': [], 'locations': []}
     raw = get_supabase_raw()
     members = raw.table('team_memberships').select('user_id,role').eq('team_id', inv['team_id']).execute().data or []
     grants = raw.table('app_inventory_members').select('user_id,inventory_id,role').eq('inventory_id', str(inventory_id)).execute().data or []
@@ -196,6 +232,44 @@ def inventory_access(inventory_id: UUID, user: AuthenticatedUser = Depends(get_c
                 'override': override['role'] if override else 'inherit', 'source': 'inventory' if override else 'workspace'})
     locations = raw.table('app_physical_locations').select('*').eq('team_id', inv['team_id']).order('created_at').execute().data if inv['can_manage'] else []
     return {'inventory': inv, 'members': members_with_names(effective), 'locations': locations or []}
+
+
+class TransferOwner(Name):
+    user_id: UUID
+    confirmed: StrictBool
+
+
+def _transfer_owner(scope, resource, body, user):
+    if body.confirmed is not True:
+        raise HTTPException(422, 'Confirm the ownership transfer before continuing.')
+    try:
+        saved = get_supabase_raw().rpc('findez_transfer_resource_owner', {
+            'p_actor': user.user_id, 'p_scope': scope, 'p_resource': str(resource),
+            'p_target': str(body.user_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'Only the current owner can transfer ownership.'),
+                  '23514': (422, 'Choose a current member with a confirmed, active account.'),
+                  '22023': (409, 'The name changed. Reopen the transfer confirmation.'),
+                  '40P01': (409, 'Permissions are being updated. Try again.'),
+                  '40001': (409, 'Permissions changed. Refresh before trying again.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message) from None
+        raise
+    if not isinstance(saved, dict) or saved.get('transferred') is not True or saved.get('scope') != scope or saved.get('resource_id') != str(resource) or saved.get('owner_user_id') != str(body.user_id):
+        raise HTTPException(503, 'The ownership transfer could not be confirmed. Refresh before retrying.')
+    return saved
+
+
+@router.post('/organizations/{organization_id}/transfer-owner')
+def transfer_organization_owner(organization_id: UUID, body: TransferOwner, user: AuthenticatedUser = Depends(get_current_user)):
+    return _transfer_owner('organization', organization_id, body, user)
+
+
+@router.post('/inventory-workspaces/{workspace_id}/transfer-owner')
+def transfer_workspace_owner(workspace_id: UUID, body: TransferOwner, user: AuthenticatedUser = Depends(get_current_user)):
+    return _transfer_owner('workspace', workspace_id, body, user)
 
 
 @router.patch('/inventories/{inventory_id}/access')

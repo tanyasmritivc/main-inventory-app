@@ -80,3 +80,6 @@ for scoped_feature_router in (
 ):
     scoped_router.include_router(scoped_feature_router)
 api_router.include_router(scoped_router)
+
+from app.api.routes.private_images import router as private_images_router
+api_router.include_router(private_images_router)

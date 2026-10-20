@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from postgrest.exceptions import APIError
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import bad_request, service_unavailable
@@ -66,6 +67,12 @@ def rename_space_route(
     try:
         updated = rename_space(user_id=user.user_id, space_id=space_id, new_name=new_name)
         return {"space": updated}
+    except HTTPException:
+        raise
+    except APIError as exc:
+        if exc.code == '42501':
+            raise HTTPException(403, 'You no longer have permission to change this Space.') from None
+        raise service_unavailable('The Space could not be changed. Try again.') from None
     except Exception:
         logger.exception("Failed to rename space %s", space_id)
         raise service_unavailable("Could not rename space. Please try again.")
@@ -79,6 +86,12 @@ def delete_space_route(
     try:
         ok = delete_space(user_id=user.user_id, space_id=space_id)
         return {"deleted": ok}
+    except HTTPException:
+        raise
+    except APIError as exc:
+        if exc.code == '42501':
+            raise HTTPException(403, 'Only inventory owners and admins can delete a Space.') from None
+        raise service_unavailable('The Space could not be deleted. Try again.') from None
     except Exception:
         logger.exception("Failed to delete space %s", space_id)
         raise service_unavailable("Could not delete space. Please try again.")

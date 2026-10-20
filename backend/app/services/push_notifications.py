@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
-from jose import jwt
+import jwt
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
