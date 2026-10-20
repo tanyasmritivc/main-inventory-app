@@ -17,6 +17,15 @@ from app.services.find_pipeline import FindPipelineError
 from app.services.limits import ScanLimitExceeded
 from app.services.storage import StoredImage
 
+@pytest.fixture(autouse=True)
+def saved_gallery_io():
+    # Dedicated saved-photo tests exercise pixels/storage; keep routing tests hermetic.
+    with patch.object(photos, 'search_saved_photos', new=AsyncMock(return_value={
+        'matches': [], 'photos_checked': 0, 'photos_available': 0, 'complete': True,
+    })) as search:
+        yield search
+
+
 PATH = 'user-1/ask-' + 'a' * 32 + '.jpg'
 URL = 'https://api.test/storage/v1/object/public/item-images/' + PATH
 

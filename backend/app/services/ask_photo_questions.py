@@ -19,6 +19,7 @@ from app.services.inventory_scope import current_inventory
 from app.services.catalog_service import enrich_scan_items_from_verified_catalog, barcode_candidates, _normalized_brand
 from app.services.items_repo import _singularize_word
 from app.services.find_pipeline import extract_inventory_items_with_find
+from app.services.saved_photo_search import search_saved_photos
 from app.services.storage import delete_image, upload_image, _external_storage_url
 from app.services.supabase_client import get_supabase_admin
 
@@ -134,7 +135,7 @@ def _match(photo: dict, item: dict) -> str | None:
 
 
 
-def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: str) -> dict:
+def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: str, saved_photos: dict | None = None) -> dict:
     """Structured observations and authorized matches, never a written answer."""
     types = _photo_types(identified)
     observations, matches, seen = [], [], set()
@@ -155,15 +156,26 @@ def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: 
             if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value > 0:
                 observation[key] = value
         observations.append(observation)
+    if saved_photos:
+        for match in saved_photos.get('matches', []):
+            item = next((row for row in inventory if row.get('item_id') == match['item_id']), None)
+            if item and item['item_id'] not in seen:
+                matches.append({**item, '_match_basis': match['match_basis']})
+                seen.add(item['item_id'])
     context = answer_context_from_reads({}, [{'tool': 'inventory_search', 'result': matches}])
     context['sources'] = [
         {'kind': 'photo', 'label': 'Attached photo', 'detail': 'Automated observations; uncertain identities remain unconfirmed'},
         {'kind': 'inventory', 'label': 'Inventory', 'detail': f'{len(inventory)} authorized item records checked by saved identifiers or names, not visual similarity'},
     ]
+    if saved_photos:
+        context['sources'].append({'kind': 'inventory', 'label': 'Saved item photos',
+            'detail': f"{saved_photos['photos_checked']} of {saved_photos['photos_available']} current photos compared; "
+                      + ('comparison complete' if saved_photos['complete'] else 'comparison incomplete')})
     context['photo_url'] = photo_url
     return {'observations': observations, 'observations_truncated': len(types) > 20,
             'unidentified_observations': any(_identifier(row.get('name')) in _UNKNOWN_NAMES for row in identified),
             'inventory_matches': matches, 'inventory_records_checked': len(inventory),
+            'saved_photo_comparison': saved_photos,
             'inventory_changed': False, 'answer_context': context}
 
 
@@ -175,7 +187,8 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
             user_id=user_id, source_frame_url=stored.url)
         identified = await asyncio.to_thread(enrich_scan_items_from_verified_catalog, data.get('items') or [])
         inventory = await asyncio.to_thread(accessible_inventory, user_id)
-        evidence = photo_evidence(identified=identified, inventory=inventory, photo_url=stored.url)
+        saved_photos = await search_saved_photos(user_id=user_id, image_bytes=image_bytes, inventory=inventory)
+        evidence = photo_evidence(identified=identified, inventory=inventory, photo_url=stored.url, saved_photos=saved_photos)
         context = evidence.pop('answer_context')
         scope = current_inventory.get()
         evidence = {'inventory_matches_are_complete_inventory': False,
@@ -202,6 +215,7 @@ async def answer_photo_question(*, user_id: str, message: str, image_bytes: byte
                     'Uncertain identities and name-only matches cannot confirm a product or ownership. Product identifiers describe products, not the individual object in the photo. '
                     'Unknown-only observations need a useful clarification or clearer photo, without an invented identity. Empty saved matches do not prove physical absence. '
                     'inventory_matches contains only potential matches for the photo labels, not every item or Space. The target Space membership was not checked. Never infer that a requested Space has no entries or which entries it contains from these matches. '
+                    'saved_photo_comparison checks current primary and gallery photos, including photos added after item creation. If it reports a match, name that saved item and its recorded location even if the detected object label differs from the saved name. A same-photo match establishes that this photograph is attached to the item, not that its product details or current stock are verified. A possible saved-photo match is only visual resemblance; qualify it. No match does not rule out another viewpoint, crop, lighting or physically owning the object. If comparison is incomplete, say that saved photos were only partially checked; never claim a complete photo search. Do not confuse a selected inventory name with a Space name. '
                     'Saved quantities are recorded stock, not counts in the photo. Null, invalid or missing quantities are unknown; do not turn them into zero. Locations are saved records, not live sightings. '
                     'Only discuss supplied dimensions when relevant to the question, as estimates to verify with a ruler. Never invent compatibility, specifications, quantities or exact fit. '
                     'No inventory mutation was performed. You may prepare item additions or deletions through the supplied review-card tools. No item changes until the user confirms a card. Ask for missing quantities and a destination Space. observation_index refers only to the current attached photo. Do not create new entries when the user asked to attach a photo to existing entries. Respect the selected inventory edit permission. '
