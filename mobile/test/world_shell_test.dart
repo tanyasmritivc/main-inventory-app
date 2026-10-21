@@ -10,6 +10,7 @@ import 'package:mobile/core/place_session.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/world/world_action_card.dart';
 import 'package:mobile/features/world/world_composer.dart';
+import 'package:mobile/features/workspaces/organization_pill.dart';
 import 'support/hierarchy_fixture.dart';
 
 Future<void> Function(String)? worldAuditCapture;
@@ -49,21 +50,21 @@ void main() {
       ..navigationReady = true;
     addTearDown(session.dispose);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.create(brightness),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            padding: const EdgeInsets.only(top: 44, bottom: 34),
-            viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
-            textScaler: TextScaler.linear(scale),
-            boldText: bold,
-            viewInsets: EdgeInsets.only(bottom: keyboard),
+      RepaintBoundary(
+        key: const ValueKey('world-audit-frame'),
+        child: MaterialApp(
+          theme: AppTheme.create(brightness),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              padding: const EdgeInsets.only(top: 44, bottom: 34),
+              viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
+              textScaler: TextScaler.linear(scale),
+              boldText: bold,
+              viewInsets: EdgeInsets.only(bottom: keyboard),
+            ),
+            child: child!,
           ),
-          child: child!,
-        ),
-        home: RepaintBoundary(
-          key: const ValueKey('world-audit-frame'),
-          child: WorldShell(
+          home: WorldShell(
             session: session,
             onOpenInventory: (_, _, _) async {},
           ),
@@ -71,6 +72,23 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  for (final brightness in Brightness.values) {
+    testWidgets('Avatar exposes preferences directly $brightness', (
+      tester,
+    ) async {
+      await mount(tester, brightness: brightness);
+      await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Theme').hitTestable(), findsOneWidget);
+      expect(find.text('Text size').hitTestable(), findsOneWidget);
+      expect(find.text('Notifications').hitTestable(), findsOneWidget);
+      expect(find.text('Account and settings'), findsNothing);
+      await worldAuditCapture?.call('avatar-${brightness.name}');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
   }
 
   for (final brightness in Brightness.values) {
@@ -87,7 +105,7 @@ void main() {
       expect(heading.text.style?.fontWeight, FontWeight.w500);
       final hint = tester.widget<RichText>(
         find.descendant(
-          of: find.text('Describe, ask, or add a photo…'),
+          of: find.text('Describe your inventory…'),
           matching: find.byType(RichText),
         ),
       );
@@ -149,6 +167,12 @@ void main() {
         ]) {
           expect(find.text(label), findsOneWidget);
         }
+        expect(find.byType(BottomSheet), findsNothing);
+        if (profile.$1 == const Size(390, 844) &&
+            profile.$2 == 1 &&
+            profile.$3 == 0) {
+          await worldAuditCapture?.call('attachments-${brightness.name}');
+        }
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       });
@@ -180,6 +204,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Search Spaces'), findsOneWidget);
     expect(find.text('Workbench'), findsOneWidget);
+    expect(find.byType(OrganizationPill), findsNothing);
+    expect(tester.getTopLeft(find.text('Spaces')).dy, lessThan(110));
     await worldAuditCapture?.call('spaces');
     await tester.enterText(find.byType(TextField).last, 'drawers');
     await tester.pumpAndSettle();
@@ -188,6 +214,8 @@ void main() {
     await tester.tap(find.byTooltip('More'));
     await tester.pumpAndSettle();
     expect(find.text('Workspaces and team tools'), findsOneWidget);
+    expect(find.byType(OrganizationPill), findsNothing);
+    expect(tester.getTopLeft(find.text('More')).dy, lessThan(110));
     await worldAuditCapture?.call('more');
     await tester.tap(find.byTooltip('Ask'));
     await tester.pumpAndSettle();
@@ -292,6 +320,20 @@ void main() {
         expect(find.byTooltip('More'), findsNothing);
         expect(find.byTooltip('Account'), findsNothing);
         expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
+        final list = find.byType(ListView).first;
+        expect(
+          tester.getTopLeft(list).dy,
+          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
+        );
+        await tester.drag(list, const Offset(0, -300));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getTopLeft(list).dy,
+          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
+        );
+        expect(find.text('Ask FindEZ…'), findsOneWidget);
+        expect(find.byTooltip('Send message'), findsNothing);
+        await worldAuditCapture?.call('conversation-clearance');
         await tester.enterText(
           find.byType(TextField).first,
           'What about the charger?',

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppTextSize {
-  small('Small', 0.9),
-  standard('Default', 1),
+  small('Small', 0.8),
+  standard('Default', 0.9),
   large('Large', 1.15),
   larger('Larger', 1.3);
 
@@ -36,7 +36,8 @@ class AppearanceController extends ChangeNotifier {
     : _storage = storage ?? DeviceAppearanceStorage();
 
   static const themeKey = 'findez.appearance.theme.v1';
-  static const textSizeKey = 'findez.appearance.text-size.v1';
+  static const textSizeKey = 'findez.appearance.text-size.v2';
+  static const legacyTextSizeKey = 'findez.appearance.text-size.v1';
   final AppearanceStorage _storage;
   ThemeMode _themeMode = ThemeMode.light;
   AppTextSize _textSize = AppTextSize.standard;
@@ -57,7 +58,12 @@ class AppearanceController extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final theme = await _storage.read(themeKey);
-      final size = await _storage.read(textSizeKey);
+      var size = await _storage.read(textSizeKey);
+      if (size == null) {
+        size = await _storage.read(legacyTextSizeKey);
+        // The former Small is now Default; preserve its physical size.
+        if (size == 'small') size = 'standard';
+      }
       if (_disposed) return;
       _themeMode = ThemeMode.values.firstWhere(
         (mode) => mode.name == theme,
@@ -110,9 +116,8 @@ class AppearanceController extends ChangeNotifier {
   }
 
   /// Compose with iOS/Android's scaler, including nonlinear accessibility sizes.
-  TextScaler textScaler(TextScaler system) => _textSize == AppTextSize.standard
-      ? system
-      : AppTextScaler(system, _textSize.factor);
+  TextScaler textScaler(TextScaler system) =>
+      AppTextScaler(system, _textSize.factor);
 
   @override
   void dispose() {

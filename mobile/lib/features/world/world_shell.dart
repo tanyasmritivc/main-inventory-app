@@ -12,9 +12,9 @@ import '../../core/low_stock_prefs.dart';
 import '../../core/ui/member_avatar.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
-import '../profile/account_page.dart';
-import '../profile/profile_page.dart';
-import '../notifications/notifications_page.dart';
+import '../inventory/item_detail_sheet.dart';
+import '../../core/ask_answer.dart';
+import '../profile/account_menu.dart';
 import '../workspaces/organization_pill.dart';
 import '../workspaces/workspace_home.dart';
 import '../scan/import_sheet_page.dart';
@@ -275,74 +275,38 @@ class _WorldShellState extends State<WorldShell> {
     if (mounted) unawaited(_load());
   });
   Future<void> _account() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (sheet) => WorldStyle(
-        child: FractionallySizedBox(
-          heightFactor: .72,
-          child: ListView(
-            padding: const EdgeInsets.all(18),
-            children: [
-              ListTile(
-                leading: MemberAvatar(
-                  name: _profile.name,
-                  photoUrl: _profile.photoUrl,
-                  size: 48,
-                ),
-                title: Text(
-                  _profile.name.isEmpty ? 'Your profile' : _profile.name,
-                ),
-                subtitle: const Text('Your account'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Profile'),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(
-                    _push(
-                      Scaffold(
-                        appBar: AppBar(title: const Text('Profile')),
-                        body: ProfilePage(
-                          api: widget.session.api,
-                          accountOnly: true,
-                          store: _profile,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.notifications_none),
-                title: const Text('Notifications'),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(_push(NotificationsPage(api: widget.session.api)));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('Account and settings'),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(
-                    _push(
-                      AccountPage(api: widget.session.api, store: _profile),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    await showAccountMenu(context, api: widget.session.api, profile: _profile);
     if (mounted) await _profile.load(force: true);
   }
+
+  Future<void> _openChatResource(Map<String, dynamic> value) => _guard(
+    () async {
+      final link = AskResourceLink.parse(value);
+      if (link == null) return;
+      final world = _world;
+      final data = await _chatApi.collaboration(
+        '/worlds/$world/resources/${link.inventoryId}/${link.kind}/${link.id}',
+      );
+      if (!mounted || world != _world) return;
+      final api = await _inventory(data);
+      if (!mounted || world != _world) return;
+      api.assertCurrentContext();
+      final resource = Map<String, dynamic>.from(data['resource'] as Map);
+      if (link.kind == 'space') {
+        await _openSpace(api, resource);
+      } else {
+        final item = InventoryItem.fromJson(resource);
+        await showItemDetailSheet(
+          context,
+          item: item,
+          api: api,
+          spaceName: item.location,
+          permission: api.canEdit ? 'edit' : 'view',
+          onItemUpdated: (_) => unawaited(_load()),
+        );
+      }
+    },
+  );
 
   Future<void> _openSpace(ApiClient api, Map<String, dynamic> space) async {
     final result = await api.searchItems(query: '');
@@ -354,7 +318,13 @@ class _WorldShellState extends State<WorldShell> {
       LocationItemsPage(
         api: api,
         location: name,
-        items: result.items.where((item) => item.location == name).toList(),
+        items: result.items
+            .where(
+              (item) => item.spaceId != null
+                  ? item.spaceId == space['id']
+                  : item.location == name,
+            )
+            .toList(),
         allItems: result.items,
         thresholds: thresholds,
         spaceId: space['id']?.toString(),
@@ -398,8 +368,6 @@ class _WorldShellState extends State<WorldShell> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Spaces', style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: 22),
           LiquidSurface(
             radius: 24,
             quiet: true,
@@ -523,8 +491,6 @@ class _WorldShellState extends State<WorldShell> {
   Widget _more(BuildContext context) => ListView(
     padding: const EdgeInsets.all(20),
     children: [
-      Text('More', style: Theme.of(context).textTheme.headlineLarge),
-      const SizedBox(height: 24),
       for (final label in [
         ('Overview', CupertinoIcons.square_grid_2x2),
         ('Review', CupertinoIcons.checkmark_seal),
@@ -588,10 +554,10 @@ class _WorldShellState extends State<WorldShell> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final focused = _tab == 0 && _chatFocused;
     return Scaffold(
-      backgroundColor: dark ? const Color(0xFF101010) : const Color(0xFFFCFAF7),
+      backgroundColor: dark ? Colors.black : const Color(0xFFFCFAF7),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: !_chatFocused && _tab == 0
+          gradient: !dark && !_chatFocused && _tab == 0
               ? RadialGradient(
                   center: const Alignment(.3, 1.2),
                   radius: 1.15,
@@ -613,18 +579,25 @@ class _WorldShellState extends State<WorldShell> {
                       Expanded(
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: OrganizationPill(
-                            api: widget.session.api,
-                            id: widget.session.organizationId,
-                            name: widget.session.organizationName,
-                            glass: true,
-                            labelStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.2,
-                            ),
-                            onSelected: widget.session.selectOrganization,
-                          ),
+                          child: _tab != 0
+                              ? Text(
+                                  _tab == 1 ? 'Spaces' : 'More',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineLarge,
+                                )
+                              : OrganizationPill(
+                                  api: widget.session.api,
+                                  id: widget.session.organizationId,
+                                  name: widget.session.organizationName,
+                                  glass: true,
+                                  labelStyle: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  onSelected: widget.session.selectOrganization,
+                                ),
                         ),
                       ),
                       if (_tab == 0)
@@ -672,6 +645,7 @@ class _WorldShellState extends State<WorldShell> {
                         if (mounted) setState(() => _chatFocused = false);
                       },
                       onCaptureAction: _capture,
+                      onOpenDestination: _openChatResource,
                       onInventoryMutated: () {
                         _revision++;
                         unawaited(_load());
@@ -708,18 +682,39 @@ class _WorldShellState extends State<WorldShell> {
                                 child: FractionallySizedBox(
                                   widthFactor: 1 / 3,
                                   heightFactor: 1,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(32),
-                                      color:
-                                          (dark ? Colors.white : Colors.white)
-                                              .withValues(
-                                                alpha: dark ? .12 : .78,
-                                              ),
-                                      border: Border.all(
-                                        width: .6,
-                                        color: Colors.white.withValues(
-                                          alpha: dark ? .12 : .65,
+                                  child: TweenAnimationBuilder<double>(
+                                    key: ValueKey('navigation-breath-$_tab'),
+                                    tween: Tween(begin: 0, end: 1),
+                                    duration: Duration(
+                                      milliseconds:
+                                          MediaQuery.disableAnimationsOf(
+                                            context,
+                                          )
+                                          ? 0
+                                          : 700,
+                                    ),
+                                    builder: (context, progress, child) =>
+                                        Transform.scale(
+                                          scale:
+                                              1 +
+                                              .025 *
+                                                  (1 -
+                                                      (2 * progress - 1).abs()),
+                                          child: child,
+                                        ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(32),
+                                        color:
+                                            (dark ? Colors.white : Colors.white)
+                                                .withValues(
+                                                  alpha: dark ? .12 : .78,
+                                                ),
+                                        border: Border.all(
+                                          width: .6,
+                                          color: Colors.white.withValues(
+                                            alpha: dark ? .12 : .65,
+                                          ),
                                         ),
                                       ),
                                     ),

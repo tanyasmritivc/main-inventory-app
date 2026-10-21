@@ -337,8 +337,19 @@ void main() {
       '${brightness.name} completion drains chunks instead of dumping a batched answer',
       (tester) async {
         final answer = List.generate(90, (index) => 'part$index').join(' ');
-        await _mount(tester, _FocusApi(answer: answer), brightness: brightness);
+        final stream = StreamController<AiStreamEvent>();
+        await _mount(
+          tester,
+          _FocusApi(pending: stream),
+          brightness: brightness,
+        );
         await _send(tester, 'Show my parts');
+        await tester.pump(const Duration(milliseconds: 300));
+        stream.add(AiStreamEvent(type: 'delta', delta: answer));
+        stream.add(
+          AiStreamEvent(type: 'done', conversationId: 'streaming-parts'),
+        );
+        await stream.close();
         await tester.pump();
         final initial = tester
             .widgetList<RichText>(find.byType(RichText))

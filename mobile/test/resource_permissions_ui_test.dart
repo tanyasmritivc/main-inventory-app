@@ -9,7 +9,7 @@ import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/features/profile/profile_page.dart';
 import 'package:mobile/features/profile/account_page.dart';
-import 'package:mobile/features/profile/profile_hub_page.dart';
+import 'package:mobile/features/profile/appearance_settings.dart';
 import 'package:mobile/features/profile/profile_editor_page.dart';
 import 'package:mobile/features/workspaces/hierarchy_page.dart';
 import 'package:mobile/features/workspaces/transfer_ownership.dart';
@@ -105,25 +105,14 @@ void main() {
           expect(tester.getCenter(button).dy, lessThan(100));
           await tester.tap(button);
           await tester.pumpAndSettle();
-          expect(find.byType(AccountPage), findsOneWidget);
-          expect(find.byType(ProfileHubPage), findsOneWidget);
-          expect(find.byType(ProfilePage), findsNothing);
-          final screen = tester.widget<Scaffold>(
-            find
-                .descendant(
-                  of: find.byType(AccountPage),
-                  matching: find.byType(Scaffold),
-                )
-                .first,
-          );
+          expect(find.byType(AccountPage), findsNothing);
+          expect(find.byType(ProfilePage), findsOneWidget);
+          expect(find.byType(AppearanceSettings), findsOneWidget);
+          expect(find.text('Theme').hitTestable(), findsOneWidget);
+          expect(find.text('Notifications').hitTestable(), findsOneWidget);
           expect(
-            screen.backgroundColor,
-            AppTheme.create(mode).scaffoldBackgroundColor,
-          );
-          expect(screen.backgroundColor!.a, 1);
-          expect(
-            tester.getTopLeft(find.byType(ProfileHubPage)).dy,
-            greaterThanOrEqualTo(47 + kToolbarHeight),
+            tester.getTopLeft(find.byType(BottomSheet)).dy,
+            greaterThanOrEqualTo(47),
           );
           expect(find.text('Free Pilot'), findsNothing);
           if (const bool.fromEnvironment('FINDEZ_VISUAL_QA') &&
@@ -147,8 +136,8 @@ void main() {
           expect(find.byType(ProfileEditorPage), findsOneWidget);
           await tester.tap(find.byType(BackButton).last);
           await tester.pumpAndSettle();
-          expect(find.byType(AccountPage), findsOneWidget);
-          await tester.tap(find.byType(BackButton).last);
+          expect(find.byType(AppearanceSettings), findsOneWidget);
+          Navigator.of(tester.element(find.byType(AppearanceSettings))).pop();
           await tester.pumpAndSettle();
           expect(find.byTooltip('Your profile'), findsOneWidget);
           expect(

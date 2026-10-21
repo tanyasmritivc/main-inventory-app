@@ -1024,6 +1024,7 @@ class ApiClient {
     if (updated == null ||
         updated.id != action.id ||
         updated.inventoryId != action.inventoryId ||
+        updated.operation != action.operation ||
         updated.status == 'pending') {
       throw const AskRequestException(
         'The action receipt could not be checked. Retry this same card safely.',
@@ -1058,6 +1059,7 @@ class ApiClient {
       'message': message,
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
+      'supports_item_management': true,
     });
 
     final client = http.Client();
@@ -1098,6 +1100,7 @@ class ApiClient {
     request.headers['Authorization'] = 'Bearer ${_requireToken()}';
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
+    request.fields['supports_item_management'] = 'true';
     if (conversationId != null) {
       request.fields['conversation_id'] = conversationId;
     }
@@ -2075,8 +2078,18 @@ class InventoryItem {
     this.confidence,
     this.catalogId,
     this.importData,
+    this.unitPrice,
+    this.currency,
+    this.expiresOn,
+    this.reorderEnabled = false,
+    this.reorderThreshold,
+    this.reorderQuantity,
   });
 
+  final double? unitPrice;
+  final String? currency, expiresOn;
+  final bool reorderEnabled;
+  final int? reorderThreshold, reorderQuantity;
   final String itemId;
   final String name;
   final String category;
@@ -2112,6 +2125,12 @@ class InventoryItem {
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(
+      unitPrice: double.tryParse('${json['unit_price'] ?? ''}'),
+      currency: json['currency']?.toString(),
+      expiresOn: json['expires_on']?.toString(),
+      reorderEnabled: json['reorder_enabled'] == true,
+      reorderThreshold: (json['reorder_threshold'] as num?)?.toInt(),
+      reorderQuantity: (json['reorder_quantity'] as num?)?.toInt(),
       itemId: (json['item_id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'brand_colors.dart';
 
 class AppColors {
-  static const background = BrandColors.ink;
-  static const surface = Color(0xFF1C1C1E);
-  static const surface2 = Color(0xFF242426);
+  static const background = Color(0xFF000000);
+  static const surface = Color(0xFF262626);
+  static const surface2 = Color(0xFF303030);
   static const chip = surface2;
   static const swipe = Color(0x1AFFFFFF);
 

@@ -257,7 +257,7 @@ class AppTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: adapt(AppColors.surface2),
+        backgroundColor: adapt(AppColors.surface),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -334,7 +334,7 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: adapt(AppColors.surface2),
+        backgroundColor: adapt(AppColors.surface),
         selectedColor: surface2,
         disabledColor: adapt(AppColors.surface),
         side: BorderSide(color: adapt(AppColors.border)),
@@ -369,7 +369,7 @@ class AppTheme {
   static const Color lightHint = Color(0xFF69696E);
 
   // Dark neutral counterparts of the same monochrome brand.
-  static const Color darkBg = BrandColors.ink;
+  static const Color darkBg = Color(0xFF000000);
   static const Color darkSurface = AppColors.surface;
   static const Color darkSurface2 = AppColors.surface2;
   static const Color darkBorder = AppColors.border;
@@ -521,9 +521,11 @@ class AppTheme {
       case 0x18181A:
       case 0x19191B:
       case 0x1C1C1E:
+      case 0x262626:
         return withAlpha(dark ? darkSurface : lightSurface);
       case 0x202020:
       case 0x242426:
+      case 0x303030:
       case 0x262629:
       case 0x29292E:
       case 0x2A2A2E:

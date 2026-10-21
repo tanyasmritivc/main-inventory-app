@@ -79,7 +79,7 @@ class WorldStyle extends StatelessWidget {
             ),
           ),
           popupMenuTheme: PopupMenuThemeData(
-            color: dark ? const Color(0xF22B2927) : const Color(0xF2FFFCF8),
+            color: dark ? const Color(0xFF262626) : const Color(0xF2FFFCF8),
             surfaceTintColor: Colors.transparent,
             textStyle: text(16),
             elevation: 12,
@@ -89,7 +89,7 @@ class WorldStyle extends StatelessWidget {
           ),
           bottomSheetTheme: theme.bottomSheetTheme.copyWith(
             backgroundColor: dark
-                ? const Color(0xF2292725)
+                ? const Color(0xFF262626)
                 : const Color(0xF7FFFCF8),
             surfaceTintColor: Colors.transparent,
             shape: const RoundedRectangleBorder(

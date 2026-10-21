@@ -47,12 +47,13 @@ class ActionApi extends ApiClient {
     ids.add(action.id);
     if (pending != null) return pending!.future;
     return ChatItemActionResult(
-      action: ChatItemAction.parse(
-        payload(
-          operation: action.operation,
-          status: decision == 'confirm' ? 'confirmed' : 'cancelled',
-        ),
-      )!,
+      action: ChatItemAction(
+        id: action.id,
+        inventoryId: action.inventoryId,
+        operation: action.operation,
+        status: decision == 'confirm' ? 'confirmed' : 'cancelled',
+        items: action.items,
+      ),
       assistantMessage: decision == 'confirm'
           ? 'Added 3 bolts in Garage.'
           : null,
@@ -108,6 +109,40 @@ Widget page(
   ),
 );
 void main() {
+  for (final operation in ['edit', 'move', 'reorder']) {
+    testWidgets('$operation presents exact changes before confirmation', (
+      tester,
+    ) async {
+      final data = payload(operation: operation)..['version'] = 2;
+      (data['items'] as List).first['details'] = [
+        'Unit price: Not set → 3.25 USD',
+        'No purchase will be placed.',
+      ];
+      final api = ActionApi();
+      final action = ChatItemAction.parse(data)!;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatItemActionCard(api: api, action: action),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Unit price: Not set → 3.25 USD'), findsOneWidget);
+      expect(api.decisions, isEmpty);
+      expect(find.text('Confirm change'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(api.decisions, ['cancel']);
+    });
+    test('$operation without exact details is not reviewable', () {
+      expect(
+        ChatItemAction.parse(payload(operation: operation)..['version'] = 2),
+        isNull,
+      );
+    });
+  }
+
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       await (FontLoader('FindEZQA')..addFont(

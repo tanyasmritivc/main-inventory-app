@@ -192,7 +192,7 @@ void main() {
         find.byType(Navigator).first,
       );
       form.text = 'Unsaved typography draft';
-      expect(media().textScaler.scale(15), closeTo(25.5, .001));
+      expect(media().textScaler.scale(15), closeTo(22.95, .001));
       expect(
         MediaQuery.boldTextOf(tester.element(find.byType(_Probe))),
         isFalse,

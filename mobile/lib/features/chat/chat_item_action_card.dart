@@ -106,9 +106,13 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
         children: [
           AppText(
             pending
-                ? _action.operation == 'add'
-                      ? 'Review new items'
-                      : 'Review items to delete'
+                ? switch (_action.operation) {
+                    'add' => 'Review new items',
+                    'delete' => 'Review items to delete',
+                    'move' => 'Review item move',
+                    'reorder' => 'Review reorder request',
+                    _ => 'Review item changes',
+                  }
                 : _action.status == 'confirmed'
                 ? 'Change confirmed'
                 : 'Cancelled',
@@ -133,6 +137,11 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(item.name),
+                        for (final detail in item.details)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: AppText(detail),
+                          ),
                         AppText(
                           '${item.quantity == null ? 'Quantity unknown' : 'Qty ${item.quantity}'} · ${item.location}',
                           style: TextStyle(
@@ -166,7 +175,9 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                           ? 'Confirming…'
                           : _action.operation == 'add'
                           ? 'Confirm additions'
-                          : 'Review deletion',
+                          : _action.operation == 'delete'
+                          ? 'Review deletion'
+                          : 'Confirm change',
                     ),
                   ),
                 ],

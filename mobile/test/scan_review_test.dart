@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
-import 'package:mobile/core/ui/brand_colors.dart';
+import 'package:mobile/core/ui/app_colors.dart';
 import 'package:mobile/features/scan/review_capture.dart';
 import 'package:mobile/features/scan/scan_evidence_panel.dart';
 
@@ -170,7 +170,7 @@ void main() {
           )
           .first,
     );
-    expect(surface.color, BrandColors.ink);
+    expect(surface.color, AppColors.background);
     expect(surface.clipBehavior, Clip.antiAlias);
 
     expect(find.text('Needs your review'), findsOneWidget);

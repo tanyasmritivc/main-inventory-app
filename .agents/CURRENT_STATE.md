@@ -1,3 +1,13 @@
+## October 21 — Chat polish and reviewed item management prepared
+
+Mobile `fix/mobile-chat-polish-20261020` builds on launch notifications for103.
+API `fix/api-chat-links-latency-20261020` adds verified links, parallel photo reads,
+and reviewed edit/move/price/expiry/reorder actions. User chose reorder requests
+for approval, never purchases. Migration074 is additive and rehearsed against an
+isolated fresh restore; **production application is not yet authorized**. Apply
+074 only after explicit approval, before deploying dependent runtime. No customer
+QA writes. See docs/plans/chat-polish-item-management-20261021.md.
+
 ## October 20 — Automatic notification permission prepared
 
 Mobile build103 now asks iOS after the first active frame, including before sign-in,
