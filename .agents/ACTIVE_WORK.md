@@ -1,3 +1,11 @@
+## October21 — Auto Extract chat restoration active
+
+Lane ownership: this task owns chat capture, its mobile cards and tests in
+feat/mobile-chat-auto-extract-20261021 and feat/api-chat-auto-extract-20261021.
+Reuse FIND, capture-save, Review and existing structure actions. Migration075 is
+prepared and rehearsed, but production approval is pending. Do not apply it or
+activate dependent runtime without approval. See docs/plans/chat-auto-extract-20261021.md.
+
 ## October21 — Build103 uploaded; approved074 and API live
 
 The user explicitly approved production074. The guarded activation applied it

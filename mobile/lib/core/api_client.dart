@@ -1060,6 +1060,7 @@ class ApiClient {
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
       'supports_item_management': true,
+      if (worldKey != null) 'supports_capture': true,
     });
 
     final client = http.Client();
@@ -1101,6 +1102,10 @@ class ApiClient {
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
     request.fields['supports_item_management'] = 'true';
+    if (worldKey != null) {
+      request.fields['supports_capture'] = 'true';
+      request.fields['auto_extract'] = photo.autoExtract.toString();
+    }
     if (conversationId != null) {
       request.fields['conversation_id'] = conversationId;
     }

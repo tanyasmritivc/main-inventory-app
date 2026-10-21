@@ -160,6 +160,7 @@ void main() {
         await tester.tap(find.byTooltip('Capture or attach'));
         await tester.pumpAndSettle();
         for (final label in [
+          'Auto Extract',
           'Take photo',
           'Choose photos',
           'Scan barcode',
