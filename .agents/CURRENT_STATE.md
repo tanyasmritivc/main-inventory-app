@@ -1,3 +1,20 @@
+## October 21 — Auto Extract build104 uploaded; backend live
+
+Apple validated and acknowledged1.1.0(104), delivery
+`90f1ae5e-6571-4476-8647-3bfe62f40fc6`. Mobile runtime43a9a39 / PR155;
+API runtimee47deb0 / PR154 and explicitly approved075 are live. The + menu starts
+with Auto Extract; image-only uploads extract immediately into durable editable
+chat drafts, then require explicit saving. Original FIND/capture/Review paths,
+verified links, duplicate approval and safe retry behavior are retained.
+
+749 full Flutter tests plus32 final chat/config checks, clean analysis,26 native
+iOS cases,1255 Python tests plus10subtests, synthetic SQL and isolated91-table
+preservation/replay checks passed. Configured-model refinement passed.32+32 device
+executables,24 privacy manifests and signatures verified; signed artifacts and17
+previews preserved in Documents/FindEZ/AppStore/1.1.0-build104. All five CI gates pass for API PR154 and mobile PR155 (run39693439001).
+Processing/tester availability was not polled. Physical-device camera and
+TestFlight acceptance remain pending. No public App Store submission.
+
 ## October 21 — Chat Auto Extract prepared; approved backend live
 
 Auto Extract is first in chat's + menu. Image-only uploads extract immediately;
