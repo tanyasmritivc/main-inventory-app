@@ -14,7 +14,8 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
-import 'package:mobile/features/onboarding/onboarding_page.dart';
+import 'package:mobile/features/world/world_welcome.dart';
+import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/sharing/invitation_host.dart';
@@ -193,53 +194,41 @@ void main() {
   });
   tearDownAll(() async => Supabase.instance.dispose());
 
-  testWidgets('fresh launch completes onboarding BEFORE authentication', (
-    tester,
-  ) async {
-    final api = _Api();
-    await tester.pumpWidget(_gate(api));
-    await tester.pumpAndSettle();
-    expect(find.byType(OnboardingPage), findsOneWidget);
-    expect(find.byType(AuthPage), findsNothing);
-    expect(find.byType(MainShell), findsNothing);
-    expect(api.reads, 0);
-    final choices = [
-      'world-path-personal',
-      'world-chip-Home',
-      'world-chip-Tools',
-    ];
-    for (final choice in choices) {
-      await tester.ensureVisible(find.byKey(Key(choice)));
-      await tester.tap(find.byKey(Key(choice)));
-      await tester.pumpAndSettle();
-    }
-    expect(find.text('This is your world.'), findsOneWidget);
-    await tester.ensureVisible(find.byKey(const Key('onboarding-next')));
-    await tester.tap(find.byKey(const Key('onboarding-next')));
-    await tester.pumpAndSettle();
-    expect(find.byType(OnboardingPage), findsNothing);
-    expect(find.byType(AuthPage), findsOneWidget);
-    expect(find.byType(MainShell), findsNothing);
-    expect(api.reads, 0);
-    expect(await OnboardingPrefs.isCompleted(), isTrue);
-    expect((await WorldSetupStore.draft())!.ready, isTrue);
-    expect(find.text('Your dashboard is ready'), findsOneWidget);
-    expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
-  });
-
   testWidgets(
-    'Skip opens auth and a restart does not replay the introduction',
+    'fresh launch introduces Ask without requiring organization setup',
     (tester) async {
       final api = _Api();
       await tester.pumpWidget(_gate(api));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onboarding-skip')));
+      expect(find.byType(WorldWelcome), findsOneWidget);
+      expect(find.byType(AuthPage), findsNothing);
+      expect(find.byType(MainShell), findsNothing);
+      expect(api.reads, 0);
+      await tester.tap(find.text('Get started'));
+      await tester.pumpAndSettle();
+      expect(find.byType(WorldWelcome), findsNothing);
+      expect(find.byType(AuthPage), findsOneWidget);
+      expect(find.byType(MainShell), findsNothing);
+      expect(api.reads, 0);
+      expect(await OnboardingPrefs.isCompleted(), isTrue);
+      expect(await WorldSetupStore.draft(), isNull);
+      expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Existing-account shortcut opens auth and a restart does not replay the introduction',
+    (tester) async {
+      final api = _Api();
+      await tester.pumpWidget(_gate(api));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('I already have an account'));
       await tester.pumpAndSettle();
       expect(find.byType(AuthPage), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_gate(api, key: const Key('restart')));
       await tester.pumpAndSettle();
-      expect(find.byType(OnboardingPage), findsNothing);
+      expect(find.byType(WorldWelcome), findsNothing);
       expect(find.byType(AuthPage), findsOneWidget);
       expect(api.reads, 0);
     },
@@ -252,30 +241,29 @@ void main() {
     await tester.pumpWidget(_gate(_Api()));
     await tester.pumpAndSettle();
     expect(find.byType(AuthPage), findsOneWidget);
-    expect(find.byType(OnboardingPage), findsNothing);
+    expect(find.byType(WorldWelcome), findsNothing);
   });
 
-  testWidgets(
-    'returning authenticated users keep their session and open their place home',
-    (tester) async {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: 'test@example.test',
-        password: 'test-password',
-      );
-      await tester.pumpWidget(_gate(_Api()));
-      await settleHome(tester);
-      expect(find.byType(InventoryContextHost), findsOneWidget);
-      expect(find.byType(WorkspaceHome), findsOneWidget);
-      expect(find.byType(MainShell), findsNothing);
-      expect(find.byType(OnboardingPage), findsNothing);
-      expect(find.byType(AuthPage), findsNothing);
-      expect(
-        Supabase.instance.client.auth.currentUser?.id,
-        'onboarding-test-account',
-      );
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+  testWidgets('returning authenticated users keep their session and open Ask', (
+    tester,
+  ) async {
+    await Supabase.instance.client.auth.signInWithPassword(
+      email: 'test@example.test',
+      password: 'test-password',
+    );
+    await tester.pumpWidget(_gate(_Api()));
+    await settleHome(tester);
+    expect(find.byType(InventoryContextHost), findsOneWidget);
+    expect(find.byType(WorldShell), findsOneWidget);
+    expect(find.byType(MainShell), findsNothing);
+    expect(find.byType(WorldWelcome), findsNothing);
+    expect(find.byType(AuthPage), findsNothing);
+    expect(
+      Supabase.instance.client.auth.currentUser?.id,
+      'onboarding-test-account',
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets(
     'fresh-install Home tour is not replayed after interrupted restart',
@@ -294,6 +282,11 @@ void main() {
       );
       await tester.pumpWidget(_gate(_Api()));
       await settleHome(tester);
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Workspaces and team tools'));
+      await settleHome(tester);
+      expect(find.byType(WorkspaceHome), findsOneWidget);
       await tester.tap(find.text('My inventory'));
       await settleHome(tester);
       for (var frame = 0; frame < 20; frame++) {
@@ -324,6 +317,11 @@ void main() {
       OnboardingPrefs.justSignedUp = true;
       await OnboardingPrefs.setPostSignupPending(true);
       await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
+      await settleHome(tester);
+      expect(find.byType(WorldShell), findsOneWidget);
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
       await tester.tap(find.text('My inventory'));
@@ -360,9 +358,7 @@ void main() {
     // Inject the SDK stream error without a real network outage.
     // ignore: invalid_use_of_internal_member
     auth.notifyException(
-      AuthRetryableFetchException(
-        message: 'Temporary connection failure',
-      ),
+      AuthRetryableFetchException(message: 'Temporary connection failure'),
     );
     await tester.pump();
     expect(find.text('Reconnect to continue'), findsOneWidget);
@@ -410,9 +406,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(inbox.pending?.kind, kind);
-      expect(find.byType(OnboardingPage), findsOneWidget);
+      expect(find.byType(WorldWelcome), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
-      await tester.tap(find.byKey(const Key('onboarding-skip')));
+      await tester.tap(find.text('I already have an account'));
       await tester.pumpAndSettle();
       expect(find.byType(AuthPage), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);

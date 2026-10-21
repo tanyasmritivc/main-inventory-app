@@ -5,9 +5,11 @@ class ChatItemAction {
     required this.operation,
     required this.status,
     required this.items,
+    this.destinationLabel,
   });
   final String id, inventoryId, operation, status;
   final List<ChatActionItem> items;
+  final String? destinationLabel;
   static final _uuid = RegExp(
     r'^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$',
     caseSensitive: false,
@@ -50,6 +52,9 @@ class ChatItemAction {
       operation: value['operation'],
       status: value['status'],
       items: items,
+      destinationLabel: value['destination_label'] is String
+          ? value['destination_label']
+          : null,
     );
   }
 }

@@ -48,12 +48,14 @@ class AskAnswerContext {
     this.rowsTruncated = false,
     this.photoUrl,
     this.pendingActions = const [],
+    this.worldActions = const [],
   });
   final List<AskSource> sources;
   final List<AskResultRow> rows;
   final bool rowsTruncated;
   final String? photoUrl;
   final List<ChatItemAction> pendingActions;
+  final List<Map<String, dynamic>> worldActions;
 
   factory AskAnswerContext.fromJson(Map<String, dynamic> json) {
     String text(Object? value, [int limit = 200]) {
@@ -129,6 +131,13 @@ class AskAnswerContext {
       }
     }
     return AskAnswerContext(
+      worldActions:
+          (json['world_actions'] is List
+                  ? json['world_actions'] as List
+                  : const [])
+              .whereType<Map>()
+              .map((v) => Map<String, dynamic>.from(v))
+              .toList(),
       pendingActions:
           (json['pending_actions'] is List
                   ? json['pending_actions'] as List

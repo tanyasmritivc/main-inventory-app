@@ -1,3 +1,12 @@
+## October 20 — mobile starts with organization-scoped Ask
+
+Ask, Spaces and More replace the normal dashboard-first entry. Organization is
+an authorization boundary; each inventory write still resolves its explicit
+inventory context. AI structure creation is reviewed and additive, never a
+migration of existing customer contents. Active Chat retains its element and
+in-memory session while navigation chrome changes. Invitation targets remain
+explicit. Production073 precedes the dependent API and build100.
+
 ## October 19 — explicit removal choices and protected Owner
 
 The user confirmed Admins cannot remove the organization Owner. Owner/Admin

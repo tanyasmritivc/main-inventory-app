@@ -1,3 +1,5 @@
+import '../world/world_composer.dart';
+import '../world/world_action_card.dart';
 import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:collection';
@@ -40,8 +42,12 @@ class ChatPage extends StatefulWidget {
     this.pageController,
     this.onOpenDestination,
     this.photoPicker,
+    this.worldHeading,
+    this.onCaptureAction,
   });
 
+  final String? worldHeading;
+  final Future<void> Function(String)? onCaptureAction;
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
   final String? initialMessage;
@@ -181,9 +187,10 @@ class _ChatPageState extends State<ChatPage>
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
 
+  bool _worldHome = true;
   bool _sending = false;
   String? _progress;
-  final _session = _ChatSession();
+  late final _ChatSession _session;
   int _requestGeneration = 0;
 
   // Conversation history
@@ -1093,7 +1100,7 @@ class _ChatPageState extends State<ChatPage>
         );
       }
       widget.onInventoryMutated?.call();
-      unawaited(_prefetchInventorySnapshot());
+      if (widget.api.worldKey == null) unawaited(_prefetchInventorySnapshot());
     } catch (_) {
       // Best-effort only.
     }
@@ -1897,6 +1904,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _prefetchInventorySnapshot() async {
+    if (widget.api.worldKey != null) return;
     try {
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
@@ -1935,7 +1943,9 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
     final photo = _photo;
     final q = text.trim().isEmpty && photo != null
-        ? 'What is in this photo? Do I already have it?'
+        ? (widget.worldHeading == null
+              ? 'What is in this photo? Do I already have it?'
+              : 'Help me organize what is in this photo. Identify the items and ask where I want to save them if the destination is unclear.')
         : text.trim();
     if (q.isEmpty) return;
     if (_pickingPhoto) return;
@@ -1967,6 +1977,7 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
+      _worldHome = false;
       _sending = true;
       _progress = photo == null ? null : 'Reading your photo...';
       _photo = null;
@@ -2115,8 +2126,11 @@ class _ChatPageState extends State<ChatPage>
   @override
   void initState() {
     super.initState();
+    _session = widget.api.worldKey == null
+        ? _ChatSession()
+        : _ChatSession._internal();
     _controller = TextEditingController();
-    unawaited(_speech.initialize());
+    if (widget.api.worldKey == null) unawaited(_speech.initialize());
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2277,6 +2291,7 @@ class _ChatPageState extends State<ChatPage>
         }
       }
       setState(() {
+        _worldHome = false;
         _session.messages = msgs;
         _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
@@ -2641,7 +2656,10 @@ class _ChatPageState extends State<ChatPage>
 
   Widget _buildBack() => IconButton(
     tooltip: 'Back',
-    onPressed: widget.onBack,
+    onPressed: () {
+      if (widget.worldHeading != null) setState(() => _worldHome = true);
+      widget.onBack?.call();
+    },
     icon: Icon(
       Icons.arrow_back_ios_new_rounded,
       size: 20,
@@ -2650,17 +2668,22 @@ class _ChatPageState extends State<ChatPage>
   );
 
   Widget _buildEmptyState() => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 16),
+    padding: EdgeInsets.symmetric(
+      vertical: widget.worldHeading == null ? 64 : 22,
+      horizontal: 16,
+    ),
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 320),
-        child: AppText(
-          'What would you like to know?',
+        child: Text(
+          widget.worldHeading ?? 'What would you like to know?',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textPrimary(context),
-            fontSize: 22,
-            fontWeight: FontWeight.w500,
+            fontSize: widget.worldHeading == null ? 22 : 28,
+            fontWeight: widget.worldHeading == null
+                ? FontWeight.w500
+                : FontWeight.w600,
             height: 1.25,
           ),
         ),
@@ -2668,30 +2691,64 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
-  Future<void> _attachPhoto() async {
-    if (_sending || _pickingPhoto) return;
-    final generation = _requestGeneration;
-    final owner = Supabase.instance.client.auth.currentUser?.id;
-    final camera = await showModalBottomSheet<bool>(
+  Future<void> _worldAttachmentMenu() async {
+    final selected = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
-      builder: (context) => SafeArea(
+      useSafeArea: true,
+      builder: (context) => SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: const AppText('Take photo'),
-              onTap: () => Navigator.pop(context, true),
-            ),
-            ListTile(
-              title: const AppText('Choose photo'),
-              onTap: () => Navigator.pop(context, false),
-            ),
+            for (final choice in const [
+              ('camera', Icons.camera_alt_outlined, 'Take photo'),
+              ('library', Icons.photo_library_outlined, 'Choose photos'),
+              ('barcode', Icons.qr_code_scanner, 'Scan barcode'),
+              ('spreadsheet', Icons.table_chart_outlined, 'Import spreadsheet'),
+            ])
+              ListTile(
+                leading: Icon(choice.$2),
+                title: Text(choice.$3),
+                onTap: () => Navigator.pop(context, choice.$1),
+              ),
           ],
         ),
       ),
     );
+    if (!mounted || selected == null) return;
+    if (selected == 'camera' || selected == 'library') {
+      await _attachPhoto(source: selected == 'camera');
+    } else {
+      await widget.onCaptureAction?.call(selected);
+    }
+  }
+
+  Future<void> _attachPhoto({bool? source}) async {
+    if (_sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    final camera =
+        source ??
+        await showModalBottomSheet<bool>(
+          context: context,
+          showDragHandle: true,
+          backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const AppText('Take photo'),
+                  onTap: () => Navigator.pop(context, true),
+                ),
+                ListTile(
+                  title: const AppText('Choose photo'),
+                  onTap: () => Navigator.pop(context, false),
+                ),
+              ],
+            ),
+          ),
+        );
     if (camera == null || !mounted || generation != _requestGeneration) return;
     setState(() => _pickingPhoto = true);
     try {
@@ -2761,6 +2818,7 @@ class _ChatPageState extends State<ChatPage>
         }
         _session.messages[i] = message.copyWith(
           answerContext: AskAnswerContext(
+            worldActions: data.worldActions,
             sources: data.sources,
             rows: data.rows,
             rowsTruncated: data.rowsTruncated,
@@ -2802,7 +2860,9 @@ class _ChatPageState extends State<ChatPage>
     _completePresentation(index, null, canonical: text);
   }
 
-  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) =>
+  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
         answer: isTyping
@@ -2822,7 +2882,86 @@ class _ChatPageState extends State<ChatPage>
                     1
             ? null
             : () => unawaited(_openNavHint(message.navHint!)),
+      ),
+      if (!isTyping)
+        for (final action
+            in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])
+          WorldActionCard(
+            key: ValueKey(action['id']),
+            api: widget.api,
+            action: action,
+            onSaved: widget.onInventoryMutated,
+            onChanged: (updated) {
+              action.clear();
+              action.addAll(updated);
+            },
+          ),
+    ],
+  );
+
+  Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
+    builder: (context, bounds) {
+      return SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: bounds.maxHeight),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildEmptyState(),
+                    const SizedBox(height: 12),
+                    if (_photo != null)
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.memory(
+                              _photo!.bytes,
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  const Icon(Icons.image_outlined),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(child: Text('Photo attached')),
+                          IconButton(
+                            tooltip: 'Remove photo',
+                            onPressed: () => setState(() => _photo = null),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    WorldComposer(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      onChanged: (_) => setState(() {}),
+                      onAttach: _sending || _pickingPhoto
+                          ? null
+                          : _worldAttachmentMenu,
+                      onVoice: _sending ? null : _toggleListening,
+                      onSend: canSend
+                          ? () => unawaited(_submit(_controller.text))
+                          : null,
+                      busy: _sending && !_canQueueFollowUp,
+                      listening: _isListening,
+                      compact: compact,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       );
+    },
+  );
 
   Widget _messageEntrance(_ChatMessage message, Widget child) {
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
@@ -2850,10 +2989,17 @@ class _ChatPageState extends State<ChatPage>
         (_controller.text.trim().isNotEmpty || _photo != null) &&
         (!_sending || _canQueueFollowUp);
 
+    if (_historyOpen) return Scaffold(body: _buildHistoryPanel());
+    if (widget.worldHeading != null &&
+        (_worldHome || _session.messages.isEmpty)) {
+      return _worldLanding(canSend, keyboardVisible || compactComposer);
+    }
     return Scaffold(
       // MainShell already resizes its PageView for the keyboard.
       resizeToAvoidBottomInset: !widget.inPageView,
-      backgroundColor: AppTheme.adaptive(context, const Color(0xFF09090B)),
+      backgroundColor: widget.worldHeading != null
+          ? Colors.transparent
+          : AppTheme.adaptive(context, const Color(0xFF09090B)),
 
       body: Container(
         color: Colors.transparent,
@@ -2867,54 +3013,62 @@ class _ChatPageState extends State<ChatPage>
           ),
           child: Column(
             children: [
-              if (_session.messages.isNotEmpty) ...[
+              if (_session.messages.isNotEmpty &&
+                  (widget.worldHeading == null || !_worldHome)) ...[
                 _buildHeader(),
                 const SizedBox(height: 12),
               ],
-              Expanded(
-                child: ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.only(top: 4, bottom: 12),
-                  itemCount: _session.messages.isEmpty
-                      ? 1
-                      : _session.messages.length,
-                  separatorBuilder: (context, index) {
-                    final curr = _session.messages[index];
-                    final next = _session.messages[index + 1];
-                    return SizedBox(height: curr.role == next.role ? 12 : 8);
-                  },
-                  itemBuilder: (context, index) {
-                    if (_session.messages.isEmpty) return _buildEmptyState();
-                    final messageIndex = index;
-                    final m = _session.messages[messageIndex];
-                    final isUser = m.role == 'user';
-                    final isTyping =
-                        !isUser &&
-                        (m.isStreaming ||
-                            messageIndex == _fakeTypingAssistantIndex ||
-                            m.content == 'Typing…' ||
-                            m.content == 'Thinking…' ||
-                            m.content == 'Thinking...');
-                    if (!isUser) {
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty))
+                const Spacer(flex: 2),
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty))
+                _buildEmptyState()
+              else
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(top: 4, bottom: 12),
+                    itemCount: _session.messages.isEmpty
+                        ? 1
+                        : _session.messages.length,
+                    separatorBuilder: (context, index) {
+                      final curr = _session.messages[index];
+                      final next = _session.messages[index + 1];
+                      return SizedBox(height: curr.role == next.role ? 12 : 8);
+                    },
+                    itemBuilder: (context, index) {
+                      if (_session.messages.isEmpty) return _buildEmptyState();
+                      final messageIndex = index;
+                      final m = _session.messages[messageIndex];
+                      final isUser = m.role == 'user';
+                      final isTyping =
+                          !isUser &&
+                          (m.isStreaming ||
+                              messageIndex == _fakeTypingAssistantIndex ||
+                              m.content == 'Typing…' ||
+                              m.content == 'Thinking…' ||
+                              m.content == 'Thinking...');
+                      if (!isUser) {
+                        return _messageEntrance(
+                          m,
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: _buildAssistantMessage(m, isTyping),
+                          ),
+                        );
+                      }
                       return _messageEntrance(
                         m,
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildAssistantMessage(m, isTyping),
+                        AskQuestionCard(
+                          question: m.content,
+                          photoBytes: m.photo?.bytes,
+                          photoUrl: m.photoUrl,
                         ),
                       );
-                    }
-                    return _messageEntrance(
-                      m,
-                      AskQuestionCard(
-                        question: m.content,
-                        photoBytes: m.photo?.bytes,
-                        photoUrl: m.photoUrl,
-                      ),
-                    );
-                  },
+                    },
+                  ),
                 ),
-              ),
               if (_sending &&
                   _progress != null &&
                   !_session.messages.any((message) => message.isStreaming)) ...[
@@ -2977,146 +3131,187 @@ class _ChatPageState extends State<ChatPage>
                     ],
                   ),
                 ),
-              Container(
-                constraints: const BoxConstraints(
-                  minHeight: 48,
-                  maxHeight: 116,
-                ),
-                padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(context, const Color(0xFF171719)),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: 'Attach photo',
-                      onPressed: _sending || _pickingPhoto
-                          ? null
-                          : _attachPhoto,
-                      icon: _pickingPhoto
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                              ),
-                            )
-                          : Icon(
-                              Icons.add_rounded,
-                              color: _sending
-                                  ? AppTheme.textSecondary(context)
-                                  : AppTheme.accentForeground(context),
-                              size: 22,
-                            ),
+              if (widget.worldHeading != null)
+                WorldComposer(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (_) => setState(() {}),
+                  onAttach: _sending || _pickingPhoto
+                      ? null
+                      : _worldAttachmentMenu,
+                  onVoice: _sending ? null : _toggleListening,
+                  onSend: canSend
+                      ? () => unawaited(_submit(_controller.text))
+                      : null,
+                  busy: _sending && !_canQueueFollowUp,
+                  listening: _isListening,
+                  compact: keyboardVisible || compactComposer || !_worldHome,
+                )
+              else
+                Container(
+                  constraints: const BoxConstraints(
+                    minHeight: 48,
+                    maxHeight: 150,
+                  ),
+                  padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0xFF171719)),
+                    borderRadius: BorderRadius.circular(
+                      widget.worldHeading != null ? 28 : 18,
                     ),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        minLines: 1,
-                        maxLines: compactComposer ? 1 : 4,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        onChanged: (_) => setState(() {}),
-                        style: AppTypography.bodyStyleOf(
-                          context,
-                          TextStyle(
-                            color: AppTheme.foreground(context, Colors.white),
-                            fontSize: 16,
-                          ),
-                        ),
-                        decoration: InputDecoration(
-                          hintText: compactComposer ? 'Ask…' : 'Ask a question',
-                          hintMaxLines: 1,
-                          isDense: true,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          contentPadding: EdgeInsets.zero,
-                          hintStyle: AppTypography.bodyStyleOf(
-                            context,
-                            TextStyle(
-                              fontSize: 16,
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0xFF636366),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: .08),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 38,
-                        height: 38,
-                      ),
-                      icon: Icon(
-                        _isListening
-                            ? Icons.mic_rounded
-                            : Icons.mic_none_rounded,
-                        color: _isListening
-                            ? AppTheme.foreground(
-                                context,
-                                const Color(0xFFF2F2F7),
-                              )
-                            : AppTheme.foreground(context, Colors.white38),
-                        size: 21,
-                      ),
-                      onPressed: _toggleListening,
-                    ),
-                    GestureDetector(
-                      onTap: canSend
-                          ? () => unawaited(_submit(_controller.text))
-                          : null,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _sending && !_canQueueFollowUp
-                              ? AppTheme.adaptive(
-                                  context,
-                                  const Color(0xFF2C2C2E),
-                                )
-                              : canSend
-                              ? AppTheme.action
-                              : AppTheme.adaptive(
-                                  context,
-                                  const Color(0xFF2C2C2E),
-                                ),
-                        ),
-                        child: _sending && !_canQueueFollowUp
-                            ? Padding(
-                                padding: EdgeInsets.all(9),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: widget.worldHeading != null
+                            ? 'Capture or attach'
+                            : 'Attach photo',
+                        onPressed: _sending || _pickingPhoto
+                            ? null
+                            : widget.worldHeading != null
+                            ? _worldAttachmentMenu
+                            : _attachPhoto,
+                        icon: _pickingPhoto
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 1.7,
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    Color(0xFF8E8E93),
-                                  ),
+                                  strokeWidth: 1.5,
                                 ),
                               )
                             : Icon(
-                                Icons.arrow_upward_rounded,
-                                color: canSend
-                                    ? AppTheme.onAction
-                                    : AppTheme.foreground(
-                                        context,
-                                        const Color(0xFF636366),
-                                      ),
-                                size: 20,
+                                Icons.add_rounded,
+                                color: _sending
+                                    ? AppTheme.textSecondary(context)
+                                    : AppTheme.accentForeground(context),
+                                size: 22,
                               ),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          minLines:
+                              widget.worldHeading != null &&
+                                  (_worldHome || _session.messages.isEmpty) &&
+                                  !keyboardVisible &&
+                                  !compactComposer
+                              ? 3
+                              : 1,
+                          maxLines: compactComposer ? 1 : 4,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          onChanged: (_) => setState(() {}),
+                          style: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 16,
+                            ),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: compactComposer
+                                ? 'Ask...'
+                                : widget.worldHeading != null
+                                ? 'Describe your world...'
+                                : 'Ask a question',
+                            hintMaxLines: 1,
+                            isDense: true,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.zero,
+                            hintStyle: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                fontSize: 16,
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFF636366),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 38,
+                          height: 38,
+                        ),
+                        icon: Icon(
+                          _isListening
+                              ? Icons.mic_rounded
+                              : Icons.mic_none_rounded,
+                          color: _isListening
+                              ? AppTheme.foreground(
+                                  context,
+                                  const Color(0xFFF2F2F7),
+                                )
+                              : AppTheme.foreground(context, Colors.white38),
+                          size: 21,
+                        ),
+                        onPressed: _toggleListening,
+                      ),
+                      GestureDetector(
+                        onTap: canSend
+                            ? () => unawaited(_submit(_controller.text))
+                            : null,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _sending && !_canQueueFollowUp
+                                ? AppTheme.adaptive(
+                                    context,
+                                    const Color(0xFF2C2C2E),
+                                  )
+                                : canSend
+                                ? AppTheme.action
+                                : AppTheme.adaptive(
+                                    context,
+                                    const Color(0xFF2C2C2E),
+                                  ),
+                          ),
+                          child: _sending && !_canQueueFollowUp
+                              ? Padding(
+                                  padding: EdgeInsets.all(9),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.7,
+                                    color: AppTheme.adaptive(
+                                      context,
+                                      Color(0xFF8E8E93),
+                                    ),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.arrow_upward_rounded,
+                                  color: canSend
+                                      ? AppTheme.onAction
+                                      : AppTheme.foreground(
+                                          context,
+                                          const Color(0xFF636366),
+                                        ),
+                                  size: 20,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty))
+                const Spacer(flex: 3),
             ],
           ),
         ),
