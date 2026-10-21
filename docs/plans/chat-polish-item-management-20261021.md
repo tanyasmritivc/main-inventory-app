@@ -1,4 +1,4 @@
-# Chat polish and item management — build103 prepared
+# Chat polish and item management — build103 delivered
 
 ## User-visible changes
 
@@ -60,8 +60,8 @@ remains pending; iPhone Mirroring reported the phone was in use.
 
 Migration074 adds optional tracking columns, a service-only reorder-request table,
 a stock-change trigger and reviewed-action RPCs. Existing customer fields are not
-rewritten. Production has NOT been migrated/deployed for this lane. Explicit
-approval is required by AGENTS.md before074. Deployment must take a fresh backup,
+rewritten. At candidate review, production had not been migrated/deployed. Explicit
+approval was required by AGENTS.md before074; it was subsequently received. Deployment must take a fresh backup,
 verify runtime/schema drift, apply074 transactionally, then overlay only the three
 runtime files with rollback and health/anonymous-access checks. No blind VM pull.
 
@@ -70,7 +70,7 @@ Apple validation must complete before upload. TestFlight upload is authorized by
 standing instruction; stop at Apple's delivery acknowledgment, without polling
 processing. Public submission is outside this task.
 
-## Final release candidate evidence — October21
+## Release candidate evidence — before approval on October21
 
 All five CI gates pass for PR151 (run39560259836), PR152
 (run39560323927) and PR153 (run39560615850), including PostgreSQL, backend,
@@ -86,7 +86,29 @@ Artifacts and13 native previews are preserved in
 
 Guarded deployment preflight passes for exactly three runtime files. The fresh
 backup/replay rehearsal verifies90 original tables with original values unchanged.
-Migration074 remains unapplied and the API remains unchanged. The prepared helper
+At candidate review, migration074 was unapplied and the API unchanged. The prepared helper
 `/tmp/findez-management-publish.py --apply-074` on the VM may run only after explicit
 production migration approval. After activation, upload the already validated103
 IPA; stop at Apple acknowledgment. No public App Store submission.
+
+## October21 — Build103 uploaded; approved074 and API live
+
+The user explicitly approved production074. The guarded activation applied it
+transactionally after a fresh backup and published APIba8a2ce. Three runtime files
+changed;101 unrelated Python files and existing database functions were preserved.
+Health/database return200; anonymous World/private-photo access returns401. No
+customer QA writes. Activation:2026-10-21T07:23:34Z.
+
+Apple validated and acknowledged1.1.0(103), delivery`b5928b86-5154-4874-b1b7-db123c0e2220`.
+Mobile source14285ce, notification parent6aae4a6; PR151/152/153 all pass five CI
+gates.741 Flutter tests, enabled production-config check,20 native iOS cases,
+1236 backend tests plus10subtests, and isolatedSQL/data-preservation rehearsal pass.
+32+32 device executables,24 privacy manifests and signatures verified;13 previews
+and signed artifacts preserved in Documents/FindEZ/AppStore/1.1.0-build103.
+Processing/tester availability was not polled. Physical-device acceptance remains
+pending. No public App Store submission. See docs/plans/chat-polish-item-management-20261021.md.
+
+The final activation receipt is `api-activation.json`; Apple acknowledgment is
+`apple-upload.json` in the preserved build103 directory. Production backup remains
+on the server under `/home/ubuntu/findez-item-management-release-20261021/before-20261021T072331Z`.
+No supplier purchase connection exists: reorder approvals never place purchases.
