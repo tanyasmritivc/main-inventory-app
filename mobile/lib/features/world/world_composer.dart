@@ -56,9 +56,20 @@ class WorldComposer extends StatelessWidget {
                   maxLines: compact ? 2 : 4,
                   textInputAction: TextInputAction.newline,
                   keyboardType: TextInputType.multiline,
-                  style: const TextStyle(fontSize: 18, height: 1.4),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.3,
+                    height: 1.4,
+                  ),
                   decoration: const InputDecoration(
                     hintText: 'Describe, ask, or add a photo…',
+                    hintStyle: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -0.3,
+                      height: 1.4,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,

@@ -13,7 +13,9 @@ class OrganizationPill extends StatefulWidget {
     required this.id,
     required this.name,
     required this.onSelected,
+    this.labelStyle,
   });
+  final TextStyle? labelStyle;
   final ApiClient api;
   final String? id;
   final String name;
@@ -242,10 +244,9 @@ class _OrganizationPillState extends State<OrganizationPill> {
                 widget.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style:
+                    widget.labelStyle ??
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(width: 6),

@@ -1,3 +1,11 @@
+## October20 — Ask typography correction in progress
+
+User requested the reference font after testing100. Mobile-only lighter native
+iOS typography, regular composer and below-route weight policy implemented on
+fix/mobile-ask-typography-20261020.35 targeted tests pass; analysis clean. Native
+visual checks, CI and signed1.1.0(101) delivery are in progress. No API/schema/data
+changes. See `docs/plans/ask-typography-20261020.md`.
+
 ## October 20 — Ask-first 1.1.0 (100) delivered
 
 Ask/Spaces/More, subtle peach glass controls, organization-wide private Chat and
