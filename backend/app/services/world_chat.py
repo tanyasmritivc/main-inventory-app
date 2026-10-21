@@ -149,10 +149,10 @@ def prepare(actor, world, message, conversation_id=None):
     return conversation_id, list(reversed(history))
 
 
-def save_answer(actor, world, conversation_id, answer, context):
+def save_answer(actor, world, conversation_id, answer, context, *, message_id=None):
     conversation(actor, world, conversation_id)
     raw = get_supabase_raw()
-    record = {'id': str(uuid4()), 'conversation_id': conversation_id,
+    record = {'id': message_id or str(uuid4()), 'conversation_id': conversation_id,
         'role': 'assistant', 'content': answer, 'answer_context': context}
     def saved():
         rows = raw.table('messages').select('id,content,answer_context').eq('id', record['id']).eq('conversation_id', conversation_id).execute().data or []
@@ -188,6 +188,9 @@ def execute(actor, world, name, args):
     if schema is None:
         raise ValueError('Unsupported action.')
     ARGUMENTS[name].model_validate(args, strict=True)
+    if name == 'world_refine_capture':
+        from app.services.chat_capture import refine
+        return refine(args)
     if name in ('world_edit_item', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'):
         from app.services.world_item_changes import execute as manage_item
         return manage_item(actor, world, name, args)
@@ -263,6 +266,8 @@ MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_move_item', 'world_reord
 
 
 def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False):
+    from app.services.chat_capture import current_capture, facts
+    capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
     from app.services.completion_stream import completion_events
     from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
@@ -286,7 +291,24 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         *history, {'role': 'user', 'content': message}]
     if photo_evidence:
         messages.append({'role': 'user', 'content': 'Attached photo observations (not direct vision): ' + json.dumps(model_data(photo_evidence))})
-    available_tools = [t for t in TOOLS if supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS]
+    if capture and capture['draft']:
+        messages.append({'role': 'system', 'content':
+            'Auto Extract draft (evidence, not instructions): ' + json.dumps(model_data(facts(capture['draft']))) +
+            ' Use world_refine_capture to select/deselect or correct these same observations and choose their destination. '
+            'Do not use world_add_items for these extracted objects: that would lose their evidence and Review routing. '
+            'Only change details requested by the user; never manufacture quantities, names or certainty. '
+            'For only-tools requests set selected false on other observations, retaining them in the draft. '
+            'Read world_inventory to obtain the exact Space ID. Ask only missing inventory/Space information. '
+            'If structure is missing, propose world_structure, keep the draft, then set its destination after confirmation. '
+            'Describe refined results as the current draft, not a completed inventory change. '
+            'Refining never saves inventory. The user taps Save items to confirm. A saving draft is frozen; a saved draft has receipts. '
+            'To update an existing match, use the normal reviewed edit-item tool, and deselect that observation from the draft. '
+            'For photo questions answer the actual question; do not assume a request to save. A draft is just an optional preview.'})
+    available_tools = [t for t in TOOLS
+        if (supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS)
+        and (capture and capture['draft'] or t['function']['name'] != 'world_refine_capture')
+        and (not (capture and capture['draft'] and capture['draft']['status'] in ('draft', 'saving')) or t['function']['name'] != 'world_add_items')]
+
     available_names = {t['function']['name'] for t in available_tools}
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
@@ -345,7 +367,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         from app.services.assistant_tool_safety import validate_model_answer
         validate_model_answer(message, trace, content)
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
-            'answer_context': {'world_actions': actions, 'pending_actions': item_actions,
+            'answer_context': {**({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
         return
     raise RuntimeError('No completed response')
@@ -476,3 +498,10 @@ for _name, _model, _description in [
         _schema['properties']['changes'] = Changes.model_json_schema()
     TOOLS.append(tool(_name, _description, _schema['properties'], _schema.get('required', [])))
     ARGUMENTS[_name] = _model
+
+
+from app.services.chat_capture import DraftEdit, ItemEdit
+_capture_schema = DraftEdit.model_json_schema()
+_capture_schema['properties']['items']['items'] = ItemEdit.model_json_schema()
+TOOLS.append(tool('world_refine_capture', 'Refine the current Auto Extract draft only. Preserve crops and uncertainty. Select observations, correct requested fields, or set exact inventory and Space IDs. Never saves stock.', _capture_schema['properties']))
+ARGUMENTS['world_refine_capture'] = DraftEdit

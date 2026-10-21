@@ -1,3 +1,12 @@
+## October21 — Auto Extract backend prepared, production approval pending
+
+feat/api-chat-auto-extract-20261021 restores full FIND drafts in private chat,
+model refinement and explicit idempotent saves through existing capture/Review.
+1,255 Python tests plus10subtests pass; composed SQL, configured-model synthetic
+probe and fresh isolated restore replay pass.91 tables' existing values unchanged.
+075 only adds private draft-photo authorization; it is not approved or applied.
+See docs/plans/chat-auto-extract-20261021.md. Build104 preparation is in progress.
+
 ## October21 — Build103 uploaded; approved074 and API live
 
 The user explicitly approved production074. The guarded activation applied it

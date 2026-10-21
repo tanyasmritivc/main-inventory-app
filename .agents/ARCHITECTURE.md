@@ -1,3 +1,11 @@
+## October21 capture integration (implementation lane, not yet production)
+
+World chat Auto Extract uses FIND and a canonical messages.answer_context.chat_capture
+draft. Explicit capability negotiation preserves old clients. Draft edits use JSONB
+compare-and-swap; explicit save reuses capture_save and review_queue under a freshly
+authorized inventory scope.075 supplies durable, private draft-image access.
+See docs/plans/chat-auto-extract-20261021.md for activation status.
+
 # Model-written Chat (October 18)
 
 All successful text/photo/file Chat replies are written by the configured model.

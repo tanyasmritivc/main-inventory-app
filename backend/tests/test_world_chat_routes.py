@@ -146,3 +146,51 @@ def test_transport_negotiates_management_card_support(transport, supported):
         response = transport.client.post(f'/worlds/{WORLD}/ai_command', json=payload)
     assert response.status_code == 200
     assert stream.call_args.kwargs['supports_item_management'] is supported
+
+
+def test_capture_is_durable_and_visible_before_model_reply_without_gallery_delay(transport):
+    from app.services import chat_capture as capture
+    out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
+    draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft', 'items': [], 'source_url': 'https://api.test/private.jpg'}
+    def stream(*args, **kwargs):
+        assert capture.current_capture.get()['draft'] == draft
+        yield {'type': 'delta', 'delta': 'Choose a Space.'}
+        yield {'type': 'done', 'assistant_message': 'Choose a Space.', 'conversation_id': CID,
+               'answer_context': {'chat_capture_id': draft['id']}}
+    with patch.object(route, 'check_and_increment_scan'), \
+         patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), \
+         patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': []})), \
+         patch.object(capture, 'create', return_value=draft) as create, \
+         patch.object(world, 'photo_matches') as gallery, \
+         patch.object(world, 'stream_turn', side_effect=stream):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'message': 'Auto extract', 'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert response.text.index('"type": "capture"') < response.text.index('"type": "delta"')
+    create.assert_called_once(); gallery.assert_not_called()
+    assert '"type": "done"' in response.text
+    assert 'chat_capture' in response.text
+    assert capture.current_capture.get() is None
+
+
+def test_capture_survives_a_failed_model_reply_after_extraction(transport):
+    from app.services import chat_capture as capture
+    out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
+    draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft', 'items': [], 'source_url': 'https://api.test/private.jpg'}
+    with patch.object(route, 'check_and_increment_scan'), \
+         patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), \
+         patch('app.services.storage.delete_image') as cleanup, \
+         patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': []})), \
+         patch.object(capture, 'create', return_value=draft), \
+         patch.object(world, 'stream_turn', side_effect=RuntimeError('Model unavailable')):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert '"type": "capture"' in response.text and '"type": "error"' in response.text
+    cleanup.assert_not_called()
+
+
+def test_capture_followup_uses_same_conversation_and_missing_capability_is_compatible(transport):
+    from app.services import chat_capture as capture
+    draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft', 'items': [], 'source_url': 'https://api.test/private.jpg'}
+    with patch.object(capture, 'load', return_value={'answer_context': {'chat_capture': draft}}) as load, \
+         patch.object(world, 'stream_turn', return_value=events()):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': 'Only tools', 'conversation_id': CID, 'supports_capture': True})
+    load.assert_called_once_with(ACTOR, WORLD, CID)
+    assert '"type": "done"' in response.text
