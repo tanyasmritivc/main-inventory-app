@@ -171,7 +171,7 @@ def test_capture_is_durable_and_visible_before_model_reply_without_gallery_delay
     assert capture.current_capture.get() is None
 
 
-def test_capture_survives_a_failed_model_reply_after_extraction(transport):
+def test_capture_survives_a_failed_model_reply_after_extraction(transport, caplog):
     from app.services import chat_capture as capture
     out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
     draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft', 'items': [], 'source_url': 'https://api.test/private.jpg'}
@@ -180,10 +180,12 @@ def test_capture_survives_a_failed_model_reply_after_extraction(transport):
          patch('app.services.storage.delete_image') as cleanup, \
          patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': []})), \
          patch.object(capture, 'create', return_value=draft), \
-         patch.object(world, 'stream_turn', side_effect=RuntimeError('Model unavailable')):
+         patch.object(world, 'stream_turn', side_effect=RuntimeError('SECRET provider detail')):
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
     assert '"type": "capture"' in response.text and '"type": "error"' in response.text
     cleanup.assert_not_called()
+    assert 'stage=chat_reply error_type=RuntimeError' in caplog.text
+    assert 'SECRET' not in caplog.text and 'SECRET' not in response.text
 
 
 def test_capture_followup_uses_same_conversation_and_missing_capability_is_compatible(transport):

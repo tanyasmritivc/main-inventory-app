@@ -88,6 +88,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         saved = False
         save_started = False
         matching = None
+        stage = 'load_draft'
         try:
             from app.services.chat_item_actions import use_photo, photo_facts
             from app.services import chat_capture
@@ -97,6 +98,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                         None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid))
             evidence = photo_facts(retained)
             if photo:
+                stage = 'extract_photo'
                 from app.services.storage import upload_image
                 from app.services.find_pipeline import extract_inventory_items_with_find
                 from uuid import uuid4
@@ -119,11 +121,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     yield encode({'type': 'capture', 'conversation_id': cid, 'answer_context': {'chat_capture': draft}})
                 evidence = {**photo_facts(retained), 'saved_photos': await matching if matching else {},
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
+            stage = 'chat_reply'
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
                 async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management)):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
+                        stage = 'save_reply'
                         save_started = True
                         await asyncio.to_thread(world.save_answer, actor, key, cid, event['assistant_message'], event['answer_context'])
                         saved = True
@@ -135,8 +139,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             yield encode({'type': 'error', 'message': 'Your photo allowance has been reached. Check your account settings.'})
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.warning('World chat failed; provider details omitted')
+        except Exception as error:
+            # No exception messages, prompts, URLs, credentials or customer IDs.
+            import traceback
+            frames = traceback.extract_tb(error.__traceback__)
+            location = frames[-1].name if frames else 'unknown'
+            logger.warning('World chat failed stage=%s error_type=%s location=%s',
+                           stage, type(error).__name__, location)
             yield encode({'type': 'error', 'code': 'world_chat_failed', 'message': 'Your request could not be completed. Please try again.'})
         finally:
             if matching is not None:
