@@ -114,6 +114,10 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                 : 'Cancelled',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
+          if (_action.destinationLabel != null) ...[
+            const SizedBox(height: 8),
+            AppText(_action.destinationLabel!),
+          ],
           const SizedBox(height: 12),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 320),

@@ -12,7 +12,7 @@ import 'package:mobile/features/sharing/review_invitation_page.dart';
 import 'package:mobile/features/workspaces/inventory_context_host.dart';
 import 'package:mobile/features/workspaces/invitation_page.dart';
 import 'package:mobile/features/workspaces/organization_pill.dart';
-import 'package:mobile/features/workspaces/workspace_home.dart';
+import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'support/hierarchy_fixture.dart';
 
@@ -203,7 +203,7 @@ void main() {
             expect(find.byType(MainShell), findsOneWidget);
             expect(f.requests.any((r) => r.path == '/inventories/inv-b'), true);
           } else {
-            expect(find.byType(WorkspaceHome), findsOneWidget);
+            expect(find.byType(WorldShell), findsOneWidget);
             expect(find.text('Original inventory'), findsNothing);
           }
           expect(await LastPlaceStore('actor-a').readOrganization(), 'b');

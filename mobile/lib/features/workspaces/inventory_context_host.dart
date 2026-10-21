@@ -1,3 +1,4 @@
+import '../world/world_shell.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -11,7 +12,6 @@ import '../../core/last_place.dart';
 import '../../core/invitation_destination.dart';
 import '../../core/push_notifications.dart';
 import '../notifications/notifications_page.dart';
-import 'workspace_home.dart';
 import 'organization_pill.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -78,13 +78,30 @@ class _InventoryContextHostState extends State<InventoryContextHost>
       return;
     }
     _initialAttempted = true;
-    unawaited(
-      _open(
-        widget.initialInventoryId!,
-        widget.initialWorkspaceId!,
-        widget.initialOrganizationId,
-      ),
-    );
+    // Honor any setup already saved by an older build, then land in Ask.
+    // Deep links still use _consumeInvitation and explicitly open their target.
+    unawaited(_acknowledgeWorldLanding());
+  }
+
+  Future<void> _acknowledgeWorldLanding() async {
+    try {
+      final data = await _places.api.collaboration(
+        '/inventories/${widget.initialInventoryId}',
+      );
+      final inventory = data['inventory'] as Map;
+      if (inventory['inventory_id'] != widget.initialInventoryId ||
+          (inventory['workspace'] as Map)['workspace_id'] !=
+              widget.initialWorkspaceId ||
+          (inventory['workspace'] as Map)['organization_id'] !=
+              widget.initialOrganizationId) {
+        return;
+      }
+      if (!mounted) return;
+      _initialOpened = true;
+      await _acknowledgeInitial();
+    } catch (_) {
+      // Retain the setup receipt for a later retry; never create it again.
+    }
   }
 
   Future<void> _startPlaces() async {
@@ -358,7 +375,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
         builder: (context) {
           if (selected == null || api == null) {
             if (!widget.pickOnly) {
-              return WorkspaceHome(session: _places, onOpenInventory: _open);
+              return WorldShell(session: _places, onOpenInventory: _open);
             }
             return HierarchyPage(
               api: _session.directoryApi,

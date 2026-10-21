@@ -52,6 +52,7 @@ class ApiClient {
     required String baseUrl,
     dio.Dio? httpClient,
     this.inventoryContext,
+    this.worldKey,
     String? boundAccount,
     bool Function()? isCurrent,
   }) : _dio =
@@ -73,6 +74,7 @@ class ApiClient {
           try {
             assertCurrentContext();
             final path = options.path;
+            if (worldKey != null) options.path = inventoryPath(path);
             if (inventoryContext != null && _inventoryRoutes.hasMatch(path)) {
               if (options.method == 'DELETE' &&
                   path.startsWith('/spaces/') &&
@@ -149,6 +151,7 @@ class ApiClient {
        _teamId = teamId,
        _teamSpaceId = spaceId,
        inventoryContext = source.inventoryContext,
+       worldKey = source.worldKey,
        _boundAccount = source._boundAccount,
        _isCurrent = source._isCurrent;
 
@@ -172,6 +175,20 @@ class ApiClient {
     boundAccount: account,
   );
 
+  factory ApiClient.forWorld(
+    ApiClient source,
+    String world, {
+    required bool Function() isCurrent,
+  }) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    worldKey: world,
+    boundAccount: source.accountId,
+    isCurrent: isCurrent,
+  );
+
+  final String? worldKey;
   final InventoryContext? inventoryContext;
   final String? _boundAccount;
   final bool Function()? _isCurrent;
@@ -180,7 +197,7 @@ class ApiClient {
       inventoryContext == null ||
       ['owner', 'admin'].contains(inventoryContext!.role);
   String get cacheKey => inventoryContext == null
-      ? 'legacy'
+      ? (worldKey == null ? 'legacy' : '$accountId:world:$worldKey')
       : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
   static final _inventoryRoutes = RegExp(
     r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)',
@@ -211,6 +228,12 @@ class ApiClient {
 
   String inventoryPath(String path) {
     assertCurrentContext();
+    if (worldKey != null &&
+        RegExp(
+          r'^/(?:ai_command|ai_photo_question|conversations)(?:[/?]|$)',
+        ).hasMatch(path)) {
+      return '/worlds/${Uri.encodeComponent(worldKey!)}$path';
+    }
     return inventoryContext != null && _inventoryRoutes.hasMatch(path)
         ? '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}$path'
         : path;
@@ -970,8 +993,9 @@ class ApiClient {
     dio.CancelToken? cancelToken,
   }) async {
     assertCurrentContext();
-    if (inventoryContext == null ||
-        inventoryContext!.inventoryId != action.inventoryId) {
+    if (worldKey == null &&
+        (inventoryContext == null ||
+            inventoryContext!.inventoryId != action.inventoryId)) {
       throw const AskRequestException(
         'Open the inventory containing this action before continuing.',
       );
@@ -985,7 +1009,9 @@ class ApiClient {
       );
     }
     final response = await _dio.post<Map<String, dynamic>>(
-      '/ai_actions/${action.id}',
+      worldKey == null
+          ? '/ai_actions/${action.id}'
+          : '/worlds/$worldKey/inventories/${action.inventoryId}/ai_actions/${action.id}',
       data: {'decision': decision},
       options: _authOptions().copyWith(
         receiveTimeout: const Duration(seconds: 60),

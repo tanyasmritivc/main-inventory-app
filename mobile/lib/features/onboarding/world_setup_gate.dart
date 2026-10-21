@@ -139,7 +139,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Getting your dashboard ready...'),
+                Text('Getting your world ready...'),
               ],
             ),
           ),

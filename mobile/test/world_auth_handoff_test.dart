@@ -13,6 +13,7 @@ import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/shell/main_shell.dart';
+import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
 import 'package:mobile/main.dart';
 
@@ -316,7 +317,7 @@ void main() {
 
   for (final signup in [false, true]) {
     testWidgets(
-      '${signup ? 'signup' : 'sign-in'} provisions through existing HTTP routes and opens the inventory dashboard',
+      '${signup ? 'signup' : 'sign-in'} preserves prepared setup through existing HTTP routes and opens Ask',
       (tester) async {
         final transport = await launch(
           tester,
@@ -345,7 +346,8 @@ void main() {
                   '/inventory-workspaces/$workspaceId/inventories',
                 ],
         );
-        expect(find.byType(MainShell), findsOneWidget);
+        expect(find.byType(MainShell), findsNothing);
+        expect(find.byType(WorldShell), findsOneWidget);
         expect(find.byType(WorkspaceHome), findsNothing);
         expect(find.byType(AuthPage), findsNothing);
         expect(await WorldSetupStore.draft(), isNull);
@@ -353,16 +355,16 @@ void main() {
           (await SharedPreferences.getInstance()).getString(
             'findez.active-inventory:$actor',
           ),
-          inventoryId,
+          isNull,
         );
         tester.platformDispatcher.textScaleFactorTestValue = 3.2;
         await tester.pump();
         expect(tester.takeException(), isNull);
         tester.platformDispatcher.clearTextScaleFactorTestValue();
         await tester.pump();
-        await tester.tap(
-          find.widgetWithText(TextButton, signup ? 'Tools' : 'Hardware'),
-        );
+        await tester.tap(find.text('More'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Workspaces and team tools'));
         await settle(tester);
         expect(find.byType(WorkspaceHome), findsOneWidget);
         await tester.tap(find.text(signup ? 'Tools' : 'Hardware'));
@@ -379,7 +381,7 @@ void main() {
         await tester.tap(find.text('Personal').last);
         await settle(tester);
         expect(find.byType(MainShell), findsNothing);
-        expect(find.byType(WorkspaceHome), findsOneWidget);
+        expect(find.byType(WorldShell), findsOneWidget);
         expect(
           find.bySemanticsLabel('Switch organization. Current: Personal'),
           findsOneWidget,
@@ -406,7 +408,8 @@ void main() {
         await tester.tap(choice);
         await settle(tester);
         expect(transport.posts.length, add ? 3 : 0);
-        expect(find.byType(MainShell), add ? findsOneWidget : findsNothing);
+        expect(find.byType(MainShell), findsNothing);
+        expect(find.byType(WorldShell), findsOneWidget);
         expect(await WorldSetupStore.draft(), isNull);
         expect(
           (await SharedPreferences.getInstance()).containsKey(
@@ -455,7 +458,7 @@ void main() {
       expect(transport.posts, isEmpty);
       await submit(tester, 'Sign in');
       expect(transport.posts.length, 3);
-      expect(find.byType(MainShell), findsOneWidget);
+      expect(find.byType(WorldShell), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       Supabase.instance.client.auth.stopAutoRefresh();

@@ -1,3 +1,13 @@
+## October 20 — Ask-first mobile build 100 candidate
+
+Implemented on feat/mobile-ask-world-20261020: organization-wide Ask landing,
+Ask/Spaces/More navigation, capture/voice entry, private history and reviewed
+inventory/Space creation. No web layout or customer data changes. 710 Flutter
+checks plus separately enabled production-config gate pass; analysis is clean.
+14 new native simulator cases pass. Requires companion API and migration073,
+which is NOT authorized or deployed. Signed delivery is in preparation.
+See `docs/plans/ask-world-mobile-20261020.md`.
+
 ## October 20 — simulator audit and beta99 delivered
 
 User requested tests/fixes before App Store submission and allowed Simulator or
