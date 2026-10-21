@@ -23,6 +23,7 @@ class Question(BaseModel):
     conversation_id: UUID | None = None
     supports_item_actions: bool = True
     supports_item_management: bool = False
+    supports_capture: bool = False
 
 
 @router.get('/directory')
@@ -54,6 +55,13 @@ def conversation(world_id: str, conversation_id: UUID, user: AuthenticatedUser =
     for row in rows:
         if row.get('answer_context'):
             row['answer_context'] = refresh_photo_context(row['answer_context'], user.user_id)
+    # Hydrate references with the canonical draft, never a stale saved snapshot.
+    from app.services.chat_capture import load
+    for row in rows:
+        context = row.get('answer_context') or {}
+        capture_id = context.get('chat_capture_id')
+        if capture_id:
+            context['chat_capture'] = load(user.user_id, world.world_key(world_id), str(conversation_id), capture_id)['answer_context']['chat_capture']
     return {'conversation': value, 'messages': rows}
 
 
@@ -68,7 +76,7 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False):
     key = await asyncio.to_thread(world.authorize, actor, key)
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
@@ -82,7 +90,11 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         matching = None
         try:
             from app.services.chat_item_actions import use_photo, photo_facts
-            retained = None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid)
+            from app.services import chat_capture
+            draft_row = await asyncio.to_thread(chat_capture.load, actor, key, cid) if supports_capture and not photo else None
+            draft = draft_row['answer_context']['chat_capture'] if draft_row else None
+            retained = ({'items': [r['item'] for r in draft['items']], 'source_url': draft['source_url']} if draft else
+                        None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid))
             evidence = photo_facts(retained)
             if photo:
                 from app.services.storage import upload_image
@@ -90,7 +102,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                 from uuid import uuid4
                 yield encode({'type': 'status', 'message': 'Reading your photo...'})
                 await asyncio.to_thread(check_and_increment_scan, actor)
-                matching = asyncio.create_task(world.photo_matches(actor, key, photo))
+                matching = None if auto_extract else asyncio.create_task(world.photo_matches(actor, key, photo))
                 stored = await asyncio.to_thread(upload_image, user_id=actor, filename=f'ask-{uuid4().hex}.jpg', content=photo)
                 result = await extract_inventory_items_with_find(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
                 from app.services.item_photos import _storage_path
@@ -100,9 +112,14 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     if item.get('image_url'):
                         clean['crop_path'] = _storage_path(user_id=actor, image_url=item['image_url'])
                     retained['items'].append(clean)
-                evidence = {**photo_facts(retained), 'saved_photos': await matching,
+                if supports_capture:
+                    draft = await asyncio.to_thread(chat_capture.create, actor, key, cid, result.get('items', []), stored.url, result.get('summary'))
+                    # The photo is now referenced by a verified durable draft.
+                    saved = True
+                    yield encode({'type': 'capture', 'conversation_id': cid, 'answer_context': {'chat_capture': draft}})
+                evidence = {**photo_facts(retained), 'saved_photos': await matching if matching else {},
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
-            with use_photo(retained):
+            with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
                 async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management)):
                     if event['type'] == 'done':
                         if stored:
@@ -110,6 +127,8 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                         save_started = True
                         await asyncio.to_thread(world.save_answer, actor, key, cid, event['assistant_message'], event['answer_context'])
                         saved = True
+                        if supports_capture and capture['draft']:
+                            event['answer_context']['chat_capture'] = capture['draft']
                     yield encode(event)
             yield 'data: [DONE]\n\n'
         except (ScanLimitExceeded, TeamSoftCapExceeded):
@@ -137,13 +156,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), user: AuthenticatedUser = Depends(get_current_user)):
     from app.services.item_photos import _jpeg_bytes, MAX_ITEM_PHOTO_BYTES
     raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
     if len(raw) > MAX_ITEM_PHOTO_BYTES:
@@ -152,7 +171,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract)
 
 
 class Decision(BaseModel):
@@ -205,3 +224,44 @@ def item_decision(request: Request, world_id: str, inventory_id: UUID, action_id
         else:
             result = change_action(actor=user.user_id, action_id=str(action_id), decision=body.decision)
     return {'action': result}
+
+
+class CaptureEdit(BaseModel):
+    revision: int = Field(ge=1)
+    changes: dict
+
+
+class CaptureSave(BaseModel):
+    revision: int = Field(ge=1)
+    allow_duplicates: bool = False
+
+
+@router.get('/conversations/{conversation_id}/captures/{capture_id}')
+def capture_draft(world_id: str, conversation_id: UUID, capture_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_capture import load
+    return {'capture': load(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id))['answer_context']['chat_capture']}
+
+
+@router.patch('/conversations/{conversation_id}/captures/{capture_id}')
+@limiter.limit('60/minute')
+def edit_capture(request: Request, world_id: str, conversation_id: UUID, capture_id: UUID, body: CaptureEdit, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_capture import edit, DraftEdit
+    from pydantic import ValidationError
+    try:
+        changes = DraftEdit.model_validate(body.changes)
+    except ValidationError:
+        raise HTTPException(422, 'Check the extracted item details.') from None
+    return {'capture': edit(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id), body.revision, changes)}
+
+
+@router.post('/conversations/{conversation_id}/captures/{capture_id}/save')
+@limiter.limit('20/minute')
+def save_capture(request: Request, world_id: str, conversation_id: UUID, capture_id: UUID, body: CaptureSave, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_capture import save
+    try:
+        return {'capture': save(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id), body.revision, body.allow_duplicates)}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning('Chat capture save unconfirmed; details omitted')
+        raise HTTPException(503, 'Saving could not be confirmed. Refresh and retry this same draft safely.') from None

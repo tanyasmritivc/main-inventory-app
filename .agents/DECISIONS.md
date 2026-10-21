@@ -1,3 +1,11 @@
+## October21 — Auto Extract is a durable chat draft
+
+The + menu exposes Auto Extract first; image-only attachments start FIND. Preserve
+full observation evidence in a canonical private conversation message, refine that
+same draft, and require explicit Save items. Uncertain observations go to Review;
+confirmed items use existing idempotent capture-save. Freeze after save begins so
+retries cannot change destinations or duplicate partially committed records.
+
 ## October 21 — Reviewed management, compact default and direct preferences
 
 The former Small (.9) becomes Default; legacy Small selections retain their
