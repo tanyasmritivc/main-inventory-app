@@ -1,7 +1,8 @@
 # Organization-wide Ask — candidate, October 20, 2026
 
 Published runtime `34af900` after explicit user authorization for migration073.
-The API and schema are live; the companion TestFlight upload is in progress.
+The API and schema are live. Apple acknowledged companion1.1.0(100);
+TestFlight processing and device acceptance remain pending.
 Existing inventory-scoped endpoints remain compatible; the web layout is unchanged.
 
 ## Behavior
