@@ -163,3 +163,14 @@ def test_contexts_are_restored_and_mutations_cannot_escape_conversation(store):
     with c.use_capture(ACTOR, WORLD, CID, make()): assert c.current_capture.get()['cid'] == CID
     assert c.current_capture.get() is None
     with pytest.raises(ValueError): c.refine({'items': []})
+
+
+def test_model_draft_counts_remain_explicit_before_bounded_observations():
+    from app.services.world_chat import model_data
+    from app.services.chat_capture import facts
+    draft = {'id':'capture','revision':1,'status':'draft','items':[
+        {'index':i,'selected':i<21,'item':{'name':f'Object {i}','quantity':1,
+            'scan_evidence':{'notes':'long evidence '*200}}} for i in range(22)]}
+    result = model_data(facts(draft))
+    assert result['observation_count'] == 22
+    assert result['selected_observation_count'] == 21

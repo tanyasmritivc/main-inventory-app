@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 import json
+import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 from app.api.routes.collaboration import organization, organization_overview
@@ -175,6 +176,7 @@ def tool(name, description, properties, required=()):
 TOOLS = [
     tool('world_directory', 'List accessible workspaces and inventories in this organization.', {}),
     tool('world_search', 'Search saved items across this organization. Results include inventory and workspace names. Empty query lists a bounded selection, not a complete stock count.', {'query': {'type': 'string', 'maxLength': 200}}, ['query']),
+    tool('world_spaces', 'List exact Space IDs and names in one inventory to choose a destination. Does not load stock or item photos.', {'inventory_id': {'type': 'string'}}, ['inventory_id']),
     tool('world_inventory', 'Read items and Spaces in one accessible inventory.', {'inventory_id': {'type': 'string'}, 'query': {'type': 'string', 'maxLength': 200}}, ['inventory_id', 'query']),
     tool('world_structure', 'Propose inventories and Spaces for explicit user review. Existing matching names are reused, never moved or overwritten. Specify one workspace_id OR a new workspace_name. Creates no items.', StructurePlan.model_json_schema()['properties'], ['inventories']),
 ]
@@ -202,6 +204,11 @@ def execute(actor, world, name, args):
             result['pending_action']['world'] = world
             result['pending_action']['destination_label'] = inv['workspace']['name'] + ' / ' + inv['name']
             return result
+    if name == 'world_spaces':
+        from app.services.spaces_repo import list_spaces
+        with in_inventory(actor, world, args['inventory_id']) as inv:
+            return {'spaces': [{**space, 'inventory_id': inv['inventory_id']}
+                for space in list_spaces(user_id=inv['owner_user_id'])]}
     if name == 'world_directory':
         return directory(actor, world)
     if name == 'world_structure':
@@ -298,7 +305,10 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Do not use world_add_items for these extracted objects: that would lose their evidence and Review routing. '
             'Only change details requested by the user; never manufacture quantities, names or certainty. '
             'For only-tools requests set selected false on other observations, retaining them in the draft. '
-            'Read world_inventory to obtain the exact Space ID. Ask only missing inventory/Space information. '
+            'Use world_spaces to obtain exact destination Space IDs without loading stock. '
+            'If no inventory was chosen, ask which inventory and Space to use; do not browse stock to choose for the user. '
+            'The extraction is already complete. Do not repeat names, quantities, category counts or an item list unless the user asks; the card displays them. '
+            'Briefly explain the next step and ask only missing destination information. '
             'If structure is missing, propose world_structure, keep the draft, then set its destination after confirmation. '
             'Describe refined results as the current draft, not a completed inventory change. '
             'Refining never saves inventory. The user taps Save items to confirm. A saving draft is frozen; a saved draft has receipts. '
@@ -320,16 +330,33 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             references[link['href']] = link
         if references:
             messages.append({'role': 'system', 'content': 'Verified photo result links: ' + json.dumps(list(references.values()))})
+    retry_available = bool(capture and capture['draft'])
+    repairing = False
+    generation_limit = 1800
     for step in range(9):
-        enabled = step < 8
-        response = gateway_completion(messages=messages, conversation_id=conversation_id,
-            max_tokens=1800, stream=True, **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
-        content, calls = '', []
-        for event in completion_events(response):
-            if event['type'] == 'delta':
-                yield event
-            else:
-                content, calls = event['content'], event['tool_calls']
+        enabled = step < 8 and not repairing
+        # Retry generation only: executed tools and their durable receipts stay in
+        # messages/memo. A transport failure never reruns an inventory mutation.
+        while True:
+            try:
+                response = gateway_completion(messages=messages, conversation_id=conversation_id,
+                    max_tokens=generation_limit, stream=True,
+                    **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
+                content, calls = '', []
+                for event in completion_events(response):
+                    if event['type'] == 'delta':
+                        yield event
+                    else:
+                        content, calls = event['content'], event['tool_calls']
+                if not content.strip() and not calls:
+                    raise RuntimeError('Empty model response')
+                break
+            except (RuntimeError, httpx.HTTPError):
+                if not retry_available:
+                    raise
+                retry_available = False
+                generation_limit = 2400
+                yield {'type': 'reset'}
         if calls:
             yield {'type': 'reset'}
             if not enabled:
@@ -349,7 +376,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                             raise ValueError('Review existing proposals before adding more.')
                         memo[key] = execute(actor, world, call.function.name, args)
                     result = memo[key]
-                    if call.function.name in ('world_search', 'world_inventory', 'world_tracking'):
+                    if call.function.name in ('world_search', 'world_inventory', 'world_spaces', 'world_tracking'):
                         links = resource_links(result)
                         references.update({link['href']: link for link in links})
                         result = {**result, 'resource_links': links}
@@ -365,7 +392,22 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         if not content.strip():
             raise RuntimeError('Empty model response')
         from app.services.assistant_tool_safety import validate_model_answer
-        validate_model_answer(message, trace, content)
+        try:
+            validate_model_answer(message, trace, content)
+        except RuntimeError:
+            if not retry_available or step == 8:
+                raise
+            retry_available = False
+            repairing = True
+            generation_limit = 2400
+            yield {'type': 'reset'}
+            messages.append({'role': 'system', 'content':
+                'The proposed reply claimed a completed action without an inventory receipt. '
+                'Write a corrected concise reply from the tool results above. '
+                'Distinguish the current extraction draft from saved inventory. '
+                'Do not claim anything was saved, added, updated or removed from inventory. '
+                'Ask for missing destination information or explain the explicit Save items step.'})
+            continue
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
             'answer_context': {**({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
@@ -465,6 +507,8 @@ class Arguments(BaseModel):
     model_config = ConfigDict(extra='forbid')
 class Search(Arguments):
     query: str = Field(max_length=200)
+class SpaceInventory(Arguments):
+    inventory_id: str
 class ReadInventory(Search):
     inventory_id: str
 class AddItem(Arguments):
@@ -481,7 +525,7 @@ class DeleteItems(Arguments):
     inventory_id: str
     item_ids: list[str] = Field(min_length=1, max_length=100)
 ARGUMENTS = {'world_directory': Arguments, 'world_search': Search, 'world_inventory': ReadInventory,
-    'world_structure': StructurePlan, 'world_add_items': AddItems, 'world_delete_items': DeleteItems}
+    'world_spaces': SpaceInventory, 'world_structure': StructurePlan, 'world_add_items': AddItems, 'world_delete_items': DeleteItems}
 
 
 from app.services.world_item_changes import Edit, Move, Reorders, DecideReorder, Tracking

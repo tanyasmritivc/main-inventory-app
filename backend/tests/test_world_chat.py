@@ -167,3 +167,81 @@ def test_old_client_cannot_execute_unadvertised_management_tool():
         result = list(w.stream_turn(ACTOR, WORLD, 'Edit this item', [], 'cid'))
     execute.assert_not_called()
     assert not result[-1]['answer_context'].get('item_actions')
+
+
+def test_destination_lookup_does_not_load_large_inventory_stock():
+    space = str(uuid4())
+    with patch.object(w, 'authorize'), patch.object(w, '_inventory', return_value=inventory()), \
+         patch('app.services.spaces_repo.list_spaces', return_value=[{'id': space, 'name': 'Workbench'}]) as read, \
+         patch('app.services.ai_agent._current_items') as stock:
+        result = w.execute(ACTOR, WORLD, 'world_spaces', {'inventory_id': INVENTORY})
+    read.assert_called_once_with(user_id=ACTOR)
+    stock.assert_not_called()
+    assert result['spaces'][0]['id'] == space
+    assert w.resource_links(result)[0]['href'] == f'findez://space/{INVENTORY}/{space}'
+    assert current_inventory.get() is None
+
+
+def test_destination_lookup_rejects_foreign_inventory_before_read():
+    with patch.object(w, 'authorize'), patch.object(w, '_inventory', return_value=inventory(OTHER)), \
+         patch('app.services.spaces_repo.list_spaces') as read:
+        with pytest.raises(HTTPException):
+            w.execute(ACTOR, WORLD, 'world_spaces', {'inventory_id': INVENTORY})
+    read.assert_not_called()
+
+
+def draft_context():
+    from app.services.chat_capture import use_capture
+    return use_capture(ACTOR, WORLD, 'cid', {'id':str(uuid4()),'version':1,
+        'revision':1,'status':'draft','items':[]})
+
+
+def broken_stream():
+    yield completion('Partial reply')
+    raise RuntimeError('PRIVATE model transport details')
+
+
+def test_capture_reply_retries_interrupted_generation_once_and_resets_text():
+    with draft_context(), patch.object(w, 'directory', return_value={}), \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[broken_stream(),completion('Which inventory and Space should I use?')]) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Auto extract', [], 'cid'))
+    assert gateway.call_count == 2
+    assert gateway.call_args.kwargs['max_tokens'] == 2400
+    assert [e['type'] for e in result] == ['delta','reset','delta','done']
+    assert result[-1]['assistant_message'] == 'Which inventory and Space should I use?'
+
+
+def test_capture_reply_retry_never_replays_an_executed_tool():
+    call = NS(id='c', function=NS(name='world_refine_capture', arguments='{}'))
+    with draft_context(), patch.object(w, 'directory', return_value={}), \
+         patch.object(w, 'execute', return_value={'capture_draft':{'status':'draft'},'saved':False}) as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]),broken_stream(),completion('The current draft is ready to review.')]):
+        result = list(w.stream_turn(ACTOR, WORLD, 'Only tools', [], 'cid'))
+    execute.assert_called_once()
+    assert result[-1]['type'] == 'done'
+
+
+def test_capture_reply_second_failure_is_an_error_not_a_fabricated_answer():
+    with draft_context(), patch.object(w, 'directory', return_value={}), \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[broken_stream(),broken_stream()]) as gateway:
+        with pytest.raises(RuntimeError, match='PRIVATE'):
+            list(w.stream_turn(ACTOR, WORLD, 'Auto extract', [], 'cid'))
+    assert gateway.call_count == 2
+
+
+def test_capture_false_save_claim_gets_one_model_correction_without_tools():
+    call = NS(id='c', function=NS(name='world_refine_capture', arguments='{}'))
+    with draft_context(), patch.object(w, 'directory', return_value={}), \
+         patch.object(w, 'execute', return_value={'capture_draft':{'status':'draft'},'saved':False}) as execute, \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]),completion('I saved your items.'),completion('The draft is ready. Choose a destination and tap Save items.')]) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Keep only tools', [], 'cid'))
+    execute.assert_called_once()
+    assert 'tools' not in gateway.call_args.kwargs
+    assert result[-1]['assistant_message'].startswith('The draft is ready.')
+
+
+def test_capture_bad_correction_still_cannot_claim_inventory_write():
+    with draft_context(), patch.object(w, 'directory', return_value={}), \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion('I saved your items.'),completion('I added your items.')]):
+        with pytest.raises(RuntimeError, match='without a confirmed receipt'):
+            list(w.stream_turn(ACTOR, WORLD, 'Add these items', [], 'cid'))
