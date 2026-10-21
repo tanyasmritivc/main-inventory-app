@@ -1,3 +1,13 @@
+## October21 — Build103 validated; migration074 approval pending
+
+PR151/152/153 all pass five CI gates. Mobile14285ce/APIba8a2ce are pushed.
+Signed103 passes Apple validation, platform/privacy/config checks;13 native
+previews preserved. Guarded deployment and isolated90-table restore rehearsal
+pass. Neither074 nor its API runtime has been activated; TestFlight103 has not
+been uploaded. Next step: explicit authorization for production074, then guarded
+activation and standing-authorized TestFlight upload. Physical device acceptance
+remains pending. See docs/plans/chat-polish-item-management-20261021.md.
+
 ## October 21 — Chat polish and reviewed item management prepared
 
 Mobile `fix/mobile-chat-polish-20261020` builds on launch notifications for103.

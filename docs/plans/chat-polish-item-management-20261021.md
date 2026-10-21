@@ -69,3 +69,24 @@ Build103 signed archive, production configuration, privacy/platform checks and
 Apple validation must complete before upload. TestFlight upload is authorized by
 standing instruction; stop at Apple's delivery acknowledgment, without polling
 processing. Public submission is outside this task.
+
+## Final release candidate evidence — October21
+
+All five CI gates pass for PR151 (run39560259836), PR152
+(run39560323927) and PR153 (run39560615850), including PostgreSQL, backend,
+Flutter, web and connectors; Vercel previews pass. Runtime sources are14285ce
+(mobile) andba8a2ce (API), with notification parent6aae4a6.
+
+Signed1.1.0(103) archive/export and strict signing pass;32 archive plus32 exported
+iOS executables,24 privacy manifests and production configuration are verified.
+Apple validation passes. IPA SHA256:
+`f06263705d9976bdd4162ab792a5310430f2a1c10bdf77a27362324491483cb1`.
+Artifacts and13 native previews are preserved in
+`Documents/FindEZ/AppStore/1.1.0-build103`.20 native cases pass.
+
+Guarded deployment preflight passes for exactly three runtime files. The fresh
+backup/replay rehearsal verifies90 original tables with original values unchanged.
+Migration074 remains unapplied and the API remains unchanged. The prepared helper
+`/tmp/findez-management-publish.py --apply-074` on the VM may run only after explicit
+production migration approval. After activation, upload the already validated103
+IPA; stop at Apple acknowledgment. No public App Store submission.
