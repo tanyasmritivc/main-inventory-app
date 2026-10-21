@@ -1,7 +1,7 @@
 # Organization-wide Ask — candidate, October 20, 2026
 
-Implemented on `feat/api-organization-chat-20261020`. Not deployed. Migration
-073 requires explicit production authorization before this API can be published.
+Published runtime `34af900` after explicit user authorization for migration073.
+The API and schema are live; the companion TestFlight upload is in progress.
 Existing inventory-scoped endpoints remain compatible; the web layout is unchanged.
 
 ## Behavior
@@ -52,3 +52,16 @@ Apply reviewed 073 only after authorization and a fresh backup. Then publish onl
 router.py, resource_access.py and the two world_chat.py files while preserving
 unrelated VM overlays. Deploy this API before mobile build 100. Keep 073 on runtime
 rollback. Public App Store build 99 is outside this candidate's scope.
+
+## Approved activation
+
+The user explicitly approved “Apply 073 and deliver TestFlight 100.” A fresh
+private backup preceded the migration and guarded four-file runtime overlay.
+Existing agent-management/approval router extensions and 99 unrelated Python
+files were preserved. API and database health returned200; anonymous world
+directory/history and private-photo requests returned401. No customer QA writes.
+
+All five CI jobs pass in run39543052610 (PR147). Activation receipt and backup:
+`/home/ubuntu/findez-world-release-20261020/activation.json`,
+`/home/ubuntu/findez-world-release-20261020/before-20261021T042849Z`.
+Migration073 stays on runtime rollback. Do not reconstruct/reset the live checkout.
