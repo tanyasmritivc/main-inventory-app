@@ -43,18 +43,34 @@ double _contrast(Color a, Color b) {
 
 void main() {
   test(
-    'first launch defaults to light appearance and system text scaling',
+    'first launch defaults to compact text with system accessibility scaling',
     () async {
       final storage = _Storage();
       final controller = AppearanceController(storage: storage);
       addTearDown(controller.dispose);
       await Future.wait([controller.load(), controller.load()]);
-      expect(storage.reads, 2);
+      expect(storage.reads, 3);
       expect(controller.loaded, isTrue);
       expect(controller.themeMode, ThemeMode.light);
       expect(controller.textSize, AppTextSize.standard);
       const system = _NonlinearScaler();
-      expect(identical(controller.textScaler(system), system), isTrue);
+      expect(controller.textScaler(system).scale(14), closeTo(25.2, .001));
+      expect(controller.textScaler(system).scale(24), closeTo(32.4, .001));
+    },
+  );
+
+  test(
+    'legacy Small becomes Default while larger preferences retain their scale',
+    () async {
+      for (final size in ['small', 'standard', 'large', 'larger']) {
+        final storage = _Storage()
+          ..values[AppearanceController.legacyTextSizeKey] = size;
+        final controller = AppearanceController(storage: storage);
+        await controller.load();
+        expect(controller.textSize.name, size == 'small' ? 'standard' : size);
+        expect(storage.writes, 0);
+        controller.dispose();
+      }
     },
   );
 

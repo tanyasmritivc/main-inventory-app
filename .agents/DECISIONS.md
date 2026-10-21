@@ -1,3 +1,19 @@
+## October 21 — Reviewed management, compact default and direct preferences
+
+The former Small (.9) becomes Default; legacy Small selections retain their
+physical size, and all choices compose with OS accessibility scaling. Organization
+selection appears only on Ask; Spaces/More headings occupy the former header.
+Avatar opens preferences directly. Placeholder typing is idle-only and respects
+reduced motion, focus, drafts, lifecycle and offscreen tabs.
+
+Chat may propose saved-detail edits, moves, tracked price/expiry and reorder rules.
+Every write uses an exact review card and a fresh atomic snapshot/authorization
+check. Reordering creates approval requests; approval never purchases or adds
+stock. Receiving requires another explicit review and is idempotent. Moves retain
+identity/media/history and require destination edit access; existing project
+allocations must be released first. Older clients do not receive advanced tools.
+Production migration074 still requires explicit user approval.
+
 ## 2026-10-20 — Ask iOS notification permission at app opening
 
 The user's explicit request supersedes the former explicit-Enable-only prompt

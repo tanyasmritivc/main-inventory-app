@@ -1,3 +1,4 @@
+import '../review/review_queue_page.dart';
 import '../workspaces/resource_removal.dart';
 import 'package:mobile/core/private_image.dart';
 import '../notifications/notification_bell.dart';
@@ -106,6 +107,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
+  bool _onlyLowQuantity = false;
   late final TextEditingController _spaceSearchController;
   ItemSortOption _sortOption = ItemSortOption.nameAZ;
 
@@ -159,7 +161,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   int _lowCount() {
     var n = 0;
     for (final it in _items) {
-      final thr = _thresholds[it.itemId];
+      final thr = it.reorderEnabled
+          ? it.reorderThreshold
+          : _thresholds[it.itemId];
       if ((thr != null && thr >= 0 && it.quantity <= thr) || it.quantity <= 0) {
         n++;
       }
@@ -464,6 +468,14 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   bool _matchesSpaceSearch(InventoryItem item) {
+    if (_onlyLowQuantity &&
+        item.quantity >
+            ((item.reorderEnabled
+                    ? item.reorderThreshold
+                    : _thresholds[item.itemId]) ??
+                0)) {
+      return false;
+    }
     final q = _spaceSearchQuery.trim().toLowerCase();
     if (q.isEmpty) return true;
     return item.name.toLowerCase().contains(q) ||
@@ -639,10 +651,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         .where((c) => filteredGroups.containsKey(c))
         .toList();
 
-    if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
+    if (filteredCats.isEmpty &&
+        (_spaceSearchQuery.trim().isNotEmpty || _onlyLowQuantity)) {
       return Center(
         child: AppText(
-          'No items match your search',
+          _onlyLowQuantity
+              ? 'No low-quantity items match this view'
+              : 'No items match your search',
           style: TextStyle(
             color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
           ),
@@ -817,7 +832,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          child: _buildProjectsCard(),
+                          child: _buildReviewCard(),
                         ),
                       ],
                     ),
@@ -1071,6 +1086,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   // Empty state or items list
                   if (_items.isEmpty)
                     SliverFillRemaining(
+                      hasScrollBody: false,
                       child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1369,124 +1385,93 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     }
   }
 
-  Widget _buildProjectsCard() => Material(
-    key: TutorialController.projectsCardKey,
+  Widget _buildReviewCard() => Material(
     color: AppTheme.adaptive(context, AppColors.surface),
     borderRadius: BorderRadius.circular(16),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: _showProjectsMenu,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: AppTheme.adaptive(context, AppColors.surface2),
-              child: Icon(
-                Icons.inventory_2_outlined,
-                color: AppTheme.foreground(context, Color(0xFFF2F2F7)),
+    clipBehavior: Clip.antiAlias,
+    child: IntrinsicHeight(
+      child: Row(
+        children: [
+          Expanded(
+            child: _reviewAction(
+              icon: Icons.photo_library_outlined,
+              title: 'Review images',
+              subtitle: 'Captured items',
+              onTap: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => ReviewQueuePage(
+                    api: widget.api,
+                    location: widget.location,
+                    onInventoryMutated: () => _changed = true,
+                  ),
+                ),
               ),
             ),
-            SizedBox(width: 14),
+          ),
+          VerticalDivider(
+            width: 1,
+            indent: 16,
+            endIndent: 16,
+            color: AppTheme.border(context),
+          ),
+          Expanded(
+            child: _reviewAction(
+              icon: Icons.inventory_2_outlined,
+              title: 'Low quantity',
+              subtitle: _onlyLowQuantity
+                  ? 'Showing low · Tap to reset'
+                  : '${_lowCount()} items',
+              onTap: () => setState(() => _onlyLowQuantity = !_onlyLowQuantity),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _reviewAction({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) => InkWell(
+    onTap: onTap,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 72),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 23),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText(
-                    'Projects',
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Colors.white),
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 3),
+                  const SizedBox(height: 3),
                   AppText(
-                    'Build readiness and project kits',
+                    subtitle,
                     style: TextStyle(
-                      color: AppTheme.foreground(context, AppColors.muted),
-                      fontSize: 13,
+                      fontSize: 12,
+                      color: AppTheme.textSecondary(context),
                     ),
                   ),
                 ],
               ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: AppTheme.foreground(context, Colors.white54),
             ),
           ],
         ),
       ),
     ),
   );
-
-  void _showProjectsMenu() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.adaptive(sheetContext, Colors.white24),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                title: AppText(
-                  'Projects',
-                  style: TextStyle(
-                    color: AppTheme.foreground(sheetContext, Colors.white),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                subtitle: AppText(
-                  'Plan a build with the inventory you have',
-                  style: TextStyle(
-                    color: AppTheme.foreground(sheetContext, Colors.white54),
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.fact_check_outlined,
-                  color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
-                ),
-                title: const AppText('Build Readiness'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openBuildReadiness();
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.inventory_2_outlined,
-                  color: AppTheme.foreground(sheetContext, Color(0xFFF2F2F7)),
-                ),
-                title: const AppText('Project Kits'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _openProjectKits();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _FabItem {

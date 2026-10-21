@@ -100,6 +100,7 @@ void main() {
 
   Future<void> open(WidgetTester tester) async {
     await tester.ensureVisible(find.text('Add Item'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Add Item'));
     await tester.pumpAndSettle();
   }

@@ -20,7 +20,13 @@ class ChatItemAction {
         !_uuid.hasMatch(value['id']) ||
         value['inventory_id'] is! String ||
         !_uuid.hasMatch(value['inventory_id']) ||
-        !const ['add', 'delete'].contains(value['operation']) ||
+        !const [
+          'add',
+          'delete',
+          'edit',
+          'move',
+          'reorder',
+        ].contains(value['operation']) ||
         !const [
           'pending',
           'confirmed',
@@ -29,6 +35,12 @@ class ChatItemAction {
         value['items'] is! List) {
       return null;
     }
+    final advanced = const [
+      'edit',
+      'move',
+      'reorder',
+    ].contains(value['operation']);
+    if (advanced && value['version'] != 2) return null;
     final raw = value['items'] as List;
     if (raw.isEmpty || raw.length > 100) return null;
     final items = <ChatActionItem>[];
@@ -42,8 +54,25 @@ class ChatItemAction {
               (item['quantity'] is! int || item['quantity'] < 0))) {
         return null;
       }
+      if (advanced &&
+          (item['details'] is! List ||
+              (item['details'] as List).isEmpty ||
+              (item['details'] as List).any(
+                (v) => v is! String || v.trim().isEmpty,
+              ))) {
+        return null;
+      }
       items.add(
-        ChatActionItem(item['name'], item['quantity'], item['location']),
+        ChatActionItem(
+          item['name'],
+          item['quantity'],
+          item['location'],
+          details:
+              (item['details'] is List ? item['details'] as List : const [])
+                  .whereType<String>()
+                  .take(20)
+                  .toList(),
+        ),
       );
     }
     return ChatItemAction(
@@ -60,7 +89,13 @@ class ChatItemAction {
 }
 
 class ChatActionItem {
-  const ChatActionItem(this.name, this.quantity, this.location);
+  const ChatActionItem(
+    this.name,
+    this.quantity,
+    this.location, {
+    this.details = const [],
+  });
+  final List<String> details;
   final String name, location;
   final int? quantity;
 }

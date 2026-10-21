@@ -41,8 +41,50 @@ class AskResultRow {
   final String? matchBasis;
 }
 
+class AskResourceLink {
+  const AskResourceLink({
+    required this.kind,
+    required this.id,
+    required this.inventoryId,
+    required this.label,
+  });
+  final String kind, id, inventoryId, label;
+  String get href => 'findez://$kind/$inventoryId/$id';
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'id': id,
+    'inventory_id': inventoryId,
+    'label': label,
+    'href': href,
+  };
+  static AskResourceLink? parse(dynamic value) {
+    if (value is! Map) return null;
+    final uuid = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+    if (!['item', 'space'].contains(value['kind']) ||
+        value['id'] is! String ||
+        value['inventory_id'] is! String ||
+        value['label'] is! String ||
+        !uuid.hasMatch(value['id']) ||
+        !uuid.hasMatch(value['inventory_id'])) {
+      return null;
+    }
+    final label = (value['label'] as String).trim();
+    if (label.isEmpty || label.length > 200) return null;
+    final link = AskResourceLink(
+      kind: value['kind'],
+      id: value['id'],
+      inventoryId: value['inventory_id'],
+      label: label,
+    );
+    return value['href'] == link.href ? link : null;
+  }
+}
+
 class AskAnswerContext {
   const AskAnswerContext({
+    this.resourceLinks = const [],
     this.sources = const [],
     this.rows = const [],
     this.rowsTruncated = false,
@@ -50,6 +92,7 @@ class AskAnswerContext {
     this.pendingActions = const [],
     this.worldActions = const [],
   });
+  final List<AskResourceLink> resourceLinks;
   final List<AskSource> sources;
   final List<AskResultRow> rows;
   final bool rowsTruncated;
@@ -131,6 +174,14 @@ class AskAnswerContext {
       }
     }
     return AskAnswerContext(
+      resourceLinks:
+          (json['resource_links'] is List
+                  ? json['resource_links'] as List
+                  : const [])
+              .take(20)
+              .map(AskResourceLink.parse)
+              .whereType<AskResourceLink>()
+              .toList(),
       worldActions:
           (json['world_actions'] is List
                   ? json['world_actions'] as List

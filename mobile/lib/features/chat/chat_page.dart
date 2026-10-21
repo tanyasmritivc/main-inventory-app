@@ -285,7 +285,7 @@ class _ChatPageState extends State<ChatPage>
       _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
       _queuePresentationWords(index, pending.substring(0, splitAt));
     }
-    _presentationIdleTimer = Timer(const Duration(milliseconds: 160), () {
+    _presentationIdleTimer = Timer(const Duration(milliseconds: 48), () {
       if (!mounted) return;
       final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
       if (buffered.isNotEmpty) _queuePresentationWords(index, buffered);
@@ -296,7 +296,7 @@ class _ChatPageState extends State<ChatPage>
     for (final match in RegExp(r'\s+|\S+\s*').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
-    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 36), (
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 24), (
       _,
     ) {
       if (!mounted) return;
@@ -310,7 +310,7 @@ class _ChatPageState extends State<ChatPage>
       final reduced = MediaQuery.disableAnimationsOf(context);
       final count = reduced
           ? _presentationQueue.length
-          : (4 + _presentationQueue.length ~/ 30).clamp(4, 16);
+          : (8 + _presentationQueue.length ~/ 8).clamp(8, 48);
       for (
         var i = 0;
         i < count &&
@@ -1410,7 +1410,7 @@ class _ChatPageState extends State<ChatPage>
     });
     _scrollToBottom(animated: false);
 
-    await Future<void>.delayed(const Duration(milliseconds: 160));
+    await Future<void>.delayed(const Duration(milliseconds: 48));
     if (!mounted) return;
     _fakeTypingAssistantIndex = -1;
     _presentationBuffers[assistantIndex] = StringBuffer(text);
@@ -2928,29 +2928,49 @@ class _ChatPageState extends State<ChatPage>
     ),
   );
 
+  final _attachmentAnchor = GlobalKey();
+
   Future<void> _worldAttachmentMenu() async {
-    final selected = await showModalBottomSheet<String>(
+    final anchor =
+        _attachmentAnchor.currentContext?.findRenderObject() as RenderBox?;
+    final overlay =
+        Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
+    if (anchor == null || overlay == null) return;
+    final origin = anchor.localToGlobal(Offset.zero, ancestor: overlay);
+    final selected = await showMenu<String>(
       context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final choice in const [
-              ('camera', CupertinoIcons.camera, 'Take photo'),
-              ('library', CupertinoIcons.photo_on_rectangle, 'Choose photos'),
-              ('barcode', CupertinoIcons.barcode_viewfinder, 'Scan barcode'),
-              ('spreadsheet', CupertinoIcons.table, 'Import spreadsheet'),
-            ])
-              ListTile(
-                leading: Icon(choice.$2),
-                title: Text(choice.$3),
-                onTap: () => Navigator.pop(context, choice.$1),
-              ),
-          ],
-        ),
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(origin.dx, origin.dy - 216, anchor.size.width, 216),
+        Offset.zero & overlay.size,
       ),
+      constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
+      items: [
+        for (final choice in const [
+          ('camera', CupertinoIcons.camera, 'Take photo'),
+          ('library', CupertinoIcons.photo_on_rectangle, 'Choose photos'),
+          ('barcode', CupertinoIcons.barcode_viewfinder, 'Scan barcode'),
+          ('spreadsheet', CupertinoIcons.table, 'Import spreadsheet'),
+        ])
+          PopupMenuItem<String>(
+            value: choice.$1,
+            height: 48,
+            child: Row(
+              children: [
+                Icon(choice.$2, size: 20),
+                const SizedBox(width: 14),
+                Flexible(
+                  child: Text(
+                    choice.$3,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
     if (!mounted || selected == null) return;
     if (selected == 'camera' || selected == 'library') {
@@ -3056,6 +3076,7 @@ class _ChatPageState extends State<ChatPage>
         _session.messages[i] = message.copyWith(
           answerContext: AskAnswerContext(
             worldActions: data.worldActions,
+            resourceLinks: data.resourceLinks,
             sources: data.sources,
             rows: data.rows,
             rowsTruncated: data.rowsTruncated,
@@ -3111,6 +3132,9 @@ class _ChatPageState extends State<ChatPage>
         animateChunks: message.live,
         api: widget.api,
         onActionResult: _onItemActionResult,
+        onOpenResource: widget.onOpenDestination == null
+            ? null
+            : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
         pendingMessage: _progress ?? 'Checking your things...',
         onOpenSource:
             message.navHint?['type'] != 'project_kit' ||
@@ -3177,6 +3201,7 @@ class _ChatPageState extends State<ChatPage>
                         ],
                       ),
                     WorldComposer(
+                      attachmentKey: _attachmentAnchor,
                       controller: _controller,
                       focusNode: _focusNode,
                       onChanged: (_) => setState(() {}),
@@ -3258,7 +3283,7 @@ class _ChatPageState extends State<ChatPage>
           child: Column(
             children: [
               if (_session.messages.isNotEmpty &&
-                  widget.worldHeading == null) ...[
+                  (widget.worldHeading == null || !_worldHome)) ...[
                 _buildHeader(),
                 const SizedBox(height: 12),
               ],
@@ -3270,83 +3295,50 @@ class _ChatPageState extends State<ChatPage>
                 _buildEmptyState()
               else
                 Expanded(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ListView.separated(
-                          controller: _scrollController,
-                          padding: EdgeInsets.only(
-                            top: widget.worldHeading == null
-                                ? 4
-                                : (MediaQuery.textScalerOf(context).scale(16) *
-                                              1.35 +
-                                          28)
-                                      .clamp(64, 180)
-                                      .toDouble(),
-                            bottom: 16,
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(top: 4, bottom: 16),
+                    itemCount: _session.messages.isEmpty
+                        ? 1
+                        : _session.messages.length,
+                    separatorBuilder: (context, index) {
+                      final curr = _session.messages[index];
+                      final next = _session.messages[index + 1];
+                      return SizedBox(height: curr.role == next.role ? 12 : 8);
+                    },
+                    itemBuilder: (context, index) {
+                      if (_session.messages.isEmpty) {
+                        return _buildEmptyState();
+                      }
+                      final messageIndex = index;
+                      final m = _session.messages[messageIndex];
+                      final isUser = m.role == 'user';
+                      final isTyping =
+                          !isUser &&
+                          (m.isStreaming ||
+                              messageIndex == _fakeTypingAssistantIndex ||
+                              m.content == 'Typing…' ||
+                              m.content == 'Thinking…' ||
+                              m.content == 'Thinking...');
+                      if (!isUser) {
+                        return _messageEntrance(
+                          m,
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: _buildAssistantMessage(m, isTyping),
                           ),
-                          itemCount: _session.messages.isEmpty
-                              ? 1
-                              : _session.messages.length,
-                          separatorBuilder: (context, index) {
-                            final curr = _session.messages[index];
-                            final next = _session.messages[index + 1];
-                            return SizedBox(
-                              height: curr.role == next.role ? 12 : 8,
-                            );
-                          },
-                          itemBuilder: (context, index) {
-                            if (_session.messages.isEmpty) {
-                              return _buildEmptyState();
-                            }
-                            final messageIndex = index;
-                            final m = _session.messages[messageIndex];
-                            final isUser = m.role == 'user';
-                            final isTyping =
-                                !isUser &&
-                                (m.isStreaming ||
-                                    messageIndex == _fakeTypingAssistantIndex ||
-                                    m.content == 'Typing…' ||
-                                    m.content == 'Thinking…' ||
-                                    m.content == 'Thinking...');
-                            if (!isUser) {
-                              return _messageEntrance(
-                                m,
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: _buildAssistantMessage(m, isTyping),
-                                ),
-                              );
-                            }
-                            return _messageEntrance(
-                              m,
-                              AskQuestionCard(
-                                compact: widget.worldHeading != null,
-                                question: m.content,
-                                photoBytes: m.photo?.bytes,
-                                photoUrl: m.photoUrl,
-                              ),
-                            );
-                          },
+                        );
+                      }
+                      return _messageEntrance(
+                        m,
+                        AskQuestionCard(
+                          compact: widget.worldHeading != null,
+                          question: m.content,
+                          photoBytes: m.photo?.bytes,
+                          photoUrl: m.photoUrl,
                         ),
-                      ),
-                      if (widget.worldHeading != null)
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ClipRect(
-                            child: BackdropFilter(
-                              enabled: !MediaQuery.highContrastOf(context),
-                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: _buildHeader(),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               if (_sending &&
@@ -3413,6 +3405,7 @@ class _ChatPageState extends State<ChatPage>
                 ),
               if (widget.worldHeading != null)
                 WorldComposer(
+                  attachmentKey: _attachmentAnchor,
                   controller: _controller,
                   focusNode: _focusNode,
                   onChanged: (_) => setState(() {}),

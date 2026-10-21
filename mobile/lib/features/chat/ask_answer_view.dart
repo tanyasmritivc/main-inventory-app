@@ -107,6 +107,7 @@ class AskAnswerView extends StatefulWidget {
     this.animateChunks = false,
     this.pendingMessage = 'Checking your things...',
     this.onOpenSource,
+    this.onOpenResource,
     this.api,
     this.onActionResult,
     this.refined = false,
@@ -118,6 +119,7 @@ class AskAnswerView extends StatefulWidget {
   final bool animateChunks;
   final String pendingMessage;
   final VoidCallback? onOpenSource;
+  final ValueChanged<AskResourceLink>? onOpenResource;
   final ApiClient? api;
   final ValueChanged<ChatItemActionResult>? onActionResult;
 
@@ -241,6 +243,15 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                   !MediaQuery.disableAnimationsOf(context),
               child: MarkdownBody(
                 data: widget.answer,
+                onTapLink: (text, href, title) {
+                  for (final link
+                      in data?.resourceLinks ?? <AskResourceLink>[]) {
+                    if (href == link.href) {
+                      widget.onOpenResource?.call(link);
+                      return;
+                    }
+                  }
+                },
                 selectable: !widget.isLoading,
                 softLineBreak: true,
                 // Generated images must not trigger arbitrary third-party requests.
@@ -277,6 +288,31 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                   listIndent: 20,
                 ),
               ),
+            ),
+          ),
+        if (!widget.isLoading &&
+            data != null &&
+            widget.onOpenResource != null &&
+            data.resourceLinks.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final link in data.resourceLinks)
+                  ActionChip(
+                    avatar: Icon(
+                      link.kind == 'space'
+                          ? Icons.grid_view_rounded
+                          : Icons.inventory_2_outlined,
+                      size: 16,
+                    ),
+                    label: Text(link.label, overflow: TextOverflow.ellipsis),
+                    tooltip: 'Open ${link.kind}: ${link.label}',
+                    onPressed: () => widget.onOpenResource!(link),
+                  ),
+              ],
             ),
           ),
         if (!widget.isLoading && data != null && widget.api != null)

@@ -181,8 +181,8 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                 ),
                 const SizedBox(height: 8),
                 AppText(
-                  'Default follows your phone. Other sizes adjust it without '
-                  'turning off accessibility scaling.',
+                  'Default uses a compact size. All sizes follow your phone’s '
+                  'accessibility scaling.',
                   style: TextStyle(
                     color: AppTheme.textSecondary(context),
                     fontSize: 12,

@@ -17,9 +17,11 @@ class ReviewQueuePage extends StatefulWidget {
     super.key,
     required this.api,
     this.onInventoryMutated,
+    this.location,
   });
 
   final ApiClient api;
+  final String? location;
   final VoidCallback? onInventoryMutated;
 
   @override
@@ -46,7 +48,14 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     try {
       final result = await widget.api.getReviewItems();
       if (!mounted) return;
-      setState(() => _items = result.items);
+      setState(
+        () => _items = result.items
+            .where(
+              (item) =>
+                  widget.location == null || item.location == widget.location,
+            )
+            .toList(),
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = describeError(error).$1);

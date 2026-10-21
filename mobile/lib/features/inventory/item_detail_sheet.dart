@@ -2016,6 +2016,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 },
               ),
 
+            if (item.unitPrice != null ||
+                item.expiresOn != null ||
+                item.reorderEnabled)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppText(
+                      'Price, expiry and reordering',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+                    if (item.unitPrice != null)
+                      AppText(
+                        'Unit price: ${item.currency ?? ''} ${item.unitPrice}',
+                      ),
+                    if (item.expiresOn != null)
+                      AppText('Expires: ${item.expiresOn}'),
+                    if (item.reorderEnabled)
+                      AppText(
+                        'Request ${item.reorderQuantity} when quantity reaches ${item.reorderThreshold}',
+                      ),
+                    const SizedBox(height: 6),
+                    const AppText(
+                      'Ask Chat to change tracking or review reorder requests.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
             // ── Check Out ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
