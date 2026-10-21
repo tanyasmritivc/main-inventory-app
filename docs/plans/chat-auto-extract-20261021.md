@@ -52,6 +52,10 @@ writes. Interrupted replies preserve the completed capture draft.
 The user explicitly approved075. The guarded publisher activated075/APIe47deb0
 at2026-10-21T23:24:51Z after a fresh private backup, preserving102 unrelated
 Python files and other database functions. Health/database200 and anonymous
-World/private-photo401 pass. No customer QA writes. Mobile104 is preparing for
-signed production delivery. Physical-device camera and TestFlight acceptance
+World/private-photo401 pass. No customer QA writes. Apple validated and acknowledged mobile104, source43a9a39 / PR155, delivery
+90f1ae5e-6571-4476-8647-3bfe62f40fc6. Signed artifacts and17 previews are preserved
+in Documents/FindEZ/AppStore/1.1.0-build104.32+32 device executables,24 privacy
+manifests and signatures passed. Processing/tester availability was not polled. Physical-device camera and TestFlight acceptance
 remain unverified; no public App Store submission.
+
+All five CI gates pass on mobile43a9a39 (run39693439001) and API759f537.
