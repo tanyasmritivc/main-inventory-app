@@ -91,7 +91,9 @@ class AskAnswerContext {
     this.photoUrl,
     this.pendingActions = const [],
     this.worldActions = const [],
+    this.chatCapture,
   });
+  final Map<String, dynamic>? chatCapture;
   final List<AskResourceLink> resourceLinks;
   final List<AskSource> sources;
   final List<AskResultRow> rows;
@@ -174,6 +176,7 @@ class AskAnswerContext {
       }
     }
     return AskAnswerContext(
+      chatCapture: parseChatCapture(json['chat_capture']),
       resourceLinks:
           (json['resource_links'] is List
                   ? json['resource_links'] as List
@@ -208,7 +211,8 @@ class AskAnswerContext {
 }
 
 class AskPhoto {
-  const AskPhoto({required this.bytes});
+  const AskPhoto({required this.bytes, this.autoExtract = false});
+  final bool autoExtract;
   final Uint8List bytes;
   static const maxBytes = 10 * 1024 * 1024;
 }
@@ -255,4 +259,35 @@ String? trustedAskPhotoUrl(
         r'$',
       ).hasMatch(path[6]);
   return legacy || scoped ? value : null;
+}
+
+Map<String, dynamic>? parseChatCapture(dynamic raw) {
+  if (raw is! Map ||
+      raw['version'] != 1 ||
+      raw['id'] is! String ||
+      !RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(raw['id']) ||
+      raw['revision'] is! int ||
+      raw['revision'] < 1 ||
+      !['draft', 'saving', 'saved'].contains(raw['status']) ||
+      raw['items'] is! List ||
+      (raw['items'] as List).length > 200) {
+    return null;
+  }
+  final rows = raw['items'] as List;
+  for (var i = 0; i < rows.length; i++) {
+    final row = rows[i];
+    if (row is! Map ||
+        row['index'] != i ||
+        row['selected'] is! bool ||
+        row['item'] is! Map) {
+      return null;
+    }
+    final item = row['item'] as Map;
+    if (item['name'] is! String ||
+        item['category'] is! String ||
+        item['quantity'] is! int) {
+      return null;
+    }
+  }
+  return Map<String, dynamic>.from(raw);
 }

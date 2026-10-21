@@ -1,3 +1,4 @@
+import 'chat_capture_card.dart';
 import '../world/world_composer.dart';
 import '../world/world_action_card.dart';
 import '../../core/app_theme.dart';
@@ -1944,12 +1945,16 @@ class _ChatPageState extends State<ChatPage>
     return 'Something went wrong. Please try again.';
   }
 
-  Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
+  Future<void> _submit(
+    String text, {
+    bool userAlreadyAdded = false,
+    bool autoExtract = false,
+  }) async {
     final photo = _photo;
     final q = text.trim().isEmpty && photo != null
         ? (widget.worldHeading == null
               ? 'What is in this photo? Do I already have it?'
-              : 'Help me organize what is in this photo. Identify the items and ask where I want to save them if the destination is unclear.')
+              : 'Auto extract the items in this photo. Keep a draft and ask only for any missing destination.')
         : text.trim();
     if (q.isEmpty) return;
     if (_pickingPhoto) return;
@@ -2026,11 +2031,26 @@ class _ChatPageState extends State<ChatPage>
             )
           : widget.api.aiPhotoQuestionStream(
               message: q,
-              photo: photo,
+              photo: AskPhoto(
+                bytes: photo.bytes,
+                autoExtract:
+                    autoExtract ||
+                    (text.trim().isEmpty && widget.api.worldKey != null),
+              ),
               conversationId: _currentConversationId,
             );
       await for (final event in events) {
         if (!mounted || requestGeneration != _requestGeneration) return;
+        if (event.type == 'capture' &&
+            event.answerContext?.chatCapture != null) {
+          _currentConversationId =
+              event.conversationId ?? _currentConversationId;
+          setState(() {
+            _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(answerContext: event.answerContext);
+          });
+        }
         if (event.type == 'reset') {
           _cancelPresentation(assistantIndex);
           setState(
@@ -2067,6 +2087,9 @@ class _ChatPageState extends State<ChatPage>
       _currentConversationId = conversationId ?? _currentConversationId;
       _session.messages[assistantIndex] = _session.messages[assistantIndex]
           .copyWith(answerContext: answerContext);
+      if (answerContext?.chatCapture != null) {
+        _onCaptureChanged(answerContext!.chatCapture!);
+      }
 
       if (mounted) {
         _completePresentation(assistantIndex, hint, canonical: canonical);
@@ -2085,6 +2108,7 @@ class _ChatPageState extends State<ChatPage>
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
+          answerContext: _session.messages[assistantIndex].answerContext,
           content: dioErrMsg.length > 1000
               ? '${dioErrMsg.substring(0, 1000)}...'
               : dioErrMsg,
@@ -2102,6 +2126,7 @@ class _ChatPageState extends State<ChatPage>
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
+          answerContext: _session.messages[assistantIndex].answerContext,
           content: e is AskRequestException
               ? e.message
               : 'Something went wrong. Please try again.',
@@ -2940,12 +2965,13 @@ class _ChatPageState extends State<ChatPage>
     final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
-        Rect.fromLTWH(origin.dx, origin.dy - 216, anchor.size.width, 216),
+        Rect.fromLTWH(origin.dx, origin.dy - 264, anchor.size.width, 264),
         Offset.zero & overlay.size,
       ),
       constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
       items: [
         for (final choice in const [
+          ('auto_extract', CupertinoIcons.sparkles, 'Auto Extract'),
           ('camera', CupertinoIcons.camera, 'Take photo'),
           ('library', CupertinoIcons.photo_on_rectangle, 'Choose photos'),
           ('barcode', CupertinoIcons.barcode_viewfinder, 'Scan barcode'),
@@ -2973,14 +2999,16 @@ class _ChatPageState extends State<ChatPage>
       ],
     );
     if (!mounted || selected == null) return;
-    if (selected == 'camera' || selected == 'library') {
+    if (selected == 'auto_extract') {
+      await _attachPhoto(autoExtract: true);
+    } else if (selected == 'camera' || selected == 'library') {
       await _attachPhoto(source: selected == 'camera');
     } else {
       await widget.onCaptureAction?.call(selected);
     }
   }
 
-  Future<void> _attachPhoto({bool? source}) async {
+  Future<void> _attachPhoto({bool? source, bool autoExtract = false}) async {
     if (_sending || _pickingPhoto) return;
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
@@ -3008,6 +3036,7 @@ class _ChatPageState extends State<ChatPage>
         );
     if (camera == null || !mounted || generation != _requestGeneration) return;
     setState(() => _pickingPhoto = true);
+    var picked = false;
     try {
       AskPhoto? photo;
       if (widget.photoPicker != null) {
@@ -3040,7 +3069,10 @@ class _ChatPageState extends State<ChatPage>
           'Choose a valid photo smaller than 10 MB.',
         );
       }
-      if (photo != null) setState(() => _photo = photo);
+      if (photo != null) {
+        picked = true;
+        setState(() => _photo = photo);
+      }
     } catch (error) {
       if (!mounted || generation != _requestGeneration) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -3057,6 +3089,36 @@ class _ChatPageState extends State<ChatPage>
         setState(() => _pickingPhoto = false);
       }
     }
+    if (picked &&
+        mounted &&
+        generation == _requestGeneration &&
+        widget.api.worldKey != null &&
+        (autoExtract || _controller.text.trim().isEmpty)) {
+      await _submit(_controller.text, autoExtract: true);
+    }
+  }
+
+  void _onCaptureChanged(Map<String, dynamic> updated) {
+    if (!mounted) return;
+    setState(() {
+      for (var i = 0; i < _session.messages.length; i++) {
+        final message = _session.messages[i];
+        final data = message.answerContext;
+        if (data?.chatCapture?['id'] != updated['id']) continue;
+        _session.messages[i] = message.copyWith(
+          answerContext: AskAnswerContext(
+            chatCapture: updated,
+            worldActions: data!.worldActions,
+            resourceLinks: data.resourceLinks,
+            sources: data.sources,
+            rows: data.rows,
+            rowsTruncated: data.rowsTruncated,
+            photoUrl: data.photoUrl,
+            pendingActions: data.pendingActions,
+          ),
+        );
+      }
+    });
   }
 
   void _onItemActionResult(ChatItemActionResult result) {
@@ -3075,6 +3137,7 @@ class _ChatPageState extends State<ChatPage>
         }
         _session.messages[i] = message.copyWith(
           answerContext: AskAnswerContext(
+            chatCapture: data.chatCapture,
             worldActions: data.worldActions,
             resourceLinks: data.resourceLinks,
             sources: data.sources,
@@ -3145,6 +3208,30 @@ class _ChatPageState extends State<ChatPage>
             ? null
             : () => unawaited(_openNavHint(message.navHint!)),
       ),
+      if (message.answerContext?.chatCapture != null &&
+          _currentConversationId != null &&
+          identical(
+            message,
+            _session.messages.lastWhere(
+              (m) =>
+                  m.answerContext?.chatCapture?['id'] ==
+                  message.answerContext!.chatCapture!['id'],
+            ),
+          ))
+        ChatCaptureCard(
+          key: ValueKey(
+            'capture-${message.timestamp}-${message.answerContext!.chatCapture!['id']}',
+          ),
+          api: widget.api,
+          conversationId: _currentConversationId!,
+          draft: message.answerContext!.chatCapture!,
+          disabled: _sending,
+          onChanged: _onCaptureChanged,
+          onSaved: widget.onInventoryMutated,
+          onOpenResource: widget.onOpenDestination == null
+              ? null
+              : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+        ),
       if (!isTyping)
         for (final action
             in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])

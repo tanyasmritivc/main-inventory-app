@@ -57,9 +57,14 @@ final _context = AskAnswerContext.fromJson({
 });
 
 class _AskApi extends ApiClient {
-  _AskApi({this.fail = false, this.pending})
-    : super(baseUrl: 'https://api.test');
+  _AskApi({
+    this.fail = false,
+    this.pending,
+    this.captureThenFail = false,
+    bool world = false,
+  }) : super(worldKey: world ? 'personal' : null, baseUrl: 'https://api.test');
   final bool fail;
+  final bool captureThenFail;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
   final List<AskPhoto> photos = [];
@@ -78,6 +83,29 @@ class _AskApi extends ApiClient {
       );
     }
     yield AiStreamEvent(type: 'status', message: 'Reading your photo...');
+    if (captureThenFail) {
+      yield AiStreamEvent(
+        type: 'capture',
+        conversationId: 'capture-chat',
+        answerContext: AskAnswerContext.fromJson({
+          'chat_capture': {
+            'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            'version': 1,
+            'revision': 1,
+            'status': 'draft',
+            'items': [
+              {
+                'index': 0,
+                'selected': true,
+                'item': {'name': 'Drill', 'category': 'Tools', 'quantity': 1},
+              },
+            ],
+          },
+        }),
+      );
+      throw const AskRequestException('Reply interrupted');
+    }
+
     if (pending != null) {
       yield* pending!.stream;
       return;
@@ -133,6 +161,7 @@ Widget _page(
       inPageView: true,
       initialMessage: initialMessage,
       photoPicker: photoPicker,
+      worldHeading: api.worldKey == null ? null : 'Find your things.',
     ),
     bottomNavigationBar: HomeNavigation(selectedIndex: 2, onSelected: (_) {}),
   ),
@@ -696,5 +725,86 @@ void main() {
     await attach(tester);
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('ask-photo-preview')), findsOneWidget);
+  });
+  testWidgets(
+    'Auto Extract is first in plus and starts after choosing a photo',
+    (tester) async {
+      final api = _AskApi(world: true);
+      await tester.pumpWidget(
+        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Capture or attach'));
+      await tester.pumpAndSettle();
+      final entries = tester
+          .widgetList<PopupMenuItem<String>>(find.byType(PopupMenuItem<String>))
+          .toList();
+      expect(entries.first.value, 'auto_extract');
+      await tester.tap(find.text('Auto Extract'));
+      await tester.pumpAndSettle();
+      expect(api.photos, isEmpty);
+      await tester.tap(find.text('Choose photo'));
+      await tester.pumpAndSettle();
+      expect(api.photos, hasLength(1));
+      expect(api.photos.single.autoExtract, isTrue);
+      expect(api.photoQuestions.single, contains('Auto extract'));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'image-only world upload extracts while typed photo question waits for Send',
+    (tester) async {
+      final api = _AskApi(world: true);
+      await tester.pumpWidget(
+        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Do I have this?');
+      await tester.tap(find.byTooltip('Capture or attach'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose photos'));
+      await tester.pumpAndSettle();
+      expect(api.photos, isEmpty);
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pumpAndSettle();
+      expect(api.photos.single.autoExtract, isFalse);
+      expect(api.photoQuestions.single, 'Do I have this?');
+    },
+  );
+  testWidgets('ordinary image-only attachment auto-extracts without Send', (
+    tester,
+  ) async {
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose photos'));
+    await tester.pumpAndSettle();
+    expect(api.photos, hasLength(1));
+    expect(api.photos.single.autoExtract, isTrue);
+  });
+  testWidgets('completed extraction stays visible if the model reply fails', (
+    tester,
+  ) async {
+    final api = _AskApi(world: true, captureThenFail: true);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Choose photos'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widgetList<AskAnswerView>(find.byType(AskAnswerView))
+          .map((view) => view.answer),
+      contains('Reply interrupted'),
+    );
+    expect(find.text('Auto Extract'), findsOneWidget);
+    expect(find.text('1 of 1 selected · Not saved yet'), findsOneWidget);
   });
 }
