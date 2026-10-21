@@ -38,6 +38,7 @@ void main() {
     double scale = 1,
     double keyboard = 0,
     Brightness brightness = Brightness.light,
+    bool bold = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -55,6 +56,7 @@ void main() {
             padding: const EdgeInsets.only(top: 44, bottom: 34),
             viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
             textScaler: TextScaler.linear(scale),
+            boldText: bold,
             viewInsets: EdgeInsets.only(bottom: keyboard),
           ),
           child: child!,
@@ -69,6 +71,45 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  for (final brightness in Brightness.values) {
+    testWidgets('Ask retains light text with OS Bold Text $brightness', (
+      tester,
+    ) async {
+      await mount(tester, brightness: brightness, bold: true);
+      final heading = tester.widget<RichText>(
+        find.descendant(
+          of: find.text('Create your inventory world.'),
+          matching: find.byType(RichText),
+        ),
+      );
+      expect(heading.text.style?.fontWeight, FontWeight.w500);
+      final hint = tester.widget<RichText>(
+        find.descendant(
+          of: find.text('Describe, ask, or add a photo…'),
+          matching: find.byType(RichText),
+        ),
+      );
+      expect(hint.text.style?.fontWeight, FontWeight.w400);
+      await tester.enterText(find.byType(TextField).first, 'My tools');
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText).first)
+            .style
+            .fontWeight,
+        FontWeight.w400,
+      );
+      expect(
+        MediaQuery.textScalerOf(
+          tester.element(find.byType(WorldComposer)),
+        ).scale(17),
+        17,
+      );
+      expect(tester.takeException(), isNull);
+      await worldAuditCapture?.call('typography-${brightness.name}');
+      await tester.pumpWidget(const SizedBox());
+    });
   }
 
   for (final brightness in Brightness.values) {
@@ -131,32 +172,55 @@ void main() {
   });
   testWidgets('Ask focuses chat and retains the draft on Back', (tester) async {
     final requests = <http.Request>[];
-    await http.runWithClient(() async {
-      await mount(tester);
-      await tester.enterText(find.byType(TextField).first, 'Where is my drill?');
-      await tester.pump();
-      await tester.tap(find.byTooltip('Send message'));
-      for (var i = 0; i < 25; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
-      }
-      expect(requests.single.url.path, '/worlds/personal/ai_command');
-      expect(find.text('More'), findsNothing);
-      expect(find.byTooltip('Account'), findsNothing);
-      expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
-      await tester.enterText(find.byType(TextField).first, 'What about the charger?');
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pumpAndSettle();
-      expect(find.text('More'), findsOneWidget);
-      expect(find.text('What about the charger?'), findsOneWidget);
-      expect(find.text('Create your inventory world.'), findsOneWidget);
-      await tester.pumpWidget(const SizedBox());
-    }, () => MockClient((request) async {
-      requests.add(request);
-      final delta = jsonEncode({'type':'delta','delta':'Your drill is on Shelf 2.'});
-      final done = jsonEncode({'type':'done','conversation_id':'10000000-0000-4000-8000-000000000001','assistant_message':'Your drill is on Shelf 2.','answer_context':{}});
-      return http.Response('data: $delta\n\ndata: $done\n\ndata: [DONE]\n\n', 200, headers: {'content-type':'text/event-stream'});
-    }));
+    await http.runWithClient(
+      () async {
+        await mount(tester);
+        await tester.enterText(
+          find.byType(TextField).first,
+          'Where is my drill?',
+        );
+        await tester.pump();
+        await tester.tap(find.byTooltip('Send message'));
+        for (var i = 0; i < 25; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 2)),
+          );
+        }
+        expect(requests.single.url.path, '/worlds/personal/ai_command');
+        expect(find.text('More'), findsNothing);
+        expect(find.byTooltip('Account'), findsNothing);
+        expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
+        await tester.enterText(
+          find.byType(TextField).first,
+          'What about the charger?',
+        );
+        await tester.tap(find.byTooltip('Back'));
+        await tester.pumpAndSettle();
+        expect(find.text('More'), findsOneWidget);
+        expect(find.text('What about the charger?'), findsOneWidget);
+        expect(find.text('Create your inventory world.'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
+      () => MockClient((request) async {
+        requests.add(request);
+        final delta = jsonEncode({
+          'type': 'delta',
+          'delta': 'Your drill is on Shelf 2.',
+        });
+        final done = jsonEncode({
+          'type': 'done',
+          'conversation_id': '10000000-0000-4000-8000-000000000001',
+          'assistant_message': 'Your drill is on Shelf 2.',
+          'answer_context': {},
+        });
+        return http.Response(
+          'data: $delta\n\ndata: $done\n\ndata: [DONE]\n\n',
+          200,
+          headers: {'content-type': 'text/event-stream'},
+        );
+      }),
+    );
   });
   test(
     'world API routes history and refuses stale organization clients',

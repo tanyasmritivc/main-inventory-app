@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/ui/app_typography.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_context.dart';
 import '../../core/place_session.dart';
@@ -525,7 +526,10 @@ class _WorldShellState extends State<WorldShell> {
     ],
   );
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      AppTypography(child: Builder(builder: _buildWorld));
+
+  Widget _buildWorld(BuildContext context) {
     if (!_loadedNavigation) {
       return Scaffold(
         body: SafeArea(
@@ -579,6 +583,11 @@ class _WorldShellState extends State<WorldShell> {
                             api: widget.session.api,
                             id: widget.session.organizationId,
                             name: widget.session.organizationName,
+                            labelStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.2,
+                            ),
                             onSelected: widget.session.selectOrganization,
                           ),
                         ),
@@ -707,6 +716,8 @@ class _WorldShellState extends State<WorldShell> {
                                             entry.$3,
                                             style: const TextStyle(
                                               fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                              letterSpacing: 0,
                                             ),
                                           ),
                                         ],

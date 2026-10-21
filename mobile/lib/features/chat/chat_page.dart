@@ -2680,10 +2680,15 @@ class _ChatPageState extends State<ChatPage>
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppTheme.textPrimary(context),
-            fontSize: widget.worldHeading == null ? 22 : 28,
-            fontWeight: widget.worldHeading == null
-                ? FontWeight.w500
-                : FontWeight.w600,
+            fontSize: widget.worldHeading == null ? 22 : 24,
+            fontWeight: FontWeight.w500,
+            fontFamily:
+                widget.worldHeading != null &&
+                    (Theme.of(context).platform == TargetPlatform.iOS ||
+                        Theme.of(context).platform == TargetPlatform.macOS)
+                ? 'CupertinoSystemDisplay'
+                : null,
+            letterSpacing: widget.worldHeading == null ? null : -0.6,
             height: 1.25,
           ),
         ),
