@@ -1,3 +1,12 @@
+## October 20 — organization Ask API published with approved 073
+
+Runtime34af900 / PR147 is live after explicit approval, fresh backup and guarded
+activation. Four runtime files changed; 99 unrelated Python files and existing
+agent routes were preserved. Health/database checks pass; anonymous world and
+private-photo access returns401. All five CI gates pass (39543052610). No customer
+QA writes. Apple acknowledged companion1.1.0(100); processing/device acceptance remain pending.
+See `docs/plans/organization-world-chat-20261020.md`.
+
 ## October 20 - saved-photo Chat retrieval and App Store 99
 
 Published lane `fix/chat-saved-photo-search-20261020`, runtime5bc885d, PR146:

@@ -227,3 +227,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir ../../supabase/migrations/072_effective_workspace_directory_access.sql
 \ir ../../supabase/migrations/072_effective_workspace_directory_access.sql
 \ir effective_workspace_directory_access.sql
+
+\ir world_chat.sql
