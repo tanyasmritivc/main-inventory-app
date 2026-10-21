@@ -80,6 +80,9 @@ class AccessQuery:
             self.query = value(*args, **kwargs)
             if name in ('select','update','delete','insert','upsert'):
                 self.operation = name
+                if self.table == 'conversations' and name in ('select', 'update', 'delete'):
+                    # Organization Chat uses its own actor+world checked routes.
+                    self.query = self.query.is_('world_key', 'null')
                 if self.table in RESOURCE_TABLES and name in ('select','update','delete'):
                     write = name != 'select' and self.table not in PRIVATE_WRITES
                     excluded = [row['inventory_id'] for row in fences(self.raw)

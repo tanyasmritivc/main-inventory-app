@@ -83,3 +83,6 @@ api_router.include_router(scoped_router)
 
 from app.api.routes.private_images import router as private_images_router
 api_router.include_router(private_images_router)
+
+from app.api.routes.world_chat import router as world_chat_router
+api_router.include_router(world_chat_router)

@@ -1,3 +1,10 @@
+# October 20 — organization-wide mobile Ask
+
+Ask uses an explicit organization boundary and author-private histories. Every tool
+reauthorizes its inventory; structure and item writes require durable review cards.
+Keep legacy endpoints and existing data. Migration073 is additive and service-only;
+publication awaits explicit database authorization.
+
 ## October 19 - account deletion preserves shared contributions
 
 The user clarified that shared contributions and ordinary membership must not

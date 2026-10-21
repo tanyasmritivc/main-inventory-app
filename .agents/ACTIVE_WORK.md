@@ -1,3 +1,10 @@
+## October 20 — organization-wide Ask candidate
+
+Additive world Chat, private history, scoped read tools and reviewed structure/item
+actions are implemented and tested. Full Python:1,199 plus10 subtests. SQL/replay
+and isolated 90-table preservation pass. Production073 is NOT authorized or applied.
+See `docs/plans/organization-world-chat-20261020.md`.
+
 ## October 20 - saved-photo Chat retrieval and App Store 99
 
 Published lane `fix/chat-saved-photo-search-20261020`, runtime5bc885d, PR146:
