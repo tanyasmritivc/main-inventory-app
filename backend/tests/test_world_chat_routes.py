@@ -108,3 +108,41 @@ def test_concurrent_photo_search_keeps_inventory_scope_isolated():
     assert {m['inventory_id'] for m in result['matches']} == set(ids)
     assert result['all_inventories_checked']
     assert current_inventory.get() is None
+
+
+def test_photo_identification_and_saved_comparison_overlap(transport):
+    out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
+    state = {'matching_started': False, 'vision_started': False}
+    async def matching(*args):
+        state['matching_started'] = True
+        for _ in range(100):
+            if state['vision_started']: return {'matches': []}
+            await asyncio.sleep(.001)
+        raise AssertionError('Vision did not run concurrently')
+    async def identify(**kwargs):
+        state['vision_started'] = True
+        for _ in range(100):
+            if state['matching_started']: return {'items': []}
+            await asyncio.sleep(.001)
+        raise AssertionError('Saved comparison was serialized after vision')
+    with patch.object(route, 'check_and_increment_scan'), patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), patch('app.services.find_pipeline.extract_inventory_items_with_find', side_effect=identify), patch.object(world, 'photo_matches', side_effect=matching), patch.object(world, 'stream_turn', return_value=events()):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert '"type": "done"' in response.text
+    assert all(state.values())
+
+
+def test_resource_route_validates_ids_and_forwards_actor_world(transport):
+    inv, item = str(uuid4()), str(uuid4())
+    with patch.object(world, 'resolve_resource', return_value={'kind': 'item'}) as resolve:
+        assert transport.client.get(f'/worlds/{WORLD}/resources/{inv}/item/{item}').status_code == 200
+        resolve.assert_called_once_with(ACTOR, WORLD, inv, 'item', item)
+        assert transport.client.get(f'/worlds/{WORLD}/resources/bad/item/{item}').status_code == 422
+
+@pytest.mark.parametrize('supported', [False, True])
+def test_transport_negotiates_management_card_support(transport, supported):
+    with patch.object(world, 'stream_turn', return_value=events()) as stream:
+        payload = {'message': 'Hello'}
+        if supported: payload['supports_item_management'] = True
+        response = transport.client.post(f'/worlds/{WORLD}/ai_command', json=payload)
+    assert response.status_code == 200
+    assert stream.call_args.kwargs['supports_item_management'] is supported
