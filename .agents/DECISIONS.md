@@ -1,3 +1,12 @@
+## October 20 — local mobile glass presentation
+
+World shell controls share a bounded frosted surface and native iOS typography.
+Navigation remains Ask/Spaces/More, with tooltips and semantic labels on the
+compact icon bar. High contrast uses solid surfaces and Reduce Motion disables
+the selection animation. History title search is local to loaded scoped rows.
+Keep styling separate from inventory permissions and AI action contracts; this
+release does not address provider/photo processing behavior.
+
 ## October 20 — mobile starts with organization-scoped Ask
 
 Ask, Spaces and More replace the normal dashboard-first entry. Organization is

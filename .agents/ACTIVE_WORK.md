@@ -1,9 +1,16 @@
-## October 20 — Mobile glass polish in progress
+## October 20 — Mobile glass polish 1.1.0 (102) delivered
 
-Lane `feat/mobile-glass-polish-20261020`, based on054a8ad. Owns mobile World
-visual styling, composer, history, and organization controls. Build102 candidate.
-No backend/web/schema changes or customer-data operations. Flutter and native
-verification in progress; no upload claimed.
+Runtime 08b7f8c on `feat/mobile-glass-polish-20261020`, PR150, refines World
+controls, navigation, chat, Spaces, More, and organization/account presentation.
+History supports local scoped title search. 714 Flutter tests pass (one skipped),
+analysis is clean, 18 native iOS cases pass, and eight previews were reviewed.
+All five CI jobs pass on run39548738411; Vercel preview also passes. Signed
+archive/export,32+32 iOS executables,24 privacy manifests, configuration and
+Apple validation pass. Apple acknowledged build102, delivery `63b221a4-481b-4c23-b19f-8c035385aac0`.
+TestFlight processing/availability were not polled; physical-device acceptance
+remains pending. No public submission or backend/web/schema/customer-data changes.
+Photo-to-inventory provider behavior remains outside this UI task. Details:
+`docs/plans/mobile-glass-polish-20261020.md`.
 
 ## October 20 — Ask typography 1.1.0 (101) delivered
 

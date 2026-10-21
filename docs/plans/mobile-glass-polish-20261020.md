@@ -1,4 +1,4 @@
-# Mobile glass polish — build 102 candidate
+# Mobile glass polish — build 102 delivered
 
 The World shell now uses restrained frosted surfaces, fine highlights and soft
 shadows, with warm orange/peach accents. Native iOS text/display typography keeps
@@ -20,8 +20,18 @@ whole history page scrolls to retain access to every control. Existing drafts,
 organization selection, captures, voice, confirmation and permission behavior
 remain unchanged. No backend, web, schema, or customer-data changes are included.
 
-All 18 native iOS simulator cases passed; eight previews were visually reviewed
-and preserved. Final Flutter regression/analysis and signed delivery are in progress. Synthetic fixtures only; never use the
-founder's account for testing. Physical-device appearance, VoiceOver and sustained
-scroll/blur performance remain device acceptance checks. The separately reported
-photo-to-inventory processing issue is outside this presentation change.
+Validation: all 714 Flutter tests passed (one compiled-configuration test skipped)
+and static analysis is clean. All 18 native iOS simulator cases passed; eight
+previews were visually reviewed and preserved. All five CI jobs passed on source
+08b7f8c (run39548738411), as did the separate Vercel preview. Production signature,
+32 archive plus32 exported iOS executables,24 privacy manifests, extension build
+identity and HTTPS/anonymous-client configuration checks passed.
+
+Apple validation passed and Apple acknowledged upload of1.1.0 (102), delivery
+`63b221a4-481b-4c23-b19f-8c035385aac0`. IPA SHA256:
+`40c87af636f19d4fd07d71773048e1fa3240153df5979548e3910307ed7d732b`. The signed IPA, archive, receipts and previews are preserved in
+`Documents/FindEZ/AppStore/1.1.0-build102`. TestFlight processing and tester
+availability were not polled. No public App Store submission. Physical-device appearance, VoiceOver
+and sustained scroll/blur performance remain device acceptance checks. Synthetic
+fixtures only; the founder's account was never used for testing. The separately
+reported photo-to-inventory processing issue is outside this presentation change.
