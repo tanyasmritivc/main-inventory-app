@@ -1,4 +1,5 @@
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import '../../core/ui/liquid_surface.dart';
 import 'package:flutter/material.dart';
 
 /// A quiet, two-row composer. All capture and voice behavior belongs to Chat.
@@ -22,103 +23,81 @@ class WorldComposer extends StatelessWidget {
   final bool busy, listening, compact;
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final contrast = MediaQuery.highContrastOf(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: contrast ? 0 : 16,
-          sigmaY: contrast ? 0 : 16,
-        ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: (dark ? const Color(0xFF272524) : Colors.white).withValues(
-              alpha: contrast ? 1 : .84,
-            ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: (dark ? Colors.white : Colors.black).withValues(
-                alpha: .10,
+    return LiquidSurface(
+      radius: 28,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 10, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              focusNode: focusNode,
+              onChanged: onChanged,
+              minLines: compact ? 1 : 2,
+              maxLines: compact ? 2 : 4,
+              textInputAction: TextInputAction.newline,
+              keyboardType: TextInputType.multiline,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w400,
+                letterSpacing: -0.3,
+                height: 1.4,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Describe, ask, or add a photo…',
+                hintStyle: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.3,
+                  height: 1.4,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            SizedBox(height: compact ? 6 : 14),
+            Row(
               children: [
-                TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  onChanged: onChanged,
-                  minLines: compact ? 1 : 2,
-                  maxLines: compact ? 2 : 4,
-                  textInputAction: TextInputAction.newline,
-                  keyboardType: TextInputType.multiline,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: -0.3,
-                    height: 1.4,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Describe, ask, or add a photo…',
-                    hintStyle: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: -0.3,
-                      height: 1.4,
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                IconButton(
+                  tooltip: 'Capture or attach',
+                  onPressed: onAttach,
+                  icon: const Icon(CupertinoIcons.plus, size: 23),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'Capture or attach',
-                      onPressed: onAttach,
-                      icon: const Icon(Icons.add_rounded, size: 27),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      tooltip: listening ? 'Stop voice input' : 'Voice input',
-                      onPressed: onVoice,
-                      icon: Icon(
-                        listening ? Icons.mic : Icons.mic_none_rounded,
-                        color: listening ? const Color(0xFFC45A28) : null,
-                      ),
-                    ),
-                    IconButton.filled(
-                      tooltip: 'Send message',
-                      onPressed: onSend,
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFFC45A28),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            (dark ? Colors.white : Colors.black).withValues(
-                              alpha: .07,
-                            ),
-                      ),
-                      icon: busy
-                          ? const SizedBox(
-                              width: 19,
-                              height: 19,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_upward_rounded),
-                    ),
-                  ],
+                const Spacer(),
+                LiquidIconButton(
+                  tooltip: listening ? 'Stop voice input' : 'Voice input',
+                  onPressed: onVoice,
+                  icon: listening
+                      ? CupertinoIcons.mic_fill
+                      : CupertinoIcons.mic,
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  tooltip: 'Send message',
+                  onPressed: onSend,
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFC45A28),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: .06),
+                  ),
+                  icon: busy
+                      ? const SizedBox(
+                          width: 19,
+                          height: 19,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(CupertinoIcons.arrow_up),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

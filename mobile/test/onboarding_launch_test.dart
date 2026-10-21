@@ -282,7 +282,7 @@ void main() {
       );
       await tester.pumpWidget(_gate(_Api()));
       await settleHome(tester);
-      await tester.tap(find.text('More'));
+      await tester.tap(find.byTooltip('More'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);
@@ -319,7 +319,7 @@ void main() {
       await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
       await settleHome(tester);
       expect(find.byType(WorldShell), findsOneWidget);
-      await tester.tap(find.text('More'));
+      await tester.tap(find.byTooltip('More'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);

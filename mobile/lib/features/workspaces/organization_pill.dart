@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import '../../core/ui/liquid_surface.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/place_session.dart';
@@ -14,8 +16,10 @@ class OrganizationPill extends StatefulWidget {
     required this.name,
     required this.onSelected,
     this.labelStyle,
+    this.glass = false,
   });
   final TextStyle? labelStyle;
+  final bool glass;
   final ApiClient api;
   final String? id;
   final String name;
@@ -60,7 +64,9 @@ class _OrganizationPillState extends State<OrganizationPill> {
           Offset.zero & overlay.size,
         ),
         constraints: BoxConstraints(maxWidth: overlay.size.width - 32),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(widget.glass ? 24 : 16),
+        ),
         items: [
           for (final org in organizations)
             PopupMenuItem(
@@ -76,10 +82,13 @@ class _OrganizationPillState extends State<OrganizationPill> {
             child: _row('Personal', widget.id == null),
           ),
           const PopupMenuDivider(),
-          const PopupMenuItem(value: 'new', child: Text('New organization')),
-          const PopupMenuItem(
+          PopupMenuItem(
+            value: 'new',
+            child: _menuLabel('New organization', CupertinoIcons.plus),
+          ),
+          PopupMenuItem(
             value: 'invite',
-            child: Text('Review invitation'),
+            child: _menuLabel('Review invitation', CupertinoIcons.envelope),
           ),
         ],
       );
@@ -119,8 +128,33 @@ class _OrganizationPillState extends State<OrganizationPill> {
     }
   }
 
+  Widget _menuLabel(String name, IconData icon) => widget.glass
+      ? Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 14),
+            Expanded(child: Text(name)),
+          ],
+        )
+      : Text(name);
+
   Widget _row(String name, bool selected) => Row(
     children: [
+      if (widget.glass) ...[
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: const Color(0xFFC45A28).withValues(alpha: .14),
+          child: Text(
+            name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFFC45A28),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+      ],
       Expanded(
         child: Text(
           name,
@@ -221,7 +255,14 @@ class _OrganizationPillState extends State<OrganizationPill> {
   }
 
   @override
-  Widget build(BuildContext context) => Semantics(
+  Widget build(BuildContext context) {
+    final button = _button(context);
+    return widget.glass
+        ? LiquidSurface(radius: 30, quiet: true, shadow: false, child: button)
+        : button;
+  }
+
+  Widget _button(BuildContext context) => Semantics(
     container: true,
     label: 'Switch organization. Current: ${widget.name}',
     button: true,
@@ -232,13 +273,32 @@ class _OrganizationPillState extends State<OrganizationPill> {
         onPressed: _loading ? null : _open,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          minimumSize: const Size(0, 40),
+          minimumSize: Size(0, widget.glass ? 44 : 40),
+          side: widget.glass ? BorderSide.none : null,
+          backgroundColor: widget.glass ? Colors.transparent : null,
           shape: const StadiumBorder(),
           foregroundColor: Theme.of(context).colorScheme.onSurface,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.glass) ...[
+              CircleAvatar(
+                radius: 13,
+                backgroundColor: const Color(0xFFC45A28).withValues(alpha: .18),
+                child: Text(
+                  widget.name.isEmpty
+                      ? '?'
+                      : widget.name.characters.first.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFC45A28),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             Flexible(
               child: Text(
                 widget.name,

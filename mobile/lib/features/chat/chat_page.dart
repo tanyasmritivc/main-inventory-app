@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import '../../core/ui/liquid_surface.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -199,6 +201,8 @@ class _ChatPageState extends State<ChatPage>
   // Retained for the intentionally detached history panel (68f5e83).
   // ignore: unused_field
   bool _historyOpen = false;
+  final _historySearch = TextEditingController();
+  bool _historySearching = false;
   bool _historyLoading = false;
   bool _historyLoadFailed = false;
   List<ConversationSummary> _conversations = [];
@@ -2210,6 +2214,7 @@ class _ChatPageState extends State<ChatPage>
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
     _controller.dispose();
+    _historySearch.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
     unawaited(_speech.stop());
@@ -2330,6 +2335,7 @@ class _ChatPageState extends State<ChatPage>
   // Retained while the history UI is intentionally detached (68f5e83).
   // ignore: unused_element
   Widget _buildHistoryPanel() {
+    if (widget.worldHeading != null) return _buildWorldHistory();
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -2591,7 +2597,233 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
+  Widget _buildWorldHistory() {
+    final query = _historySearch.text.trim().toLowerCase();
+    final rows = _conversations
+        .where((c) => c.title.toLowerCase().contains(query))
+        .toList();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scrollWhole =
+            constraints.maxHeight < 480 &&
+            MediaQuery.textScalerOf(context).scale(16) > 22;
+        final historyBody = _historyLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _historyLoadFailed
+            ? Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Couldn't load history."),
+                      TextButton(
+                        onPressed: _openHistory,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : rows.isEmpty
+            ? Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        CupertinoIcons.chat_bubble_2,
+                        size: 42,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: .3),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        query.isEmpty
+                            ? 'Start your first chat'
+                            : 'No matching chats',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        query.isEmpty
+                            ? 'Ask about your things or add something new.'
+                            : 'Try a different title.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : ListView.separated(
+                shrinkWrap: scrollWhole,
+                physics: scrollWhole
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
+                itemCount: rows.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, i) {
+                  final c = rows[i];
+                  return Dismissible(
+                    key: Key(c.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(CupertinoIcons.trash),
+                    ),
+                    onDismissed: (_) => unawaited(_deleteConversation(c.id)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 6,
+                      ),
+                      title: Text(
+                        c.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(_relativeTime(c.updatedAt)),
+                      ),
+                      trailing: c.id == _currentConversationId
+                          ? const Icon(CupertinoIcons.checkmark, size: 17)
+                          : null,
+                      onTap: () => unawaited(_loadConversation(c.id)),
+                    ),
+                  );
+                },
+              );
+        final content = Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+          child: Column(
+            mainAxisSize: scrollWhole ? MainAxisSize.min : MainAxisSize.max,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Chats',
+                      style: Theme.of(context).textTheme.headlineLarge,
+                    ),
+                  ),
+                  LiquidIconButton(
+                    tooltip: 'Search chats',
+                    icon: CupertinoIcons.search,
+                    onPressed: () => setState(() {
+                      _historySearching = !_historySearching;
+                      if (!_historySearching) _historySearch.clear();
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  LiquidIconButton(
+                    tooltip: 'Close history',
+                    icon: CupertinoIcons.xmark,
+                    onPressed: _closeHistory,
+                  ),
+                ],
+              ),
+              if (_historySearching)
+                Padding(
+                  padding: const EdgeInsets.only(top: 18),
+                  child: LiquidSurface(
+                    radius: 26,
+                    quiet: true,
+                    shadow: false,
+                    child: TextField(
+                      controller: _historySearch,
+                      autofocus: true,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Search chats',
+                        prefixIcon: Icon(CupertinoIcons.search),
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              if (scrollWhole) historyBody else Expanded(child: historyBody),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: LiquidSurface(
+                  radius: 30,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      _closeHistory();
+                      _resetChat();
+                    },
+                    icon: const Icon(CupertinoIcons.plus, size: 20),
+                    label: const Text('New chat'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        return scrollWhole ? SingleChildScrollView(child: content) : content;
+      },
+    );
+  }
+
   Widget _buildHeader() {
+    if (widget.worldHeading != null) {
+      return Row(
+        children: [
+          if (widget.onBack != null)
+            LiquidIconButton(
+              tooltip: 'Back',
+              icon: CupertinoIcons.chevron_left,
+              onPressed: () {
+                setState(() => _worldHome = true);
+                widget.onBack?.call();
+              },
+            ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Center(
+              child: LiquidSurface(
+                radius: 28,
+                quiet: true,
+                shadow: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  child: Text(
+                    'Ask',
+                    key: const Key('ask-heading'),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          LiquidIconButton(
+            tooltip: 'New chat',
+            icon: CupertinoIcons.square_pencil,
+            onPressed: _resetChat,
+          ),
+        ],
+      );
+    }
     // The parent Scaffold consumes MediaQuery's keyboard inset when it resizes.
     final compact =
         (View.of(context).viewInsets.bottom > 0 ||
@@ -2706,10 +2938,10 @@ class _ChatPageState extends State<ChatPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final choice in const [
-              ('camera', Icons.camera_alt_outlined, 'Take photo'),
-              ('library', Icons.photo_library_outlined, 'Choose photos'),
-              ('barcode', Icons.qr_code_scanner, 'Scan barcode'),
-              ('spreadsheet', Icons.table_chart_outlined, 'Import spreadsheet'),
+              ('camera', CupertinoIcons.camera, 'Take photo'),
+              ('library', CupertinoIcons.photo_on_rectangle, 'Choose photos'),
+              ('barcode', CupertinoIcons.barcode_viewfinder, 'Scan barcode'),
+              ('spreadsheet', CupertinoIcons.table, 'Import spreadsheet'),
             ])
               ListTile(
                 leading: Icon(choice.$2),
@@ -2870,6 +3102,7 @@ class _ChatPageState extends State<ChatPage>
     children: [
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
+        refined: widget.worldHeading != null,
         answer: isTyping
             ? _renderableStreamingMarkdown(message.content)
             : message.content,
@@ -2994,7 +3227,13 @@ class _ChatPageState extends State<ChatPage>
         (_controller.text.trim().isNotEmpty || _photo != null) &&
         (!_sending || _canQueueFollowUp);
 
-    if (_historyOpen) return Scaffold(body: _buildHistoryPanel());
+    if (_historyOpen) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        resizeToAvoidBottomInset: !widget.inPageView,
+        body: _buildHistoryPanel(),
+      );
+    }
     if (widget.worldHeading != null &&
         (_worldHome || _session.messages.isEmpty)) {
       return _worldLanding(canSend, keyboardVisible || compactComposer);
@@ -3019,7 +3258,7 @@ class _ChatPageState extends State<ChatPage>
           child: Column(
             children: [
               if (_session.messages.isNotEmpty &&
-                  (widget.worldHeading == null || !_worldHome)) ...[
+                  widget.worldHeading == null) ...[
                 _buildHeader(),
                 const SizedBox(height: 12),
               ],
@@ -3031,47 +3270,83 @@ class _ChatPageState extends State<ChatPage>
                 _buildEmptyState()
               else
                 Expanded(
-                  child: ListView.separated(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(top: 4, bottom: 12),
-                    itemCount: _session.messages.isEmpty
-                        ? 1
-                        : _session.messages.length,
-                    separatorBuilder: (context, index) {
-                      final curr = _session.messages[index];
-                      final next = _session.messages[index + 1];
-                      return SizedBox(height: curr.role == next.role ? 12 : 8);
-                    },
-                    itemBuilder: (context, index) {
-                      if (_session.messages.isEmpty) return _buildEmptyState();
-                      final messageIndex = index;
-                      final m = _session.messages[messageIndex];
-                      final isUser = m.role == 'user';
-                      final isTyping =
-                          !isUser &&
-                          (m.isStreaming ||
-                              messageIndex == _fakeTypingAssistantIndex ||
-                              m.content == 'Typing…' ||
-                              m.content == 'Thinking…' ||
-                              m.content == 'Thinking...');
-                      if (!isUser) {
-                        return _messageEntrance(
-                          m,
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: _buildAssistantMessage(m, isTyping),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ListView.separated(
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(
+                            top: widget.worldHeading == null
+                                ? 4
+                                : (MediaQuery.textScalerOf(context).scale(16) *
+                                              1.35 +
+                                          28)
+                                      .clamp(64, 180)
+                                      .toDouble(),
+                            bottom: 16,
                           ),
-                        );
-                      }
-                      return _messageEntrance(
-                        m,
-                        AskQuestionCard(
-                          question: m.content,
-                          photoBytes: m.photo?.bytes,
-                          photoUrl: m.photoUrl,
+                          itemCount: _session.messages.isEmpty
+                              ? 1
+                              : _session.messages.length,
+                          separatorBuilder: (context, index) {
+                            final curr = _session.messages[index];
+                            final next = _session.messages[index + 1];
+                            return SizedBox(
+                              height: curr.role == next.role ? 12 : 8,
+                            );
+                          },
+                          itemBuilder: (context, index) {
+                            if (_session.messages.isEmpty) {
+                              return _buildEmptyState();
+                            }
+                            final messageIndex = index;
+                            final m = _session.messages[messageIndex];
+                            final isUser = m.role == 'user';
+                            final isTyping =
+                                !isUser &&
+                                (m.isStreaming ||
+                                    messageIndex == _fakeTypingAssistantIndex ||
+                                    m.content == 'Typing…' ||
+                                    m.content == 'Thinking…' ||
+                                    m.content == 'Thinking...');
+                            if (!isUser) {
+                              return _messageEntrance(
+                                m,
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: _buildAssistantMessage(m, isTyping),
+                                ),
+                              );
+                            }
+                            return _messageEntrance(
+                              m,
+                              AskQuestionCard(
+                                compact: widget.worldHeading != null,
+                                question: m.content,
+                                photoBytes: m.photo?.bytes,
+                                photoUrl: m.photoUrl,
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                      if (widget.worldHeading != null)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              enabled: !MediaQuery.highContrastOf(context),
+                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _buildHeader(),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               if (_sending &&

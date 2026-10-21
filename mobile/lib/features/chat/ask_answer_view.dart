@@ -18,60 +18,82 @@ class AskQuestionCard extends StatelessWidget {
     required this.question,
     this.photoBytes,
     this.photoUrl,
+    this.compact = false,
   });
   final String question;
+  final bool compact;
   final Uint8List? photoBytes;
   // Only a validated app-owned URL may be passed here by the chat controller.
   final String? photoUrl;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: AppTheme.adaptive(context, const Color(0xFF171719)),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (photoBytes != null || photoUrl != null) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 180),
-              child: photoBytes != null
-                  ? Image.memory(
-                      photoBytes!,
-                      fit: BoxFit.contain,
-                      semanticLabel: 'Attached photo',
-                      errorBuilder: (_, _, _) =>
-                          const AppText('Photo unavailable'),
-                    )
-                  : PrivateImage(
-                      photoUrl!,
-                      fit: BoxFit.contain,
-                      semanticLabel: 'Attached photo',
-                      errorBuilder: (_, _, _) =>
-                          const AppText('Photo unavailable'),
-                    ),
-            ),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => Align(
+      alignment: compact ? Alignment.centerRight : Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: compact ? constraints.maxWidth * .88 : constraints.maxWidth,
+        ),
+        child: Container(
+          width: compact ? null : double.infinity,
+          padding: EdgeInsets.all(compact ? 14 : 16),
+          decoration: BoxDecoration(
+            color: AppTheme.adaptive(context, const Color(0xFF171719)),
+            borderRadius: BorderRadius.circular(compact ? 24 : 16),
+            border: compact
+                ? Border.all(
+                    width: .6,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: .08),
+                  )
+                : null,
           ),
-          const SizedBox(height: 12),
-        ],
-        SelectableText(
-          question,
-          style: AppTypography.styleOf(
-            context,
-            TextStyle(
-              color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
-              fontSize: 17,
-              height: 1.5,
-              fontWeight: FontWeight.w400,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (photoBytes != null || photoUrl != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    child: photoBytes != null
+                        ? Image.memory(
+                            photoBytes!,
+                            fit: BoxFit.contain,
+                            semanticLabel: 'Attached photo',
+                            errorBuilder: (_, _, _) =>
+                                const AppText('Photo unavailable'),
+                          )
+                        : PrivateImage(
+                            photoUrl!,
+                            fit: BoxFit.contain,
+                            semanticLabel: 'Attached photo',
+                            errorBuilder: (_, _, _) =>
+                                const AppText('Photo unavailable'),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              SelectableText(
+                question,
+                style: AppTypography.styleOf(
+                  context,
+                  TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+                    fontSize: compact ? 16 : 17,
+                    letterSpacing: compact ? -.25 : null,
+                    height: compact ? 1.45 : 1.5,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     ),
   );
 }
@@ -87,8 +109,10 @@ class AskAnswerView extends StatefulWidget {
     this.onOpenSource,
     this.api,
     this.onActionResult,
+    this.refined = false,
   });
   final String answer;
+  final bool refined;
   final AskAnswerContext? contextData;
   final bool isLoading;
   final bool animateChunks;
@@ -226,8 +250,9 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     context,
                     TextStyle(
                       color: primary,
-                      fontSize: 17,
+                      fontSize: widget.refined ? 16 : 17,
                       height: 1.5,
+                      letterSpacing: widget.refined ? -.25 : null,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -235,15 +260,20 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                     context,
                     TextStyle(
                       color: primary,
-                      fontSize: 17,
+                      fontSize: widget.refined ? 16 : 17,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   listBullet: AppTypography.styleOf(
                     context,
-                    TextStyle(color: primary, fontSize: 17, height: 1.5),
+                    TextStyle(
+                      color: primary,
+                      fontSize: widget.refined ? 16 : 17,
+                      height: 1.5,
+                      letterSpacing: widget.refined ? -.25 : null,
+                    ),
                   ),
-                  blockSpacing: 10,
+                  blockSpacing: widget.refined ? 14 : 10,
                   listIndent: 20,
                 ),
               ),
