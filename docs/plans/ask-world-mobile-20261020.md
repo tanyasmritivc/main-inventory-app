@@ -47,3 +47,7 @@ Build 100 requires the companion API and reviewed migration 073. Migration 073
 requires explicit production authorization. Prepare/sign/validate the candidate,
 then apply 073 and publish the API before delivering the mobile build. Existing
 App Store build 99 submission remains untouched. No public submission of 100.
+
+Apple validation reports 1.0.9 is already approved and its release train is closed.
+The identical candidate is therefore version1.1.0/build100; the earlier
+1.0.9/build100 validation failure is preserved, and was not uploaded.
