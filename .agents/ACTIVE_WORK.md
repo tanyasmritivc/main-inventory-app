@@ -1,10 +1,15 @@
-## October20 — Ask typography correction in progress
+## October 20 — Ask typography 1.1.0 (101) delivered
 
-User requested the reference font after testing100. Mobile-only lighter native
-iOS typography, regular composer and below-route weight policy implemented on
-fix/mobile-ask-typography-20261020.35 targeted tests pass; analysis clean. Native
-visual checks, CI and signed1.1.0(101) delivery are in progress. No API/schema/data
-changes. See `docs/plans/ask-typography-20261020.md`.
+Mobile-only typography correction is committed on 0e7bf9a / PR149. Smaller native
+iOS display heading, regular composer text and lighter labels match the reference
+proportions; its exact font identity is not verified. 35 targeted tests, 16 native
+simulator cases, clean analysis and all five CI test jobs pass (39545769323;
+712 Flutter tests passed, one compiled-config test skipped). Archive/export,
+privacy/config and Apple validation pass. Apple acknowledged 1.1.0 (101), delivery
+1f58c797-1cae-4824-8efb-c9ce90c5ca59. Processing and physical-device acceptance
+remain pending; no public submission. The separate Vercel web preview failed on
+unchanged Next.js Google font resolution. No web/API/schema/data changes.
+See `docs/plans/ask-typography-20261020.md`.
 
 ## October 20 — Ask-first 1.1.0 (100) delivered
 
