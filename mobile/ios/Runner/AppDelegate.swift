@@ -32,6 +32,27 @@ import UserNotifications
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
+      case "requestPermission":
+        // Permission belongs to this installation, not an account or APNs token.
+        // Keep launch authorization independent of network registration/timeouts.
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          guard settings.authorizationStatus == .notDetermined else {
+            let allowed = settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional ||
+              settings.authorizationStatus == .ephemeral
+            DispatchQueue.main.async { result(allowed) }
+            return
+          }
+          UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            DispatchQueue.main.async {
+              if let error = error {
+                result(FlutterError(code: "permission_error", message: error.localizedDescription, details: nil))
+              } else {
+                result(granted)
+              }
+            }
+          }
+        }
       case "register":
         self?.registerForPush(result: result)
       case "authorizationStatus":

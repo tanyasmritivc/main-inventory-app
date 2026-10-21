@@ -11,6 +11,7 @@ import 'core/app_theme.dart';
 import 'core/appearance_controller.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
+import 'core/launch_notification_permission.dart';
 import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
@@ -248,11 +249,14 @@ class _MyAppState extends State<MyApp> {
                   child: GestureDetector(
                     onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                     behavior: HitTestBehavior.translucent,
-                    child: InvitationHost(
+                    child: LaunchNotificationPermission(
                       api: _api,
-                      navigatorKey: _navigatorKey,
-                      ready: _invitationReady,
-                      child: child ?? const SizedBox.shrink(),
+                      child: InvitationHost(
+                        api: _api,
+                        navigatorKey: _navigatorKey,
+                        ready: _invitationReady,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),

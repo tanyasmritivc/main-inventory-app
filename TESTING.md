@@ -1,3 +1,22 @@
+## Automatic launch notification authorization
+
+Run `test/push_notifications_test.dart` and
+`test/launch_notification_permission_test.dart`, then full Flutter tests and
+analysis. They cover notDetermined versus existing OS decisions, concurrent
+requests, signed-out startup, background/resume, denial, native errors, disposal
+and account changes. All backend registration calls are synthetic.
+
+For the actual Apple permission alert on a fresh disposable iOS installation:
+`flutter test integration_test/notification_launch_test.dart -d <simulator-id>
+--no-pub --dart-define=FINDEZ_NOTIFICATION_PERMISSION_QA=true --reporter expanded`.
+Answer the native alert within three minutes. This uses the production launch
+gate and native channel with an explicitly signed-out API stub. It checks the OS
+choice survives gate recreation and a second native permission call. The test
+is opt-in because OS authorization is persistent; never reset a customer's
+installation for QA. Repeat the first-open permission and Settings behavior on a
+physical test iPhone before public release. Simulator authorization does not prove
+background APNs delivery or physical-device acceptance.
+
 # FindEZ test suite
 
 ## Native iOS release audit

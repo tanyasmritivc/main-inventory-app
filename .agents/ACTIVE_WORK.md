@@ -1,3 +1,13 @@
+## October 20 — Automatic launch notification permission in progress
+
+Mobile-only branch `fix/mobile-launch-notification-permission-20261020` adds the
+native iOS permission request after the first active app frame, including before
+sign-in. Existing OS choices are respected; push token registration remains
+account-bound. Build103 is planned under standing TestFlight authorization.
+727 Flutter tests, clean analysis and the actual native Apple alert/Allow/no-repeat
+check pass. Delivery is pending the user's subsequent chat presentation/latency
+feedback. This lane has no backend/schema/customer-data changes.
+
 ## October 20 — Mobile glass polish 1.1.0 (102) delivered
 
 Runtime 08b7f8c on `feat/mobile-glass-polish-20261020`, PR150, refines World

@@ -1,3 +1,12 @@
+## October 20 — Automatic notification permission prepared
+
+Mobile build103 now asks iOS after the first active frame, including before sign-in,
+only for notDetermined permission. 727 Flutter tests, clean analysis and the native
+Apple alert/Allow/no-repeat check pass. Existing denied/allowed choices and
+account-bound registration are preserved. Delivery is pending additional chat UI
+and latency fixes requested during this task. No production data changes.
+See docs/plans/launch-notification-permission-20261020.md.
+
 ## October 20 — Mobile glass polish 1.1.0 (102) delivered
 
 Runtime 08b7f8c on `feat/mobile-glass-polish-20261020`, PR150, refines World
