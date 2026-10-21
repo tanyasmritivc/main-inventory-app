@@ -105,3 +105,65 @@ def test_failed_save_never_exposes_an_action_card():
     db = Mock(); db.table.return_value = q
     with patch.object(w, 'conversation'), patch.object(w, 'get_supabase_raw', return_value=db):
         with pytest.raises(RuntimeError, match='verified'): w.save_answer(ACTOR, WORLD, 'cid', 'Review', {'world_actions': []})
+
+
+def test_links_only_use_saved_scoped_read_ids():
+    item, space = str(uuid4()), str(uuid4())
+    links = w.resource_links({'items': [
+        {'item_id': item, 'inventory_id': INVENTORY, 'name': 'Drill'},
+        {'item_id': 'invented', 'inventory_id': INVENTORY, 'name': 'Fake'}],
+        'spaces': [{'id': space, 'inventory_id': INVENTORY, 'name': 'Shelf'}],
+        'world_action': {'name': 'Unsaved'}})
+    assert [r['kind'] for r in links] == ['item', 'space']
+    assert links[0]['href'] == f'findez://item/{INVENTORY}/{item}'
+
+
+def test_answer_links_are_grounded_in_reads_and_limited_to_referenced_records():
+    item, absent = str(uuid4()), str(uuid4())
+    call = NS(id='read', function=NS(name='world_search', arguments='{"query":"drill"}'))
+    read = {'items': [{'item_id': item, 'inventory_id': INVENTORY, 'name': 'Drill'},
+                      {'item_id': absent, 'inventory_id': INVENTORY, 'name': 'Hammer'}]}
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=read), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('Your Drill is on Shelf 2.')]):
+        answer = list(w.stream_turn(ACTOR, WORLD, 'Where is my drill?', [], 'cid'))[-1]
+    assert [r['id'] for r in answer['answer_context']['resource_links']] == [item]
+
+
+def test_resource_rechecks_world_before_any_read():
+    with patch.object(w, 'authorize'), patch.object(w, '_inventory', return_value=inventory(OTHER)), patch('app.services.supabase_client.get_supabase_admin') as db:
+        with pytest.raises(HTTPException): w.resolve_resource(ACTOR, WORLD, INVENTORY, 'item', str(uuid4()))
+    db.assert_not_called()
+
+
+@pytest.mark.parametrize('kind,column', [('item', 'item_id'), ('space', 'id')])
+def test_resource_reads_exact_current_id_and_handles_deleted_records(kind, column):
+    ident = str(uuid4())
+    q = Mock()
+    for method in ('select', 'eq', 'limit'): getattr(q, method).return_value = q
+    q.execute.return_value.data = [{column: ident, 'name': 'Renamed'}]
+    db = Mock(); db.table.return_value = q
+    inv = inventory(); inv['workspace']['workspace_id'] = WORKSPACE
+    with patch.object(w, 'authorize'), patch.object(w, '_inventory', return_value=inv), patch('app.services.supabase_client.get_supabase_admin', return_value=db):
+        result = w.resolve_resource(ACTOR, WORLD, INVENTORY, kind, ident)
+        assert result['resource']['name'] == 'Renamed'
+        assert ('user_id', ACTOR) in [c.args for c in q.eq.call_args_list]
+        assert (column, ident) in [c.args for c in q.eq.call_args_list]
+        q.execute.return_value.data = []
+        with pytest.raises(HTTPException) as error: w.resolve_resource(ACTOR, WORLD, INVENTORY, kind, ident)
+        assert error.value.status_code == 404
+    assert current_inventory.get() is None
+
+@pytest.mark.parametrize('supported', [False, True])
+def test_management_tools_require_client_card_support(supported):
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Hello.')) as gateway:
+        list(w.stream_turn(ACTOR, WORLD, 'Hello', [], 'cid', supports_item_management=supported))
+    names = {t['function']['name'] for t in gateway.call_args.kwargs['tools']}
+    assert (w.MANAGEMENT_TOOLS <= names) == supported
+    assert 'world_add_items' in names
+
+
+def test_old_client_cannot_execute_unadvertised_management_tool():
+    call = NS(id='c', function=NS(name='world_edit_item', arguments='{}'))
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute') as execute, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('Please update FindEZ to review this change.')]):
+        result = list(w.stream_turn(ACTOR, WORLD, 'Edit this item', [], 'cid'))
+    execute.assert_not_called()
+    assert not result[-1]['answer_context'].get('item_actions')

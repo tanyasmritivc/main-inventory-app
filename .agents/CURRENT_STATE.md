@@ -1,3 +1,40 @@
+## October21 — Build103 uploaded; approved074 and API live
+
+The user explicitly approved production074. The guarded activation applied it
+transactionally after a fresh backup and published APIba8a2ce. Three runtime files
+changed;101 unrelated Python files and existing database functions were preserved.
+Health/database return200; anonymous World/private-photo access returns401. No
+customer QA writes. Activation:2026-10-21T07:23:34Z.
+
+Apple validated and acknowledged1.1.0(103), delivery`b5928b86-5154-4874-b1b7-db123c0e2220`.
+Mobile source14285ce, notification parent6aae4a6; PR151/152/153 all pass five CI
+gates.741 Flutter tests, enabled production-config check,20 native iOS cases,
+1236 backend tests plus10subtests, and isolatedSQL/data-preservation rehearsal pass.
+32+32 device executables,24 privacy manifests and signatures verified;13 previews
+and signed artifacts preserved in Documents/FindEZ/AppStore/1.1.0-build103.
+Processing/tester availability was not polled. Physical-device acceptance remains
+pending. No public App Store submission. See docs/plans/chat-polish-item-management-20261021.md.
+
+## October21 — Build103 validated; migration074 approval pending
+
+PR151/152/153 all pass five CI gates. Mobile14285ce/APIba8a2ce are pushed.
+Signed103 passes Apple validation, platform/privacy/config checks;13 native
+previews preserved. Guarded deployment and isolated90-table restore rehearsal
+pass. Neither074 nor its API runtime has been activated; TestFlight103 has not
+been uploaded. Next step: explicit authorization for production074, then guarded
+activation and standing-authorized TestFlight upload. Physical device acceptance
+remains pending. See docs/plans/chat-polish-item-management-20261021.md.
+
+## October 21 — Chat polish and reviewed item management prepared
+
+Mobile `fix/mobile-chat-polish-20261020` builds on launch notifications for103.
+API `fix/api-chat-links-latency-20261020` adds verified links, parallel photo reads,
+and reviewed edit/move/price/expiry/reorder actions. User chose reorder requests
+for approval, never purchases. Migration074 is additive and rehearsed against an
+isolated fresh restore; **production application is not yet authorized**. Apply
+074 only after explicit approval, before deploying dependent runtime. No customer
+QA writes. See docs/plans/chat-polish-item-management-20261021.md.
+
 ## October 20 — organization Ask API published with approved 073
 
 Runtime34af900 / PR147 is live after explicit approval, fresh backup and guarded

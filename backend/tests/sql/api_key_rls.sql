@@ -229,3 +229,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir effective_workspace_directory_access.sql
 
 \ir world_chat.sql
+
+\ir world_item_management.sql

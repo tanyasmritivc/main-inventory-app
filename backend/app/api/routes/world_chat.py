@@ -22,6 +22,7 @@ class Question(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
     conversation_id: UUID | None = None
     supports_item_actions: bool = True
+    supports_item_management: bool = False
 
 
 @router.get('/directory')
@@ -32,6 +33,12 @@ def directory(world_id: str, user: AuthenticatedUser = Depends(get_current_user)
 @router.get('/spaces')
 def spaces(world_id: str, user: AuthenticatedUser = Depends(get_current_user)):
     return world.spaces(user.user_id, world.world_key(world_id))
+
+
+@router.get('/resources/{inventory_id}/{kind}/{resource_id}')
+def resource(world_id: str, inventory_id: UUID, kind: str, resource_id: UUID,
+             user: AuthenticatedUser = Depends(get_current_user)):
+    return world.resolve_resource(user.user_id, world.world_key(world_id), str(inventory_id), kind, str(resource_id))
 
 
 @router.get('/conversations')
@@ -61,7 +68,7 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False):
     key = await asyncio.to_thread(world.authorize, actor, key)
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
@@ -72,9 +79,10 @@ async def answer(actor, key, message, conversation_id, photo=None):
         stored = None
         saved = False
         save_started = False
+        matching = None
         try:
             from app.services.chat_item_actions import use_photo, photo_facts
-            retained = await asyncio.to_thread(world.latest_photo, actor, key, cid)
+            retained = None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid)
             evidence = photo_facts(retained)
             if photo:
                 from app.services.storage import upload_image
@@ -82,6 +90,7 @@ async def answer(actor, key, message, conversation_id, photo=None):
                 from uuid import uuid4
                 yield encode({'type': 'status', 'message': 'Reading your photo...'})
                 await asyncio.to_thread(check_and_increment_scan, actor)
+                matching = asyncio.create_task(world.photo_matches(actor, key, photo))
                 stored = await asyncio.to_thread(upload_image, user_id=actor, filename=f'ask-{uuid4().hex}.jpg', content=photo)
                 result = await extract_inventory_items_with_find(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
                 from app.services.item_photos import _storage_path
@@ -91,10 +100,10 @@ async def answer(actor, key, message, conversation_id, photo=None):
                     if item.get('image_url'):
                         clean['crop_path'] = _storage_path(user_id=actor, image_url=item['image_url'])
                     retained['items'].append(clean)
-                evidence = {**photo_facts(retained), 'saved_photos': await world.photo_matches(actor, key, photo),
+                evidence = {**photo_facts(retained), 'saved_photos': await matching,
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             with use_photo(retained):
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence)):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management)):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -111,6 +120,10 @@ async def answer(actor, key, message, conversation_id, photo=None):
             logger.warning('World chat failed; provider details omitted')
             yield encode({'type': 'error', 'code': 'world_chat_failed', 'message': 'Your request could not be completed. Please try again.'})
         finally:
+            if matching is not None:
+                if not matching.done():
+                    matching.cancel()
+                await asyncio.gather(matching, return_exceptions=True)
             if stored and not saved and not save_started:
                 from app.services.storage import delete_image
                 try:
@@ -124,13 +137,13 @@ async def answer(actor, key, message, conversation_id, photo=None):
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), user: AuthenticatedUser = Depends(get_current_user)):
     from app.services.item_photos import _jpeg_bytes, MAX_ITEM_PHOTO_BYTES
     raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
     if len(raw) > MAX_ITEM_PHOTO_BYTES:
@@ -139,7 +152,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management)
 
 
 class Decision(BaseModel):
@@ -184,5 +197,11 @@ def item_decision(request: Request, world_id: str, inventory_id: UUID, action_id
     if not messages:
         raise HTTPException(404, 'This action is unavailable in this organization.')
     with world.in_inventory(user.user_id, key, str(inventory_id)):
-        result = change_action(actor=user.user_id, action_id=str(action_id), decision=body.decision)
+        cards = (messages[0].get('answer_context') or {}).get('pending_actions', [])
+        card = next((c for c in cards if c.get('id') == str(action_id)), {})
+        if card.get('version') == 2:
+            from app.services.world_item_changes import change_action as change_item
+            result = change_item(actor=user.user_id, world=key, inventory=str(inventory_id), action_id=str(action_id), decision=body.decision)
+        else:
+            result = change_action(actor=user.user_id, action_id=str(action_id), decision=body.decision)
     return {'action': result}
