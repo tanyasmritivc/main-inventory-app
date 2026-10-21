@@ -1,4 +1,4 @@
-# Ask-first mobile world — build 100 candidate
+# Ask-first mobile world — 1.1.0 (100) delivered
 
 The app starts at Ask with an organization pill and profile avatar, a quiet
 orange/peach backdrop, rounded translucent composer and Ask / Spaces / More tabs.
@@ -51,3 +51,21 @@ App Store build 99 submission remains untouched. No public submission of 100.
 Apple validation reports 1.0.9 is already approved and its release train is closed.
 The identical candidate is therefore version1.1.0/build100; the earlier
 1.0.9/build100 validation failure is preserved, and was not uploaded.
+
+## Final delivery
+
+Runtime58411f5, PR148; all five CI jobs pass in run39543694110. Companion
+API runtime34af900 / PR147 passed all five CI jobs in39543052610. User explicitly
+approved migration073 and TestFlight100; 073 and the four-file API overlay are
+live after fresh backup, healthy API/database checks, denied anonymous world/photo
+access and preservation of99 unrelated Python files. No customer QA writes.
+
+Signed1.1.0(100) passed strict signing,32 archive and32 exported device executable
+checks,24 privacy manifests, matching app/extension versions, production HTTPS
+anonymous configuration and Apple validation. Apple acknowledged upload with
+delivery `cb293add-bf18-49c1-89e1-24692f195964`. IPA SHA256:
+`87f215f963ef6d42b192978d41ab787887d1718c3baeaa18fd07f7506a9012b6`.
+
+Artifacts, screenshots, logs, receipt and device acceptance flow are preserved at
+`Documents/FindEZ/AppStore/1.1.0-build100`. Processing/availability were not polled;
+physical-device acceptance is pending. No public App Store submission of100.

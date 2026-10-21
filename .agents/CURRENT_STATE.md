@@ -1,12 +1,13 @@
-## October 20 — Ask-first mobile build 100 candidate
+## October 20 — Ask-first 1.1.0 (100) delivered
 
-Implemented on feat/mobile-ask-world-20261020: organization-wide Ask landing,
-Ask/Spaces/More navigation, capture/voice entry, private history and reviewed
-inventory/Space creation. No web layout or customer data changes. 710 Flutter
-checks plus separately enabled production-config gate pass; analysis is clean.
-14 new native simulator cases pass. Requires companion API and migration073,
-which is NOT authorized or deployed. Signed delivery is in preparation.
-See `docs/plans/ask-world-mobile-20261020.md`.
+Ask/Spaces/More, subtle peach glass controls, organization-wide private Chat and
+reviewed inventory/Space creation are delivered on runtime58411f5 / PR148. All
+five CI gates pass (39543694110);710 Flutter tests, separately enabled production
+config, clean analysis,14 new native cases and161 existing native cases pass.
+Approved073 and supporting API are live; customer data was preserved. Apple
+validated and acknowledged signed1.1.0(100), deliverycb293add-bf18-49c1-89e1-24692f195964.
+TestFlight processing/availability and physical-device acceptance remain pending.
+No public submission of100. See `docs/plans/ask-world-mobile-20261020.md`.
 
 ## October 20 — simulator audit and beta99 delivered
 
