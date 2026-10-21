@@ -1,3 +1,19 @@
+## October 21 — Chat Auto Extract prepared; approved backend live
+
+Auto Extract is first in chat's + menu. Image-only uploads extract immediately;
+typed photo questions wait for Send. Durable drafts retain FIND crops/evidence,
+support chat refinement and explicit reviewed saving with duplicate checks.
+Approved migration075 and APIe47deb0 activated2026-10-21T23:24:51Z after a fresh
+backup. Health/database200, anonymous access401;102 unrelated Python files and
+customer records preserved. No customer QA writes.
+
+Validation:1255 Python tests plus10subtests;749 full Flutter tests and32 final
+chat/config checks; clean analysis;26 native iOS tests;17 previews; synthetic SQL,
+91-table restore/replay rehearsal and configured-model refinement probe pass.
+API PR154 passes all five CI gates. Signed mobile104 delivery is in progress.
+Physical-device camera and TestFlight acceptance remain pending.
+See docs/plans/chat-auto-extract-20261021.md.
+
 ## October21 — Auto Extract backend prepared, production approval pending
 
 feat/api-chat-auto-extract-20261021 restores full FIND drafts in private chat,

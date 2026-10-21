@@ -41,12 +41,17 @@ to world conversation payloads remain prohibited by073.
 
 ## Validation and delivery
 
-Implementation in progress on feat/api-chat-auto-extract-20261021 and
-feat/mobile-chat-auto-extract-20261021. Initial Python workflow/transport tests and
-the composed synthetic SQL fixture pass. Migration075 replayed on a fresh isolated
-restore with91 tables' customer values unchanged and private buckets preserved.
-Full Python suite passes1,255 tests plus10subtests. A configured-model probe refined a synthetic draft (selection and quantity), preserved uncertainty and performed no inventory writes. Mobile/native release checks remain in progress.
+APIe47deb0 / PR154 passes all five CI gates.1255 Python tests plus10subtests,
+749 full Flutter tests and32 final chat/config checks, clean analysis,26 native
+iOS cases and17 preserved previews pass. Synthetic SQL includes privacy,
+revocation, stale writes and migration replay.075 was rehearsed twice on an
+isolated fresh restore with91 customer tables unchanged. A configured-model
+probe refined selection/quantity while preserving uncertainty, without inventory
+writes. Interrupted replies preserve the completed capture draft.
 
-Production075 is NOT approved or applied. AGENTS.md requires separate explicit
-approval for production database changes. The migration must be applied before
-activating dependent runtime. No customer accounts are used for QA.
+The user explicitly approved075. The guarded publisher activated075/APIe47deb0
+at2026-10-21T23:24:51Z after a fresh private backup, preserving102 unrelated
+Python files and other database functions. Health/database200 and anonymous
+World/private-photo401 pass. No customer QA writes. Mobile104 is preparing for
+signed production delivery. Physical-device camera and TestFlight acceptance
+remain unverified; no public App Store submission.
