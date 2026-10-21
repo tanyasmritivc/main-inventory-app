@@ -1,3 +1,12 @@
+## 2026-10-20 — Ask iOS notification permission at app opening
+
+The user's explicit request supersedes the former explicit-Enable-only prompt
+policy. Request native alert/badge/sound authorization after the first active app
+frame, even before sign-in, only while iOS reports notDetermined. Keep the OS as
+the durable source of permission state. Never register an anonymous server token;
+existing authenticated reconnect, Settings and sign-out cleanup remain in place.
+Permission failure cannot block onboarding or inventory navigation.
+
 ## October 20 — local mobile glass presentation
 
 World shell controls share a bounded frosted surface and native iOS typography.
@@ -595,7 +604,7 @@ rejected original artifact and verified runtime behavior. Do not create a new
 public submission or replace the released 1.0.7 (59) selection. Physical phone
 acceptance remains deferred and is separate from Apple processing/group access.
 
-## October 11 native notifications
+## October 11 native notifications (launch prompt superseded October 20)
 
 OS notification authorization belongs to the phone app; ask for new permission
 from the explicit inbox Enable action and reconnect an already granted permission

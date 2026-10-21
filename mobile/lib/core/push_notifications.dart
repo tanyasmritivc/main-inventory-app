@@ -11,6 +11,7 @@ class PushNotifications {
   static Stream<void> get received => _received.stream;
   static bool _initialized = false;
   static Future<bool>? _registration;
+  static Future<bool>? _permissionRequest;
   static String? _registrationAccount;
   static int _generation = 0;
   static ApiClient? _registeredApi;
@@ -25,7 +26,30 @@ class PushNotifications {
         'notDetermined';
   }
 
-  /// A launch or resume may reconnect existing permission, never request it.
+  /// Ask once through iOS before sign-in; never register an anonymous device.
+  /// iOS owns the durable decision, so upgrades and relaunches do not re-prompt.
+  static Future<bool> requestPermissionIfNeeded() async {
+    if (!supported) return false;
+    final pending = _permissionRequest;
+    if (pending != null) return pending;
+    final request = _requestPermissionIfNeeded();
+    _permissionRequest = request;
+    try {
+      return await request;
+    } finally {
+      if (identical(_permissionRequest, request)) _permissionRequest = null;
+    }
+  }
+
+  static Future<bool> _requestPermissionIfNeeded() async {
+    final status = await authorizationStatus();
+    if (status == 'notDetermined') {
+      return await _channel.invokeMethod<bool>('requestPermission') ?? false;
+    }
+    return ['authorized', 'provisional', 'ephemeral'].contains(status);
+  }
+
+  /// Authenticated shells and resumes reconnect without opening another prompt.
   static Future<bool> registerIfAuthorized(ApiClient api) async {
     final status = await authorizationStatus();
     if (!['authorized', 'provisional', 'ephemeral'].contains(status)) {

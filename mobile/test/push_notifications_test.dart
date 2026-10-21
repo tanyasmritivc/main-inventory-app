@@ -32,15 +32,24 @@ void main() {
   late List<String> calls;
   late String status;
   Completer<Map<String, dynamic>>? registration;
+  Completer<bool>? permission;
+  bool granted = true;
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     calls = [];
     status = 'notDetermined';
     registration = null;
+    permission = null;
+    granted = true;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           calls.add(call.method);
           if (call.method == 'authorizationStatus') return status;
+          if (call.method == 'requestPermission') {
+            final result = await (permission?.future ?? Future.value(granted));
+            status = result ? 'authorized' : 'denied';
+            return result;
+          }
           if (call.method == 'register') {
             return registration?.future ??
                 {'deviceToken': 'a' * 64, 'environment': 'sandbox'};
@@ -54,7 +63,60 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
   });
-  test('launch reconnects only existing notification permission', () async {
+  test(
+    'undetermined permission asks iOS without registering an account',
+    () async {
+      expect(await PushNotifications.requestPermissionIfNeeded(), isTrue);
+      expect(calls, ['authorizationStatus', 'requestPermission']);
+      expect(await PushNotifications.requestPermissionIfNeeded(), isTrue);
+      expect(calls.where((value) => value == 'requestPermission').length, 1);
+    },
+  );
+  test('denial is retained and never prompts again', () async {
+    granted = false;
+    expect(await PushNotifications.requestPermissionIfNeeded(), isFalse);
+    expect(await PushNotifications.requestPermissionIfNeeded(), isFalse);
+    expect(calls.where((value) => value == 'requestPermission').length, 1);
+  });
+  test('existing OS decisions are respected', () async {
+    for (final value in ['denied', 'authorized', 'provisional', 'ephemeral']) {
+      status = value;
+      expect(
+        await PushNotifications.requestPermissionIfNeeded(),
+        value != 'denied',
+      );
+    }
+    expect(calls.where((value) => value != 'authorizationStatus'), isEmpty);
+  });
+  test(
+    'concurrent launch requests share one native permission result',
+    () async {
+      permission = Completer<bool>();
+      final first = PushNotifications.requestPermissionIfNeeded();
+      final second = PushNotifications.requestPermissionIfNeeded();
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.where((value) => value == 'requestPermission').length, 1);
+      permission!.complete(true);
+      expect(await first, isTrue);
+      expect(await second, isTrue);
+    },
+  );
+  test('native permission failure does not prevent a later retry', () async {
+    permission = Completer<bool>();
+    final failed = PushNotifications.requestPermissionIfNeeded();
+    final expectation = expectLater(failed, throwsA(isA<PlatformException>()));
+    await Future<void>.delayed(Duration.zero);
+    permission!.completeError(PlatformException(code: 'permission_error'));
+    await expectation;
+    permission = null;
+    expect(await PushNotifications.requestPermissionIfNeeded(), isTrue);
+  });
+  test('other platforms do not invoke iOS permission methods', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    expect(await PushNotifications.requestPermissionIfNeeded(), isFalse);
+    expect(calls, isEmpty);
+  });
+  test('shell reconnects only existing notification permission', () async {
     final api = _PushApi();
     for (final value in ['notDetermined', 'denied']) {
       status = value;
