@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/liquid_surface.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 
@@ -59,66 +60,72 @@ class _WorldActionCardState extends State<WorldActionCard> {
         ? (plan['inventories'] as List).whereType<Map>()
         : const <Map>[];
     final pending = _action['status'] == 'pending';
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              pending
-                  ? 'Review your inventory world'
-                  : _action['status'] == 'confirmed'
-                  ? 'Saved to your world'
-                  : 'Cancelled',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            if (_action['workspace_label'] != null)
-              Text('Workspace: ${_action['workspace_label']}'),
-            for (final inventory in inventories) ...[
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: LiquidSurface(
+        radius: 24,
+        shadow: false,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                inventory['name'].toString(),
-                style: Theme.of(context).textTheme.titleSmall,
+                pending
+                    ? 'Review your inventory world'
+                    : _action['status'] == 'confirmed'
+                    ? 'Saved to your world'
+                    : 'Cancelled',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              for (final space
-                  in (inventory['spaces'] is List
-                      ? inventory['spaces'] as List
-                      : const []))
+              const SizedBox(height: 12),
+              if (_action['workspace_label'] != null)
+                Text('Workspace: ${_action['workspace_label']}'),
+              for (final inventory in inventories) ...[
+                Text(
+                  inventory['name'].toString(),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                for (final space
+                    in (inventory['spaces'] is List
+                        ? inventory['spaces'] as List
+                        : const []))
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, top: 4),
+                    child: Text(space.toString()),
+                  ),
+                const SizedBox(height: 8),
+              ],
+              if (pending)
+                const Text(
+                  'Matching existing inventories and Spaces will be reused. No existing items will be changed.',
+                ),
+              if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 4),
-                  child: Text(space.toString()),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 8),
+              if (pending)
+                Wrap(
+                  spacing: 12,
+                  children: [
+                    FilledButton(
+                      onPressed: _busy ? null : () => _decide('confirm'),
+                      child: Text(_busy ? 'Saving...' : 'Create'),
+                    ),
+                    TextButton(
+                      onPressed: _busy ? null : () => _decide('cancel'),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
             ],
-            if (pending)
-              const Text(
-                'Matching existing inventories and Spaces will be reused. No existing items will be changed.',
-              ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            if (pending)
-              Wrap(
-                spacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: _busy ? null : () => _decide('confirm'),
-                    child: Text(_busy ? 'Saving...' : 'Create'),
-                  ),
-                  TextButton(
-                    onPressed: _busy ? null : () => _decide('cancel'),
-                    child: const Text('Cancel'),
-                  ),
-                ],
-              ),
-          ],
+          ),
         ),
       ),
     );

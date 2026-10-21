@@ -362,7 +362,7 @@ void main() {
         expect(tester.takeException(), isNull);
         tester.platformDispatcher.clearTextScaleFactorTestValue();
         await tester.pump();
-        await tester.tap(find.text('More'));
+        await tester.tap(find.byTooltip('More'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Workspaces and team tools'));
         await settle(tester);

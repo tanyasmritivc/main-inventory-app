@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import '../../core/ui/liquid_surface.dart';
+import 'world_style.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
-import '../../core/ui/app_typography.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_context.dart';
 import '../../core/place_session.dart';
@@ -148,7 +149,7 @@ class _WorldShellState extends State<WorldShell> {
   Future<void> _push(Widget page) async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute<void>(builder: (_) => page));
+    ).push(MaterialPageRoute<void>(builder: (_) => WorldStyle(child: page)));
     if (mounted) unawaited(_load());
   }
 
@@ -279,60 +280,64 @@ class _WorldShellState extends State<WorldShell> {
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
-      builder: (sheet) => FractionallySizedBox(
-        heightFactor: .72,
-        child: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            ListTile(
-              leading: MemberAvatar(
-                name: _profile.name,
-                photoUrl: _profile.photoUrl,
-                size: 48,
+      builder: (sheet) => WorldStyle(
+        child: FractionallySizedBox(
+          heightFactor: .72,
+          child: ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              ListTile(
+                leading: MemberAvatar(
+                  name: _profile.name,
+                  photoUrl: _profile.photoUrl,
+                  size: 48,
+                ),
+                title: Text(
+                  _profile.name.isEmpty ? 'Your profile' : _profile.name,
+                ),
+                subtitle: const Text('Your account'),
               ),
-              title: Text(
-                _profile.name.isEmpty ? 'Your profile' : _profile.name,
-              ),
-              subtitle: const Text('Your account'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profile'),
-              onTap: () {
-                Navigator.pop(sheet);
-                unawaited(
-                  _push(
-                    Scaffold(
-                      appBar: AppBar(title: const Text('Profile')),
-                      body: ProfilePage(
-                        api: widget.session.api,
-                        accountOnly: true,
-                        store: _profile,
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Profile'),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  unawaited(
+                    _push(
+                      Scaffold(
+                        appBar: AppBar(title: const Text('Profile')),
+                        body: ProfilePage(
+                          api: widget.session.api,
+                          accountOnly: true,
+                          store: _profile,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications_none),
-              title: const Text('Notifications'),
-              onTap: () {
-                Navigator.pop(sheet);
-                unawaited(_push(NotificationsPage(api: widget.session.api)));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Account and settings'),
-              onTap: () {
-                Navigator.pop(sheet);
-                unawaited(
-                  _push(AccountPage(api: widget.session.api, store: _profile)),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_none),
+                title: const Text('Notifications'),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  unawaited(_push(NotificationsPage(api: widget.session.api)));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('Account and settings'),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  unawaited(
+                    _push(
+                      AccountPage(api: widget.session.api, store: _profile),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -358,7 +363,7 @@ class _WorldShellState extends State<WorldShell> {
     );
   }
 
-  Widget _spaces() {
+  Widget _spaces(BuildContext context) {
     final error = _error ?? _spacesError;
     if (error != null) {
       return Center(
@@ -395,12 +400,21 @@ class _WorldShellState extends State<WorldShell> {
         children: [
           Text('Spaces', style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 22),
-          TextField(
-            controller: _search,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: 'Search Spaces',
-              prefixIcon: Icon(Icons.search),
+          LiquidSurface(
+            radius: 24,
+            quiet: true,
+            shadow: false,
+            child: TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                hintText: 'Search Spaces',
+                prefixIcon: Icon(CupertinoIcons.search, size: 20),
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -414,14 +428,31 @@ class _WorldShellState extends State<WorldShell> {
               ),
             ),
           for (final row in rows)
-            Card(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
               child: ListTile(
-                leading: const Icon(Icons.inventory_2_outlined),
-                title: Text(row['space']['name'].toString()),
-                subtitle: Text(
-                  '${row['group']['workspace_name']} · ${row['group']['name']}',
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 2,
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                leading: LiquidSurface(
+                  radius: 18,
+                  quiet: true,
+                  shadow: false,
+                  child: const SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Icon(CupertinoIcons.archivebox, size: 24),
+                  ),
+                ),
+                title: Text(row['space']['name'].toString()),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '${row['group']['workspace_name']} · ${row['group']['name']}',
+                  ),
+                ),
+                trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
                 onTap: () => _guard(() async {
                   final api = await _inventory(row['group']);
                   await _openSpace(api, row['space']);
@@ -489,28 +520,30 @@ class _WorldShellState extends State<WorldShell> {
     };
     await _push(page);
   });
-  Widget _more() => ListView(
+  Widget _more(BuildContext context) => ListView(
     padding: const EdgeInsets.all(20),
     children: [
       Text('More', style: Theme.of(context).textTheme.headlineLarge),
       const SizedBox(height: 24),
       for (final label in [
-        'Overview',
-        'Review',
-        'Projects',
-        'Documents and notes',
-        'Lent items',
+        ('Overview', CupertinoIcons.square_grid_2x2),
+        ('Review', CupertinoIcons.checkmark_seal),
+        ('Projects', CupertinoIcons.cube_box),
+        ('Documents and notes', CupertinoIcons.doc_text),
+        ('Lent items', CupertinoIcons.arrow_right_arrow_left),
       ])
         ListTile(
-          title: Text(label),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _tool(label),
+          leading: Icon(label.$2),
+          title: Text(label.$1),
+          trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
+          onTap: () => _tool(label.$1),
         ),
       const Divider(),
       ListTile(
+        leading: const Icon(CupertinoIcons.person_2),
         title: const Text('Workspaces and team tools'),
         subtitle: const Text('People, tasks, files, activity and settings'),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: () => _push(
           WorkspaceHome(
             session: widget.session,
@@ -519,15 +552,16 @@ class _WorldShellState extends State<WorldShell> {
         ),
       ),
       ListTile(
+        leading: const Icon(CupertinoIcons.gear),
         title: const Text('Account settings'),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
         onTap: _account,
       ),
     ],
   );
   @override
   Widget build(BuildContext context) =>
-      AppTypography(child: Builder(builder: _buildWorld));
+      WorldStyle(child: Builder(builder: _buildWorld));
 
   Widget _buildWorld(BuildContext context) {
     if (!_loadedNavigation) {
@@ -583,6 +617,7 @@ class _WorldShellState extends State<WorldShell> {
                             api: widget.session.api,
                             id: widget.session.organizationId,
                             name: widget.session.organizationName,
+                            glass: true,
                             labelStyle: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -593,10 +628,13 @@ class _WorldShellState extends State<WorldShell> {
                         ),
                       ),
                       if (_tab == 0)
-                        IconButton(
-                          tooltip: 'Chat history',
-                          onPressed: _history,
-                          icon: const Icon(Icons.history),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: LiquidIconButton(
+                            tooltip: 'Chat history',
+                            onPressed: _history,
+                            icon: CupertinoIcons.clock,
+                          ),
                         ),
                       IconButton(
                         tooltip: 'Account',
@@ -604,7 +642,7 @@ class _WorldShellState extends State<WorldShell> {
                         icon: MemberAvatar(
                           name: _profile.name,
                           photoUrl: _profile.photoUrl,
-                          size: 38,
+                          size: 36,
                         ),
                       ),
                     ],
@@ -639,94 +677,104 @@ class _WorldShellState extends State<WorldShell> {
                         unawaited(_load());
                       },
                     ),
-                    _spaces(),
-                    _more(),
+                    _spaces(context),
+                    _more(context),
                   ],
                 ),
               ),
               if (!focused && !keyboard)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 8, 32, 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(40),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(
-                        sigmaX: MediaQuery.of(context).disableAnimations
-                            ? 0
-                            : 18,
-                        sigmaY: MediaQuery.of(context).disableAnimations
-                            ? 0
-                            : 18,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: (dark ? Colors.white : Colors.black)
-                              .withValues(alpha: .06),
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(
-                            color: (dark ? Colors.white : Colors.black)
-                                .withValues(alpha: .10),
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(5),
-                        child: Row(
-                          children: [
-                            for (final entry in [
-                              (0, Icons.chat_bubble_outline, 'Ask'),
-                              (1, Icons.grid_view_rounded, 'Spaces'),
-                              (2, Icons.more_horiz, 'More'),
-                            ])
-                              Expanded(
-                                child: Semantics(
-                                  selected: _tab == entry.$1,
-                                  button: true,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(34),
-                                    onTap: () =>
-                                        setState(() => _tab = entry.$1),
-                                    child: AnimatedContainer(
-                                      duration: Duration(
-                                        milliseconds:
-                                            MediaQuery.disableAnimationsOf(
-                                              context,
-                                            )
-                                            ? 0
-                                            : 180,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(34),
-                                        color: _tab == entry.$1
-                                            ? (dark
-                                                      ? Colors.white
-                                                      : Colors.white)
-                                                  .withValues(
-                                                    alpha: dark ? .14 : .9,
-                                                  )
-                                            : Colors.transparent,
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(entry.$2),
-                                          const SizedBox(height: 3),
-                                          Text(
-                                            entry.$3,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
-                                              letterSpacing: 0,
-                                            ),
-                                          ),
-                                        ],
+                  padding: const EdgeInsets.fromLTRB(44, 8, 44, 10),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 340),
+                    child: LiquidSurface(
+                      radius: 40,
+                      quiet: true,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: SizedBox(
+                          height: 54,
+                          child: Stack(
+                            children: [
+                              AnimatedAlign(
+                                alignment: Alignment((_tab - 1).toDouble(), 0),
+                                duration: Duration(
+                                  milliseconds:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? 0
+                                      : 260,
+                                ),
+                                curve: Curves.easeOutCubic,
+                                child: FractionallySizedBox(
+                                  widthFactor: 1 / 3,
+                                  heightFactor: 1,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(32),
+                                      color:
+                                          (dark ? Colors.white : Colors.white)
+                                              .withValues(
+                                                alpha: dark ? .12 : .78,
+                                              ),
+                                      border: Border.all(
+                                        width: .6,
+                                        color: Colors.white.withValues(
+                                          alpha: dark ? .12 : .65,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                          ],
+                              Row(
+                                children: [
+                                  for (final entry in [
+                                    (
+                                      0,
+                                      CupertinoIcons.chat_bubble,
+                                      CupertinoIcons.chat_bubble_fill,
+                                      'Ask',
+                                    ),
+                                    (
+                                      1,
+                                      CupertinoIcons.square_grid_2x2,
+                                      CupertinoIcons.square_grid_2x2_fill,
+                                      'Spaces',
+                                    ),
+                                    (
+                                      2,
+                                      CupertinoIcons.ellipsis,
+                                      CupertinoIcons.ellipsis,
+                                      'More',
+                                    ),
+                                  ])
+                                    Expanded(
+                                      child: Semantics(
+                                        selected: _tab == entry.$1,
+                                        child: Tooltip(
+                                          message: entry.$4,
+                                          child: IconButton(
+                                            tooltip: null,
+                                            onPressed: () =>
+                                                setState(() => _tab = entry.$1),
+                                            style: IconButton.styleFrom(
+                                              minimumSize: const Size(48, 54),
+                                            ),
+                                            icon: Icon(
+                                              _tab == entry.$1
+                                                  ? entry.$3
+                                                  : entry.$2,
+                                              size: 25,
+                                              semanticLabel: entry.$4,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

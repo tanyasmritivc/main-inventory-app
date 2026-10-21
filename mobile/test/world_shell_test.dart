@@ -157,19 +157,120 @@ void main() {
   testWidgets('Spaces is reachable and does not replace Ask with a dashboard', (
     tester,
   ) async {
+    final fallback = fixture.respond;
+    fixture.respond = (request) {
+      if (request.path.endsWith('/spaces')) {
+        return {
+          'inventories': [
+            {
+              'name': 'Workshop tools',
+              'workspace_name': 'Personal',
+              'spaces': [
+                {'name': 'Workbench', 'space_id': 'space-a'},
+                {'name': 'Parts drawers', 'space_id': 'space-b'},
+              ],
+            },
+          ],
+        };
+      }
+      return fallback(request);
+    };
     await mount(tester);
-    await tester.tap(find.text('Spaces').last);
+    await tester.tap(find.byTooltip('Spaces'));
     await tester.pumpAndSettle();
     expect(find.text('Search Spaces'), findsOneWidget);
+    expect(find.text('Workbench'), findsOneWidget);
     await worldAuditCapture?.call('spaces');
-    await tester.tap(find.text('More'));
+    await tester.enterText(find.byType(TextField).last, 'drawers');
+    await tester.pumpAndSettle();
+    expect(find.text('Workbench'), findsNothing);
+    expect(find.text('Parts drawers'), findsOneWidget);
+    await tester.tap(find.byTooltip('More'));
     await tester.pumpAndSettle();
     expect(find.text('Workspaces and team tools'), findsOneWidget);
     await worldAuditCapture?.call('more');
-    await tester.tap(find.text('Ask'));
+    await tester.tap(find.byTooltip('Ask'));
     await tester.pumpAndSettle();
     expect(find.text('Create your inventory world.'), findsOneWidget);
   });
+  testWidgets('History search filters titles and opens the selected chat', (
+    tester,
+  ) async {
+    final fallback = fixture.respond;
+    fixture.respond = (request) {
+      if (request.path.endsWith('/conversations')) {
+        return [
+          {'id': 'chat-tools', 'title': 'Workshop tools'},
+          {'id': 'chat-books', 'title': 'Classroom books'},
+        ];
+      }
+      if (request.path.endsWith('/conversations/chat-books')) {
+        return {
+          'conversation': {'id': 'chat-books', 'title': 'Classroom books'},
+          'messages': [
+            {'id': 'q1', 'role': 'user', 'content': 'Where are the books?'},
+            {
+              'id': 'a1',
+              'role': 'assistant',
+              'content': 'On the classroom shelf.',
+            },
+          ],
+        };
+      }
+      return fallback(request);
+    };
+    await mount(tester, brightness: Brightness.dark);
+    await tester.tap(find.byTooltip('Chat history'));
+    await tester.pumpAndSettle();
+    expect(find.text('Workshop tools'), findsOneWidget);
+    await worldAuditCapture?.call('history-dark');
+    await tester.tap(find.byTooltip('Search chats'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'BOOKS');
+    await tester.pumpAndSettle();
+    expect(find.text('Workshop tools'), findsNothing);
+    expect(find.text('Classroom books'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'missing');
+    await tester.pumpAndSettle();
+    expect(find.text('No matching chats'), findsOneWidget);
+    await tester.tap(find.byTooltip('Search chats'));
+    await tester.pumpAndSettle();
+    expect(find.text('Workshop tools'), findsOneWidget);
+    await tester.tap(find.text('Classroom books'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('On the classroom shelf.'), findsWidgets);
+    expect(find.byTooltip('More'), findsNothing);
+    expect(
+      fixture.requests.last.path,
+      '/worlds/personal/conversations/chat-books',
+    );
+    await worldAuditCapture?.call('conversation-dark');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Glass navigation and history fit narrow screens at large text', (
+    tester,
+  ) async {
+    final fallback = fixture.respond;
+    fixture.respond = (request) =>
+        request.path.endsWith('/conversations') ? [] : fallback(request);
+    await mount(tester, size: const Size(320, 568), scale: 2);
+    for (final label in ['Spaces', 'More', 'Ask']) {
+      await tester.tap(find.byTooltip(label));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+    await tester.tap(find.byTooltip('Chat history'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start your first chat'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byTooltip('Search chats'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Ask focuses chat and retains the draft on Back', (tester) async {
     final requests = <http.Request>[];
     await http.runWithClient(
@@ -188,7 +289,7 @@ void main() {
           );
         }
         expect(requests.single.url.path, '/worlds/personal/ai_command');
-        expect(find.text('More'), findsNothing);
+        expect(find.byTooltip('More'), findsNothing);
         expect(find.byTooltip('Account'), findsNothing);
         expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
         await tester.enterText(
@@ -197,7 +298,7 @@ void main() {
         );
         await tester.tap(find.byTooltip('Back'));
         await tester.pumpAndSettle();
-        expect(find.text('More'), findsOneWidget);
+        expect(find.byTooltip('More'), findsOneWidget);
         expect(find.text('What about the charger?'), findsOneWidget);
         expect(find.text('Create your inventory world.'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
