@@ -251,11 +251,34 @@ class PlaceSession extends ChangeNotifier {
     }
     final generation = ++_generation;
     try {
+      final hasSavedPlace = await store.hasSavedPlace();
       final savedOrganization = await store.readOrganization();
       final place = await store.read();
       if (!_current(generation)) return;
       if (savedOrganization != null) {
         await selectOrganization(savedOrganization, preferred: place);
+      } else if (!hasSavedPlace) {
+        // A fresh sign-in has no local destination. Prefer an organization the
+        // account owns; selectOrganization rechecks current server access.
+        final result = await api.collaboration('/organizations');
+        if (!_current(generation)) return;
+        final owned = placeRows(result['organizations'])
+            .where(
+              (row) =>
+                  row['owner_user_id'] == accountId || row['role'] == 'owner',
+            )
+            .toList();
+        owned.sort(
+          (a, b) => (b['created_at']?.toString() ?? '').compareTo(
+            a['created_at']?.toString() ?? '',
+          ),
+        );
+        if (owned.isNotEmpty) {
+          await selectOrganization(owned.first['organization_id'] as String);
+        } else {
+          await select(place);
+          if (error == null && !_disposed) await initializeNavigation();
+        }
       } else {
         await select(place);
         if (error == null && !_disposed) await initializeNavigation();

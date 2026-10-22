@@ -471,6 +471,7 @@ class WorldProvisioner {
     _current(actor);
     await LastPlaceStore(actor).save(
       LastPlace.workspace(landing.workspaceId),
+      organizationId: landing.organizationId,
       isCurrent: () => api.accountId == actor,
     );
     _current(actor);

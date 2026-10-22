@@ -29,6 +29,7 @@ import UserNotifications
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.applicationRegistrar
+    registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -182,4 +183,65 @@ import UserNotifications
     }
     completionHandler()
   }
+}
+
+
+// A real UIKit menu anchored to the composer plus button. The OS controls
+// spacing, material, submenu navigation, VoiceOver and outside-tap dismissal.
+private final class ChatMenuFactory: NSObject, FlutterPlatformViewFactory {
+  let messenger: FlutterBinaryMessenger
+  init(messenger: FlutterBinaryMessenger) { self.messenger = messenger }
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol { FlutterStandardMessageCodec.sharedInstance() }
+  func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+    ChatMenuView(frame: frame, id: viewId, messenger: messenger, args: args)
+  }
+}
+
+private final class ChatMenuView: NSObject, FlutterPlatformView {
+  let button = UIButton(type: .system)
+  let channel: FlutterMethodChannel
+  init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
+    channel = FlutterMethodChannel(name: "com.findez.app/chat-menu/\(id)", binaryMessenger: messenger)
+    super.init()
+    button.frame = frame
+    button.backgroundColor = .clear
+    button.tintColor = .label
+    button.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 23, weight: .regular)), for: .normal)
+    button.accessibilityLabel = "Capture or attach"
+    button.accessibilityHint = "Opens attachment and context options"
+    button.showsMenuAsPrimaryAction = true
+    if #available(iOS 16.0, *) { button.preferredMenuElementOrder = .fixed }
+    func action(_ id: String, _ title: String, _ icon: String) -> UIAction {
+      UIAction(title: title, image: UIImage(systemName: icon)) { [weak self] _ in
+        self?.channel.invokeMethod("selected", arguments: id)
+      }
+    }
+    let attach = UIMenu(title: "Attach", image: UIImage(systemName: "paperclip"), children: [
+      action("library", "Photo Library", "photo.on.rectangle"),
+      action("camera", "Take Photo", "camera"),
+      action("file", "Choose Files", "folder")
+    ])
+    let context = UIMenu(title: "Add context", image: UIImage(systemName: "text.bubble"), children: [
+      action("space", "Spaces", "square.grid.2x2"),
+      action("item", "Items", "cube.box"),
+      action("project", "Projects", "folder"),
+      action("document", "Documents and notes", "doc.text"),
+      action("connections", "Connections", "link")
+    ])
+    button.menu = UIMenu(children: [action("auto_extract", "Auto Extract", "sparkles"), attach,
+      action("spreadsheet", "Import inventory", "tablecells"),
+      action("barcode", "Scan barcode", "barcode.viewfinder"), context])
+    configure(args)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "configure" else { result(FlutterMethodNotImplemented); return }
+      self?.configure(call.arguments); result(nil)
+    }
+  }
+  private func configure(_ args: Any?) {
+    let values = args as? [String: Any] ?? [:]
+    button.isEnabled = values["enabled"] as? Bool ?? true
+    button.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
+  }
+  func view() -> UIView { button }
+  deinit { channel.setMethodCallHandler(nil) }
 }

@@ -14,7 +14,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
-import 'package:mobile/features/world/world_welcome.dart';
+import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/onboarding/pending_world.dart';
@@ -196,18 +196,19 @@ void main() {
   tearDownAll(() async => Supabase.instance.dispose());
 
   testWidgets(
-    'fresh launch introduces Ask without requiring organization setup',
+    'fresh launch restores the full setup flow before authentication',
     (tester) async {
       final api = _Api();
       await tester.pumpWidget(_gate(api));
       await tester.pumpAndSettle();
-      expect(find.byType(WorldWelcome), findsOneWidget);
+      expect(find.byType(OnboardingPage), findsOneWidget);
       expect(find.byType(AuthPage), findsNothing);
       expect(find.byType(MainShell), findsNothing);
       expect(api.reads, 0);
-      await tester.tap(find.text('Get started'));
+      expect(find.text("Who's FindEZ for?"), findsOneWidget);
+      await tester.tap(find.text('I already have an account'));
       await tester.pumpAndSettle();
-      expect(find.byType(WorldWelcome), findsNothing);
+      expect(find.byType(OnboardingPage), findsNothing);
       expect(find.byType(AuthPage), findsOneWidget);
       expect(find.byType(MainShell), findsNothing);
       expect(api.reads, 0);
@@ -229,7 +230,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_gate(api, key: const Key('restart')));
       await tester.pumpAndSettle();
-      expect(find.byType(WorldWelcome), findsNothing);
+      expect(find.byType(OnboardingPage), findsNothing);
       expect(find.byType(AuthPage), findsOneWidget);
       expect(api.reads, 0);
     },
@@ -242,7 +243,7 @@ void main() {
     await tester.pumpWidget(_gate(_Api()));
     await tester.pumpAndSettle();
     expect(find.byType(AuthPage), findsOneWidget);
-    expect(find.byType(WorldWelcome), findsNothing);
+    expect(find.byType(OnboardingPage), findsNothing);
   });
 
   testWidgets('returning authenticated users keep their session and open Ask', (
@@ -257,7 +258,7 @@ void main() {
     expect(find.byType(InventoryContextHost), findsOneWidget);
     expect(find.byType(WorldShell), findsOneWidget);
     expect(find.byType(MainShell), findsNothing);
-    expect(find.byType(WorldWelcome), findsNothing);
+    expect(find.byType(OnboardingPage), findsNothing);
     expect(find.byType(AuthPage), findsNothing);
     expect(
       Supabase.instance.client.auth.currentUser?.id,
@@ -410,7 +411,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(inbox.pending?.kind, kind);
-      expect(find.byType(WorldWelcome), findsOneWidget);
+      expect(find.byType(OnboardingPage), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
       await tester.tap(find.text('I already have an account'));
       await tester.pumpAndSettle();

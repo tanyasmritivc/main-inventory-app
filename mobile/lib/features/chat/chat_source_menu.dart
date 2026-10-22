@@ -50,7 +50,7 @@ class _SourceMenuState extends State<_SourceMenu> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final media = MediaQuery.of(context);
-      final width = math.min(320.0, constraints.maxWidth - 24);
+      final width = math.min(280.0, constraints.maxWidth - 24);
       final bottom = math.min(
         widget.anchor.dy - 8,
         constraints.maxHeight -
@@ -58,7 +58,10 @@ class _SourceMenuState extends State<_SourceMenu> {
             media.padding.bottom -
             12,
       );
-      final top = math.max(media.padding.top + 12, bottom - 340);
+      final rows = choices[page]!.length + (page == 'root' ? 0 : 1);
+      final desiredHeight =
+          rows * 48.0 * media.textScaler.scale(1).clamp(1.0, 2.0) + 16;
+      final top = math.max(media.padding.top + 12, bottom - desiredHeight);
       final height = math.max(48.0, bottom - top);
       final left = widget.anchor.dx.clamp(
         12.0,
@@ -74,13 +77,15 @@ class _SourceMenuState extends State<_SourceMenu> {
             child: Material(
               elevation: 12,
               color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(16),
               clipBehavior: Clip.antiAlias,
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   if (page != 'root') ...[
                     ListTile(
+                      dense: true,
+                      minVerticalPadding: 8,
                       leading: const Icon(
                         CupertinoIcons.chevron_left,
                         size: 18,
@@ -92,6 +97,8 @@ class _SourceMenuState extends State<_SourceMenu> {
                   ],
                   for (final choice in choices[page]!)
                     ListTile(
+                      dense: true,
+                      minVerticalPadding: 8,
                       leading: Icon(choice.$2, size: 21),
                       title: Text(
                         choice.$3,

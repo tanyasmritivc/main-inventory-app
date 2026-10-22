@@ -1,3 +1,4 @@
+import '../chat/native_chat_menu_button.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
@@ -10,6 +11,7 @@ class WorldComposer extends StatefulWidget {
     this.attachmentKey,
     this.sourceChips,
     this.menuOpen = false,
+    this.onSourceSelected,
     required this.controller,
     required this.focusNode,
     required this.onChanged,
@@ -23,6 +25,7 @@ class WorldComposer extends StatefulWidget {
   final GlobalKey? attachmentKey;
   final Widget? sourceChips;
   final bool menuOpen;
+  final ValueChanged<String>? onSourceSelected;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -183,16 +186,24 @@ class _WorldComposerState extends State<WorldComposer>
             SizedBox(height: widget.compact ? 12 : 14),
             Row(
               children: [
-                LiquidIconButton(
-                  key: widget.attachmentKey,
-                  tooltip: widget.menuOpen
-                      ? 'Close attachment menu'
-                      : 'Capture or attach',
-                  onPressed: widget.onAttach,
-                  icon: widget.menuOpen
-                      ? CupertinoIcons.xmark
-                      : CupertinoIcons.plus,
-                ),
+                if (usesNativeChatMenu && widget.onSourceSelected != null)
+                  NativeChatMenuButton(
+                    enabled: widget.onAttach != null,
+                    onSelected: widget.onSourceSelected!,
+                  )
+                else
+                  IconButton(
+                    key: widget.attachmentKey,
+                    tooltip: widget.menuOpen
+                        ? 'Close attachment menu'
+                        : 'Capture or attach',
+                    onPressed: widget.onAttach,
+                    icon: Icon(
+                      widget.menuOpen
+                          ? CupertinoIcons.xmark
+                          : CupertinoIcons.plus,
+                    ),
+                  ),
                 const Spacer(),
                 LiquidIconButton(
                   tooltip: widget.listening

@@ -1,3 +1,37 @@
+## October 21 — Build 110 onboarding, native menus and chat photos
+
+Full onboarding is restored for incomplete/fresh installs. Created organization IDs
+persist through setup, and fresh sign-ins select an owned organization with current
+access checks; existing explicit Personal selection is respected. Chat photos can
+link to existing items after choosing an exact saved candidate, including typo and
+similar-name suggestions. Quantities and existing primary photos are preserved.
+
+The iPhone plus button now has no circle and uses actual UIKit UIMenu for the root,
+Attach and Add context menus. Apple controls compact spacing and materials; camera
+and gallery still use native UIImagePickerController/PHPicker. Other platforms use
+a smaller content-sized fallback menu. Build 1.1.0 (110).
+
+Validation: 788 Flutter tests passed (one existing skip), 44 targeted onboarding/
+auth/organization tests, seven native photo-card flows, and direct native menu
+interaction verified root/submenu ordering and the selection callback. Light/dark
+photo cards and large text inspected. Clean static analysis passed.
+Physical camera/gallery, VoiceOver and final TestFlight acceptance remain unverified.
+
+Release: runtime7ef16fc / PR167, all five CI gates passed on run39721774176.
+The newer CI Flutter identified hidden ListTile ink feedback; a transparent Material
+ancestor fixed it, and seven targeted photo tests plus clean analysis passed.
+Apple validated and acknowledged1.1.0(110), delivery
+9a4db965-4167-4df5-a26f-f23cd2b1693b. Processing/tester availability not polled.
+Verified32 device binaries in archive/export, strict signatures,24 privacy manifests
+and production configuration. Final IPA SHA256:
+90e896dd9319260f17c3908844c39f4d9f2e46c8abca4c9801d88a712ccc2be8.
+Artifacts and native previews: Documents/FindEZ/AppStore/1.1.0-build110.
+API49374c1 / PR166 is live with guarded three-file activation,104 unrelated Python
+files preserved,health/database200,private endpoints401,and synthetic typo/model
+verification. No migration or customer QA writes. Earlier unuploaded mobile package
+retained separately under superseded-pre-ci. Physical acceptance remains unverified.
+
+
 ## October 21 - Build 109 delivered: chat sources and connections
 
 Runtime 1724a94 / PR165 adds the anchored plus menu, native iPhone camera and

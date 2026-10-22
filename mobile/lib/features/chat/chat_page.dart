@@ -1,3 +1,4 @@
+import 'chat_photo_attachment_card.dart';
 import '../../core/chat_source.dart';
 import 'chat_source_menu.dart';
 import 'chat_context_picker.dart';
@@ -3204,6 +3205,12 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) return;
     setState(() => _sourceMenuOpen = false);
     if (selected == null || generation != _requestGeneration) return;
+    await _selectChatSource(selected);
+  }
+
+  Future<void> _selectChatSource(String selected) async {
+    if (!mounted || _sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
     if (selected == 'auto_extract') {
       await _attachPhoto(autoExtract: true);
     } else if (selected == 'camera' || selected == 'library') {
@@ -3369,7 +3376,8 @@ class _ChatPageState extends State<ChatPage>
         _session.messages[i] = message.copyWith(
           answerContext: AskAnswerContext(
             chatCapture: updated,
-            worldActions: data!.worldActions,
+            photoAttachment: data!.photoAttachment,
+            worldActions: data.worldActions,
             resourceLinks: data.resourceLinks,
             sources: data.sources,
             rows: data.rows,
@@ -3399,6 +3407,7 @@ class _ChatPageState extends State<ChatPage>
         _session.messages[i] = message.copyWith(
           answerContext: AskAnswerContext(
             chatCapture: data.chatCapture,
+            photoAttachment: data.photoAttachment,
             worldActions: data.worldActions,
             resourceLinks: data.resourceLinks,
             sources: data.sources,
@@ -3504,6 +3513,18 @@ class _ChatPageState extends State<ChatPage>
               ? null
               : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
         ),
+      if (!isTyping && message.answerContext?.photoAttachment != null)
+        ChatPhotoAttachmentCard(
+          key: ValueKey(message.answerContext!.photoAttachment!['id']),
+          api: widget.api,
+          attachment: message.answerContext!.photoAttachment!,
+          onSaved: widget.onInventoryMutated,
+          onChanged: (updated) {
+            final target = message.answerContext!.photoAttachment!;
+            target.clear();
+            target.addAll(updated);
+          },
+        ),
       if (!isTyping)
         for (final action
             in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])
@@ -3563,6 +3584,8 @@ class _ChatPageState extends State<ChatPage>
                       sourceChips: _sourceChips,
                       menuOpen: _sourceMenuOpen,
                       attachmentKey: _attachmentAnchor,
+                      onSourceSelected: (value) =>
+                          unawaited(_selectChatSource(value)),
                       controller: _controller,
                       focusNode: _focusNode,
                       onChanged: (_) => setState(() {}),
@@ -3708,6 +3731,8 @@ class _ChatPageState extends State<ChatPage>
                 sourceChips: _sourceChips,
                 menuOpen: _sourceMenuOpen,
                 attachmentKey: _attachmentAnchor,
+                onSourceSelected: (value) =>
+                    unawaited(_selectChatSource(value)),
                 controller: _controller,
                 focusNode: _focusNode,
                 onChanged: (_) => setState(() {}),
@@ -3872,6 +3897,8 @@ class _ChatPageState extends State<ChatPage>
                   sourceChips: _sourceChips,
                   menuOpen: _sourceMenuOpen,
                   attachmentKey: _attachmentAnchor,
+                  onSourceSelected: (value) =>
+                      unawaited(_selectChatSource(value)),
                   controller: _controller,
                   focusNode: _focusNode,
                   onChanged: (_) => setState(() {}),
