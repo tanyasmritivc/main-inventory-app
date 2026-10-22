@@ -1,3 +1,25 @@
+## October 21 — Build106 delivery receipt
+
+Apple validated and acknowledged 1.1.0(106), runtime e02b7b1 / PR160, delivery
+c60752ee-c06f-4204-b321-54ffcec9bb21. All five code CI gates passed. The separate
+Vercel preview failed; its logs require an unconnected Vercel login. No web runtime
+files changed in this lane.
+
+756 Flutter tests, clean analysis, enabled production-config verification,9 native
+capture cases and2 native New Chat cases passed. Verified32 device executables in
+each archive/export, strict archive signatures,24 privacy manifests and production
+configuration. Preserved signed IPA/archive and previews privately under
+Documents/FindEZ/AppStore/1.1.0-build106. The first upload attempt could not access
+Apple's Defaults.properties; retry outside the sandbox succeeded with the same
+validated IPA. Processing and tester availability were not polled. Physical-device
+acceptance remains pending.
+
+API144a120 / PR159 is live since2026-10-22T01:40:24Z: three guarded file replacements,
+102 unrelated Python files preserved, health/database200 and anonymous private401.
+No migration or customer QA writes. Refresh and retry the same failed draft; the
+Review record is reused. Destination pills stay with unsaved drafts and tap directly
+to select/save in106. New Chat clears prior context and cancels the prior response.
+
 ## October 21 — Persistent destination pills and fresh-chat isolation
 
 Lane: fix/mobile-chat-reset-destinations-20261021, build 1.1.0(106).
