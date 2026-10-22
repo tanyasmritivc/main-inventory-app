@@ -1,3 +1,12 @@
+## October 21 — Saved-receipt context activated
+
+API1d638dc / PR161 activated at2026-10-22T02:16:34Z. All five CI gates and the web
+preview passed. Three guarded replacements preserved102 unrelated Python sources.
+Health/database200 and anonymous private401. No migration or customer QA writes.
+New save-status replies use the compact confirmed receipt over stale unsaved history;
+existing historical messages are not rewritten. Mobile107/PR162 supplies compact
+saved cards with one Space link and optional lazy details.
+
 ## October 21 — Compact saved-extraction model context
 
 Lane: fix/api-capture-receipt-context-20261021. Saved captures provide bounded
