@@ -1,3 +1,17 @@
+## October 21 — Compact saved-extraction model context
+
+Lane: fix/api-capture-receipt-context-20261021. Saved captures provide bounded
+receipt counts and a destination link, without replaying all observation names,
+item links or draft-only instructions. The latest confirmed receipt supersedes
+historical unsaved claims. Saved captures no longer advertise draft refinement;
+unsaved capture behavior and write confirmation boundaries remain intact.
+
+Validation: 1,236 backend tests plus40 API documentation tests and10subtests passed.
+A configured-model probe with stale unsaved history and a295-item confirmed receipt
+answered that all295 were saved and linked the destination, without item enumeration
+or new tool calls. Three runtime files staged; no migration or customer QA writes.
+Activation pending.
+
 ## October 21 — Save recovery activated
 
 API144a120 / PR159 activated at 2026-10-22T01:40:24Z. All five CI gates passed.

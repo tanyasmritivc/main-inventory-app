@@ -97,7 +97,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             draft = draft_row['answer_context']['chat_capture'] if draft_row else None
             retained = ({'items': [r['item'] for r in draft['items']], 'source_url': draft['source_url']} if draft else
                         None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid))
-            evidence = photo_facts(retained)
+            evidence = photo_facts(retained) if not draft or draft['status'] != 'saved' else {}
             if photo:
                 stage = 'extract_photo'
                 from app.services.storage import upload_image
