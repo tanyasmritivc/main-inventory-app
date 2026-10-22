@@ -145,12 +145,19 @@ def edit(actor, key, cid, capture_id, revision, changes):
 def facts(draft):
     if not draft:
         return None
-    return {k: draft.get(k) for k in ('id', 'revision', 'status', 'inventory_id', 'space_id', 'destination_label', 'location', 'receipt')} | {
+    value = {k: draft.get(k) for k in ('id', 'revision', 'status', 'inventory_id', 'space_id', 'destination_label', 'location')} | {
         'observation_count': len(draft['items']),
-        'selected_observation_count': sum(bool(row['selected']) for row in draft['items']),
-        'items': [{'index': row['index'], 'selected': row['selected'],
-                   **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'scan_evidence')}}
-                  for row in draft['items']]}
+        'selected_observation_count': sum(bool(row['selected']) for row in draft['items'])}
+    receipt = draft.get('receipt')
+    if receipt:
+        value['receipt'] = {k: receipt.get(k, 0) for k in ('saved_count', 'review_count')}
+        value['receipt']['failure_count'] = len(receipt.get('failures', []))
+        value['receipt']['resource_links'] = [link for link in receipt.get('resource_links', []) if link.get('kind') == 'space'][:1]
+    if draft.get('status') != 'saved':
+        value['items'] = [{'index': row['index'], 'selected': row['selected'],
+                          **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'scan_evidence')}}
+                         for row in draft['items']]
+    return value
 
 
 @contextmanager

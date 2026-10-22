@@ -245,3 +245,25 @@ def test_capture_bad_correction_still_cannot_claim_inventory_write():
          patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion('I saved your items.'),completion('I added your items.')]):
         with pytest.raises(RuntimeError, match='without a confirmed receipt'):
             list(w.stream_turn(ACTOR, WORLD, 'Add these items', [], 'cid'))
+
+
+def test_saved_capture_uses_current_receipt_over_unsaved_history():
+    from app.services.chat_capture import use_capture
+    space = str(uuid4())
+    link = {'kind':'space','id':space,'inventory_id':INVENTORY,'label':'Fasteners',
+            'href':f'findez://space/{INVENTORY}/{space}'}
+    draft = {'id':str(uuid4()),'status':'saved','items':[],
+             'receipt':{'saved_count':295,'review_count':0,'resource_links':[link]}}
+    reply = f'All 295 items were saved to [Fasteners]({link["href"]}).'
+    with use_capture(ACTOR, WORLD, 'cid', draft), patch.object(w, 'directory', return_value={}), \
+         patch('app.services.agent_gateway_client.gateway_completion', return_value=completion(reply)) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Are all the items saved?',
+            [{'role':'assistant','content':'Nothing is saved. Choose a destination.'}], 'cid'))
+    messages = gateway.call_args.kwargs['messages']
+    current = next(row['content'] for row in messages if 'Current confirmed extraction receipt' in row['content'])
+    assert 'Current confirmed extraction receipt' in current
+    assert '"saved_count": 295' in current
+    assert 'supersedes earlier conversation claims' in current
+    assert not any('Use world_refine_capture to' in row['content'] for row in messages)
+    assert not any(t['function']['name'] == 'world_refine_capture' for t in gateway.call_args.kwargs['tools'])
+    assert result[-1]['answer_context']['resource_links'] == [link]

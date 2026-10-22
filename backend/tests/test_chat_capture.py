@@ -209,3 +209,18 @@ def test_large_spreadsheet_checkpoints_bounded_batches_and_replay(store):
     assert [len(call.args[0].items) for call in store.bulk.call_args_list] == [200,200,50]
     c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
     assert store.bulk.call_count == 3
+
+
+def test_saved_capture_facts_keep_counts_without_unbounded_item_links():
+    draft = {'id': 'capture', 'revision': 1, 'status': 'saved', 'items': [
+        {'index': i, 'selected': True, 'item': {'name': f'Part {i}'}} for i in range(1000)],
+        'receipt': {'saved_count': 995, 'review_count': 5, 'failures': [],
+                    'resource_links': [{'kind': 'item', 'id': str(i)} for i in range(1000)] +
+                                      [{'kind': 'space', 'id': SPACE}]}}
+    result = c.facts(draft)
+    assert result['observation_count'] == 1000
+    assert result['receipt']['saved_count'] == 995
+    assert result['receipt']['review_count'] == 5
+    assert result['receipt']['resource_links'] == [{'kind': 'space', 'id': SPACE}]
+    assert 'items' not in result
+    assert len(json.dumps(result)) < 800
