@@ -10,6 +10,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/chat_source.dart';
 import 'package:mobile/core/ask_answer.dart';
 import 'package:mobile/features/chat/ask_answer_view.dart';
 import 'package:mobile/features/chat/chat_page.dart';
@@ -74,6 +75,7 @@ class _AskApi extends ApiClient {
     required String message,
     required AskPhoto photo,
     String? conversationId,
+    List<ChatSource> sources = const [],
   }) async* {
     photos.add(photo);
     photoQuestions.add(message);
@@ -124,6 +126,7 @@ class _AskApi extends ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    List<ChatSource> sources = const [],
   }) async* {
     conversationIds.add(conversationId);
     if (pending != null) {
@@ -736,10 +739,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Capture or attach'));
       await tester.pumpAndSettle();
-      final entries = tester
-          .widgetList<PopupMenuItem<String>>(find.byType(PopupMenuItem<String>))
-          .toList();
-      expect(entries.first.value, 'auto_extract');
+      expect(
+        tester.getTopLeft(find.text('Auto Extract')).dy,
+        lessThan(tester.getTopLeft(find.text('Attach')).dy),
+      );
       await tester.tap(find.text('Auto Extract'));
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
@@ -762,7 +765,9 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'Do I have this?');
       await tester.tap(find.byTooltip('Capture or attach'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Choose photos'));
+      await tester.tap(find.text('Attach'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Photo library'));
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
       await tester.tap(find.byTooltip('Send message'));
@@ -781,7 +786,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Capture or attach'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Choose photos'));
+    await tester.tap(find.text('Attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo library'));
     await tester.pumpAndSettle();
     expect(api.photos, hasLength(1));
     expect(api.photos.single.autoExtract, isTrue);
@@ -796,7 +803,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Capture or attach'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Choose photos'));
+    await tester.tap(find.text('Attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo library'));
     await tester.pumpAndSettle();
     expect(
       tester

@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/chat_source.dart';
 import 'package:mobile/core/chat_item_action.dart';
 import 'package:mobile/core/ask_answer.dart';
 import 'package:dio/dio.dart' show CancelToken;
@@ -39,6 +40,7 @@ class _FocusApi extends ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    List<ChatSource> sources = const [],
   }) async* {
     requests.add(message);
     conversationIds.add(conversationId);

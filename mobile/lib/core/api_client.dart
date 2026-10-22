@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ask_answer.dart';
+import 'chat_source.dart';
 import 'chat_item_action.dart';
 import 'inventory_context.dart';
 
@@ -237,6 +238,38 @@ class ApiClient {
     return inventoryContext != null && _inventoryRoutes.hasMatch(path)
         ? '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}$path'
         : path;
+  }
+
+  Future<ChatSource> readChatFile(List<int> bytes, String filename) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/chat-files',
+      data: dio.FormData.fromMap({
+        'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+      options: _authOptions(),
+    );
+    assertCurrentContext();
+    return ChatSource.fromJson(response.data!);
+  }
+
+  Future<Map<String, dynamic>> chatSourceChoices({
+    required String inventoryId,
+    required String kind,
+    String query = '',
+    int offset = 0,
+  }) async {
+    final result = await collaboration(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/chat-sources',
+      query: {
+        'inventory_id': inventoryId,
+        'kind': kind,
+        'query': query,
+        'offset': offset,
+      },
+    );
+    assertCurrentContext();
+    return result;
   }
 
   Future<Map<String, dynamic>> createSpreadsheetDraft(
@@ -1058,6 +1091,7 @@ class ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    List<ChatSource> sources = const [],
   }) async* {
     final baseUrl = _dio.options.baseUrl.endsWith('/')
         ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
@@ -1078,6 +1112,8 @@ class ApiClient {
       'supports_item_actions': true,
       'supports_item_management': true,
       if (worldKey != null) 'supports_capture': true,
+      if (worldKey != null && sources.isNotEmpty)
+        'sources': sources.map((s) => s.toJson()).toList(),
     });
 
     final client = http.Client();
@@ -1086,7 +1122,17 @@ class ApiClient {
           .send(request)
           .timeout(const Duration(minutes: 2));
       if (response.statusCode != 200) {
-        throw StateError('HTTP ${response.statusCode}');
+        throw AskRequestException(switch (response.statusCode) {
+          401 => 'Session expired. Please sign in again.',
+          403 =>
+            'Access or chat allowance changed. Check your selected sources and account.',
+          404 =>
+            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
+          422 =>
+            'The selected sources could not be read together. Try fewer files or different sources.',
+          429 => 'Too many requests. Please wait a moment.',
+          _ => 'Your request could not be completed. Please try again.',
+        });
       }
 
       yield* decodeAiCommandEvents(response.stream).map((event) {
@@ -1102,6 +1148,7 @@ class ApiClient {
     required String message,
     required AskPhoto photo,
     String? conversationId,
+    List<ChatSource> sources = const [],
   }) async* {
     if (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes) {
       throw const AskRequestException(
@@ -1122,6 +1169,11 @@ class ApiClient {
     if (worldKey != null) {
       request.fields['supports_capture'] = 'true';
       request.fields['auto_extract'] = photo.autoExtract.toString();
+      if (sources.isNotEmpty) {
+        request.fields['sources'] = json.encode(
+          sources.map((s) => s.toJson()).toList(),
+        );
+      }
     }
     if (conversationId != null) {
       request.fields['conversation_id'] = conversationId;
@@ -1137,8 +1189,10 @@ class ApiClient {
       if (response.statusCode != 200) {
         throw AskRequestException(switch (response.statusCode) {
           401 => 'Session expired. Please sign in again.',
-          403 => 'Your account photo or chat limit has been reached.',
-          404 => 'This conversation is unavailable. Start a new chat.',
+          403 =>
+            'Access or allowance changed. Check your selected sources and account.',
+          404 =>
+            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
           413 => 'Choose a photo smaller than 10 MB.',
           400 || 422 => 'Choose a valid photo and a shorter question.',
           429 => 'Too many photo requests. Please wait a moment.',

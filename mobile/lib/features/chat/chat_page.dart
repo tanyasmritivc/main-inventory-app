@@ -1,3 +1,7 @@
+import '../../core/chat_source.dart';
+import 'chat_source_menu.dart';
+import 'chat_context_picker.dart';
+import 'assistant_connections_page.dart';
 import '../scan/space_barcode_flow.dart';
 import 'chat_viewport.dart';
 import '../notifications/notification_bell.dart';
@@ -199,6 +203,8 @@ class _ChatPageState extends State<ChatPage>
   String? _progress;
   late final _ChatSession _session;
   int _requestGeneration = 0;
+  final List<ChatSource> _sources = [];
+  bool _sourceMenuOpen = false;
   StreamIterator<AiStreamEvent>? _activeReply;
 
   // Conversation history
@@ -427,6 +433,7 @@ class _ChatPageState extends State<ChatPage>
       _session.messages.clear();
       _session.hasStarted = false;
       _pendingAttachments.clear();
+      _sources.clear();
       _currentConversationId = null;
     });
     widget.onChatStateChanged?.call(false);
@@ -1972,10 +1979,13 @@ class _ChatPageState extends State<ChatPage>
     bool autoExtract = false,
   }) async {
     final photo = _photo;
+    final sources = List<ChatSource>.of(_sources);
     final q = text.trim().isEmpty && photo != null
         ? (widget.worldHeading == null
               ? 'What is in this photo? Do I already have it?'
               : 'Auto extract the items in this photo. Keep a draft and ask only for any missing destination.')
+        : text.trim().isEmpty && sources.isNotEmpty
+        ? 'Help me understand these selected sources.'
         : text.trim();
     if (q.isEmpty) return;
     if (_pickingPhoto) return;
@@ -2050,10 +2060,12 @@ class _ChatPageState extends State<ChatPage>
       final events = photo == null
           ? widget.api.aiCommandStream(
               message: q,
+              sources: sources,
               conversationId: _currentConversationId,
             )
           : widget.api.aiPhotoQuestionStream(
               message: q,
+              sources: sources,
               photo: AskPhoto(
                 bytes: photo.bytes,
                 autoExtract:
@@ -3050,14 +3062,14 @@ class _ChatPageState extends State<ChatPage>
                 file.size,
                 filename: file.name,
               );
-        if (!current()) return;
+        if (!mounted || !current()) return;
         result = await widget.api.createSpreadsheetDraft(
           part,
           conversationId: conversationId,
         );
       }
       widget.api.assertCurrentContext();
-      if (!current()) return;
+      if (!mounted || !current()) return;
       final id = result['conversation_id'] as String;
       if (!await _loadConversation(id) || !mounted) return;
       setState(() => _pickingPhoto = false);
@@ -3081,55 +3093,177 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Future<void> _worldAttachmentMenu() async {
-    final anchor =
-        _attachmentAnchor.currentContext?.findRenderObject() as RenderBox?;
-    final overlay =
-        Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
-    if (anchor == null || overlay == null) return;
-    final origin = anchor.localToGlobal(Offset.zero, ancestor: overlay);
-    final selected = await showMenu<String>(
-      context: context,
-      popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromRect(
-        Rect.fromLTWH(origin.dx, origin.dy - 264, anchor.size.width, 264),
-        Offset.zero & overlay.size,
-      ),
-      constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
-      items: [
-        for (final choice in const [
-          ('auto_extract', CupertinoIcons.sparkles, 'Auto Extract'),
-          ('camera', CupertinoIcons.camera, 'Take photo'),
-          ('library', CupertinoIcons.photo_on_rectangle, 'Choose photos'),
-          ('barcode', CupertinoIcons.barcode_viewfinder, 'Scan barcode'),
-          ('spreadsheet', CupertinoIcons.table, 'Import spreadsheet'),
-        ])
-          PopupMenuItem<String>(
-            value: choice.$1,
-            height: 48,
-            child: Row(
-              children: [
-                Icon(choice.$2, size: 20),
-                const SizedBox(width: 14),
-                Flexible(
-                  child: Text(
-                    choice.$3,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
+  Widget? get _sourceChips => _sources.isEmpty
+      ? null
+      : SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final source in _sources)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: InputChip(
+                    avatar: Icon(
+                      source.kind == 'file'
+                          ? CupertinoIcons.doc
+                          : CupertinoIcons.link,
+                      size: 16,
                     ),
+                    label: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 190),
+                      child: Text(
+                        '${source.name}${source.truncated ? ' (excerpt)' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    tooltip:
+                        '${source.name}${source.inventoryName == null ? '' : ' - ${source.inventoryName}'}',
+                    onDeleted: _sending
+                        ? null
+                        : () => setState(() => _sources.remove(source)),
+                    deleteButtonTooltipMessage: 'Remove ${source.name}',
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-      ],
-    );
-    if (!mounted || selected == null) return;
+        );
+
+  Future<void> _attachChatFile() async {
+    if (_sending || _pickingPhoto) return;
+    if (_sources.length >= 8 ||
+        _sources.where((s) => s.kind == 'file').length >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use up to 8 sources, including up to 4 files.'),
+        ),
+      );
+      return;
+    }
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    bool current() =>
+        mounted &&
+        generation == _requestGeneration &&
+        owner == Supabase.instance.client.auth.currentUser?.id;
+    setState(() => _pickingPhoto = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'txt', 'md'],
+        withData: true,
+      );
+      if (!current() || result == null) return;
+      final file = result.files.single;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty || bytes.length > 10 * 1024 * 1024) {
+        throw const AskRequestException(
+          'Choose a nonempty file smaller than 10 MB.',
+        );
+      }
+      final source = await widget.api.readChatFile(bytes, file.name);
+      if (!mounted || !current()) return;
+      if (_sources.fold<int>(0, (count, s) => count + (s.text?.length ?? 0)) +
+              (source.text?.length ?? 0) >
+          48000) {
+        throw const AskRequestException(
+          'These files are too long together. Remove a file before adding another.',
+        );
+      }
+      setState(() {
+        if (!_sources.any((s) => s.key == source.key)) _sources.add(source);
+      });
+    } catch (error) {
+      if (!mounted || !current()) return;
+      final detail = error is dio.DioException
+          ? (error.response?.data is Map
+                ? error.response?.data['detail']
+                : null)
+          : null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is AskRequestException
+                ? error.message
+                : detail is String
+                ? detail
+                : 'Could not read this file. Try a text-based PDF, TXT or Markdown file.',
+          ),
+        ),
+      );
+    } finally {
+      if (current()) setState(() => _pickingPhoto = false);
+    }
+  }
+
+  Future<void> _worldAttachmentMenu() async {
+    if (_sending || _pickingPhoto || _sourceMenuOpen) return;
+    final generation = _requestGeneration;
+    setState(() => _sourceMenuOpen = true);
+    final selected = await showChatSourceMenu(context, _attachmentAnchor);
+    if (!mounted) return;
+    setState(() => _sourceMenuOpen = false);
+    if (selected == null || generation != _requestGeneration) return;
     if (selected == 'auto_extract') {
       await _attachPhoto(autoExtract: true);
     } else if (selected == 'camera' || selected == 'library') {
       await _attachPhoto(source: selected == 'camera');
+    } else if (selected == 'file') {
+      await _attachChatFile();
+    } else if (selected == 'connections') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const AssistantConnectionsPage(),
+        ),
+      );
+    } else if (['space', 'item', 'project', 'document'].contains(selected)) {
+      final result = await Navigator.of(context).push<List<ChatSource>>(
+        MaterialPageRoute(
+          builder: (_) => ChatContextPicker(
+            api: widget.api,
+            kind: selected,
+            selected: _sources,
+          ),
+        ),
+      );
+      if (!mounted || generation != _requestGeneration || result == null) {
+        return;
+      }
+      widget.api.assertCurrentContext();
+      setState(() {
+        _sources.clear();
+        _sources.addAll(result);
+      });
+    } else if (selected == 'spreadsheet') {
+      final proceed = await showModalBottomSheet<bool>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Import inventory', style: TextStyle(fontSize: 22)),
+                const SizedBox(height: 12),
+                const Text(
+                  'Choose a CSV or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(CupertinoIcons.folder),
+                  label: const Text('Choose spreadsheet'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (mounted && generation == _requestGeneration && proceed == true) {
+        await _captureSource(selected);
+      }
     } else {
       await _captureSource(selected);
     }
@@ -3426,6 +3560,8 @@ class _ChatPageState extends State<ChatPage>
                         ],
                       ),
                     WorldComposer(
+                      sourceChips: _sourceChips,
+                      menuOpen: _sourceMenuOpen,
                       attachmentKey: _attachmentAnchor,
                       controller: _controller,
                       focusNode: _focusNode,
@@ -3437,7 +3573,7 @@ class _ChatPageState extends State<ChatPage>
                       onSend: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
-                      busy: _sending && !_canQueueFollowUp,
+                      busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
                       listening: _isListening,
                       compact: compact,
                     ),
@@ -3474,7 +3610,9 @@ class _ChatPageState extends State<ChatPage>
         keyboardVisible && MediaQuery.textScalerOf(context).scale(16) > 32;
     final canSend =
         !_pickingPhoto &&
-        (_controller.text.trim().isNotEmpty || _photo != null) &&
+        (_controller.text.trim().isNotEmpty ||
+            _photo != null ||
+            _sources.isNotEmpty) &&
         (!_sending || _canQueueFollowUp);
 
     if (_historyOpen) {
@@ -3567,6 +3705,8 @@ class _ChatPageState extends State<ChatPage>
                   ],
                 ),
               WorldComposer(
+                sourceChips: _sourceChips,
+                menuOpen: _sourceMenuOpen,
                 attachmentKey: _attachmentAnchor,
                 controller: _controller,
                 focusNode: _focusNode,
@@ -3729,6 +3869,8 @@ class _ChatPageState extends State<ChatPage>
                 ),
               if (widget.worldHeading != null)
                 WorldComposer(
+                  sourceChips: _sourceChips,
+                  menuOpen: _sourceMenuOpen,
                   attachmentKey: _attachmentAnchor,
                   controller: _controller,
                   focusNode: _focusNode,
@@ -3740,7 +3882,7 @@ class _ChatPageState extends State<ChatPage>
                   onSend: canSend
                       ? () => unawaited(_submit(_controller.text))
                       : null,
-                  busy: _sending && !_canQueueFollowUp,
+                  busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
                   listening: _isListening,
                   compact: keyboardVisible || compactComposer || !_worldHome,
                 )

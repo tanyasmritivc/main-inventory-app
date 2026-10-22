@@ -8,6 +8,8 @@ class WorldComposer extends StatefulWidget {
   const WorldComposer({
     super.key,
     this.attachmentKey,
+    this.sourceChips,
+    this.menuOpen = false,
     required this.controller,
     required this.focusNode,
     required this.onChanged,
@@ -19,6 +21,8 @@ class WorldComposer extends StatefulWidget {
     required this.compact,
   });
   final GlobalKey? attachmentKey;
+  final Widget? sourceChips;
+  final bool menuOpen;
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -135,7 +139,12 @@ class _WorldComposerState extends State<WorldComposer>
         padding: const EdgeInsets.fromLTRB(16, 16, 10, 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.sourceChips != null) ...[
+              widget.sourceChips!,
+              const SizedBox(height: 8),
+            ],
             TextField(
               controller: widget.controller,
               focusNode: widget.focusNode,
@@ -176,9 +185,13 @@ class _WorldComposerState extends State<WorldComposer>
               children: [
                 LiquidIconButton(
                   key: widget.attachmentKey,
-                  tooltip: 'Capture or attach',
+                  tooltip: widget.menuOpen
+                      ? 'Close attachment menu'
+                      : 'Capture or attach',
                   onPressed: widget.onAttach,
-                  icon: CupertinoIcons.plus,
+                  icon: widget.menuOpen
+                      ? CupertinoIcons.xmark
+                      : CupertinoIcons.plus,
                 ),
                 const Spacer(),
                 LiquidIconButton(
