@@ -1,3 +1,21 @@
+## October 21 — Build107 delivered
+
+Apple validated and acknowledged1.1.0(107), runtime9cc6de6 / PR162, delivery
+62acc207-dba0-42c5-a39b-5542c31e20ee. All five CI gates and both runtime web previews
+passed. The signed archive/export contain32 verified device executables each;
+strict signatures,24 privacy manifests and production configuration passed.
+Artifacts/previews/receipts remain private in Documents/FindEZ/AppStore/1.1.0-build107.
+
+758 Flutter tests,1,276 Python tests plus10subtests, clean analysis, enabled
+production-config check and11 native extraction cases passed. Both themes were
+visually checked with1000-item compact cards. Apple processing/tester availability
+were not polled; physical-device acceptance remains pending.
+
+API1d638dc / PR161 activated at2026-10-22T02:16:34Z with3 guarded file replacements,
+102 unrelated Python files preserved, healthy service/database and private access
+boundaries. New save-status replies use current confirmed receipts. No migration,
+customer QA writes, re-import or re-save is required for existing saved extractions.
+
 ## October 21 — Compact saved extraction cards
 
 Lane: fix/mobile-compact-extraction-receipts-20261021, build1.1.0(107).
