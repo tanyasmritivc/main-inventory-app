@@ -109,30 +109,33 @@ class _ChatPhotoAttachmentCardState extends State<ChatPhotoAttachmentCard> {
             const AppText('Choose the saved item, then attach this photo.'),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 320),
-              child: ListView(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                children: [
-                  for (final choice in _choices)
-                    Semantics(
-                      selected: _selected == _key(choice),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          _selected == _key(choice)
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    for (final choice in _choices)
+                      Semantics(
+                        selected: _selected == _key(choice),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            _selected == _key(choice)
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                          ),
+                          title: AppText(choice['name'] as String),
+                          subtitle: AppText(
+                            '${choice['workspace_name']} / ${choice['inventory_name']} / ${choice['location']}',
+                          ),
+                          onTap: _busy || status == 'saving'
+                              ? null
+                              : () => setState(() => _selected = _key(choice)),
                         ),
-                        title: AppText(choice['name'] as String),
-                        subtitle: AppText(
-                          '${choice['workspace_name']} / ${choice['inventory_name']} / ${choice['location']}',
-                        ),
-                        onTap: _busy || status == 'saving'
-                            ? null
-                            : () => setState(() => _selected = _key(choice)),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (_card['more_matches'] == true)
