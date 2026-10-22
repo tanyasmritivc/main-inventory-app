@@ -1,3 +1,13 @@
+## October 21 - Inventories open Spaces directly
+
+Workspace inventory rows, Browse inventories and accepted inventory invitations
+open a scoped Spaces directory, not MainShell's legacy dashboard. Back from the
+workspace flow returns to the same inventory directory. Ask/Spaces/More remain
+the main navigation. A shared anchored ellipsis menu exposes Open, Rename for
+editors and Delete for inventory owners/admins. Deletion always uses the existing
+preview, move-items-or-delete-contents choice and exact-name confirmation; a menu
+tap alone never deletes contents. Do not add decorative unsupported menu actions.
+
 ## October 21 — Immediate destination save and floating chat controls
 
 The user explicitly chose suggested Space chips to select and save immediately.

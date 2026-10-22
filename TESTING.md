@@ -1,3 +1,17 @@
+## Spaces directory and anchored actions
+
+`test/space_directory_test.dart` covers scoped list/item reads, rename, new Space,
+confirmed deletion, moving contents, cancellation, denied writes, revoked context,
+editor/viewer permissions and large text. `world_auth_handoff_test.dart` exercises
+the actual More -> workspace -> inventory -> Spaces -> Back path.
+`invitation_destination_test.dart` checks exact inventory invitation entry without
+the old shell. `onboarding_launch_test.dart` prevents the retired Home tutorial
+from resurfacing on inventory entry or restart.
+
+Run `flutter test integration_test/spaces_audit_test.dart -d <simulator-id>
+--no-pub --reporter expanded` for the same actions on native iOS with synthetic
+APIs and preserved screenshots. Never delete a customer Space for QA.
+
 ## Automatic launch notification authorization
 
 Run `test/push_notifications_test.dart` and

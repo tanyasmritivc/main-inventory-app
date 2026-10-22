@@ -15,6 +15,7 @@ import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/shell/main_shell.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
+import 'package:mobile/features/inventory/space_directory.dart';
 import 'package:mobile/main.dart';
 
 const actor = '10000000-0000-4000-8000-000000000001';
@@ -369,9 +370,13 @@ void main() {
         expect(find.byType(WorkspaceHome), findsOneWidget);
         await tester.tap(find.text(signup ? 'Tools' : 'Hardware'));
         await settle(tester);
-        expect(find.byType(MainShell), findsOneWidget);
-        // Switching from the actual dashboard retires its nested inventory
-        // navigator and leaves the new organization boundary selected.
+        expect(find.byType(MainShell), findsNothing);
+        expect(find.byType(InventorySpacesPage), findsOneWidget);
+        expect(find.text('Spaces'), findsOneWidget);
+        // Back returns to the workspace directory, not the old dashboard.
+        await tester.tap(find.byType(BackButton));
+        await settle(tester);
+        expect(find.byType(WorkspaceHome), findsOneWidget);
         await tester.tap(
           find.bySemanticsLabel(
             'Switch organization. Current: ${signup ? 'Personal' : 'Kestrel Labs'}',
@@ -381,7 +386,7 @@ void main() {
         await tester.tap(find.text('Personal').last);
         await settle(tester);
         expect(find.byType(MainShell), findsNothing);
-        expect(find.byType(WorldShell), findsOneWidget);
+        expect(find.byType(WorkspaceHome), findsOneWidget);
         expect(
           find.bySemanticsLabel('Switch organization. Current: Personal'),
           findsOneWidget,

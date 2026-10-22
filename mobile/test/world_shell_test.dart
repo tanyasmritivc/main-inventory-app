@@ -66,10 +66,7 @@ void main() {
             ),
             child: child!,
           ),
-          home: WorldShell(
-            session: session,
-            onOpenInventory: (_, _, _) async {},
-          ),
+          home: WorldShell(session: session),
         ),
       ),
     );

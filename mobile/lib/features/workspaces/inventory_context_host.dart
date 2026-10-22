@@ -5,14 +5,13 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_session.dart';
 import '../../core/ui/app_text.dart';
-import '../shell/main_shell.dart';
+import '../inventory/space_directory.dart';
 import 'hierarchy_page.dart';
 import '../../core/place_session.dart';
 import '../../core/last_place.dart';
 import '../../core/invitation_destination.dart';
 import '../../core/push_notifications.dart';
 import '../notifications/notifications_page.dart';
-import 'organization_pill.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A fresh Navigator disposes inventory routes, drafts and sheets when switching.
@@ -375,7 +374,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
         builder: (context) {
           if (selected == null || api == null) {
             if (!widget.pickOnly) {
-              return WorldShell(session: _places, onOpenInventory: _open);
+              return WorldShell(session: _places);
             }
             return HierarchyPage(
               api: _session.directoryApi,
@@ -385,39 +384,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
                   : null,
             );
           }
-          return SafeArea(
-            child: MainShell(
-              api: api,
-              organizationSelector: OrganizationPill(
-                api: _places.api,
-                id: selected.organizationId,
-                name: selected.organizationName ?? 'Personal',
-                onSelected: (id) async {
-                  final switching = _places.selectOrganization(id);
-                  await _session.chooseAnother();
-                  await switching;
-                },
-              ),
-              onWorkspaceNotification: _notification,
-              onSwitchContext: _directory,
-              onManageContext: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => HierarchyPage(
-                      api: _session.directoryApi,
-                      onOpenInventory: _open,
-                      level: HierarchyLevel.inventory,
-                      id: selected.inventoryId,
-                      name: selected.name,
-                    ),
-                  ),
-                );
-                if (mounted && identical(selected, _session.selection)) {
-                  await _revalidate();
-                }
-              },
-            ),
-          );
+          return InventorySpacesPage(api: api, onBack: _directory);
         },
       ),
     );

@@ -20,6 +20,7 @@ import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/sharing/invitation_host.dart';
 import 'package:mobile/features/shell/main_shell.dart';
+import 'package:mobile/features/inventory/space_directory.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/features/workspaces/inventory_context_host.dart';
 import 'package:mobile/features/workspaces/workspace_home.dart';
@@ -266,7 +267,7 @@ void main() {
   });
 
   testWidgets(
-    'fresh-install Home tour is not replayed after interrupted restart',
+    'fresh-install inventory entry stays in Spaces across interrupted restart',
     (tester) async {
       addTearDown(Supabase.instance.client.auth.stopAutoRefresh);
       await OnboardingPrefs.prepareGuidedTourInstall(hasSession: false);
@@ -292,8 +293,10 @@ void main() {
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
-      expect(find.byKey(const Key('tutorial-card')), findsOneWidget);
-      expect(find.text('Start at Home'), findsOneWidget);
+      expect(find.byType(InventorySpacesPage), findsOneWidget);
+      expect(find.byType(MainShell), findsNothing);
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
+      expect(find.text('Start at Home'), findsNothing);
       for (final state in [
         AppLifecycleState.inactive,
         AppLifecycleState.hidden,
@@ -329,7 +332,8 @@ void main() {
       for (var frame = 0; frame < 20; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
-      expect(find.byType(MainShell), findsOneWidget);
+      expect(find.byType(MainShell), findsNothing);
+      expect(find.byType(InventorySpacesPage), findsOneWidget);
       expect(find.byKey(const Key('tutorial-card')), findsNothing);
       OnboardingPrefs.justSignedUp = false;
       await tester.pumpWidget(const SizedBox());

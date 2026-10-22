@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
 import 'world_style.dart';
+import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -28,13 +29,8 @@ import '../scan/project_kits_page.dart';
 
 /// Organization is a knowledge boundary; inventory clients remain explicit for writes.
 class WorldShell extends StatefulWidget {
-  const WorldShell({
-    super.key,
-    required this.session,
-    required this.onOpenInventory,
-  });
+  const WorldShell({super.key, required this.session});
   final PlaceSession session;
-  final Future<void> Function(String, String, String?) onOpenInventory;
   @override
   State<WorldShell> createState() => _WorldShellState();
 }
@@ -399,33 +395,15 @@ class _WorldShellState extends State<WorldShell> {
           for (final row in rows)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 2,
+              child: SpaceDirectoryTile(
+                key: ValueKey(
+                  '${row['group']['inventory_id']}:${spaceIdentifier(row['space'])}',
                 ),
-                leading: LiquidSurface(
-                  radius: 18,
-                  quiet: true,
-                  shadow: false,
-                  child: const SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: Icon(CupertinoIcons.archivebox, size: 24),
-                  ),
-                ),
-                title: Text(row['space']['name'].toString()),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
+                space: row['space'],
+                subtitle:
                     '${row['group']['workspace_name']} · ${row['group']['name']}',
-                  ),
-                ),
-                trailing: const Icon(CupertinoIcons.chevron_right, size: 15),
-                onTap: () => _guard(() async {
-                  final api = await _inventory(row['group']);
-                  await _openSpace(api, row['space']);
-                }),
+                resolveApi: () => _inventory(row['group']),
+                onChanged: _load,
               ),
             ),
           TextButton.icon(
@@ -434,7 +412,7 @@ class _WorldShellState extends State<WorldShell> {
             onPressed: () => _guard(() async {
               final api = await _chooseInventory();
               if (api != null && mounted) {
-                await _push(InventoryPage(api: api, refreshToken: _revision));
+                await _push(InventorySpacesPage(api: api));
               }
             }),
           ),
@@ -442,6 +420,19 @@ class _WorldShellState extends State<WorldShell> {
       ),
     );
   }
+
+  Future<void> _openInventorySpaces(
+    String id,
+    String workspace,
+    String? organization,
+  ) => _guard(() async {
+    if (organization != widget.session.organizationId) return;
+    final api = await _inventory({
+      'inventory_id': id,
+      'workspace_id': workspace,
+    });
+    if (mounted) await _push(InventorySpacesPage(api: api));
+  });
 
   Future<void> _tool(String kind) => _guard(() async {
     final api = await _chooseInventory();
@@ -514,7 +505,7 @@ class _WorldShellState extends State<WorldShell> {
         onTap: () => _push(
           WorkspaceHome(
             session: widget.session,
-            onOpenInventory: widget.onOpenInventory,
+            onOpenInventory: _openInventorySpaces,
           ),
         ),
       ),

@@ -13,7 +13,7 @@ import 'package:mobile/features/workspaces/inventory_context_host.dart';
 import 'package:mobile/features/workspaces/invitation_page.dart';
 import 'package:mobile/features/workspaces/organization_pill.dart';
 import 'package:mobile/features/world/world_shell.dart';
-import 'package:mobile/features/shell/main_shell.dart';
+import 'package:mobile/features/inventory/space_directory.dart';
 import 'support/hierarchy_fixture.dart';
 
 void main() {
@@ -195,15 +195,16 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.byType(InventoryContextHost), findsOneWidget);
           expect(find.byType(AccessInvitationPage), findsNothing);
-          expect(
-            tester.widget<OrganizationPill>(find.byType(OrganizationPill)).id,
-            'b',
-          );
           if (target == 'inventory') {
-            expect(find.byType(MainShell), findsOneWidget);
+            expect(find.byType(InventorySpacesPage), findsOneWidget);
+            expect(find.text('Spaces'), findsOneWidget);
             expect(f.requests.any((r) => r.path == '/inventories/inv-b'), true);
           } else {
             expect(find.byType(WorldShell), findsOneWidget);
+            expect(
+              tester.widget<OrganizationPill>(find.byType(OrganizationPill)).id,
+              'b',
+            );
             expect(find.text('Original inventory'), findsNothing);
           }
           expect(await LastPlaceStore('actor-a').readOrganization(), 'b');

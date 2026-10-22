@@ -13,8 +13,12 @@ workspace. The top-left OrganizationPill is the cross-organization control;
 workspace directories are loaded through the selected organization overview and
 child parent IDs are revalidated before use. Existing independent workspaces
 remain in Personal. InventoryContextHost retires the inventory Navigator/client
-on organization changes. Inventory dashboard content and existing API grants
-remain unchanged. See docs/plans/mobile-organization-scope.md.
+on organization changes. Inventory entry now opens InventorySpacesPage directly;
+World workspace navigation pushes it without replacing the Ask/Spaces/More shell.
+The shared SpaceDirectoryTile resolves an inventory-bound client before actions.
+Rename requires edit access; deletion remains owner/admin-only through the existing
+resource-removal preview and exact-name confirmation. Existing API grants remain
+unchanged. The legacy dashboard is no longer an inventory-entry destination. See docs/plans/mobile-organization-scope.md.
 
 # Current architecture
 
