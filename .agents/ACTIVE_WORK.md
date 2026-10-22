@@ -1,3 +1,11 @@
+## Launch audit — October 21
+
+Branch fix/api-launch-approval-20261021 owns migration076 and its regression.
+Live assistant deletion exposed inventory purge rejecting migration074's reorder
+metadata as an unknown dependency. Narrow guard update prepared and tested in an
+empty network-disabled DB; production change awaits explicit approval. Preserve
+all unrelated API runtime overlays and customer records.
+
 ## October 21 — Reviewed chat photo attachments
 
 Lane feat/api-chat-item-photo-20261021 adds opt-in chat-photo attachment to existing

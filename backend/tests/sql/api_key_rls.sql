@@ -232,3 +232,5 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 
 \ir world_item_management.sql
 \ir chat_capture.sql
+
+\ir inventory_reorder_deletion.sql
