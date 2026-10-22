@@ -1,3 +1,23 @@
+## October 21 - Spaces-only inventory entry and Space menus
+
+Lane: fix/mobile-space-navigation-menus-20261021, build1.1.0(108).
+Workspace inventory rows and accepted inventory invitations open the scoped Spaces
+directory. The normal workspace flow preserves Back to the inventory list and
+Ask/Spaces/More. Both Spaces directories share an anchored Open/Rename/Delete
+menu with current inventory authorization. Existing removal previews offer moving
+contents or deleting them after exact-name confirmation. No backend/schema changes
+or customer QA writes.
+
+Validation:772 Flutter tests, clean analysis, enabled production configuration and
+14 native Spaces cases passed. Light/dark menus and directories plus large type
+were visually reviewed; both final directory previews were refreshed and verified.
+All five CI gates and the web preview passed for runtime d2a3606 / PR163. Apple
+validated and acknowledged1.1.0(108), delivery aa13a46b-d98b-4883-b7f8-705e511a6d3d.
+Verified32 device executables in both archive/export, strict signatures,24 privacy
+manifests and production configuration. Signed artifacts, checks and five previews
+are preserved privately in Documents/FindEZ/AppStore/1.1.0-build108. Apple processing
+and tester availability were not polled. Physical-device acceptance remains pending.
+
 ## October 21 — Build107 delivered
 
 Apple validated and acknowledged1.1.0(107), runtime9cc6de6 / PR162, delivery
