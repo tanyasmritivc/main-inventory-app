@@ -1,3 +1,12 @@
+## October 21 — Save recovery activated
+
+API144a120 / PR159 activated at 2026-10-22T01:40:24Z. All five CI gates passed.
+Three guarded runtime replacements;102 unrelated Python sources preserved.
+Health and database health200; anonymous private access401. No schema changes or
+customer QA writes. Existing saving drafts can be refreshed and retried using the
+same draft; the previously inserted Review record is reused. Mobile106 in PR160
+adds persistent direct-save destination pills and fresh-chat isolation.
+
 ## October 21 — Scoped Auto Extract save recovery
 
 Lane: fix/api-chat-save-recovery-20261021. A production read-only probe reproduced
