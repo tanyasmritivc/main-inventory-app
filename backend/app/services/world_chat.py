@@ -190,6 +190,9 @@ def execute(actor, world, name, args):
     if schema is None:
         raise ValueError('Unsupported action.')
     ARGUMENTS[name].model_validate(args, strict=True)
+    if name == 'world_attach_item_photo':
+        from app.services.chat_photo_attachment import propose
+        return propose(actor, world, args)
     if name == 'world_refine_capture':
         from app.services.chat_capture import refine
         return refine(args)
@@ -272,7 +275,7 @@ def resolve_resource(actor, world, inventory_id, kind, resource_id):
 MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'})
 
 
-def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None):
+def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
@@ -293,6 +296,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         'Use world_add_items or world_delete_items for reviewed item changes. Photo observation_index retains the object crop and original photo. '
         'Ask for missing quantities or an ambiguous destination; never silently pick a workspace. '
         'Use world_edit_item for saved details, quantity, unit_price with ISO currency, expires_on date, and reorder rules. Never infer a price or expiry from an ambiguous photo. '
+        'When asked to add the attached photo to an existing item, use world_attach_item_photo with the user supplied name or part number, preserving their spelling. Never use add-items for this request. The tool returns exact or similar saved candidates; ask Did you mean for a similar name and which location for duplicate names. The user confirms the exact target on the photo card. Do not claim the image is saved until its receipt confirms it. '
         'Use world_move_item for reviewed moves to an exact existing inventory/Space. Linked records move too; existing project allocations must be released first. '
         'Reorder rules require an explicit threshold and quantity. They create approval requests, NEVER purchases. Use world_reorders to read requests and world_reorder_decision to propose approval, dismissal or receiving stock only when the user says it arrived. '
         'Use world_tracking for due expiry dates, prices or enabled reorder rules. Ask for missing dates, amounts and currency. All writes require card confirmation. ' + CHAT_STYLE_INSTRUCTION},
@@ -327,7 +331,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Answer save-status questions briefly with these counts and the destination Space. Do not enumerate items or every item link unless asked. '
             'Do not ask the user to choose a destination or save this extraction again. For current stock/details use inventory tools.'})
     available_tools = [t for t in TOOLS
-        if (supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS)
+        if (supports_photo_attachment and photo_evidence or t['function']['name'] != 'world_attach_item_photo')
+        and (supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS)
         and (capture and capture['draft'] and capture['draft']['status'] == 'draft' or t['function']['name'] != 'world_refine_capture')
         and (not (capture and capture['draft'] and capture['draft']['status'] in ('draft', 'saving')) or t['function']['name'] != 'world_add_items')]
 
@@ -335,6 +340,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
     actions, item_actions, trace = [], [], []
+    attachment = None
     memo = {}
     references = {}
     if capture and capture['draft'] and capture['draft']['status'] == 'saved':
@@ -387,6 +393,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         raise ValueError('Invalid action arguments')
                     key = call.function.name + json.dumps(args, sort_keys=True)
                     if key not in memo:
+                        if call.function.name == 'world_attach_item_photo' and attachment:
+                            raise ValueError('Choose from the existing photo card first.')
                         if call.function.name in ('world_structure', 'world_add_items', 'world_delete_items', 'world_edit_item', 'world_move_item', 'world_reorder_decision') and len(actions) + len(item_actions) >= 8:
                             raise ValueError('Review existing proposals before adding more.')
                         memo[key] = execute(actor, world, call.function.name, args)
@@ -395,6 +403,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         links = resource_links(result)
                         references.update({link['href']: link for link in links})
                         result = {**result, 'resource_links': links}
+                    if result.get('photo_attachment'):
+                        attachment = {**result['photo_attachment'], 'conversation_id': conversation_id}
                     trace.append({'tool': call.function.name, 'result': result})
                     if result.get('pending_action') and result['pending_action'] not in item_actions:
                         item_actions.append(result['pending_action'])
@@ -426,7 +436,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 'Ask for missing destination information or explain the explicit Save items step.')})
             continue
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
-            'answer_context': {**({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
+            'answer_context': {**({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
         return
     raise RuntimeError('No completed response')
@@ -566,3 +576,8 @@ _capture_schema = DraftEdit.model_json_schema()
 _capture_schema['properties']['items']['items'] = ItemEdit.model_json_schema()
 TOOLS.append(tool('world_refine_capture', 'Refine the current Auto Extract draft only. Preserve crops and uncertainty. Select observations, correct requested fields, or set exact inventory and Space IDs. Never saves stock.', _capture_schema['properties']))
 ARGUMENTS['world_refine_capture'] = DraftEdit
+
+from app.services.chat_photo_attachment import PhotoTarget
+_photo_schema = PhotoTarget.model_json_schema()
+TOOLS.append(tool('world_attach_item_photo', 'Find saved items for attaching the current chat photo. Use the user supplied name or part number, including typos. Returns an exact-item confirmation card or close matches; never creates stock or writes a photo by itself.', _photo_schema['properties'], _photo_schema.get('required', [])))
+ARGUMENTS['world_attach_item_photo'] = PhotoTarget

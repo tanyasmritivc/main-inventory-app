@@ -1,3 +1,10 @@
+## October 21 — Chat photos target confirmed saved item IDs
+
+Name similarity only proposes candidates. Every chat photo link requires explicit
+item selection and confirmation; retries keep the target fixed and preserve the
+existing primary photo and all stock quantities. Reuse durable message context and
+item photo events; no schema change.
+
 # October 21 - Explicit world chat evidence
 
 World chat accepts up to eight explicit references/files. Every saved reference is
