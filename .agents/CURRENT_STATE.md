@@ -1,3 +1,16 @@
+## October 21 — Compact saved extraction cards
+
+Lane: fix/mobile-compact-extraction-receipts-20261021, build1.1.0(107).
+A saved capture now displays its saved/Review counts, one destination Space link,
+and an optional details sheet. It no longer expands every receipt item into an Open
+button in chat. The sheet builds selected item rows lazily. Unsaved Space pills,
+direct select/save, duplicate confirmation and Review behavior are preserved.
+
+Validation:758 Flutter tests, clean analysis, enabled production-config check and
+11 native capture cases passed. Both light/dark1000-item receipt screenshots were
+inspected; card height stays bounded and the destination opens the exact Space.
+No customer QA writes. Signed production archive and Apple acknowledgment pending.
+
 ## October 21 — Build106 delivery receipt
 
 Apple validated and acknowledged 1.1.0(106), runtime e02b7b1 / PR160, delivery

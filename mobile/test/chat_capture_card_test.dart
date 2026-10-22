@@ -102,6 +102,7 @@ void main() {
     WidgetTester t, {
     Brightness brightness = Brightness.light,
     double scale = 1,
+    ValueChanged<AskResourceLink>? onOpen,
   }) async {
     t.view.physicalSize = const Size(390, 844);
     t.view.devicePixelRatio = 1;
@@ -126,6 +127,7 @@ void main() {
               conversationId: 'conversation',
               draft: value,
               onChanged: (_) {},
+              onOpenResource: onOpen,
             ),
           ),
         ),
@@ -256,6 +258,64 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '1000 saved items stay compact and details are lazy $brightness',
+      (t) async {
+        value.addAll({
+          'status': 'saved',
+          'inventory_id': inv,
+          'space_id': space,
+          'location': 'Garage',
+          'items': List.generate(
+            1000,
+            (i) => {
+              'index': i,
+              'selected': true,
+              'item': {
+                'name': 'Part $i',
+                'category': 'Hardware',
+                'quantity': 1,
+              },
+            },
+          ),
+          'receipt': {
+            'saved_count': 1000,
+            'review_count': 0,
+            'failures': [],
+            'resource_links': List.generate(
+              1000,
+              (i) => AskResourceLink(
+                kind: 'item',
+                id: 'dddddddd-dddd-4ddd-8ddd-${i.toString().padLeft(12, '0')}',
+                inventoryId: inv,
+                label: 'Part $i',
+              ).toJson(),
+            ),
+          },
+        });
+        AskResourceLink? opened;
+        await mount(t, brightness: brightness, onOpen: (link) => opened = link);
+        expect(find.text('1000 saved · 0 in Review'), findsOneWidget);
+        expect(find.text('Part 0'), findsNothing);
+        expect(find.text('Open Part 0'), findsNothing);
+        expect(find.text('Open Part 999'), findsNothing);
+        expect(t.getSize(find.byType(ChatCaptureCard)).height, lessThan(300));
+        await captureAuditCapture?.call('compact-1000-${brightness.name}');
+        await t.tap(find.text('Open Garage'));
+        expect(opened?.id, space);
+        expect(opened?.kind, 'space');
+        await t.tap(find.text('View 1000 extracted items'));
+        await t.pumpAndSettle();
+        expect(find.text('Extraction details'), findsOneWidget);
+        expect(find.text('Part 0'), findsOneWidget);
+        expect(find.text('Part 999'), findsNothing);
+        expect(find.byType(ListTile).evaluate().length, lessThan(30));
+        expect(t.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('large text stays scrollable', (t) async {
     await mount(t, scale: 2);
     expect(t.takeException(), isNull);
