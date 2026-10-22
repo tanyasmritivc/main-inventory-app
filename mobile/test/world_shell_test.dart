@@ -163,11 +163,21 @@ void main() {
         await tester.pumpAndSettle();
         for (final label in [
           'Auto Extract',
-          'Take photo',
-          'Choose photos',
+          'Attach',
+          'Import inventory',
           'Scan barcode',
-          'Import spreadsheet',
+          'Add context',
         ]) {
+          await tester.scrollUntilVisible(
+            find.text(label),
+            80,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ListView).last,
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
           expect(find.text(label), findsOneWidget);
         }
         expect(find.byType(BottomSheet), findsNothing);

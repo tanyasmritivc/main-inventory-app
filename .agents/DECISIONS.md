@@ -1,3 +1,14 @@
+# October 21 - Explicit chat sources and existing assistant setup
+
+The approved first phase uses file imports and existing Claude Desktop MCP / ChatGPT
+Actions connections. Camera and gallery keep the native iOS image_picker integration
+(UIImagePickerController camera and PHPicker library); no custom camera/gallery UI.
+The plus popover keeps Auto Extract first, groups attachments and saved context,
+and separates reference selection from inventory save destinations. Context resets
+with a new chat/world and failed sends retain selected sources for retry.
+Connections opens the existing web setup and API key management; it does not infer
+connection status or advertise unimplemented inbound OAuth integrations.
+
 ## October 21 - Inventories open Spaces directly
 
 Workspace inventory rows, Browse inventories and accepted inventory invitations

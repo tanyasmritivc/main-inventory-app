@@ -1,3 +1,12 @@
+## October 21 - Chat sources and assistant connections
+
+Lane: feat/mobile-chat-sources-20261021. Implementing the approved file-first
+plus menu, saved context selection and existing Claude Desktop MCP/ChatGPT Actions
+setup entry points. API contract in the separate api-chat-sources lane. Native iOS
+camera/gallery retained. No inbound provider OAuth or fabricated connection state.
+779 mobile tests passed across the full run and corrected menu checks; one existing
+skip. Seven native simulator flows passed. Build109 packaging/upload pending.
+
 ## October 21 - Spaces-only inventory entry and Space menus
 
 Lane: fix/mobile-space-navigation-menus-20261021, build1.1.0(108).

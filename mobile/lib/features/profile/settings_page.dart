@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
 import '../../core/external_links.dart';
+import '../chat/assistant_connections_page.dart';
 import '../../core/account_deletion.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
@@ -276,6 +277,21 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
+          _sectionLabel('CONNECTIONS'),
+          _glassCard(
+            _actionRow(
+              icon: Icons.link,
+              iconColor: Theme.of(context).colorScheme.onSurface,
+              label: 'AI assistant connections',
+              labelColor: Theme.of(context).colorScheme.onSurface,
+              last: true,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AssistantConnectionsPage(),
+                ),
+              ),
+            ),
+          ),
           // ── Actions ──────────────────────────────────────────────────────
           _sectionLabel('ACTIONS'),
           _glassCard(
