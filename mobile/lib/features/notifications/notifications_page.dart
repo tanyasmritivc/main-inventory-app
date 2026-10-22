@@ -1,3 +1,4 @@
+import '../teams/team_board_page.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -368,8 +369,22 @@ class _NotificationsPageState extends State<NotificationsPage>
                       ),
                     ),
                     subtitle: details.isEmpty ? null : AppText(details),
-                    onTap: action != 'access_invitation'
+                    onTap:
+                        action == 'access_invitation' &&
+                            (item['invitation'] as Map?)?['status'] != null &&
+                            (item['invitation'] as Map?)?['status'] != 'pending'
                         ? null
+                        : action != 'access_invitation'
+                        ? (action.startsWith('task_') && item['team_id'] != null
+                              ? () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => TeamBoardPage(
+                                      api: widget.api,
+                                      initialTeamId: item['team_id'].toString(),
+                                    ),
+                                  ),
+                                )
+                              : null)
                         : () async {
                             final id =
                                 (item['invitation'] as Map?)?['invitation_id']

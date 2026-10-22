@@ -1,3 +1,7 @@
+import '../scan/space_barcode_flow.dart';
+import 'chat_viewport.dart';
+import '../notifications/notification_bell.dart';
+import 'package:flutter/services.dart';
 import 'chat_capture_card.dart';
 import '../world/world_composer.dart';
 import '../world/world_action_card.dart';
@@ -211,6 +215,8 @@ class _ChatPageState extends State<ChatPage>
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
+  final Map<String, GlobalKey<ChatCaptureCardState>> _captureKeys = {};
+  final Set<int> _replyHaptics = {};
   Timer? _presentationTimer;
   Timer? _presentationIdleTimer;
   final Map<int, StringBuffer> _presentationBuffers = {};
@@ -333,6 +339,7 @@ class _ChatPageState extends State<ChatPage>
           navHint: isLast ? _presentationHints.remove(index) : null,
         );
       });
+      _replyVisible(index);
       if (isLast) _presentationComplete.remove(index);
       _scrollToBottom(animated: false);
     });
@@ -1945,6 +1952,13 @@ class _ChatPageState extends State<ChatPage>
     return 'Something went wrong. Please try again.';
   }
 
+  void _replyVisible(int index) {
+    if (!_replyHaptics.add(index)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(HapticFeedback.lightImpact());
+    });
+  }
+
   Future<void> _submit(
     String text, {
     bool userAlreadyAdded = false,
@@ -1979,6 +1993,7 @@ class _ChatPageState extends State<ChatPage>
     }
 
     if (!mounted) return;
+    unawaited(HapticFeedback.lightImpact());
     final requestGeneration = ++_requestGeneration;
 
     _phaseTimer1?.cancel();
@@ -2018,6 +2033,7 @@ class _ChatPageState extends State<ChatPage>
     _scrollToBottom(animated: false);
 
     final assistantIndex = _session.messages.length - 1;
+    _replyHaptics.remove(assistantIndex);
     try {
       AskAnswerContext? answerContext;
       Map<String, dynamic>? hint;
@@ -2039,8 +2055,13 @@ class _ChatPageState extends State<ChatPage>
               ),
               conversationId: _currentConversationId,
             );
+      var backendAcknowledged = false;
       await for (final event in events) {
         if (!mounted || requestGeneration != _requestGeneration) return;
+        if (!backendAcknowledged && event.type != 'error') {
+          backendAcknowledged = true;
+          unawaited(HapticFeedback.selectionClick());
+        }
         if (event.type == 'capture' &&
             event.answerContext?.chatCapture != null) {
           _currentConversationId =
@@ -2051,6 +2072,7 @@ class _ChatPageState extends State<ChatPage>
                 .copyWith(answerContext: event.answerContext);
           });
         }
+        if (event.type == 'capture') _replyVisible(assistantIndex);
         if (event.type == 'reset') {
           _cancelPresentation(assistantIndex);
           setState(
@@ -2840,7 +2862,8 @@ class _ChatPageState extends State<ChatPage>
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          NotificationBell(api: widget.api),
+          const SizedBox(width: 8),
           LiquidIconButton(
             tooltip: 'New chat',
             icon: CupertinoIcons.square_pencil,
@@ -2955,6 +2978,78 @@ class _ChatPageState extends State<ChatPage>
 
   final _attachmentAnchor = GlobalKey();
 
+  Future<void> _captureSource(String kind) async {
+    if (_sending || _pickingPhoto || widget.api.worldKey == null) return;
+    setState(() => _pickingPhoto = true);
+    try {
+      Map<String, dynamic>? result;
+      if (kind == 'barcode') {
+        final code = await scanBarcodeForDraft(context);
+        if (!mounted || code == null) return;
+        setState(() => _progress = 'Looking up barcode...');
+        result = await widget.api.collaboration(
+          '/worlds/${widget.api.worldKey}/captures/barcode',
+          method: 'POST',
+          data: {
+            'barcode': code,
+            if (_currentConversationId != null)
+              'conversation_id': _currentConversationId,
+          },
+        );
+      } else {
+        final picked = await FilePicker.platform.pickFiles(
+          type: FileType.any,
+          allowMultiple: false,
+          withReadStream: true,
+        );
+        if (!mounted || picked == null) return;
+        final file = picked.files.single;
+        if (!['csv', 'xlsx'].contains(file.extension?.toLowerCase()) ||
+            file.size <= 0 ||
+            file.size > 10 * 1024 * 1024) {
+          throw const AskRequestException(
+            'Choose a CSV or Excel file smaller than 10 MB.',
+          );
+        }
+        setState(() => _progress = 'Reading spreadsheet...');
+        final part = file.path != null
+            ? await dio.MultipartFile.fromFile(file.path!, filename: file.name)
+            : dio.MultipartFile.fromStream(
+                () => file.readStream!,
+                file.size,
+                filename: file.name,
+              );
+        result = await widget.api.createSpreadsheetDraft(
+          part,
+          conversationId: _currentConversationId,
+        );
+      }
+      widget.api.assertCurrentContext();
+      if (!mounted) return;
+      final id = result['conversation_id'] as String;
+      await _loadConversation(id);
+      if (!mounted) return;
+      setState(() => _pickingPhoto = false);
+      // The durable draft is already visible before the model offers destinations.
+      await _submit(
+        'Help me review this extraction and choose where to save it.',
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyApiError(error))));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _pickingPhoto = false;
+          _progress = null;
+        });
+      }
+    }
+  }
+
   Future<void> _worldAttachmentMenu() async {
     final anchor =
         _attachmentAnchor.currentContext?.findRenderObject() as RenderBox?;
@@ -2964,6 +3059,7 @@ class _ChatPageState extends State<ChatPage>
     final origin = anchor.localToGlobal(Offset.zero, ancestor: overlay);
     final selected = await showMenu<String>(
       context: context,
+      popUpAnimationStyle: AnimationStyle.noAnimation,
       position: RelativeRect.fromRect(
         Rect.fromLTWH(origin.dx, origin.dy - 264, anchor.size.width, 264),
         Offset.zero & overlay.size,
@@ -3004,7 +3100,7 @@ class _ChatPageState extends State<ChatPage>
     } else if (selected == 'camera' || selected == 'library') {
       await _attachPhoto(source: selected == 'camera');
     } else {
-      await widget.onCaptureAction?.call(selected);
+      await _captureSource(selected);
     }
   }
 
@@ -3195,6 +3291,16 @@ class _ChatPageState extends State<ChatPage>
         animateChunks: message.live,
         api: widget.api,
         onActionResult: _onItemActionResult,
+        onChooseDestination:
+            !_sending &&
+                message.answerContext?.chatCapture?['status'] == 'draft'
+            ? (link) => unawaited(
+                _captureKeys[message.answerContext!.chatCapture!['id']]
+                        ?.currentState
+                        ?.selectAndSave(link) ??
+                    Future.value(),
+              )
+            : null,
         onOpenResource: widget.onOpenDestination == null
             ? null
             : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
@@ -3219,8 +3325,9 @@ class _ChatPageState extends State<ChatPage>
             ),
           ))
         ChatCaptureCard(
-          key: ValueKey(
-            'capture-${message.timestamp}-${message.answerContext!.chatCapture!['id']}',
+          key: _captureKeys.putIfAbsent(
+            message.answerContext!.chatCapture!['id'] as String,
+            () => GlobalKey<ChatCaptureCardState>(),
           ),
           api: widget.api,
           conversationId: _currentConversationId!,
@@ -3349,6 +3456,105 @@ class _ChatPageState extends State<ChatPage>
     if (widget.worldHeading != null &&
         (_worldHome || _session.messages.isEmpty)) {
       return _worldLanding(canSend, keyboardVisible || compactComposer);
+    }
+    if (widget.worldHeading != null) {
+      return Scaffold(
+        resizeToAvoidBottomInset: !widget.inPageView,
+        backgroundColor: Colors.transparent,
+        body: ChatViewport(
+          header: _buildHeader(),
+          controller: _scrollController,
+          messages: [
+            for (final message in _session.messages)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: message.role == 'user'
+                    ? AskQuestionCard(
+                        compact: true,
+                        question: message.content,
+                        photoBytes: message.photo?.bytes,
+                        photoUrl: message.photoUrl,
+                      )
+                    : _buildAssistantMessage(message, message.isStreaming),
+              ),
+          ],
+          footer: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_pickingPhoto) const LinearProgressIndicator(),
+              if (!_sending)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      for (final idea
+                          in _session.messages.any(
+                                (m) =>
+                                    m.answerContext?.chatCapture?['status'] ==
+                                    'draft',
+                              )
+                              ? [
+                                  'Keep all items',
+                                  'Help me choose a Space',
+                                  'Only keep the tools',
+                                ]
+                              : [
+                                  'Find an item',
+                                  'What needs restocking?',
+                                  'Organize a photo',
+                                ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(
+                              idea,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            onPressed: () {
+                              _controller.text = idea;
+                              _focusNode.requestFocus();
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              if (_photo != null)
+                Row(
+                  children: [
+                    const Expanded(child: Text('Photo attached')),
+                    IconButton(
+                      tooltip: 'Remove photo',
+                      onPressed: () => setState(() => _photo = null),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              WorldComposer(
+                attachmentKey: _attachmentAnchor,
+                controller: _controller,
+                focusNode: _focusNode,
+                onChanged: (_) => setState(() {}),
+                onAttach: _sending || _pickingPhoto
+                    ? null
+                    : _worldAttachmentMenu,
+                onVoice: _sending ? null : _toggleListening,
+                onSend: canSend
+                    ? () => unawaited(_submit(_controller.text))
+                    : null,
+                busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
+                listening: _isListening,
+                compact: true,
+              ),
+            ],
+          ),
+        ),
+      );
     }
     return Scaffold(
       // MainShell already resizes its PageView for the keyboard.

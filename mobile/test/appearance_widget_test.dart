@@ -58,6 +58,9 @@ Future<void> _open(
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 500));
+  expect(find.text('Theme'), findsNothing);
+  await tester.tap(find.text('Appearance'));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -275,7 +278,16 @@ void main() {
       await controller.setThemeMode(mode);
       await controller.setTextSize(AppTextSize.larger);
       await _open(tester, controller, form);
-      await tester.scrollUntilVisible(find.text('Preview'), 200);
+      await tester.scrollUntilVisible(
+        find.text('Preview'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(_Probe),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('The right item, in the right place.'), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).height,

@@ -108,6 +108,7 @@ class AskAnswerView extends StatefulWidget {
     this.pendingMessage = 'Checking your things...',
     this.onOpenSource,
     this.onOpenResource,
+    this.onChooseDestination,
     this.api,
     this.onActionResult,
     this.refined = false,
@@ -120,6 +121,7 @@ class AskAnswerView extends StatefulWidget {
   final String pendingMessage;
   final VoidCallback? onOpenSource;
   final ValueChanged<AskResourceLink>? onOpenResource;
+  final ValueChanged<AskResourceLink>? onChooseDestination;
   final ApiClient? api;
   final ValueChanged<ChatItemActionResult>? onActionResult;
 
@@ -309,8 +311,16 @@ class _AskAnswerViewState extends State<AskAnswerView> {
                       size: 16,
                     ),
                     label: Text(link.label, overflow: TextOverflow.ellipsis),
-                    tooltip: 'Open ${link.kind}: ${link.label}',
-                    onPressed: () => widget.onOpenResource!(link),
+                    tooltip:
+                        link.kind == 'space' &&
+                            widget.onChooseDestination != null
+                        ? 'Save selected items to ${link.label}'
+                        : 'Open ${link.kind}: ${link.label}',
+                    onPressed: () =>
+                        link.kind == 'space' &&
+                            widget.onChooseDestination != null
+                        ? widget.onChooseDestination!(link)
+                        : widget.onOpenResource!(link),
                   ),
               ],
             ),

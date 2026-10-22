@@ -26,13 +26,14 @@ class ChatCaptureCard extends StatefulWidget {
   final ValueChanged<AskResourceLink>? onOpenResource;
   final bool disabled;
   @override
-  State<ChatCaptureCard> createState() => _ChatCaptureCardState();
+  State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
 
-class _ChatCaptureCardState extends State<ChatCaptureCard> {
+class ChatCaptureCardState extends State<ChatCaptureCard> {
   late Map<String, dynamic> _draft;
   bool _busy = false, _expanded = false, _choosing = false;
   String? _error;
+  int _visibleRows = 40;
   @override
   void initState() {
     super.initState();
@@ -300,7 +301,23 @@ class _ChatCaptureCardState extends State<ChatCaptureCard> {
     return choice;
   }
 
-  Future<void> _save() => _run(() async {
+  Future<void> selectAndSave(AskResourceLink link) => _run(() async {
+    if (link.kind != 'space' || _draft['status'] != 'draft') return;
+    _accept(
+      await widget.api.collaboration(
+        _path,
+        method: 'PATCH',
+        data: {
+          'revision': _draft['revision'],
+          'changes': {'inventory_id': link.inventoryId, 'space_id': link.id},
+        },
+      ),
+    );
+    if (mounted) await _saveItems();
+  });
+
+  Future<void> _save() => _run(_saveItems);
+  Future<void> _saveItems() async {
     Future<Map<String, dynamic>> send(bool separate) =>
         widget.api.collaboration(
           '$_path/save',
@@ -318,8 +335,19 @@ class _ChatCaptureCardState extends State<ChatCaptureCard> {
       response = await send(true);
     }
     _accept(response);
+    // Large imports checkpoint each batch on the server. Retry only the frozen
+    // draft; partial failures remain visible and never count as a full save.
+    while (mounted &&
+        _draft['source_kind'] == 'spreadsheet' &&
+        _draft['processed_count'] is int &&
+        _draft['status'] == 'saving' &&
+        ((_draft['receipt'] as Map?)?['failures'] as List? ?? []).isEmpty) {
+      response = await send(false);
+      _accept(response);
+    }
     widget.onSaved?.call();
-  });
+  }
+
   @override
   Widget build(BuildContext context) {
     final rows = _rows;
@@ -377,7 +405,8 @@ class _ChatCaptureCardState extends State<ChatCaptureCard> {
                 'No items were detected. Try a closer, well-lit photo.',
               ),
             ),
-          for (final row in (_expanded ? rows : rows.take(4))) ...[
+          for (final row
+              in (_expanded ? rows.take(_visibleRows) : rows.take(4))) ...[
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -449,6 +478,11 @@ class _ChatCaptureCardState extends State<ChatCaptureCard> {
               child: Text(
                 _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
               ),
+            ),
+          if (_expanded && rows.length > _visibleRows)
+            TextButton(
+              onPressed: () => setState(() => _visibleRows += 40),
+              child: const Text('Show more items'),
             ),
           if (!saved) ...[
             const SizedBox(height: 12),

@@ -1,3 +1,4 @@
+import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
@@ -569,6 +570,7 @@ class _WorldShellState extends State<WorldShell> {
               : null,
         ),
         child: SafeArea(
+          top: !focused,
           child: Column(
             children: [
               if (!focused)
@@ -600,6 +602,7 @@ class _WorldShellState extends State<WorldShell> {
                                 ),
                         ),
                       ),
+                      if (_tab == 0) NotificationBell(api: _chatApi),
                       if (_tab == 0)
                         Padding(
                           padding: const EdgeInsets.only(right: 10),

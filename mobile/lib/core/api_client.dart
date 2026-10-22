@@ -239,6 +239,23 @@ class ApiClient {
         : path;
   }
 
+  Future<Map<String, dynamic>> createSpreadsheetDraft(
+    dio.MultipartFile file, {
+    String? conversationId,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/captures/spreadsheet',
+      data: dio.FormData.fromMap({
+        'file': file,
+        if (conversationId != null) 'conversation_id': conversationId,
+      }),
+      options: _authOptions(),
+    );
+    assertCurrentContext();
+    return response.data ?? {};
+  }
+
   /// Account-bound hierarchy APIs use the same JWT and server permissions as web.
   Future<Map<String, dynamic>> collaboration(
     String path, {

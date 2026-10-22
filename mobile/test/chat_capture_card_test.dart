@@ -134,6 +134,69 @@ void main() {
     await t.pumpAndSettle();
   }
 
+  testWidgets(
+    'suggested destination selects and saves once without opening chooser',
+    (t) async {
+      await mount(t);
+      final state = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
+      final link = AskResourceLink(
+        kind: 'space',
+        inventoryId: inv,
+        id: space,
+        label: 'Garage',
+      );
+      final first = state.selectAndSave(link);
+      final duplicate = state.selectAndSave(link);
+      await t.pumpAndSettle();
+      await first;
+      await duplicate;
+      expect(value['status'], 'saved');
+      expect(f.requests.where((r) => r.method == 'PATCH'), hasLength(1));
+      expect(f.requests.where((r) => r.path.endsWith('/save')), hasLength(1));
+      expect(find.text('Save to a Space'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'spreadsheet save resumes checkpointed batches without another tap',
+    (t) async {
+      value = {...draft(), 'source_kind': 'spreadsheet'};
+      final original = f.respond;
+      var saves = 0;
+      f.respond = (r) {
+        if (!r.path.endsWith('/save')) return original(r);
+        saves++;
+        value = {
+          ...value,
+          'status': saves == 3 ? 'saved' : 'saving',
+          'processed_count': saves * 200,
+          'receipt': {
+            'saved_count': saves * 200,
+            'review_count': 0,
+            'resource_links': [],
+            'failures': [],
+          },
+        };
+        return {'capture': value};
+      };
+      await mount(t);
+      final state = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
+      final saving = state.selectAndSave(
+        AskResourceLink(
+          kind: 'space',
+          inventoryId: inv,
+          id: space,
+          label: 'Garage',
+        ),
+      );
+      await t.pumpAndSettle();
+      await saving;
+      expect(saves, 3);
+      expect(value['status'], 'saved');
+      expect(value['receipt']['saved_count'], 600);
+    },
+  );
+
   test('invalid capture cannot render editable data', () {
     expect(parseChatCapture(draft()), isNotNull);
     expect(parseChatCapture({...draft(), 'revision': '1'}), isNull);

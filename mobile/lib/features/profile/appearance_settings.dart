@@ -18,6 +18,7 @@ class AppearanceSettings extends StatefulWidget {
 class _AppearanceSettingsState extends State<AppearanceSettings> {
   AppearanceController? _controller;
   bool _ownsController = false;
+  bool _expanded = false;
 
   @override
   void didChangeDependencies() {
@@ -122,124 +123,123 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
-            child: AppText(
-              'Appearance',
-              style: TextStyle(
-                color: AppTheme.textSecondary(context),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            title: const Text('Appearance'),
+            subtitle: Text(
+              '${controller.themeMode.name} · ${controller.textSize.label} text',
             ),
+            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            onTap: () => setState(() => _expanded = !_expanded),
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppTheme.surface(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppTheme.border(context), width: 0.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _choices<ThemeMode>(
-                  label: 'Theme',
-                  choices: const {
-                    ThemeMode.light: 'Light',
-                    ThemeMode.dark: 'Dark',
-                    ThemeMode.system: 'System',
-                  },
-                  selected: controller.themeMode,
-                  onSelected: enabled
-                      ? (mode) => unawaited(controller.setThemeMode(mode))
-                      : null,
-                ),
-                const SizedBox(height: 8),
-                AppText(
-                  'System follows your phone\'s appearance.',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary(context),
-                    fontSize: 12,
-                    height: 1.4,
+          if (_expanded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppTheme.surface(context),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.border(context), width: 0.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _choices<ThemeMode>(
+                    label: 'Theme',
+                    choices: const {
+                      ThemeMode.light: 'Light',
+                      ThemeMode.dark: 'Dark',
+                      ThemeMode.system: 'System',
+                    },
+                    selected: controller.themeMode,
+                    onSelected: enabled
+                        ? (mode) => unawaited(controller.setThemeMode(mode))
+                        : null,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  child: Divider(height: 1, color: AppTheme.border(context)),
-                ),
-                _choices<AppTextSize>(
-                  label: 'Text size',
-                  choices: {
-                    for (final size in AppTextSize.values) size: size.label,
-                  },
-                  selected: controller.textSize,
-                  onSelected: enabled
-                      ? (size) => unawaited(controller.setTextSize(size))
-                      : null,
-                ),
-                const SizedBox(height: 8),
-                AppText(
-                  'Default uses a compact size. All sizes follow your phone’s '
-                  'accessibility scaling.',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary(context),
-                    fontSize: 12,
-                    height: 1.4,
+                  const SizedBox(height: 8),
+                  AppText(
+                    'System follows your phone\'s appearance.',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary(context),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surface2(context),
-                    borderRadius: BorderRadius.circular(12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: Divider(height: 1, color: AppTheme.border(context)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
-                        'Preview',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary(context),
-                          fontSize: 12,
+                  _choices<AppTextSize>(
+                    label: 'Text size',
+                    choices: {
+                      for (final size in AppTextSize.values) size: size.label,
+                    },
+                    selected: controller.textSize,
+                    onSelected: enabled
+                        ? (size) => unawaited(controller.setTextSize(size))
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  AppText(
+                    'Default uses a compact size. All sizes follow your phone’s '
+                    'accessibility scaling.',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary(context),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface2(context),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          'Preview',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary(context),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      AppText(
-                        'The right item, in the right place.',
+                        const SizedBox(height: 6),
+                        AppText(
+                          'The right item, in the right place.',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary(context),
+                            fontSize: 15,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (controller.saving) ...[
+                    const SizedBox(height: 12),
+                    const AppText('Saving appearance settings...'),
+                  ],
+                  if (controller.error != null) ...[
+                    const SizedBox(height: 12),
+                    Semantics(
+                      liveRegion: true,
+                      child: AppText(
+                        controller.error!,
                         style: TextStyle(
-                          color: AppTheme.textPrimary(context),
-                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 13,
                           height: 1.4,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                if (controller.saving) ...[
-                  const SizedBox(height: 12),
-                  const AppText('Saving appearance settings...'),
-                ],
-                if (controller.error != null) ...[
-                  const SizedBox(height: 12),
-                  Semantics(
-                    liveRegion: true,
-                    child: AppText(
-                      controller.error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
         ],
       );
     },

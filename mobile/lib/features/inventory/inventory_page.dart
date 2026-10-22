@@ -1171,7 +1171,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 child: GestureDetector(
                   onTap: () {
                     setState(() => _fabOpen = false);
-                    _fabController.reverse();
+                    _fabController.value = 0;
                   },
                   child: Container(
                     color: AppTheme.adaptive(
@@ -1194,9 +1194,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   void _toggleFab() {
     setState(() => _fabOpen = !_fabOpen);
     if (_fabOpen) {
-      _fabController.forward();
+      _fabController.value = 1;
     } else {
-      _fabController.reverse();
+      _fabController.value = 0;
     }
   }
 
@@ -1303,7 +1303,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   void _onFabItemTap(String label) {
     setState(() => _fabOpen = false);
-    _fabController.reverse();
+    _fabController.value = 0;
     switch (label) {
       case 'Scan Photo':
         unawaited(_uploadImage());

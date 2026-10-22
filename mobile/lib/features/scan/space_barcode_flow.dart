@@ -9,6 +9,11 @@ import 'confirm_scan_sheet.dart';
 import 'upload_photo_flow.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
+Future<String?> scanBarcodeForDraft(BuildContext context) =>
+    Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const _SpaceBarcodeScannerPage()),
+    );
+
 Future<void> runSpaceBarcodeFlow({
   required BuildContext context,
   required ApiClient api,
