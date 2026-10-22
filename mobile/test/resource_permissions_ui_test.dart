@@ -108,7 +108,8 @@ void main() {
           expect(find.byType(AccountPage), findsNothing);
           expect(find.byType(ProfilePage), findsOneWidget);
           expect(find.byType(AppearanceSettings), findsOneWidget);
-          expect(find.text('Theme').hitTestable(), findsOneWidget);
+          expect(find.text('Theme'), findsNothing);
+          expect(find.text('Appearance').hitTestable(), findsOneWidget);
           expect(find.text('Notifications').hitTestable(), findsOneWidget);
           expect(
             tester.getTopLeft(find.byType(BottomSheet)).dy,

@@ -270,7 +270,8 @@ Map<String, dynamic>? parseChatCapture(dynamic raw) {
       raw['revision'] < 1 ||
       !['draft', 'saving', 'saved'].contains(raw['status']) ||
       raw['items'] is! List ||
-      (raw['items'] as List).length > 200) {
+      (raw['items'] as List).length >
+          (raw['source_kind'] == 'spreadsheet' ? 10000 : 200)) {
     return null;
   }
   final rows = raw['items'] as List;

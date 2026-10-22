@@ -1,3 +1,12 @@
+## October 21 — Immediate destination save and floating chat controls
+
+The user explicitly chose suggested Space chips to select and save immediately.
+Keep inline resource links as navigation and preserve duplicate confirmation,
+Review uncertainty and retry identity. Chat source capture never forces a Space
+before extraction: photo, spreadsheet and barcode share the draft lifecycle.
+Use a measured overlay viewport so content can scroll under the glass controls
+while the first and last content remain reachable. Appearance opens collapsed.
+
 ## October21 — Auto Extract is a durable chat draft
 
 The + menu exposes Auto Extract first; image-only attachments start FIND. Preserve

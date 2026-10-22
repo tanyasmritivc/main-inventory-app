@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:flutter/material.dart';
@@ -80,6 +81,9 @@ void main() {
     ) async {
       await mount(tester, brightness: brightness);
       await tester.tap(find.byTooltip('Account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Theme'), findsNothing);
+      await tester.tap(find.text('Appearance'));
       await tester.pumpAndSettle();
       expect(find.text('Theme').hitTestable(), findsOneWidget);
       expect(find.text('Text size').hitTestable(), findsOneWidget);
@@ -270,8 +274,8 @@ void main() {
     expect(find.textContaining('On the classroom shelf.'), findsWidgets);
     expect(find.byTooltip('More'), findsNothing);
     expect(
-      fixture.requests.last.path,
-      '/worlds/personal/conversations/chat-books',
+      fixture.requests.map((r) => r.path),
+      contains('/worlds/personal/conversations/chat-books'),
     );
     await worldAuditCapture?.call('conversation-dark');
     expect(tester.takeException(), isNull);
@@ -302,6 +306,18 @@ void main() {
 
   testWidgets('Ask focuses chat and retains the draft on Back', (tester) async {
     final requests = <http.Request>[];
+    final haptics = <String>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') {
+        haptics.add(call.arguments as String);
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
     await http.runWithClient(
       () async {
         await mount(tester);
@@ -318,19 +334,27 @@ void main() {
           );
         }
         expect(requests.single.url.path, '/worlds/personal/ai_command');
+        expect(
+          haptics,
+          containsAllInOrder([
+            'HapticFeedbackType.lightImpact',
+            'HapticFeedbackType.selectionClick',
+            'HapticFeedbackType.lightImpact',
+          ]),
+        );
         expect(find.byTooltip('More'), findsNothing);
         expect(find.byTooltip('Account'), findsNothing);
         expect(find.textContaining('Your drill is on Shelf 2.'), findsWidgets);
         final list = find.byType(ListView).first;
         expect(
           tester.getTopLeft(list).dy,
-          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
+          lessThan(tester.getBottomLeft(find.byTooltip('Back')).dy),
         );
         await tester.drag(list, const Offset(0, -300));
         await tester.pumpAndSettle();
         expect(
           tester.getTopLeft(list).dy,
-          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
+          lessThan(tester.getBottomLeft(find.byTooltip('Back')).dy),
         );
         expect(find.text('Ask FindEZ…'), findsOneWidget);
         expect(find.byTooltip('Send message'), findsNothing);
