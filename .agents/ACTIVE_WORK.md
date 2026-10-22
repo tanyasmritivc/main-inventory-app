@@ -1,12 +1,12 @@
 ## October 21 — Build 111 launch audit
 
-Lane `audit/app-store-launch-20261021`, stacked on build110. Native iOS testing
+Lane `audit/app-store-launch-20261021`, stacked on build 110. Native iOS testing
 found the restock count dialog overflowed at large text with the keyboard open.
-Its title, form and actions now scroll together. Build1.1.0(111) retains build110
+Its title, form and actions now scroll together. Build 1.1.0 (111) retains build 110
 onboarding, organization Chat landing, UIKit plus menus and confirmed item photos.
 
-Validation:788 Flutter tests passed (one default release-config skip), clean
-analysis,228 native checks across the primary audit suites and161 extended native
+Validation: 788 Flutter tests passed (one default release-config skip), clean
+analysis, 228 native checks across the primary audit suites and 161 extended native
 checks (one host-only source test skipped on iOS). Extended tests cover documents,
 onboarding, organization setup, inventories, permissions, restock, notifications,
 memory, review, imported items, profile, invitations and session restoration.
@@ -15,11 +15,16 @@ menu tests use the UIKit callback instead of looking for Flutter-rendered rows.
 The real app also launched against the dedicated App Review account on simulator.
 
 Cross-stack results and physical limitations are in
-`docs/plans/app-store-launch-audit-20261021.md`. Approved migration076 is live in
-the separate API lane, with a fresh backup and91-table rehearsal. User-supplied
-App Store screenshots are preserved:five iPhone andfive iPad assets COMPLETE.
-Signed build111 and public submission remain pending; explicitly authorized by
-the user. Do not use the debug review harness or QA credentials in release builds.
+`docs/plans/app-store-launch-audit-20261021.md`. Approved migration 076 is live in
+the separate API lane, with a fresh backup and91-table rehearsal. The user later supplied
+`findez-appstore-v9.zip`:nine iPhone images are uploaded in numbered order and
+checksum verified; the five existing iPad assets remain unchanged, all COMPLETE.
+Build 111 passed all five CI gates, signed packaging and Apple validation, and
+Apple acknowledged upload and processed the build as VALID. The authorized
+version1.1.0/build111 submission is WAITING_FOR_REVIEW as of
+2026-10-22T05:56:50Z, submission3eef3590-11b3-4d75-85cd-fce87b1bf45d.
+Release is AFTER_APPROVAL. Reviewer login, screenshot checksums and public/service
+URLs passed; physical camera/microphone/APNs/VoiceOver limits remain documented. Do not use the debug review harness or QA credentials in release builds.
 
 ## October 21 — Build 110 onboarding, native menus and chat photos
 
