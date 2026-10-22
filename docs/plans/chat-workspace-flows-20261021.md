@@ -23,3 +23,13 @@ Physical push receipt remains unverified.
 Mobile delivery is a separate PR/build105. Backend activation must preserve all
 unrelated live Python sources and previously deployed invitation hooks. Public
 App Store submission and database changes are outside this runtime-only release.
+
+## October 21 — Runtime activation receipt
+
+API1f31f97 / PR157 activated at2026-10-22T00:44:17Z. All five CI gates passed.
+Nine guarded runtime replacements;96 unrelated Python sources preserved.
+Health and database health200; anonymous private access401. No migration and no
+customer QA writes. Rollback files and activation receipt remain in the private
+server candidate directory. APNs signing is verified; physical delivery remains
+unverified. Mobile105 is separately packaged in PR158.
+

@@ -1,3 +1,12 @@
+## October 21 — Runtime activation receipt
+
+API1f31f97 / PR157 activated at2026-10-22T00:44:17Z. All five CI gates passed.
+Nine guarded runtime replacements;96 unrelated Python sources preserved.
+Health and database health200; anonymous private access401. No migration and no
+customer QA writes. Rollback files and activation receipt remain in the private
+server candidate directory. APNs signing is verified; physical delivery remains
+unverified. Mobile105 is separately packaged in PR158.
+
 ## October 21 — Workspace writes, capture imports and 30-day notifications
 
 Lane: fix/api-workspace-capture-notifications-20261021. Production logs identify
