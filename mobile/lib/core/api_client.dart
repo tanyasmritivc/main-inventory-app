@@ -1089,10 +1089,10 @@ class ApiClient {
         throw StateError('HTTP ${response.statusCode}');
       }
 
-      await for (final event in decodeAiCommandEvents(response.stream)) {
+      yield* decodeAiCommandEvents(response.stream).map((event) {
         assertCurrentContext();
-        yield event;
-      }
+        return event;
+      });
     } finally {
       client.close();
     }
@@ -1145,10 +1145,10 @@ class ApiClient {
           _ => 'Your photo question could not be completed. Please try again.',
         });
       }
-      await for (final event in decodeAiCommandEvents(response.stream)) {
+      yield* decodeAiCommandEvents(response.stream).map((event) {
         assertCurrentContext();
-        yield event;
-      }
+        return event;
+      });
     } finally {
       client.close();
     }
@@ -1674,35 +1674,41 @@ class AiStreamEvent {
   }
 }
 
-Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) async* {
-  await for (final line
-      in bytes
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .timeout(const Duration(minutes: 2))) {
-    final data = line.trimRight();
-    if (!data.startsWith('data:')) continue;
-    final payload = data.substring(5).trim();
-    if (payload == '[DONE]') {
-      yield AiStreamEvent(type: 'done');
-      break;
-    }
-    if (payload.isEmpty) continue;
-    final decoded = json.decode(payload);
-    if (decoded is! Map<String, dynamic>) continue;
-    final event = AiStreamEvent.fromJson(decoded);
-    if (event.type == 'error') {
-      throw AskRequestException(switch (decoded['code']) {
-        'photo_timeout' =>
-          'Photo analysis took too long. Try a clearer, closer photo.',
-        'photo_failed' => 'Your photo could not be analyzed. Please try again.',
-        'history_save_failed' =>
-          'The answer could not be saved. Please try again.',
-        _ => 'Ask is temporarily unavailable. Please try again.',
-      });
-    }
-    yield event;
-  }
+Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) {
+  return bytes
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .timeout(const Duration(minutes: 2))
+      .transform(
+        StreamTransformer<String, AiStreamEvent>.fromHandlers(
+          handleData: (line, sink) {
+            final data = line.trimRight();
+            if (!data.startsWith('data:')) return;
+            final payload = data.substring(5).trim();
+            if (payload == '[DONE]') {
+              sink.add(AiStreamEvent(type: 'done'));
+              sink.close();
+              return;
+            }
+            if (payload.isEmpty) return;
+            final decoded = json.decode(payload);
+            if (decoded is! Map<String, dynamic>) return;
+            final event = AiStreamEvent.fromJson(decoded);
+            if (event.type == 'error') {
+              throw AskRequestException(switch (decoded['code']) {
+                'photo_timeout' =>
+                  'Photo analysis took too long. Try a clearer, closer photo.',
+                'photo_failed' =>
+                  'Your photo could not be analyzed. Please try again.',
+                'history_save_failed' =>
+                  'The answer could not be saved. Please try again.',
+                _ => 'Ask is temporarily unavailable. Please try again.',
+              });
+            }
+            sink.add(event);
+          },
+        ),
+      );
 }
 
 class ConversationSummary {

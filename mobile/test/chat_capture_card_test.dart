@@ -138,6 +138,7 @@ void main() {
     'suggested destination selects and saves once without opening chooser',
     (t) async {
       await mount(t);
+      expect(find.widgetWithText(ActionChip, 'Garage'), findsOneWidget);
       final state = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
       final link = AskResourceLink(
         kind: 'space',
@@ -197,6 +198,19 @@ void main() {
     },
   );
 
+  testWidgets('persistent Space pill saves directly after a parent rebuild', (
+    t,
+  ) async {
+    await mount(t);
+    await t.pump();
+    await t.tap(find.widgetWithText(ActionChip, 'Garage'));
+    await t.pumpAndSettle();
+    expect(value['status'], 'saved');
+    expect(f.requests.where((r) => r.method == 'PATCH'), hasLength(1));
+    expect(f.requests.where((r) => r.path.endsWith('/save')), hasLength(1));
+    expect(find.text('Save to a Space'), findsNothing);
+  });
+
   test('invalid capture cannot render editable data', () {
     expect(parseChatCapture(draft()), isNotNull);
     expect(parseChatCapture({...draft(), 'revision': '1'}), isNull);
@@ -229,7 +243,7 @@ void main() {
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
       await t.tap(find.text('Choose inventory and Space'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Garage'));
+      await t.tap(find.widgetWithText(ListTile, 'Garage'));
       await t.pumpAndSettle();
       expect(find.text('Home / Tools / Garage'), findsOneWidget);
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
