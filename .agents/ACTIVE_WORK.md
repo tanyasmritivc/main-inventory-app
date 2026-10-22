@@ -1,3 +1,29 @@
+## October 21 — Save recovery activated
+
+API144a120 / PR159 activated at 2026-10-22T01:40:24Z. All five CI gates passed.
+Three guarded runtime replacements;102 unrelated Python sources preserved.
+Health and database health200; anonymous private access401. No schema changes or
+customer QA writes. Existing saving drafts can be refreshed and retried using the
+same draft; the previously inserted Review record is reused. Mobile106 in PR160
+adds persistent direct-save destination pills and fresh-chat isolation.
+
+## October 21 — Scoped Auto Extract save recovery
+
+Lane: fix/api-chat-save-recovery-20261021. A production read-only probe reproduced
+an existing draft stuck in saving: the Review insert succeeded but receipt matching
+compared an unscoped key with the stored inventory-prefixed key. Use the same scoped
+key for insertion, lookup and receipt matching so retries reuse the existing Review
+row and continue the draft. No migration or customer data repair is required.
+
+The chat prompt separates unsaved extraction observations from saved inventory and
+answers a changed topic before asking again for a draft destination. Save failures
+log only exception type and terminal function, without customer values.
+
+Validation: 1,274 Python tests plus 10 subtests passed. The staged fix confirmed the
+existing Review receipt under a transport hook prohibiting writes. A configured-model
+probe queried saved inventory with an active draft and labeled the draft unsaved.
+Activation pending; no customer QA writes.
+
 ## October 21 — Runtime activation receipt
 
 API1f31f97 / PR157 activated at2026-10-22T00:44:17Z. All five CI gates passed.

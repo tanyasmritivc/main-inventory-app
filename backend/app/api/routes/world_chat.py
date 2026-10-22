@@ -272,8 +272,11 @@ def save_capture(request: Request, world_id: str, conversation_id: UUID, capture
         return {'capture': save(user.user_id, world.world_key(world_id), str(conversation_id), str(capture_id), body.revision, body.allow_duplicates)}
     except HTTPException:
         raise
-    except Exception:
-        logger.warning('Chat capture save unconfirmed; details omitted')
+    except Exception as error:
+        import traceback
+        frames = traceback.extract_tb(error.__traceback__)
+        logger.warning('Chat capture save unconfirmed error_type=%s location=%s',
+                       type(error).__name__, frames[-1].name if frames else 'unknown')
         raise HTTPException(503, 'Saving could not be confirmed. Refresh and retry this same draft safely.') from None
 
 
