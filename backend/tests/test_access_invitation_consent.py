@@ -109,3 +109,25 @@ def test_denied_invitation_never_sends_email_or_exposes_database_details(api):
     result = client.post(f'/organizations/{RESOURCE}/members', json={'email': 'recipient@example.invalid'})
     assert result.status_code == 403 and 'private schema' not in result.text
     mail.assert_not_called()
+
+
+def test_notification_history_requires_verified_recipient_and_retains_decisions():
+    db = MagicMock()
+    db.auth.admin.get_user_by_id.return_value.user = SimpleNamespace(email='RECIPIENT@example.invalid', email_confirmed_at='confirmed')
+    query = db.table.return_value
+    for method in ('select','eq','gte','order'):
+        getattr(query, method).return_value = query
+    query.execute.return_value.data = [row(status='accepted', seen_at=None, invited_by=None)]
+    with patch.object(service, 'get_supabase_raw', return_value=db):
+        result = service.notification_rows(ACTOR)
+    db.auth.admin.get_user_by_id.assert_called_once_with(ACTOR)
+    query.eq.assert_called_once_with('recipient_email', 'recipient@example.invalid')
+    assert result[0]['is_read'] is True
+    assert '(accepted)' in result[0]['display_text']
+    assert 'recipient_email' not in query.select.call_args.args[0]
+    assert 'code_hash' not in query.select.call_args.args[0]
+    db.reset_mock()
+    db.auth.admin.get_user_by_id.return_value.user.email_confirmed_at = None
+    with patch.object(service, 'get_supabase_raw', return_value=db):
+        assert service.notification_rows(ACTOR) == []
+    db.table.assert_not_called()

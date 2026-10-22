@@ -71,6 +71,16 @@ class AccessQuery:
         self.raw,self.query,self.table = raw,query,table
         self.operation = None
 
+    @property
+    def headers(self):
+        # Metadata is not a fluent query builder. Returning this wrapper here
+        # corrupts the query when callers copy request-local actor headers.
+        return self.query.headers
+
+    @headers.setter
+    def headers(self, value):
+        self.query.headers = value
+
     def __getattr__(self, name):
         value = getattr(self.query, name)
         if not callable(value):

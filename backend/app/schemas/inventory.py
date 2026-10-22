@@ -161,7 +161,20 @@ class ScanEvidence(BaseModel):
     needs_review: bool = False
 
 
+class ImportField(BaseModel):
+    name: str = Field(max_length=1000)
+    value: str | int | float | bool | None = None
+
+
+class ImportData(BaseModel):
+    filename: str = Field(max_length=500)
+    sheet: str = Field(max_length=500)
+    fields: list[ImportField] = Field(max_length=500)
+
+
 class ExtractedInventoryItem(BaseModel):
+    import_data: ImportData | None = None
+    purchase_source: str | None = Field(default=None, max_length=200)
     client_request_id: str | None = Field(default=None, min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)
