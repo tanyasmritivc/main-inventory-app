@@ -1,3 +1,16 @@
+## Launch audit — October 21
+
+Branch fix/api-launch-approval-20261021 owns migration076 and its regression.
+Live assistant deletion exposed inventory purge rejecting migration074's reorder
+metadata as an unknown dependency. Narrow guard update prepared and tested in an
+empty network-disabled DB. User explicitly approved applying migration076.
+Applied after a fresh production backup, with guard verification. Rehearsal applied
+it twice to an isolated restored backup and preserved all 91 tables. Live disposable
+HTTPS assistant deletion now passes exact-name, stale-preview, foreign-account and
+API-key denial checks, plus item/Space/inventory/workspace removal and cleanup.
+Receipt: /home/ubuntu/findez-launch076-release-20261021/receipt.json.
+All unrelated API runtime overlays and customer records were preserved.
+
 ## October 21 — Reviewed chat photo attachments
 
 Lane feat/api-chat-item-photo-20261021 adds opt-in chat-photo attachment to existing
