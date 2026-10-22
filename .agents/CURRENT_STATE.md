@@ -1,3 +1,18 @@
+## October 21 — Reviewed chat photo attachments
+
+Lane feat/api-chat-item-photo-20261021 adds opt-in chat-photo attachment to existing
+items. Exact names/part numbers and close spellings produce a scoped confirmation
+card, with duplicate locations kept distinct. No stock is created or quantity
+changed. The selected ID freezes when saving starts; deterministic photo-event
+receipts make retries safe. Existing primary photos are preserved; empty previews
+are filled. Ordinary photo attachment no longer forces an extraction draft for
+capable clients; Auto Extract and older clients retain their behavior.
+
+Validation: 1,311 Python tests plus 10 subtests passed. Coverage includes typo/model
+number differences, duplicate names, current permissions, foreign source rejection,
+expiry, cancellation, stale item identity, primary preservation and lost responses.
+No schema migration. Candidate model/schema probe and publication pending.
+
 ## October 21 - Chat sources API activated
 
 Runtime 5507499 / PR164 activated at 2026-10-22T03:42:25Z. Three guarded source
