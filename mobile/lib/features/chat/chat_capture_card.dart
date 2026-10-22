@@ -388,6 +388,48 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     widget.onSaved?.call();
   }
 
+  void _showSavedItems() {
+    final rows = _rows.where((row) => row['selected'] == true).toList();
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .75,
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Extraction details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: rows.length,
+                  itemBuilder: (context, index) {
+                    final item = rows[index]['item'] as Map;
+                    final review =
+                        (item['scan_evidence'] as Map?)?['needs_review'] ==
+                        true;
+                    return ListTile(
+                      title: Text(item['name'] as String),
+                      subtitle: Text(
+                        '${item['category']} · Qty ${item['quantity']}${review ? ' · Sent to Review' : ''}',
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rows = _rows;
@@ -397,7 +439,18 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     final saving = _draft['status'] == 'saving';
     final links = (receipt?['resource_links'] as List? ?? [])
         .map(AskResourceLink.parse)
-        .whereType<AskResourceLink>();
+        .whereType<AskResourceLink>()
+        .toList();
+    final destination =
+        AskResourceLink.parse({
+          'kind': 'space',
+          'id': _draft['space_id'],
+          'inventory_id': _draft['inventory_id'],
+          'label': _draft['location'],
+          'href':
+              'findez://space/${_draft['inventory_id']}/${_draft['space_id']}',
+        }) ??
+        links.where((link) => link.kind == 'space').firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -469,7 +522,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   fontSize: 13,
                 ),
               ),
-              if (rows.isEmpty)
+              if (!saved && rows.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
@@ -477,7 +530,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   ),
                 ),
               for (final row
-                  in (_expanded ? rows.take(_visibleRows) : rows.take(4))) ...[
+                  in (saved
+                      ? <Map<String, dynamic>>[]
+                      : _expanded
+                      ? rows.take(_visibleRows)
+                      : rows.take(4))) ...[
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -543,14 +600,14 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   ],
                 ),
               ],
-              if (rows.length > 4)
+              if (!saved && rows.length > 4)
                 TextButton(
                   onPressed: () => setState(() => _expanded = !_expanded),
                   child: Text(
                     _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
                   ),
                 ),
-              if (_expanded && rows.length > _visibleRows)
+              if (!saved && _expanded && rows.length > _visibleRows)
                 TextButton(
                   onPressed: () => setState(() => _visibleRows += 40),
                   child: const Text('Show more items'),
@@ -599,12 +656,18 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               if (receipt != null) ...[
                 for (final failure in receipt['failures'] as List? ?? [])
                   Text(failure['reason'] as String),
-                for (final link in links)
-                  TextButton(
+                if (destination != null)
+                  TextButton.icon(
                     onPressed: widget.onOpenResource == null
                         ? null
-                        : () => widget.onOpenResource!(link),
-                    child: Text('Open ${link.label}'),
+                        : () => widget.onOpenResource!(destination),
+                    icon: const Icon(Icons.folder_outlined, size: 18),
+                    label: Text('Open ${destination.label}'),
+                  ),
+                if (saved && selected > 0)
+                  TextButton(
+                    onPressed: _showSavedItems,
+                    child: Text('View $selected extracted items'),
                   ),
               ],
             ],

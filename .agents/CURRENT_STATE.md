@@ -1,3 +1,34 @@
+## October 21 — Build107 delivered
+
+Apple validated and acknowledged1.1.0(107), runtime9cc6de6 / PR162, delivery
+62acc207-dba0-42c5-a39b-5542c31e20ee. All five CI gates and both runtime web previews
+passed. The signed archive/export contain32 verified device executables each;
+strict signatures,24 privacy manifests and production configuration passed.
+Artifacts/previews/receipts remain private in Documents/FindEZ/AppStore/1.1.0-build107.
+
+758 Flutter tests,1,276 Python tests plus10subtests, clean analysis, enabled
+production-config check and11 native extraction cases passed. Both themes were
+visually checked with1000-item compact cards. Apple processing/tester availability
+were not polled; physical-device acceptance remains pending.
+
+API1d638dc / PR161 activated at2026-10-22T02:16:34Z with3 guarded file replacements,
+102 unrelated Python files preserved, healthy service/database and private access
+boundaries. New save-status replies use current confirmed receipts. No migration,
+customer QA writes, re-import or re-save is required for existing saved extractions.
+
+## October 21 — Compact saved extraction cards
+
+Lane: fix/mobile-compact-extraction-receipts-20261021, build1.1.0(107).
+A saved capture now displays its saved/Review counts, one destination Space link,
+and an optional details sheet. It no longer expands every receipt item into an Open
+button in chat. The sheet builds selected item rows lazily. Unsaved Space pills,
+direct select/save, duplicate confirmation and Review behavior are preserved.
+
+Validation:758 Flutter tests, clean analysis, enabled production-config check and
+11 native capture cases passed. Both light/dark1000-item receipt screenshots were
+inspected; card height stays bounded and the destination opens the exact Space.
+No customer QA writes. Signed production archive and Apple acknowledgment pending.
+
 ## October 21 — Build106 delivery receipt
 
 Apple validated and acknowledged 1.1.0(106), runtime e02b7b1 / PR160, delivery
