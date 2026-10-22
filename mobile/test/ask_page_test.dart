@@ -456,7 +456,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('New chat'));
     pending.add(AiStreamEvent(type: 'delta', delta: 'Stale answer'));
-    await pending.close();
+    await tester.runAsync(pending.close);
     await tester.pumpAndSettle();
     expect(find.textContaining('Stale answer'), findsNothing);
     expect(find.byType(AskQuestionCard), findsNothing);

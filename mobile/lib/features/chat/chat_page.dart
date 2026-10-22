@@ -199,6 +199,7 @@ class _ChatPageState extends State<ChatPage>
   String? _progress;
   late final _ChatSession _session;
   int _requestGeneration = 0;
+  StreamIterator<AiStreamEvent>? _activeReply;
 
   // Conversation history
   String? get _currentConversationId => _session.conversationId;
@@ -391,6 +392,11 @@ class _ChatPageState extends State<ChatPage>
 
   void _resetChat() {
     _requestGeneration++;
+    final active = _activeReply;
+    _activeReply = null;
+    if (active != null) unawaited(active.cancel());
+    _captureKeys.clear();
+    _replyHaptics.clear();
     _presentationTimer?.cancel();
     _presentationTimer = null;
     _presentationIdleTimer?.cancel();
@@ -412,6 +418,7 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
+      _worldHome = true;
       _photo = null;
       _pickingPhoto = false;
       _sending = false;
@@ -2056,7 +2063,10 @@ class _ChatPageState extends State<ChatPage>
               conversationId: _currentConversationId,
             );
       var backendAcknowledged = false;
-      await for (final event in events) {
+      final iterator = StreamIterator(events);
+      _activeReply = iterator;
+      while (await iterator.moveNext()) {
+        final event = iterator.current;
         if (!mounted || requestGeneration != _requestGeneration) return;
         if (!backendAcknowledged && event.type != 'error') {
           backendAcknowledged = true;
@@ -2158,8 +2168,13 @@ class _ChatPageState extends State<ChatPage>
       });
       _scrollToBottom();
     } finally {
-      _phaseTimer1?.cancel();
-      _phaseTimer2?.cancel();
+      if (requestGeneration == _requestGeneration) {
+        final active = _activeReply;
+        _activeReply = null;
+        if (active != null) unawaited(active.cancel());
+        _phaseTimer1?.cancel();
+        _phaseTimer2?.cancel();
+      }
       if (mounted && requestGeneration == _requestGeneration) {
         setState(() {
           _progress = null;
@@ -2255,6 +2270,8 @@ class _ChatPageState extends State<ChatPage>
   @override
   void dispose() {
     _requestGeneration++;
+    final active = _activeReply;
+    if (active != null) unawaited(active.cancel());
     _presentationTimer?.cancel();
     _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
@@ -2308,8 +2325,9 @@ class _ChatPageState extends State<ChatPage>
 
   void _closeHistory() => setState(() => _historyOpen = false);
 
-  Future<void> _loadConversation(String id) async {
+  Future<bool> _loadConversation(String id) async {
     _closeHistory();
+    _resetChat();
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
@@ -2317,7 +2335,7 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted ||
           generation != _requestGeneration ||
           owner != Supabase.instance.client.auth.currentUser?.id) {
-        return;
+        return false;
       }
       _actionReplyIds.addAll(result.messages.map((message) => message.id));
       final msgs = result.messages
@@ -2350,12 +2368,14 @@ class _ChatPageState extends State<ChatPage>
       });
       widget.onChatStateChanged?.call(msgs.isNotEmpty);
       _scrollToBottom();
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return false;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
+    return false;
   }
 
   Future<void> _deleteConversation(String id) async {
@@ -2837,8 +2857,7 @@ class _ChatPageState extends State<ChatPage>
               tooltip: 'Back',
               icon: CupertinoIcons.chevron_left,
               onPressed: () {
-                setState(() => _worldHome = true);
-                widget.onBack?.call();
+                _returnToHome();
               },
             ),
           const SizedBox(width: 12),
@@ -2934,11 +2953,21 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
+  void _returnToHome() {
+    final pending = _controller.text;
+    _resetChat();
+    _controller.text = pending;
+    widget.onBack?.call();
+  }
+
   Widget _buildBack() => IconButton(
     tooltip: 'Back',
     onPressed: () {
-      if (widget.worldHeading != null) setState(() => _worldHome = true);
-      widget.onBack?.call();
+      if (widget.worldHeading != null) {
+        _returnToHome();
+      } else {
+        widget.onBack?.call();
+      }
     },
     icon: Icon(
       Icons.arrow_back_ios_new_rounded,
@@ -2980,20 +3009,22 @@ class _ChatPageState extends State<ChatPage>
 
   Future<void> _captureSource(String kind) async {
     if (_sending || _pickingPhoto || widget.api.worldKey == null) return;
+    final generation = _requestGeneration;
+    final conversationId = _currentConversationId;
+    bool current() => mounted && generation == _requestGeneration;
     setState(() => _pickingPhoto = true);
     try {
       Map<String, dynamic>? result;
       if (kind == 'barcode') {
         final code = await scanBarcodeForDraft(context);
-        if (!mounted || code == null) return;
+        if (!current() || code == null) return;
         setState(() => _progress = 'Looking up barcode...');
         result = await widget.api.collaboration(
           '/worlds/${widget.api.worldKey}/captures/barcode',
           method: 'POST',
           data: {
             'barcode': code,
-            if (_currentConversationId != null)
-              'conversation_id': _currentConversationId,
+            if (conversationId != null) 'conversation_id': conversationId,
           },
         );
       } else {
@@ -3002,7 +3033,7 @@ class _ChatPageState extends State<ChatPage>
           allowMultiple: false,
           withReadStream: true,
         );
-        if (!mounted || picked == null) return;
+        if (!current() || picked == null) return;
         final file = picked.files.single;
         if (!['csv', 'xlsx'].contains(file.extension?.toLowerCase()) ||
             file.size <= 0 ||
@@ -3019,29 +3050,29 @@ class _ChatPageState extends State<ChatPage>
                 file.size,
                 filename: file.name,
               );
+        if (!current()) return;
         result = await widget.api.createSpreadsheetDraft(
           part,
-          conversationId: _currentConversationId,
+          conversationId: conversationId,
         );
       }
       widget.api.assertCurrentContext();
-      if (!mounted) return;
+      if (!current()) return;
       final id = result['conversation_id'] as String;
-      await _loadConversation(id);
-      if (!mounted) return;
+      if (!await _loadConversation(id) || !mounted) return;
       setState(() => _pickingPhoto = false);
       // The durable draft is already visible before the model offers destinations.
       await _submit(
         'Help me review this extraction and choose where to save it.',
       );
     } catch (error) {
-      if (mounted) {
+      if (mounted && current()) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(friendlyApiError(error))));
       }
     } finally {
-      if (mounted) {
+      if (mounted && current()) {
         setState(() {
           _pickingPhoto = false;
           _progress = null;

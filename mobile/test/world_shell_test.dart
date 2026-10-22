@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -390,6 +391,117 @@ void main() {
       }),
     );
   });
+  testWidgets('New chat clears the completed conversation ID', (tester) async {
+    final requests = <http.Request>[];
+    await http.runWithClient(
+      () async {
+        await mount(tester);
+        for (final question in ['First question', 'Second question']) {
+          await tester.enterText(find.byType(TextField).first, question);
+          await tester.pump();
+          await tester.tap(find.byTooltip('Send message'));
+          for (var i = 0; i < 25; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 2)),
+            );
+          }
+          if (question == 'First question') {
+            expect(find.textContaining('Completed answer'), findsWidgets);
+            await tester.tap(find.byTooltip('New chat'));
+            await tester.pump();
+            expect(find.text('First question'), findsNothing);
+            expect(find.textContaining('Completed answer'), findsNothing);
+          }
+        }
+        expect(requests, hasLength(2));
+        expect(
+          jsonDecode(requests.last.body).containsKey('conversation_id'),
+          isFalse,
+        );
+        await tester.pumpWidget(const SizedBox());
+      },
+      () => MockClient((request) async {
+        requests.add(request);
+        return http.Response(
+          'data: {"type":"done","assistant_message":"Completed answer","conversation_id":"10000000-0000-4000-8000-000000000001","answer_context":{}}\n\ndata: [DONE]\n\n',
+          200,
+        );
+      }),
+    );
+  });
+
+  testWidgets(
+    'New chat cancels an in-flight answer and sends without old conversation',
+    (tester) async {
+      final requests = <http.BaseRequest>[];
+      final old = StreamController<List<int>>();
+      var cancelled = false;
+      old.onCancel = () {
+        cancelled = true;
+      };
+      await http.runWithClient(
+        () async {
+          await mount(tester);
+          await tester.enterText(find.byType(TextField).first, 'Old question');
+          await tester.pump();
+          await tester.tap(find.byTooltip('Send message'));
+          for (var i = 0; i < 5; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 2)),
+            );
+          }
+          old.add(
+            utf8.encode('data: {"type":"status","message":"Thinking..."}\n\n'),
+          );
+          await tester.pump();
+          await tester.tap(find.byTooltip('New chat'));
+          await tester.pump();
+          expect(find.text('Old question'), findsNothing);
+          await tester.enterText(
+            find.byType(TextField).first,
+            'Fresh question',
+          );
+          await tester.pump();
+          await tester.tap(find.byTooltip('Send message'));
+          for (var i = 0; i < 25; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 2)),
+            );
+          }
+          expect(requests, hasLength(2));
+          expect(
+            jsonDecode(
+              (requests.last as http.Request).body,
+            ).containsKey('conversation_id'),
+            isFalse,
+          );
+          expect(find.textContaining('Fresh answer'), findsWidgets);
+          expect(find.text('Old question'), findsNothing);
+          expect(cancelled, isTrue);
+          await tester.pumpWidget(const SizedBox());
+        },
+        () => MockClient.streaming((request, body) async {
+          requests.add(request);
+          if (requests.length == 1) {
+            return http.StreamedResponse(old.stream, 200);
+          }
+          return http.StreamedResponse(
+            Stream.value(
+              utf8.encode(
+                'data: {"type":"done","assistant_message":"Fresh answer","conversation_id":"10000000-0000-4000-8000-000000000002","answer_context":{}}\n\ndata: [DONE]\n\n',
+              ),
+            ),
+            200,
+          );
+        }),
+      );
+      await tester.runAsync(old.close);
+    },
+  );
+
   test(
     'world API routes history and refuses stale organization clients',
     () async {

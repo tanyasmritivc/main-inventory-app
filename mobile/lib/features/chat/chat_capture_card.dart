@@ -34,16 +34,51 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
   bool _busy = false, _expanded = false, _choosing = false;
   String? _error;
   int _visibleRows = 40;
+  List<AskResourceLink> _destinations = [];
+  bool _destinationFailed = false;
   @override
   void initState() {
     super.initState();
     _draft = widget.draft;
+    _loadDestinations();
   }
 
   @override
   void didUpdateWidget(ChatCaptureCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.draft != widget.draft) _draft = widget.draft;
+  }
+
+  Future<void> _loadDestinations() async {
+    if (_draft['status'] == 'saved' || widget.api.worldKey == null) return;
+    try {
+      final result = await widget.api.collaboration(
+        '/worlds/${widget.api.worldKey}/spaces',
+      );
+      widget.api.assertCurrentContext();
+      if (!mounted) return;
+      final links = <AskResourceLink>[];
+      for (final group
+          in (result['inventories'] as List? ?? []).whereType<Map>()) {
+        if (group['can_edit'] != true) continue;
+        for (final space in (group['spaces'] as List? ?? []).whereType<Map>()) {
+          links.add(
+            AskResourceLink(
+              kind: 'space',
+              inventoryId: group['inventory_id'] as String,
+              id: space['id'] as String,
+              label: space['name'] as String,
+            ),
+          );
+        }
+      }
+      setState(() {
+        _destinations = links;
+        _destinationFailed = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _destinationFailed = true);
+    }
   }
 
   String get _path =>
@@ -302,7 +337,12 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
   }
 
   Future<void> selectAndSave(AskResourceLink link) => _run(() async {
-    if (link.kind != 'space' || _draft['status'] != 'draft') return;
+    if (link.kind != 'space') return;
+    if (_draft['status'] == 'saving' && _draft['space_id'] == link.id) {
+      await _saveItems();
+      return;
+    }
+    if (_draft['status'] != 'draft') return;
     _accept(
       await widget.api.collaboration(
         _path,
@@ -358,184 +398,219 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     final links = (receipt?['resource_links'] as List? ?? [])
         .map(AskResourceLink.parse)
         .whereType<AskResourceLink>();
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg(context),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome_outlined, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  saved ? 'Extraction saved' : 'Auto Extract',
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Refresh extraction',
-                onPressed: _busy || widget.disabled ? null : _refresh,
-                icon: const Icon(Icons.refresh, size: 20),
-              ),
-            ],
-          ),
-          Text(
-            saved
-                ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
-                : '$selected of ${rows.length} selected · Not saved yet',
-            style: TextStyle(
-              color: AppTheme.textSecondary(context),
-              fontSize: 13,
-            ),
-          ),
-          if (rows.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No items were detected. Try a closer, well-lit photo.',
-              ),
-            ),
-          for (final row
-              in (_expanded ? rows.take(_visibleRows) : rows.take(4))) ...[
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!saved && _destinations.isNotEmpty)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                if (!saved)
-                  Checkbox(
-                    value: row['selected'] == true,
-                    onChanged: !_editable
-                        ? null
-                        : (value) => _patch({
-                            'items': [
-                              {'index': row['index'], 'selected': value},
-                            ],
-                          }),
-                  ),
-                if (row['item']['image_url'] is String)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: PrivateImage(
-                      row['item']['image_url'],
-                      width: 46,
-                      height: 46,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const SizedBox(
-                        width: 46,
-                        height: 46,
-                        child: Icon(Icons.image_outlined),
-                      ),
+                for (final link in _destinations)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ActionChip(
+                      avatar: const Icon(Icons.grid_view_rounded, size: 18),
+                      label: Text(link.label),
+                      tooltip: 'Save selected items to ${link.label}',
+                      onPressed:
+                          _busy ||
+                              widget.disabled ||
+                              (saving && _draft['space_id'] != link.id)
+                          ? null
+                          : () => selectAndSave(link),
                     ),
-                  ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        row['item']['name'] as String,
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      Text(
-                        '${row['item']['category']} · Qty ${row['item']['quantity']}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary(context),
-                        ),
-                      ),
-                      if ((row['item']['scan_evidence']
-                              as Map?)?['needs_review'] ==
-                          true)
-                        const Text(
-                          'Needs Review',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                    ],
-                  ),
-                ),
-                if (!saved)
-                  IconButton(
-                    tooltip: 'Edit ${row['item']['name']}',
-                    onPressed: _editable ? () => _edit(row) : null,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
                   ),
               ],
             ),
-          ],
-          if (rows.length > 4)
-            TextButton(
-              onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(
-                _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
+          ),
+        if (!saved && _destinationFailed)
+          TextButton(
+            onPressed: _loadDestinations,
+            child: const Text('Retry loading Spaces'),
+          ),
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg(context),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      saved ? 'Extraction saved' : 'Auto Extract',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Refresh extraction',
+                    onPressed: _busy || widget.disabled ? null : _refresh,
+                    icon: const Icon(Icons.refresh, size: 20),
+                  ),
+                ],
               ),
-            ),
-          if (_expanded && rows.length > _visibleRows)
-            TextButton(
-              onPressed: () => setState(() => _visibleRows += 40),
-              child: const Text('Show more items'),
-            ),
-          if (!saved) ...[
-            const SizedBox(height: 12),
-            TextButton.icon(
-              onPressed: _editable ? _destination : null,
-              icon: const Icon(Icons.folder_outlined, size: 18),
-              label: Text(
-                _draft['space_id'] == null
-                    ? 'Choose inventory and Space'
-                    : '${_draft['destination_label']} / ${_draft['location']}',
+              Text(
+                saved
+                    ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
+                    : '$selected of ${rows.length} selected · Not saved yet',
+                style: TextStyle(
+                  color: AppTheme.textSecondary(context),
+                  fontSize: 13,
+                ),
               ),
-            ),
-            Text(
-              'Ask chat to refine these items or create a destination. Uncertain items go to Review.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary(context),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed:
-                  _busy ||
-                      widget.disabled ||
-                      selected == 0 ||
-                      _draft['space_id'] == null
-                  ? null
-                  : _save,
-              child: Text(saving ? 'Retry save safely' : 'Save items'),
-            ),
-          ],
-          if (_busy && !_choosing) const LinearProgressIndicator(),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (receipt != null) ...[
-            for (final failure in receipt['failures'] as List? ?? [])
-              Text(failure['reason'] as String),
-            for (final link in links)
-              TextButton(
-                onPressed: widget.onOpenResource == null
-                    ? null
-                    : () => widget.onOpenResource!(link),
-                child: Text('Open ${link.label}'),
-              ),
-          ],
-        ],
-      ),
+              if (rows.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'No items were detected. Try a closer, well-lit photo.',
+                  ),
+                ),
+              for (final row
+                  in (_expanded ? rows.take(_visibleRows) : rows.take(4))) ...[
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (!saved)
+                      Checkbox(
+                        value: row['selected'] == true,
+                        onChanged: !_editable
+                            ? null
+                            : (value) => _patch({
+                                'items': [
+                                  {'index': row['index'], 'selected': value},
+                                ],
+                              }),
+                      ),
+                    if (row['item']['image_url'] is String)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: PrivateImage(
+                          row['item']['image_url'],
+                          width: 46,
+                          height: 46,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            width: 46,
+                            height: 46,
+                            child: Icon(Icons.image_outlined),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            row['item']['name'] as String,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          Text(
+                            '${row['item']['category']} · Qty ${row['item']['quantity']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary(context),
+                            ),
+                          ),
+                          if ((row['item']['scan_evidence']
+                                  as Map?)?['needs_review'] ==
+                              true)
+                            const Text(
+                              'Needs Review',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (!saved)
+                      IconButton(
+                        tooltip: 'Edit ${row['item']['name']}',
+                        onPressed: _editable ? () => _edit(row) : null,
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                      ),
+                  ],
+                ),
+              ],
+              if (rows.length > 4)
+                TextButton(
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  child: Text(
+                    _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
+                  ),
+                ),
+              if (_expanded && rows.length > _visibleRows)
+                TextButton(
+                  onPressed: () => setState(() => _visibleRows += 40),
+                  child: const Text('Show more items'),
+                ),
+              if (!saved) ...[
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: _editable ? _destination : null,
+                  icon: const Icon(Icons.folder_outlined, size: 18),
+                  label: Text(
+                    _draft['space_id'] == null
+                        ? 'Choose inventory and Space'
+                        : '${_draft['destination_label']} / ${_draft['location']}',
+                  ),
+                ),
+                Text(
+                  'Ask chat to refine these items or create a destination. Uncertain items go to Review.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary(context),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed:
+                      _busy ||
+                          widget.disabled ||
+                          selected == 0 ||
+                          _draft['space_id'] == null
+                      ? null
+                      : _save,
+                  child: Text(saving ? 'Retry save safely' : 'Save items'),
+                ),
+              ],
+              if (_busy && !_choosing) const LinearProgressIndicator(),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              if (receipt != null) ...[
+                for (final failure in receipt['failures'] as List? ?? [])
+                  Text(failure['reason'] as String),
+                for (final link in links)
+                  TextButton(
+                    onPressed: widget.onOpenResource == null
+                        ? null
+                        : () => widget.onOpenResource!(link),
+                    child: Text('Open ${link.label}'),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,3 +1,21 @@
+## October 21 — Persistent destination pills and fresh-chat isolation
+
+Lane: fix/mobile-chat-reset-destinations-20261021, build 1.1.0(106).
+Writable Space pills belong to each unsaved extraction card and remain available
+after follow-ups. A tap selects and saves directly; uncertain records still go to
+Review and duplicate creation still needs explicit confirmation. A saving draft can
+resume through its existing destination pill.
+
+New Chat and return-to-home clear conversation IDs, draft keys, queued prompts and
+reply presentation. Stream cancellation propagates to the response transport rather
+than waiting for another event. Late history/import/photo results cannot restore a
+reset conversation, and old request cleanup cannot cancel new progress timers.
+
+Validation: 756 Flutter tests, clean analysis, enabled production-config check,
+9 native capture tests with light/dark previews and 2 native New Chat regressions.
+No customer QA writes. API save receipt repair is separate PR159. Signed device
+archive and Apple acknowledgment pending; physical acceptance remains unverified.
+
 ## October 21 — Build105 delivered
 
 Apple validated and acknowledged1.1.0(105), runtime9fd9c10 / PR158, delivery
