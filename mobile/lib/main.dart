@@ -19,7 +19,6 @@ import 'core/ui/launch_loading_screen.dart';
 import 'core/ui/findez_wordmark.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
-import 'features/world/world_welcome.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/onboarding/world_setup_gate.dart';
@@ -586,7 +585,10 @@ class _AuthGateState extends State<LaunchAuthGate> {
               }
               final completed = onboardingSnap.data ?? false;
               if (!completed) {
-                return WorldWelcome(onFinished: _bump);
+                return OnboardingPage(
+                  onFinished: _bump,
+                  onExistingAccount: _bump,
+                );
               }
               return WorldAuthEntry(onAuthChanged: _bump);
             },

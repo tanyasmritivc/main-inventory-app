@@ -63,6 +63,12 @@ class LastPlaceStore {
     });
   }
 
+  Future<bool> hasSavedPlace() async {
+    await (_writes[userId] ?? Future<void>.value());
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(key);
+  }
+
   Future<LastPlace> read() async {
     await (_writes[userId] ?? Future<void>.value());
     final prefs = await SharedPreferences.getInstance();

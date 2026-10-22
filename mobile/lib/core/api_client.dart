@@ -1037,6 +1037,54 @@ class ApiClient {
     await _dio.delete<void>('/conversations/$id', options: _authOptions());
   }
 
+  String _photoAttachmentPath(Map<String, dynamic> card) {
+    assertCurrentContext();
+    if (worldKey == null) {
+      throw const AskRequestException('Open your organization chat first.');
+    }
+    return '/worlds/${Uri.encodeComponent(worldKey!)}/conversations/${Uri.encodeComponent(card['conversation_id'] as String)}/photo-attachments/${Uri.encodeComponent(card['id'] as String)}';
+  }
+
+  Map<String, dynamic> _photoReceipt(
+    Map<String, dynamic> result,
+    Map<String, dynamic> original,
+  ) {
+    assertCurrentContext();
+    final card = parsePhotoAttachment(result['attachment']);
+    if (card == null ||
+        card['id'] != original['id'] ||
+        card['conversation_id'] != original['conversation_id']) {
+      throw const AskRequestException(
+        'The photo receipt could not be checked. Retry this same card.',
+      );
+    }
+    return card;
+  }
+
+  Future<Map<String, dynamic>> getChatPhotoAttachment(
+    Map<String, dynamic> card,
+  ) async {
+    final response = await collaboration(_photoAttachmentPath(card));
+    return _photoReceipt(response, card);
+  }
+
+  Future<Map<String, dynamic>> decideChatPhotoAttachment(
+    Map<String, dynamic> card,
+    String decision, {
+    Map<String, dynamic>? choice,
+  }) async {
+    final response = await collaboration(
+      _photoAttachmentPath(card),
+      method: 'POST',
+      data: {
+        'decision': decision,
+        if (choice != null) 'item_id': choice['item_id'],
+        if (choice != null) 'inventory_id': choice['inventory_id'],
+      },
+    );
+    return _photoReceipt(response, card);
+  }
+
   Future<ChatItemActionResult> decideChatItemAction({
     required ChatItemAction action,
     required String decision,
@@ -1111,6 +1159,7 @@ class ApiClient {
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
       'supports_item_management': true,
+      'supports_photo_attachment': true,
       if (worldKey != null) 'supports_capture': true,
       if (worldKey != null && sources.isNotEmpty)
         'sources': sources.map((s) => s.toJson()).toList(),
@@ -1166,6 +1215,7 @@ class ApiClient {
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
     request.fields['supports_item_management'] = 'true';
+    request.fields['supports_photo_attachment'] = 'true';
     if (worldKey != null) {
       request.fields['supports_capture'] = 'true';
       request.fields['auto_extract'] = photo.autoExtract.toString();

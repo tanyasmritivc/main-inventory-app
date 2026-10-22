@@ -92,8 +92,9 @@ class AskAnswerContext {
     this.pendingActions = const [],
     this.worldActions = const [],
     this.chatCapture,
+    this.photoAttachment,
   });
-  final Map<String, dynamic>? chatCapture;
+  final Map<String, dynamic>? chatCapture, photoAttachment;
   final List<AskResourceLink> resourceLinks;
   final List<AskSource> sources;
   final List<AskResultRow> rows;
@@ -177,6 +178,7 @@ class AskAnswerContext {
     }
     return AskAnswerContext(
       chatCapture: parseChatCapture(json['chat_capture']),
+      photoAttachment: parsePhotoAttachment(json['photo_attachment']),
       resourceLinks:
           (json['resource_links'] is List
                   ? json['resource_links'] as List
@@ -291,4 +293,40 @@ Map<String, dynamic>? parseChatCapture(dynamic raw) {
     }
   }
   return Map<String, dynamic>.from(raw);
+}
+
+Map<String, dynamic>? parsePhotoAttachment(Object? value) {
+  if (value is! Map ||
+      value['version'] != 1 ||
+      value['id'] is! String ||
+      value['conversation_id'] is! String ||
+      !const [
+        'pending',
+        'saving',
+        'confirmed',
+        'cancelled',
+      ].contains(value['status']) ||
+      value['choices'] is! List ||
+      (value['choices'] as List).isEmpty ||
+      (value['choices'] as List).length > 5) {
+    return null;
+  }
+  for (final choice in value['choices'] as List) {
+    if (choice is! Map ||
+        [
+          'item_id',
+          'inventory_id',
+          'name',
+          'location',
+          'inventory_name',
+          'workspace_name',
+        ].any((k) => choice[k] is! String)) {
+      return null;
+    }
+  }
+  if (value['status'] == 'confirmed' &&
+      (value['receipt'] is! Map || value['receipt']['photo_added'] != true)) {
+    return null;
+  }
+  return Map<String, dynamic>.from(value);
 }

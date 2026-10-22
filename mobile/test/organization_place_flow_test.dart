@@ -114,6 +114,39 @@ void main() {
     session = PlaceSession(fixture.api, 'actor-a');
   });
   tearDown(() => session.dispose());
+  test(
+    'fresh sign-in selects owned organization, including an empty organization',
+    () async {
+      hasWorkspace = false;
+      await session.restoreNavigation();
+      expect(session.organizationId, 'org');
+      expect(session.navigationReady, isTrue);
+      expect(session.error, isNull);
+      expect(await session.store.readOrganization(), 'org');
+    },
+  );
+  test(
+    'saved personal selection is respected and does not auto-switch organizations',
+    () async {
+      hasWorkspace = false;
+      fixture.respond = (r) {
+        if (r.path == '/inventory-workspaces') return {'workspaces': []};
+        if (r.path.endsWith('/directory')) {
+          return {'inventories': [], 'next_offset': null};
+        }
+        throw StateError('Unexpected route ${r.path}');
+      };
+      await session.store.save(
+        const LastPlace.personal(),
+        isCurrent: () => true,
+      );
+      await session.restoreNavigation();
+      expect(session.organizationId, isNull);
+      expect(session.error, isNull);
+      expect(fixture.requests.any((r) => r.path == '/organizations'), isFalse);
+    },
+  );
+
   Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 18; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -305,34 +338,39 @@ void main() {
           await tester.pumpWidget(const SizedBox());
         },
       );
-      testWidgets('leave organization clears selected and remembered organization', (tester) async {
-        role = 'member';
-        final previous = fixture.respond;
-        fixture.respond = (r) {
-          if (r.path == '/organizations/org/leave') {
-            hasWorkspace = false;
-            return {'left':true,'organization_id':'org'};
-          }
-          return previous(r);
-        };
-        await mount(tester,brightness:mode);
-        await organization(tester);
-        await tester.tap(find.byTooltip('Organization settings'));
-        await settle(tester);
-        await tester.tap(find.byTooltip('Actions'));
-        await settle(tester);
-        await tester.tap(find.text('Leave organization'));
-        await settle(tester);
-        await tester.tap(find.widgetWithText(TextButton,'Leave organization'));
-        await settle(tester);
-        expect(find.byType(HierarchyPage),findsNothing);
-        expect(session.organizationId,isNull);
-        expect(session.current,const LastPlace.personal());
-        expect(await session.store.readOrganization(),isNull);
-        expect(await session.store.read(),const LastPlace.personal());
-        expect(find.text('Retry'),findsNothing);
-        await tester.pumpWidget(const SizedBox());
-      });
+      testWidgets(
+        'leave organization clears selected and remembered organization',
+        (tester) async {
+          role = 'member';
+          final previous = fixture.respond;
+          fixture.respond = (r) {
+            if (r.path == '/organizations/org/leave') {
+              hasWorkspace = false;
+              return {'left': true, 'organization_id': 'org'};
+            }
+            return previous(r);
+          };
+          await mount(tester, brightness: mode);
+          await organization(tester);
+          await tester.tap(find.byTooltip('Organization settings'));
+          await settle(tester);
+          await tester.tap(find.byTooltip('Actions'));
+          await settle(tester);
+          await tester.tap(find.text('Leave organization'));
+          await settle(tester);
+          await tester.tap(
+            find.widgetWithText(TextButton, 'Leave organization'),
+          );
+          await settle(tester);
+          expect(find.byType(HierarchyPage), findsNothing);
+          expect(session.organizationId, isNull);
+          expect(session.current, const LastPlace.personal());
+          expect(await session.store.readOrganization(), isNull);
+          expect(await session.store.read(), const LastPlace.personal());
+          expect(find.text('Retry'), findsNothing);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
       testWidgets(
         'organization viewer has no management writes and large text stays usable',
         (tester) async {

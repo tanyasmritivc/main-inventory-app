@@ -1,3 +1,11 @@
+## October 21 — Native iPhone composer menu
+
+Use UIKit UIMenu on a clear 48-point plus button for iPhone attachment/context
+actions. Native camera/gallery alone does not satisfy the requested native menu.
+Keep full onboarding and persist the created organization before entering Chat.
+Photo name matches propose exact IDs for explicit confirmation; never silently
+attach to a fuzzy match.
+
 # October 21 - Explicit chat sources and existing assistant setup
 
 The approved first phase uses file imports and existing Claude Desktop MCP / ChatGPT

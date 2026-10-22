@@ -1,3 +1,22 @@
+## October 21 — Build 110 onboarding, native menus and chat photos
+
+Full onboarding is restored for incomplete/fresh installs. Created organization IDs
+persist through setup, and fresh sign-ins select an owned organization with current
+access checks; existing explicit Personal selection is respected. Chat photos can
+link to existing items after choosing an exact saved candidate, including typo and
+similar-name suggestions. Quantities and existing primary photos are preserved.
+
+The iPhone plus button now has no circle and uses actual UIKit UIMenu for the root,
+Attach and Add context menus. Apple controls compact spacing and materials; camera
+and gallery still use native UIImagePickerController/PHPicker. Other platforms use
+a smaller content-sized fallback menu. Build 1.1.0 (110).
+
+Validation: 788 Flutter tests passed (one existing skip), 44 targeted onboarding/
+auth/organization tests, seven native photo-card flows, and direct native menu
+interaction verified root/submenu ordering and the selection callback. Light/dark
+photo cards and large text inspected. Static analysis/release checks follow.
+Physical camera/gallery, VoiceOver and final TestFlight acceptance remain unverified.
+
 ## October 21 - Build 109 delivered: chat sources and connections
 
 Runtime 1724a94 / PR165 adds the anchored plus menu, native iPhone camera and
