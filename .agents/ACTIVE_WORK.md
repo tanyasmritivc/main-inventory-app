@@ -11,8 +11,12 @@ or customer QA writes.
 Validation:772 Flutter tests, clean analysis, enabled production configuration and
 14 native Spaces cases passed. Light/dark menus and directories plus large type
 were visually reviewed; both final directory previews were refreshed and verified.
-Signed production archive, CI and Apple acknowledgment pending. Physical-device
-acceptance remains pending.
+All five CI gates and the web preview passed for runtime d2a3606 / PR163. Apple
+validated and acknowledged1.1.0(108), delivery aa13a46b-d98b-4883-b7f8-705e511a6d3d.
+Verified32 device executables in both archive/export, strict signatures,24 privacy
+manifests and production configuration. Signed artifacts, checks and five previews
+are preserved privately in Documents/FindEZ/AppStore/1.1.0-build108. Apple processing
+and tester availability were not polled. Physical-device acceptance remains pending.
 
 ## October 21 — Build107 delivered
 
