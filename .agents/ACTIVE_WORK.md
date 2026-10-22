@@ -1,11 +1,12 @@
-## October 21 - Chat file and reference sources
+## October 21 - Chat sources API activated
 
-Lane: feat/api-chat-sources-20261021. Bounded PDF/text extraction and explicit
-Space/item/project/document references for private world chat. Every saved reference
-is reauthorized at use. No migration, OAuth provider setup, or inventory auto-save.
-Mobile is implemented in its separate chat-sources lane. Full baseline: 1,292 Python
-tests and 10 subtests; final source/route/model checks cover bounded PDF extraction,
-fresh authorization and full excerpt delivery. Runtime activation pending.
+Runtime 5507499 / PR164 activated at 2026-10-22T03:42:25Z. Three guarded source
+replacements preserved 103 unrelated Python files. Service/database health200 and
+anonymous private endpoints401; no migration or customer QA writes. Full baseline
+1,292 Python tests plus10 subtests, 72 final source/route/model checks and20 final
+source tests passed. All five CI gates and web preview passed. Live zero-row schema
+checks verified identifiers; synthetic configured-model probe verified full excerpt
+use. Mobile109 / PR165 provides file imports and existing assistant setup links.
 
 ## October 21 — Saved-receipt context activated
 

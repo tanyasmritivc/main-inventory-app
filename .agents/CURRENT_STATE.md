@@ -1,3 +1,13 @@
+## October 21 - Chat sources API activated
+
+Runtime 5507499 / PR164 activated at 2026-10-22T03:42:25Z. Three guarded source
+replacements preserved 103 unrelated Python files. Service/database health200 and
+anonymous private endpoints401; no migration or customer QA writes. Full baseline
+1,292 Python tests plus10 subtests, 72 final source/route/model checks and20 final
+source tests passed. All five CI gates and web preview passed. Live zero-row schema
+checks verified identifiers; synthetic configured-model probe verified full excerpt
+use. Mobile109 / PR165 provides file imports and existing assistant setup links.
+
 ## October 21 — Saved-receipt context activated
 
 API1d638dc / PR161 activated at2026-10-22T02:16:34Z. All five CI gates and the web
