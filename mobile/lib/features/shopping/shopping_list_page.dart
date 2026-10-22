@@ -690,15 +690,23 @@ class _RestockCountDialogState extends State<_RestockCountDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: AppText(widget.title),
-    content: SingleChildScrollView(
+  Widget build(BuildContext context) => Dialog(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
       child: Form(
         key: _form,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Semantics(
+              namesRoute: true,
+              child: AppText(
+                widget.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            const SizedBox(height: 16),
             AppText(widget.description),
             const SizedBox(height: 16),
             TextFormField(
@@ -716,26 +724,38 @@ class _RestockCountDialogState extends State<_RestockCountDialog> {
                     : null;
               },
             ),
+            const SizedBox(height: 24),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const AppText('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: _submitted
+                        ? null
+                        : () {
+                            if (_form.currentState!.validate()) {
+                              setState(() => _submitted = true);
+                              Navigator.pop(
+                                context,
+                                int.parse(_controller.text),
+                              );
+                            }
+                          },
+                    child: AppText(widget.action),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const AppText('Cancel'),
-      ),
-      FilledButton(
-        onPressed: _submitted
-            ? null
-            : () {
-                if (_form.currentState!.validate()) {
-                  setState(() => _submitted = true);
-                  Navigator.pop(context, int.parse(_controller.text));
-                }
-              },
-        child: AppText(widget.action),
-      ),
-    ],
   );
 }

@@ -244,6 +244,7 @@ void main() {
       );
     }
   }
+  tearDownAll(() => Supabase.instance.dispose());
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       final font = FontLoader('FindEZQA')
