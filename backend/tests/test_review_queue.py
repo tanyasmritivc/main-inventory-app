@@ -239,3 +239,25 @@ def test_review_resolution_validates_required_location_before_service_call():
         json={"name": "Bolt", "category": "Hardware", "quantity": 1},
     )
     assert response.status_code == 422
+
+
+def test_scoped_review_receipt_uses_same_key_for_insert_and_retry():
+    from app.services.inventory_scope import InventoryClient, InventoryScope, current_inventory
+    scope = InventoryScope('inventory-a', 'actor', 'owner', None, 'owner')
+    raw, query = MagicMock(), MagicMock()
+    for name in ('select', 'eq', 'in_', 'upsert', 'or_'):
+        getattr(query, name).return_value = query
+    raw.table.return_value = query
+    record = {'review_id': REVIEW_ID, 'source_key': 'inventory:inventory-a:photo:digest:0', 'status': 'pending'}
+    query.execute.side_effect = [SimpleNamespace(data=[]), SimpleNamespace(data=[record]), SimpleNamespace(data=[record]), SimpleNamespace(data=[record])]
+    token = current_inventory.set(scope)
+    try:
+        with patch('app.services.review_queue.get_supabase_admin', return_value=InventoryClient(raw, scope)):
+            first = enqueue_uncertain_items(user_id='owner', source_digest='digest', items=[_uncertain_item()])
+            retried = enqueue_uncertain_items(user_id='owner', source_digest='digest', items=[_uncertain_item()])
+        assert first[0]['review_id'] == retried[0]['review_id'] == REVIEW_ID
+        query.upsert.assert_called_once()
+        assert query.upsert.call_args.args[0][0]['source_key'] == record['source_key']
+        assert query.upsert.call_args.kwargs['on_conflict'] == 'inventory_id,user_id,source_key'
+    finally:
+        current_inventory.reset(token)

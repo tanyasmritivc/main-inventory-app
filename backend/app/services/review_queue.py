@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.services.catalog_service import verified_catalog_id_for_identity
+from app.services.inventory_scope import current_inventory
 from app.services.capture_previews import verify_capture_preview
 from app.services.items_repo import (
     _normalize_category,
@@ -84,7 +85,9 @@ def enqueue_uncertain_items(
     for index, item in enumerate(items):
         evidence = item.get("scan_evidence")
         if isinstance(evidence, dict) and bool(evidence.get("needs_review")):
-            source_key = f"photo:{source_digest}:{index}"
+            scope = current_inventory.get()
+            prefix = f"inventory:{scope.inventory_id}:" if scope else ""
+            source_key = f"{prefix}photo:{source_digest}:{index}"
             uncertain.append((index, source_key, item))
 
     if not uncertain:
