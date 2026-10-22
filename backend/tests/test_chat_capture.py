@@ -21,7 +21,14 @@ class Database:
 class Query:
     def __init__(self, db): self.db, self.filters, self.payload = db, [], None
     def select(self, *args): return self
+    def is_(self, key, value):
+        assert value == 'null'
+        self.filters.append(lambda row: row['answer_context']['chat_capture'].get(key.split('->>')[-1]) is None)
+        return self
     def eq(self, key, value):
+        if key.startswith('answer_context->chat_capture->>'):
+            self.filters.append(lambda row: str(row['answer_context']['chat_capture'].get(key.split('->>')[-1])) == value)
+            return self
         if key == 'answer_context': value = json.loads(value)
         self.filters.append(lambda row: row.get(key) == value)
         return self
@@ -174,3 +181,31 @@ def test_model_draft_counts_remain_explicit_before_bounded_observations():
     result = model_data(facts(draft))
     assert result['observation_count'] == 22
     assert result['selected_observation_count'] == 21
+
+
+def test_spreadsheet_draft_preserves_source_fields_through_save(store):
+    original = {'filename':'parts.csv','sheet':'Sheet1','fields':[{'name':'Serial','value':'0000123'}]}
+    draft = c.create(ACTOR, WORLD, CID, [{'name':'Drill','category':'Tools','quantity':2,
+        'import_data':original,'purchase_source':'Local shop'}], None, source_kind='spreadsheet')
+    draft = destination(draft)
+    c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
+    item = store.bulk.call_args.args[0].items[0]
+    assert item.import_data.model_dump() == original
+    assert item.purchase_source == 'Local shop'
+
+
+def test_large_spreadsheet_checkpoints_bounded_batches_and_replay(store):
+    from app.schemas.inventory import BulkCreateResponse
+    store.bulk.side_effect = lambda payload, user: BulkCreateResponse(
+        inserted=[{'item_id': str(uuid4()), 'name': item.name} for item in payload.items],
+        failures=[], accepted_indices=list(range(len(payload.items))))
+    draft = c.create(ACTOR, WORLD, CID, [{'name':f'Part {n}','category':'Tools','quantity':1} for n in range(450)], None, source_kind='spreadsheet')
+    draft = destination(draft)
+    for processed in [200, 400, 450]:
+        draft = c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
+        assert draft['processed_count'] == processed
+        assert draft['receipt']['saved_count'] == processed
+    assert draft['status'] == 'saved'
+    assert [len(call.args[0].items) for call in store.bulk.call_args_list] == [200,200,50]
+    c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
+    assert store.bulk.call_count == 3

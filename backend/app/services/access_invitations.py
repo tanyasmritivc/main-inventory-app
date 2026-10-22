@@ -3,6 +3,7 @@ import hashlib
 import html
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
@@ -54,19 +55,22 @@ def decorate(invitation: dict) -> dict:
     return {**invitation, 'name': invitation['resource_name'], 'destination': destination, 'inviter': inviter}
 
 
-def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email: str | None = None, member_id: str | None = None) -> dict:
-    code = ''.join(secrets.choice(ALPHABET) for _ in range(12))
+def invite_or_change(actor: str, scope: str, resource: str, role: str, *, email: str | None = None, member_id: str | None = None, _save=None, _code: str | None = None) -> dict:
+    code = _code or ''.join(secrets.choice(ALPHABET) for _ in range(12))
     data = {'scope': scope, 'resource_id': resource, 'role': role, 'code_hash': code_hash(code)}
     data.update({'user_id': member_id} if member_id else {'email': email})
-    saved = invitation_rpc(actor, 'change' if member_id else 'create', data)
+    saved = _save(data) if _save else invitation_rpc(actor, 'change' if member_id else 'create', data)
     if 'invitation_id' not in saved:
         return saved
-    from app.services.push_notifications import enqueue_invitation
-    enqueue_invitation(saved['invitation_id'])
+    skip_delivery = saved.pop('_skip_delivery', False)
     invitation = decorate(saved)
     base = str(get_settings().frontend_url).rstrip('/')
     url = f'{base}/join/access?code={code}'
     name = invitation['name']
+    if skip_delivery:
+        return {'invitation': invitation, 'code': code, 'invite_url': url, 'email_sent': None, 'delivery_status': 'not_retried'}
+    from app.services.push_notifications import enqueue_invitation
+    enqueue_invitation(saved['invitation_id'])
     inviter_name = (invitation.get('inviter') or {}).get('display_name') or 'A team member'
     sent = False
     try:
@@ -108,12 +112,28 @@ def inbox(actor: str) -> list[dict]:
 
 
 def notification_rows(actor: str) -> list[dict]:
+    # The actionable inbox intentionally contains only pending invitations.
+    # Notification history retains decisions/expiry without restoring access.
+    client = get_supabase_raw()
+    identity = client.auth.admin.get_user_by_id(actor).user
+    if not identity or not identity.email_confirmed_at or not identity.email:
+        return []
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    rows = client.table('app_access_invitations').select(
+        'invitation_id,scope,resource_id,resource_name,role,status,invited_by,team_id,created_at,expires_at,seen_at'
+    ).eq('recipient_email', identity.email.lower()).gte('created_at', cutoff).order('created_at', desc=True).execute().data or []
+    now = datetime.now(timezone.utc)
+    for row in rows:
+        row.pop('code_hash', None)
+        row.pop('recipient_email', None)
+        if row['status'] == 'pending' and datetime.fromisoformat(row['expires_at'].replace('Z', '+00:00')) <= now:
+            row['status'] = 'expired'
     return [{
         'activity_id': row['invitation_id'], 'action': 'access_invitation',
         'actor_id': row['invited_by'], 'team_id': row.get('team_id'),
-        'created_at': row['created_at'], 'is_read': bool(row.get('seen_at')),
+        'created_at': row['created_at'], 'is_read': bool(row.get('seen_at')) or row['status'] != 'pending',
         'summary': f"Invitation to {row['name']}",
-        'display_text': f"Invitation to {row['name']}",
+        'display_text': f"Invitation to {row['name']}" + (f" ({row['status']})" if row['status'] != 'pending' else ''),
         'activity_type': 'Invitation', 'team_name': '', 'invitation': row,
         'metadata': {'invitation_id': row['invitation_id']},
-    } for row in inbox(actor)]
+    } for row in map(decorate, rows)]

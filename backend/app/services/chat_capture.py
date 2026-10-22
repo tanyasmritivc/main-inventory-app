@@ -7,7 +7,6 @@ Stable capture IDs feed the existing idempotent inventory and Review save paths.
 from contextlib import contextmanager
 from contextvars import ContextVar
 from copy import deepcopy
-import json
 from uuid import UUID, uuid4
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,7 +18,7 @@ current_capture = ContextVar('chat_capture', default=None)
 
 class ItemEdit(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    index: int = Field(ge=0, lt=200)
+    index: int = Field(ge=0, lt=10000)
     selected: bool | None = None
     name: str | None = Field(default=None, min_length=1, max_length=200)
     category: str | None = Field(default=None, min_length=1, max_length=100)
@@ -36,13 +35,13 @@ class DraftEdit(BaseModel):
     items: list[ItemEdit] = Field(default_factory=list, max_length=200)
 
 
-def create(actor, key, cid, items, source_url, summary=None):
+def create(actor, key, cid, items, source_url, summary=None, *, source_kind="photo"):
     from app.services import world_chat as world
     from app.services.catalog_service import enrich_scan_items_from_verified_catalog
-    if len(items) > 200:
-        raise HTTPException(422, 'This photo has too many objects. Photograph a smaller area.')
+    if len(items) > (10000 if source_kind == 'spreadsheet' else 200):
+        raise HTTPException(422, 'A chat draft supports up to 200 items. Split this capture into smaller batches.')
     clean = []
-    for raw in enrich_scan_items_from_verified_catalog(items):
+    for raw in (items if source_kind == 'spreadsheet' else enrich_scan_items_from_verified_catalog(items)):
         item = ExtractedInventoryItem.model_validate(raw).model_dump(exclude_none=True)
         for field in ('review_id', 'review_status', 'review_token', 'client_request_id'):
             item.pop(field, None)
@@ -52,7 +51,7 @@ def create(actor, key, cid, items, source_url, summary=None):
         clean.append({'index': len(clean), 'selected': True, 'item': item})
     draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft',
              'items': clean, 'summary': summary or {}, 'inventory_id': None, 'space_id': None,
-             'destination_label': None, 'source_url': source_url}
+             'destination_label': None, 'source_url': source_url, 'source_kind': source_kind}
     world.save_answer(actor, key, cid, f'Auto Extract found {len(clean)} item(s). Review the draft before saving.',
                       {'chat_capture': draft}, message_id=draft['id'])
     return draft
@@ -80,10 +79,16 @@ def load(actor, key, cid, capture_id=None):
 
 def replace(cid, row, draft):
     context = {**row['answer_context'], 'chat_capture': draft}
-    # JSONB equality is an atomic optimistic lock, including the frozen save state.
-    result = (get_supabase_raw().table('messages').update({'answer_context': context})
-              .eq('id', row['id']).eq('conversation_id', cid)
-              .eq('answer_context', json.dumps(row['answer_context'], separators=(',', ':'))).execute().data)
+    # Compare the version and frozen save checkpoint, not the whole draft in
+    # a URL filter (large spreadsheets exceed HTTP request-line limits).
+    old = row['answer_context']['chat_capture']
+    query = (get_supabase_raw().table('messages').update({'answer_context': context})
+             .eq('id', row['id']).eq('conversation_id', cid)
+             .eq('answer_context->chat_capture->>revision', str(old['revision']))
+             .eq('answer_context->chat_capture->>status', old['status']))
+    field = 'answer_context->chat_capture->>processed_count'
+    query = query.eq(field, str(old['processed_count'])) if 'processed_count' in old else query.is_(field, 'null')
+    result = query.execute().data
     if not result:
         raise HTTPException(409, 'This draft changed. Refresh it before continuing.')
     return draft
@@ -172,16 +177,13 @@ def duplicate_links(owner, inventory_id, selected):
     from app.services import world_chat as world
     found = {}
     client = get_supabase_admin()
-    for entry in selected:
-        item = entry['item']
-        # Exact names and identifiers are possible duplicates, never proof that
-        # two objects are the same. Every query is scoped and performed afresh.
-        candidates = [('name', item['name'])]
-        candidates += [(k, item[k]) for k in ('barcode', 'part_number') if item.get(k)]
-        for field, value in candidates:
-            rows = client.table('items').select('item_id,name').eq('user_id', owner).eq(field, value).limit(20).execute().data or []
+    for field in ('name', 'barcode', 'part_number'):
+        values = list({entry['item'][field] for entry in selected if entry['item'].get(field)})
+        for offset in range(0, len(values), 100):
+            rows = client.table('items').select('item_id,name').eq('user_id', owner).in_(field, values[offset:offset + 100]).limit(200).execute().data or []
             for row in rows:
                 found[row['item_id']] = {**row, 'inventory_id': inventory_id}
+    # Links are bounded independently from the duplicate decision.
     return world.resource_links({'items': list(found.values())})
 
 
@@ -221,7 +223,9 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
         # Frozen details + stable IDs: a partial/lost response can only finish the
         # same save; it cannot change the destination or create another copy.
         inventory_items, reviews = [], []
-        for entry in selected:
+        processed = draft.get('processed_count', 0)
+        batch = selected[processed:processed + 200]
+        for entry in batch:
             item = {**entry['item'], 'location': draft['location'],
                     'client_request_id': f"chat_{draft['id']}_{entry['index']}"}
             if (item.get('scan_evidence') or {}).get('needs_review'):
@@ -236,9 +240,14 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
         failures = [{**f, 'index': inventory_items[f['index']][0]} for f in (result.failures if result else [])]
         links = world.resource_links({'items': [{**r, 'inventory_id': inv['inventory_id']} for r in inserted],
             'spaces': [{**space, 'inventory_id': inv['inventory_id']}]})
-        draft['receipt'] = {'saved_count': len(inserted), 'review_count': len(reviews),
-                            'reviews': reviews, 'failures': failures, 'resource_links': links}
-        draft['status'] = 'saving' if failures else 'saved'
+        prior = draft.get('completed_receipt') or {}
+        draft['receipt'] = {'saved_count': prior.get('saved_count', 0) + len(inserted), 'review_count': prior.get('review_count', 0) + len(reviews),
+                            'reviews': prior.get('reviews', []) + reviews, 'failures': failures,
+                            'resource_links': (prior.get('resource_links', []) + links)[-200:]}
+        if not failures:
+            draft['processed_count'] = processed + len(batch)
+            draft['completed_receipt'] = deepcopy(draft['receipt'])
+        draft['status'] = 'saving' if failures or draft.get('processed_count', 0) < len(selected) else 'saved'
         try:
             return replace(cid, row, draft)
         except HTTPException as error:

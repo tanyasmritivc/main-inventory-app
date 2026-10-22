@@ -7,7 +7,7 @@ from app.services.supabase_client import get_supabase_admin
 from app.services.access_invitations import notification_rows, invitation_rpc
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
-NOTIFICATION_HISTORY_DAYS = 14
+NOTIFICATION_HISTORY_DAYS = 30
 
 
 def _history_cutoff() -> str:
@@ -113,7 +113,7 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
         "activity_id", activity_ids
     ).gte("created_at", _history_cutoff()).order(
         "created_at", desc=True
-    ).limit(100).execute().data or []
+    ).limit(1000).execute().data or []
     activity = _visible_activity(client, user.user_id, activity)
     if not activity:
         return {"notifications":invitations,"unread_count":sum(not row['is_read'] for row in invitations)}

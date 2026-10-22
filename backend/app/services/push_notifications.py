@@ -145,7 +145,7 @@ def _deliver_to_recipients(
         devices = client.table("push_devices").select(
             "user_id,device_token,environment"
         ).in_("user_id", user_ids).eq("enabled", True).execute().data or []
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         recipient_rows = client.table("team_notification_recipients").select(
             "user_id,activity_id"
         ).in_("user_id", user_ids).gte("created_at", cutoff).execute().data or []

@@ -869,6 +869,11 @@ async def barcode_lookup_route(
             },
         )
 
+    return await lookup_barcode_product(barcode, user.user_id)
+
+
+async def lookup_barcode_product(barcode: str, user_id: str) -> BarcodeLookupResponse:
+    """Resolve product identity without reading any user's inventory."""
     out: dict[str, Any] | None = None
 
     # STEP 0: Check internal parts_catalog first
@@ -942,7 +947,7 @@ async def barcode_lookup_route(
             image_url=None,
         )
 
-    await increment_usage(user.user_id, "barcode_scan")
+    await increment_usage(user_id, "barcode_scan")
     return BarcodeLookupResponse(
         barcode=barcode,
         name=(out.get("name") or "Unknown item"),

@@ -1,3 +1,13 @@
+## October 21 — Destination suggestions and capture parity
+
+The user explicitly chose “Select and save immediately” for suggested Space chips.
+The client patches the draft destination then calls explicit save; inline resource
+links still navigate. Duplicate confirmation, Review and stable retry IDs remain.
+Spreadsheet and barcode capture use the same private draft lifecycle as photos;
+no destination is required before inspection. Preserve original import columns.
+Notification history includes all invitation statuses for 30 days; only pending
+invitations expose consent actions. Never expose invitation secrets in history.
+
 ## October21 — Auto Extract is a durable chat draft
 
 The + menu exposes Auto Extract first; image-only attachments start FIND. Preserve

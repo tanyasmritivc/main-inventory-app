@@ -14,7 +14,7 @@ from app.services.item_photos import retain_capture_original
 _FIELDS = (
     'name', 'category', 'subcategory', 'brand', 'part_number', 'quantity',
     'location', 'image_url', 'barcode', 'purchase_source', 'notes', 'tags',
-    'confidence',
+    'confidence', 'import_data',
 )
 logger = logging.getLogger(__name__)
 

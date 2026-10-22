@@ -196,3 +196,41 @@ def test_capture_followup_uses_same_conversation_and_missing_capability_is_compa
         response = transport.client.post(f'/worlds/{WORLD}/ai_command', json={'message': 'Only tools', 'conversation_id': CID, 'supports_capture': True})
     load.assert_called_once_with(ACTOR, WORLD, CID)
     assert '"type": "done"' in response.text
+
+
+def test_spreadsheet_capture_has_no_destination_and_preserves_original_columns(transport):
+    from app.services import chat_capture
+    from app.services.spreadsheet_import import infer_import_mapping
+    with patch('app.services.limits.check_and_increment_import'), \
+         patch('app.services.usage_service.check_limit', new=AsyncMock(return_value={'allowed':True})), \
+         patch('app.services.usage_service.increment_usage', new=AsyncMock()), \
+         patch('app.services.spreadsheet_import.infer_import_mapping', return_value={'name_columns':['Name'], 'quantity_column':'Qty', 'category':'Tools'}), \
+         patch.object(chat_capture, 'create', return_value={'status':'draft'}) as create:
+        response = transport.client.post(f'/worlds/{WORLD}/captures/spreadsheet', files={'file':('items.csv',b'Name,Qty,Serial\nDrill,2,ABC-123\n','text/csv')})
+    assert response.status_code == 200, response.text
+    args = create.call_args.args
+    assert args[:3] == (ACTOR, WORLD, CID)
+    assert args[3][0]['name'] == 'Drill' and args[3][0]['quantity'] == 2
+    assert args[3][0]['import_data']['fields'][-1] == {'name':'Serial','value':'ABC-123'}
+    assert args[4] is None
+    assert create.call_args.kwargs['source_kind'] == 'spreadsheet'
+
+
+def test_barcode_capture_is_unknown_review_draft_without_stock_reads(transport):
+    from app.schemas.inventory import BarcodeLookupResponse
+    with patch('app.services.usage_service.check_limit', new=AsyncMock(return_value={'allowed':True})), \
+         patch('app.api.routes.items.lookup_barcode_product', new=AsyncMock(return_value=BarcodeLookupResponse(name='Unknown item'))) as lookup, \
+         patch('app.services.chat_capture.create', return_value={'status':'draft'}) as create:
+        response = transport.client.post(f'/worlds/{WORLD}/captures/barcode', json={'barcode':'12345678'})
+    assert response.status_code == 200, response.text
+    lookup.assert_awaited_once_with('12345678', ACTOR)
+    assert create.call_args.args[3][0]['scan_evidence']['needs_review'] is True
+    assert create.call_args.kwargs['source_kind'] == 'barcode'
+
+
+def test_capture_import_rejects_unauthorized_world_before_parse(transport):
+    transport.authorize.side_effect = HTTPException(403, 'Access denied')
+    with patch('app.services.spreadsheet_import.parse_import_tables') as parse:
+        result = transport.client.post(f'/worlds/{WORLD}/captures/spreadsheet', files={'file':('items.csv', b'Name\nDrill', 'text/csv')})
+    assert result.status_code == 403
+    parse.assert_not_called(); transport.prepare.assert_not_called()
