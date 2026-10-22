@@ -1,11 +1,16 @@
-## October 21 - Chat sources and assistant connections
+## October 21 - Build 109 delivered: chat sources and connections
 
-Lane: feat/mobile-chat-sources-20261021. Implementing the approved file-first
-plus menu, saved context selection and existing Claude Desktop MCP/ChatGPT Actions
-setup entry points. API contract in the separate api-chat-sources lane. Native iOS
-camera/gallery retained. No inbound provider OAuth or fabricated connection state.
-779 mobile tests passed across the full run and corrected menu checks; one existing
-skip. Seven native simulator flows passed. Build109 packaging/upload pending.
+Runtime 1724a94 / PR165 adds the anchored plus menu, native iPhone camera and
+PHPicker photo library, PDF/TXT/Markdown attachments, saved context chips and
+existing Claude Desktop MCP/ChatGPT Actions setup links. Build 108 Space navigation
+and menus are retained. 779 mobile tests passed across the full run and corrected
+menu checks, one existing skip, clean analysis and seven native simulator flows.
+All five CI gates and web preview passed. Physical camera/gallery acceptance is
+unverified. Apple validated and acknowledged 1.1.0 (109), delivery
+37d70e05-ca15-4050-8b96-8a491992ab0b. Processing/tester availability were not polled.
+A clean device build verified 32 binaries in archive/export, strict signatures,
+24 privacy manifests and production configuration. Signed artifacts and previews:
+Documents/FindEZ/AppStore/1.1.0-build109. API5507499 / PR164 is live; no migration.
 
 ## October 21 - Spaces-only inventory entry and Space menus
 
