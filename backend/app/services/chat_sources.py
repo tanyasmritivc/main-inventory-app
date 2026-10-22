@@ -31,7 +31,7 @@ source_adapter = TypeAdapter(SourceList)
 # Column allowlists prevent signed URLs, storage paths or unrelated metadata
 # from being sent to the model or the context directory.
 KINDS = {
-    'space': ('spaces', 'space_id', 'user_id', 'name', 'space_id,name'),
+    'space': ('spaces', 'id', 'user_id', 'name', 'id,name'),
     'item': ('items', 'item_id', 'user_id', 'name', 'item_id,name,quantity,category,location,notes'),
     'project': ('project_kits', 'id', 'owner_user_id', 'name', 'id,name,location'),
     'document': ('documents', 'document_id', 'user_id', 'filename', 'document_id,filename,mime_type,size_bytes'),

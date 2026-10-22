@@ -69,7 +69,7 @@ def test_reference_is_fresh_and_owner_scoped_each_time():
     assert ('eq', ('item_id', REF)) in query.calls
 
 def test_directory_is_paginated_and_search_is_literal():
-    query = Query([{'space_id': str(uuid4()), 'name': str(i)} for i in range(31)])
+    query = Query([{'id': str(uuid4()), 'name': str(i)} for i in range(31)])
     with patch.object(world, 'in_inventory', side_effect=inventory), patch.object(sources, 'get_supabase_admin', return_value=query):
         result = sources.search(ACTOR, WORLD, INV, 'space', '100%_', 30)
     assert len(result['sources']) == 30 and result['next_offset'] == 60
