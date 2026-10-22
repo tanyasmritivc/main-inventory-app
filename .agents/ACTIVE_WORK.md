@@ -1,3 +1,12 @@
+## October 21 - Chat file and reference sources
+
+Lane: feat/api-chat-sources-20261021. Bounded PDF/text extraction and explicit
+Space/item/project/document references for private world chat. Every saved reference
+is reauthorized at use. No migration, OAuth provider setup, or inventory auto-save.
+Mobile is implemented in its separate chat-sources lane. Full baseline: 1,292 Python
+tests and 10 subtests; final source/route/model checks cover bounded PDF extraction,
+fresh authorization and full excerpt delivery. Runtime activation pending.
+
 ## October 21 — Saved-receipt context activated
 
 API1d638dc / PR161 activated at2026-10-22T02:16:34Z. All five CI gates and the web

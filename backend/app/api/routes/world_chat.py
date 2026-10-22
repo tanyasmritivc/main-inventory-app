@@ -3,12 +3,13 @@ import asyncio
 import json
 import logging
 from uuid import UUID
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from app.core.limiter import limiter
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import world_chat as world
+from app.services import chat_sources
 from app.services.supabase_client import get_supabase_raw
 from app.services.completion_stream import async_iterate
 from app.services.limits import check_and_increment_chat, check_and_increment_scan, ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded
@@ -24,6 +25,25 @@ class Question(BaseModel):
     supports_item_actions: bool = True
     supports_item_management: bool = False
     supports_capture: bool = False
+    sources: chat_sources.SourceList = Field(default_factory=list)
+
+
+@router.get('/chat-sources')
+def sources(world_id: str, inventory_id: UUID, kind: str,
+            query: str = Query('', max_length=100), offset: int = Query(0, ge=0, le=10000),
+            user: AuthenticatedUser = Depends(get_current_user)):
+    return JSONResponse(chat_sources.search(user.user_id, world.world_key(world_id), str(inventory_id), kind, query, offset), headers={'Cache-Control': 'private, no-store'})
+
+
+@router.post('/chat-files')
+@limiter.limit('10/minute')
+async def file_source(request: Request, world_id: str, file: UploadFile = File(...),
+                      user: AuthenticatedUser = Depends(get_current_user)):
+    await asyncio.to_thread(world.authorize, user.user_id, world.world_key(world_id))
+    content = await file.read(chat_sources.MAX_BYTES + 1)
+    # No inventory record, persistent file, or save destination is created here.
+    result = await asyncio.to_thread(chat_sources.extract, file.filename or '', content)
+    return JSONResponse(result, headers={'Cache-Control': 'private, no-store'})
 
 
 @router.get('/directory')
@@ -76,8 +96,9 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None):
     key = await asyncio.to_thread(world.authorize, actor, key)
+    source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
     except (ChatLimitExceeded, TeamSoftCapExceeded):
@@ -124,10 +145,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             stage = 'chat_reply'
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management)):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'source_evidence': source_evidence} if source_evidence else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
+                        if source_evidence:
+                            event['answer_context']['selected_sources'] = [{k: v for k, v in s.items() if k in ('kind', 'name', 'inventory_id', 'resource_id', 'truncated')} for s in source_evidence]
+                            event['answer_context'].setdefault('sources', []).extend({'kind': {'space': 'spaces', 'item': 'inventory', 'file': 'document'}.get(s['kind'], s['kind']), 'label': s['name'], 'detail': 'Selected excerpt' if s.get('truncated') else 'Selected for this message'} for s in source_evidence)
                         stage = 'save_reply'
                         save_started = True
                         await asyncio.to_thread(world.save_answer, actor, key, cid, event['assistant_message'], event['answer_context'])
@@ -166,13 +190,17 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        selected_sources = chat_sources.source_adapter.validate_json(sources)
+    except ValueError:
+        raise HTTPException(422, 'Choose valid chat sources.') from None
     from app.services.item_photos import _jpeg_bytes, MAX_ITEM_PHOTO_BYTES
     raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
     if len(raw) > MAX_ITEM_PHOTO_BYTES:
@@ -181,7 +209,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources)
 
 
 class Decision(BaseModel):

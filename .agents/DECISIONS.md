@@ -1,3 +1,15 @@
+# October 21 - Explicit world chat evidence
+
+World chat accepts up to eight explicit references/files. Every saved reference is
+resolved using actor, world, inventory and owner fencing on every turn. Documents
+are read only after validating the authorized record and owner storage path;
+selection does not change global AI-access flags. Reference selection never implies
+a save destination or write approval. File extraction is ephemeral, bounded and
+labeled when partial. Only source metadata is stored with replies; raw files and
+extracted text are not added to inventory. Full selected file excerpts use their
+explicit text budget instead of the generic 1,500-character tool-field cap.
+No schema migration or inbound provider OAuth is needed for this first phase.
+
 ## October 21 — Destination suggestions and capture parity
 
 The user explicitly chose “Select and save immediately” for suggested Space chips.
