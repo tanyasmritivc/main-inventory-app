@@ -177,6 +177,7 @@ Future<void> _login(String id) => Supabase.instance.client.auth
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  tearDownAll(() => Supabase.instance.dispose());
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       final fontBytes = File(
@@ -747,6 +748,12 @@ void main() {
         expect(tester.takeException(), isNull);
         await _count(tester, 'Record arrival', 5);
         expect(tester.takeException(), isNull);
+        await tester.ensureVisible(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
+        expect(
+          find.widgetWithText(TextButton, 'Cancel').hitTestable(),
+          findsOneWidget,
+        );
         await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

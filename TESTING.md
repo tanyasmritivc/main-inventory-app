@@ -35,6 +35,16 @@ background APNs delivery or physical-device acceptance.
 
 ## Native iOS release audit
 
+The extended matrix runs with `flutter test
+integration_test/launch_extended_audit_test.dart -d <simulator-id> --no-pub
+--dart-define=FINDEZ_NATIVE_AUDIT=true --reporter expanded`. It uses synthetic
+APIs for documents, onboarding, organization setup, permissions, restock,
+notifications, memory, review, imported items, profile, invitations and sessions.
+The native flag skips only the repository-file linker assertion, which still runs
+in the host suite. Dispose Supabase between combined suites to isolate auth clients.
+Use native menu callbacks for Flutter assertions; UIKit menus require separate
+native inspection. See `docs/plans/app-store-launch-audit-20261021.md` for results.
+
 Run `flutter test integration_test/release_audit_test.dart -d <simulator-id>
 --no-pub --reporter expanded` from `mobile/` to exercise the current hierarchy,
 removal dialogs, item sheets, profile, Chat, attribution and account flows using
