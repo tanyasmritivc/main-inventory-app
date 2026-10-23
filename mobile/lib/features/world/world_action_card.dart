@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/ui/liquid_surface.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/ask_answer.dart';
 
 class WorldActionCard extends StatefulWidget {
   const WorldActionCard({
@@ -10,10 +11,12 @@ class WorldActionCard extends StatefulWidget {
     required this.action,
     this.onSaved,
     this.onChanged,
+    this.onOpenResource,
   });
   final ApiClient api;
   final Map<String, dynamic> action;
   final VoidCallback? onSaved;
+  final ValueChanged<AskResourceLink>? onOpenResource;
   final ValueChanged<Map<String, dynamic>>? onChanged;
   @override
   State<WorldActionCard> createState() => _WorldActionCardState();
@@ -33,7 +36,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
       final result = await widget.api.collaboration(
         '/worlds/${widget.api.worldKey}/structure-actions/${_action['id']}',
         method: 'POST',
-        data: {'decision': decision},
+        data: {'decision': decision, 'supports_task_actions': true},
       );
       final action = Map<String, dynamic>.from(result['action'] as Map);
       if (action['id'] != _action['id'] ||
@@ -60,6 +63,17 @@ class _WorldActionCardState extends State<WorldActionCard> {
         ? (plan['inventories'] as List).whereType<Map>()
         : const <Map>[];
     final pending = _action['status'] == 'pending';
+    final receipt = _action['receipt'] is Map
+        ? _action['receipt'] as Map
+        : const {};
+    final links = AskAnswerContext.fromJson({
+      'resource_links': receipt['resource_links'] ?? [],
+    }).resourceLinks;
+    final hasItems = inventories.any(
+      (i) =>
+          (i['items'] is List && (i['items'] as List).isNotEmpty) ||
+          (i['moves'] is List && (i['moves'] as List).isNotEmpty),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: LiquidSurface(
@@ -94,12 +108,37 @@ class _WorldActionCardState extends State<WorldActionCard> {
                     padding: const EdgeInsets.only(left: 12, top: 4),
                     child: Text(space.toString()),
                   ),
+                for (final item
+                    in (inventory['items'] is List
+                            ? inventory['items'] as List
+                            : const [])
+                        .whereType<Map>())
+                  Text(
+                    'Add ${item['quantity']} ${item['name']} to ${item['location']}',
+                  ),
+                for (final item
+                    in (inventory['moves'] is List
+                            ? inventory['moves'] as List
+                            : const [])
+                        .whereType<Map>())
+                  Text('Move ${item['name']} to ${item['target_location']}'),
                 const SizedBox(height: 8),
               ],
               if (pending)
-                const Text(
-                  'Matching existing inventories and Spaces will be reused. No existing items will be changed.',
+                Text(
+                  hasItems
+                      ? 'Confirm once to create the destination and complete the item changes shown above.'
+                      : 'Matching existing inventories and Spaces will be reused.',
                 ),
+              if (!pending && _action['status'] == 'confirmed')
+                for (final link in links)
+                  TextButton.icon(
+                    onPressed: widget.onOpenResource == null
+                        ? null
+                        : () => widget.onOpenResource!(link),
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: Text('Open ${link.label}'),
+                  ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -116,7 +155,13 @@ class _WorldActionCardState extends State<WorldActionCard> {
                   children: [
                     FilledButton(
                       onPressed: _busy ? null : () => _decide('confirm'),
-                      child: Text(_busy ? 'Saving...' : 'Create'),
+                      child: Text(
+                        _busy
+                            ? 'Saving...'
+                            : hasItems
+                            ? 'Create and complete'
+                            : 'Create',
+                      ),
                     ),
                     TextButton(
                       onPressed: _busy ? null : () => _decide('cancel'),

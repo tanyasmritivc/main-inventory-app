@@ -1159,6 +1159,7 @@ class ApiClient {
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
       'supports_item_management': true,
+      'supports_task_actions': true,
       'supports_photo_attachment': true,
       if (worldKey != null) 'supports_capture': true,
       if (worldKey != null && sources.isNotEmpty)
@@ -1215,6 +1216,7 @@ class ApiClient {
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
     request.fields['supports_item_management'] = 'true';
+    request.fields['supports_task_actions'] = 'true';
     request.fields['supports_photo_attachment'] = 'true';
     if (worldKey != null) {
       request.fields['supports_capture'] = 'true';

@@ -3532,6 +3532,9 @@ class _ChatPageState extends State<ChatPage>
             key: ValueKey(action['id']),
             api: widget.api,
             action: action,
+            onOpenResource: widget.onOpenDestination == null
+                ? null
+                : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
             onSaved: widget.onInventoryMutated,
             onChanged: (updated) {
               action.clear();
