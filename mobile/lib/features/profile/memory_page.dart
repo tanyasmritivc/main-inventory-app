@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,24 +37,12 @@ class _MemoryPageState extends State<MemoryPage> {
   }
 
   Future<void> _forget() async {
-    final yes = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const AppText('Forget personalization?'),
-        content: const AppText(
+    final yes = await showAppConfirmation(
+      context,
+      title: 'Forget personalization?',
+      message:
           'This removes your preferences, aliases and unverified legacy memory. Your chats and inventory stay saved.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const AppText('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const AppText('Forget'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Forget',
     );
     if (yes == true) await store.change({'action': 'clear'});
   }

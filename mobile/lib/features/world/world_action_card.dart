@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/ui/liquid_surface.dart';
+import '../../core/ui/content_card.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ask_answer.dart';
@@ -88,9 +88,8 @@ class _WorldActionCardState extends State<WorldActionCard> {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: LiquidSurface(
-        radius: 18,
-        shadow: false,
+      child: ContentCard(
+        padding: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

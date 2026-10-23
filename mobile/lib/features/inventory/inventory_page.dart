@@ -1,3 +1,4 @@
+import '../../core/ui/native_menu_button.dart';
 import '../review/review_queue_page.dart';
 import '../workspaces/resource_removal.dart';
 import 'package:mobile/core/private_image.dart';
@@ -704,59 +705,38 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           ),
           actions: [
             NotificationBell(api: widget.api),
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_horiz,
-                color: AppTheme.foreground(context, Color(0xB3FFFFFF)),
-              ),
-              color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+            AppMenuButton(
+              label: 'Space options',
               onSelected: _onFabItemTap,
-              itemBuilder: (_) => [
+              items: [
                 if (!widget.readOnly)
-                  const PopupMenuItem(
-                    value: 'Import Spreadsheet',
-                    child: ListTile(
-                      leading: Icon(Icons.table_chart_outlined),
-                      title: AppText('Import Spreadsheet'),
-                    ),
+                  const AppMenuItem(
+                    'Import Spreadsheet',
+                    'Import Spreadsheet',
+                    'tablecells',
                   ),
                 if (!widget.readOnly &&
                     (widget.api.inventoryContext == null ||
                         widget.api.inventoryContext!.isPersonal))
-                  const PopupMenuItem(
-                    value: 'Share Space',
-                    child: ListTile(
-                      leading: Icon(Icons.share_outlined),
-                      title: AppText('Share Space'),
-                    ),
+                  const AppMenuItem(
+                    'Share Space',
+                    'Share Space',
+                    'square.and.arrow.up',
                   ),
                 if (widget.api.inventoryContext == null)
-                  const PopupMenuItem(
-                    value: 'Join Space',
-                    child: ListTile(
-                      leading: Icon(Icons.person_add_outlined),
-                      title: AppText('Join Space'),
-                    ),
+                  const AppMenuItem(
+                    'Join Space',
+                    'Join Space',
+                    'person.badge.plus',
                   ),
-                PopupMenuItem(
-                  value: 'Print Bin Label',
-                  child: ListTile(
-                    leading: Icon(Icons.qr_code_2),
-                    title: AppText('Print Bin Label'),
-                  ),
+                const AppMenuItem(
+                  'Print Bin Label',
+                  'Print Bin Label',
+                  'qrcode',
                 ),
                 if (widget.api.inventoryContext == null ||
                     widget.api.inventoryContext!.isPersonal)
-                  const PopupMenuItem(
-                    value: 'Members',
-                    child: ListTile(
-                      leading: Icon(Icons.people_outline),
-                      title: AppText('Members'),
-                    ),
-                  ),
+                  const AppMenuItem('Members', 'Members', 'person.2'),
               ],
             ),
           ],
@@ -2877,15 +2857,8 @@ class _InventoryPageState extends State<InventoryPage>
                                 ],
                               ),
                             ),
-                            PopupMenuButton<String>(
-                              tooltip: 'Space options',
-                              icon: Icon(
-                                Icons.more_horiz_rounded,
-                                color: AppTheme.foreground(
-                                  context,
-                                  Color(0x73FFFFFF),
-                                ),
-                              ),
+                            AppMenuButton(
+                              label: 'Space options',
                               onSelected: (value) {
                                 if (value == 'share') {
                                   showModalBottomSheet<void>(
@@ -2913,22 +2886,17 @@ class _InventoryPageState extends State<InventoryPage>
                                   );
                                 }
                               },
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: 'share',
-                                  child: AppText('Share invitation link'),
+                              items: const [
+                                AppMenuItem(
+                                  'share',
+                                  'Share invitation link',
+                                  'square.and.arrow.up',
                                 ),
-                                PopupMenuItem(
-                                  value: 'leave',
-                                  child: AppText(
-                                    'Leave Space',
-                                    style: TextStyle(
-                                      color: AppTheme.foreground(
-                                        context,
-                                        AppColors.danger,
-                                      ),
-                                    ),
-                                  ),
+                                AppMenuItem(
+                                  'leave',
+                                  'Leave Space',
+                                  'rectangle.portrait.and.arrow.right',
+                                  destructive: true,
                                 ),
                               ],
                             ),
@@ -3492,16 +3460,8 @@ class _InventoryPageState extends State<InventoryPage>
                   tooltip: 'Restock planner',
                   onPressed: _openRestock,
                 ),
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: AppTheme.foreground(context, Colors.white70),
-                    size: 22,
-                  ),
-                  color: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                AppMenuButton(
+                  label: 'Inventory options',
                   onSelected: (value) {
                     if (value == 'checkout') {
                       Navigator.push(
@@ -3516,67 +3476,14 @@ class _InventoryPageState extends State<InventoryPage>
                       _loadItems();
                     }
                   },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'checkout',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.swap_horiz_outlined,
-                            color: AppTheme.foreground(context, Colors.white70),
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          AppText(
-                            'Check-Out Tracker',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
+                  items: const [
+                    AppMenuItem(
+                      'checkout',
+                      'Check-Out Tracker',
+                      'arrow.left.arrow.right',
                     ),
-                    PopupMenuItem(
-                      value: 'join',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.person_add_outlined,
-                            color: AppTheme.foreground(context, Colors.white70),
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          AppText(
-                            'Join a Space',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.refresh_outlined,
-                            color: AppTheme.foreground(context, Colors.white70),
-                            size: 18,
-                          ),
-                          SizedBox(width: 12),
-                          AppText(
-                            'Refresh',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    AppMenuItem('join', 'Join Space', 'person.badge.plus'),
+                    AppMenuItem('refresh', 'Refresh', 'arrow.clockwise'),
                   ],
                 ),
                 AccountButton(api: widget.api),

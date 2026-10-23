@@ -2334,23 +2334,15 @@ class _ChatPageState extends State<ChatPage>
     _focusNode.unfocus();
     final generation = _requestGeneration;
     try {
-      final selected = await showModalBottomSheet<String>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        showDragHandle: true,
-        builder: (_) => FractionallySizedBox(
-          heightFactor: .86,
-          child: ChatHistorySheet(
-            api: widget.api,
-            currentId: _currentConversationId,
-            onDeleted: (id) {
-              if (mounted && id == _currentConversationId) {
-                _currentConversationId = null;
-              }
-            },
-          ),
-        ),
+      final selected = await showChatHistory(
+        context,
+        api: widget.api,
+        currentId: _currentConversationId,
+        onDeleted: (id) {
+          if (mounted && id == _currentConversationId) {
+            _currentConversationId = null;
+          }
+        },
       );
       if (!mounted || generation != _requestGeneration || selected == null) {
         return;
@@ -2439,21 +2431,10 @@ class _ChatPageState extends State<ChatPage>
           const SizedBox(width: 12),
           Expanded(
             child: Center(
-              child: LiquidSurface(
-                radius: 28,
-                quiet: true,
-                shadow: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: Text(
-                    'Ask',
-                    key: const Key('ask-heading'),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
+              child: Text(
+                'Ask',
+                key: const Key('ask-heading'),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
           ),
@@ -2767,23 +2748,6 @@ class _ChatPageState extends State<ChatPage>
     final generation = _requestGeneration;
     if (selected == 'open') {
       await _worldAttachmentMenu();
-    } else if (selected == 'attach' && usesNativeChatMenu) {
-      await WidgetsBinding.instance.endOfFrame;
-      if (!mounted || generation != _requestGeneration) return;
-      final opened =
-          await (_attachmentAnchor.currentState as NativeChatMenuButtonState?)
-              ?.showAttachments() ??
-          false;
-      if (!opened && mounted && generation == _requestGeneration) {
-        final source = await showChatSourceMenu(
-          context,
-          _attachmentAnchor,
-          initialPage: 'attach',
-        );
-        if (source != null && mounted && generation == _requestGeneration) {
-          await _selectChatSource(source);
-        }
-      }
     } else if (selected == 'auto_extract') {
       await _attachPhoto(autoExtract: true);
     } else if (selected == 'camera' || selected == 'library') {

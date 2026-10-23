@@ -1,3 +1,15 @@
+## October 23 - Native iOS controls (beta 117 candidate)
+
+Branch `feat/native-ios-controls-20261023`, stacked on PR178. Native UIKit history
+and settings sheets, UIMenu, alerts, simple choices and glass toolbar controls;
+quieter inventory review cards. Existing APIs, auth, chat attachment/extraction
+routing, restored background and hidden unfinished connectors retained.
+Full Flutter suite 816 passed / one optional skip; six focused presentation/settings/toolbar tests pass;
+analysis clean. Native iOS 26.5 simulator checks pass for history search/selection,
+keyboard-open plus menu, attachment callback, dark/light appearance, Space prompt
+and alert cancellation. Physical-device/accessibility acceptance pending.
+Signed beta117 delivery pending. See `docs/plans/native-ios-controls-20261023.md`.
+
 ## October 23 - Native iOS tabs and restored chat background (beta 116)
 
 PR #178 now also replaces the iOS custom bottom navigation with a real UIKit

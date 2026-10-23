@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import 'package:mobile/core/private_image.dart';
 import 'dart:async';
 import 'dart:io';
@@ -237,30 +238,51 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Future<void> _addPhoto() async {
     if (_photoSaving || _closing) return;
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const AppText('Take Photo'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+    final nativeSource = usesNativePresentation
+        ? await showNativeChoices(
+            context,
+            title: 'Add photo',
+            rows: const [
+              {'id': 'camera', 'title': 'Take Photo', 'symbol': 'camera'},
+              {
+                'id': 'library',
+                'title': 'Choose from Library',
+                'symbol': 'photo.on.rectangle',
+              },
+            ],
+          )
+        : null;
+    if (!mounted) return;
+    final source = usesNativePresentation
+        ? nativeSource == null
+              ? null
+              : nativeSource == 'camera'
+              ? ImageSource.camera
+              : ImageSource.gallery
+        : await showModalBottomSheet<ImageSource>(
+            context: context,
+            backgroundColor: AppTheme.surface2(context),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const AppText('Choose from Library'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            builder: (ctx) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_outlined),
+                    title: const AppText('Take Photo'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.photo_library_outlined),
+                    title: const AppText('Choose from Library'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-    );
+          );
     if (source == null || !mounted) return;
 
     final photo = await ImagePicker().pickImage(
@@ -302,22 +324,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Future<void> _deletePhoto(ItemPhoto photo) async {
     if (_photoSaving || _closing) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const AppText('Delete photo?'),
-        content: const AppText('This photo will be removed from the item.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const AppText('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const AppText('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await showAppConfirmation(
+      context,
+      title: 'Delete photo?',
+      message: 'This photo will be removed from the item.',
     );
     if (confirmed != true || !mounted) return;
 

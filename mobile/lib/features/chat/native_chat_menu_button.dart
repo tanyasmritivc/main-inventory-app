@@ -22,10 +22,6 @@ class NativeChatMenuButton extends StatefulWidget {
 
 class NativeChatMenuButtonState extends State<NativeChatMenuButton> {
   MethodChannel? _channel;
-  Future<bool> showAttachments() async {
-    return await _channel?.invokeMethod<bool>('showAttachments') ?? false;
-  }
-
   Future<void> _configure() async {
     await _channel?.invokeMethod<void>('configure', {
       'enabled': widget.enabled,

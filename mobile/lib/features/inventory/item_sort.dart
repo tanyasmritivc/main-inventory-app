@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,7 +124,25 @@ void showItemSortSheet(
   BuildContext context,
   ItemSortOption current,
   void Function(ItemSortOption) onSelected,
-) {
+) async {
+  if (usesNativePresentation) {
+    final id = await showNativeChoices(
+      context,
+      title: 'Sort by',
+      rows: [
+        for (final option in ItemSortOption.values)
+          {
+            'id': option.name,
+            'title': itemSortLabel(option),
+            'checked': current == option,
+          },
+      ],
+    );
+    if (context.mounted && id != null) {
+      onSelected(ItemSortOption.values.byName(id));
+    }
+    return;
+  }
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),

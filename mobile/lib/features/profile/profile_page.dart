@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -306,31 +307,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surface2(dialogContext),
-        title: const AppText('Delete account'),
-        content: const AppText(
+    final confirmed = await showAppConfirmation(
+      context,
+      title: 'Delete account',
+      message:
           'This permanently deletes your account and data. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const AppText('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.adaptive(
-                dialogContext,
-                const Color(0xFFEF4444),
-              ),
-            ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const AppText('Delete'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     try {

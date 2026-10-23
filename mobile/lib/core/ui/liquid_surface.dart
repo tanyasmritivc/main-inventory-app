@@ -1,3 +1,6 @@
+import 'package:flutter/cupertino.dart';
+import 'native_menu_button.dart';
+import 'native_presentation.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -108,17 +111,35 @@ class LiquidIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   @override
-  Widget build(BuildContext context) => LiquidSurface(
-    radius: 30,
-    shadow: false,
-    child: IconButton(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      icon: Icon(icon, size: 21),
-      style: IconButton.styleFrom(
-        minimumSize: const Size(44, 44),
-        padding: const EdgeInsets.all(10),
+  Widget build(BuildContext context) {
+    final symbol = <IconData, String>{
+      CupertinoIcons.clock: 'clock',
+      CupertinoIcons.search: 'magnifyingglass',
+      CupertinoIcons.xmark: 'xmark',
+      CupertinoIcons.chevron_left: 'chevron.left',
+      CupertinoIcons.square_pencil: 'square.and.pencil',
+      CupertinoIcons.plus: 'plus',
+      CupertinoIcons.ellipsis: 'ellipsis',
+    }[icon];
+    if (usesNativePresentation && symbol != null) {
+      return NativeToolbarButton(
+        symbol: symbol,
+        label: tooltip,
+        onPressed: onPressed,
+      );
+    }
+    return LiquidSurface(
+      radius: 30,
+      shadow: false,
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 21),
+        style: IconButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          padding: const EdgeInsets.all(10),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
