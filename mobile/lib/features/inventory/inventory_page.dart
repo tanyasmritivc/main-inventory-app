@@ -328,29 +328,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => _showProductInfo(context, item),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0x14FFFFFF),
-                      ),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.info_outline,
-                    color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                    size: 14,
-                  ),
-                ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: 'Details for ${item.displayName}',
+                onPressed: () => _showProductInfo(context, item),
+                icon: const Icon(Icons.info_outline, size: 20),
               ),
             ],
           ),
@@ -485,7 +467,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
   void _onCategoryPillTapped(String cat) {
     setState(() => _selectedCategory = cat);
-    _listScrollController.jumpTo(0);
+    if (_listScrollController.hasClients) _listScrollController.jumpTo(0);
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -653,66 +635,53 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
     if (filteredCats.isEmpty &&
         (_spaceSearchQuery.trim().isNotEmpty || _onlyLowQuantity)) {
-      return Center(
-        child: AppText(
-          _onlyLowQuantity
-              ? 'No low-quantity items match this view'
-              : 'No items match your search',
-          style: TextStyle(
-            color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            _onlyLowQuantity
+                ? 'No low-quantity items match this view'
+                : 'No items match your search',
           ),
         ),
       );
     }
 
-    return ListView(
-      controller: _listScrollController,
-      padding: const EdgeInsets.only(bottom: 16),
-      children: [
-        for (final cat in filteredCats) ...[
-          Padding(
-            key: _categoryKeys[cat],
-            padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
-            child: AppText(
-              cat.toUpperCase(),
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
+    // One lazy viewport for the entire Space, including category headings.
+    final entries = <Object>[];
+    for (final cat in filteredCats) {
+      entries.add(cat);
+      entries.addAll(filteredGroups[cat]!);
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+      sliver: SliverList.builder(
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          if (entry is String) {
+            return Padding(
+              key: _categoryKeys[entry],
+              padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
+              child: Text(
+                '$entry  ·  ${filteredGroups[entry]!.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textSecondary(context),
+                ),
               ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
               color: AppTheme.adaptive(context, const Color(0xFF171717)),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                width: 0.5,
-              ),
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: _buildItemRow(entry as InventoryItem),
             ),
-            clipBehavior: Clip.hardEdge,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
-                  _buildItemRow(filteredGroups[cat]![i]),
-                  if (i < filteredGroups[cat]!.length - 1)
-                    Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      indent: 16,
-                      endIndent: 16,
-                      color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ],
+          );
+        },
+      ),
     );
   }
 
@@ -790,7 +759,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   ),
               ],
             ),
-            AccountButton(api: widget.api),
           ],
           backgroundColor: AppTheme.bg(context),
           elevation: 0,
@@ -801,6 +769,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             Container(
               color: AppTheme.bg(context),
               child: CustomScrollView(
+                controller: _listScrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
                   // Stats bar + action toolbar — scrolls away
                   SliverToBoxAdapter(
@@ -809,25 +780,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       children: [
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                          child: Row(
-                            children: [
-                              _StatChip(
-                                icon: Icons.inventory_2_outlined,
-                                label:
-                                    '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
-                                color: AppTheme.adaptive(context, Colors.white),
-                              ),
-                              const SizedBox(width: 8),
-                              if (_lowCount() > 0)
-                                _StatChip(
-                                  icon: Icons.warning_amber_outlined,
-                                  label: '${_lowCount()} low stock',
-                                  color: AppTheme.adaptive(
-                                    context,
-                                    const Color(0xFFFBBF24),
-                                  ),
+                          child: Text(
+                            '${_items.length} items · ${_totalCount()} units',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.textSecondary(context),
                                 ),
-                            ],
                           ),
                         ),
                         Padding(
@@ -840,245 +798,236 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
                   // Search bar + category pills — pinned
                   if (_items.isNotEmpty)
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _SearchPinDelegate(
-                        height: 132,
-                        child: Container(
-                          color: AppTheme.adaptive(context, Colors.black),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Search bar + sort button
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
-                                child: SizedBox(
-                                  height: 44,
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          decoration: BoxDecoration(
+                    SliverToBoxAdapter(
+                      child: Container(
+                        color: AppTheme.adaptive(context, Colors.black),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Search bar + sort button
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              child: SizedBox(
+                                height: 44,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.adaptive(
+                                            context,
+                                            const Color(0xFF171717),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          border: Border.all(
                                             color: AppTheme.adaptive(
                                               context,
-                                              const Color(0xFF171717),
+                                              const Color(0x14FFFFFF),
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              14,
-                                            ),
-                                            border: Border.all(
-                                              color: AppTheme.adaptive(
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: TextField(
+                                          controller: _spaceSearchController,
+                                          style: AppTypography.bodyStyleOf(
+                                            context,
+                                            TextStyle(
+                                              color: AppTheme.foreground(
                                                 context,
-                                                const Color(0x14FFFFFF),
+                                                Colors.white,
                                               ),
-                                              width: 0.5,
+                                              fontSize: 14,
                                             ),
                                           ),
-                                          child: TextField(
-                                            controller: _spaceSearchController,
-                                            style: AppTypography.bodyStyleOf(
-                                              context,
-                                              TextStyle(
-                                                color: AppTheme.foreground(
+                                          decoration: InputDecoration(
+                                            hintText: 'Search in this space...',
+                                            hintStyle:
+                                                AppTypography.bodyStyleOf(
                                                   context,
-                                                  Colors.white,
+                                                  TextStyle(
+                                                    color: AppTheme.foreground(
+                                                      context,
+                                                      Color(0x4DFFFFFF),
+                                                    ),
+                                                    fontSize: 14,
+                                                  ),
                                                 ),
-                                                fontSize: 14,
+                                            prefixIcon: Icon(
+                                              Icons.search,
+                                              color: AppTheme.foreground(
+                                                context,
+                                                Color(0x4DFFFFFF),
                                               ),
+                                              size: 20,
                                             ),
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  'Search in this space...',
-                                              hintStyle:
-                                                  AppTypography.bodyStyleOf(
-                                                    context,
-                                                    TextStyle(
+                                            border: InputBorder.none,
+                                            enabledBorder: InputBorder.none,
+                                            focusedBorder: InputBorder.none,
+                                            filled: false,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  vertical: 13,
+                                                ),
+                                            suffixIcon:
+                                                _spaceSearchQuery.isNotEmpty
+                                                ? GestureDetector(
+                                                    onTap: () {
+                                                      _spaceSearchController
+                                                          .clear();
+                                                      setState(
+                                                        () =>
+                                                            _spaceSearchQuery =
+                                                                '',
+                                                      );
+                                                      FocusScope.of(
+                                                        context,
+                                                      ).unfocus();
+                                                    },
+                                                    child: Icon(
+                                                      Icons.close,
                                                       color:
                                                           AppTheme.foreground(
                                                             context,
                                                             Color(0x4DFFFFFF),
                                                           ),
-                                                      fontSize: 14,
+                                                      size: 16,
                                                     ),
-                                                  ),
-                                              prefixIcon: Icon(
-                                                Icons.search,
-                                                color: AppTheme.foreground(
-                                                  context,
-                                                  Color(0x4DFFFFFF),
-                                                ),
-                                                size: 20,
-                                              ),
-                                              border: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              focusedBorder: InputBorder.none,
-                                              filled: false,
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 13,
-                                                  ),
-                                              suffixIcon:
-                                                  _spaceSearchQuery.isNotEmpty
-                                                  ? GestureDetector(
-                                                      onTap: () {
-                                                        _spaceSearchController
-                                                            .clear();
-                                                        setState(
-                                                          () =>
-                                                              _spaceSearchQuery =
-                                                                  '',
-                                                        );
-                                                        FocusScope.of(
-                                                          context,
-                                                        ).unfocus();
-                                                      },
-                                                      child: Icon(
-                                                        Icons.close,
-                                                        color:
-                                                            AppTheme.foreground(
-                                                              context,
-                                                              Color(0x4DFFFFFF),
-                                                            ),
-                                                        size: 16,
-                                                      ),
-                                                    )
-                                                  : null,
-                                            ),
-                                            textInputAction:
-                                                TextInputAction.search,
-                                            onSubmitted: (_) => FocusManager
-                                                .instance
-                                                .primaryFocus
-                                                ?.unfocus(),
-                                            onChanged: (v) => setState(
-                                              () => _spaceSearchQuery = v,
-                                            ),
+                                                  )
+                                                : null,
+                                          ),
+                                          textInputAction:
+                                              TextInputAction.search,
+                                          onSubmitted: (_) => FocusManager
+                                              .instance
+                                              .primaryFocus
+                                              ?.unfocus(),
+                                          onChanged: (v) => setState(
+                                            () => _spaceSearchQuery = v,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: () => showItemSortSheet(
-                                          context,
-                                          _sortOption,
-                                          (opt) async {
-                                            await saveSortPref(opt);
-                                            if (mounted) {
-                                              setState(() => _sortOption = opt);
-                                            }
-                                          },
-                                        ),
-                                        child: Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => showItemSortSheet(
+                                        context,
+                                        _sortOption,
+                                        (opt) async {
+                                          await saveSortPref(opt);
+                                          if (mounted) {
+                                            setState(() => _sortOption = opt);
+                                          }
+                                        },
+                                      ),
+                                      child: Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.adaptive(
+                                            context,
+                                            const Color(0xFF171717),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          border: Border.all(
                                             color: AppTheme.adaptive(
                                               context,
-                                              const Color(0xFF171717),
+                                              const Color(0x14FFFFFF),
                                             ),
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.sort,
+                                          color:
+                                              _sortOption !=
+                                                  ItemSortOption.nameAZ
+                                              ? AppTheme.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                )
+                                              : AppTheme.foreground(
+                                                  context,
+                                                  const Color(0x4DFFFFFF),
+                                                ),
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Category filter pills
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SizedBox(
+                                height: 68,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  physics: const BouncingScrollPhysics(),
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(width: 8),
+                                  itemCount: _sortedCategoryPills().length,
+                                  itemBuilder: (_, i) {
+                                    final pills = _sortedCategoryPills();
+                                    final label = pills[i];
+                                    final isActive = _selectedCategory == label;
+                                    return GestureDetector(
+                                      onTap: () => _onCategoryPillTapped(label),
+                                      child: GlassControl(
+                                        radius: 20,
+                                        selected: isActive,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
                                             borderRadius: BorderRadius.circular(
-                                              14,
-                                            ),
-                                            border: Border.all(
-                                              color: AppTheme.adaptive(
-                                                context,
-                                                const Color(0x14FFFFFF),
-                                              ),
-                                              width: 0.5,
+                                              20,
                                             ),
                                           ),
-                                          child: Icon(
-                                            Icons.sort,
-                                            color:
-                                                _sortOption !=
-                                                    ItemSortOption.nameAZ
-                                                ? AppTheme.foreground(
-                                                    context,
-                                                    Colors.white,
-                                                  )
-                                                : AppTheme.foreground(
-                                                    context,
-                                                    const Color(0x4DFFFFFF),
-                                                  ),
-                                            size: 20,
+                                          child: Center(
+                                            child: AppText(
+                                              label,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: isActive
+                                                    ? AppTheme.accentForeground(
+                                                        context,
+                                                      )
+                                                    : AppTheme.foreground(
+                                                        context,
+                                                        const Color(0x73FFFFFF),
+                                                      ),
+                                                fontSize: 13,
+                                                fontWeight: isActive
+                                                    ? FontWeight.w500
+                                                    : FontWeight.w400,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
                               ),
-                              // Category filter pills
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: SizedBox(
-                                  height: 68,
-                                  child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    physics: const BouncingScrollPhysics(),
-                                    separatorBuilder: (_, _) =>
-                                        const SizedBox(width: 8),
-                                    itemCount: _sortedCategoryPills().length,
-                                    itemBuilder: (_, i) {
-                                      final pills = _sortedCategoryPills();
-                                      final label = pills[i];
-                                      final isActive =
-                                          _selectedCategory == label;
-                                      return GestureDetector(
-                                        onTap: () =>
-                                            _onCategoryPillTapped(label),
-                                        child: GlassControl(
-                                          radius: 20,
-                                          selected: isActive,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 6,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Center(
-                                              child: AppText(
-                                                label,
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: isActive
-                                                      ? AppTheme.accentForeground(
-                                                          context,
-                                                        )
-                                                      : AppTheme.foreground(
-                                                          context,
-                                                          const Color(
-                                                            0x73FFFFFF,
-                                                          ),
-                                                        ),
-                                                  fontSize: 13,
-                                                  fontWeight: isActive
-                                                      ? FontWeight.w500
-                                                      : FontWeight.w400,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1155,10 +1104,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                       ),
                     )
                   else
-                    SliverFillRemaining(
-                      hasScrollBody: true,
-                      child: _buildGroupedList(),
-                    ),
+                    _buildGroupedList(),
                 ],
               ),
             ),
@@ -1437,9 +1383,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }) => InkWell(
     onTap: onTap,
     child: ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 72),
+      constraints: const BoxConstraints(minHeight: 60),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
             Icon(icon, size: 23),
@@ -3983,32 +3929,6 @@ class _SearchResultsList extends StatelessWidget {
   }
 }
 
-// ─── Pinned header delegate for search + pills ───────────────────────────────
-
-class _SearchPinDelegate extends SliverPersistentHeaderDelegate {
-  const _SearchPinDelegate({required this.child, this.height = 100});
-
-  final Widget child;
-  final double height;
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  bool shouldRebuild(_SearchPinDelegate old) =>
-      old.child != child || old.height != height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) => child;
-}
-
 // ─── Barcode scanner page (reused inside LocationItemsPage) ──────────────────
 
 class _InventoryBarcodeScannerPage extends StatefulWidget {
@@ -4482,46 +4402,6 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                   fontSize: 15,
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, const Color(0xFF171717)),
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(
-          color: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: AppTheme.foreground(context, color)),
-          const SizedBox(width: 5),
-          AppText(
-            label,
-            style: TextStyle(
-              color: AppTheme.foreground(context, color),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

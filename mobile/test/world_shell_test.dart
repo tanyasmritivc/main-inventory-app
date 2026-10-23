@@ -81,6 +81,7 @@ void main() {
       await mount(tester, brightness: brightness);
       await tester.tap(find.byTooltip('Account'));
       await tester.pumpAndSettle();
+      await worldAuditCapture?.call('settings-${brightness.name}');
       expect(find.text('Theme'), findsNothing);
       await tester.tap(find.text('Appearance'));
       await tester.pumpAndSettle();
@@ -226,6 +227,10 @@ void main() {
     await mount(tester);
     await tester.tap(find.byTooltip('Spaces'));
     await tester.pumpAndSettle();
+    expect(find.text('Search Spaces'), findsNothing);
+    expect(find.byTooltip('Account'), findsNothing);
+    await tester.tap(find.byTooltip('Search Spaces'));
+    await tester.pumpAndSettle();
     expect(find.text('Search Spaces'), findsOneWidget);
     expect(find.text('Workbench'), findsOneWidget);
     expect(find.byType(OrganizationPill), findsNothing);
@@ -275,14 +280,15 @@ void main() {
     await tester.tap(find.byTooltip('Chat history'));
     await tester.pumpAndSettle();
     expect(find.text('Workshop tools'), findsOneWidget);
+    expect(find.byType(BottomSheet), findsOneWidget);
     await worldAuditCapture?.call('history-dark');
     await tester.tap(find.byTooltip('Search chats'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'BOOKS');
+    await tester.enterText(find.byType(TextField).last, 'BOOKS');
     await tester.pumpAndSettle();
     expect(find.text('Workshop tools'), findsNothing);
     expect(find.text('Classroom books'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'missing');
+    await tester.enterText(find.byType(TextField).last, 'missing');
     await tester.pumpAndSettle();
     expect(find.text('No matching chats'), findsOneWidget);
     await tester.tap(find.byTooltip('Search chats'));

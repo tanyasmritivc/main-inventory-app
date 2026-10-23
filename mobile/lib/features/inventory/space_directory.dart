@@ -48,6 +48,22 @@ Future<void> openDirectorySpace(
   );
 }
 
+/// Shared manual creation flow; the caller resolves an authorized inventory first.
+Future<bool> createDirectorySpace(BuildContext context, ApiClient api) async {
+  api.assertCurrentContext();
+  if (!api.canEdit) return false;
+  final name = await showDialog<String>(
+    context: context,
+    builder: (_) => const _SpaceNameDialog(),
+  );
+  if (!context.mounted || name == null) return false;
+  api.assertCurrentContext();
+  await api.createSpace(name: name);
+  api.assertCurrentContext();
+  InventoryCache.clear();
+  return true;
+}
+
 /// Both organization and inventory directories use the same scoped Space actions.
 class SpaceDirectoryTile extends StatefulWidget {
   const SpaceDirectoryTile({
@@ -287,14 +303,8 @@ class _InventorySpacesPageState extends State<InventorySpacesPage> {
     if (_creating) return;
     setState(() => _creating = true);
     try {
-      final name = await showDialog<String>(
-        context: context,
-        builder: (_) => const _SpaceNameDialog(),
-      );
-      if (!mounted || name == null) return;
-      await widget.api.createSpace(name: name);
-      InventoryCache.clear();
-      if (mounted) await _load();
+      final created = await createDirectorySpace(context, widget.api);
+      if (mounted && created) await _load();
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(

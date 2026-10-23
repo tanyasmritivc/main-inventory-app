@@ -49,6 +49,8 @@ class _WorldShellState extends State<WorldShell> {
   Object? _error;
   int _loadGeneration = 0;
   final _search = TextEditingController();
+  bool _searchingSpaces = false;
+  bool _creatingSpace = false;
   @override
   void initState() {
     super.initState();
@@ -96,6 +98,7 @@ class _WorldShellState extends State<WorldShell> {
     _chatFocused = false;
     _history = null;
     _search.clear();
+    _searchingSpaces = false;
     _loadedNavigation =
         widget.session.navigationReady && !widget.session.loading;
     if (_loadedNavigation) unawaited(_load());
@@ -339,6 +342,20 @@ class _WorldShellState extends State<WorldShell> {
     );
   }
 
+  Future<void> _newSpace() async {
+    if (_creatingSpace) return;
+    setState(() => _creatingSpace = true);
+    try {
+      await _guard(() async {
+        final api = await _chooseInventory(writable: true);
+        if (api == null || !mounted) return;
+        if (await createDirectorySpace(context, api)) await _load();
+      });
+    } finally {
+      if (mounted) setState(() => _creatingSpace = false);
+    }
+  }
+
   Widget _spaces(BuildContext context) {
     final error = _error ?? _spacesError;
     if (error != null) {
@@ -374,24 +391,26 @@ class _WorldShellState extends State<WorldShell> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          LiquidSurface(
-            radius: 24,
-            quiet: true,
-            shadow: false,
-            child: TextField(
-              controller: _search,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Search Spaces',
-                prefixIcon: Icon(CupertinoIcons.search, size: 20),
-                filled: false,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
+          if (_searchingSpaces)
+            LiquidSurface(
+              radius: 24,
+              quiet: true,
+              shadow: false,
+              child: TextField(
+                controller: _search,
+                autofocus: true,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  hintText: 'Search Spaces',
+                  prefixIcon: Icon(CupertinoIcons.search, size: 20),
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+          if (_searchingSpaces) const SizedBox(height: 16),
           if (rows.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
@@ -558,14 +577,24 @@ class _WorldShellState extends State<WorldShell> {
       backgroundColor: dark ? Colors.black : const Color(0xFFFCFAF7),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: !dark && !_chatFocused && _tab == 0
-              ? RadialGradient(
-                  center: const Alignment(.3, 1.2),
-                  radius: 1.15,
-                  colors: [
-                    const Color(0xFFEE9B6C).withValues(alpha: dark ? .18 : .22),
-                    Colors.transparent,
-                  ],
+          gradient: _tab == 0
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: const [0, .42, .78, 1],
+                  colors: dark
+                      ? const [
+                          Color(0xFF080A10),
+                          Color(0xFF121825),
+                          Color(0xFF29202D),
+                          Color(0xFF3C2720),
+                        ]
+                      : const [
+                          Color(0xFFFCFAF7),
+                          Color(0xFFF1EDF7),
+                          Color(0xFFE7E7F4),
+                          Color(0xFFF2D8C7),
+                        ],
                 )
               : null,
         ),
@@ -612,15 +641,32 @@ class _WorldShellState extends State<WorldShell> {
                             icon: CupertinoIcons.clock,
                           ),
                         ),
-                      IconButton(
-                        tooltip: 'Account',
-                        onPressed: _account,
-                        icon: MemberAvatar(
-                          name: _profile.name,
-                          photoUrl: _profile.photoUrl,
-                          size: 36,
+                      if (_tab == 1)
+                        IconButton(
+                          tooltip: _searchingSpaces
+                              ? 'Close Space search'
+                              : 'Search Spaces',
+                          icon: Icon(
+                            _searchingSpaces
+                                ? CupertinoIcons.xmark
+                                : CupertinoIcons.search,
+                            size: 22,
+                          ),
+                          onPressed: () => setState(() {
+                            _searchingSpaces = !_searchingSpaces;
+                            _search.clear();
+                          }),
                         ),
-                      ),
+                      if (_tab == 0)
+                        IconButton(
+                          tooltip: 'Account',
+                          onPressed: _account,
+                          icon: MemberAvatar(
+                            name: _profile.name,
+                            photoUrl: _profile.photoUrl,
+                            size: 36,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -659,18 +705,38 @@ class _WorldShellState extends State<WorldShell> {
                   ],
                 ),
               ),
+              if (_tab == 1 &&
+                  !keyboard &&
+                  _inventories.any((row) => row['can_edit'] == true))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 12),
+                  child: LiquidSurface(
+                    radius: 28,
+                    child: TextButton.icon(
+                      onPressed: _creatingSpace ? null : _newSpace,
+                      icon: const Icon(CupertinoIcons.plus, size: 19),
+                      label: Text(_creatingSpace ? 'Creating...' : 'New space'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               if (!focused && !keyboard)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(44, 8, 44, 10),
+                  padding: const EdgeInsets.fromLTRB(54, 8, 54, 10),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 340),
+                    constraints: const BoxConstraints(maxWidth: 288),
                     child: LiquidSurface(
                       radius: 40,
                       quiet: true,
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: SizedBox(
-                          height: 54,
+                          height: 48,
                           child: Stack(
                             children: [
                               AnimatedAlign(
@@ -679,46 +745,41 @@ class _WorldShellState extends State<WorldShell> {
                                   milliseconds:
                                       MediaQuery.disableAnimationsOf(context)
                                       ? 0
-                                      : 260,
+                                      : 360,
                                 ),
-                                curve: Curves.easeOutCubic,
+                                curve: Curves.easeInOutCubicEmphasized,
                                 child: FractionallySizedBox(
                                   widthFactor: 1 / 3,
                                   heightFactor: 1,
-                                  child: TweenAnimationBuilder<double>(
-                                    key: ValueKey('navigation-breath-$_tab'),
-                                    tween: Tween(begin: 0, end: 1),
-                                    duration: Duration(
-                                      milliseconds:
-                                          MediaQuery.disableAnimationsOf(
-                                            context,
-                                          )
-                                          ? 0
-                                          : 700,
-                                    ),
-                                    builder: (context, progress, child) =>
-                                        Transform.scale(
-                                          scale:
-                                              1 +
-                                              .025 *
-                                                  (1 -
-                                                      (2 * progress - 1).abs()),
-                                          child: child,
-                                        ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(32),
-                                        color:
-                                            (dark ? Colors.white : Colors.white)
-                                                .withValues(
-                                                  alpha: dark ? .12 : .78,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(28),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: dark
+                                            ? [
+                                                Colors.white.withValues(
+                                                  alpha: .19,
                                                 ),
-                                        border: Border.all(
-                                          width: .6,
-                                          color: Colors.white.withValues(
-                                            alpha: dark ? .12 : .65,
-                                          ),
+                                                Colors.white.withValues(
+                                                  alpha: .08,
+                                                ),
+                                              ]
+                                            : [
+                                                Colors.white.withValues(
+                                                  alpha: .96,
+                                                ),
+                                                Colors.white.withValues(
+                                                  alpha: .64,
+                                                ),
+                                              ],
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: dark ? .2 : .8,
                                         ),
+                                        width: .6,
                                       ),
                                     ),
                                   ),
@@ -756,13 +817,13 @@ class _WorldShellState extends State<WorldShell> {
                                             onPressed: () =>
                                                 setState(() => _tab = entry.$1),
                                             style: IconButton.styleFrom(
-                                              minimumSize: const Size(48, 54),
+                                              minimumSize: const Size(48, 48),
                                             ),
                                             icon: Icon(
                                               _tab == entry.$1
                                                   ? entry.$3
                                                   : entry.$2,
-                                              size: 25,
+                                              size: 23,
                                               semanticLabel: entry.$4,
                                             ),
                                           ),

@@ -380,29 +380,31 @@ class _ProfilePageState extends State<ProfilePage> {
     ),
   );
 
-  Widget _glassCard(Widget child) => ClipRRect(
-    borderRadius: BorderRadius.circular(20),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.adaptive(
-            context,
-            const Color(0xFF1C1C1E).withValues(alpha: 0.92),
-          ),
+  Widget _glassCard(Widget child) => widget.settingsOnly
+      ? child
+      : ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppTheme.adaptive(
-              context,
-              Colors.white.withValues(alpha: 0.09),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.adaptive(
+                  context,
+                  const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppTheme.adaptive(
+                    context,
+                    Colors.white.withValues(alpha: 0.09),
+                  ),
+                  width: 0.5,
+                ),
+              ),
+              child: child,
             ),
-            width: 0.5,
           ),
-        ),
-        child: child,
-      ),
-    ),
-  );
+        );
 
   Widget _toggleRow({
     required String label,
@@ -1418,11 +1420,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   _actionRow(
                     icon: Icons.mail_outline,
                     label: 'Send feedback',
+                    showChevron: false,
                     onTap: () => unawaited(_sendFeedback()),
                   ),
                   _actionRow(
                     icon: Icons.bug_report_outlined,
                     label: 'Report a problem',
+                    showChevron: false,
                     onTap: () => unawaited(_reportProblem()),
                     last: true,
                   ),

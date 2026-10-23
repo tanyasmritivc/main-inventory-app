@@ -356,6 +356,47 @@ void main() {
     expect(request.data, {'name': 'Parts bins'});
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets('World New space creates in chosen inventory and refreshes', (
+    tester,
+  ) async {
+    await mount(tester);
+    expect(find.byTooltip('Account'), findsNothing);
+    expect(find.text('Search Spaces'), findsNothing);
+    final button = find.text('New space');
+    expect(button.hitTestable(), findsOneWidget);
+    expect(
+      tester.getBottomLeft(button).dy,
+      lessThan(tester.getTopLeft(find.byTooltip('Spaces')).dy),
+    );
+    await spaceAuditCapture?.call('world-new-space');
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tools').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Garage');
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Garage'), findsOneWidget);
+    expect(
+      f.requests
+          .where(
+            (r) => r.method == 'POST' && r.path == '/inventories/inv-a/spaces',
+          )
+          .length,
+      1,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('World viewer does not see creation action', (tester) async {
+    role = 'viewer';
+    await mount(tester);
+    expect(find.text('New space'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Large type menu and directory remain usable', (tester) async {
     await mount(tester, world: false, scale: 2);
     await menu(tester);
