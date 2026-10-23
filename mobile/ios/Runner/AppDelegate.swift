@@ -4,6 +4,7 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private var nativePresentation: NativePresentation?
   private var pushResult: FlutterResult?
   private var pushDartReady = false
   private var pushChannel: FlutterMethodChannel?
@@ -31,6 +32,8 @@ import UserNotifications
     let registrar = engineBridge.applicationRegistrar
     registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
     registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
+    registrar.register(NativeControlFactory(messenger: registrar.messenger()), withId: "com.findez.app/toolbar-control")
+    nativePresentation = NativePresentation(messenger: registrar.messenger())
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -198,17 +201,8 @@ private final class ChatMenuFactory: NSObject, FlutterPlatformViewFactory {
   }
 }
 
-private final class AttachmentMenuButton: UIButton {
-  override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
-      willEndFor configuration: UIContextMenuConfiguration,
-      animator: UIContextMenuInteractionAnimating?) {
-    super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
-    showsMenuAsPrimaryAction = false
-  }
-}
-
 private final class ChatMenuView: NSObject, FlutterPlatformView {
-  let button = AttachmentMenuButton(type: .system)
+  let button = UIButton(type: .system)
   let channel: FlutterMethodChannel
   init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
     channel = FlutterMethodChannel(name: "com.findez.app/chat-menu/\(id)", binaryMessenger: messenger)
@@ -218,9 +212,7 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
     button.tintColor = .label
     button.accessibilityLabel = "Capture or attach"
     button.accessibilityHint = "Opens attachment and context options"
-    button.addAction(UIAction { [weak self] _ in
-      self?.channel.invokeMethod("selected", arguments: "open")
-    }, for: .touchUpInside)
+    button.showsMenuAsPrimaryAction = true
     if #available(iOS 16.0, *) { button.preferredMenuElementOrder = .fixed }
     func action(_ id: String, _ title: String, _ icon: String) -> UIAction {
       UIAction(title: title, image: UIImage(systemName: icon)) { [weak self] _ in
@@ -228,33 +220,36 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
       }
     }
     button.menu = UIMenu(children: [
-      action("library", "Photo Library", "photo.on.rectangle"),
-      action("camera", "Take Photo", "camera"),
-      action("file", "Choose Files", "folder")
+      action("auto_extract", "Auto Extract", "sparkles"),
+      UIMenu(title: "Attach", image: UIImage(systemName: "paperclip"), children: [
+        action("library", "Photo Library", "photo.on.rectangle"),
+        action("camera", "Take Photo", "camera"),
+        action("file", "Choose Files", "folder")
+      ]),
+      UIMenu(title: "Inventory tools", image: UIImage(systemName: "shippingbox"), children: [
+        action("spreadsheet", "Import inventory", "tablecells"),
+        action("barcode", "Scan barcode", "barcode.viewfinder")
+      ]),
+      UIMenu(title: "Add context", image: UIImage(systemName: "text.bubble"), children: [
+        action("space", "Spaces", "square.grid.2x2"),
+        action("item", "Items", "shippingbox"),
+        action("project", "Projects", "folder"),
+        action("document", "Documents and notes", "doc.text"),
+        action("connections", "Connections", "link")
+      ])
     ])
     configure(args)
     channel.setMethodCallHandler { [weak self] call, result in
-      switch call.method {
-      case "configure": self?.configure(call.arguments); result(nil)
-      case "showAttachments":
-        guard let self = self, self.button.isEnabled else { result(false); return }
-        if #available(iOS 17.4, *) {
-          self.button.showsMenuAsPrimaryAction = true
-          self.button.performPrimaryAction()
-          result(true)
-        } else { result(false) }
-      default: result(FlutterMethodNotImplemented)
-      }
+      if call.method == "configure" { self?.configure(call.arguments); result(nil) }
+      else { result(FlutterMethodNotImplemented) }
     }
   }
   private func configure(_ args: Any?) {
     let values = args as? [String: Any] ?? [:]
     button.isEnabled = values["enabled"] as? Bool ?? true
     button.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
-    let open = values["menuOpen"] as? Bool == true
-    button.setImage(UIImage(systemName: open ? "xmark" : "plus", withConfiguration:
+    button.setImage(UIImage(systemName: "plus", withConfiguration:
       UIImage.SymbolConfiguration(pointSize: 19, weight: .light)), for: .normal)
-    button.accessibilityLabel = open ? "Close attachment menu" : "Capture or attach"
   }
   func view() -> UIView { button }
   deinit { channel.setMethodCallHandler(nil) }

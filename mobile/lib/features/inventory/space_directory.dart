@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -52,10 +53,7 @@ Future<void> openDirectorySpace(
 Future<bool> createDirectorySpace(BuildContext context, ApiClient api) async {
   api.assertCurrentContext();
   if (!api.canEdit) return false;
-  final name = await showDialog<String>(
-    context: context,
-    builder: (_) => const _SpaceNameDialog(),
-  );
+  final name = await _askSpaceName(context);
   if (!context.mounted || name == null) return false;
   api.assertCurrentContext();
   await api.createSpace(name: name);
@@ -116,45 +114,60 @@ class _SpaceDirectoryTileState extends State<SpaceDirectoryTile> {
     final overlay =
         Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
     final origin = box.localToGlobal(Offset.zero, ancestor: overlay);
-    final action = await showMenu<String>(
-      context: context,
-      position: RelativeRect.fromRect(
-        origin & box.size,
-        Offset.zero & overlay.size,
-      ),
-      popUpAnimationStyle: AnimationStyle.noAnimation,
-      items: [
-        const PopupMenuItem(
-          value: 'open',
-          child: _MenuLabel(CupertinoIcons.folder_open, 'Open Space'),
-        ),
-        if (api.canEdit && id.isNotEmpty)
-          const PopupMenuItem(
-            value: 'rename',
-            child: _MenuLabel(CupertinoIcons.pencil, 'Rename'),
-          ),
-        if (api.canDeleteSpace && id.isNotEmpty) ...[
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'delete',
-            child: _MenuLabel(
-              CupertinoIcons.trash,
-              'Delete Space',
-              color: Theme.of(context).colorScheme.error,
+    final choice = usesNativePresentation
+        ? showNativeChoices(
+            context,
+            title: name,
+            rows: [
+              {'id': 'open', 'title': 'Open Space', 'symbol': 'folder'},
+              if (api.canEdit && id.isNotEmpty)
+                {'id': 'rename', 'title': 'Rename', 'symbol': 'pencil'},
+              if (api.canDeleteSpace && id.isNotEmpty)
+                {
+                  'id': 'delete',
+                  'title': 'Delete Space',
+                  'symbol': 'trash',
+                  'destructive': true,
+                },
+            ],
+          )
+        : showMenu<String>(
+            context: context,
+            position: RelativeRect.fromRect(
+              origin & box.size,
+              Offset.zero & overlay.size,
             ),
-          ),
-        ],
-      ],
-    );
+            popUpAnimationStyle: AnimationStyle.noAnimation,
+            items: [
+              const PopupMenuItem(
+                value: 'open',
+                child: _MenuLabel(CupertinoIcons.folder_open, 'Open Space'),
+              ),
+              if (api.canEdit && id.isNotEmpty)
+                const PopupMenuItem(
+                  value: 'rename',
+                  child: _MenuLabel(CupertinoIcons.pencil, 'Rename'),
+                ),
+              if (api.canDeleteSpace && id.isNotEmpty) ...[
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: _MenuLabel(
+                    CupertinoIcons.trash,
+                    'Delete Space',
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
+          );
+    final action = await choice;
     if (!mounted || action == null) return;
     api.assertCurrentContext();
     if (action == 'open') {
       await _open(api);
     } else if (action == 'rename') {
-      final newName = await showDialog<String>(
-        context: context,
-        builder: (_) => _SpaceNameDialog(name: name),
-      );
+      final newName = await _askSpaceName(context, name: name);
       if (!mounted || newName == null || newName == name) return;
       api.assertCurrentContext();
       await api.renameSpace(spaceId: id, name: newName);
@@ -217,6 +230,21 @@ class _MenuLabel extends StatelessWidget {
         child: Text(label, style: TextStyle(color: color)),
       ),
     ],
+  );
+}
+
+Future<String?> _askSpaceName(BuildContext context, {String? name}) {
+  if (usesNativePresentation) {
+    return showNativeNamePrompt(
+      context,
+      title: name == null ? 'New Space' : 'Rename Space',
+      placeholder: 'Space name',
+      initial: name,
+    );
+  }
+  return showDialog<String>(
+    context: context,
+    builder: (_) => _SpaceNameDialog(name: name),
   );
 }
 

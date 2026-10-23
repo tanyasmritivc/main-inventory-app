@@ -1,3 +1,12 @@
+## October 23 — Native iOS standard controls
+
+Use UIKit for history/settings sheets, simple alerts/choices, UIMenu and standard
+header buttons; keep Flutter domain forms and authorization/services. Bridge
+callbacks are session-scoped and async failures remain visible. Never replace
+UIAlertController's presentation delegate. Glass belongs on navigation/controls;
+review cards use quiet content surfaces. Preserve original chat background and
+non-iOS fallbacks. See native-ios-controls-20261023 plan.
+
 ## October 23 - Use system iOS bottom navigation
 
 User explicitly requested native iOS Liquid Glass. Host UITabBar through

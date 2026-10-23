@@ -1,9 +1,123 @@
+import '../../core/ui/native_presentation.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/liquid_surface.dart';
+
+Future<String?> showChatHistory(
+  BuildContext context, {
+  required ApiClient api,
+  String? currentId,
+  ValueChanged<String>? onDeleted,
+}) async {
+  if (!usesNativePresentation) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: .86,
+        child: ChatHistorySheet(
+          api: api,
+          currentId: currentId,
+          onDeleted: onDeleted,
+        ),
+      ),
+    );
+  }
+  List<ConversationSummary> rows = [];
+  Map<String, dynamic> model({bool loading = false, String? error}) => {
+    'title': 'Chats',
+    'search': true,
+    'searchPlaceholder': 'Search chats',
+    'large': true,
+    'load': loading,
+    'loading': loading,
+    'empty': error ?? 'Start your first chat',
+    'primary': {
+      'id': ChatHistorySheet.newChat,
+      'title': 'New chat',
+      'symbol': 'square.and.pencil',
+    },
+    'sections': [
+      {
+        'rows': [
+          if (error != null)
+            {
+              'id': 'load',
+              'title': 'Retry',
+              'symbol': 'arrow.clockwise',
+              'close': false,
+            },
+          for (final row in rows)
+            {
+              'id': row.id,
+              'title': row.title,
+              'subtitle': historyTime(row.updatedAt),
+              'checked': row.id == currentId,
+              'delete': {
+                'id': 'delete:${row.id}',
+                'close': false,
+                'confirmation': {
+                  'title': 'Delete chat?',
+                  'message': row.title,
+                  'confirmLabel': 'Delete',
+                  'destructive': true,
+                },
+              },
+            },
+        ],
+      },
+    ],
+  };
+  final selected = await NativePresentation.show(
+    context,
+    model: model(loading: true),
+    onAction: (id, _) async {
+      if (!context.mounted) return {};
+      try {
+        api.assertCurrentContext();
+        if (id == 'load') {
+          rows = await api.listConversations();
+          api.assertCurrentContext();
+        } else if (id.startsWith('delete:')) {
+          final target = id.substring(7);
+          if (!rows.any((r) => r.id == target)) return model();
+          await api.deleteConversation(target);
+          api.assertCurrentContext();
+          rows.removeWhere((r) => r.id == target);
+          if (context.mounted) onDeleted?.call(target);
+        }
+        return model();
+      } catch (error) {
+        return {
+          ...model(error: rows.isEmpty ? "Couldn't load history." : null),
+          'error': describeError(error).$1,
+        };
+      }
+    },
+  );
+  if (!context.mounted) return null;
+  if (selected?['error'] is String) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(selected!['error'] as String)));
+  }
+  return selected?['action'] as String?;
+}
+
+String historyTime(DateTime date) {
+  final age = DateTime.now().difference(date);
+  if (age.inMinutes < 1) return 'Just now';
+  if (age.inMinutes < 60) return '${age.inMinutes}m ago';
+  if (age.inHours < 24) return '${age.inHours}h ago';
+  if (age.inDays == 1) return 'Yesterday';
+  if (age.inDays < 7) return '${age.inDays}d ago';
+  return '${date.month}/${date.day}/${date.year}';
+}
 
 /// A route-owned sheet keeps history loading/search separate from the composer.
 class ChatHistorySheet extends StatefulWidget {
@@ -47,34 +161,12 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
     }
   }
 
-  String _time(DateTime date) {
-    final age = DateTime.now().difference(date);
-    if (age.inMinutes < 1) return 'Just now';
-    if (age.inMinutes < 60) return '${age.inMinutes}m ago';
-    if (age.inHours < 24) return '${age.inHours}h ago';
-    if (age.inDays == 1) return 'Yesterday';
-    if (age.inDays < 7) return '${age.inDays}d ago';
-    return '${date.month}/${date.day}/${date.year}';
-  }
-
   Future<bool> _delete(ConversationSummary row) async {
     if (_deleting.contains(row.id)) return false;
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: const Text('Delete chat?'),
-        content: Text(row.title),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final approved = await showAppConfirmation(
+      context,
+      title: 'Delete chat?',
+      message: row.title,
     );
     if (approved != true || !mounted) return false;
     _deleting.add(row.id);
@@ -198,7 +290,7 @@ class _ChatHistorySheetState extends State<ChatHistorySheet> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
-                            _time(row.updatedAt),
+                            historyTime(row.updatedAt),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           trailing: row.id == widget.currentId

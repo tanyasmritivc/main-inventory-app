@@ -1107,3 +1107,12 @@ design/onboarding-a/out. Debug worst UI 59.89 ms/raster 28.804 ms exceeds 16 ms;
 device profile acceptance, real OAuth/email links, OS Reduce Motion and spoken
 VoiceOver still require physical verification. Do not repeat completed checks
 after push/build; stop beta release at Apple's upload acknowledgment.
+
+
+## Native iOS controls (October 23, beta 117)
+
+Run `flutter test test/native_presentation_test.dart test/native_account_menu_test.dart test/native_toolbar_button_test.dart` for presentation lifecycle, cancellation,
+revoked scopes, failed chat deletion, settings persistence/rollback and menu action
+validation. `flutter run -t tool/native_controls_visual.dart -d <ios-device>` runs a
+synthetic debug-only UIKit audit. Manual native/physical acceptance steps and
+known coverage limits: `docs/plans/native-ios-controls-20261023.md`.

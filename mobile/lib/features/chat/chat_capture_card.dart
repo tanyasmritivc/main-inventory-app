@@ -1,3 +1,4 @@
+import '../../core/ui/content_card.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -482,14 +483,8 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
             onPressed: _loadDestinations,
             child: const Text('Retry loading Spaces'),
           ),
-        Container(
+        ContentCard(
           margin: const EdgeInsets.symmetric(vertical: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.cardBg(context),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

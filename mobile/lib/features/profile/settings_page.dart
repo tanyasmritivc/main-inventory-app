@@ -1,3 +1,4 @@
+import '../../core/ui/native_presentation.dart';
 import '../notifications/notification_bell.dart';
 import 'dart:async';
 
@@ -113,38 +114,11 @@ class _SettingsPageState extends State<SettingsPage> {
   );
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface2(ctx),
-        title: AppText(
-          'Delete Account',
-          style: TextStyle(color: AppTheme.foreground(ctx, Colors.white)),
-        ),
-        content: AppText(
+    final confirmed = await showAppConfirmation(
+      context,
+      title: 'Delete Account',
+      message:
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
-          style: TextStyle(color: AppTheme.foreground(ctx, Color(0x73FFFFFF))),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: AppText(
-              'Cancel',
-              style: TextStyle(
-                color: AppTheme.foreground(ctx, Color(0x73FFFFFF)),
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.adaptive(ctx, const Color(0xFFEF4444)),
-              foregroundColor: Colors.white,
-            ),
-            child: const AppText('Delete'),
-          ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     try {

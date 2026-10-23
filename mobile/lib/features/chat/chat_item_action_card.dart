@@ -1,3 +1,5 @@
+import '../../core/ui/content_card.dart';
+import '../../core/ui/native_presentation.dart';
 import 'package:dio/dio.dart' show CancelToken;
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
@@ -44,27 +46,13 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
       if (decision == 'confirm' &&
           _action.operation == 'delete' &&
           _action.status == 'pending') {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            scrollable: true,
-            title: AppText(
+        final confirmed = await showAppConfirmation(
+          context,
+          title:
               'Delete ${_action.items.length} ${_action.items.length == 1 ? 'item' : 'items'}?',
-            ),
-            content: const AppText(
+          message:
               'Only the listed item records will be deleted. Their related history and photos may be removed. Spaces, inventories and organizations are kept.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const AppText('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const AppText('Delete items'),
-              ),
-            ],
-          ),
+          confirmLabel: 'Delete items',
         );
         if (confirmed != true || !mounted) return;
       }
@@ -96,14 +84,8 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
   @override
   Widget build(BuildContext context) {
     final pending = _action.status == 'pending';
-    return Container(
+    return ContentCard(
       margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surface2(context),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
