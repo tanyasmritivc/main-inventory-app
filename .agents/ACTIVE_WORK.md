@@ -10,8 +10,8 @@ focused checks: 33 pass; two light/dark receipt visual cases pass and images
 reviewed. The exploratory unfiltered native host-suite import had seven
 nonportable menu/semantics assumptions, documented in TESTING.md. Release
 packaging is in progress. Requires companion API and
-approved migrations077/078 before activation. Public App Store submission111
-must remain unchanged. See docs/plans/chat-control-center-20261022.md.
+approved migrations077/078 before activation. Apple validation reports1.1.0 approved and its train closed; beta112 therefore
+uses1.1.1. No new public submission is requested. See docs/plans/chat-control-center-20261022.md.
 
 ## October 21 — Build 111 launch audit
 
