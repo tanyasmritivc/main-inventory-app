@@ -332,6 +332,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
               api: widget.api!,
               action: action,
               onResult: widget.onActionResult,
+              onOpenResource: widget.onOpenResource,
             ),
         if (!widget.isLoading && data != null && data.rows.isNotEmpty) ...[
           const SizedBox(height: 22),

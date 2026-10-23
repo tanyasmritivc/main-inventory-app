@@ -143,6 +143,54 @@ void main() {
     });
   }
 
+  testWidgets(
+    'completed move opens its exact item in the destination inventory',
+    (tester) async {
+      const itemId = '33333333-3333-4333-8333-333333333333';
+      const destination = '44444444-4444-4444-8444-444444444444';
+      final action = ChatItemAction.parse({
+        ...payload(operation: 'move', status: 'confirmed'),
+        'version': 2,
+        'items': [
+          {
+            'item_id': itemId,
+            'inventory_id': destination,
+            'name': 'Drill',
+            'quantity': 1,
+            'location': 'Garage',
+            'details': ['Moved to Garage'],
+          },
+        ],
+      })!;
+      AskResourceLink? opened;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatItemActionCard(
+              api: ActionApi(),
+              action: action,
+              onOpenResource: (link) => opened = link,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Confirm change'), findsNothing);
+      expect(find.text('Item moved'), findsOneWidget);
+      await tester.tap(find.text('Open item'));
+      expect(opened?.id, itemId);
+      expect(opened?.inventoryId, destination);
+    },
+  );
+
+  test(
+    'completed receipts survive history parsing without becoming proposals',
+    () {
+      final context = AskAnswerContext.fromJson({
+        'completed_actions': [payload(status: 'confirmed')],
+      });
+      expect(context.pendingActions.single.status, 'confirmed');
+    },
+  );
   setUpAll(() async {
     if (const bool.fromEnvironment('FINDEZ_VISUAL_QA')) {
       await (FontLoader('FindEZQA')..addFont(
@@ -210,7 +258,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(api.decisions, ['confirm']);
         expect(api.ids, [actionId]);
-        expect(find.text('Change confirmed'), findsOneWidget);
+        expect(find.text('Items added'), findsOneWidget);
         expect(find.text('Confirm additions'), findsNothing);
         expect(replies.single.assistantMessage, 'Added 3 bolts in Garage.');
         await tester.pumpWidget(const SizedBox());
@@ -238,7 +286,7 @@ void main() {
         await tester.tap(find.text('Delete items'));
         await tester.pumpAndSettle();
         expect(api.decisions, ['confirm']);
-        expect(find.text('Change confirmed'), findsOneWidget);
+        expect(find.text('Items deleted'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
       },
     );

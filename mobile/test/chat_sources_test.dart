@@ -73,6 +73,7 @@ class _Api extends ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    String? requestId,
     List<ChatSource> sources = const [],
   }) async* {
     sent.add(List.of(sources));

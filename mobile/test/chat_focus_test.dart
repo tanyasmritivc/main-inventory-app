@@ -40,6 +40,7 @@ class _FocusApi extends ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    String? requestId,
     List<ChatSource> sources = const [],
   }) async* {
     requests.add(message);
@@ -251,7 +252,7 @@ void main() {
             .controller!
             .jumpTo(0);
         await tester.pumpAndSettle();
-        expect(find.text('Change confirmed'), findsOneWidget);
+        expect(find.text('Items added'), findsOneWidget);
         expect(find.text('Confirm additions'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

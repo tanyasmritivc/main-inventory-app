@@ -1,3 +1,38 @@
+## October 22 — Chat fixes live; beta 112 upload acknowledged
+
+User explicitly approved migrations 077 and 078. Both are applied with a fresh
+backup; final API runtime `223b95b` is live and healthy (PR #170). Guarded selective
+publication preserved unrelated VM work. The previous create_space confirmation
+shortcut was deliberately removed to honor the new creation-confirmation policy.
+
+Actual deployed HTTPS/model/database checks with one disposable account passed:
+one confirmation creates structure plus 10 batteries; repeated confirmation adds
+nothing; set 8/use 3 saves 5; the same-request retry stays at 5; one confirmation
+creates Garage and moves the same item; existing-Space moves execute directly;
+resource navigation reads the current location. The account and its inventories
+were removed. Customer inventory was not modified.
+
+Apple validated and acknowledged **1.1.1 (112)**, mobile source `2b2ea7c` (PR #171),
+delivery `2141c0fa-35c8-41ab-b935-1c6f108dccb3`. Apple rejected the initial 1.1.0
+candidate because that approved version's train is closed; the final 1.1.1 upload
+succeeded. Processing/tester availability was not polled. No new public App Store
+submission. Physical-device acceptance remains unverified.
+
+Validation: 1,355 Python tests plus 10 subtests; 793 Flutter tests (one optional
+visual skip), clean analysis; 33 focused native iOS tests and two inspected native
+light/dark visual cases. The exploratory unfiltered native suite's seven host-only
+menu/semantics failures are documented in TESTING.md. Both final runtime commits
+passed all five CI gates. PostgreSQL fixtures and seven synthetic real-model cases
+passed. Isolated migration replay preserved all 91 tables' original data. Signed
+archive/export checks verified 32 device executables each and 24 privacy manifests.
+
+Artifacts: `Documents/FindEZ/AppStore/1.1.1-build112`, including receipts, logs,
+previews and `delivery.md`. Product scope, known gaps and 25 acceptance prompts:
+`docs/plans/chat-control-center-20261022.md`. Advanced visual search, inbound
+connectors, arbitrary autobiographical memory, chat-native project reservations,
+and photo-draft structure/save consolidation remain explicitly documented work.
+This delivery does not claim the entire future product vision is implemented.
+
 ## October 21 — Build 111 launch audit
 
 Lane `audit/app-store-launch-20261021`, stacked on build 110. Native iOS testing

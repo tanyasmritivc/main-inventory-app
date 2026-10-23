@@ -68,6 +68,7 @@ class _AskApi extends ApiClient {
   final bool captureThenFail;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
+  final List<String?> requestIds = [];
   final List<AskPhoto> photos = [];
   final List<String> photoQuestions = [];
   @override
@@ -126,9 +127,11 @@ class _AskApi extends ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    String? requestId,
     List<ChatSource> sources = const [],
   }) async* {
     conversationIds.add(conversationId);
+    requestIds.add(requestId);
     if (pending != null) {
       yield* pending!.stream;
       return;
@@ -298,6 +301,46 @@ void main() {
     expect(context.rows.last.matchBasis, isNull);
   });
 
+  testWidgets(
+    'Retry response reuses request ID without sending a new user command',
+    (tester) async {
+      final api = _AskApi(fail: true, world: true);
+      await tester.pumpWidget(_page(api, initialMessage: 'I used 3 batteries'));
+      await tester.pumpAndSettle();
+      expect(api.requestIds, hasLength(1));
+      expect(api.requestIds.single, isNotNull);
+      await tester.ensureVisible(find.text('Retry response'));
+      await tester.tap(find.text('Retry response'));
+      await tester.pumpAndSettle();
+      expect(api.requestIds, hasLength(2));
+      expect(api.requestIds.first, api.requestIds.last);
+      expect(find.text('I used 3 batteries'), findsOneWidget);
+    },
+  );
+
+  test(
+    'world response failure is recoverable without claiming a service outage',
+    () async {
+      final events = decodeAiCommandEvents(
+        Stream.value(
+          utf8.encode(
+            'data: {"type":"error","code":"world_chat_failed","message":"SECRET"}\n\n',
+          ),
+        ),
+      );
+      await expectLater(
+        events.toList(),
+        throwsA(
+          predicate(
+            (e) =>
+                e.toString().contains('Retry') &&
+                !e.toString().contains('unavailable') &&
+                !e.toString().contains('SECRET'),
+          ),
+        ),
+      );
+    },
+  );
   test('SSE decoder preserves fragmented UTF-8 and additive context', () async {
     final text =
         'data: {"content":"Drill - café"}\n\n'
@@ -408,7 +451,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.text('Something went wrong. Please try again.'),
+      find.text('This response was interrupted. Please retry.'),
       findsOneWidget,
     );
     expect(find.textContaining('SECRET'), findsNothing);

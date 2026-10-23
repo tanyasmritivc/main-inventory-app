@@ -589,4 +589,69 @@ void main() {
       );
     },
   );
+  testWidgets(
+    'one creation card displays dependent items and opens saved Space',
+    (tester) async {
+      const inventory = '11111111-1111-4111-8111-111111111111';
+      const space = '22222222-2222-4222-8222-222222222222';
+      final action = <String, dynamic>{
+        'id': 'task',
+        'version': 2,
+        'status': 'pending',
+        'plan': {
+          'inventories': [
+            {
+              'name': 'Test',
+              'spaces': ['Storage'],
+              'items': [
+                {'name': 'AA batteries', 'quantity': 10, 'location': 'Storage'},
+              ],
+            },
+          ],
+        },
+      };
+      final api = ApiClient.forWorld(
+        fixture.api,
+        'org-a',
+        isCurrent: () => true,
+      );
+      fixture.respond = (_) => {
+        'action': {
+          ...action,
+          'status': 'confirmed',
+          'receipt': {
+            'resource_links': [
+              {
+                'kind': 'space',
+                'id': space,
+                'inventory_id': inventory,
+                'label': 'Storage',
+                'href': 'findez://space/$inventory/$space',
+              },
+            ],
+          },
+        },
+      };
+      var opened = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WorldActionCard(
+              api: api,
+              action: action,
+              onOpenResource: (_) => opened = true,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Add 10 AA batteries to Storage'), findsOneWidget);
+      await tester.tap(find.text('Create and complete'));
+      await tester.pumpAndSettle();
+      expect(fixture.requests.length, 1);
+      expect(find.text('Create and complete'), findsNothing);
+      await tester.tap(find.text('Open Storage'));
+      expect(opened, isTrue);
+      expect(fixture.requests.length, 1);
+    },
+  );
 }

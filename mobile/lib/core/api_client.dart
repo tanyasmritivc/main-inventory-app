@@ -1139,6 +1139,7 @@ class ApiClient {
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    String? requestId,
     List<ChatSource> sources = const [],
   }) async* {
     final baseUrl = _dio.options.baseUrl.endsWith('/')
@@ -1156,9 +1157,11 @@ class ApiClient {
     request.headers['Authorization'] = 'Bearer $token';
     request.body = json.encode(<String, dynamic>{
       'message': message,
+      if (worldKey != null && requestId != null) 'request_id': requestId,
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
       'supports_item_management': true,
+      'supports_task_actions': true,
       'supports_photo_attachment': true,
       if (worldKey != null) 'supports_capture': true,
       if (worldKey != null && sources.isNotEmpty)
@@ -1215,6 +1218,7 @@ class ApiClient {
     request.fields['message'] = message;
     request.fields['supports_item_actions'] = 'true';
     request.fields['supports_item_management'] = 'true';
+    request.fields['supports_task_actions'] = 'true';
     request.fields['supports_photo_attachment'] = 'true';
     if (worldKey != null) {
       request.fields['supports_capture'] = 'true';
@@ -1805,8 +1809,10 @@ Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) {
                 'photo_failed' =>
                   'Your photo could not be analyzed. Please try again.',
                 'history_save_failed' =>
-                  'The answer could not be saved. Please try again.',
-                _ => 'Ask is temporarily unavailable. Please try again.',
+                  'I could not save this reply. Retry to check the result of this request.',
+                'world_chat_failed' =>
+                  'I could not finish this response. Retry to check the result of this request.',
+                _ => 'This response was interrupted. Please retry.',
               });
             }
             sink.add(event);
