@@ -1,7 +1,7 @@
 # Connector imports and compact cards
 
-Implementation tested locally, not yet deployed. Migration079 requires explicit
-production approval. Google and all unfinished connectors are omitted from the
+Migration 079 and the backend/web release are live after explicit user approval.
+Apple acknowledged TestFlight build 114, delivery `b5637833-5240-4f71-b04b-e48c0ddf238d`. Processing and tester availability were not polled. Google and all unfinished connectors are omitted from the
 build at the user's October22 direction. Existing Claude Desktop/ChatGPT outbound
 setup remains; it is not shown as a connected Google account.
 
@@ -92,6 +92,46 @@ https://developers.google.com/identity/protocols/oauth2/web-server
 10. A viewer/another account must not retrieve or submit someone else's import.
     Revoking edit access between preview and confirmation must deny the write.
 
+## Main files changed
+
+- `backend/app/api/routes/connectors.py`: authenticated upload, mapping, preview,
+  commit, provider status and BOM endpoints; ownership derived from the session.
+- `backend/app/services/connector_tables.py`: shared field mapping, validation,
+  duplicate detection, cautious BOM matches and safe CSV export.
+- `backend/app/services/spreadsheet_import.py`: bounded CSV/XLSX parsing and source
+  row/header retention; existing parser remains the shared implementation.
+- `backend/app/services/project_kits_service.py`: shared reservation-aware stock
+  calculations; existing kit behavior retained.
+- `backend/supabase/migrations/079_connector_import_sessions.sql`: private snapshots,
+  atomic row receipts and once-per-file quota charging; inventory deletion cleanup.
+- `backend/app/api/router.py`: legacy and inventory-scoped connector routes. The
+  live deployment preserves its existing agent-management and approval overlays.
+- `backend/app/services/world_chat.py`: concise creation-card introductions.
+- `mobile/lib/features/scan/connector_destination_page.dart` and
+  `connector_review_page.dart`: authorized destination selection, mapping, duplicate
+  choices, import receipts and BOM export; existing upload/BOM pages delegate here.
+- `mobile/lib/features/chat/assistant_connections_page.dart`, `chat_item_action_card.dart`
+  and `mobile/lib/features/world/world_action_card.dart`: compact, actionable cards.
+- `frontend/src/components/site/spreadsheet-import-modal.tsx`: complete reviewed
+  spreadsheet/BOM flow; scan center and scoped transport reuse it.
+- Connector unit/widget tests, the disposable SQL fixture and native screenshot
+  harness cover these changes. Sample files are in `test-data/import-samples/`.
+
+## Required configuration and current limits
+
+No new environment variables or provider credentials are needed. Existing
+FastAPI/Supabase authentication, service-role credentials, frontend public API/auth
+configuration and mobile production defines are reused. Migration 079 is required.
+Google OAuth is intentionally absent from this build, so no Google setup is needed.
+
+This release imports one selected worksheet per source session. To import another
+worksheet after committing, export it to a separate file. Duplicate choices are
+Skip or explicitly Create a separate item; there is no merge/update control.
+Correct invalid source values in the file or skip those rows; mappings can be
+corrected before confirmation. Committed choices stay frozen for safe replay.
+BOMs with invalid rows cannot export a complete purchasing list until corrected.
+These are file imports, with no automatic synchronization or purchasing.
+
 ## Costs and limits
 
 Deterministic imports and BOM matching make no model calls and use existing
@@ -115,5 +155,16 @@ photo/document model costs are unchanged.
 - No Google configuration, credentials or extra paid SDK required for this build.
   Existing API/Supabase configuration is reused. Migration 079 must be approved and
   applied before exposing the new frontend/mobile import flow in production.
-- No production activation or beta delivery yet. Physical-device picker/share-sheet,
-  customer file acceptance, and Google integrations remain unverified/unimplemented.
+- All five CI jobs passed for API PR #176, mobile PR #175 and web PR #174.
+- Final full-data rehearsal applied migration 079 twice to a network-isolated copy;
+  all 91 existing tables retained identical row counts and hashes.
+- Approved migration/backend/web activation succeeded. API/database health passed;
+  eight web routes passed. Deployment preserved 109 unrelated API files and 348
+  unrelated web files. Production web build passed with real deployment config.
+- Live HTTPS acceptance used two temporary synthetic accounts, both removed:
+  CSV review/duplicates/invalid quantities/commit/replay/barcode zeros, cross-user
+  denial, BOM shortage/DNP/export without inventory mutation, and XLSX save passed.
+- Build 114: production configuration, 24 privacy manifests, 32 archive and 32 export
+  device executables, strict signature and Apple validation passed. Apple acknowledged upload: `b5637833-5240-4f71-b04b-e48c0ddf238d`; processing and tester availability are unverified.
+- Physical-device picker/share-sheet and customer-file acceptance remain pending.
+  Google and other unfinished providers are hidden and unimplemented.
