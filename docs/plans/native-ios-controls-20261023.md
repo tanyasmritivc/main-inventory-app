@@ -60,4 +60,11 @@ It is debug-only and is not the release entry point.
 
 ## Delivery
 
-Build 1.1.1 (117). Release and Apple receipt pending until recorded below.
+Apple acknowledged 1.1.1 (117): `81e1133e-f035-4b0c-bf55-af1197d5eaa3`.
+Runtime `ffda41d5850550b6f32d38079beee0b2b00f77ee`; PR179, CI run 40036587851
+(all five gates passed). Signed archive/export: 32 device executables each, valid
+strict archive signature; 24 privacy manifests. Apple validation passed. Preserved
+IPA SHA256: `f9c233a0e004aff33a497160a4bff46d6a6b2fe243b830ad0c1e813868505a5d`.
+Artifacts/receipts retained privately in `Documents/FindEZ/AppStore/1.1.1-build117`.
+Stopped at acknowledgment. Processing/tester availability and physical acceptance
+remain pending. No public store submission.
