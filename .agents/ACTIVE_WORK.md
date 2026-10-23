@@ -1,10 +1,15 @@
-## October 22 - Mobile shell refinement, beta 115 in preparation
+## October 23 - Mobile UI refinement uploaded as beta 115
 
-Mobile-only branch fix/mobile-fluid-shell-20261022. History now uses a modal sheet;
-compact fluid navigation, plain grouped settings, header Space search/manual New
-space, lazy Space scrolling, visible chat gradients and release-to-send voice.
-Validation/release in progress. No database/API changes. See
-`docs/plans/mobile-fluid-shell-20261022.md` for scope and device acceptance steps.
+Apple acknowledged 1.1.1 (115), delivery ba84b6af-5da2-47a8-9dad-78666abc095b.
+Runtime f98d6d4, PR #177 (stacked on mobile connector PR #175). All five CI gates
+passed on that exact commit. Local full suite: 810 Flutter tests, one optional
+skip; eight focused voice tests passed after the native cached-callback fix.
+Analysis clean. Native iOS: 17 cases plus four corrected settings/detail cases
+passed; light/dark screenshots inspected. Signed archive/export verified 32 device
+executables each and 24 privacy manifests. Processing/tester availability was not
+polled. Physical iPhone voice/gesture acceptance remains pending. No public store
+submission or backend/database changes. Google/unfinished connectors stay hidden.
+See `docs/plans/mobile-fluid-shell-20261022.md` for exact acceptance steps.
 
 ## October 22 — Connector release live; beta 114 uploaded
 

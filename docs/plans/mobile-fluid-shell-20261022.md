@@ -41,7 +41,11 @@ analysis clean. Eight focused voice tests also passed after correcting the nativ
 plugin's cached initialization callback, including the actual plugin lifecycle
 with a mocked native channel. Native iOS: 17 initial cases passed and four updated settings/detail
 cases passed after the large-text correction. Screenshots inspected in both themes.
-Apple acknowledgment will be recorded at release completion. Native visual
+Apple acknowledged beta 1.1.1 (115) on October 23, delivery
+ba84b6af-5da2-47a8-9dad-78666abc095b. Runtime f98d6d4, PR #177. All five
+CI jobs passed on that exact commit. Production signing/device-platform and 24
+privacy manifests verified. No public App Store submission; processing/tester
+availability not polled. Physical-device acceptance remains pending. Native visual
 captures use synthetic accounts/inventory. Flutter repaint captures omit UIKit-native
 attachment buttons; the existing native attachment control is unchanged.
 An exploratory full run found a large-text count overflow; it was corrected before
