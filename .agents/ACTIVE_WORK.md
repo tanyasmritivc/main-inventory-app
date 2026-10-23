@@ -1,3 +1,24 @@
+## October 22 — Direct GLM photo chat live
+
+API runtime `1beab28` is live (PR #172), with no schema changes. All five exact
+source CI gates passed. Real HTTPS photo and retained-image follow-up succeeded
+in 3.5/3.7 seconds in disposable-account QA; no extraction draft or stock created.
+The live schema permits answer metadata only on assistant messages, so retention
+uses hidden, verified assistant receipts tied to the user turn. Do not update
+user-row answer_context. GLM grounded extraction remains opt-in, disabled by
+default after gateway structured-output failures. FIND remains Auto Extract.
+Mobile source `9906ecc` targets beta 113 with a compact Lovable-reference menu;
+Apple acknowledged beta 113: `19c2790f-c6bb-41cf-b1b8-9cb888b1835c`. Processing
+and tester availability were not polled; physical-device acceptance is unverified.
+
+## October 22 - Direct chat vision and compact attachment menu
+
+Active isolated API/mobile lanes `fix/chat-direct-vision-api-20261022` and
+`fix/chat-direct-vision-mobile-20261022`. Separate direct GLM image chat from
+explicit Auto Extract, keep ordinary attachments in composer until Send, shrink
+plus/menu, and compare opt-in GLM grounded crops with FIND before activation.
+No schema changes. Runtime base API223b95b/mobile2b2ea7c; beta target113.
+
 ## October 22 — Chat fixes live; beta 112 upload acknowledged
 
 User explicitly approved migrations 077 and 078. Both are applied with a fresh

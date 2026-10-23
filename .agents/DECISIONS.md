@@ -1309,3 +1309,12 @@ events. Shared originals must survive pending Review and sibling item references
 do not expose them through workspace Files. Review resolution needs migration056
 to attach its original atomically before the pending image grant disappears.
 Prepare/rehearse first; production DB activation still requires explicit approval.
+
+## October 22 — Ordinary chat images are direct model input
+
+Only explicit Auto Extract enters inventory vision extraction from world chat.
+Ordinary camera/library/image-file attachments stay in the composer until Send,
+then reach the verified private GLM model as pixels; they consume no scan credit
+and create no extraction draft. Retain owned images for follow-ups and failed
+response retries. GLM box/crop extraction remains opt-in until comparative QA
+shows reliable results. Do not infer model identity from the older gateway alias.

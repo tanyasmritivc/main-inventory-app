@@ -28,6 +28,7 @@ def transport():
         prepare = stack.enter_context(patch.object(world, 'prepare', return_value=(CID, [])))
         save = stack.enter_context(patch.object(world, 'save_answer'))
         stack.enter_context(patch.object(world, 'latest_photo', return_value=None))
+        stack.enter_context(patch('app.services.chat_vision.retain'))
         stack.enter_context(patch.object(route, 'check_and_increment_chat'))
         yield NS(client=TestClient(app), authorize=authorize, prepare=prepare, save=save)
 
@@ -71,22 +72,20 @@ def test_malformed_photo_does_not_reach_ai_or_create_conversation(transport):
     assert response.status_code == 422
     transport.prepare.assert_not_called()
 
-def test_uploaded_photo_uses_existing_vision_and_later_added_gallery_search(transport):
+def test_ordinary_photo_goes_directly_to_chat_without_find_or_scan(transport):
     out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
     stored = NS(path=f'{ACTOR}/ask-' + 'a'*32 + '.jpg', url='https://api.test/private.jpg')
-    match = {'matches': [{'name': 'Saved motor', 'match_basis': 'same saved photo'}]}
-    with patch.object(route, 'check_and_increment_scan'), \
+    with patch.object(route, 'check_and_increment_scan') as scan, \
          patch('app.services.storage.upload_image', return_value=stored), \
          patch('app.services.storage.delete_image') as cleanup, \
-         patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [{'name': 'Motor', 'quantity': 1}]})), \
-         patch.object(world, 'photo_matches', new=AsyncMock(return_value=match)) as gallery, \
+         patch('app.services.find_pipeline.extract_inventory_items_with_find') as find, \
+         patch.object(world, 'photo_matches') as gallery, \
          patch.object(world, 'stream_turn', return_value=events()) as stream:
-        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'message': 'Do I have this?'}, files={'file': ('motor.png', out.getvalue(), 'image/png')})
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'message': 'Read this label'}, files={'file': ('motor.png', out.getvalue(), 'image/png')})
     assert '"type": "done"' in response.text
-    assert gallery.await_args.args[:2] == (ACTOR, WORLD)
-    assert stream.call_args.args[-1]['saved_photos'] == match
-    assert transport.save.call_args.args[-1]['photo_path'] == stored.path
-    cleanup.assert_not_called()
+    assert stream.call_args.kwargs['image_content']['image_url']['url'].startswith('data:image/jpeg;base64,')
+    assert transport.save.call_args.args[-1]['chat_photo']['mode'] == 'chat'
+    find.assert_not_called(); gallery.assert_not_called(); scan.assert_not_called(); cleanup.assert_not_called()
 
 def test_concurrent_photo_search_keeps_inventory_scope_isolated():
     ids = [str(uuid4()) for _ in range(4)]
@@ -110,26 +109,23 @@ def test_concurrent_photo_search_keeps_inventory_scope_isolated():
     assert current_inventory.get() is None
 
 
-def test_photo_identification_and_saved_comparison_overlap(transport):
+def test_direct_photo_retained_before_failed_reply_and_followup_has_pixels(transport):
     out = io.BytesIO(); Image.new('RGB', (30, 30), 'orange').save(out, format='PNG')
-    state = {'matching_started': False, 'vision_started': False}
-    async def matching(*args):
-        state['matching_started'] = True
-        for _ in range(100):
-            if state['vision_started']: return {'matches': []}
-            await asyncio.sleep(.001)
-        raise AssertionError('Vision did not run concurrently')
-    async def identify(**kwargs):
-        state['vision_started'] = True
-        for _ in range(100):
-            if state['matching_started']: return {'items': []}
-            await asyncio.sleep(.001)
-        raise AssertionError('Saved comparison was serialized after vision')
-    with patch.object(route, 'check_and_increment_scan'), patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), patch('app.services.find_pipeline.extract_inventory_items_with_find', side_effect=identify), patch.object(world, 'photo_matches', side_effect=matching), patch.object(world, 'stream_turn', return_value=events()):
-        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', files={'file': ('photo.png', out.getvalue(), 'image/png')})
-    assert '"type": "done"' in response.text
-    assert all(state.values())
-
+    stored = NS(path=f'{ACTOR}/ask-test.jpg', url='https://api.test/private.jpg')
+    with patch('app.services.storage.upload_image', return_value=stored), \
+         patch('app.services.storage.delete_image') as cleanup, \
+         patch('app.services.chat_vision.retain') as retain, \
+         patch.object(world, 'stream_turn', side_effect=RuntimeError('failed')):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'message':'Read it','supports_task_actions':'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert '"type": "error"' in response.text
+    retain.assert_called_once(); cleanup.assert_not_called()
+    with patch.object(world,'latest_photo',return_value={'mode':'chat','items':[],'source_path':stored.path,'source_url':stored.url}), \
+         patch('app.services.chat_vision.retained_image',return_value={'type':'image_url','image_url':{'url':'data:image/jpeg;base64,abc'}}) as read, \
+         patch.object(world,'stream_turn',return_value=events()) as stream:
+        result=transport.client.post(f'/worlds/{WORLD}/ai_command',json={'message':'What color is it?','conversation_id':CID})
+    assert '"type": "done"' in result.text
+    read.assert_called_once()
+    assert stream.call_args.kwargs['image_content']['type']=='image_url'
 
 def test_resource_route_validates_ids_and_forwards_actor_world(transport):
     inv, item = str(uuid4()), str(uuid4())
