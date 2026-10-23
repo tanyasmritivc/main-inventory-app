@@ -493,8 +493,9 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         # Never invent a confirmation control. Regenerate with tools available
         # so a missing proposal can actually be created rather than paraphrased.
         import re
-        mentions_card = bool(re.search(r'\b(?:confirm|review|approve)\b.{0,100}\bcard\b|\b(?:proposed|prepared)\s+(?:additions|an?\s+(?:edit|change|move|action|card))', content, re.I | re.S))
-        if mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or prior_pending):
+        mentions_card = bool(re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b|\bcard\b.{0,100}\bconfirm\b|\b(?:proposed|prepared)\s+(?:additions|an?\s+(?:edit|change|move|action|card))', content, re.I | re.S))
+        refers_to_previous = prior_pending and bool(re.search(r'\b(?:earlier|previous|above)\b', content, re.I))
+        if mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or refers_to_previous):
             if not card_repair_available or step == 8:
                 raise RuntimeError('The reply referenced an action card that does not exist')
             card_repair_available = False
@@ -612,7 +613,7 @@ TOOLS.extend([
                 'location': {'type': 'string', 'minLength': 1, 'maxLength': 100},
                 'notes': {'type': 'string', 'maxLength': 2000}, 'observation_index': {'type': 'integer', 'minimum': 0, 'maximum': 19}},
             'required': ['name', 'quantity', 'location']}}}, ['inventory_id', 'items']),
-    tool('world_delete_items', 'Propose deletion of exact saved item IDs, after a fresh search. User must confirm.', {
+    tool('world_delete_items', 'Propose deletion of exact saved item IDs, after a fresh search. Follow the client action policy for immediate execution or review.', {
         'inventory_id': {'type': 'string', 'format': 'uuid'},
         'item_ids': {'type': 'array', 'minItems': 1, 'maxItems': 100, 'uniqueItems': True, 'items': {'type': 'string', 'format': 'uuid'}}}, ['inventory_id', 'item_ids']),
 ])
@@ -646,10 +647,10 @@ ARGUMENTS = {'world_directory': Arguments, 'world_search': Search, 'world_invent
 from app.services.world_item_changes import Edit, Adjust, Move, Reorders, DecideReorder, Tracking
 for _name, _model, _description in [
     ('world_adjust_quantity', Adjust, 'Adjust saved stock by a signed integer delta. Use negative for consumption and positive for receipts. Server computes from fresh stock and rejects negative or reserved-stock violations.'),
-    ('world_edit_item', Edit, 'Propose exact saved item edits, price/currency, expiry or reorder rule changes. Null clears optional fields. Explicit review required; does not place purchases.'),
+    ('world_edit_item', Edit, 'Propose exact saved item edits, price/currency, expiry or reorder rule changes. Null clears optional fields. The client action policy determines immediate execution or review; does not place purchases.'),
     ('world_move_item', Move, 'Propose moving one saved item to an existing inventory/Space in this organization, retaining linked history and photos.'),
     ('world_reorders', Reorders, 'Read persistent reorder approval requests. Approved means approved for manual purchase, never purchased.'),
-    ('world_reorder_decision', DecideReorder, 'Propose approving/dismissing a reorder request, or marking an approved request received and adding its quantity to stock. User must confirm.'),
+    ('world_reorder_decision', DecideReorder, 'Propose approving/dismissing a reorder request, or marking an approved request received and adding its quantity to stock. Follow the client action policy for immediate execution or review.'),
     ('world_tracking', Tracking, 'Read tracked prices, enabled reorder rules or expiry on/before YYYY-MM-DD (default today). Bounded to 100 results.'),
 ]:
     _schema = _model.model_json_schema()
@@ -674,7 +675,7 @@ ARGUMENTS['world_attach_item_photo'] = PhotoTarget
 
 from app.services.world_tasks import Task as WorldTask, schema as task_schema
 _task_schema = task_schema()
-TOOLS.append(tool('world_create_task', 'Review one complete creation request: workspace/inventory/Spaces AND requested new items or moves of saved items. One confirmation completes all steps. Use existing exact names to reuse structure. Moves require saved source IDs; do not copy moved items.', _task_schema['properties'], _task_schema.get('required', [])))
+TOOLS.append(tool('world_create_task', 'Review one complete creation request: workspace/inventory/Spaces AND requested new items or moves of saved items. One confirmation completes all steps. Use existing exact inventory names to add missing Spaces inside them. Call this tool even when only the Space is new. Moves require saved source IDs; do not copy moved items.', _task_schema['properties'], _task_schema.get('required', [])))
 ARGUMENTS['world_create_task'] = WorldTask
 
 from app.services.world_insights import MODELS as INSIGHT_MODELS, DESCRIPTIONS as INSIGHT_DESCRIPTIONS

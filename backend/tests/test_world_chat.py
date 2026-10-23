@@ -328,3 +328,13 @@ def test_invented_internal_link_is_plain_text_not_an_inert_control():
 def test_read_only_world_history_answer_does_not_trigger_write_claim_guard():
     from app.services.assistant_tool_safety import validate_model_answer
     validate_model_answer('When was this created?', [{'tool': 'world_activity', 'result': {'activity': []}}], 'Created on October 21.')
+
+
+@pytest.mark.parametrize('history', [[], [{'role': 'system', 'content': 'Older unrelated draft', 'action_states': [{'id': 'old', 'status': 'pending'}]}]])
+def test_confirmation_card_noun_does_not_bypass_real_card_requirement(history):
+    call = NS(id='new', function=NS(name='world_create_task', arguments='{}'))
+    proposal = {'world_action': {'id': 'actual', 'version': 2, 'status': 'pending'}}
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=proposal), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion('One confirmation card completes the Space creation and move. Confirm it.'), completion(calls=[call]), completion('Review the complete task below.')]) as gateway:
+        done = list(w.stream_turn(ACTOR, WORLD, 'Move batteries to a new Garage Space', history, 'cid', supports_task_actions=True))[-1]
+    assert gateway.call_count == 3
+    assert done['answer_context']['world_actions'] == [proposal['world_action']]

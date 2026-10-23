@@ -1,3 +1,15 @@
+## October 22 — Approved activation and live follow-through QA
+
+User explicitly approved migrations077/078; applied atomically with a fresh
+backup. Runtime a76cdae is live and healthy; eight selective files, unrelated
+source preserved. The older live create_space shortcut was deliberately removed
+to honor the requested creation-confirmation policy. Actual HTTPS QA with one
+disposable account verified creation+addition with one confirmation, repeated
+confirmation idempotency, direct8→5 consumption and same-request retry at5.
+A later new-Space move exposed a phantom-card phrasing variant: “confirmation
+card” bypassed the imperative-only detector. Added coverage and repair; final
+publication/live recheck in progress. QA account and inventory were removed.
+
 ## October 22 — Follow-through implementation and verification
 
 Lane: fix/chat-follow-through-api-20261022. Migrations 077/078 and runtime are
