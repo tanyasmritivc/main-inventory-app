@@ -1,3 +1,11 @@
+## October 22 — Chat executes clear edits and completes creation tasks
+
+The user explicitly requests confirmation only for creation/deletion. New clients
+advertise task actions: edits, moves and quantity deltas execute with durable
+per-request receipts; one creation confirmation includes dependent adds/moves.
+Current DB/card state overrides old prose. Identity is the signed-in actor, never
+the shared inventory owner. See docs/plans/chat-control-center-20261022.md.
+
 ## October 21 — Native iPhone composer menu
 
 Use UIKit UIMenu on a clear 48-point plus button for iPhone attachment/context
