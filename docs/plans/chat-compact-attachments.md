@@ -23,6 +23,10 @@ Validation: focused chat/shell tests 56 pass; search/back/native routing tests
 appearance, search, nested Back, native attachment presentation, Photo Library
 callback and subsequent reopening of the root menu. The synthetic preview does
 not test actual camera permissions or physical-device photo selection. Full mobile
-suite and signed beta release are tracked in the release receipt.
+suite: 795 pass, one optional skip. Both runtime branches passed all five CI jobs.
+Apple acknowledged build 1.1.1 (113), delivery
+19c2790f-c6bb-41cf-b1b8-9cb888b1835c. Processing/tester availability was not polled.
+The signed archive, IPA, validation and upload receipts are preserved in
+Documents/FindEZ/AppStore/1.1.1-build113.
 
 No claim is made that the broader FindEZ product roadmap is complete.
