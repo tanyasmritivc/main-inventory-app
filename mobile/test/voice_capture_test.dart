@@ -1,3 +1,6 @@
+import 'package:flutter/services.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/world/world_composer.dart';
@@ -82,6 +85,26 @@ void main() {
     text.dispose();
     focus.dispose();
   });
+  testWidgets(
+    'native cached initialization routes errors to the latest recording',
+    (tester) async {
+      const channel = MethodChannel('plugin.csdcorp.com/speech_to_text');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (_) async => true);
+      final speech = SpeechToText();
+      final device = DeviceVoiceRecorder(speech: speech);
+      var firstErrors = 0, secondErrors = 0;
+      await device.start((_, _) {}, () => firstErrors++);
+      await device.cancel();
+      await device.start((_, _) {}, () => secondErrors++);
+      speech.errorListener!(SpeechRecognitionError('error_network', true));
+      expect(firstErrors, 0);
+      expect(secondErrors, 1);
+      await device.cancel();
+      messenger.setMockMethodCallHandler(channel, null);
+    },
+  );
   test('release waits for final words and sends exactly once', () async {
     await voice.start();
     recorder.result!('Find my', false);

@@ -11,10 +11,14 @@ abstract interface class VoiceRecorder {
 }
 
 class DeviceVoiceRecorder implements VoiceRecorder {
-  final SpeechToText _speech = SpeechToText();
+  DeviceVoiceRecorder({SpeechToText? speech})
+    : _speech = speech ?? SpeechToText();
+  final SpeechToText _speech;
   @override
   Future<bool> start(VoiceResult onResult, VoidCallback onError) async {
-    if (!await _speech.initialize(onError: (_) => onError())) return false;
+    // initialize caches its first callback. Rebind each recording explicitly.
+    _speech.errorListener = (_) => onError();
+    if (!await _speech.initialize(onError: _speech.errorListener)) return false;
     await _speech.listen(
       onResult: (result) =>
           onResult(result.recognizedWords, result.finalResult),

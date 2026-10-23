@@ -37,7 +37,9 @@ manual creation, 1,000-row lazy rendering and voice completion/cancellation/gest
 ## Verification
 
 Validation: 810 host Flutter tests passed, one optional visual test skipped; static
-analysis clean. Native iOS: 17 initial cases passed and four updated settings/detail
+analysis clean. Eight focused voice tests also passed after correcting the native
+plugin's cached initialization callback, including the actual plugin lifecycle
+with a mocked native channel. Native iOS: 17 initial cases passed and four updated settings/detail
 cases passed after the large-text correction. Screenshots inspected in both themes.
 Apple acknowledgment will be recorded at release completion. Native visual
 captures use synthetic accounts/inventory. Flutter repaint captures omit UIKit-native
