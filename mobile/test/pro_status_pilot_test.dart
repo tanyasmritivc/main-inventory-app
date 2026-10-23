@@ -18,45 +18,44 @@ class _StubApi extends ApiClient {
 }
 
 Map<String, dynamic> _pilotPayload({
-  String? endsAt = '2026-09-11T23:59:59Z',
+  String? endsAt = '2026-11-01T23:59:59Z',
   String? notice =
-      'Free Pilot: Unlimited access through September 11, 2026. '
-      'Standard free-plan limits and optional paid plans begin September 12. '
+      'Free Pilot: Unlimited access through November 1, 2026. '
+      'Standard free-plan limits and optional paid plans begin November 2. '
       'You will not be charged automatically.',
-}) =>
-    {
-      'tier': 'free',
-      'pilot_mode': true,
-      'pilot_ends_at': endsAt,
-      'pilot_notice': notice,
-      'items': {'used': 0, 'max': null},
-      'spaces': {'used': 0, 'max': null},
-      'chats': {'used': 0, 'max': null, 'resets_at': '2026-10-01T00:00:00Z'},
-      'scans': {
-        'used': 0,
-        'max': null,
-        'daily_used': 0,
-        'daily_max': null,
-        'resets_at': '2026-10-01T00:00:00Z',
-      },
-    };
+}) => {
+  'tier': 'free',
+  'pilot_mode': true,
+  'pilot_ends_at': endsAt,
+  'pilot_notice': notice,
+  'items': {'used': 0, 'max': null},
+  'spaces': {'used': 0, 'max': null},
+  'chats': {'used': 0, 'max': null, 'resets_at': '2026-10-01T00:00:00Z'},
+  'scans': {
+    'used': 0,
+    'max': null,
+    'daily_used': 0,
+    'daily_max': null,
+    'resets_at': '2026-10-01T00:00:00Z',
+  },
+};
 
 Map<String, dynamic> _nonPilotPayload() => {
-      'tier': 'free',
-      'pilot_mode': false,
-      'pilot_ends_at': null,
-      'pilot_notice': null,
-      'items': {'used': 5, 'max': 30},
-      'spaces': {'used': 1, 'max': 3},
-      'chats': {'used': 3, 'max': 20, 'resets_at': '2026-10-01T00:00:00Z'},
-      'scans': {
-        'used': 2,
-        'max': 10,
-        'daily_used': 1,
-        'daily_max': null,
-        'resets_at': '2026-10-01T00:00:00Z',
-      },
-    };
+  'tier': 'free',
+  'pilot_mode': false,
+  'pilot_ends_at': null,
+  'pilot_notice': null,
+  'items': {'used': 5, 'max': 30},
+  'spaces': {'used': 1, 'max': 3},
+  'chats': {'used': 3, 'max': 20, 'resets_at': '2026-10-01T00:00:00Z'},
+  'scans': {
+    'used': 2,
+    'max': 10,
+    'daily_used': 1,
+    'daily_max': null,
+    'resets_at': '2026-10-01T00:00:00Z',
+  },
+};
 
 void main() {
   setUp(() {
@@ -72,14 +71,14 @@ void main() {
 
     test('pilotEndsAt is populated', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
-      expect(ProStatus.pilotEndsAt, '2026-09-11T23:59:59Z');
+      expect(ProStatus.pilotEndsAt, '2026-11-01T23:59:59Z');
     });
 
     test('pilotNotice contains the required text', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
-      expect(ProStatus.pilotNotice, contains('September 11, 2026'));
+      expect(ProStatus.pilotNotice, contains('through November 1, 2026'));
       expect(ProStatus.pilotNotice, contains('not be charged automatically'));
-      expect(ProStatus.pilotNotice, contains('September 12'));
+      expect(ProStatus.pilotNotice, contains('begin November 2'));
     });
 
     test('isPro is false — pilot is not a paid tier', () async {
@@ -96,7 +95,7 @@ void main() {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('pilot_mode'), isTrue);
-      expect(prefs.getString('pilot_ends_at'), '2026-09-11T23:59:59Z');
+      expect(prefs.getString('pilot_ends_at'), '2026-11-01T23:59:59Z');
       expect(prefs.getString('pilot_notice'), isNotNull);
     });
 
@@ -104,36 +103,74 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'plan_tier': 'free',
         'pilot_mode': true,
-        'pilot_ends_at': '2026-09-11T23:59:59Z',
+        'pilot_ends_at': '2026-11-01T23:59:59Z',
         'pilot_notice': 'Cached notice text',
       });
       ProStatus.reset();
       await ProStatus.loadCached();
       expect(ProStatus.isPilotMode, isTrue);
-      expect(ProStatus.pilotEndsAt, '2026-09-11T23:59:59Z');
+      expect(ProStatus.pilotEndsAt, '2026-11-01T23:59:59Z');
       expect(ProStatus.pilotNotice, 'Cached notice text');
     });
 
-    test('API failure falls back to cached pilot values — never shows paywall', () async {
+    test(
+      'API failure falls back to cached pilot values — never shows paywall',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'plan_tier': 'free',
+          'pilot_mode': true,
+          'pilot_ends_at': '2026-09-11T23:59:59Z',
+          'pilot_notice': 'Stale cached notice',
+        });
+        ProStatus.reset();
+        await ProStatus.refresh(_StubApi(null)); // null → throws
+
+        expect(
+          ProStatus.isPilotMode,
+          isTrue,
+          reason: 'Must fall back to cached pilot=true on API failure',
+        );
+        expect(ProStatus.pilotEndsAt, '2026-09-11T23:59:59Z');
+        expect(ProStatus.pilotNotice, 'Stale cached notice');
+      },
+    );
+
+    test(
+      'pilot with no end-date: endsAt is null, notice still present',
+      () async {
+        await ProStatus.refresh(_StubApi(_pilotPayload(endsAt: null)));
+        expect(ProStatus.pilotEndsAt, isNull);
+        expect(ProStatus.pilotNotice, isNotNull);
+      },
+    );
+
+    test('display fallback uses November 1 without changing billing state', () {
+      expect(
+        ProStatus.defaultPilotNotice,
+        'Unlimited access through November 1, 2026. '
+        'Standard free-plan limits and optional paid plans begin November 2. '
+        'You will not be charged automatically.',
+      );
+      expect(ProStatus.isPilotMode, isFalse);
+      expect(ProStatus.isPro, isFalse);
+    });
+
+    test('successful refresh replaces the old cached deadline', () async {
       SharedPreferences.setMockInitialValues({
         'plan_tier': 'free',
         'pilot_mode': true,
         'pilot_ends_at': '2026-09-11T23:59:59Z',
-        'pilot_notice': 'Stale cached notice',
+        'pilot_notice': 'Unlimited access through September 11, 2026.',
       });
-      ProStatus.reset();
-      await ProStatus.refresh(_StubApi(null)); // null → throws
+      await ProStatus.loadCached();
+      await ProStatus.refresh(_StubApi(_pilotPayload()));
 
-      expect(ProStatus.isPilotMode, isTrue,
-          reason: 'Must fall back to cached pilot=true on API failure');
-      expect(ProStatus.pilotEndsAt, '2026-09-11T23:59:59Z');
-      expect(ProStatus.pilotNotice, 'Stale cached notice');
-    });
-
-    test('pilot with no end-date: endsAt is null, notice still present', () async {
-      await ProStatus.refresh(_StubApi(_pilotPayload(endsAt: null)));
-      expect(ProStatus.pilotEndsAt, isNull);
-      expect(ProStatus.pilotNotice, isNotNull);
+      expect(ProStatus.pilotEndsAt, '2026-11-01T23:59:59Z');
+      expect(ProStatus.pilotNotice, contains('through November 1, 2026'));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('pilot_notice'), ProStatus.pilotNotice);
+      expect(prefs.getString('pilot_ends_at'), ProStatus.pilotEndsAt);
+      expect(ProStatus.tier, 'free');
     });
   });
 

@@ -1,31 +1,45 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 
-import { LandingMorph } from "@/components/site/landing-morph";
-import { MarketingFooter } from "@/components/site/product-marketing";
+import { LandingLab } from "@/components/site/landing-lab";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
+
+const geist = localFont({
+  src: [{ path: "./fonts/geist-400.ttf", weight: "400" }, { path: "./fonts/geist-500.ttf", weight: "500" }],
+  variable: "--fzl-geist", display: "swap",
+});
+const mono = localFont({
+  src: [{ path: "./fonts/geist-mono-400.ttf", weight: "400" }, { path: "./fonts/geist-mono-500.ttf", weight: "500" }],
+  variable: "--fzl-mono", display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: { absolute: "FindEZ — Understands your environment" },
-  description:
-    "FindEZ understands your environment. Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
+  title: { absolute: PUBLIC_SITE_TITLE },
+  description: PUBLIC_SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "FindEZ — Understands your environment",
-    description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
-    url: "https://findez.ai/",
-    siteName: "FindEZ",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
+    url: `${PUBLIC_SITE_URL}/`,
+    siteName: "FindEZ AI",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "FindEZ — Understands your environment",
-    description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
   },
 };
 
-export default function LandingPage() {
-  return (
-    <>
-      <LandingMorph />
-      <MarketingFooter theme="light" />
-    </>
-  );
+export default async function LandingPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }}
+    />
+    <LandingLab className={`${geist.variable} ${mono.variable}`} siteNavigation initialSignedIn={Boolean(user)} />
+  </>;
 }

@@ -1560,3 +1560,18 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
   .label-toolbar { align-items: stretch; flex-direction: column; padding-bottom: 10px; }.label-toolbar .product-input { max-width: none; }
   .team-title-row { max-width: calc(100% - 90px); }.app-frame .team-title-select { min-width: 0; max-width: 100%; }
 }
+
+/* Only newly received answer text fades; earlier text remains steady. */
+@keyframes ask-chunk-in { from { opacity: 0; } to { opacity: 1; } }
+.ask-chunk { animation: ask-chunk-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .ask-chunk { animation: none !important; } }
+
+.ask-action-card { margin: 18px 0; padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); }
+.ask-action-card ul { list-style: none; margin: 12px 0; padding: 0; max-height: 320px; overflow-y: auto; }
+.ask-action-card li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.ask-action-card li span, .ask-action-card li small { display: block; }
+.ask-action-card li small { opacity: .7; margin-top: 4px; }
+.ask-action-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+
+.member-identity-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; vertical-align: middle; }
+.member-identity-label > span:last-child { overflow-wrap: anywhere; }

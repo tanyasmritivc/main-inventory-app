@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, Syne } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
+import { CookieNotice } from "@/components/site/cookie-notice";
 import { APP_THEME_STORAGE_KEY, INTERIOR_PATH_PREFIXES } from "@/lib/app-theme-constants";
+import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
 import "./globals.css";
 import "./app-theme.css";
+import "./workspace.css";
+import "@fontsource-variable/source-sans-3/wght.css";
+import "@fontsource-variable/source-sans-3/wght-italic.css";
 
 // Runs before first paint, on every route, because layout.tsx wraps the
 // whole app. It must stay a no-op outside the interior: it checks the
@@ -37,24 +42,34 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://findez.ai"),
+  metadataBase: new URL(PUBLIC_SITE_URL),
   title: {
-    default: "FindEZ — Intelligent inventory for the real world",
-    template: "%s | FindEZ",
+    default: PUBLIC_SITE_TITLE,
+    template: "%s | FindEZ AI",
   },
-  description: "Capture items from photos, barcodes, or spreadsheets, then find anything through search or Ask FindEZ.",
+  description: PUBLIC_SITE_DESCRIPTION,
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "FindEZ",
-    description: "Know what you have. Find it.",
-    url: "https://findez.ai",
-    siteName: "FindEZ",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
+    url: PUBLIC_SITE_URL,
+    siteName: "FindEZ AI",
     type: "website",
   },
+  twitter: {
+    card: "summary",
+    title: PUBLIC_SITE_TITLE,
+    description: PUBLIC_SITE_DESCRIPTION,
+  },
   icons: {
-    icon: "/images/findez-favicon.svg",
+    icon: [
+      { url: "/favicon.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -70,7 +85,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>
+        <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div><CookieNotice /></AppDialogProvider>
       </body>
     </html>
   );

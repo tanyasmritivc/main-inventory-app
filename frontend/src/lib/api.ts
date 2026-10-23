@@ -1,6 +1,15 @@
-import { getAccessToken } from "@/lib/session";
+import type { TeamCategory } from "./team-categories";
+import { getAccessToken, getAccessSession } from "@/lib/session";
+import { activeInventory, assertInventory, canDeleteSpace, inventoryApiPath } from "@/lib/inventory-selection";
+import type { AccessInvitation } from "./access-invitation";
 
 export type InventoryItem = {
+  /** Original imported values, independent of current stock and location. */
+  import_data?: {
+    filename: string;
+    sheet: string;
+    fields: { name: string; value: unknown }[];
+  } | null;
   item_id: string;
   name: string;
   category: string;
@@ -83,6 +92,8 @@ export type ApiRequestOptions = {
   method?: string;
   /** Fallback only; the current session token from `getAccessToken()` wins. */
   token?: string | null;
+  /** Invitation consent belongs to its captured account, not a later session. */
+  bindToToken?: boolean;
   body?: BodyInit | Record<string, unknown>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
@@ -102,9 +113,20 @@ export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}):
 }
 
 async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
+  const selected = activeInventory();
+  const scopedPath = inventoryApiPath(path, selected);
+  if (selected && opts.method?.toUpperCase() === "DELETE" && path.startsWith("/spaces/") && !canDeleteSpace()) {
+    throw new ApiError("Only inventory owners and admins can delete a Space.", 403, null);
+  }
   // Prefer the live session token: a token captured earlier by a component can be
   // stale after Supabase's hourly refresh. The explicit token is the fallback.
-  const token = (await getAccessToken()) || opts.token;
+  let token = opts.bindToToken ? opts.token : (await getAccessToken()) || opts.token;
+  if (scopedPath !== path && selected) {
+    const session = await getAccessSession();
+    if (!session || session.accountId !== selected.accountId) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
+    token = opts.bindToToken ? opts.token : session.token;
+    assertInventory(selected);
+  }
   if (!token) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
   let bodyToSend: BodyInit | undefined;
   const autoHeaders: Record<string, string> = {};
@@ -124,7 +146,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
   }
   let res: Response;
   try {
-    res = await fetch(`${apiBase()}${path}`, {
+    res = await fetch(`${apiBase()}${scopedPath}`, {
       method: opts.method || "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -138,6 +160,8 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
     if (isAbortError(error)) throw error;
     throw new ApiError("We couldn't connect to FindEZ. Check your connection and try again.", 0, null);
   }
+
+  if (scopedPath !== path) assertInventory(selected);
 
   if (!res.ok) {
     const text = await res.text();
@@ -156,6 +180,7 @@ async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
 
   if (res.status === 204) return undefined as T;
   const text = await res.text();
+  if (scopedPath !== path) assertInventory(selected);
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
@@ -171,8 +196,22 @@ export async function searchItems(params: { token: string; query: string }) {
   );
 }
 
+export type InvitationPreview = {
+  kind: "space" | "team"; name: string; target_id: string;
+  permission: string; already_joined: boolean;
+  inviter?: {user_id: string; display_name: string; avatar_url?: string; avatar_color?: string};
+  inviter_label?: string;
+};
+export function previewInvitation({ token, kind, code }: { token: string; kind: "space" | "team"; code: string }) {
+  return apiFetch<InvitationPreview>("/invitations/preview", { method: "POST", token, body: { kind, code } });
+}
+export function getSpaceInvite({ token, share_id }: { token: string; share_id: string }) {
+  return apiFetch<{ share_id: string; share_name: string; share_code: string; permission: string; invite_url: string }>(`/sharing/${encodeURIComponent(share_id)}/invite`, { token });
+}
+
 export type ScanEvidence = {
   identification_reasoning?: string | null;
+  identity_confidence?: number | null;
   ocr_text?: string | null;
   ocr_confidence?: number | null;
   length_mm?: number | null;
@@ -183,10 +222,13 @@ export type ScanEvidence = {
   barcode_symbology?: string | null;
   barcode_confidence?: number | null;
   detection_confidence?: number | null;
+  review_reasons?: string[];
+  warnings?: string[];
   needs_review: boolean;
 };
 
 export type ExtractedInventoryItem = {
+  client_request_id?: string;
   name: string;
   category: string;
   subcategory?: string | null;
@@ -196,9 +238,21 @@ export type ExtractedInventoryItem = {
   barcode?: string | null;
   tags?: string[] | null;
   confidence?: number | null;
+  image_url?: string | null;
+  source_frame_url?: string | null;
   notes?: string | null;
   location?: string | null;
   scan_evidence?: ScanEvidence | null;
+  review_id?: string | null;
+  review_status?: string | null;
+  review_token?: string | null;
+};
+
+export type ReviewItem = ExtractedInventoryItem & {
+  review_id: string;
+  status: "pending" | "resolved" | "dismissed";
+  source_kind: string;
+  created_at: string;
 };
 
 export type MultiExtractSummary = {
@@ -214,12 +268,14 @@ export type MultiExtractSummary = {
 export async function extractFromImageMulti(params: { token: string; file: File }) {
   const form = new FormData();
   form.append("file", params.file);
+  form.append("preview_only", "true");
   return apiFetch<{
     items: ExtractedInventoryItem[];
     summary: MultiExtractSummary;
   }>("/inventory/extract_from_image", {
     method: "POST",
     token: params.token,
+    bindToToken: true,
     body: form,
   });
 }
@@ -228,14 +284,77 @@ export async function bulkCreate(params: {
   token: string;
   items: ExtractedInventoryItem[];
 }) {
-  return apiFetch<{ inserted: InventoryItem[]; failures: Array<Record<string, unknown>> }>(
+  return apiFetch<{ inserted: InventoryItem[]; failures: Array<Record<string, unknown>>; accepted_indices?: number[] }>(
     "/inventory/bulk_create",
     {
       method: "POST",
       token: params.token,
+      bindToToken: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: params.items }),
     }
+  );
+}
+
+export async function getReviewItems(params: { token: string; limit?: number }) {
+  const limit = Math.max(1, Math.min(200, params.limit ?? 100));
+  return apiFetch<{ items: ReviewItem[]; pending_count: number }>(
+    `/review-items?limit=${limit}`,
+    { token: params.token },
+  );
+}
+
+function reviewItemPayload(item: ExtractedInventoryItem) {
+  return {
+    name: item.name,
+    category: item.category,
+    subcategory: item.subcategory,
+    quantity: item.quantity,
+    brand: item.brand,
+    part_number: item.part_number,
+    barcode: item.barcode,
+    tags: item.tags,
+    confidence: item.confidence,
+    image_url: item.image_url,
+    notes: item.notes,
+    location: item.location?.trim() || "Unsorted",
+  };
+}
+
+export async function updateReviewItem(params: {
+  token: string;
+  reviewId: string;
+  item: ExtractedInventoryItem;
+}) {
+  return apiFetch<{ review_item: ReviewItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}`,
+    {
+      method: params.item.review_status === "preview" ? "POST" : "PATCH",
+      token: params.token,
+      bindToToken: true,
+      body: params.item.review_status === "preview" ? params.item : reviewItemPayload(params.item),
+    },
+  );
+}
+
+export async function resolveReviewItem(params: {
+  token: string;
+  reviewId: string;
+  item: ExtractedInventoryItem;
+}) {
+  return apiFetch<{ item: InventoryItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}/resolve`,
+    { method: "POST", token: params.token, bindToToken: true, body: reviewItemPayload(params.item) },
+  );
+}
+
+export async function dismissReviewItem(params: {
+  token: string;
+  reviewId: string;
+}) {
+  return apiFetch<{ review_item: ReviewItem }>(
+    `/review-items/${encodeURIComponent(params.reviewId)}`,
+    { method: "DELETE", token: params.token, bindToToken: true },
   );
 }
 
@@ -263,6 +382,7 @@ export async function deleteItem(params: { token: string; item_id: string }) {
 export async function extractFromImage(params: { token: string; file: File }) {
   const form = new FormData();
   form.append("file", params.file);
+  form.append("preview_only", "true");
   return apiFetch<{ extracted: Record<string, unknown>; image_url: string }>(
     "/extract_from_image",
     {
@@ -277,6 +397,7 @@ export async function processBarcode(params: { token: string; barcode: string })
   return apiFetch<{ result: Record<string, unknown> }>("/process_barcode", {
     method: "POST",
     token: params.token,
+    bindToToken: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ barcode: params.barcode }),
   });
@@ -326,6 +447,7 @@ export async function createShare(params: { token: string; share_name: string; p
 
 export async function getMyShares(params: { token: string }) {
   type MyShare = { share_id: string; share_name: string; share_code: string; code?: string; permission: string; member_count: number };
+  if (activeInventory()?.team_id) return { shares: [] as MyShare[] };
   const data = await apiFetch<{ shares?: MyShare[] } | MyShare[]>("/sharing/my-shares", { token: params.token });
   return { shares: Array.isArray(data) ? data : data.shares ?? [] };
 }
@@ -340,6 +462,7 @@ export async function getJoinedShares(params: { token: string }) {
     owner?: string;
     team_shares?: JoinedShare | JoinedShare[] | null;
   };
+  if (activeInventory()) return { shares: [] as JoinedShare[] };
   const data = await apiFetch<{ shares?: JoinedMembership[] } | JoinedMembership[]>("/sharing/joined", { token: params.token });
   const memberships = Array.isArray(data) ? data : data.shares ?? [];
   const shares = memberships.flatMap((membership): JoinedShare[] => {
@@ -367,10 +490,11 @@ export async function deleteShare(params: { token: string; share_id: string }) {
   });
 }
 
-export async function joinShare(params: { token: string; share_code: string }) {
+export async function joinShare(params: { token: string; share_code: string; bindToToken?: boolean }) {
   return apiFetch<{ share_id: string; share_name: string; permission: string }>("/sharing/join", {
     method: "POST",
     token: params.token,
+    bindToToken: params.bindToToken,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ share_code: params.share_code }),
   });
@@ -543,6 +667,7 @@ export type TeamData = {
   join_code?: string;
   plan?: string | null;
   program?: string;
+  custom_category?: string | null;
   plan_expires_at?: string | null;
 };
 
@@ -554,17 +679,19 @@ export async function createTeam({
   token,
   name,
   program,
+  custom_category,
   rookie = false,
 }: {
   token: string;
   name: string;
-  program: 'robotics' | 'ftc' | 'frc' | 'fll' | 'vex' | 'education' | 'makerspace' | 'club' | 'business' | 'other';
+  program: TeamCategory;
+  custom_category?: string;
   rookie?: boolean;
 }) {
   return apiFetch<{ team: { team_id: string; name: string; join_code?: string; plan?: string | null; plan_expires_at?: string | null } }>('/teams', {
     method: 'POST',
     token,
-    body: { name, program, rookie },
+    body: { name, program, rookie, ...(program === "custom" ? { custom_category } : {}) },
   });
 }
 
@@ -577,8 +704,8 @@ export type Space = {
   item_count?: number;
 };
 
-export async function getSpaces({ token }: { token: string }): Promise<Space[]> {
-  const raw = await apiFetch<unknown>('/spaces', { token });
+export async function getSpaces({ token, bindToToken = false }: { token: string; bindToToken?: boolean }): Promise<Space[]> {
+  const raw = await apiFetch<unknown>('/spaces', { token, bindToToken });
   if (Array.isArray(raw)) return raw as Space[];
   if (raw !== null && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).spaces)) {
     return (raw as { spaces: Space[] }).spaces;
@@ -591,6 +718,7 @@ export async function createSpace({ token, name }: { token: string; name: string
   return apiFetch<{ space: Space }>('/spaces', {
     method: 'POST',
     token,
+    bindToToken: true,
     body: { name },
   });
 }
@@ -613,6 +741,8 @@ export async function deleteSpace({ token, spaceId }: { token: string; spaceId: 
 // ── Activity and notifications ───────────────────────────────────────────────
 
 export type ActivityEntry = {
+  actor_id?: string;
+  invitation?: AccessInvitation;
   id?: string;
   activity_id?: string;
   action?: string;
@@ -683,8 +813,12 @@ export async function streamAiCommand({
   onDelta: (delta: string) => void;
   onConversationId?: (id: string) => void;
 }) {
-  const accessToken = (await getAccessToken()) || token;
-  const response = await fetch(`${apiBase()}/ai_command?stream=true`, {
+  const selected = activeInventory();
+  const session = selected ? await getAccessSession() : null;
+  if (selected && session?.accountId !== selected.accountId) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
+  const accessToken = session?.token || (await getAccessToken()) || token;
+  assertInventory(selected);
+  const response = await fetch(`${apiBase()}${inventoryApiPath('/ai_command?stream=true', selected)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -702,6 +836,7 @@ export async function streamAiCommand({
   let buffer = '';
   while (true) {
     const { value, done } = await reader.read();
+    if (activeInventory() !== selected) { await reader.cancel(); assertInventory(selected); }
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
     const blocks = buffer.split('\n\n');
@@ -753,6 +888,7 @@ export type TeamBoardTask = {
   status: 'todo' | 'doing' | 'done';
   priority: 'normal' | 'high' | 'urgent';
   assigned_to?: string | null;
+  assigned_by?: string | null;
   due_at?: string | null;
   created_by?: string;
   created_at?: string;
@@ -767,10 +903,11 @@ export type TeamDocument = {
   created_at: string;
 };
 
-export async function joinTeam({ token, code }: { token: string; code: string }) {
+export async function joinTeam({ token, code, bindToToken }: { token: string; code: string; bindToToken?: boolean }) {
   return apiFetch<{ membership: { team_id: string; user_id: string; role: TeamRole } }>('/teams/join', {
     method: 'POST',
     token,
+    bindToToken,
     body: { code: code.trim().toUpperCase() },
   });
 }
