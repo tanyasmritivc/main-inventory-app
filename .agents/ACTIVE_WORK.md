@@ -9,14 +9,18 @@ chat background remains.
 Full host suite: 812 passed, one optional skip (including channel/shell checks).
 Actual native taps, sliding selection and both themes verified in a running iOS
 26.5 Simulator harness. Physical-device/accessibility acceptance remains pending.
-Beta 116 is being rebuilt; the gradient-only candidate was never uploaded.
+Apple acknowledged 1.1.1 (116), delivery 2a1a948f-cfde-47a8-9f5e-4f519f5ff8a2.
+Runtime `d4ccc0d`; all five CI gates passed (run 40029940276).
+Signed archive/export, privacy/device-platform checks and Apple validation passed.
+Processing and tester availability were not polled; no public App Store submission.
+Earlier candidates were never uploaded.
 See `docs/plans/native-ios-tabs-20261023.md`.
 
 ## October 23 - Restore the previous chat background
 
 User rejected beta 115's stronger gradient. Restore the exact beta 114 background:
 black in dark mode; warm off-white with the original subtle landing glow in light
-mode. All other beta 115 UI/voice changes remain. Beta 116 in preparation. Existing
+mode. All other beta 115 UI/voice changes remain. Delivered in beta 116 above. Existing
 23 shell tests passed (including both themes); analysis clean. No new tests needed
 for this exact visual restoration.
 

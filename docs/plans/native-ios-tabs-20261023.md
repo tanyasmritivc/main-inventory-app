@@ -49,3 +49,15 @@ production wrapper. No private UIKit APIs or custom gesture simulation are used.
    device for its standard UIKit fallback before public release.
 
 Google and unfinished connectors stay hidden. This is a TestFlight release only.
+
+## Delivery receipt
+
+Apple acknowledged 1.1.1 (116), delivery 2a1a948f-cfde-47a8-9f5e-4f519f5ff8a2.
+Runtime `d4ccc0d`; all five CI gates passed (run 40029940276).
+Signed archive/export, privacy/device-platform checks and Apple validation passed.
+Processing and tester availability were not polled; no public App Store submission.
+Earlier candidates were never uploaded.
+
+IPA SHA-256: `c526cd4fe1eda922d4f0eb27f11f0f34bbd4b3bdbe4404f7e28233d054066b53`.
+Durable archive, IPA and receipts: `Documents/FindEZ/AppStore/1.1.1-build116`.
+Physical-device, VoiceOver, Reduce Motion and older-iOS acceptance remain pending.
