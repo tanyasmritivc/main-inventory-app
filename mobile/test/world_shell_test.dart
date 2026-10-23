@@ -576,12 +576,12 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Workspace: Workshop'), findsOneWidget);
+      expect(find.text('Workshop'), findsOneWidget);
       expect(changes, 0);
       await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
       expect(changes, 1);
-      expect(find.text('Saved to your world'), findsOneWidget);
+      expect(find.text('Created Hardware'), findsOneWidget);
       expect(
         fixture.requests.single.path,
         '/worlds/org-a/structure-actions/review',
@@ -643,11 +643,11 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Add 10 AA batteries to Storage'), findsOneWidget);
-      await tester.tap(find.text('Create and complete'));
+      expect(find.text('AA batteries · Qty 10 · Storage'), findsOneWidget);
+      await tester.tap(find.text('Create & complete'));
       await tester.pumpAndSettle();
       expect(fixture.requests.length, 1);
-      expect(find.text('Create and complete'), findsNothing);
+      expect(find.text('Create & complete'), findsNothing);
       await tester.tap(find.text('Open Storage'));
       expect(opened, isTrue);
       expect(fixture.requests.length, 1);

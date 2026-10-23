@@ -282,12 +282,12 @@ class _SettingsPageState extends State<SettingsPage> {
             _actionRow(
               icon: Icons.link,
               iconColor: Theme.of(context).colorScheme.onSurface,
-              label: 'AI assistant connections',
+              label: 'Connections',
               labelColor: Theme.of(context).colorScheme.onSurface,
               last: true,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const AssistantConnectionsPage(),
+                  builder: (_) => AssistantConnectionsPage(api: widget.api),
                 ),
               ),
             ),

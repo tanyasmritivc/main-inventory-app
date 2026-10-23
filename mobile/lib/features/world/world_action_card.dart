@@ -89,35 +89,43 @@ class _WorldActionCardState extends State<WorldActionCard> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: LiquidSurface(
-        radius: 24,
+        radius: 18,
         shadow: false,
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 pending
-                    ? 'Review your inventory world'
+                    ? inventories.length == 1
+                          ? 'Create ${inventories.first['name']}'
+                          : 'Review creation'
                     : _action['status'] == 'confirmed'
-                    ? 'Saved to your world'
+                    ? inventories.length == 1
+                          ? 'Created ${inventories.first['name']}'
+                          : 'Created'
                     : 'Cancelled',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
               if (_action['workspace_label'] != null)
-                Text('Workspace: ${_action['workspace_label']}'),
-              for (final inventory in inventories) ...[
                 Text(
-                  inventory['name'].toString(),
-                  style: Theme.of(context).textTheme.titleSmall,
+                  _action['workspace_label'].toString(),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
+              for (final inventory in inventories) ...[
+                if (inventories.length > 1)
+                  Text(
+                    inventory['name'].toString(),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 for (final space
                     in (inventory['spaces'] is List
                         ? inventory['spaces'] as List
                         : const []))
                   Padding(
-                    padding: const EdgeInsets.only(left: 12, top: 4),
+                    padding: const EdgeInsets.only(top: 4, bottom: 8),
                     child: Text(space.toString()),
                   ),
                 for (final item
@@ -126,7 +134,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
                             : const [])
                         .whereType<Map>())
                   Text(
-                    'Add ${item['quantity']} ${item['name']} to ${item['location']}',
+                    '${item['name']} · Qty ${item['quantity']} · ${item['location']}',
                   ),
                 for (final item
                     in (inventory['moves'] is List
@@ -136,12 +144,6 @@ class _WorldActionCardState extends State<WorldActionCard> {
                   Text('Move ${item['name']} to ${item['target_location']}'),
                 const SizedBox(height: 8),
               ],
-              if (pending)
-                Text(
-                  hasItems
-                      ? 'Confirm once to create the destination and complete the item changes shown above.'
-                      : 'Matching existing inventories and Spaces will be reused.',
-                ),
               if (!pending && _action['status'] == 'confirmed')
                 for (final link in links)
                   TextButton.icon(
@@ -171,7 +173,7 @@ class _WorldActionCardState extends State<WorldActionCard> {
                         _busy
                             ? 'Saving...'
                             : hasItems
-                            ? 'Create and complete'
+                            ? 'Create & complete'
                             : 'Create',
                       ),
                     ),

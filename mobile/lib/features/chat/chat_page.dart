@@ -5,6 +5,7 @@ import 'chat_source_menu.dart';
 import 'native_chat_menu_button.dart';
 import 'chat_context_picker.dart';
 import 'assistant_connections_page.dart';
+import '../scan/connector_destination_page.dart';
 import '../scan/space_barcode_flow.dart';
 import 'chat_viewport.dart';
 import '../notifications/notification_bell.dart';
@@ -3053,54 +3054,32 @@ class _ChatPageState extends State<ChatPage>
   final _attachmentAnchor = GlobalKey();
 
   Future<void> _captureSource(String kind) async {
+    if (_sending || _pickingPhoto) return;
+    if (kind != 'barcode') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConnectorDestinationPage(api: widget.api),
+        ),
+      );
+      return;
+    }
     if (_sending || _pickingPhoto || widget.api.worldKey == null) return;
     final generation = _requestGeneration;
     final conversationId = _currentConversationId;
     bool current() => mounted && generation == _requestGeneration;
     setState(() => _pickingPhoto = true);
     try {
-      Map<String, dynamic>? result;
-      if (kind == 'barcode') {
-        final code = await scanBarcodeForDraft(context);
-        if (!current() || code == null) return;
-        setState(() => _progress = 'Looking up barcode...');
-        result = await widget.api.collaboration(
-          '/worlds/${widget.api.worldKey}/captures/barcode',
-          method: 'POST',
-          data: {
-            'barcode': code,
-            if (conversationId != null) 'conversation_id': conversationId,
-          },
-        );
-      } else {
-        final picked = await FilePicker.platform.pickFiles(
-          type: FileType.any,
-          allowMultiple: false,
-          withReadStream: true,
-        );
-        if (!current() || picked == null) return;
-        final file = picked.files.single;
-        if (!['csv', 'xlsx'].contains(file.extension?.toLowerCase()) ||
-            file.size <= 0 ||
-            file.size > 10 * 1024 * 1024) {
-          throw const AskRequestException(
-            'Choose a CSV or Excel file smaller than 10 MB.',
-          );
-        }
-        setState(() => _progress = 'Reading spreadsheet...');
-        final part = file.path != null
-            ? await dio.MultipartFile.fromFile(file.path!, filename: file.name)
-            : dio.MultipartFile.fromStream(
-                () => file.readStream!,
-                file.size,
-                filename: file.name,
-              );
-        if (!mounted || !current()) return;
-        result = await widget.api.createSpreadsheetDraft(
-          part,
-          conversationId: conversationId,
-        );
-      }
+      final code = await scanBarcodeForDraft(context);
+      if (!current() || code == null) return;
+      setState(() => _progress = 'Looking up barcode...');
+      final result = await widget.api.collaboration(
+        '/worlds/${widget.api.worldKey}/captures/barcode',
+        method: 'POST',
+        data: {
+          'barcode': code,
+          if (conversationId != null) 'conversation_id': conversationId,
+        },
+      );
       widget.api.assertCurrentContext();
       if (!mounted || !current()) return;
       final id = result['conversation_id'] as String;
@@ -3284,7 +3263,7 @@ class _ChatPageState extends State<ChatPage>
     } else if (selected == 'connections') {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => const AssistantConnectionsPage(),
+          builder: (_) => AssistantConnectionsPage(api: widget.api),
         ),
       );
     } else if (['space', 'item', 'project', 'document'].contains(selected)) {

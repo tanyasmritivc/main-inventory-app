@@ -88,7 +88,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('Create and complete'), findsOneWidget);
+      expect(find.text('Create & complete'), findsOneWidget);
       await tester.ensureVisible(find.text('Open item'));
       await tester.pumpAndSettle();
       final boundary = tester.renderObject<RenderRepaintBoundary>(

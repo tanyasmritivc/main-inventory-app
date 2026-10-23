@@ -1,4 +1,3 @@
-import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'dart:io';
 
@@ -7,10 +6,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import 'connector_review_page.dart';
 import '../../core/api_error.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
-enum _ImportState { ready, uploading, success }
+enum _ImportState { ready, uploading }
 
 class ImportSheetPage extends StatefulWidget {
   const ImportSheetPage({
@@ -18,6 +18,7 @@ class ImportSheetPage extends StatefulWidget {
     required this.api,
     required this.location,
     this.shareId,
+    this.kind = 'inventory',
     this.initialFilePath,
     this.initialFilename,
   });
@@ -25,6 +26,7 @@ class ImportSheetPage extends StatefulWidget {
   final ApiClient api;
   final String location;
   final String? shareId;
+  final String kind;
   final String? initialFilePath;
   final String? initialFilename;
 
@@ -38,7 +40,6 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   _ImportState _state = _ImportState.ready;
   String? _filename;
   String? _errorMessage;
-  SpreadsheetImportResult? _result;
 
   @override
   void initState() {
@@ -139,22 +140,29 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     setState(() {
       _filename = file.name;
       _errorMessage = null;
-      _result = null;
       _state = _ImportState.uploading;
     });
 
     try {
       final multipart = await _multipartFile(file);
-      final result = await widget.api.importSpreadsheet(
+      final source = await widget.api.uploadConnectorSource(
         file: multipart,
         location: widget.location,
         shareId: widget.shareId,
+        kind: widget.kind,
       );
       if (!mounted) return;
-      setState(() {
-        _result = result;
-        _state = _ImportState.success;
-      });
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => ConnectorReviewPage(api: widget.api, source: source),
+        ),
+      );
+      if (!mounted) return;
+      if (result == true) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() => _state = _ImportState.ready);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -164,15 +172,6 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     }
   }
 
-  void _importAnother() {
-    setState(() {
-      _filename = null;
-      _errorMessage = null;
-      _result = null;
-      _state = _ImportState.ready;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -180,7 +179,9 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       child: Scaffold(
         backgroundColor: AppTheme.adaptive(context, Colors.black),
         appBar: AppBar(
-          title: const AppText('Import spreadsheet'),
+          title: AppText(
+            widget.kind == 'bom' ? 'Import parts list' : 'Import spreadsheet',
+          ),
           centerTitle: true,
           backgroundColor: AppTheme.adaptive(context, Colors.black),
           surfaceTintColor: Colors.transparent,
@@ -200,13 +201,6 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
                 key: const ValueKey('uploading'),
                 filename: _filename ?? 'Spreadsheet',
                 location: widget.location,
-              ),
-              _ImportState.success => _SuccessView(
-                key: const ValueKey('success'),
-                result: _result!,
-                location: widget.location,
-                onViewItems: () => Navigator.of(context).pop(true),
-                onImportAnother: _importAnother,
               ),
             },
           ),
@@ -316,7 +310,7 @@ class _UploadingView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             AppText(
-              'Importing your inventory…',
+              'Reading your file...',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white),
                 fontSize: 18,
@@ -325,7 +319,7 @@ class _UploadingView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             AppText(
-              '$filename\nAdding items to “$location”',
+              '$filename\nPreparing a preview for $location',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x73FFFFFF)),
@@ -335,102 +329,12 @@ class _UploadingView extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             AppText(
-              'Keep FindEZ open while the file is processed.',
+              'You will review the rows before anything is saved.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
                 fontSize: 12,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SuccessView extends StatelessWidget {
-  const _SuccessView({
-    super.key,
-    required this.result,
-    required this.location,
-    required this.onViewItems,
-    required this.onImportAnother,
-  });
-
-  final SpreadsheetImportResult result;
-  final String location;
-  final VoidCallback onViewItems;
-  final VoidCallback onImportAnother;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, Color(0x1A30D158)),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_rounded,
-                color: AppTheme.foreground(context, Color(0xFF30D158)),
-                size: 38,
-              ),
-            ),
-            const SizedBox(height: 20),
-            AppText(
-              'Import complete',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white),
-                fontSize: 23,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            AppText(
-              '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.foreground(context, Color(0x99FFFFFF)),
-                fontSize: 15,
-              ),
-            ),
-            if (result.failures > 0) ...[
-              const SizedBox(height: 8),
-              AppText(
-                '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Color(0xFFFF9F0A)),
-                  fontSize: 13,
-                ),
-              ),
-            ],
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton(
-                onPressed: onViewItems,
-                style: GlassControl.buttonStyle(
-                  context,
-                  radius: 99,
-                  base: FilledButton.styleFrom(shape: const StadiumBorder()),
-                ),
-                child: const AppText('View Items'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onImportAnother,
-              child: const AppText('Import Another'),
             ),
           ],
         ),

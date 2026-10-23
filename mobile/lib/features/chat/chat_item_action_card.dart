@@ -97,11 +97,11 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
   Widget build(BuildContext context) {
     final pending = _action.status == 'pending';
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.surface2(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
@@ -128,7 +128,13 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
           ),
           if (_action.destinationLabel != null) ...[
             const SizedBox(height: 8),
-            AppText(_action.destinationLabel!),
+            AppText(
+              _action.destinationLabel!,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary(context),
+              ),
+            ),
           ],
           const SizedBox(height: 12),
           ConstrainedBox(
@@ -144,7 +150,27 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppText(item.name),
+                        AppText(
+                          item.name,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        for (final detail in item.details)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: AppText(detail),
+                          ),
+                        AppText(
+                          item.details.any(
+                                (detail) =>
+                                    detail.toLowerCase().contains('quantity'),
+                              )
+                              ? item.location
+                              : '${item.quantity == null ? 'Quantity unknown' : 'Qty ${item.quantity}'} · ${item.location}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.textSecondary(context),
+                          ),
+                        ),
                         if (item.id != null &&
                             widget.onOpenResource != null &&
                             !(_action.operation == 'delete' &&
@@ -162,18 +188,6 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                             icon: const Icon(Icons.open_in_new, size: 16),
                             label: const AppText('Open item'),
                           ),
-                        for (final detail in item.details)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: AppText(detail),
-                          ),
-                        AppText(
-                          '${item.quantity == null ? 'Quantity unknown' : 'Qty ${item.quantity}'} · ${item.location}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary(context),
-                          ),
-                        ),
                       ],
                     ),
                   ),

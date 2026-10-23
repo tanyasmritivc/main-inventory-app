@@ -201,7 +201,7 @@ class ApiClient {
       ? (worldKey == null ? 'legacy' : '$accountId:world:$worldKey')
       : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
   static final _inventoryRoutes = RegExp(
-    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import)(?:[/?]|$)',
+    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)',
   );
   static bool _readOperation(String method, String path) =>
       ['GET', 'HEAD', 'OPTIONS'].contains(method) ||
@@ -396,6 +396,61 @@ class ApiClient {
     );
     final data = res.data ?? {};
     return UploadDocumentResult.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> uploadConnectorSource({
+    required dio.MultipartFile file,
+    required String location,
+    String kind = 'inventory',
+    String? shareId,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/connectors/imports',
+      data: dio.FormData.fromMap({
+        'file': file,
+        'location': location,
+        'kind': kind,
+        if (shareId != null) 'share_id': shareId,
+      }),
+      options: _longRunningOptions(),
+    );
+    assertCurrentContext();
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> connectorImport(
+    String id, {
+    String action = '',
+    Map<String, dynamic>? data,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.request<Map<String, dynamic>>(
+      '/connectors/imports/$id${action.isEmpty ? '' : '/$action'}',
+      data: data,
+      options: _longRunningOptions().copyWith(
+        method: data == null ? 'GET' : 'POST',
+      ),
+    );
+    assertCurrentContext();
+    final result = response.data ?? {};
+    if (action == 'commit') {
+      final counts = result['counts'];
+      if (result['id'] != id ||
+          !['complete', 'importing'].contains(result['status']) ||
+          counts is! Map ||
+          [
+            'imported',
+            'skipped',
+            'failed',
+            'pending',
+          ].any((key) => counts[key] is! int || (counts[key] as int) < 0)) {
+        throw const FormatException(
+          'The import result could not be verified. Resume safely to check saved results.',
+        );
+      }
+    }
+    return result;
   }
 
   Future<SpreadsheetImportResult> importSpreadsheet({

@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/external_links.dart';
+import '../../core/api_client.dart';
+import '../scan/connector_destination_page.dart';
 
 /// Existing outbound assistant setup. No inferred connection or OAuth status.
 class AssistantConnectionsPage extends StatefulWidget {
-  const AssistantConnectionsPage({super.key});
+  const AssistantConnectionsPage({super.key, this.api});
+  final ApiClient? api;
   @override
   State<AssistantConnectionsPage> createState() =>
       _AssistantConnectionsPageState();
@@ -35,11 +38,48 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
           ),
         ),
         const SizedBox(height: 20),
-        const Text('AI assistants', style: TextStyle(fontSize: 20)),
-        const SizedBox(height: 8),
-        const Text(
-          'Use your FindEZ inventory from an assistant. Manage setup and scoped API keys on the web.',
-        ),
+        if (widget.api != null) ...[
+          const Text('Import sources', style: TextStyle(fontSize: 16)),
+          const SizedBox(height: 12),
+          for (final entry in const [
+            (
+              'CSV & Excel',
+              'Map columns and review inventory',
+              'inventory',
+              Icons.table_chart_outlined,
+            ),
+            (
+              'Parts lists',
+              'KiCad and Fusion BOM files',
+              'bom',
+              Icons.precision_manufacturing_outlined,
+            ),
+          ])
+            if ('${entry.$1} ${entry.$2}'.toLowerCase().contains(query))
+              Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: Icon(entry.$4, size: 22),
+                  title: Text(entry.$1),
+                  subtitle: Text(entry.$2),
+                  trailing: const Icon(CupertinoIcons.chevron_right, size: 16),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ConnectorDestinationPage(
+                        api: widget.api!,
+                        kind: entry.$3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          const SizedBox(height: 20),
+        ],
+        const Text('AI assistants', style: TextStyle(fontSize: 16)),
         const SizedBox(height: 12),
         for (final entry in const [
           (
@@ -55,25 +95,46 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
         ])
           if ('${entry.$1} ${entry.$2}'.toLowerCase().contains(query))
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(entry.$1, style: const TextStyle(fontSize: 18)),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${entry.$2} - Setup on web',
-                      style: Theme.of(context).textTheme.labelMedium,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                leading: const Icon(CupertinoIcons.chat_bubble_2, size: 22),
+                title: Text(entry.$1),
+                subtitle: Text('${entry.$2} · Setup on web'),
+                trailing: const Icon(CupertinoIcons.chevron_right, size: 16),
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  showDragHandle: true,
+                  isScrollControlled: true,
+                  builder: (sheetContext) => SafeArea(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.$1,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(entry.$3),
+                          const SizedBox(height: 20),
+                          FilledButton.icon(
+                            onPressed: () => _open('/docs/api#ai-assistants'),
+                            icon: const Icon(
+                              CupertinoIcons.arrow_up_right,
+                              size: 16,
+                            ),
+                            label: const Text('Open setup'),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(entry.$3),
-                    TextButton.icon(
-                      onPressed: () => _open('/docs/api#ai-assistants'),
-                      icon: const Icon(CupertinoIcons.arrow_up_right, size: 16),
-                      label: const Text('View setup'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -81,6 +142,9 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
             ![
               'claude desktop mcp extension',
               'chatgpt actions',
+              if (widget.api != null)
+                'csv & excel map columns and review inventory',
+              if (widget.api != null) 'parts lists kicad and fusion bom files',
             ].any((value) => value.contains(query)))
           const Padding(
             padding: EdgeInsets.all(16),
@@ -91,10 +155,6 @@ class _AssistantConnectionsPageState extends State<AssistantConnectionsPage> {
           onPressed: () => _open('/settings/api-keys'),
           icon: const Icon(CupertinoIcons.lock),
           label: const Text('Manage API keys'),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'To bring data into FindEZ now, use Attach for PDF or text, or Import inventory for CSV and Excel. These assistant connections do not import email or cloud files.',
         ),
       ],
     ),

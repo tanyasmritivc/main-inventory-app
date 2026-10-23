@@ -1,3 +1,12 @@
+## October 22 — Connector imports and compact cards (mobile)
+
+Implementation prepared; migration 079 and activation approved in this session.
+Google and all unfinished connectors remain hidden. CSV/XLSX and file BOM review
+reuse the shared backend. Existing outbound assistant setup remains available.
+Native light/dark screenshots inspected; 799 mobile tests and six native cases
+passed, 478 web tests passed, TypeScript/lint and Flutter analysis clean.
+Release/build114 not yet delivered. See docs/plans/connectors-phase1-20261022.md.
+
 ## October 22 — Chat fixes live; beta 112 upload acknowledged
 
 User explicitly approved migrations 077 and 078. Both are applied with a fresh
