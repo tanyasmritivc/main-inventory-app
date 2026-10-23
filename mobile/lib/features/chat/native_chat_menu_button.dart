@@ -5,25 +5,32 @@ import 'package:flutter/services.dart';
 
 bool get usesNativeChatMenu => !kIsWeb && Platform.isIOS;
 
-/// UIKit owns the button and UIMenu, including nested menus and dismissal.
+/// Native anchor for the compact source menu and system attachment submenu.
 class NativeChatMenuButton extends StatefulWidget {
   const NativeChatMenuButton({
     super.key,
     required this.enabled,
     required this.onSelected,
+    this.menuOpen = false,
   });
   final bool enabled;
   final ValueChanged<String> onSelected;
+  final bool menuOpen;
   @override
-  State<NativeChatMenuButton> createState() => _NativeChatMenuButtonState();
+  State<NativeChatMenuButton> createState() => NativeChatMenuButtonState();
 }
 
-class _NativeChatMenuButtonState extends State<NativeChatMenuButton> {
+class NativeChatMenuButtonState extends State<NativeChatMenuButton> {
   MethodChannel? _channel;
+  Future<bool> showAttachments() async {
+    return await _channel?.invokeMethod<bool>('showAttachments') ?? false;
+  }
+
   Future<void> _configure() async {
     await _channel?.invokeMethod<void>('configure', {
       'enabled': widget.enabled,
       'dark': Theme.of(context).brightness == Brightness.dark,
+      'menuOpen': widget.menuOpen,
     });
   }
 

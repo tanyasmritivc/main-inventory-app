@@ -1199,6 +1199,7 @@ class ApiClient {
   Stream<AiStreamEvent> aiPhotoQuestionStream({
     required String message,
     required AskPhoto photo,
+    String? requestId,
     String? conversationId,
     List<ChatSource> sources = const [],
   }) async* {
@@ -1221,6 +1222,7 @@ class ApiClient {
     request.fields['supports_task_actions'] = 'true';
     request.fields['supports_photo_attachment'] = 'true';
     if (worldKey != null) {
+      if (requestId != null) request.fields['request_id'] = requestId;
       request.fields['supports_capture'] = 'true';
       request.fields['auto_extract'] = photo.autoExtract.toString();
       if (sources.isNotEmpty) {

@@ -1,3 +1,23 @@
+## October 22 — Compact attachment menu delivered in beta 113
+
+Mobile runtime `9906ecc` (PR #173), API runtime `1beab28` (PR #172). All five CI
+gates passed on both exact runtime commits. Mobile: 795 tests pass, one optional
+skip, clean analysis, native dark/light simulator menu and callback checks.
+Apple acknowledged 1.1.1 (113): `19c2790f-c6bb-41cf-b1b8-9cb888b1835c`.
+Processing/tester availability not polled; physical-device acceptance unverified.
+Artifacts: Documents/FindEZ/AppStore/1.1.1-build113. Smaller light plus/X, compact
+searchable/nested menu, separate native attachment menu. Ordinary photos wait for
+Send and use GLM directly; only Auto Extract invokes extraction. FIND stays the
+default because experimental GLM grounding hit gateway output failures.
+
+## October 22 - Direct chat vision and compact attachment menu
+
+Active isolated API/mobile lanes `fix/chat-direct-vision-api-20261022` and
+`fix/chat-direct-vision-mobile-20261022`. Separate direct GLM image chat from
+explicit Auto Extract, keep ordinary attachments in composer until Send, shrink
+plus/menu, and compare opt-in GLM grounded crops with FIND before activation.
+No schema changes. Runtime base API223b95b/mobile2b2ea7c; beta target113.
+
 ## October 22 — Chat fixes live; beta 112 upload acknowledged
 
 User explicitly approved migrations 077 and 078. Both are applied with a fresh

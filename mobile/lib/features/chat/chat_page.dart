@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'chat_photo_attachment_card.dart';
 import '../../core/chat_source.dart';
 import 'chat_source_menu.dart';
+import 'native_chat_menu_button.dart';
 import 'chat_context_picker.dart';
 import 'assistant_connections_page.dart';
 import '../scan/space_barcode_flow.dart';
@@ -1985,9 +1986,9 @@ class _ChatPageState extends State<ChatPage>
     final photo = requestId == null ? _photo : null;
     final sources = List<ChatSource>.of(retrySources ?? _sources);
     final q = text.trim().isEmpty && photo != null
-        ? (widget.worldHeading == null
-              ? 'What is in this photo? Do I already have it?'
-              : 'Auto extract the items in this photo. Keep a draft and ask only for any missing destination.')
+        ? (autoExtract
+              ? 'Auto extract the items in this photo. Keep a draft and ask only for any missing destination.'
+              : 'Describe this photo briefly and ask what I would like help with.')
         : text.trim().isEmpty && sources.isNotEmpty
         ? 'Help me understand these selected sources.'
         : text.trim();
@@ -2096,13 +2097,9 @@ class _ChatPageState extends State<ChatPage>
             )
           : widget.api.aiPhotoQuestionStream(
               message: q,
+              requestId: turnId,
               sources: sources,
-              photo: AskPhoto(
-                bytes: photo.bytes,
-                autoExtract:
-                    autoExtract ||
-                    (text.trim().isEmpty && widget.api.worldKey != null),
-              ),
+              photo: AskPhoto(bytes: photo.bytes, autoExtract: autoExtract),
               conversationId: _currentConversationId,
             );
       var backendAcknowledged = false;
@@ -3186,7 +3183,7 @@ class _ChatPageState extends State<ChatPage>
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt', 'md'],
+        allowedExtensions: ['pdf', 'txt', 'md', 'jpg', 'jpeg', 'png', 'webp'],
         withData: true,
       );
       if (!current() || result == null) return;
@@ -3196,6 +3193,15 @@ class _ChatPageState extends State<ChatPage>
         throw const AskRequestException(
           'Choose a nonempty file smaller than 10 MB.',
         );
+      }
+      if ([
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+      ].contains(file.extension?.toLowerCase())) {
+        setState(() => _photo = AskPhoto(bytes: bytes));
+        return;
       }
       final source = await widget.api.readChatFile(bytes, file.name);
       if (!mounted || !current()) return;
@@ -3236,7 +3242,11 @@ class _ChatPageState extends State<ChatPage>
     if (_sending || _pickingPhoto || _sourceMenuOpen) return;
     final generation = _requestGeneration;
     setState(() => _sourceMenuOpen = true);
-    final selected = await showChatSourceMenu(context, _attachmentAnchor);
+    final selected = await showChatSourceMenu(
+      context,
+      _attachmentAnchor,
+      nativeAttach: usesNativeChatMenu,
+    );
     if (!mounted) return;
     setState(() => _sourceMenuOpen = false);
     if (selected == null || generation != _requestGeneration) return;
@@ -3246,7 +3256,26 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _selectChatSource(String selected) async {
     if (!mounted || _sending || _pickingPhoto) return;
     final generation = _requestGeneration;
-    if (selected == 'auto_extract') {
+    if (selected == 'open') {
+      await _worldAttachmentMenu();
+    } else if (selected == 'attach' && usesNativeChatMenu) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || generation != _requestGeneration) return;
+      final opened =
+          await (_attachmentAnchor.currentState as NativeChatMenuButtonState?)
+              ?.showAttachments() ??
+          false;
+      if (!opened && mounted && generation == _requestGeneration) {
+        final source = await showChatSourceMenu(
+          context,
+          _attachmentAnchor,
+          initialPage: 'attach',
+        );
+        if (source != null && mounted && generation == _requestGeneration) {
+          await _selectChatSource(source);
+        }
+      }
+    } else if (selected == 'auto_extract') {
       await _attachPhoto(autoExtract: true);
     } else if (selected == 'camera' || selected == 'library') {
       await _attachPhoto(source: selected == 'camera');
@@ -3396,7 +3425,7 @@ class _ChatPageState extends State<ChatPage>
         mounted &&
         generation == _requestGeneration &&
         widget.api.worldKey != null &&
-        (autoExtract || _controller.text.trim().isEmpty)) {
+        autoExtract) {
       await _submit(_controller.text, autoExtract: true);
     }
   }
