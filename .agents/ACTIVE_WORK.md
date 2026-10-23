@@ -1,3 +1,19 @@
+## October 22 — Connector release live; beta 114 uploaded
+
+User approved migration 079 and activation. Migration/backend/web are live; Google
+and unfinished connectors remain hidden. Apple acknowledged 1.1.1 (114), delivery
+b5637833-5240-4f71-b04b-e48c0ddf238d. Processing, tester availability and physical-device acceptance
+were not polled/verified. No public App Store submission.
+
+API runtime 595f269 (PR #176), mobile bc426f2 (PR #175), web f7bac21 (PR #174).
+All five CI gates passed in each lane. Full local suites: 1,409 Python tests and
+10 subtests, 799 Flutter tests (one optional skip), 478 web tests. Six native iOS
+cases passed, screenshots inspected. Full-data rehearsal preserved all 91 existing
+tables; live synthetic CSV/XLSX/BOM/replay/isolation checks passed and both accounts
+were removed. Deployment preserved 109 unrelated API and 348 web files. No paid
+SDKs/new model calls; no Google configuration needed. See
+`docs/plans/connectors-phase1-20261022.md` for files, limits and exact test steps.
+
 ## October 22 — Connector imports and compact cards (web)
 
 Implementation prepared; migration 079 and activation approved in this session.
