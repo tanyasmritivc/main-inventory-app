@@ -1113,7 +1113,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                             ),
                             const SizedBox(height: 8),
                             AppText(
-                              'Add your first item to save this space.',
+                              'Add items here when you are ready.',
                               style: TextStyle(
                                 color: AppTheme.foreground(
                                   context,

@@ -1,3 +1,18 @@
+## October 22 — Chat follow-through beta112 candidate
+
+Lane: fix/chat-follow-through-mobile-20261022, based on public-review build111.
+Composite creation cards show the entire task and open saved destinations;
+confirmed direct edits/moves open the exact item. Chat retries preserve request
+identity, conversation and selected sources. Failed generation has a local Retry
+response action. Own profile/preferences are supplied by the companion API.
+Full Flutter suite: 793 pass, one optional visual skip; analysis clean. Native
+focused checks: 33 pass; two light/dark receipt visual cases pass and images
+reviewed. The exploratory unfiltered native host-suite import had seven
+nonportable menu/semantics assumptions, documented in TESTING.md. Release
+packaging is in progress. Requires companion API and
+approved migrations077/078 before activation. Public App Store submission111
+must remain unchanged. See docs/plans/chat-control-center-20261022.md.
+
 ## October 21 — Build 111 launch audit
 
 Lane `audit/app-store-launch-20261021`, stacked on build 110. Native iOS testing

@@ -289,7 +289,16 @@ class _WorldShellState extends State<WorldShell> {
       if (!mounted || world != _world) return;
       api.assertCurrentContext();
       final resource = Map<String, dynamic>.from(data['resource'] as Map);
-      if (link.kind == 'space') {
+      if (link.kind == 'inventory') {
+        await _push(InventorySpacesPage(api: api));
+      } else if (link.kind == 'project') {
+        await _push(
+          ProjectKitDetailPage(
+            api: api,
+            initial: ProjectKitDetail.fromJson(resource),
+          ),
+        );
+      } else if (link.kind == 'space') {
         await _openSpace(api, resource);
       } else {
         final item = InventoryItem.fromJson(resource);

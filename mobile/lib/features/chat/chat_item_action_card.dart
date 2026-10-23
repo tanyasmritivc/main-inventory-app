@@ -4,6 +4,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/chat_item_action.dart';
+import '../../core/ask_answer.dart';
 import '../../core/ui/app_text.dart';
 
 class ChatItemActionCard extends StatefulWidget {
@@ -12,7 +13,9 @@ class ChatItemActionCard extends StatefulWidget {
     required this.api,
     required this.action,
     this.onResult,
+    this.onOpenResource,
   });
+  final ValueChanged<AskResourceLink>? onOpenResource;
   final ApiClient api;
   final ChatItemAction action;
   final ValueChanged<ChatItemActionResult>? onResult;
@@ -114,7 +117,12 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                     _ => 'Review item changes',
                   }
                 : _action.status == 'confirmed'
-                ? 'Change confirmed'
+                ? switch (_action.operation) {
+                    'add' => 'Items added',
+                    'delete' => 'Items deleted',
+                    'move' => 'Item moved',
+                    _ => 'Changes saved',
+                  }
                 : 'Cancelled',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
@@ -137,6 +145,23 @@ class _ChatItemActionCardState extends State<ChatItemActionCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(item.name),
+                        if (item.id != null &&
+                            widget.onOpenResource != null &&
+                            !(_action.operation == 'delete' &&
+                                _action.status == 'confirmed'))
+                          TextButton.icon(
+                            onPressed: () => widget.onOpenResource!(
+                              AskResourceLink(
+                                kind: 'item',
+                                id: item.id!,
+                                inventoryId:
+                                    item.inventoryId ?? _action.inventoryId,
+                                label: item.name,
+                              ),
+                            ),
+                            icon: const Icon(Icons.open_in_new, size: 16),
+                            label: const AppText('Open item'),
+                          ),
                         for (final detail in item.details)
                           Padding(
                             padding: const EdgeInsets.only(top: 6),

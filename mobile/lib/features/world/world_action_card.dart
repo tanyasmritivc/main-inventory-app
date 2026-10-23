@@ -67,7 +67,19 @@ class _WorldActionCardState extends State<WorldActionCard> {
         ? _action['receipt'] as Map
         : const {};
     final links = AskAnswerContext.fromJson({
-      'resource_links': receipt['resource_links'] ?? [],
+      'resource_links': [
+        ...((receipt['resource_links'] as List?) ?? []),
+        for (final inventory
+            in ((receipt['inventories'] as List?) ?? []).whereType<Map>())
+          {
+            'kind': 'inventory',
+            'id': inventory['inventory_id'],
+            'inventory_id': inventory['inventory_id'],
+            'label': inventory['name'],
+            'href':
+                'findez://inventory/${inventory['inventory_id']}/${inventory['inventory_id']}',
+          },
+      ],
     }).resourceLinks;
     final hasItems = inventories.any(
       (i) =>

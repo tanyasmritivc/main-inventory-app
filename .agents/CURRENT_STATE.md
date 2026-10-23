@@ -1,3 +1,10 @@
+## October 22 chat follow-through candidate
+
+New mobile capability flag enables atomic creation tasks and direct edit/move
+receipts. Retry reuses request identity; confirmed cards navigate using fresh
+authorization. Beta112 is a candidate, not yet uploaded. API migrations077/078
+are pending explicit production approval. Full details in the control-center plan.
+
 ## October 21 — Build 110 onboarding, native menus and chat photos
 
 Full onboarding is restored for incomplete/fresh installs. Created organization IDs

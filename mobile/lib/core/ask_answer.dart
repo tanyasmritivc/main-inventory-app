@@ -62,7 +62,7 @@ class AskResourceLink {
     final uuid = RegExp(
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
     );
-    if (!['item', 'space'].contains(value['kind']) ||
+    if (!['item', 'space', 'inventory', 'project'].contains(value['kind']) ||
         value['id'] is! String ||
         value['inventory_id'] is! String ||
         value['label'] is! String ||
@@ -194,14 +194,14 @@ class AskAnswerContext {
               .whereType<Map>()
               .map((v) => Map<String, dynamic>.from(v))
               .toList(),
-      pendingActions:
-          (json['pending_actions'] is List
-                  ? json['pending_actions'] as List
-                  : const [])
-              .take(8)
-              .map(ChatItemAction.parse)
-              .whereType<ChatItemAction>()
-              .toList(),
+      pendingActions: [
+        ...(json['pending_actions'] is List
+            ? json['pending_actions'] as List
+            : const []),
+        ...(json['completed_actions'] is List
+            ? json['completed_actions'] as List
+            : const []),
+      ].take(8).map(ChatItemAction.parse).whereType<ChatItemAction>().toList(),
       sources: sources,
       rows: rows,
       rowsTruncated: json['rows_truncated'] == true,

@@ -1,3 +1,16 @@
+## October 22 chat follow-through
+
+Run the full host Flutter suite and analysis. The focused iOS regression command is
+`flutter test integration_test/chat_follow_through_test.dart -d <simulator-id>
+--no-pub --reporter expanded --name "one creation card|confirmed structure|completed move|Retry response|stream failure|generated answer images|receipt|presents exact changes|pending disables|cards|unknown errors|supports.*text|Ask layout|creation card"`.
+It runs 33 native cases; the imported host suites also contain UIKit-menu and
+semantics assumptions that are not portable to a native run without adaptation.
+Do not report an unfiltered run as passed: the exploratory run had seven such
+failures. `chat_receipt_visual_test.dart` captures synthetic creation/saved cards
+in both themes; preserve its temporary screenshots while it runs. New card taps,
+request identity and layout passed; actual customer device/network acceptance
+remains separate.
+
 ## Spaces directory and anchored actions
 
 `test/space_directory_test.dart` covers scoped list/item reads, rename, new Space,

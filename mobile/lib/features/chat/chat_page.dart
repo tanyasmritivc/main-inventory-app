@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'chat_photo_attachment_card.dart';
 import '../../core/chat_source.dart';
 import 'chat_source_menu.dart';
@@ -1978,9 +1979,11 @@ class _ChatPageState extends State<ChatPage>
     String text, {
     bool userAlreadyAdded = false,
     bool autoExtract = false,
+    String? requestId,
+    List<ChatSource>? retrySources,
   }) async {
-    final photo = _photo;
-    final sources = List<ChatSource>.of(_sources);
+    final photo = requestId == null ? _photo : null;
+    final sources = List<ChatSource>.of(retrySources ?? _sources);
     final q = text.trim().isEmpty && photo != null
         ? (widget.worldHeading == null
               ? 'What is in this photo? Do I already have it?'
@@ -2000,7 +2003,7 @@ class _ChatPageState extends State<ChatPage>
           _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
         );
       });
-      _controller.clear();
+      if (requestId == null) _controller.clear();
       _scrollToBottom(animated: false);
       return;
     }
@@ -2022,7 +2025,7 @@ class _ChatPageState extends State<ChatPage>
       _worldHome = false;
       _sending = true;
       _progress = photo == null ? null : 'Reading your photo...';
-      _photo = null;
+      if (requestId == null) _photo = null;
       _canQueueFollowUp = false;
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
@@ -2047,11 +2050,37 @@ class _ChatPageState extends State<ChatPage>
       );
     });
     widget.onChatStateChanged?.call(true);
-    _controller.clear();
+    if (requestId == null) _controller.clear();
     _scrollToBottom(animated: false);
 
     final assistantIndex = _session.messages.length - 1;
+    final random = math.Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final turnId =
+        requestId ??
+        '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
     _replyHaptics.remove(assistantIndex);
+    final retry = photo == null
+        ? () {
+            if (_sending || !mounted) return;
+            setState(
+              () => _session.messages[assistantIndex] = _session
+                  .messages[assistantIndex]
+                  .copyWith(clearRetry: true),
+            );
+            unawaited(
+              _submit(
+                q,
+                requestId: turnId,
+                retrySources: sources,
+                userAlreadyAdded: true,
+              ),
+            );
+          }
+        : null;
     try {
       AskAnswerContext? answerContext;
       Map<String, dynamic>? hint;
@@ -2062,6 +2091,7 @@ class _ChatPageState extends State<ChatPage>
           ? widget.api.aiCommandStream(
               message: q,
               sources: sources,
+              requestId: turnId,
               conversationId: _currentConversationId,
             )
           : widget.api.aiPhotoQuestionStream(
@@ -2113,7 +2143,10 @@ class _ChatPageState extends State<ChatPage>
         }
         if (event.navHint != null) hint = event.navHint;
         if (event.answerContext != null) answerContext = event.answerContext;
-        if (event.conversationId != null) conversationId = event.conversationId;
+        if (event.conversationId != null) {
+          conversationId = event.conversationId;
+          _currentConversationId = conversationId;
+        }
         if (event.type == 'done') {
           completed = true;
           canonical = event.assistantMessage;
@@ -2154,6 +2187,7 @@ class _ChatPageState extends State<ChatPage>
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
           answerContext: _session.messages[assistantIndex].answerContext,
+          onRetry: retry,
           content: dioErrMsg.length > 1000
               ? '${dioErrMsg.substring(0, 1000)}...'
               : dioErrMsg,
@@ -2172,9 +2206,10 @@ class _ChatPageState extends State<ChatPage>
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
           answerContext: _session.messages[assistantIndex].answerContext,
+          onRetry: retry,
           content: e is AskRequestException
               ? e.message
-              : 'Something went wrong. Please try again.',
+              : 'This response was interrupted. Please retry.',
           timestamp: _session.messages[assistantIndex].timestamp,
           isStreaming: false,
         );
@@ -3454,6 +3489,15 @@ class _ChatPageState extends State<ChatPage>
   Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
+      if (message.onRetry != null && !isTyping)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _sending ? null : message.onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry response'),
+          ),
+        ),
       AskAnswerView(
         key: ValueKey('answer-${message.timestamp}'),
         refined: widget.worldHeading != null,
@@ -4100,8 +4144,10 @@ class _ChatMessage {
     this.answerContext,
     this.photo,
     this.photoUrl,
+    this.onRetry,
   });
 
+  final VoidCallback? onRetry;
   final String role;
   final String content;
   final int timestamp;
@@ -4119,9 +4165,11 @@ class _ChatMessage {
     Map<String, dynamic>? navHint,
     AskAnswerContext? answerContext,
     String? photoUrl,
+    bool clearRetry = false,
   }) {
     return _ChatMessage(
       role: role,
+      onRetry: clearRetry ? null : onRetry,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,

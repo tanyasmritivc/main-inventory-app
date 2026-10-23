@@ -67,6 +67,14 @@ class ChatItemAction {
           item['name'],
           item['quantity'],
           item['location'],
+          id: item['item_id'] is String && _uuid.hasMatch(item['item_id'])
+              ? item['item_id']
+              : null,
+          inventoryId:
+              item['inventory_id'] is String &&
+                  _uuid.hasMatch(item['inventory_id'])
+              ? item['inventory_id']
+              : value['inventory_id'],
           details:
               (item['details'] is List ? item['details'] as List : const [])
                   .whereType<String>()
@@ -94,7 +102,10 @@ class ChatActionItem {
     this.quantity,
     this.location, {
     this.details = const [],
+    this.id,
+    this.inventoryId,
   });
+  final String? id, inventoryId;
   final List<String> details;
   final String name, location;
   final int? quantity;
