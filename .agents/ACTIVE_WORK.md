@@ -1,3 +1,14 @@
+## October 22 — Follow-through implementation and verification
+
+Lane: fix/chat-follow-through-api-20261022. Migrations 077/078 and runtime are
+implemented; production activation is not yet approved. Fresh private production
+copy rehearsal applied both migrations twice in a network-disabled container;
+all 91 tables retained identical data. Synthetic real-model creation, consumption,
+move, count, identity, restock and correction scenarios passed without database
+reads/writes. Filtered query, project readiness/navigation and actor-private audit
+reads now reuse existing scoped services. Full spec and 25 acceptance scenarios:
+docs/plans/chat-control-center-20261022.md. Preserve unrelated VM overlays.
+
 ## October 22 - Sequential chat reliability work
 
 Active isolated lane `fix/chat-follow-through-api-20261022`. First: one reviewed

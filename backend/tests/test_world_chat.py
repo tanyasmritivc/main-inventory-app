@@ -301,3 +301,30 @@ def test_retry_of_completed_turn_disables_mutations_and_uses_receipt():
     names = {t['function']['name'] for t in gateway.call_args.kwargs['tools']}
     assert not names.intersection({'world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_create_task', 'world_add_items'})
     assert result[-1]['answer_context']['pending_actions'] == [saved]
+
+
+def test_old_retry_recovers_canonical_receipt_outside_recent_history():
+    turn, cid = str(uuid4()), str(uuid4())
+    saved = {'id': str(uuid4()), 'turn_id': turn, 'status': 'confirmed', 'direct': True, 'operation': 'edit'}
+    q = Mock()
+    for method in ('select', 'eq', 'limit', 'order', 'contains'): getattr(q, method).return_value = q
+    q.execute.side_effect = [NS(data=[{'conversation_id': cid, 'content': 'I used 3 batteries'}]), NS(data=[]),
+        NS(data=[{'id': str(uuid4()), 'role': 'assistant', 'content': '', 'answer_context': {'pending_actions': [saved]}}])]
+    db = Mock(); db.table.return_value = q
+    with patch.object(w, 'authorize'), patch.object(w, 'conversation'), patch.object(w, 'get_supabase_raw', return_value=db):
+        result_cid, history = w.prepare(ACTOR, WORLD, 'I used 3 batteries', cid, turn_id=turn)
+    assert result_cid == cid and history[0]['action_states'] == [saved]
+    q.contains.assert_called_once_with('answer_context', {'direct_receipt': True, 'turn_id': turn})
+    q.insert.assert_not_called()
+
+
+def test_invented_internal_link_is_plain_text_not_an_inert_control():
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('See [Hardware](findez://inventory/invented).')):
+        done = list(w.stream_turn(ACTOR, WORLD, 'What is available?', [], 'cid'))[-1]
+    assert done['assistant_message'] == 'See Hardware.'
+    assert done['answer_context']['resource_links'] == []
+
+
+def test_read_only_world_history_answer_does_not_trigger_write_claim_guard():
+    from app.services.assistant_tool_safety import validate_model_answer
+    validate_model_answer('When was this created?', [{'tool': 'world_activity', 'result': {'activity': []}}], 'Created on October 21.')

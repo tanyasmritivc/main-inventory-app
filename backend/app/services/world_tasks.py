@@ -35,9 +35,9 @@ class Task(Model):
     inventories: list[Destination] = Field(min_length=1, max_length=10)
 
 
-def schema():
+def schema(model=Task):
     """Inline nested models for gateways without JSON Schema ref support."""
-    root = Task.model_json_schema()
+    root = model.model_json_schema()
     definitions = root.pop('$defs', {})
     def expand(value):
         if isinstance(value, dict):
