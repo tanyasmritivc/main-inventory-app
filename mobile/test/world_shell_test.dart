@@ -176,8 +176,7 @@ void main() {
         for (final label in [
           'Auto Extract',
           'Attach',
-          'Import inventory',
-          'Scan barcode',
+          'Inventory tools',
           'Add context',
         ]) {
           await tester.scrollUntilVisible(

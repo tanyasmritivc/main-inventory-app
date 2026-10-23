@@ -1,3 +1,11 @@
+## October 22 - Direct chat vision and compact attachment menu
+
+Active isolated API/mobile lanes `fix/chat-direct-vision-api-20261022` and
+`fix/chat-direct-vision-mobile-20261022`. Separate direct GLM image chat from
+explicit Auto Extract, keep ordinary attachments in composer until Send, shrink
+plus/menu, and compare opt-in GLM grounded crops with FIND before activation.
+No schema changes. Runtime base API223b95b/mobile2b2ea7c; beta target113.
+
 ## October 22 — Chat fixes live; beta 112 upload acknowledged
 
 User explicitly approved migrations 077 and 078. Both are applied with a fresh

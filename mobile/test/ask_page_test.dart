@@ -75,6 +75,7 @@ class _AskApi extends ApiClient {
   Stream<AiStreamEvent> aiPhotoQuestionStream({
     required String message,
     required AskPhoto photo,
+    String? requestId,
     String? conversationId,
     List<ChatSource> sources = const [],
   }) async* {
@@ -653,7 +654,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
     expect(api.photos, hasLength(1));
-    expect(api.photoQuestions.single, contains('Do I already have it?'));
+    expect(api.photoQuestions.single, contains('Describe this photo'));
     expect(api.conversationIds, isEmpty);
     expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
     expect(find.byType(AskQuestionCard), findsOneWidget);
@@ -797,15 +798,33 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('typed photo question waits for Send', (tester) async {
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Do I have this?');
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo library'));
+    await tester.pumpAndSettle();
+    expect(api.photos, isEmpty);
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    expect(api.photos.single.autoExtract, isFalse);
+    expect(api.photoQuestions.single, 'Do I have this?');
+  });
   testWidgets(
-    'image-only world upload extracts while typed photo question waits for Send',
+    'ordinary image-only attachment waits for Send and never auto-extracts',
     (tester) async {
       final api = _AskApi(world: true);
       await tester.pumpWidget(
         _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Do I have this?');
       await tester.tap(find.byTooltip('Capture or attach'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Attach'));
@@ -813,29 +832,14 @@ void main() {
       await tester.tap(find.text('Photo library'));
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
+      expect(find.text('Photo attached'), findsOneWidget);
       await tester.tap(find.byTooltip('Send message'));
       await tester.pumpAndSettle();
+      expect(api.photos, hasLength(1));
       expect(api.photos.single.autoExtract, isFalse);
-      expect(api.photoQuestions.single, 'Do I have this?');
+      expect(api.photoQuestions.single, contains('Describe this photo'));
     },
   );
-  testWidgets('ordinary image-only attachment auto-extracts without Send', (
-    tester,
-  ) async {
-    final api = _AskApi(world: true);
-    await tester.pumpWidget(
-      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Capture or attach'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Attach'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Photo library'));
-    await tester.pumpAndSettle();
-    expect(api.photos, hasLength(1));
-    expect(api.photos.single.autoExtract, isTrue);
-  });
   testWidgets('completed extraction stays visible if the model reply fails', (
     tester,
   ) async {
@@ -846,9 +850,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Capture or attach'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Attach'));
+    await tester.tap(find.text('Auto Extract'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Photo library'));
+    await tester.tap(find.text('Choose photo'));
     await tester.pumpAndSettle();
     expect(
       tester

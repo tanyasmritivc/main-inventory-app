@@ -188,7 +188,9 @@ class _WorldComposerState extends State<WorldComposer>
               children: [
                 if (usesNativeChatMenu && widget.onSourceSelected != null)
                   NativeChatMenuButton(
+                    key: widget.attachmentKey,
                     enabled: widget.onAttach != null,
+                    menuOpen: widget.menuOpen,
                     onSelected: widget.onSourceSelected!,
                   )
                 else
@@ -202,6 +204,7 @@ class _WorldComposerState extends State<WorldComposer>
                       widget.menuOpen
                           ? CupertinoIcons.xmark
                           : CupertinoIcons.plus,
+                      size: 19,
                     ),
                   ),
                 const Spacer(),

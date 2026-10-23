@@ -1353,3 +1353,10 @@ complete receipt callback navigates to the saved Space's item list, using the sa
 inventory API context. Keep failed drafts visible. Crop/original photo ordering is
 owned by the API gallery; keep the existing swipe viewer in both themes. Do not
 cover the returned list with a QR offer. Preserve customer Dashboard content.
+
+## October 22 — Compact chat attachment navigation
+
+Use the supplied Lovable screenshots for the compact anchored menu proportions:
+small light plus, searchable four-choice root, nested Back, and separate native
+photo/file menu. Retain accessible tap targets and native system pickers. Ordinary
+photos wait for Send and use direct GLM chat; only Auto Extract starts extraction.
