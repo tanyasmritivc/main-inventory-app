@@ -231,6 +231,8 @@ select pg_temp.check((select image_url='https://images.test/crop.jpg' from publi
 \ir world_chat.sql
 
 \ir world_item_management.sql
+\ir world_task_actions.sql
+\ir world_direct_actions.sql
 \ir chat_capture.sql
 
 \ir inventory_reorder_deletion.sql

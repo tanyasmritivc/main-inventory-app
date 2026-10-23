@@ -5,7 +5,10 @@ import re
 
 READ_TOOLS = frozenset(('inventory_search', 'inventory_knowledge_search',
                         'inventory_recall', 'documents_list', 'list_spaces',
-                        'inventory_query', 'project_kit_readiness'))
+                        'inventory_query', 'project_kit_readiness',
+                        'world_directory', 'world_search', 'world_inventory', 'world_spaces',
+                        'world_tracking', 'world_reorders', 'world_query', 'world_projects',
+                        'world_project_readiness', 'world_activity'))
 SAFE_EDIT_FIELDS = frozenset(('name', 'category', 'location', 'notes'))
 _ACTION = r'^\s*(?:(?:can|could|would) you\s+)?(?:please\s+)?(?:move|rename|change|set|update|edit|add|delete|remove|create|increase|decrease|restock|log)\b'
 
@@ -111,6 +114,13 @@ def validate_model_answer(message, trace, text):
                     and isinstance(entry.get('result'), dict)
                     and entry['result'].get('item_id') and not entry['result'].get('error')
                     for entry in writes)
+    confirmed = confirmed or any(
+        isinstance(entry.get('result'), dict)
+        and entry['result'].get('inventory_changed') is True
+        and (entry['result'].get('pending_action') or {}).get('status') == 'confirmed'
+        and isinstance(entry['result'].get('receipt'), dict)
+        and entry['result']['receipt'].get('count', 0) > 0
+        for entry in writes)
     if confirmed:
         return
     claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|attached|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)

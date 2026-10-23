@@ -2,7 +2,7 @@
 import asyncio
 import json
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4, uuid5, NAMESPACE_URL
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -26,6 +26,8 @@ class Question(BaseModel):
     supports_item_management: bool = False
     supports_capture: bool = False
     supports_photo_attachment: bool = False
+    supports_task_actions: bool = False
+    request_id: UUID | None = None
     sources: chat_sources.SourceList = Field(default_factory=list)
 
 
@@ -83,7 +85,7 @@ def conversation(world_id: str, conversation_id: UUID, user: AuthenticatedUser =
         capture_id = context.get('chat_capture_id')
         if capture_id:
             context['chat_capture'] = load(user.user_id, world.world_key(world_id), str(conversation_id), capture_id)['answer_context']['chat_capture']
-    return {'conversation': value, 'messages': rows}
+    return {'conversation': value, 'messages': [row for row in rows if not (row.get('answer_context') or {}).get('direct_receipt')]}
 
 
 @router.delete('/conversations/{conversation_id}')
@@ -97,14 +99,15 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None):
     key = await asyncio.to_thread(world.authorize, actor, key)
     source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
     except (ChatLimitExceeded, TeamSoftCapExceeded):
         raise HTTPException(403, 'Your chat allowance has been reached. Check your account settings.') from None
-    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id)
+    turn_id = str(uuid5(NAMESPACE_URL, f'findez:request:{actor}:{key}:{request_id}')) if request_id else str(uuid4())
+    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions else {}))
     async def generate():
         stored = None
         saved = False
@@ -112,7 +115,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         matching = None
         stage = 'load_draft'
         try:
-            yield encode({'type': 'status', 'message': 'Thinking...'})
+            yield encode({'type': 'status', 'message': 'Thinking...', 'conversation_id': cid})
             from app.services.chat_item_actions import use_photo, photo_facts
             from app.services import chat_capture
             draft_row = await asyncio.to_thread(chat_capture.load, actor, key, cid) if supports_capture and not photo else None
@@ -155,8 +158,10 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                 evidence = {**photo_facts(retained), 'saved_photos': await matching if matching else {},
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             stage = 'chat_reply'
+            from app.services.world_user_context import load as load_user_context
+            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -182,7 +187,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             location = frames[-1].name if frames else 'unknown'
             logger.warning('World chat failed stage=%s error_type=%s location=%s',
                            stage, type(error).__name__, location)
-            yield encode({'type': 'error', 'code': 'world_chat_failed', 'message': 'Your request could not be completed. Please try again.'})
+            yield encode({'type': 'error', 'code': 'history_save_failed' if stage == 'save_reply' else 'world_chat_failed', 'conversation_id': cid, 'message': 'I could not finish this response. Retry to check the result of this request.'})
         finally:
             if matching is not None:
                 if not matching.done():
@@ -201,13 +206,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
     try:
         selected_sources = chat_sources.source_adapter.validate_json(sources)
     except ValueError:
@@ -220,11 +225,12 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions)
 
 
 class Decision(BaseModel):
     decision: str = Field(pattern='^(confirm|cancel)$')
+    supports_task_actions: bool = False
 
 
 @router.post('/structure-actions/{action_id}')
@@ -235,10 +241,16 @@ def decide(request: Request, world_id: str, action_id: UUID, body: Decision, use
     owners = {user.user_id}
     for workspace in world.directory(user.user_id, key)['workspaces']:
         owners.add(world._workspace(workspace['workspace_id'], user.user_id)['owner_user_id'])
-    space_limits = {owner: resolve_effective_limits(owner)[0].get('spaces') for owner in owners}
+    limits = {owner: resolve_effective_limits(owner)[0] for owner in owners}
+    space_limits = {owner: value.get('spaces') for owner, value in limits.items()}
     try:
-        result = get_supabase_raw().rpc('findez_world_structure_action', {
-            'p_actor': user.user_id, 'p_world': key, 'p_action': str(action_id), 'p_decision': body.decision, 'p_space_limits': space_limits}).execute().data
+        if body.supports_task_actions:
+            from app.services.world_tasks import confirm
+            result = confirm(user.user_id, key, str(action_id), body.decision, space_limits,
+                {owner: value.get('items') for owner, value in limits.items()})
+        else:
+            result = get_supabase_raw().rpc('findez_world_structure_action', {
+                'p_actor': user.user_id, 'p_world': key, 'p_action': str(action_id), 'p_decision': body.decision, 'p_space_limits': space_limits}).execute().data
     except Exception as error:
         code = getattr(error, 'code', None)
         if code == '42501':

@@ -87,7 +87,7 @@ def test_structure_proposals_stream_and_survive_repeated_tool_call_without_write
 
 def test_model_cannot_claim_pending_action_was_saved():
     call = NS(id='c', function=NS(name='world_structure', arguments='{}'))
-    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'world_action': {'id': 'review'}}), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('I created the inventory.')]):
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'world_action': {'id': 'review'}}), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion(calls=[call]), completion('I created the inventory.'), completion('I created the inventory.')]):
         with pytest.raises(RuntimeError, match='without a confirmed receipt'):
             list(w.stream_turn(ACTOR, WORLD, 'Create inventory', [], 'cid'))
 
@@ -267,3 +267,74 @@ def test_saved_capture_uses_current_receipt_over_unsaved_history():
     assert not any('Use world_refine_capture to' in row['content'] for row in messages)
     assert not any(t['function']['name'] == 'world_refine_capture' for t in gateway.call_args.kwargs['tools'])
     assert result[-1]['answer_context']['resource_links'] == [link]
+
+
+def test_missing_card_is_repaired_with_real_tool_before_completion():
+    call = NS(id='add', function=NS(name='world_add_items', arguments='{}'))
+    proposal = {'pending_action': {'id': 'real-card', 'status': 'pending'}}
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=proposal), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion('Please confirm the action card.'), completion(calls=[call]), completion('Review the items below.')]) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Add 4 cables', [], 'cid'))
+    assert result[-1]['answer_context']['pending_actions'] == [proposal['pending_action']]
+    assert 'tools' in gateway.call_args_list[1].kwargs
+
+
+def test_repeated_imaginary_card_never_becomes_success():
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Confirm the action card.')):
+        with pytest.raises(RuntimeError, match='does not exist'):
+            list(w.stream_turn(ACTOR, WORLD, 'Add cables', [], 'cid'))
+
+
+def test_plain_chat_recovers_a_transient_generation_failure():
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[RuntimeError('interrupted'), completion('How can I help?')]) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Hello', [], 'cid'))
+    assert gateway.call_count == 2
+    assert result[-1]['type'] == 'done'
+
+
+def test_retry_of_completed_turn_disables_mutations_and_uses_receipt():
+    turn = str(uuid4())
+    saved = {'id': str(uuid4()), 'turn_id': turn, 'direct': True, 'status': 'confirmed',
+        'operation': 'edit', 'receipt': {'count': 1, 'operation': 'edit', 'items': [{'name': 'Batteries', 'quantity': 5}]}}
+    history = [{'role': 'system', 'content': 'Saved receipt', 'action_states': [saved]}]
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('Updated the batteries to 5.')) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'I used 3 batteries', history, 'cid', supports_item_management=True, supports_task_actions=True, turn_id=turn))
+    names = {t['function']['name'] for t in gateway.call_args.kwargs['tools']}
+    assert not names.intersection({'world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_create_task', 'world_add_items'})
+    assert result[-1]['answer_context']['pending_actions'] == [saved]
+
+
+def test_old_retry_recovers_canonical_receipt_outside_recent_history():
+    turn, cid = str(uuid4()), str(uuid4())
+    saved = {'id': str(uuid4()), 'turn_id': turn, 'status': 'confirmed', 'direct': True, 'operation': 'edit'}
+    q = Mock()
+    for method in ('select', 'eq', 'limit', 'order', 'contains'): getattr(q, method).return_value = q
+    q.execute.side_effect = [NS(data=[{'conversation_id': cid, 'content': 'I used 3 batteries'}]), NS(data=[]),
+        NS(data=[{'id': str(uuid4()), 'role': 'assistant', 'content': '', 'answer_context': {'pending_actions': [saved]}}])]
+    db = Mock(); db.table.return_value = q
+    with patch.object(w, 'authorize'), patch.object(w, 'conversation'), patch.object(w, 'get_supabase_raw', return_value=db):
+        result_cid, history = w.prepare(ACTOR, WORLD, 'I used 3 batteries', cid, turn_id=turn)
+    assert result_cid == cid and history[0]['action_states'] == [saved]
+    q.contains.assert_called_once_with('answer_context', {'direct_receipt': True, 'turn_id': turn})
+    q.insert.assert_not_called()
+
+
+def test_invented_internal_link_is_plain_text_not_an_inert_control():
+    with patch.object(w, 'directory', return_value={}), patch('app.services.agent_gateway_client.gateway_completion', return_value=completion('See [Hardware](findez://inventory/invented).')):
+        done = list(w.stream_turn(ACTOR, WORLD, 'What is available?', [], 'cid'))[-1]
+    assert done['assistant_message'] == 'See Hardware.'
+    assert done['answer_context']['resource_links'] == []
+
+
+def test_read_only_world_history_answer_does_not_trigger_write_claim_guard():
+    from app.services.assistant_tool_safety import validate_model_answer
+    validate_model_answer('When was this created?', [{'tool': 'world_activity', 'result': {'activity': []}}], 'Created on October 21.')
+
+
+@pytest.mark.parametrize('history', [[], [{'role': 'system', 'content': 'Older unrelated draft', 'action_states': [{'id': 'old', 'status': 'pending'}]}]])
+def test_confirmation_card_noun_does_not_bypass_real_card_requirement(history):
+    call = NS(id='new', function=NS(name='world_create_task', arguments='{}'))
+    proposal = {'world_action': {'id': 'actual', 'version': 2, 'status': 'pending'}}
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=proposal), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion('One confirmation card completes the Space creation and move. Confirm it.'), completion(calls=[call]), completion('Review the complete task below.')]) as gateway:
+        done = list(w.stream_turn(ACTOR, WORLD, 'Move batteries to a new Garage Space', history, 'cid', supports_task_actions=True))[-1]
+    assert gateway.call_count == 3
+    assert done['answer_context']['world_actions'] == [proposal['world_action']]
