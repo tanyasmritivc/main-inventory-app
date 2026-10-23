@@ -1,1490 +1,1454 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../core/ui/findez_wordmark.dart';
+import '../auth/auth_page.dart';
 import 'onboarding_prefs.dart';
+import 'pending_world.dart';
+import 'world_scene.dart';
+import 'world_transitions.dart';
+import 'world_motion.dart' show phase;
 
-const white = Color(0xFFF2F2F7);
-const muted = Color(0xFFAEAEB2);
-const surface = Color(0xFF18181A);
-const inset = Color(0xFF111113);
-const border = Color(0x24FFFFFF);
-const lavender = Color(0xFFAA9BDE);
-const mint = Color(0xFF8FCDB2);
-const rose = Color(0xFFD99BBC);
-const sky = Color(0xFF91BEDB);
-const coral = Color(0xFFE39A86);
+const worldBackground = Color(0xFFF7F7F6);
+const worldInk = Color(0xFF111112);
+const worldSecondary = Color(0xFF6B6965);
+const worldHint = Color(0xFF8A8782);
+const worldOrange = Color(0xFFE8590C);
+const worldBorder = Color(0xFFE3E0DA);
 
+ThemeData worldTheme(BuildContext context) => Theme.of(context).copyWith(
+  brightness: Brightness.light,
+  scaffoldBackgroundColor: worldBackground,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: worldOrange,
+    brightness: Brightness.light,
+  ),
+  textTheme: Theme.of(
+    context,
+  ).textTheme.apply(fontFamily: 'PlaceGeist', bodyColor: worldInk),
+  textSelectionTheme: const TextSelectionThemeData(
+    cursorColor: worldOrange,
+    selectionColor: Color(0x44E8590C),
+    selectionHandleColor: worldOrange,
+  ),
+  filledButtonTheme: const FilledButtonThemeData(),
+  textButtonTheme: const TextButtonThemeData(),
+  outlinedButtonTheme: const OutlinedButtonThemeData(),
+);
+
+/// First-run setup advances from real selections and keyboard Done actions.
+/// Local progress is saved before leaving each step.
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
     this.onFinished,
-    this.saveFirstSpace = true,
+    this.onExistingAccount,
+    this.isReplay = false,
+    this.initialSetup,
   });
-
-  final VoidCallback? onFinished;
-  final bool saveFirstSpace;
-
+  final VoidCallback? onFinished, onExistingAccount;
+  final bool isReplay;
+  @visibleForTesting
+  final PendingWorld? initialSetup;
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
-  final space = TextEditingController(text: 'Parts Room');
-  int step = 0;
-  bool creating = false;
-  bool spaceMade = false;
-  bool itemMade = false;
-  bool answered = false;
-  bool finishing = false;
-
-  String get spaceName =>
-      space.text.trim().isEmpty ? 'Parts Room' : space.text.trim();
-  bool get canContinue => switch (step) {
-    1 => spaceMade,
-    2 => itemMade,
-    3 => answered,
-    _ => true,
-  };
-  String get buttonText => switch (step) {
-    0 => 'Start the tour',
-    1 => spaceMade ? 'Continue' : 'Create a Space above',
-    2 => itemMade ? 'Continue' : 'Add the sample item',
-    3 => answered ? 'Continue' : 'Ask the question',
-    4 => 'Finish tour',
-    _ => 'Get started',
-  };
+class _OnboardingPageState extends State<OnboardingPage>
+    with TickerProviderStateMixin {
+  PendingWorld _setup = const PendingWorld();
+  final _organization = TextEditingController();
+  final _custom = TextEditingController();
+  final _focus = FocusNode();
+  late final AnimationController _intro, _introFade, _exit;
+  final _canvasKey = GlobalKey();
+  final _worldKey = GlobalKey();
+  GlobalKey _personalMiniKey = GlobalKey(), _teamMiniKey = GlobalKey();
+  final _hiddenMini = ValueNotifier<String?>(null);
+  WorldCamera? _morphOrigin;
+  bool _goingBack = false, _leavingIntro = false;
+  Timer? _introTimer;
+  bool _loaded = false, _busy = false, _customizing = false, _exiting = false;
+  String? _error;
+  double _edgeDistance = 0;
+  bool _edge = false;
+  late ThemeData _theme;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _theme = worldTheme(context);
+  }
 
   @override
-  void dispose() {
-    space.dispose();
-    super.dispose();
-  }
-
-  Future<void> finish(bool keepSpace) async {
-    if (finishing) return;
-    setState(() => finishing = true);
-    await OnboardingPrefs.setPendingFirstSpaceName(
-      keepSpace && widget.saveFirstSpace ? spaceName : null,
+  void initState() {
+    super.initState();
+    _intro = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
     );
-    await OnboardingPrefs.setPostSignupPending(false);
-    await OnboardingPrefs.setCompleted(true);
-    if (mounted) widget.onFinished?.call();
+    _introFade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+      value: 1,
+    );
+    _exit = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _focus.addListener(() {
+      if (mounted) setState(() {});
+    });
+    unawaited(_restore());
   }
 
-  void next() {
-    if (!canContinue || finishing) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.lightImpact();
-    if (step < 5) {
-      setState(() => step++);
-    } else {
-      finish(spaceMade);
+  Future<void> _restore() async {
+    try {
+      final saved =
+          widget.initialSetup ??
+          (widget.isReplay ? null : await WorldSetupStore.draft()) ??
+          const PendingWorld();
+      if (!mounted) return;
+      _setup = saved.step == WorldStep.auth
+          ? saved.copyWith(step: WorldStep.world)
+          : saved;
+      _organization.text = _setup.orgName;
+      setState(() => _loaded = true);
+      if (_setup.step == WorldStep.intro) {
+        _intro.forward();
+        _introTimer = Timer(
+          const Duration(seconds: 3),
+          () => unawaited(_leaveIntro()),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Your setup could not be loaded. Try again.');
+      }
     }
   }
 
-  void back() {
-    if (step == 0) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.selectionClick();
-    setState(() => step--);
+  Future<bool> _persist(PendingWorld value) async {
+    try {
+      if (!widget.isReplay) await WorldSetupStore.saveDraft(value);
+      if (mounted && _error != null) setState(() => _error = null);
+      return true;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Your setup could not be saved. Try again.');
+      }
+      return false;
+    }
+  }
+
+  void _answer(PendingWorld value) {
+    setState(() => _setup = value);
+    unawaited(_persist(value));
+  }
+
+  Future<void> _select(PendingWorld value) async {
+    if (_busy) return;
+    _goingBack = false;
+    if (_setup.step == WorldStep.choose) {
+      final icon =
+          (value.isTeam ? _teamMiniKey : _personalMiniKey).currentContext
+                  ?.findRenderObject()
+              as RenderBox?;
+      final canvas =
+          _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+      if (icon != null && canvas != null) {
+        final origin = canvas.globalToLocal(
+          icon.localToGlobal(icon.size.center(Offset.zero)),
+        );
+        _morphOrigin = WorldCamera(origin.dx, origin.dy, .36);
+      }
+    }
+    _answer(value);
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _busy = true);
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+      if (!mounted) return;
+      setState(() => _busy = false);
+    }
+    await _next();
+  }
+
+  Future<void> _go(WorldStep next) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final value = _setup.copyWith(step: next);
+    if (await _persist(value) && mounted) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() {
+        if (_setup.step == WorldStep.choose && next != WorldStep.choose) {
+          _hiddenMini.value = _setup.path;
+        } else if (next == WorldStep.choose) {
+          _hiddenMini.value = null;
+        }
+        _setup = value;
+        _customizing = false;
+      });
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _leaveIntro() async {
+    if (!_loaded || _setup.step != WorldStep.intro || _leavingIntro) return;
+    _leavingIntro = true;
+    _introTimer?.cancel();
+    if (!MediaQuery.disableAnimationsOf(context)) await _introFade.reverse();
+    if (!mounted) return;
+    await _go(WorldStep.choose);
+  }
+
+  Future<void> _next() async {
+    if (_busy || !_valid) return;
+    _goingBack = false;
+    final next = switch (_setup.step) {
+      WorldStep.choose =>
+        _setup.isTeam ? WorldStep.organization : WorldStep.workspace,
+      WorldStep.organization => WorldStep.workspace,
+      WorldStep.workspace => WorldStep.inventory,
+      WorldStep.inventory => WorldStep.world,
+      _ => WorldStep.auth,
+    };
+    if (next != WorldStep.auth) {
+      await _go(next);
+      return;
+    }
+    setState(() => _busy = true);
+    final value = _setup.copyWith(step: WorldStep.auth);
+    if (!await _persist(value) || !mounted) {
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    try {
+      if (!widget.isReplay) await OnboardingPrefs.setCompleted(true);
+      if (!mounted) return;
+      if (widget.isReplay) {
+        widget.onFinished?.call();
+        return;
+      }
+      setState(() => _exiting = true);
+      if (!MediaQuery.disableAnimationsOf(context)) await _exit.forward();
+      if (mounted) widget.onFinished?.call();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = 'Your setup could not be saved. Try again.';
+        });
+      }
+    }
+  }
+
+  Future<void> _existing() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      if (!widget.isReplay) {
+        await WorldSetupStore.skipDraft();
+        await OnboardingPrefs.setCompleted(true);
+      }
+      if (mounted) (widget.onExistingAccount ?? widget.onFinished)?.call();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = 'Your setup could not be saved. Try again.';
+        });
+      }
+    }
+  }
+
+  void _back() {
+    if (_busy || _exiting) return;
+    if (_customizing) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _customizing = false);
+      return;
+    }
+    final previous = switch (_setup.step) {
+      WorldStep.organization => WorldStep.choose,
+      WorldStep.workspace =>
+        _setup.isTeam ? WorldStep.organization : WorldStep.choose,
+      WorldStep.inventory => WorldStep.workspace,
+      WorldStep.world => WorldStep.inventory,
+      _ => null,
+    };
+    if (previous != null) {
+      _goingBack = true;
+      unawaited(_go(previous));
+    }
+  }
+
+  bool get _valid => switch (_setup.step) {
+    WorldStep.choose => _setup.path != null,
+    WorldStep.organization => PendingWorld.validName(_setup.orgName, 60),
+    WorldStep.workspace =>
+      !_customizing && PendingWorld.validName(_setup.workspacePurpose, 40),
+    WorldStep.inventory =>
+      !_customizing && PendingWorld.validName(_setup.inventoryName, 40),
+    WorldStep.world => true,
+    _ => false,
+  };
+  String get _title => switch (_setup.step) {
+    WorldStep.choose => "Who's FindEZ for?",
+    WorldStep.organization => 'Name your\norganization',
+    WorldStep.workspace => "What's this\nworkspace for?",
+    WorldStep.inventory => 'Create your first\ninventory',
+    _ => 'This is your world.',
+  };
+  String get _subtitle => switch (_setup.step) {
+    WorldStep.choose => 'Pick one to start. You can change it later.',
+    WorldStep.organization => 'Use the name of your company, lab or team.',
+    WorldStep.workspace =>
+      _setup.isTeam
+          ? 'Each purpose gets its own dashboard.'
+          : 'Your personal space. Only you can see it.',
+    WorldStep.inventory =>
+      _setup.isTeam
+          ? 'Group your things by team, like hardware or software.'
+          : 'Group your things, like tools or electronics.',
+    _ =>
+      'Add more workspaces and inventories anytime. Spaces like a parts wall go inside each inventory.',
+  };
+  @override
+  void dispose() {
+    _introTimer?.cancel();
+    _intro.dispose();
+    _introFade.dispose();
+    _hiddenMini.dispose();
+    _exit.dispose();
+    _organization.dispose();
+    _custom.dispose();
+    _focus.dispose();
+    super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 6, 18, 16),
-          child: Column(
-            children: [
-              _Top(step: step, back: back, skip: () => finish(false)),
-              if (step > 0) ...[
-                const SizedBox(height: 8),
-                _Progress(step),
-                const SizedBox(height: 15),
-              ] else
-                const SizedBox(height: 4),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(
-                      scale: Tween(begin: .985, end: 1.0).animate(animation),
-                      child: child,
-                    ),
-                  ),
-                  child: switch (step) {
-                    0 => const _Welcome(key: ValueKey('welcome')),
-                    1 => _Inventory(
-                      key: const ValueKey('inventory'),
-                      controller: space,
-                      creating: creating,
-                      made: spaceMade,
-                      open: () => setState(() => creating = true),
-                      close: () => setState(() => creating = false),
-                      changed: (_) => setState(() {}),
-                      create: () {
-                        if (space.text.trim().isEmpty) return;
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        HapticFeedback.mediumImpact();
-                        setState(() {
-                          spaceMade = true;
-                          creating = false;
-                        });
-                      },
-                    ),
-                    2 => _Scan(
-                      key: const ValueKey('scan'),
-                      name: spaceName,
-                      made: itemMade,
-                      add: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() => itemMade = true);
-                      },
-                    ),
-                    3 => _Assist(
-                      key: const ValueKey('assist'),
-                      name: spaceName,
-                      answered: answered,
-                      ask: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => answered = true);
-                      },
-                    ),
-                    4 => _Teams(key: const ValueKey('teams'), name: spaceName),
-                    _ => _Ready(key: const ValueKey('ready'), name: spaceName),
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: canContinue && !finishing ? next : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: white,
-                    foregroundColor: const Color(0xFF151517),
-                    disabledBackgroundColor: const Color(0xFF242426),
-                    disabledForegroundColor: const Color(0xFF6C6C70),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(17),
-                    ),
-                  ),
-                  child: finishing
-                      ? const SizedBox(
-                          width: 19,
-                          height: 19,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF151517),
+  Widget build(BuildContext context) => Theme(
+    data: _theme,
+    child: Builder(
+      builder: (context) => Scaffold(
+        backgroundColor: worldBackground,
+        resizeToAvoidBottomInset: false,
+        body: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _back();
+          },
+          child: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: (details) {
+                _edge = details.globalPosition.dx <= 24;
+                _edgeDistance = 0;
+              },
+              onHorizontalDragUpdate: (details) {
+                if (_edge) _edgeDistance += details.delta.dx;
+              },
+              onHorizontalDragEnd: (details) {
+                if (_edge &&
+                    (_edgeDistance > 60 ||
+                        (details.primaryVelocity ?? 0) > 300)) {
+                  _back();
+                }
+                _edge = false;
+              },
+              child: !_loaded
+                  ? Center(
+                      child: _error == null
+                          ? const CircularProgressIndicator(color: worldInk)
+                          : TextButton(
+                              onPressed: _restore,
+                              child: Text(_error!),
+                            ),
+                    )
+                  : _setup.step == WorldStep.intro
+                  ? _introView(context)
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final reduced = MediaQuery.disableAnimationsOf(context);
+                        final scaledText =
+                            MediaQuery.textScalerOf(context).scale(15) / 15;
+                        final keyboard = MediaQuery.viewInsetsOf(
+                          context,
+                        ).bottom;
+                        if (scaledText > 1.35 ||
+                            constraints.maxHeight < 700 ||
+                            constraints.maxWidth < 350) {
+                          return _flowLayout(
+                            context,
+                            constraints.maxWidth,
+                            reduced,
+                            keyboard,
+                          );
+                        }
+                        final scale = math.min(constraints.maxWidth, 460) / 390;
+                        return Center(
+                          child: SizedBox(
+                            width: 390 * scale,
+                            height: constraints.maxHeight,
+                            child: FittedBox(
+                              alignment: Alignment.topLeft,
+                              fit: BoxFit.fill,
+                              child: SizedBox(
+                                key: _canvasKey,
+                                width: 390,
+                                height: constraints.maxHeight / scale,
+                                child: _referenceLayout(
+                                  context,
+                                  390,
+                                  constraints.maxHeight / scale,
+                                  reduced,
+                                  keyboard / scale,
+                                ),
+                              ),
+                            ),
                           ),
-                        )
-                      : Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Top extends StatelessWidget {
-  const _Top({required this.step, required this.back, required this.skip});
-  final int step;
-  final VoidCallback back;
-  final VoidCallback skip;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 44,
-    child: Row(
-      children: [
-        SizedBox(
-          width: 76,
-          child: step == 0
-              ? const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                        );
+                      },
                     ),
-                  ),
-                )
-              : IconButton(
-                  onPressed: back,
-                  padding: EdgeInsets.zero,
-                  alignment: Alignment.centerLeft,
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: muted,
-                    size: 19,
-                  ),
-                ),
-        ),
-        const Spacer(),
-        TextButton(
-          onPressed: skip,
-          child: const Text(
-            'Skip',
-            style: TextStyle(color: muted, fontSize: 15),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Progress extends StatelessWidget {
-  const _Progress(this.step);
-  final int step;
-
-  @override
-  Widget build(BuildContext context) {
-    const colors = [mint, coral, lavender, sky];
-    return Row(
-      children: List.generate(
-        4,
-        (i) => Expanded(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            height: 3,
-            margin: EdgeInsets.only(right: i == 3 ? 0 : 7),
-            decoration: BoxDecoration(
-              color: i < step ? colors[i] : const Color(0xFF2C2C2E),
-              borderRadius: BorderRadius.circular(99),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Welcome extends StatelessWidget {
-  const _Welcome({super.key});
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const _MapGraphic(),
-            const SizedBox(height: 28),
-            const Text(
-              'Know what you have.\nFind it fast.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 31,
-                height: 1.06,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Take a quick tour using a sample inventory.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: muted, fontSize: 16, height: 1.35),
-            ),
-            const SizedBox(height: 28),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _Point(Icons.inventory_2_outlined, 'Organize', mint),
-                SizedBox(width: 24),
-                _Point(Icons.qr_code_scanner_rounded, 'Capture', coral),
-                SizedBox(width: 24),
-                _Point(Icons.auto_awesome_rounded, 'Find', lavender),
-              ],
-            ),
-          ],
-        ),
-      ),
     ),
   );
-}
-
-class _MapGraphic extends StatelessWidget {
-  const _MapGraphic();
-
-  @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
-    tween: Tween(begin: .9, end: 1),
-    duration: const Duration(milliseconds: 650),
-    curve: Curves.easeOutBack,
-    builder: (_, value, child) => Transform.scale(scale: value, child: child),
-    child: SizedBox(
-      width: 220,
-      height: 150,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 92,
-            height: 92,
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: border),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: Colors.white,
-              size: 38,
-            ),
-          ),
-          const Positioned(
-            left: 3,
-            top: 5,
-            child: _Orbit(Icons.hardware_outlined, coral),
-          ),
-          const Positioned(
-            right: 3,
-            top: 5,
-            child: _Orbit(Icons.groups_outlined, mint),
-          ),
-          const Positioned(
-            left: 22,
-            bottom: 0,
-            child: _Orbit(Icons.description_outlined, sky),
-          ),
-          const Positioned(
-            right: 22,
-            bottom: 0,
-            child: _Orbit(Icons.auto_awesome_rounded, lavender),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Orbit extends StatelessWidget {
-  const _Orbit(this.icon, this.color);
-  final IconData icon;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 48,
-    height: 48,
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: .14),
-      shape: BoxShape.circle,
-      border: Border.all(color: color.withValues(alpha: .42)),
-    ),
-    child: Icon(icon, color: color, size: 22),
-  );
-}
-
-class _Point extends StatelessWidget {
-  const _Point(this.icon, this.label, this.color);
-  final IconData icon;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Icon(icon, color: color, size: 21),
-      const SizedBox(height: 7),
-      Text(label, style: const TextStyle(color: muted, fontSize: 12)),
-    ],
-  );
-}
-
-enum _Tab { inventory, scan, assist, teams }
-
-class _Frame extends StatelessWidget {
-  const _Frame(this.icon, this.color, this.instruction, this.tab, this.child);
-  final IconData icon;
-  final Color color;
-  final String instruction;
-  final _Tab tab;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              instruction,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 13),
-      Expanded(
-        child: Container(
-          width: double.infinity,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0B0B0D),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: border),
-          ),
-          child: Column(
+  Widget _introView(BuildContext context) {
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      button: true,
+      label: 'FindEZ. Everything you own, remembered. Continue to setup.',
+      child: GestureDetector(
+        onTap: _leaveIntro,
+        behavior: HitTestBehavior.opaque,
+        child: FadeTransition(
+          opacity: _introFade,
+          child: Stack(
             children: [
-              Expanded(child: child),
-              _Nav(tab),
-            ],
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _Nav extends StatelessWidget {
-  const _Nav(this.selected);
-  final _Tab selected;
-  @override
-  Widget build(BuildContext context) {
-    const entries = [
-      (_Tab.inventory, Icons.home_outlined, 'Inventory'),
-      (_Tab.scan, Icons.qr_code_scanner_rounded, 'Scan'),
-      (_Tab.assist, Icons.chat_bubble_outline_rounded, 'Assist'),
-      (_Tab.teams, Icons.groups_outlined, 'Teams'),
-    ];
-    return Container(
-      height: 68,
-      decoration: const BoxDecoration(
-        color: Color(0xF2131315),
-        border: Border(top: BorderSide(color: border)),
-      ),
-      child: Row(
-        children: entries
-            .map(
-              (e) => Expanded(
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _IntroPainter(_intro, reduced)),
+                ),
+              ),
+              Align(
+                alignment: const Alignment(0, -.04),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      e.$2,
-                      color: selected == e.$1 ? Colors.white : muted,
-                      size: 21,
+                    AnimatedBuilder(
+                      animation: _intro,
+                      child: const FindEZWordmark(width: 208),
+                      builder: (context, child) {
+                        final progress = reduced
+                            ? 1.0
+                            : Curves.easeOutCubic.transform(
+                                phase(_intro.value * 3000, 300, 800),
+                              );
+                        return Opacity(
+                          opacity: progress,
+                          child: Transform.translate(
+                            offset: Offset(0, 18 * (1 - progress)),
+                            child: child,
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      e.$3,
-                      style: TextStyle(
-                        color: selected == e.$1 ? Colors.white : muted,
-                        fontSize: 10,
-                        fontWeight: selected == e.$1
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                    const SizedBox(height: 10),
+                    AnimatedBuilder(
+                      animation: _intro,
+                      child: const Text(
+                        'Everything you own, remembered.',
+                        style: TextStyle(
+                          fontFamily: 'PlaceGeist',
+                          fontSize: 16,
+                          color: worldSecondary,
+                        ),
+                      ),
+                      builder: (context, child) => Opacity(
+                        opacity: reduced
+                            ? 1
+                            : phase(_intro.value * 3000, 1000, 600),
+                        child: child,
                       ),
                     ),
                   ],
                 ),
               ),
-            )
-            .toList(),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
 
-class _Inventory extends StatelessWidget {
-  const _Inventory({
-    super.key,
-    required this.controller,
-    required this.creating,
-    required this.made,
-    required this.open,
-    required this.close,
-    required this.changed,
-    required this.create,
-  });
-  final TextEditingController controller;
-  final bool creating;
-  final bool made;
-  final VoidCallback open;
-  final VoidCallback close;
-  final ValueChanged<String> changed;
-  final VoidCallback create;
-
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_circle_outline_rounded,
-    mint,
-    made
-        ? 'Your Space is ready.'
-        : creating
-        ? 'Name it, then create it.'
-        : 'Tap + to create a Space.',
-    _Tab.inventory,
-    Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-          child: Column(
-            children: [
-              const _Header('Inventory'),
-              const SizedBox(height: 13),
-              const _Segment('Spaces', 'Teams', true),
-              const SizedBox(height: 12),
-              const _Search(),
-              const SizedBox(height: 14),
-              Expanded(
-                child: made
-                    ? _SpaceCard(controller.text.trim())
-                    : const _Empty(),
-              ),
-            ],
-          ),
-        ),
-        if (!made && !creating)
-          Positioned(right: 16, bottom: 16, child: _Plus(open)),
-        if (creating)
-          Positioned.fill(
-            child: _SpaceSheet(controller, changed, close, create),
-          ),
-      ],
-    ),
-  );
-}
-
-class _SpaceSheet extends StatelessWidget {
-  const _SpaceSheet(this.controller, this.changed, this.close, this.create);
-  final TextEditingController controller;
-  final ValueChanged<String> changed;
-  final VoidCallback close;
-  final VoidCallback create;
-  @override
-  Widget build(BuildContext context) => Container(
-    color: const Color(0xB3000000),
-    alignment: Alignment.bottomCenter,
-    child: Container(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: border)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'New Space',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: close,
-                icon: const Icon(Icons.close_rounded, color: muted),
-              ),
-            ],
-          ),
-          TextField(
-            controller: controller,
-            onChanged: changed,
-            onSubmitted: (_) => create(),
-            textCapitalization: TextCapitalization.words,
-            maxLength: 48,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
-              counterText: '',
-              prefixIcon: Icon(Icons.inventory_2_outlined, color: mint),
-              filled: true,
-              fillColor: inset,
-              border: _field,
-              enabledBorder: _field,
-              focusedBorder: _field,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: FilledButton(
-              onPressed: controller.text.trim().isEmpty ? null : create,
-              style: FilledButton.styleFrom(
-                backgroundColor: white,
-                foregroundColor: const Color(0xFF151517),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text(
-                'Create Space',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-const _field = OutlineInputBorder(
-  borderRadius: BorderRadius.all(Radius.circular(15)),
-  borderSide: BorderSide(color: border),
-);
-
-class _Empty extends StatelessWidget {
-  const _Empty();
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.inventory_2_outlined, color: Color(0xFF555559), size: 34),
-        SizedBox(height: 10),
-        Text(
-          'Your inventory starts here',
-          style: TextStyle(color: muted, fontSize: 13),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SpaceCard extends StatelessWidget {
-  const _SpaceCard(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.topCenter,
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.inventory_2_outlined, color: mint, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '0 items',
-                  style: TextStyle(color: muted, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.check_circle_rounded, color: mint, size: 20),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Plus extends StatelessWidget {
-  const _Plus(this.tap);
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(24),
-    child: Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: const Color(0xE62C2C2E),
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x45FFFFFF)),
-      ),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-    ),
-  );
-}
-
-class _Scan extends StatelessWidget {
-  const _Scan({
-    super.key,
-    required this.name,
-    required this.made,
-    required this.add,
-  });
-  final String name;
-  final bool made;
-  final VoidCallback add;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_photo_alternate_outlined,
-    coral,
-    made
-        ? 'FindEZ extracted the item details.'
-        : 'Tap the sample photo to add an item.',
-    _Tab.scan,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Scan'),
-          const SizedBox(height: 13),
-          const _Segment('Scan Barcode', 'Auto Extract', false),
-          const SizedBox(height: 15),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: made
-                  ? _Item(name, key: const ValueKey('item'))
-                  : _Photo(add, key: const ValueKey('photo')),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Photo extends StatelessWidget {
-  const _Photo(this.tap, {super.key});
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(22),
-    child: Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: BoxDecoration(
-              color: coral.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Icon(Icons.hardware_outlined, color: coral, size: 37),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Sample: M4 bolts',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Tap to extract',
-            style: TextStyle(color: muted, fontSize: 13),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Item extends StatelessWidget {
-  const _Item(this.name, {super.key});
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: mint, size: 21),
-            SizedBox(width: 8),
-            Text(
-              'Ready to save',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const _Data('NAME', 'M4 bolts'),
-        const SizedBox(height: 7),
-        const Row(
-          children: [
-            Expanded(child: _Data('CATEGORY', 'Hardware')),
-            SizedBox(width: 10),
-            Expanded(child: _Data('QUANTITY', '24')),
-          ],
-        ),
-        const Spacer(),
-        Row(
-          children: [
-            const Icon(Icons.inventory_2_outlined, color: mint, size: 17),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                'Saving to $name',
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: muted, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _Data extends StatelessWidget {
-  const _Data(this.label, this.value);
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: inset,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: muted, fontSize: 9, letterSpacing: .7),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Assist extends StatelessWidget {
-  const _Assist({
-    super.key,
-    required this.name,
-    required this.answered,
-    required this.ask,
-  });
-  final String name;
-  final bool answered;
-  final VoidCallback ask;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.auto_awesome_rounded,
-    lavender,
-    answered
-        ? 'Assist answers from your inventory.'
-        : 'Send the sample inventory question.',
-    _Tab.assist,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Assist'),
-          const SizedBox(height: 18),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: answered
-                  ? Column(
-                      key: const ValueKey('conversation'),
-                      children: [
-                        const Align(
-                          alignment: Alignment.centerRight,
-                          child: _Bubble('Where are the M4 bolts?', true),
-                        ),
-                        const SizedBox(height: 14),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: _Bubble('24 M4 bolts are in $name.', false),
-                        ),
-                        const SizedBox(height: 12),
-                        _Result(name),
-                      ],
-                    )
-                  : const Center(
-                      key: ValueKey('empty-assist'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            color: lavender,
-                            size: 34,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Ask about your inventory',
-                            style: TextStyle(color: muted, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: ask,
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Where are the M4 bolts?',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: const BoxDecoration(
-                      color: white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_upward_rounded,
-                      color: Color(0xFF151517),
-                      size: 19,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble(this.text, this.mine);
-  final String text;
-  final bool mine;
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(maxWidth: 245),
-    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-    decoration: BoxDecoration(
-      color: mine ? const Color(0xFF2C2C2E) : inset,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: Text(
-      text,
-      style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.25),
-    ),
-  );
-}
-
-class _Result extends StatelessWidget {
-  const _Result(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.hardware_outlined, color: coral, size: 22),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Text(
-            'M4 bolts · 24',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Flexible(
-          child: Text(
-            name,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: muted, fontSize: 11),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Teams extends StatelessWidget {
-  const _Teams({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.groups_outlined,
-    sky,
-    'Everything the team needs stays connected.',
-    _Tab.teams,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _Header('Build Team'),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const _Avatars(),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '$name · 3 members',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: muted, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          const Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.inventory_2_outlined,
-                          'Spaces',
-                          'Shared inventory',
-                          mint,
-                        ),
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.task_alt_rounded,
-                          'Board',
-                          'Tasks and requests',
-                          coral,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 7),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.groups_outlined,
-                          'People',
-                          'Members and roles',
-                          lavender,
-                        ),
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.description_outlined,
-                          'Documents',
-                          'Files and photos',
-                          sky,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 7),
-                _Activity(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _TeamTile extends StatelessWidget {
-  const _TeamTile(this.icon, this.label, this.detail, this.color);
-  final IconData icon;
-  final String label;
-  final String detail;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(11),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const Spacer(),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          detail,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: muted, fontSize: 9),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Activity extends StatelessWidget {
-  const _Activity();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 46,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: border),
-    ),
-    child: const Row(
-      children: [
-        Icon(Icons.history_rounded, color: rose, size: 19),
-        SizedBox(width: 9),
-        Expanded(
-          child: Text(
-            'Maya updated M4 bolts',
-            style: TextStyle(color: Colors.white, fontSize: 11),
-          ),
-        ),
-        Text('now', style: TextStyle(color: muted, fontSize: 10)),
-      ],
-    ),
-  );
-}
-
-class _Avatars extends StatelessWidget {
-  const _Avatars();
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 73,
-    height: 34,
-    child: Stack(
-      children: const [
-        _Avatar(0, 'T', lavender),
-        _Avatar(20, 'M', mint),
-        _Avatar(40, 'V', coral),
-      ],
-    ),
-  );
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar(this.left, this.label, this.color);
-  final double left;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: left,
-    child: Container(
-      width: 34,
-      height: 34,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF0B0B0D), width: 2),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF111113),
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    ),
-  );
-}
-
-class _Ready extends StatelessWidget {
-  const _Ready({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: .75, end: 1),
-              duration: const Duration(milliseconds: 520),
-              curve: Curves.easeOutBack,
-              builder: (_, value, child) =>
-                  Transform.scale(scale: value, child: child),
-              child: Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  color: mint.withValues(alpha: .13),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: mint.withValues(alpha: .45)),
-                ),
-                child: const Icon(Icons.check_rounded, color: mint, size: 39),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'You know the flow.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 29,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.8,
-              ),
-            ),
-            const SizedBox(height: 9),
-            const Text(
-              'Your real inventory starts next.',
-              style: TextStyle(color: muted, fontSize: 15),
-            ),
-            const SizedBox(height: 26),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: border),
-              ),
-              child: Column(
-                children: [
-                  _ReadyRow(
-                    Icons.inventory_2_outlined,
-                    mint,
-                    name,
-                    'Created after sign-in',
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
-                  ),
-                  const _ReadyRow(
-                    Icons.hardware_outlined,
-                    coral,
-                    'M4 bolts',
-                    'Tour sample only',
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
-                  ),
-                  const _ReadyRow(
-                    Icons.groups_outlined,
-                    lavender,
-                    'Team-ready',
-                    'Invite people when you are ready',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _ReadyRow extends StatelessWidget {
-  const _ReadyRow(this.icon, this.color, this.title, this.detail);
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String detail;
-  @override
-  Widget build(BuildContext context) => Row(
+  Widget _heading(bool reduced) => Column(
+    key: ValueKey(_setup.step),
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, color: color, size: 22),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(detail, style: const TextStyle(color: muted, fontSize: 11)),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-class _Header extends StatelessWidget {
-  const _Header(this.title);
-  final String title;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
+      Semantics(
+        header: true,
         child: Text(
-          title,
-          textAlign: TextAlign.center,
+          _title,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
+            fontFamily: 'PlaceGeist',
+            fontSize: 34,
             fontWeight: FontWeight.w600,
+            letterSpacing: -1.19,
+            height: 1.04,
+            color: worldInk,
           ),
         ),
       ),
-      const Icon(Icons.notifications_none_rounded, color: muted, size: 20),
+      const SizedBox(height: 12),
+      Text(
+        _subtitle,
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 15,
+          height: 1.45,
+          color: worldSecondary,
+        ),
+      ),
     ],
   );
-}
 
-class _Segment extends StatelessWidget {
-  const _Segment(this.left, this.right, this.leftActive);
-  final String left;
-  final String right;
-  final bool leftActive;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 40,
-    padding: const EdgeInsets.all(3),
-    decoration: BoxDecoration(
-      color: const Color(0xFF262629),
-      borderRadius: BorderRadius.circular(13),
-    ),
-    child: Row(
-      children: [
-        _SegmentLabel(left, leftActive),
-        _SegmentLabel(right, !leftActive),
-      ],
-    ),
-  );
-}
+  double _textHeight(
+    BuildContext context,
+    String text,
+    TextStyle style,
+    double width,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: math.max(1, width));
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
 
-class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.label, this.active);
-  final String label;
-  final bool active;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFF4A4A4D) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: active ? Colors.white : muted,
-          fontSize: 11,
-          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+  double _tagHeight(BuildContext context, double width) =>
+      [
+        _setup.isTeam ? _setup.orgName : 'Personal',
+        _setup.workspacePurpose,
+        _setup.inventoryName,
+      ].fold(
+        30.0,
+        (height, label) => math.max(
+          height,
+          12 +
+              _textHeight(
+                context,
+                label,
+                const TextStyle(
+                  fontFamily: 'PlaceGeist',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                math.min(300, width - 48) - 38,
+              ),
+        ),
+      );
+
+  double _chipsHeight(BuildContext context, double width) {
+    var rows = 1;
+    var used = 0.0;
+    for (final label in _choices) {
+      final text = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0,
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final chip = math.min(width, math.max(44.0, text.width + 40));
+      text.dispose();
+      if (used > 0 && used + 8 + chip > width) {
+        rows++;
+        used = 0;
+      }
+      used += (used == 0 ? 0 : 8) + chip;
+    }
+    return rows * 44 + (rows - 1) * 2.0;
+  }
+
+  double _legendHeight(BuildContext context, double width) =>
+      [
+        _setup.isTeam ? _setup.orgName : 'Only you',
+        _setup.workspacePurpose,
+        _setup.inventoryName,
+      ].fold(
+        0.0,
+        (height, label) =>
+            height +
+            17 +
+            44 +
+            _textHeight(
+              context,
+              label,
+              const TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.24,
+              ),
+              width,
+            ),
+      );
+
+  // Reserve the platform's front label and the highest falling cube before
+  // choosing a scale. Safe-area and keyboard space are already excluded.
+  WorldCamera _fitCamera(
+    WorldCamera preferred,
+    Rect area, {
+    required double modelTop,
+    required double tagHalf,
+  }) {
+    final scale = math.max(
+      .02,
+      math.min(
+        preferred.scale,
+        math.min(
+          area.width / 346.5,
+          (area.height - 2 * tagHalf) / (106 - modelTop),
         ),
       ),
+    );
+    final low = area.top - modelTop * scale + tagHalf;
+    final high = area.bottom - 106 * scale - tagHalf;
+    return WorldCamera(
+      preferred.x,
+      high < low ? (low + high) / 2 : preferred.y.clamp(low, high),
+      scale,
+    );
+  }
+
+  Widget _referenceLayout(
+    BuildContext context,
+    double width,
+    double height,
+    bool reduced,
+    double keyboard,
+  ) {
+    final naming = _setup.step == WorldStep.organization || _customizing;
+    final focused = naming && _focus.hasFocus;
+    const headingTop = 32.0;
+    final headingBottom =
+        headingTop +
+        _textHeight(
+          context,
+          _title,
+          const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 34,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -1.19,
+            height: 1.04,
+          ),
+          width - 48,
+        ) +
+        12 +
+        _textHeight(
+          context,
+          _subtitle,
+          const TextStyle(fontFamily: 'PlaceGeist', fontSize: 15, height: 1.45),
+          width - 48,
+        );
+    final inputHeight =
+        64 +
+        48 +
+        (_setup.step == WorldStep.organization
+            ? 8 +
+                  _textHeight(
+                    context,
+                    'Your team will see this. You can change it later.',
+                    const TextStyle(
+                      fontFamily: 'PlaceGeist',
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                    width - 56,
+                  )
+            : 0);
+    final inputTop = math.min(
+      height - 219,
+      height - keyboard - inputHeight - 12,
+    );
+    final chipsBottom = math.min(96.0, height * .12);
+    final controlsTop = naming
+        ? inputTop
+        : height - chipsBottom - _chipsHeight(context, width - 48);
+    final desired = switch (_setup.step) {
+      WorldStep.organization => const WorldCamera(195, 500, .8),
+      WorldStep.workspace => const WorldCamera(195, 490, .9),
+      WorldStep.inventory => const WorldCamera(195, 480, 1),
+      _ => const WorldCamera(112, 520, .62),
+    };
+    final tagHalf = _tagHeight(context, width) / 2;
+    final modelTop = switch (_setup.step) {
+      WorldStep.organization => -122.0,
+      WorldStep.workspace => -145.0,
+      _ => -230.0,
+    };
+    final area = Rect.fromLTRB(
+      24,
+      headingBottom + 24,
+      width - 24,
+      controlsTop - 24,
+    );
+    final fitted = _fitCamera(
+      WorldCamera(
+        desired.x,
+        desired.y + height - 844,
+        focused ? .6 : desired.scale,
+      ),
+      area,
+      modelTop: modelTop,
+      tagHalf: tagHalf,
+    );
+    final legendHeight = _legendHeight(context, 126);
+    final legendTop = math.max(
+      headingBottom + 36,
+      math.min(330.0, height - 136 - legendHeight),
+    );
+    if (_setup.step == WorldStep.world &&
+        legendTop + legendHeight > height - 136) {
+      return _flowLayout(context, width, reduced, keyboard);
+    }
+    final camera = _exiting
+        ? const WorldCamera(150, 120, .12)
+        : _setup.step == WorldStep.choose
+        ? _morphOrigin ?? const WorldCamera(292, 474, .36)
+        : _setup.step == WorldStep.world
+        ? WorldCamera(112, legendTop + legendHeight / 2, .62)
+        : fitted;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: WorldScene(
+              key: _worldKey,
+              setup: _exiting ? _setup.copyWith(step: WorldStep.auth) : _setup,
+              camera: camera,
+              morphFrom: _morphOrigin,
+              reduced: reduced,
+              focused: focused,
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: Duration(milliseconds: reduced ? 200 : 350),
+            reverseDuration: Duration(milliseconds: reduced ? 200 : 350),
+            layoutBuilder: (current, previous) => Stack(
+              fit: StackFit.expand,
+              children: [
+                ...previous.map((child) => IgnorePointer(child: child)),
+                if (current != null) current,
+              ],
+            ),
+            transitionBuilder: (child, animation) => AnimatedBuilder(
+              animation: animation,
+              child: child,
+              builder: (context, child) =>
+                  animation.status == AnimationStatus.reverse
+                  ? Opacity(
+                      opacity: Curves.easeInOutCubic.transform(animation.value),
+                      child: child,
+                    )
+                  : child!,
+            ),
+            child: _exiting
+                ? const SizedBox.shrink(key: ValueKey('exiting'))
+                : Stack(
+                    key: ValueKey(_setup.step),
+                    children: [
+                      Positioned(
+                        top: headingTop,
+                        left: 24,
+                        right: 24,
+                        child: WorldEntrance(
+                          key: ValueKey('${_setup.step}-heading'),
+                          duration: _setup.step == WorldStep.choose ? 600 : 500,
+                          backwards: _goingBack,
+                          child: _heading(reduced),
+                        ),
+                      ),
+                      if (_setup.step == WorldStep.choose) ...[
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 250,
+                          child: WorldEntrance(
+                            delay: 250,
+                            duration: 600,
+                            distance: 26,
+                            child: _tile('personal'),
+                          ),
+                        ),
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 396,
+                          child: WorldEntrance(
+                            delay: 400,
+                            duration: 600,
+                            distance: 26,
+                            child: _tile('team'),
+                          ),
+                        ),
+                        const Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 548,
+                          child: WorldEntrance(
+                            delay: 700,
+                            child: Text(
+                              'Starting solo? You can add an organization anytime.',
+                              style: TextStyle(
+                                fontFamily: 'PlaceGeist',
+                                fontSize: 13.5,
+                                height: 1.4,
+                                color: worldHint,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: 28,
+                          child: WorldPress(
+                            child: TextButton(
+                              key: const Key('onboarding-skip'),
+                              onPressed: _busy ? null : _existing,
+                              child: const Text(
+                                'I already have an account',
+                                style: TextStyle(
+                                  fontFamily: 'PlaceGeist',
+                                  fontSize: 15,
+                                  color: worldSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (naming)
+                        Positioned(
+                          top: inputTop,
+                          left: 24,
+                          right: 24,
+                          child: _input(),
+                        ),
+                      if (!naming &&
+                          [
+                            WorldStep.workspace,
+                            WorldStep.inventory,
+                          ].contains(_setup.step))
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: chipsBottom,
+                          child: WorldEntrance(
+                            key: ValueKey('${_setup.step}-chips'),
+                            delay: 300,
+                            backwards: _goingBack,
+                            child: _chips(),
+                          ),
+                        ),
+                      if (_setup.step == WorldStep.world)
+                        Positioned(
+                          left: 240,
+                          right: 24,
+                          top: legendTop,
+                          child: _legend(),
+                        ),
+                      if (keyboard == 0 && _setup.step == WorldStep.world)
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          bottom: 56,
+                          child: WorldEntrance(child: _continue()),
+                        ),
+                      if (_error != null)
+                        Positioned(
+                          left: 24,
+                          right: 24,
+                          top: 54,
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: Color(0xFFB42318),
+                                fontFamily: 'PlaceGeist',
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+        if (_exiting)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _exit,
+                child: const AuthPage(fromOnboarding: true),
+                builder: (context, child) {
+                  final progress = reduced
+                      ? 1.0
+                      : Curves.easeOutCubic.transform(
+                          phase(_exit.value * 900, 200, 600),
+                        );
+                  return Opacity(
+                    opacity: progress,
+                    child: Transform.translate(
+                      offset: Offset(0, 16 * (1 - progress)),
+                      child: child,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _flowLayout(
+    BuildContext context,
+    double width,
+    bool reduced,
+    double keyboard,
+  ) => Padding(
+    padding: EdgeInsets.only(bottom: keyboard),
+    child: SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        math.max(MediaQuery.paddingOf(context).top, 24),
+        24,
+        36,
+      ),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _heading(reduced),
+          const SizedBox(height: 28),
+          if (_setup.step == WorldStep.choose) ...[
+            _tile('personal', flow: true),
+            const SizedBox(height: 14),
+            _tile('team', flow: true),
+            const SizedBox(height: 20),
+            const Text(
+              'Starting solo? You can add an organization anytime.',
+              style: TextStyle(color: worldSecondary, fontSize: 13.5),
+            ),
+          ],
+          SizedBox(
+            height: _setup.step == WorldStep.choose
+                ? 0
+                : 320 + math.max(0, _tagHeight(context, width - 48) - 30),
+            child: WorldScene(
+              key: _worldKey,
+              setup: _setup,
+              camera: WorldCamera((width - 48) / 2, 220, .68),
+              reduced: reduced,
+            ),
+          ),
+          if (_setup.step != WorldStep.choose) ...[
+            if (_setup.step == WorldStep.world) _legend(),
+            if (_setup.step == WorldStep.organization || _customizing)
+              _input()
+            else if (_setup.step != WorldStep.world)
+              _chips(),
+          ],
+          const SizedBox(height: 24),
+          if (_error != null)
+            Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+          if (_setup.step == WorldStep.world) _continue(),
+          if (_setup.step == WorldStep.choose)
+            TextButton(
+              key: const Key('onboarding-skip'),
+              onPressed: _busy ? null : _existing,
+              child: const Text(
+                'I already have an account',
+                style: TextStyle(color: worldSecondary),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+  Widget _tile(String path, {bool flow = false}) {
+    final selected = _setup.path == path;
+    final personal = path == 'personal';
+    final miniKey = GlobalKey();
+    if (personal) {
+      _personalMiniKey = miniKey;
+    } else {
+      _teamMiniKey = miniKey;
+    }
+    return WorldPress(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: personal
+            ? 'Just me. Home, garage, desk or dorm.'
+            : 'My team. A company, lab or team.',
+        excludeSemantics: true,
+        onTap: _busy
+            ? null
+            : () => unawaited(_select(_setup.copyWith(path: path))),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: Key('world-path-$path'),
+            onTap: _busy
+                ? null
+                : () => unawaited(_select(_setup.copyWith(path: path))),
+            borderRadius: BorderRadius.circular(24),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFFFF8F3) : Colors.white,
+                border: Border.all(
+                  color: selected ? worldOrange : worldBorder,
+                  width: selected ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              height: flow ? null : 132,
+              child: Stack(
+                children: [
+                  if (!flow)
+                    Positioned(
+                      right: 0,
+                      top: 14,
+                      width: 148,
+                      height: 128,
+                      child: SizedBox(
+                        key: miniKey,
+                        child: ValueListenableBuilder<String?>(
+                          valueListenable: _hiddenMini,
+                          builder: (context, hidden, _) => Opacity(
+                            opacity: hidden == path ? 0 : 1,
+                            child: WorldScene(
+                              setup: PendingWorld(path: path),
+                              camera: const WorldCamera(74, 64, .36),
+                              mini: true,
+                              personalMini: personal,
+                              reduced: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (flow)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
+                      child: _tileText(personal),
+                    )
+                  else
+                    Positioned(
+                      left: 22,
+                      right: 22,
+                      bottom: 20,
+                      child: _tileText(personal),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tileText(bool personal) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        personal ? 'Just me' : 'My team',
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -.44,
+          height: 1.2,
+          color: worldInk,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        personal ? 'Home, garage, desk or dorm.' : 'A company, lab or team.',
+        style: const TextStyle(
+          fontFamily: 'PlaceGeist',
+          fontSize: 14,
+          height: 1.25,
+          color: worldSecondary,
+        ),
+      ),
+    ],
+  );
+
+  Widget _input() {
+    final organization = _setup.step == WorldStep.organization;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: Key(organization ? 'world-organization' : 'world-custom'),
+          controller: organization ? _organization : _custom,
+          focusNode: _focus,
+          enabled: !_busy,
+          maxLength: organization ? 60 : 40,
+          textInputAction: TextInputAction.done,
+          textCapitalization: TextCapitalization.words,
+          onChanged: (text) {
+            if (organization) {
+              _answer(_setup.copyWith(orgName: text));
+            } else {
+              setState(() {});
+            }
+          },
+          onSubmitted: (_) {
+            if (organization) {
+              if (_valid) unawaited(_next());
+            } else {
+              _confirmCustom();
+            }
+          },
+          style: const TextStyle(
+            fontFamily: 'PlaceGeist',
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            color: worldInk,
+          ),
+          cursorColor: worldOrange,
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: organization
+                ? 'e.g. FindEZ AI'
+                : _setup.step == WorldStep.workspace
+                ? 'e.g. Field service'
+                : 'e.g. Lab supplies',
+            hintStyle: const TextStyle(color: Color(0xFFB3B0A9)),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 18,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: worldBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: worldOrange, width: 2),
+            ),
+          ),
+        ),
+        if (organization)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'Your team will see this. You can change it later.',
+              style: TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 13,
+                height: 1.35,
+                color: worldHint,
+              ),
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: _busy
+                ? null
+                : organization
+                ? (_valid ? _next : null)
+                : (PendingWorld.validName(_custom.text, 40)
+                      ? _confirmCustom
+                      : null),
+            child: const Text('Done', style: TextStyle(color: worldSecondary)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _confirmCustom() {
+    if (!PendingWorld.validName(_custom.text, 40)) return;
+    final name = _custom.text.trim();
+    _focus.unfocus();
+    _answer(
+      _setup.step == WorldStep.workspace
+          ? _setup.copyWith(workspacePurpose: name)
+          : _setup.copyWith(inventoryName: name),
+    );
+    setState(() => _customizing = false);
+    unawaited(_next());
+  }
+
+  List<String> get _choices {
+    final workspace = _setup.step == WorldStep.workspace;
+    final choices = workspace
+        ? (_setup.isTeam
+              ? ['R&D', 'Production', 'Competition']
+              : ['Home', 'Workshop', 'Studio'])
+        : (_setup.isTeam
+              ? ['Hardware', 'Electronics', 'Software']
+              : ['Tools', 'Electronics', 'Household']);
+    final selected = workspace ? _setup.workspacePurpose : _setup.inventoryName;
+    if (selected.isNotEmpty && !choices.contains(selected)) {
+      choices.add(selected);
+    }
+    return [...choices, '+ Custom'];
+  }
+
+  Widget _chips() {
+    final workspace = _setup.step == WorldStep.workspace;
+    final selected = workspace ? _setup.workspacePurpose : _setup.inventoryName;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 2,
+      children: [
+        for (final label in _choices)
+          Semantics(
+            button: true,
+            selected: label == selected,
+            child: WorldPress(
+              child: SizedBox(
+                height: 44,
+                child: Center(
+                  widthFactor: 1,
+                  child: TextButton(
+                    key: ValueKey('world-chip-$label'),
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            if (label == '+ Custom') {
+                              _custom.text = selected;
+                              setState(() => _customizing = true);
+                              _focus.requestFocus();
+                            } else {
+                              unawaited(
+                                _select(
+                                  workspace
+                                      ? _setup.copyWith(workspacePurpose: label)
+                                      : _setup.copyWith(inventoryName: label),
+                                ),
+                              );
+                            }
+                          },
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(44, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      tapTargetSize: MaterialTapTargetSize.padded,
+                      backgroundColor: label == selected
+                          ? worldOrange
+                          : Colors.white,
+                      foregroundColor: label == selected
+                          ? Colors.white
+                          : const Color(0xFF3F3D39),
+                      shape: StadiumBorder(
+                        side: label == selected
+                            ? BorderSide.none
+                            : const BorderSide(color: worldBorder),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'PlaceGeist',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _legend() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final entry in [
+        (
+          _setup.isTeam ? 'ORGANIZATION' : 'PERSONAL',
+          _setup.isTeam ? _setup.orgName : 'Only you',
+        ),
+        ('WORKSPACE', _setup.workspacePurpose),
+        ('INVENTORY', _setup.inventoryName),
+      ]) ...[
+        WorldEntrance(
+          delay:
+              800 +
+              300 *
+                  (_setup.isTeam
+                          ? ['ORGANIZATION', 'WORKSPACE', 'INVENTORY']
+                          : ['PERSONAL', 'WORKSPACE', 'INVENTORY'])
+                      .indexOf(entry.$1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                entry.$1,
+                style: const TextStyle(
+                  fontFamily: 'PlaceGeistMono',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: .84,
+                  color: Color(0xFF9A978F),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                entry.$2,
+                style: const TextStyle(
+                  fontFamily: 'PlaceGeist',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -.24,
+                  color: worldInk,
+                ),
+              ),
+              const SizedBox(height: 44),
+            ],
+          ),
+        ),
+      ],
+    ],
+  );
+  Widget _continue() => WorldPress(
+    child: FilledButton(
+      key: const Key('onboarding-next'),
+      onPressed: _valid && !_busy ? _next : null,
+      style: FilledButton.styleFrom(
+        backgroundColor: worldInk,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: worldBorder,
+        disabledForegroundColor: const Color(0xFF9A978F),
+        minimumSize: const Size(double.infinity, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      child: _busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : Text(
+              'Open my dashboard',
+              style: const TextStyle(
+                fontFamily: 'PlaceGeist',
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.17,
+              ),
+            ),
     ),
   );
 }
 
-class _Search extends StatelessWidget {
-  const _Search();
+class _IntroPainter extends CustomPainter {
+  _IntroPainter(this.animation, this.reduced) : super(repaint: animation);
+  final Animation<double> animation;
+  final bool reduced;
   @override
-  Widget build(BuildContext context) => Container(
-    height: 44,
-    padding: const EdgeInsets.symmetric(horizontal: 13),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: const Row(
-      children: [
-        Icon(Icons.search_rounded, color: muted, size: 19),
-        SizedBox(width: 8),
-        Text(
-          'Search inventory',
-          style: TextStyle(color: Color(0xFF737377), fontSize: 12),
-        ),
-      ],
-    ),
-  );
+  void paint(Canvas canvas, Size size) {
+    const dots = [
+      Offset(.18, .21),
+      Offset(.77, .18),
+      Offset(.54, .26),
+      Offset(.87, .47),
+      Offset(.13, .56),
+      Offset(.82, .71),
+      Offset(.31, .76),
+      Offset(.49, .83),
+    ];
+    final time = reduced ? 3000.0 : animation.value * 3000;
+    final sweep = Curves.easeInOutCubic.transform(phase(time, 300, 1300));
+    final scanY = size.height * sweep;
+    for (var index = 0; index < dots.length; index++) {
+      final point = dots[index];
+      final at = Offset(point.dx * size.width, point.dy * size.height);
+      final fade = Curves.easeOutCubic.transform(phase(time, index * 80, 500));
+      // Invert the sweep curve to get the exact time this dot is passed.
+      double low = 0, high = 1;
+      for (var i = 0; i < 16; i++) {
+        final middle = (low + high) / 2;
+        if (Curves.easeInOutCubic.transform(middle) < point.dy) {
+          low = middle;
+        } else {
+          high = middle;
+        }
+      }
+      final detection = Curves.easeOutCubic.transform(
+        phase(time, 300 + high * 1300, 250),
+      );
+      canvas.drawCircle(
+        at,
+        3,
+        Paint()
+          ..color = (detection > 0 ? worldOrange : const Color(0xFFC8C5BE))
+              .withValues(alpha: fade),
+      );
+      if (detection > 0) {
+        final edge = 18 * (1.4 - .4 * detection);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(center: at, width: edge, height: edge),
+            const Radius.circular(3),
+          ),
+          Paint()
+            ..color = worldOrange.withValues(alpha: detection)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4,
+        );
+      }
+    }
+    if (!reduced && time >= 300 && time <= 1600) {
+      canvas.drawLine(
+        Offset(0, scanY),
+        Offset(size.width, scanY),
+        Paint()
+          ..color = worldOrange.withValues(alpha: .8)
+          ..strokeWidth = 1.4,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _IntroPainter old) =>
+      old.animation != animation || old.reduced != reduced;
 }

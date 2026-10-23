@@ -1,3 +1,5 @@
+import '../../core/account_deletion.dart';
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -11,50 +13,90 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
+import '../../core/profile_store.dart';
+import '../../core/ui/member_avatar.dart';
 import '../../core/push_notifications.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/notification_snapshot.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
 import '../chat/chat_page.dart';
+import '../checkout/checkout_page.dart';
+import '../documents/documents_page.dart';
+import '../home/home_page.dart';
+import '../home/home_overview.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
+import '../notifications/notification_bell.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
+import '../profile/profile_hub_page.dart';
+import '../onboarding/setup_questions_page.dart';
+import '../onboarding/onboarding_answers.dart';
 import '../profile/terms_of_service_page.dart';
+import '../review/review_queue_page.dart';
 import '../scan/scan_page.dart';
 import '../teams/teams_page.dart';
+import 'home_navigation.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.api});
+  const MainShell({
+    super.key,
+    required this.api,
+    this.onSwitchContext,
+    this.onManageContext,
+    this.onWorkspaceNotification,
+    this.organizationSelector,
+  });
 
   final ApiClient api;
+  final Widget? organizationSelector;
+  final Future<void> Function()? onSwitchContext, onManageContext;
+  final Future<void> Function(Map<String, dynamic>)? onWorkspaceNotification;
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   late final PageController _pageController;
+  late final ProfileStore _profileStore;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 3;
+  int _currentPage = 0;
   int _inventoryRefreshToken = 0;
+  int _inventoryCacheGeneration = 0;
+  String? _deletedSpaceId;
   DateTime? _lastTabSwitchRefreshAt;
-  VoidCallback? _resetChatCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
-  bool _hasActiveChat = false;
   int _inventorySection = 0;
   VoidCallback? _joinSpaceCallback;
-  int _notificationCount = 0;
+  final _notificationCount = ValueNotifier<int>(0);
+  bool _openingAccount = false;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
+  StreamSubscription<void>? _foregroundPush;
+  int _notificationGeneration = 0;
+  late final String? _notificationAccount;
   double _pageOpacity = 1;
   int _pageTransitionGeneration = 0;
+  int _chatGeneration = 0;
+  String? _chatInitialMessage;
+  bool _chatHasMessages = false;
+  int _chatReturnPage = 0;
 
   Future<void> _prefetchInventoryCache() async {
+    final generation = ++_inventoryCacheGeneration;
+    final account = widget.api.accountId;
     try {
       final result = await widget.api.searchItems(query: '');
-      InventoryCache.setItems(result.items);
+      if (!mounted ||
+          generation != _inventoryCacheGeneration ||
+          account != widget.api.accountId) {
+        return;
+      }
+      InventoryCache.setItems(result.items, contextKey: widget.api.cacheKey);
     } catch (_) {
       // acceptable: read-only background cache warmup; silently skip if
       // the API is unreachable at launch. The inventory page fetches fresh
@@ -83,14 +125,28 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 3);
+    _notificationAccount = widget.api.accountId;
+    WidgetsBinding.instance.addObserver(this);
+    _pageController = PageController(initialPage: 0);
+    _profileStore = ProfileStore(api: widget.api);
+    unawaited(_profileStore.load());
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
-    unawaited(_initializePushNotifications());
-    _notificationTimer = Timer.periodic(
-      const Duration(seconds: 60),
+    _foregroundPush = PushNotifications.received.listen(
       (_) => unawaited(_loadNotificationCount()),
     );
+    unawaited(_initializePushNotifications());
+    _notificationTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      final lifecycle = WidgetsBinding.instance.lifecycleState;
+      if (lifecycle == null || lifecycle == AppLifecycleState.resumed) {
+        unawaited(_loadNotificationCount());
+      }
+    });
+    unawaited(_syncSetupAnswers());
+    if (widget.api.inventoryContext == null ||
+        widget.api.inventoryContext!.isPersonal) {
+      unawaited(_createPendingFirstSpace());
+    }
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -100,8 +156,11 @@ class _MainShellState extends State<MainShell> {
       if (state.event == AuthChangeEvent.signedOut) {
         InventoryCache.clear();
         ProStatus.reset();
+        unawaited(PushNotifications.stop());
       }
-      if (state.event == AuthChangeEvent.signedOut && mounted) {
+      if (widget.api.accountId != _notificationAccount && mounted) {
+        _notificationGeneration++;
+        setState(() => _notificationCount.value = 0);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.of(
@@ -113,21 +172,27 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  Future<void> _syncSetupAnswers() async {
+    final account = widget.api.accountId;
+    if (account == null) return;
+    try {
+      await OnboardingAnswerStore.sync(widget.api);
+    } catch (_) {
+      if (!mounted || widget.api.accountId != account) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const AppText('Your setup answers could not be saved yet.'),
+          action: SnackBarAction(label: 'Retry', onPressed: _syncSetupAnswers),
+        ),
+      );
+    }
+  }
+
   Future<void> _maybeLaunchTutorial() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
-    await _createPendingFirstSpace();
-    final postSignupPending = await OnboardingPrefs.isPostSignupPending();
-    if (OnboardingPrefs.justSignedUp || postSignupPending) {
-      OnboardingPrefs.justSignedUp = false;
-      await OnboardingPrefs.setCoachmarkPending(uid, true);
-      await OnboardingPrefs.setPostSignupPending(false);
-    }
-    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
-    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
-    if (!pending || seen) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
+      if (!mounted || widget.api.accountId != uid) return;
       await TutorialController.instance.maybeStart(
         userId: uid,
         pageController: _pageController,
@@ -159,33 +224,256 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
+    _notificationGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
     _authSub?.cancel();
     _notificationTimer?.cancel();
+    _foregroundPush?.cancel();
+    TutorialController.instance.dismiss();
     _pageController.dispose();
+    _profileStore.dispose();
+    _notificationCount.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      TutorialController.instance.dismiss();
+    }
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_loadNotificationCount());
+      unawaited(_initializePushNotifications());
+      setState(() => _inventoryRefreshToken++);
+      unawaited(_prefetchInventoryCache());
+    }
+  }
+
   int get _navigationIndex => switch (_currentPage) {
-    3 => 0,
+    0 => 0,
     2 => 1,
     1 => 2,
     _ => 3,
   };
 
   void _onNavigationTap(int index) {
-    const pages = [3, 2, 1, 0];
+    const pages = [0, 2, 1, 3];
     _animateTo(pages[index], haptic: true);
   }
 
+  void _openAsk(String? message) {
+    final question = (message ?? '').trim();
+    if (question.isNotEmpty) {
+      setState(() {
+        _chatInitialMessage = question;
+        _chatGeneration++;
+      });
+    }
+    _animateTo(1, haptic: true);
+  }
+
+  void _leaveChat() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _animateTo(_chatReturnPage, haptic: true);
+  }
+
+  void _onChatStateChanged(bool hasMessages) {
+    if (!mounted || _chatHasMessages == hasMessages) return;
+    setState(() => _chatHasMessages = hasMessages);
+  }
+
+  Widget _buildAccountControl() => ListenableBuilder(
+    listenable: Listenable.merge([_profileStore, _notificationCount]),
+    builder: (context, _) => IconButton(
+      key: const Key('home-account-button'),
+      tooltip: 'Account',
+      onPressed: () => unawaited(_openAccount()),
+      icon: Badge(
+        isLabelVisible: _notificationCount.value > 0,
+        label: AppText(
+          _notificationCount.value > 99 ? '99+' : '${_notificationCount.value}',
+          semanticsLabel: '${_notificationCount.value} unread notifications',
+        ),
+        child: _profileStore.photoUrl.isEmpty
+            ? Icon(
+                CupertinoIcons.person_crop_circle,
+                size: 28,
+                color: AppTheme.textPrimary(context),
+              )
+            : MemberAvatar(
+                key: ValueKey(_profileStore.photoRevision),
+                name: _profileStore.name,
+                photoUrl: _profileStore.photoUrl,
+                colorHex: _profileStore.color,
+                size: 28,
+              ),
+      ),
+    ),
+  );
+
+  Future<void> _openAccount() async {
+    if (_openingAccount) return;
+    _openingAccount = true;
+    HapticFeedback.lightImpact();
+    unawaited(_profileStore.load());
+    unawaited(_loadNotificationCount());
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => ValueListenableBuilder<int>(
+            valueListenable: _notificationCount,
+            builder: (context, count, _) => Scaffold(
+              backgroundColor: AppTheme.adaptive(
+                context,
+                HomeColors.background,
+              ),
+              appBar: AppBar(
+                title: const AppText('Account'),
+                actions: [
+                  NotificationBell(
+                    api: widget.api,
+                    count: _notificationCount,
+                    onOpen: _openNotifications,
+                  ),
+                ],
+              ),
+              body: ProfileHubPage(
+                api: widget.api,
+                store: _profileStore,
+                showHeading: false,
+                onOpenProfile: _openProfile,
+                onOpenSettings: _openSettings,
+                onOpenDocuments: _openDocuments,
+                onOpenNotifications: _openNotifications,
+                onOpenCheckouts: _openCheckouts,
+                onOpenTour: _openTour,
+                unreadCount: count,
+              ),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      _openingAccount = false;
+    }
+  }
+
+  Future<void> _openProfile() async {
+    HapticFeedback.lightImpact();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProfilePage(
+          api: widget.api,
+          accountOnly: true,
+          store: _profileStore,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openReview() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReviewQueuePage(
+          api: widget.api,
+          onInventoryMutated: () {
+            setState(() => _inventoryRefreshToken++);
+            unawaited(_prefetchInventoryCache());
+          },
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _inventoryRefreshToken++);
+  }
+
+  Future<void> _openDocuments() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => DocumentsPage(api: widget.api)));
+  }
+
+  Future<void> _openCheckouts() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)),
+    );
+    if (mounted) setState(() => _inventoryRefreshToken++);
+  }
+
+  Future<void> _openHomeSpace(Map<String, dynamic> space) async {
+    setState(() => _inventorySection = 0);
+    _animateTo(3, haptic: true);
+    for (
+      var attempt = 0;
+      attempt < 12 && _openAssistDestination == null;
+      attempt++
+    ) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    if (!mounted) return;
+    final open = _openAssistDestination;
+    if (open == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Could not open this Space. Please try again.'),
+        ),
+      );
+      return;
+    }
+    try {
+      await open({'space_name': space['name'], 'space_id': space['id']});
+      if (mounted) setState(() => _inventoryRefreshToken++);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: AppText('Could not open this Space. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: AppTheme.adaptive(context, HomeColors.background),
+          appBar: AppBar(title: const AppText('Settings')),
+          body: ProfilePage(api: widget.api, settingsOnly: true),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openTour() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (tourContext) => SetupQuestionsPage(
+          api: widget.api,
+          isReplay: true,
+          onFinished: () => Navigator.of(tourContext).pop(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadNotificationCount() async {
+    if (_openingNotifications || widget.api.accountId != _notificationAccount) {
+      return;
+    }
+    final generation = ++_notificationGeneration;
     try {
       final result = await widget.api.getNotifications();
-      if (!mounted) return;
-      setState(
-        () =>
-            _notificationCount = (result['unread_count'] as num?)?.toInt() ?? 0,
-      );
-      await PushNotifications.setBadgeCount(_notificationCount);
+      if (!mounted ||
+          generation != _notificationGeneration ||
+          widget.api.accountId != _notificationAccount) {
+        return;
+      }
+      final count = notificationUnreadCount(result);
+      setState(() => _notificationCount.value = count);
+      await PushNotifications.setBadgeCount(count);
     } catch (_) {
       // Read-only badge refresh; the inbox shows a visible error if opened.
     }
@@ -194,21 +482,31 @@ class _MainShellState extends State<MainShell> {
   Future<void> _initializePushNotifications() async {
     try {
       await PushNotifications.initialize(
-        onNotificationTap: (_) async {
+        onNotificationTap: (payload) async {
+          if (widget.onWorkspaceNotification != null) {
+            await widget.onWorkspaceNotification!(payload);
+            return;
+          }
           WidgetsBinding.instance.addPostFrameCallback((_) {
             unawaited(_openNotifications());
           });
         },
       );
-      await PushNotifications.register(widget.api);
+      if (!mounted || widget.api.accountId != _notificationAccount) return;
+      await PushNotifications.registerIfAuthorized(widget.api);
     } catch (error) {
-      debugPrint('Push notifications are unavailable: $error');
+      // Optional phone alerts can be enabled/retried in the inbox.
     }
   }
 
   Future<void> _openNotifications() async {
-    if (!mounted || _openingNotifications) return;
+    if (!mounted ||
+        _openingNotifications ||
+        widget.api.accountId != _notificationAccount) {
+      return;
+    }
     _openingNotifications = true;
+    _notificationGeneration++;
     HapticFeedback.lightImpact();
     try {
       await Navigator.push(
@@ -216,79 +514,147 @@ class _MainShellState extends State<MainShell> {
         MaterialPageRoute(
           builder: (_) => NotificationsPage(
             api: widget.api,
-            onRead: () {
-              if (mounted) setState(() => _notificationCount = 0);
-              unawaited(PushNotifications.setBadgeCount(0));
+            onReadStarting: () => _notificationGeneration++,
+            onUnreadChanged: (count) {
+              if (!mounted || widget.api.accountId != _notificationAccount) {
+                return;
+              }
+              _notificationGeneration++;
+              setState(() => _notificationCount.value = count);
             },
           ),
         ),
       );
-      await _loadNotificationCount();
     } finally {
       _openingNotifications = false;
+      if (mounted) unawaited(_loadNotificationCount());
     }
   }
 
-  Widget _notificationBell() {
-    return IconButton(
-      tooltip: 'Notifications',
-      onPressed: _openNotifications,
-      icon: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(CupertinoIcons.bell, size: 21),
-          if (_notificationCount > 0)
-            Positioned(
-              right: -7,
-              top: -7,
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: const BoxDecoration(
-                  color: AppColors.danger,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _notificationCount > 99 ? '99+' : '$_notificationCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+  PreferredSizeWidget? _buildAppBar() {
+    final selected = widget.api.inventoryContext;
+    if (selected != null) {
+      final scaler = MediaQuery.textScalerOf(context);
+      return AppBar(
+        toolbarHeight:
+            (scaler.scale(14) * 1.2 +
+                    scaler.scale(11) * 1.1 +
+                    (widget.organizationSelector == null
+                        ? 20
+                        : (scaler.scale(13) * 1.4 + 16).clamp(
+                                40,
+                                double.infinity,
+                              ) +
+                              32))
+                .clamp(56, double.infinity),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.organizationSelector != null)
+              widget.organizationSelector!,
+            TextButton(
+              key: TutorialController.teamsSegmentKey,
+              onPressed: widget.onSwitchContext,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    [
+                      if (widget.organizationSelector == null)
+                        selected.organizationName,
+                      selected.workspaceName,
+                    ].whereType<String>().join(' / '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      color: AppTheme.textSecondary(context),
+                    ),
                   ),
-                ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: AppText(
+                          selected.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.2,
+                            color: AppTheme.textPrimary(context),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.expand_more, size: 18),
+                    ],
+                  ),
+                ],
               ),
             ),
+          ],
+        ),
+        actions: [
+          NotificationBell(
+            api: widget.api,
+            count: _notificationCount,
+            onOpen: _openNotifications,
+          ),
+          IconButton(
+            tooltip: 'Inventory settings',
+            onPressed: widget.onManageContext,
+            icon: const Icon(Icons.more_horiz),
+          ),
+          _buildAccountControl(),
         ],
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
+      );
+    }
     switch (_currentPage) {
       case 3:
         return AppBar(
           title: SizedBox(
             key: TutorialController.teamsSegmentKey,
             width: 210,
-            child: CupertinoSlidingSegmentedControl<int>(
-              groupValue: _inventorySection,
-              children: {
-                0: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Spaces'),
-                ),
-                1: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Teams'),
-                ),
-              },
-              onValueChanged: (value) {
-                if (value != null && value != _inventorySection) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _inventorySection = value);
-                }
-              },
+            child: FrostedSurface(
+              radius: 10,
+              shadow: false,
+              tint: AppTheme.surface2(context),
+              child: CupertinoSlidingSegmentedControl<int>(
+                groupValue: _inventorySection,
+                backgroundColor: Colors.transparent,
+                thumbColor: AppTheme.neutralSelectionTint(context),
+                children: {
+                  0: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppText(
+                      'Spaces',
+                      style: TextStyle(
+                        color: _inventorySection == 0
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.textSecondary(context),
+                      ),
+                    ),
+                  ),
+                  1: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppText(
+                      'Teams',
+                      style: TextStyle(
+                        color: _inventorySection == 1
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.textSecondary(context),
+                      ),
+                    ),
+                  ),
+                },
+                onValueChanged: (value) {
+                  if (value != null && value != _inventorySection) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _inventorySection = value);
+                  }
+                },
+              ),
             ),
           ),
           actions: [
@@ -298,203 +664,176 @@ class _MainShellState extends State<MainShell> {
                 icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
                 tooltip: 'Join Shared Space',
               ),
-            _notificationBell(),
+            _buildAccountControl(),
           ],
         );
       case 2:
         return AppBar(
-          title: const Text('Scan'),
-          actions: [_notificationBell()],
+          title: const AppText('Capture'),
+          actions: [_buildAccountControl()],
         );
       case 1:
         return AppBar(
-          title: const Text('Assist'),
-          actions: [
-            if (_hasActiveChat)
-              IconButton(
-                icon: const Icon(CupertinoIcons.square_pencil, size: 20),
-                tooltip: 'New chat',
-                onPressed: _resetChatCallback,
-              ),
-            _notificationBell(),
-          ],
+          title: const AppText('Ask'),
+          actions: [_buildAccountControl()],
         );
       default:
-        return AppBar(
-          title: const Text('Profile'),
-          actions: [_notificationBell()],
-        );
+        return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final chatFocused = _currentPage == 1 && _chatHasMessages;
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final navigation = keyboardVisible || chatFocused
+        ? const SizedBox.shrink()
+        : HomeNavigation(
+            monochrome:
+                widget.api.inventoryContext == null &&
+                _currentPage == 3 &&
+                _inventorySection == 1,
+            selectedIndex: _navigationIndex,
+            onSelected: _onNavigationTap,
+            destinationKeys: {
+              0: TutorialController.inventoryIconKey,
+              1: TutorialController.scanTabKey,
+              2: TutorialController.assistTabKey,
+            },
+          );
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: AnimatedOpacity(
-              opacity: _pageOpacity,
-              duration: const Duration(milliseconds: 140),
-              curve: Curves.easeOutCubic,
-              child: PageView(
-                controller: _pageController,
-                reverse: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) {
-                  unawaited(_loadNotificationCount());
-                  final now = DateTime.now();
-                  final tooSoon =
-                      index == 3 &&
-                      _lastTabSwitchRefreshAt != null &&
-                      now.difference(_lastTabSwitchRefreshAt!) <
-                          const Duration(seconds: 5);
-                  setState(() {
-                    _currentPage = index;
-                    if (index == 3 && !tooSoon) {
-                      _inventoryRefreshToken++;
-                      _lastTabSwitchRefreshAt = now;
-                    }
-                  });
+      backgroundColor: AppTheme.adaptive(context, HomeColors.background),
+      appBar: chatFocused ? null : _buildAppBar(),
+      body: SafeArea(
+        top: chatFocused,
+        bottom: chatFocused,
+        child: AnimatedOpacity(
+          opacity: _pageOpacity,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          child: PageView(
+            controller: _pageController,
+            reverse: true,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              unawaited(_loadNotificationCount());
+              final now = DateTime.now();
+              final tooSoon =
+                  index == 3 &&
+                  _lastTabSwitchRefreshAt != null &&
+                  now.difference(_lastTabSwitchRefreshAt!) <
+                      const Duration(seconds: 5);
+              setState(() {
+                if (index == 1 && _currentPage != 1) {
+                  _chatReturnPage = _currentPage;
+                }
+                _currentPage = index;
+                if (index == 3 && !tooSoon) {
+                  _inventoryRefreshToken++;
+                  _lastTabSwitchRefreshAt = now;
+                }
+              });
+            },
+            children: [
+              HomePage(
+                api: widget.api,
+                refreshToken: _inventoryRefreshToken,
+                deletedSpaceId: _deletedSpaceId,
+                onOpenAsk: _openAsk,
+                accountControl: widget.api.inventoryContext == null
+                    ? _buildAccountControl()
+                    : null,
+                onOpenReview: _openReview,
+                onOpenCheckouts: _openCheckouts,
+                onOpenSpace: _openHomeSpace,
+              ),
+              ChatPage(
+                key: ValueKey('chat-$_chatGeneration'),
+                api: widget.api,
+                initialMessage: _chatInitialMessage,
+                inPageView: true,
+                pageController: _pageController,
+                onChatStateChanged: _onChatStateChanged,
+                onBack: _leaveChat,
+                onOpenInventory: () {
+                  setState(() => _inventorySection = 0);
+                  _animateTo(3);
                 },
+                onInventoryMutated: () {
+                  setState(() => _inventoryRefreshToken++);
+                  unawaited(_prefetchInventoryCache());
+                },
+                onOpenDestination: (hint) async {
+                  _animateTo(3);
+                  await Future<void>.delayed(const Duration(milliseconds: 350));
+                  await _openAssistDestination?.call(hint);
+                },
+              ),
+              ScanPage(
+                api: widget.api,
+                isActive: _currentPage == 2,
+                showAppBar: false,
+                onSaved: () {
+                  setState(() => _inventoryRefreshToken++);
+                  unawaited(_prefetchInventoryCache());
+                },
+                onCaptureCompleted: (spaceName) async {
+                  setState(() => _inventorySection = 0);
+                  _animateTo(3);
+                  await Future<void>.delayed(const Duration(milliseconds: 350));
+                  if (mounted) await _openHomeSpace({'name': spaceName});
+                },
+                onSpaceScanned: (spaceName) {
+                  setState(() => _inventoryRefreshToken++);
+                  _animateTo(3);
+                },
+                onSkipCoachmark: () {},
+              ),
+              IndexedStack(
+                index: _inventorySection,
                 children: [
-                  ProfilePage(api: widget.api),
-                  ChatPage(
+                  InventoryPage(
                     api: widget.api,
-                    inPageView: true,
-                    pageController: _pageController,
-                    onInventoryMutated: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
-                    },
-                    onRegisterReset: (fn) => _resetChatCallback = fn,
-                    onChatStateChanged: (hasMessages) =>
-                        setState(() => _hasActiveChat = hasMessages),
-                    onOpenDestination: (hint) async {
-                      _animateTo(3);
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 350),
+                    refreshToken: _inventoryRefreshToken,
+                    onSpaceDeleted: (spaceId) {
+                      _inventoryCacheGeneration++;
+                      InventoryCache.removeSpace(
+                        spaceId,
+                        contextKey: widget.api.cacheKey,
                       );
-                      await _openAssistDestination?.call(hint);
+                      setState(() {
+                        _deletedSpaceId = spaceId;
+                        _inventoryRefreshToken++;
+                      });
                     },
-                  ),
-                  ScanPage(
-                    api: widget.api,
-                    isActive: _currentPage == 2,
                     showAppBar: false,
-                    onSaved: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
+                    onRegisterJoinSpace: (fn) {
+                      if (_joinSpaceCallback == fn) return;
+                      setState(() => _joinSpaceCallback = fn);
                     },
-                    onSpaceScanned: (spaceName) {
-                      setState(() => _inventoryRefreshToken++);
-                      _animateTo(3);
-                    },
-                    onSkipCoachmark: () {},
+                    onRegisterOpenAssistDestination: (fn) =>
+                        _openAssistDestination = fn,
                   ),
-                  IndexedStack(
-                    index: _inventorySection,
-                    children: [
-                      InventoryPage(
-                        api: widget.api,
-                        refreshToken: _inventoryRefreshToken,
-                        showAppBar: false,
-                        onRegisterJoinSpace: (fn) {
-                          if (_joinSpaceCallback == fn) return;
-                          setState(() => _joinSpaceCallback = fn);
-                        },
-                        onRegisterOpenAssistDestination: (fn) =>
-                            _openAssistDestination = fn,
-                      ),
-                      TeamsPage(api: widget.api),
-                    ],
-                  ),
+                  if (widget.api.inventoryContext == null)
+                    TeamsPage(api: widget.api),
                 ],
               ),
-            ),
+            ],
           ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 8,
-            child: IgnorePointer(
-              ignoring: keyboardVisible,
-              child: AnimatedSlide(
-                offset: keyboardVisible ? const Offset(0, 1.35) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: AnimatedOpacity(
-                  opacity: keyboardVisible ? 0 : 1,
-                  duration: const Duration(milliseconds: 140),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xF2131418),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x66000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: NavigationBar(
-                        height: 70,
-                        backgroundColor: Colors.transparent,
-                        selectedIndex: _navigationIndex,
-                        onDestinationSelected: _onNavigationTap,
-                        destinations: [
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.house,
-                              key: TutorialController.inventoryIconKey,
-                            ),
-                            selectedIcon: const Icon(CupertinoIcons.house_fill),
-                            label: 'Inventory',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                              key: TutorialController.scanTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                            ),
-                            label: 'Scan',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.chat_bubble,
-                              key: TutorialController.assistTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.chat_bubble_fill,
-                            ),
-                            label: 'Assist',
-                          ),
-                          const NavigationDestination(
-                            icon: Icon(CupertinoIcons.person_crop_circle),
-                            selectedIcon: Icon(
-                              CupertinoIcons.person_crop_circle_fill,
-                            ),
-                            label: 'Profile',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+      bottomNavigationBar: reduceMotion || keyboardVisible
+          ? navigation
+          : AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
+              child: navigation,
+            ),
     );
   }
 }
@@ -511,7 +850,7 @@ class _ProfileControlCenter extends StatefulWidget {
 class _ProfileControlCenterState extends State<_ProfileControlCenter> {
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
+      color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
       fontWeight: FontWeight.w600,
     );
   }
@@ -523,18 +862,24 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
         children: [
           Flexible(
             fit: FlexFit.loose,
-            child: Text(
+            child: AppText(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.85),
+                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          Text(
+          AppText(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.70),
+              color: AppTheme.adaptive(
+                context,
+                Colors.white.withValues(alpha: 0.70),
+              ),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -559,7 +904,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Your Inventory', style: _sectionTitleStyle(context)),
+        AppText('Your Inventory', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
         GlassCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -585,7 +930,7 @@ class _ProfileSupportSection extends StatelessWidget {
 
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: Colors.white.withValues(alpha: 0.70),
+      color: AppTheme.adaptive(context, Colors.white.withValues(alpha: 0.70)),
       fontWeight: FontWeight.w600,
     );
   }
@@ -601,7 +946,7 @@ class _ProfileSupportSection extends StatelessWidget {
       if (!context.mounted) return;
       if (!can) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          const SnackBar(content: AppText('Unable to open email app.')),
         );
         return;
       }
@@ -610,13 +955,13 @@ class _ProfileSupportSection extends StatelessWidget {
       if (!context.mounted) return;
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          const SnackBar(content: AppText('Unable to open email app.')),
         );
       }
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open email app.')),
+        const SnackBar(content: AppText('Unable to open email app.')),
       );
     }
   }
@@ -627,7 +972,7 @@ class _ProfileSupportSection extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Support', style: _sectionTitleStyle(context)),
+        AppText('Support', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
         GlassCard(
           padding: const EdgeInsets.all(6),
@@ -637,7 +982,7 @@ class _ProfileSupportSection extends StatelessWidget {
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.mail_outline),
-                title: const Text('Send feedback'),
+                title: const AppText('Send feedback'),
                 onTap: () =>
                     unawaited(_launchEmail(context, 'FindEZ Feedback')),
               ),
@@ -645,7 +990,7 @@ class _ProfileSupportSection extends StatelessWidget {
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.bug_report_outlined),
-                title: const Text('Report a problem'),
+                title: const AppText('Report a problem'),
                 onTap: () =>
                     unawaited(_launchEmail(context, 'FindEZ Issue Report')),
               ),
@@ -691,22 +1036,25 @@ class _ProfilePage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.black,
+        title: const AppText('Profile'),
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: AppTheme.adaptive(context, Colors.black),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
+            AppText(
               'Account',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -718,10 +1066,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -734,10 +1088,13 @@ class _ProfilePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
+                      AppText(
                         'Signed in as',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.62),
+                          color: AppTheme.adaptive(
+                            context,
+                            Colors.white.withValues(alpha: 0.62),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -752,7 +1109,7 @@ class _ProfilePage extends StatelessWidget {
                                   (snap.data ?? '').isNotEmpty)
                               ? snap.data!
                               : emailFallbackName();
-                          return Text(
+                          return AppText(
                             name,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
@@ -770,10 +1127,13 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             const _ProfileControlCenter(),
             const SizedBox(height: 16),
-            Text(
+            AppText(
               'Actions',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -785,10 +1145,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -802,9 +1168,10 @@ class _ProfilePage extends StatelessWidget {
                     children: [
                       OutlinedButton(
                         onPressed: () async {
+                          await PushNotifications.stop();
                           await Supabase.instance.client.auth.signOut();
                         },
-                        child: const Text('Logout'),
+                        child: const AppText('Logout'),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
@@ -813,19 +1180,20 @@ class _ProfilePage extends StatelessWidget {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: const Text('Delete Account'),
-                                content: const Text(
+                                title: const AppText('Delete Account'),
+                                content: const AppText(
                                   'Are you sure you want to permanently delete your account? This action cannot be undone.',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.of(context).pop(false),
-                                    child: Text(
+                                    child: AppText(
                                       'Cancel',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.7,
+                                        color: AppTheme.foreground(
+                                          context,
+                                          Colors.white.withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ),
@@ -834,10 +1202,12 @@ class _ProfilePage extends StatelessWidget {
                                     onPressed: () =>
                                         Navigator.of(context).pop(true),
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
                                       foregroundColor: Colors.white,
                                     ),
-                                    child: const Text('Delete'),
+                                    child: const AppText('Delete'),
                                   ),
                                 ],
                               );
@@ -847,32 +1217,16 @@ class _ProfilePage extends StatelessWidget {
                           if (confirmed != true) return;
 
                           try {
-                            final response = await Supabase
-                                .instance
-                                .client
-                                .functions
-                                .invoke('delete-user');
-
-                            if (response.data == null) {
-                              throw Exception('Failed to delete account');
-                            }
-
-                            final responseData =
-                                response.data as Map<String, dynamic>;
-                            if (responseData['error'] != null) {
-                              throw Exception(
-                                responseData['error'] ??
-                                    'Failed to delete account',
-                              );
-                            }
+                            await requestAccountDeletion();
 
                             InventoryCache.clear();
+                            await PushNotifications.stop();
                             await Supabase.instance.client.auth.signOut();
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
+                                content: AppText(
                                   'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
                                 ),
                                 backgroundColor: Theme.of(
@@ -882,7 +1236,7 @@ class _ProfilePage extends StatelessWidget {
                             );
                           }
                         },
-                        child: const Text('Delete Account'),
+                        child: const AppText('Delete Account'),
                       ),
                     ],
                   ),
@@ -892,10 +1246,13 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             const _ProfileSupportSection(),
             const SizedBox(height: 16),
-            Text(
+            AppText(
               'Legal',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.70),
+                ),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -907,10 +1264,16 @@ class _ProfilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: AppTheme.adaptive(
+                      context,
+                      Colors.white.withValues(alpha: 0.06),
+                    ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: AppTheme.adaptive(
+                        context,
+                        Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -932,7 +1295,7 @@ class _ProfilePage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Text('Privacy Policy'),
+                        child: const AppText('Privacy Policy'),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(
@@ -944,7 +1307,7 @@ class _ProfilePage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Text('Terms of Service'),
+                        child: const AppText('Terms of Service'),
                       ),
                     ],
                   ),
@@ -952,10 +1315,13 @@ class _ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            Text(
+            AppText(
               'To delete your account and all associated data,\nemail us at info@findez.ai\nfrom your registered email address.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.75),
+                color: AppTheme.adaptive(
+                  context,
+                  Colors.white.withValues(alpha: 0.75),
+                ),
                 height: 1.4,
               ),
             ),

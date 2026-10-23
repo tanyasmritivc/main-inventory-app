@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from app.services import ai_agent
-from app.services.agent_gateway_client import AgentGatewayClient
+from app.services.agent_gateway_client import AgentGatewayClient, gateway_completion
 from app.services.ai_memory import extract_and_save_memory
 
 
@@ -47,6 +47,22 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     assert request.kwargs["json"]["stream"] is False
     assert result.choices[0].message.content == "Ready"
     http.__exit__.assert_called_once()
+
+
+def test_bounded_photo_timeout_is_local_and_does_not_change_normal_gateway_timeout():
+    response = Mock()
+    response.json.return_value = {"choices": [{"message": {"content": '{"indices": [0]}'}}]}
+    http = MagicMock()
+    http.__enter__.return_value = http
+    http.post.return_value = response
+    with patch('app.services.agent_gateway_client.get_settings', return_value=_settings()), \
+         patch('app.services.agent_gateway_client.httpx.Client', return_value=http) as client:
+        gateway_completion(messages=[{'role': 'user', 'content': 'labels'}],
+                           conversation_id='photo', request_timeout_seconds=12)
+        assert AgentGatewayClient().timeout.read == 180
+    timeout = client.call_args.kwargs['timeout']
+    assert timeout.read == timeout.connect == timeout.write == timeout.pool == 12
+    assert 'request_timeout_seconds' not in http.post.call_args.kwargs['json']
 
 
 def test_gateway_provider_uses_dedicated_key_endpoint_and_conversation_headers():
@@ -127,21 +143,8 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
     assert events[-1]["assistant_message"] == "M4 screws are in Cabinet."
 
 
-def test_memory_extraction_uses_gateway_when_configured():
-    completion = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="{}"))]
-    )
-    create = Mock(return_value=completion)
-    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
-
-    with patch("app.core.config.get_settings", return_value=_settings()), patch(
-        "app.services.agent_gateway_client.AgentGatewayClient", return_value=client
-    ) as gateway:
-        asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "In Cabinet."))
-
-    gateway.assert_called_once_with()
-    kwargs = create.call_args.kwargs
-    assert kwargs["model"] == "deepseek-v4-flash-agent"
-    assert kwargs["max_tokens"] == 200
-    assert "max_completion_tokens" not in kwargs
-    assert kwargs["extra_headers"]["X-Agent-Timezone"] == "America/Los_Angeles"
+def test_legacy_memory_extraction_does_not_promote_answers_or_call_gateway():
+    with patch("app.services.agent_gateway_client.AgentGatewayClient") as gateway, patch("app.services.supabase_client.create_supabase_admin") as database:
+        asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "Invented fact"))
+    gateway.assert_not_called()
+    database.assert_not_called()
