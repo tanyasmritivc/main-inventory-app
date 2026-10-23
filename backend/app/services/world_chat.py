@@ -190,6 +190,9 @@ def execute(actor, world, name, args):
     if schema is None:
         raise ValueError('Unsupported action.')
     ARGUMENTS[name].model_validate(args, strict=True)
+    if name == 'world_create_task':
+        from app.services.world_tasks import propose
+        return propose(actor, world, args)
     if name == 'world_attach_item_photo':
         from app.services.chat_photo_attachment import propose
         return propose(actor, world, args)
@@ -275,7 +278,7 @@ def resolve_resource(actor, world, inventory_id, kind, resource_id):
 MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'})
 
 
-def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False):
+def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
@@ -336,6 +339,11 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         and (capture and capture['draft'] and capture['draft']['status'] == 'draft' or t['function']['name'] != 'world_refine_capture')
         and (not (capture and capture['draft'] and capture['draft']['status'] in ('draft', 'saving')) or t['function']['name'] != 'world_add_items')]
 
+    if supports_task_actions:
+        available_tools = [t for t in available_tools if t['function']['name'] != 'world_structure']
+        messages.append({'role': 'system', 'content': 'For missing structure use world_create_task. Include the requested new items or saved-item moves in that SAME creation plan. Its single confirmation performs the full task atomically. Never split creation and the requested item action into two reviews. Keep creation-only plans empty of item changes. Ask only for genuinely ambiguous destinations.'})
+    else:
+        available_tools = [t for t in available_tools if t['function']['name'] != 'world_create_task']
     available_names = {t['function']['name'] for t in available_tools}
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
@@ -581,3 +589,9 @@ from app.services.chat_photo_attachment import PhotoTarget
 _photo_schema = PhotoTarget.model_json_schema()
 TOOLS.append(tool('world_attach_item_photo', 'Find saved items for attaching the current chat photo. Use the user supplied name or part number, including typos. Returns an exact-item confirmation card or close matches; never creates stock or writes a photo by itself.', _photo_schema['properties'], _photo_schema.get('required', [])))
 ARGUMENTS['world_attach_item_photo'] = PhotoTarget
+
+
+from app.services.world_tasks import Task as WorldTask, schema as task_schema
+_task_schema = task_schema()
+TOOLS.append(tool('world_create_task', 'Review one complete creation request: workspace/inventory/Spaces AND requested new items or moves of saved items. One confirmation completes all steps. Use existing exact names to reuse structure. Moves require saved source IDs; do not copy moved items.', _task_schema['properties'], _task_schema.get('required', [])))
+ARGUMENTS['world_create_task'] = WorldTask

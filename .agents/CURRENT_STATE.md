@@ -1,3 +1,11 @@
+## October 22 - Sequential chat reliability work
+
+Active isolated lane `fix/chat-follow-through-api-20261022`. First: one reviewed
+creation task including requested item additions/moves. Next: direct edits/moves,
+actionable cards, error recovery, user/world context and capability audit.
+Migration 077 is under implementation and is NOT applied to production.
+Mobile counterpart: `fix/chat-follow-through-mobile-20261022`.
+
 ## October 21 — Reviewed chat photo attachments
 
 Lane feat/api-chat-item-photo-20261021 adds opt-in chat-photo attachment to existing

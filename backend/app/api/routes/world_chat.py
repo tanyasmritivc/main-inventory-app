@@ -26,6 +26,7 @@ class Question(BaseModel):
     supports_item_management: bool = False
     supports_capture: bool = False
     supports_photo_attachment: bool = False
+    supports_task_actions: bool = False
     sources: chat_sources.SourceList = Field(default_factory=list)
 
 
@@ -97,7 +98,7 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False):
     key = await asyncio.to_thread(world.authorize, actor, key)
     source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
@@ -156,7 +157,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             stage = 'chat_reply'
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -201,13 +202,13 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions)
 
 
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
     try:
         selected_sources = chat_sources.source_adapter.validate_json(sources)
     except ValueError:
@@ -220,11 +221,12 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions)
 
 
 class Decision(BaseModel):
     decision: str = Field(pattern='^(confirm|cancel)$')
+    supports_task_actions: bool = False
 
 
 @router.post('/structure-actions/{action_id}')
@@ -235,10 +237,16 @@ def decide(request: Request, world_id: str, action_id: UUID, body: Decision, use
     owners = {user.user_id}
     for workspace in world.directory(user.user_id, key)['workspaces']:
         owners.add(world._workspace(workspace['workspace_id'], user.user_id)['owner_user_id'])
-    space_limits = {owner: resolve_effective_limits(owner)[0].get('spaces') for owner in owners}
+    limits = {owner: resolve_effective_limits(owner)[0] for owner in owners}
+    space_limits = {owner: value.get('spaces') for owner, value in limits.items()}
     try:
-        result = get_supabase_raw().rpc('findez_world_structure_action', {
-            'p_actor': user.user_id, 'p_world': key, 'p_action': str(action_id), 'p_decision': body.decision, 'p_space_limits': space_limits}).execute().data
+        if body.supports_task_actions:
+            from app.services.world_tasks import confirm
+            result = confirm(user.user_id, key, str(action_id), body.decision, space_limits,
+                {owner: value.get('items') for owner, value in limits.items()})
+        else:
+            result = get_supabase_raw().rpc('findez_world_structure_action', {
+                'p_actor': user.user_id, 'p_world': key, 'p_action': str(action_id), 'p_decision': body.decision, 'p_space_limits': space_limits}).execute().data
     except Exception as error:
         code = getattr(error, 'code', None)
         if code == '42501':
