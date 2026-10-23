@@ -111,6 +111,13 @@ def validate_model_answer(message, trace, text):
                     and isinstance(entry.get('result'), dict)
                     and entry['result'].get('item_id') and not entry['result'].get('error')
                     for entry in writes)
+    confirmed = confirmed or any(
+        isinstance(entry.get('result'), dict)
+        and entry['result'].get('inventory_changed') is True
+        and (entry['result'].get('pending_action') or {}).get('status') == 'confirmed'
+        and isinstance(entry['result'].get('receipt'), dict)
+        and entry['result']['receipt'].get('count', 0) > 0
+        for entry in writes)
     if confirmed:
         return
     claims = re.search(r"(?:\b(?:i|we)(?:'ve| have)?\s+(?:successfully\s+)?|^)(?:moved|saved|updated|deleted|removed|created|added|attached|renamed|reserved|ordered|scheduled|logged|changed)\b", text, re.I)

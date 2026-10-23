@@ -58,6 +58,11 @@ class Edit(StrictModel):
     item_id: str
     changes: Changes
 
+class Adjust(StrictModel):
+    inventory_id: str
+    item_id: str
+    delta: int = Field(ge=-1000000, le=1000000)
+
 class Move(StrictModel):
     inventory_id: str
     item_id: str
@@ -95,7 +100,7 @@ def _label(value):
 
 def execute(actor, world, name, args):
     from app.services.world_chat import in_inventory, inventory_scope
-    models = {'world_edit_item': Edit, 'world_move_item': Move, 'world_reorders': Reorders,
+    models = {'world_edit_item': Edit, 'world_adjust_quantity': Adjust, 'world_move_item': Move, 'world_reorders': Reorders,
               'world_reorder_decision': DecideReorder, 'world_tracking': Tracking}
     parsed = models[name].model_validate(args, strict=True)
     inventory = str(UUID(parsed.inventory_id))
@@ -131,8 +136,16 @@ def execute(actor, world, name, args):
         entry = {'item_id': item['item_id'], 'name': item['name'], 'quantity': item['quantity'] if item['quantity'] >= 0 else None,
                  'location': item.get('location') or 'Unsorted', 'snapshot': frozen['snapshot']}
         details = []
-        if name == 'world_edit_item':
-            changes = parsed.changes.model_dump(exclude_unset=True)
+        if name in ('world_edit_item', 'world_adjust_quantity'):
+            if name == 'world_adjust_quantity':
+                if item['quantity'] < 0:
+                    raise ValueError('The saved quantity is unknown. Ask for a counted quantity first.')
+                quantity = item['quantity'] + parsed.delta
+                if not 0 <= quantity <= 1000000:
+                    raise ValueError('That change exceeds the saved stock. Ask for the correct quantity.')
+                changes = {'quantity': quantity}
+            else:
+                changes = parsed.changes.model_dump(exclude_unset=True)
             merged = {**item, **changes}
             if merged.get('unit_price') is not None and not merged.get('currency'):
                 raise ValueError('Ask for the currency with the price.')

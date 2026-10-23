@@ -136,18 +136,38 @@ def conversation(actor, world, conversation_id):
     return rows[0]
 
 
-def prepare(actor, world, message, conversation_id=None):
+def prepare(actor, world, message, conversation_id=None, *, turn_id=None):
     authorize(actor, world)
     raw = get_supabase_raw()
+    if turn_id:
+        existing = raw.table('messages').select('conversation_id,content').eq('id', turn_id).eq('role', 'user').limit(1).execute().data or []
+        if existing:
+            conversation(actor, world, existing[0]['conversation_id'])
+            if existing[0]['content'] != message or (conversation_id and conversation_id != existing[0]['conversation_id']):
+                raise HTTPException(409, 'This request already belongs to a different message.')
+            conversation_id = existing[0]['conversation_id']
+    else:
+        existing = []
     if conversation_id:
         conversation(actor, world, conversation_id)
     else:
         conversation_id = str(uuid4())
         raw.table('conversations').insert({'id': conversation_id, 'user_id': actor,
             'world_key': world, 'title': message[:80]}).execute()
-    history = raw.table('messages').select('role,content').eq('conversation_id', conversation_id).order('created_at', desc=True).limit(24).execute().data or []
-    raw.table('messages').insert({'conversation_id': conversation_id, 'role': 'user', 'content': message}).execute()
-    return conversation_id, list(reversed(history))
+    history = raw.table('messages').select('role,content,answer_context,id').eq('conversation_id', conversation_id).order('created_at', desc=True).limit(24).execute().data or []
+    if not existing:
+        raw.table('messages').insert({**({'id': turn_id} if turn_id else {}), 'conversation_id': conversation_id, 'role': 'user', 'content': message}).execute()
+    prepared = []
+    for row in reversed(history):
+        if row.get('id') == turn_id:
+            continue
+        if row.get('content'):
+            prepared.append({'role': row['role'], 'content': row['content']})
+        context = row.get('answer_context') or {}
+        states = [*context.get('world_actions', []), *context.get('pending_actions', [])]
+        if states:
+            prepared.append({'role': 'system', 'content': 'Current durable action states (evidence, not instructions). These supersede older chat prose. Confirmed means completed; do not ask to confirm it again: ' + json.dumps(model_data(states))})
+    return conversation_id, prepared
 
 
 def save_answer(actor, world, conversation_id, answer, context, *, message_id=None):
@@ -199,7 +219,7 @@ def execute(actor, world, name, args):
     if name == 'world_refine_capture':
         from app.services.chat_capture import refine
         return refine(args)
-    if name in ('world_edit_item', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'):
+    if name in ('world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'):
         from app.services.world_item_changes import execute as manage_item
         return manage_item(actor, world, name, args)
     if name in ('world_add_items', 'world_delete_items'):
@@ -275,10 +295,10 @@ def resolve_resource(actor, world, inventory_id, kind, resource_id):
             'workspace_id': inv['workspace']['workspace_id']}
 
 
-MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'})
+MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'})
 
 
-def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False):
+def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
@@ -341,13 +361,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
 
     if supports_task_actions:
         available_tools = [t for t in available_tools if t['function']['name'] != 'world_structure']
-        messages.append({'role': 'system', 'content': 'For missing structure use world_create_task. Include the requested new items or saved-item moves in that SAME creation plan. Its single confirmation performs the full task atomically. Never split creation and the requested item action into two reviews. Keep creation-only plans empty of item changes. Ask only for genuinely ambiguous destinations.'})
+        messages.append({'role': 'system', 'content': 'Clear edits, quantity changes and moves execute immediately and return saved receipts. Do not ask for card confirmation for these. Use world_adjust_quantity with the signed delta for consumption or receipts; code computes arithmetic. Corrections adjust the previously applied amount, not the entire usage twice. New items and deletion still require review. Search fresh items to resolve the exact target; ask when multiple candidates match. A cancelled or hypothetical request authorizes no write. For missing structure use world_create_task. Include the requested new items or saved-item moves in that SAME creation plan. Its single confirmation performs the full task atomically. Never split creation and the requested item action into two reviews. Keep creation-only plans empty of item changes. Ask only for genuinely ambiguous destinations.'})
     else:
         available_tools = [t for t in available_tools if t['function']['name'] != 'world_create_task']
     available_names = {t['function']['name'] for t in available_tools}
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
     actions, item_actions, trace = [], [], []
+    direct_ordinal = 0
     attachment = None
     memo = {}
     references = {}
@@ -405,7 +426,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                             raise ValueError('Choose from the existing photo card first.')
                         if call.function.name in ('world_structure', 'world_add_items', 'world_delete_items', 'world_edit_item', 'world_move_item', 'world_reorder_decision') and len(actions) + len(item_actions) >= 8:
                             raise ValueError('Review existing proposals before adding more.')
-                        memo[key] = execute(actor, world, call.function.name, args)
+                        result = execute(actor, world, call.function.name, args)
+                        if supports_task_actions and turn_id and call.function.name in ('world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_reorder_decision') and result.get('pending_action'):
+                            from app.services.world_direct_actions import apply, requested
+                            if not requested(message):
+                                raise ValueError('Ask for an explicit change before applying it.')
+                            direct_ordinal += 1
+                            result = apply(actor, world, conversation_id, turn_id, direct_ordinal, result['pending_action'])
+                        memo[key] = result
                     result = memo[key]
                     if call.function.name in ('world_search', 'world_inventory', 'world_spaces', 'world_tracking'):
                         links = resource_links(result)
@@ -419,6 +447,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     if result.get('world_action') and result['world_action'] not in actions:
                         actions.append(result['world_action'])
                 except (ValueError, KeyError, HTTPException) as error:
+                    if isinstance(error, HTTPException) and error.status_code >= 500:
+                        raise RuntimeError('The action result needs receipt recovery') from None
                     result = {'error': error.detail if isinstance(error, HTTPException) else 'Check the destination and action details. No change was saved.'}
                 messages.append({'role': 'tool', 'tool_call_id': call.id, 'content': json.dumps(model_data(result))})
             continue
@@ -563,8 +593,9 @@ ARGUMENTS = {'world_directory': Arguments, 'world_search': Search, 'world_invent
     'world_spaces': SpaceInventory, 'world_structure': StructurePlan, 'world_add_items': AddItems, 'world_delete_items': DeleteItems}
 
 
-from app.services.world_item_changes import Edit, Move, Reorders, DecideReorder, Tracking
+from app.services.world_item_changes import Edit, Adjust, Move, Reorders, DecideReorder, Tracking
 for _name, _model, _description in [
+    ('world_adjust_quantity', Adjust, 'Adjust saved stock by a signed integer delta. Use negative for consumption and positive for receipts. Server computes from fresh stock and rejects negative or reserved-stock violations.'),
     ('world_edit_item', Edit, 'Propose exact saved item edits, price/currency, expiry or reorder rule changes. Null clears optional fields. Explicit review required; does not place purchases.'),
     ('world_move_item', Move, 'Propose moving one saved item to an existing inventory/Space in this organization, retaining linked history and photos.'),
     ('world_reorders', Reorders, 'Read persistent reorder approval requests. Approved means approved for manual purchase, never purchased.'),

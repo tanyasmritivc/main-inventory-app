@@ -2,7 +2,7 @@
 import asyncio
 import json
 import logging
-from uuid import UUID
+from uuid import UUID, uuid4, uuid5, NAMESPACE_URL
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -27,6 +27,7 @@ class Question(BaseModel):
     supports_capture: bool = False
     supports_photo_attachment: bool = False
     supports_task_actions: bool = False
+    request_id: UUID | None = None
     sources: chat_sources.SourceList = Field(default_factory=list)
 
 
@@ -98,14 +99,15 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None):
     key = await asyncio.to_thread(world.authorize, actor, key)
     source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
     except (ChatLimitExceeded, TeamSoftCapExceeded):
         raise HTTPException(403, 'Your chat allowance has been reached. Check your account settings.') from None
-    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id)
+    turn_id = str(uuid5(NAMESPACE_URL, f'findez:request:{actor}:{key}:{request_id}')) if request_id else str(uuid4())
+    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions else {}))
     async def generate():
         stored = None
         saved = False
@@ -113,7 +115,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         matching = None
         stage = 'load_draft'
         try:
-            yield encode({'type': 'status', 'message': 'Thinking...'})
+            yield encode({'type': 'status', 'message': 'Thinking...', 'conversation_id': cid})
             from app.services.chat_item_actions import use_photo, photo_facts
             from app.services import chat_capture
             draft_row = await asyncio.to_thread(chat_capture.load, actor, key, cid) if supports_capture and not photo else None
@@ -157,7 +159,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             stage = 'chat_reply'
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -202,7 +204,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id)
 
 
 @router.post('/ai_photo_question')
