@@ -35,9 +35,17 @@ ordinary-photo routing, retained-image follow-ups and interrupted replies,
 foreign storage rejection, valid pixel crops, duplicate/invalid boxes, strict
 refinement mappings and explicit uncertainty. No migration is required.
 
-Remaining acceptance: authenticated HTTPS photo/follow-up smoke, guarded API
-publication, and mobile beta delivery. Broad document OCR, exact segmentation
-masks, and the rest of the product roadmap are not claimed by this change.
+API runtime 1beab287c0893d47d9a4411c70bdc57b05dc1d51 is live. All five CI
+jobs passed for that exact source. Guarded selective publication preserved other
+VM files; API and database health passed. Authenticated HTTPS QA used a fresh
+disposable account: ordinary photo answer 3.5 seconds, retained-image follow-up
+3.7 seconds, no capture event/draft and no inventory items created. The account
+and uploaded photo were removed afterward. No customer inventory was changed.
+
+Mobile source 9906ecc targets build 113; its separate delivery receipt records
+Apple acknowledgment. Physical-device acceptance remains unverified. Broad
+document OCR, exact segmentation masks, and the rest of the product roadmap
+are not claimed by this change.
 
 Live schema correction: messages_answer_context_object only permits metadata on
 assistant rows. The authenticated smoke caught a user-row update rejected by that
