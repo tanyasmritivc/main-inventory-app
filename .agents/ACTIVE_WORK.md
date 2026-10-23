@@ -8,7 +8,8 @@ uses hidden, verified assistant receipts tied to the user turn. Do not update
 user-row answer_context. GLM grounded extraction remains opt-in, disabled by
 default after gateway structured-output failures. FIND remains Auto Extract.
 Mobile source `9906ecc` targets beta 113 with a compact Lovable-reference menu;
-Apple upload is in progress and its acknowledgment is tracked separately.
+Apple acknowledged beta 113: `19c2790f-c6bb-41cf-b1b8-9cb888b1835c`. Processing
+and tester availability were not polled; physical-device acceptance is unverified.
 
 ## October 22 - Direct chat vision and compact attachment menu
 
