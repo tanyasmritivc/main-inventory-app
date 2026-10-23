@@ -36,6 +36,8 @@ api_router.include_router(items_router)
 api_router.include_router(inventory_router)
 api_router.include_router(ai_router)
 api_router.include_router(imports_router)
+from app.api.routes.connectors import router as connectors_router
+api_router.include_router(connectors_router)
 api_router.include_router(documents_router)
 api_router.include_router(activity_router)
 api_router.include_router(sharing_router)
@@ -74,7 +76,7 @@ api_router.include_router(access_invitations_router)
 from app.api.routes.workspace_directory import router as directory_router
 api_router.include_router(directory_router)
 for scoped_feature_router in (
-    items_router, inventory_router, ai_router, imports_router, documents_router,
+    items_router, inventory_router, ai_router, imports_router, connectors_router, documents_router,
     activity_router, checkouts_router, spaces_router, bins_router,
     conversations_router, project_kits_router, review_router, sharing_router,
 ):

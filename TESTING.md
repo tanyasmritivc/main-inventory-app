@@ -1,3 +1,14 @@
+## Reviewed connector imports (October 22)
+
+Run full Python, Flutter, and Jest suites plus Flutter analysis, TypeScript and
+changed-file lint. New connector tests cover deterministic CSV/XLSX validation,
+row decisions, BOM stock allocation, authenticated sessions and replay recovery.
+The disposable SQL entry point now includes connector_import_ci.sql and migration
+079 twice; never run this fixture on production. Native layout captures use
+mobile/integration_test/connector_visual_test.dart and chat_receipt_visual_test.dart.
+Preserve their temporary screenshots during execution. See
+`docs/plans/connectors-phase1-20261022.md` for acceptance steps and release status.
+
 ## Consistent resource permissions and private photos
 
 Run the full Python, web and Flutter suites/analysis/types/build. The composed

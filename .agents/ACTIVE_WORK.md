@@ -1,3 +1,12 @@
+## October 22 - Connector imports and compact cards (tested locally, pending migration 079 approval)
+
+Implementation lane feat/connectors-phase1-api-20261022 owns reviewed CSV/XLSX,
+file BOMs, private source sessions and atomic import receipts (migration079).
+No production migration or connector deployment yet. Google configuration is
+absent; user explicitly requires hiding all unfinished connectors in this build.
+Mobile/web use separate companion branches. Preserve direct GLM attachments and
+explicit FIND Auto Extract. Validation/release receipts will follow completion.
+
 ## October 22 — Direct GLM photo chat live
 
 API runtime `1beab28` is live (PR #172), with no schema changes. All five exact

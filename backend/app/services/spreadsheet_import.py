@@ -5,12 +5,16 @@ import io
 import json
 import math
 import re
+import zipfile
 from datetime import date, datetime, time
 
 import openpyxl
 
 
 MAX_IMPORT_BYTES = 10 * 1024 * 1024
+MAX_IMPORT_ROWS = 5000
+MAX_IMPORT_COLUMNS = 200
+MAX_CELL_CHARS = 10000
 
 
 def _text(value: object) -> str:
@@ -18,7 +22,18 @@ def _text(value: object) -> str:
 
 
 def _table(name: str, headers: list, rows) -> dict | None:
-    source_rows = [list(row) for row in rows if any(_text(cell) for cell in row)]
+    source_rows = []
+    row_numbers = []
+    for number, row in enumerate(rows, 2):
+        if number > MAX_IMPORT_ROWS + 1:
+            raise ValueError('Choose a file with at most 5,000 rows per sheet.')
+        if len(row) > MAX_IMPORT_COLUMNS or any(len(_text(cell)) > MAX_CELL_CHARS for cell in row):
+            raise ValueError('A sheet exceeds 200 columns or 10,000 characters per cell.')
+        if any(_text(cell) for cell in row):
+            source_rows.append(list(row))
+            row_numbers.append(number)
+    if len(headers) > MAX_IMPORT_COLUMNS or any(len(_text(cell)) > 1000 for cell in headers):
+        raise ValueError('The column headers are too large.')
     if not source_rows:
         return None
     # Preserve position: duplicate and unnamed columns must not overwrite values.
@@ -29,6 +44,9 @@ def _table(name: str, headers: list, rows) -> dict | None:
     ]
     return {
         'name': name,
+        'row_numbers': row_numbers,
+        'row_widths': [len(row) for row in source_rows],
+        'header_width': len(headers),
         'headers': [h.strip() or f'Column {i + 1}' for i, h in enumerate(source_headers)],
         'rows': [[_text(cell) for cell in row] for row in source_rows],
         'source_headers': source_headers,
@@ -55,7 +73,7 @@ def _json_value(value):
     return value
 
 
-def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
+def parse_import_tables(raw: bytes, filename: str, *, review: bool = False) -> list[dict]:
     """Return tables in the shape expected by the existing import route."""
     if not raw:
         raise ValueError('The selected file is empty.')
@@ -64,10 +82,18 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
 
     name = filename.lower()
     tables = []
-    if name.endswith(('.xlsx', '.xls')):
+    if name.endswith('.xlsx'):
         try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                entries = archive.infolist()
+                if len(entries) > 1000 or sum(entry.file_size for entry in entries) > 50 * 1024 * 1024:
+                    raise ValueError('The expanded workbook is too large.')
+                if any(entry.flag_bits & 1 for entry in entries):
+                    raise ValueError('Password-protected workbooks are not supported.')
+                if any(entry.filename.lower().endswith('vbaproject.bin') for entry in entries):
+                    raise ValueError('Macro-enabled workbooks are not supported.')
             workbook = openpyxl.load_workbook(
-                io.BytesIO(raw), read_only=True, data_only=True,
+                io.BytesIO(raw), read_only=True, data_only=not review, keep_links=False,
             )
             try:
                 for worksheet in workbook.worksheets:
@@ -83,11 +109,20 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
                         tables.append(table)
             finally:
                 workbook.close()
+        except ValueError:
+            raise
         except Exception as exc:
             raise ValueError('This Excel file could not be read.') from exc
     elif name.endswith('.csv'):
         try:
-            rows = csv.reader(io.StringIO(raw.decode('utf-8-sig')))
+            text = raw.decode('utf-8-sig')
+            if '\x00' in text:
+                raise ValueError('CSV files must contain UTF-8 text, not binary data.')
+            try:
+                dialect = csv.Sniffer().sniff(text[:8192], delimiters=',;\t')
+            except csv.Error:
+                dialect = csv.excel
+            rows = csv.reader(io.StringIO(text), dialect=dialect, strict=True)
             headers = next(rows, None)
             if headers is not None:
                 table = _table('Sheet1', headers, rows)
@@ -120,6 +155,8 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
     else:
         raise ValueError('Choose an Excel (.xlsx), CSV, or JSON file.')
 
+    if sum(len(table['rows']) for table in tables) > MAX_IMPORT_ROWS or len(tables) > 20:
+        raise ValueError('Choose a file with at most 5,000 rows and 20 sheets.')
     if not tables:
         raise ValueError('No inventory rows were found in this file.')
     return tables
