@@ -125,43 +125,52 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             if supports_photo_attachment and not photo:
                 retained = await asyncio.to_thread(world.latest_photo, actor, key, cid) or retained
             evidence = photo_facts(retained) if supports_photo_attachment or not draft or draft['status'] != 'saved' else {}
+            from app.services import chat_vision
+            image_content = None
             if photo:
-                stage = 'extract_photo'
                 from app.services.storage import upload_image
-                from app.services.find_pipeline import extract_inventory_items_with_find
-                from uuid import uuid4
-                yield encode({'type': 'status', 'message': 'Reading your photo...'})
-                await asyncio.to_thread(check_and_increment_scan, actor)
-                matching = None if auto_extract else asyncio.create_task(world.photo_matches(actor, key, photo))
                 stored = await asyncio.to_thread(upload_image, user_id=actor, filename=f'ask-{uuid4().hex}.jpg', content=photo)
-                try:
-                    result = await extract_inventory_items_with_find(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
-                except Exception:
-                    if auto_extract or not supports_photo_attachment:
-                        raise
-                    # Linking a user's photo to an existing item does not require
-                    # recognizing its contents. Never invent visual observations.
-                    result = {'items': [], 'summary': 'Photo attached; its contents could not be identified.'}
-                    yield encode({'type': 'status', 'message': 'Photo attached. Its contents could not be identified.'})
-                from app.services.item_photos import _storage_path
                 retained = {'items': [], 'source_url': stored.url}
-                for item in result.get('items', [])[:20]:
-                    clean = {k: item.get(k) for k in ('name', 'category', 'quantity', 'confidence', 'brand', 'part_number')}
-                    if item.get('image_url'):
-                        clean['crop_path'] = _storage_path(user_id=actor, image_url=item['image_url'])
-                    retained['items'].append(clean)
-                if supports_capture and (auto_extract or not supports_photo_attachment):
-                    draft = await asyncio.to_thread(chat_capture.create, actor, key, cid, result.get('items', []), stored.url, result.get('summary'))
-                    # The photo is now referenced by a verified durable draft.
-                    saved = True
-                    yield encode({'type': 'capture', 'conversation_id': cid, 'answer_context': {'chat_capture': draft}})
-                evidence = {**photo_facts(retained), 'saved_photos': await matching if matching else {},
-                    'note': 'Uncertain observations are not verified identities or stock counts.'}
+                if auto_extract:
+                    stage = 'extract_photo'
+                    yield encode({'type': 'status', 'message': 'Extracting items...'})
+                    await asyncio.to_thread(check_and_increment_scan, actor)
+                    from app.core.config import get_settings
+                    if get_settings().findez_chat_extraction == 'glm_grounded':
+                        from app.services.glm_extraction import extract
+                        result = await asyncio.to_thread(extract, photo, actor, stored.url)
+                    else:
+                        from app.services.find_pipeline import extract_inventory_items_with_find
+                        result = await extract_inventory_items_with_find(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
+                    from app.services.item_photos import _storage_path
+                    for item in result.get('items', [])[:20]:
+                        clean = {k: item.get(k) for k in ('name', 'category', 'quantity', 'confidence', 'brand', 'part_number')}
+                        if item.get('image_url'):
+                            clean['crop_path'] = _storage_path(user_id=actor, image_url=item['image_url'])
+                        retained['items'].append(clean)
+                    if supports_capture:
+                        draft = await asyncio.to_thread(chat_capture.create, actor, key, cid, result.get('items', []), stored.url, result.get('summary'))
+                        saved = True
+                        yield encode({'type': 'capture', 'conversation_id': cid, 'answer_context': {'chat_capture': draft}})
+                    evidence = {**photo_facts(retained), 'note': 'Uncertain observations are not verified identities or stock counts.'}
+                else:
+                    stage = 'read_chat_photo'
+                    yield encode({'type': 'status', 'message': 'Looking at your photo...'})
+                    retained.update(mode='chat', source_path=stored.path)
+                    image_content = chat_vision.image_part(photo)
+                    evidence = photo_facts(retained)
+                    if supports_task_actions:
+                        await asyncio.to_thread(chat_vision.retain, actor, key, cid, turn_id, retained)
+                        saved = True
+            elif retained and retained.get('mode') == 'chat':
+                draft = None
+                stage = 'load_chat_photo'
+                image_content = await asyncio.to_thread(chat_vision.retained_image, actor, retained)
             stage = 'chat_reply'
             from app.services.world_user_context import load as load_user_context
             user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -212,7 +221,7 @@ async def command(request: Request, world_id: str, body: Question, user: Authent
 @router.post('/ai_photo_question')
 @limiter.limit('10/minute')
 async def photo(request: Request, world_id: str, file: UploadFile = File(...), message: str = Form('', max_length=8000),
-                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
+                conversation_id: UUID | None = Form(None), supports_item_management: bool = Form(False), supports_capture: bool = Form(False), auto_extract: bool = Form(False), supports_photo_attachment: bool = Form(False), supports_task_actions: bool = Form(False), request_id: UUID | None = Form(None), sources: str = Form('[]', max_length=110000), user: AuthenticatedUser = Depends(get_current_user)):
     try:
         selected_sources = chat_sources.source_adapter.validate_json(sources)
     except ValueError:
@@ -225,7 +234,7 @@ async def photo(request: Request, world_id: str, file: UploadFile = File(...), m
         jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
     except ValueError:
         raise HTTPException(422, 'Choose a valid photo smaller than 10 MB.') from None
-    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions)
+    return await answer(user.user_id, world.world_key(world_id), message.strip() or 'Help me with this photo. Ask whether I want to identify, find or save its contents if that is unclear.', str(conversation_id) if conversation_id else None, jpeg, supports_item_management=supports_item_management, supports_capture=supports_capture, auto_extract=auto_extract, sources=selected_sources, supports_photo_attachment=supports_photo_attachment, supports_task_actions=supports_task_actions, request_id=request_id)
 
 
 class Decision(BaseModel):

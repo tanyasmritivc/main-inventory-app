@@ -338,3 +338,14 @@ def test_confirmation_card_noun_does_not_bypass_real_card_requirement(history):
         done = list(w.stream_turn(ACTOR, WORLD, 'Move batteries to a new Garage Space', history, 'cid', supports_task_actions=True))[-1]
     assert gateway.call_count == 3
     assert done['answer_context']['world_actions'] == [proposal['world_action']]
+
+
+def test_direct_image_reaches_multimodal_model_and_is_not_a_photo_observation():
+    image = {'type':'image_url','image_url':{'url':'data:image/jpeg;base64,abc'}}
+    with patch.object(w,'directory',return_value={}), patch('app.services.agent_gateway_client.gateway_completion',return_value=completion('The handles appear orange.')) as gateway:
+        result=list(w.stream_turn(ACTOR,WORLD,'What color are the handles?',[],'cid',image_content=image))
+    assert result[-1]['assistant_message']=='The handles appear orange.'
+    args=gateway.call_args.kwargs
+    assert args['model']=='glm-5.3-flash-agent'
+    assert any(isinstance(m['content'],list) and image in m['content'] for m in args['messages'])
+    assert 'image_url' not in str(result[-1]['answer_context'])

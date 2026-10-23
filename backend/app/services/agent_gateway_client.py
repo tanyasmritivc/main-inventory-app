@@ -105,7 +105,7 @@ def gateway_completion(
               else AgentGatewayClient(request_timeout_seconds=request_timeout_seconds))
     try:
         return client.chat.completions.create(
-            model=settings.findez_agent_model,
+            model=kwargs.pop("model", settings.findez_agent_model),
             messages=messages,
             max_tokens=max_tokens,
             extra_headers={

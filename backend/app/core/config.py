@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"
+    findez_chat_vision_model: str = "glm-5.3-flash-agent"
+    # Grounded extraction remains opt-in until compared with FIND on real photos.
+    findez_chat_extraction: str = "find"
     findez_agent_timezone: str = "America/Los_Angeles"
 
     # FIND is the server-side inventory-photo ingestion pipeline used by both
