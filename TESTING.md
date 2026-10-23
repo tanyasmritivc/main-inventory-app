@@ -1,3 +1,13 @@
+## Native bottom tabs (October 23)
+
+Run `flutter test test/native_bottom_tabs_test.dart test/world_shell_test.dart`
+for channel/state/navigation regressions. For actual UIKit taps and drag motion,
+run `flutter run -t tool/native_tabs_visual.dart -d <ios-device-id> --no-pub`
+and follow `docs/plans/native-ios-tabs-20261023.md`. WidgetTester.tap does not
+synthesize UIKit touches. The audit harness contains no customer data and is
+never the production entry point. Complete physical iPhone accessibility checks
+before public release.
+
 ## October 22 chat follow-through
 
 Run the full host Flutter suite and analysis. The focused iOS regression command is

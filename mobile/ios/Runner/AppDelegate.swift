@@ -30,6 +30,7 @@ import UserNotifications
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.applicationRegistrar
     registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
+    registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -257,4 +258,98 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
   }
   func view() -> UIView { button }
   deinit { channel.setMethodCallHandler(nil) }
+}
+
+// UIKit owns the tab bar material, selection animation and accessibility.
+// Linking against iOS 26 adopts Liquid Glass without custom bar appearances.
+private final class NativeTabsFactory: NSObject, FlutterPlatformViewFactory {
+  private let messenger: FlutterBinaryMessenger
+  init(messenger: FlutterBinaryMessenger) { self.messenger = messenger }
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol { FlutterStandardMessageCodec.sharedInstance() }
+  func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+    NativeTabsView(frame: frame, id: viewId, messenger: messenger, args: args)
+  }
+}
+
+private final class NativeTabsHost: UIView {
+  let controller = UITabBarController()
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    backgroundColor = .clear
+    controller.view.backgroundColor = .clear
+    addSubview(controller.view)
+  }
+  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    guard window != nil else { detach(); return }
+    guard controller.parent == nil else { return }
+    var candidate: UIResponder? = next
+    while let responder = candidate {
+      if let parent = responder as? UIViewController {
+        parent.addChild(controller)
+        controller.didMove(toParent: parent)
+        break
+      }
+      candidate = responder.next
+    }
+  }
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    controller.view.frame = bounds
+  }
+  func detach() {
+    guard controller.parent != nil else { return }
+    controller.willMove(toParent: nil)
+    controller.removeFromParent()
+  }
+}
+
+private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarControllerDelegate {
+  private let host: NativeTabsHost
+  private let channel: FlutterMethodChannel
+  init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
+    host = NativeTabsHost(frame: frame)
+    channel = FlutterMethodChannel(name: "com.findez.app/native-tabs/\(id)", binaryMessenger: messenger)
+    super.init()
+    let tabs = [("Ask", "bubble.left", "bubble.left.fill"),
+                ("Spaces", "square.grid.2x2", "square.grid.2x2.fill"),
+                ("More", "ellipsis", "ellipsis")]
+    host.controller.viewControllers = tabs.enumerated().map { index, tab in
+      let page = UIViewController()
+      page.view.backgroundColor = .clear
+      page.tabBarItem = UITabBarItem(title: tab.0, image: UIImage(systemName: tab.1), selectedImage: UIImage(systemName: tab.2))
+      page.tabBarItem.tag = index
+      page.tabBarItem.accessibilityIdentifier = "findez.tab.\(tab.0.lowercased())"
+      return page
+    }
+    host.controller.delegate = self
+    host.controller.tabBar.tintColor = .label
+    if #available(iOS 18.0, *) { host.controller.mode = .tabBar }
+    configure(args)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self = self else { result(nil); return }
+      if call.method == "configure" {
+        self.configure(call.arguments)
+        result(nil)
+      } else { result(FlutterMethodNotImplemented) }
+    }
+  }
+  private func configure(_ args: Any?) {
+    let values = args as? [String: Any] ?? [:]
+    host.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
+    host.controller.overrideUserInterfaceStyle = host.overrideUserInterfaceStyle
+    if let selected = values["selected"] as? Int, (0...2).contains(selected), host.controller.selectedIndex != selected {
+      host.controller.selectedIndex = selected
+    }
+  }
+  func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+    channel.invokeMethod("selected", arguments: tabBarController.selectedIndex)
+  }
+  func view() -> UIView { host }
+  deinit {
+    channel.setMethodCallHandler(nil)
+    host.controller.delegate = nil
+    host.detach()
+  }
 }

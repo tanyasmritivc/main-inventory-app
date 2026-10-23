@@ -1,3 +1,10 @@
+## October 23 - Use system iOS bottom navigation
+
+User explicitly requested native iOS Liquid Glass. Host UITabBarController through
+a platform view, leaving its system appearance and selection gestures intact.
+Do not substitute a Flutter blur/shader imitation on iOS. Preserve the Flutter
+fallback on other platforms and use standard UIKit styling on older iOS.
+
 ## October 23 - Keep the original quiet chat background
 
 User rejected the stronger beta 115 chat gradient. Retain the beta 114 background:
