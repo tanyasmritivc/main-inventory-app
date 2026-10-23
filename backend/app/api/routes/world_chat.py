@@ -85,7 +85,7 @@ def conversation(world_id: str, conversation_id: UUID, user: AuthenticatedUser =
         capture_id = context.get('chat_capture_id')
         if capture_id:
             context['chat_capture'] = load(user.user_id, world.world_key(world_id), str(conversation_id), capture_id)['answer_context']['chat_capture']
-    return {'conversation': value, 'messages': rows}
+    return {'conversation': value, 'messages': [row for row in rows if not (row.get('answer_context') or {}).get('direct_receipt')]}
 
 
 @router.delete('/conversations/{conversation_id}')
@@ -158,8 +158,10 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                 evidence = {**photo_facts(retained), 'saved_photos': await matching if matching else {},
                     'note': 'Uncertain observations are not verified identities or stock counts.'}
             stage = 'chat_reply'
+            from app.services.world_user_context import load as load_user_context
+            user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}))):
                     if event['type'] == 'done':
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
@@ -185,7 +187,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             location = frames[-1].name if frames else 'unknown'
             logger.warning('World chat failed stage=%s error_type=%s location=%s',
                            stage, type(error).__name__, location)
-            yield encode({'type': 'error', 'code': 'world_chat_failed', 'message': 'Your request could not be completed. Please try again.'})
+            yield encode({'type': 'error', 'code': 'history_save_failed' if stage == 'save_reply' else 'world_chat_failed', 'conversation_id': cid, 'message': 'I could not finish this response. Retry to check the result of this request.'})
         finally:
             if matching is not None:
                 if not matching.done():
