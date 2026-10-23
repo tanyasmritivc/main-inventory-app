@@ -1,6 +1,6 @@
 ## October 23 - Use system iOS bottom navigation
 
-User explicitly requested native iOS Liquid Glass. Host UITabBarController through
+User explicitly requested native iOS Liquid Glass. Host UITabBar through
 a platform view, leaving its system appearance and selection gestures intact.
 Do not substitute a Flutter blur/shader imitation on iOS. Preserve the Flutter
 fallback on other platforms and use standard UIKit styling on older iOS.

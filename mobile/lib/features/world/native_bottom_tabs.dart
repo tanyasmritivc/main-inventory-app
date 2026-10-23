@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 
 bool get usesNativeBottomTabs => !kIsWeb && Platform.isIOS;
 
-/// Hosts the system UITabBarController. iOS owns Liquid Glass and touch motion.
+/// Hosts the system UITabBar. iOS owns Liquid Glass and touch motion.
 class NativeBottomTabs extends StatefulWidget {
   const NativeBottomTabs({
     super.key,
@@ -53,7 +53,6 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
     height: 83,
     child: UiKitView(
       viewType: 'com.findez.app/native-tabs',
-      // Keep default arbitration: eager recognizers interfere with UIKit tabs.
       creationParamsCodec: const StandardMessageCodec(),
       creationParams: _configuration,
       onPlatformViewCreated: (id) {

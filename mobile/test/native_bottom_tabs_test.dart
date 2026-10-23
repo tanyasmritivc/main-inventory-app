@@ -14,9 +14,12 @@ void main() {
       final messenger = binding.defaultBinaryMessenger;
       final configurations = <Map<Object?, Object?>>[];
       MethodChannel? channel;
+      final platformCalls = <String>[];
+      var ancestorTaps = 0;
       messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
         call,
       ) async {
+        platformCalls.add(call.method);
         if (call.method == 'create') {
           final args = call.arguments as Map<Object?, Object?>;
           channel = MethodChannel('com.findez.app/native-tabs/${args['id']}');
@@ -43,6 +46,13 @@ void main() {
           builder: (context, setState) {
             update = setState;
             return MaterialApp(
+              builder: (context, child) => GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: MediaQuery.viewInsetsOf(context).bottom > 0
+                    ? () => ancestorTaps++
+                    : null,
+                child: child,
+              ),
               theme: ThemeData(
                 brightness: dark ? Brightness.dark : Brightness.light,
               ),
@@ -64,6 +74,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(configurations.last, {'selected': 0, 'dark': false});
+      platformCalls.clear();
+      await tester.tap(find.byType(UiKitView));
+      await tester.pumpAndSettle();
+      expect(platformCalls, contains('acceptGesture'));
+      expect(ancestorTaps, 0);
+      platformCalls.clear();
+      await tester.drag(find.byType(UiKitView), const Offset(80, 0));
+      await tester.pumpAndSettle();
+      expect(platformCalls, contains('acceptGesture'));
+      expect(ancestorTaps, 0);
       Future<void> nativeEvent(
         Object? value, {
         String method = 'selected',

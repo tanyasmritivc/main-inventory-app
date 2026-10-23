@@ -21,6 +21,13 @@ class _AuditState extends State<_Audit> {
   bool dark = true;
   @override
   Widget build(BuildContext context) => MaterialApp(
+    builder: (context, child) => GestureDetector(
+      onTap: MediaQuery.viewInsetsOf(context).bottom > 0
+          ? () => FocusManager.instance.primaryFocus?.unfocus()
+          : null,
+      behavior: HitTestBehavior.translucent,
+      child: child,
+    ),
     theme: AppTheme.create(dark ? Brightness.dark : Brightness.light),
     home: Scaffold(
       body: SafeArea(

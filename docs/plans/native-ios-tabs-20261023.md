@@ -6,25 +6,26 @@ The chat background is restored to beta 114: black in dark mode and the original
 warm light landing surface. Beta 115's history sheet, settings, Space layout,
 manual Space creation, compact menus and release-to-send voice behavior remain.
 
-On iOS the bottom navigation now hosts UIKit's UITabBarController, using SF Symbols
+On iOS the bottom navigation now hosts UIKit's UITabBar, using SF Symbols
 and the system material, selected lens, drag motion and tab labels. With the iOS 26
 SDK this is native Liquid Glass; older iOS uses its standard system tab appearance.
 Flutter retains the page state, scope, navigation and non-iOS fallback. No package,
 backend, database or account changes are needed. The existing compact width remains.
 The native container reserves 83 points so the system bar fits its touch bounds.
 
-Do not add an eager Flutter gesture recognizer to this platform view. It interfered
-with native tab selection in Simulator. Default platform-view arbitration allowed
-normal single taps and dragging across the native tabs in the running app.
+The native bar uses default platform-view gesture arbitration. The app-wide
+keyboard-dismiss tap recognizer is enabled only when the software keyboard is
+visible; the shell hides bottom tabs in that state. Keeping an always-active
+ancestor tap recognizer consumes native tab taps. The runtime audit mirrors this
+production wrapper. No private UIKit APIs or custom gesture simulation are used.
 
 ## Verification
 
 - Full host suite: 812 passed, one optional skip.
-- Final focused native-channel and world-shell tests: 24 passed.
 - Flutter analysis: clean (see release receipt for final delivery).
 - Native iPhone 17 Pro / iOS 26.5: compiled and ran the actual UIKit view. Verified
   Ask → Spaces → More → Ask with single taps, sliding Ask → More, and live light/
-  dark appearance changes using the app UI and observing the Flutter page label.
+  dark appearance changes with the production-style keyboard-dismiss wrapper using the app UI and observing the Flutter page label.
 - Exploratory WidgetTester-driven native touch runs timed out intermittently even
   with forwarded device events. These are not counted as passing native tests.
   Use the normal runtime harness below for native gestures, not WidgetTester.tap.

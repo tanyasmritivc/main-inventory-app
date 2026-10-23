@@ -1,10 +1,12 @@
 ## October 23 - Native iOS tabs and restored chat background (beta 116)
 
 PR #178 now also replaces the iOS custom bottom navigation with a real UIKit
-UITabBarController. Native material/selection/drag behavior comes from the system;
+UITabBar. Native material/selection/drag behavior comes from the system;
 Flutter keeps existing page state and the non-iOS fallback. Default platform-view
-gesture arbitration is intentional. Restored beta 114 chat background remains.
-Full host suite: 812 passed, one optional skip; focused channel/shell checks: 24.
+gesture arbitration is intentional. The ancestor keyboard-dismiss gesture is
+active only with the keyboard visible, when tabs are hidden. Restored beta 114
+chat background remains.
+Full host suite: 812 passed, one optional skip (including channel/shell checks).
 Actual native taps, sliding selection and both themes verified in a running iOS
 26.5 Simulator harness. Physical-device/accessibility acceptance remains pending.
 Beta 116 is being rebuilt; the gradient-only candidate was never uploaded.

@@ -246,7 +246,11 @@ class _MyAppState extends State<MyApp> {
                       ? SystemUiOverlayStyle.dark
                       : SystemUiOverlayStyle.light,
                   child: GestureDetector(
-                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                    // Avoid competing with native controls when no keyboard
+                    // needs dismissal. The shell hides tabs while it is open.
+                    onTap: MediaQuery.viewInsetsOf(context).bottom > 0
+                        ? () => FocusManager.instance.primaryFocus?.unfocus()
+                        : null,
                     behavior: HitTestBehavior.translucent,
                     child: LaunchNotificationPermission(
                       api: _api,
