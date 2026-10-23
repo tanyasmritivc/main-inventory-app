@@ -1,3 +1,4 @@
+import 'native_bottom_tabs.dart';
 import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -577,24 +578,14 @@ class _WorldShellState extends State<WorldShell> {
       backgroundColor: dark ? Colors.black : const Color(0xFFFCFAF7),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: _tab == 0
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  stops: const [0, .42, .78, 1],
-                  colors: dark
-                      ? const [
-                          Color(0xFF080A10),
-                          Color(0xFF121825),
-                          Color(0xFF29202D),
-                          Color(0xFF3C2720),
-                        ]
-                      : const [
-                          Color(0xFFFCFAF7),
-                          Color(0xFFF1EDF7),
-                          Color(0xFFE7E7F4),
-                          Color(0xFFF2D8C7),
-                        ],
+          gradient: !dark && !_chatFocused && _tab == 0
+              ? RadialGradient(
+                  center: const Alignment(.3, 1.2),
+                  radius: 1.15,
+                  colors: [
+                    const Color(0xFFEE9B6C).withValues(alpha: dark ? .18 : .22),
+                    Colors.transparent,
+                  ],
                 )
               : null,
         ),
@@ -730,113 +721,129 @@ class _WorldShellState extends State<WorldShell> {
                   padding: const EdgeInsets.fromLTRB(54, 8, 54, 10),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 288),
-                    child: LiquidSurface(
-                      radius: 40,
-                      quiet: true,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: SizedBox(
-                          height: 48,
-                          child: Stack(
-                            children: [
-                              AnimatedAlign(
-                                alignment: Alignment((_tab - 1).toDouble(), 0),
-                                duration: Duration(
-                                  milliseconds:
-                                      MediaQuery.disableAnimationsOf(context)
-                                      ? 0
-                                      : 360,
-                                ),
-                                curve: Curves.easeInOutCubicEmphasized,
-                                child: FractionallySizedBox(
-                                  widthFactor: 1 / 3,
-                                  heightFactor: 1,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(28),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: dark
-                                            ? [
-                                                Colors.white.withValues(
-                                                  alpha: .19,
-                                                ),
-                                                Colors.white.withValues(
-                                                  alpha: .08,
-                                                ),
-                                              ]
-                                            : [
-                                                Colors.white.withValues(
-                                                  alpha: .96,
-                                                ),
-                                                Colors.white.withValues(
-                                                  alpha: .64,
-                                                ),
-                                              ],
+                    child: usesNativeBottomTabs
+                        ? NativeBottomTabs(
+                            selected: _tab,
+                            onSelected: (index) => setState(() => _tab = index),
+                          )
+                        : LiquidSurface(
+                            radius: 40,
+                            quiet: true,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: SizedBox(
+                                height: 48,
+                                child: Stack(
+                                  children: [
+                                    AnimatedAlign(
+                                      alignment: Alignment(
+                                        (_tab - 1).toDouble(),
+                                        0,
                                       ),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(
-                                          alpha: dark ? .2 : .8,
-                                        ),
-                                        width: .6,
+                                      duration: Duration(
+                                        milliseconds:
+                                            MediaQuery.disableAnimationsOf(
+                                              context,
+                                            )
+                                            ? 0
+                                            : 360,
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  for (final entry in [
-                                    (
-                                      0,
-                                      CupertinoIcons.chat_bubble,
-                                      CupertinoIcons.chat_bubble_fill,
-                                      'Ask',
-                                    ),
-                                    (
-                                      1,
-                                      CupertinoIcons.square_grid_2x2,
-                                      CupertinoIcons.square_grid_2x2_fill,
-                                      'Spaces',
-                                    ),
-                                    (
-                                      2,
-                                      CupertinoIcons.ellipsis,
-                                      CupertinoIcons.ellipsis,
-                                      'More',
-                                    ),
-                                  ])
-                                    Expanded(
-                                      child: Semantics(
-                                        selected: _tab == entry.$1,
-                                        child: Tooltip(
-                                          message: entry.$4,
-                                          child: IconButton(
-                                            tooltip: null,
-                                            onPressed: () =>
-                                                setState(() => _tab = entry.$1),
-                                            style: IconButton.styleFrom(
-                                              minimumSize: const Size(48, 48),
+                                      curve: Curves.easeInOutCubicEmphasized,
+                                      child: FractionallySizedBox(
+                                        widthFactor: 1 / 3,
+                                        heightFactor: 1,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              28,
                                             ),
-                                            icon: Icon(
-                                              _tab == entry.$1
-                                                  ? entry.$3
-                                                  : entry.$2,
-                                              size: 23,
-                                              semanticLabel: entry.$4,
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: dark
+                                                  ? [
+                                                      Colors.white.withValues(
+                                                        alpha: .19,
+                                                      ),
+                                                      Colors.white.withValues(
+                                                        alpha: .08,
+                                                      ),
+                                                    ]
+                                                  : [
+                                                      Colors.white.withValues(
+                                                        alpha: .96,
+                                                      ),
+                                                      Colors.white.withValues(
+                                                        alpha: .64,
+                                                      ),
+                                                    ],
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white.withValues(
+                                                alpha: dark ? .2 : .8,
+                                              ),
+                                              width: .6,
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                ],
+                                    Row(
+                                      children: [
+                                        for (final entry in [
+                                          (
+                                            0,
+                                            CupertinoIcons.chat_bubble,
+                                            CupertinoIcons.chat_bubble_fill,
+                                            'Ask',
+                                          ),
+                                          (
+                                            1,
+                                            CupertinoIcons.square_grid_2x2,
+                                            CupertinoIcons.square_grid_2x2_fill,
+                                            'Spaces',
+                                          ),
+                                          (
+                                            2,
+                                            CupertinoIcons.ellipsis,
+                                            CupertinoIcons.ellipsis,
+                                            'More',
+                                          ),
+                                        ])
+                                          Expanded(
+                                            child: Semantics(
+                                              selected: _tab == entry.$1,
+                                              child: Tooltip(
+                                                message: entry.$4,
+                                                child: IconButton(
+                                                  tooltip: null,
+                                                  onPressed: () => setState(
+                                                    () => _tab = entry.$1,
+                                                  ),
+                                                  style: IconButton.styleFrom(
+                                                    minimumSize: const Size(
+                                                      48,
+                                                      48,
+                                                    ),
+                                                  ),
+                                                  icon: Icon(
+                                                    _tab == entry.$1
+                                                        ? entry.$3
+                                                        : entry.$2,
+                                                    size: 23,
+                                                    semanticLabel: entry.$4,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
             ],

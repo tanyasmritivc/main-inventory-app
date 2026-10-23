@@ -1,3 +1,16 @@
+## October 23 - Use system iOS bottom navigation
+
+User explicitly requested native iOS Liquid Glass. Host UITabBar through
+a platform view, leaving its system appearance and selection gestures intact.
+Do not substitute a Flutter blur/shader imitation on iOS. Preserve the Flutter
+fallback on other platforms and use standard UIKit styling on older iOS.
+
+## October 23 - Keep the original quiet chat background
+
+User rejected the stronger beta 115 chat gradient. Retain the beta 114 background:
+black in dark mode and the original warm light landing background. Preserve the
+sheet, navigation, settings, Space and voice refinements independently.
+
 ## October 22 - Chat history sheet and unified Space scrolling
 
 History is a route-owned bottom sheet, keeping the composer mounted. Avatar stays

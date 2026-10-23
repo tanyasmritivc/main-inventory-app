@@ -30,6 +30,7 @@ import UserNotifications
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.applicationRegistrar
     registrar.register(ChatMenuFactory(messenger: registrar.messenger()), withId: "com.findez.app/chat-menu")
+    registrar.register(NativeTabsFactory(messenger: registrar.messenger()), withId: "com.findez.app/native-tabs")
     let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -257,4 +258,52 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
   }
   func view() -> UIView { button }
   deinit { channel.setMethodCallHandler(nil) }
+}
+
+// UIKit owns the tab bar material, selection animation and accessibility.
+// Linking against iOS 26 adopts Liquid Glass without custom bar appearances.
+private final class NativeTabsFactory: NSObject, FlutterPlatformViewFactory {
+  private let messenger: FlutterBinaryMessenger
+  init(messenger: FlutterBinaryMessenger) { self.messenger = messenger }
+  func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol { FlutterStandardMessageCodec.sharedInstance() }
+  func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
+    NativeTabsView(frame: frame, id: viewId, messenger: messenger, args: args)
+  }
+}
+
+private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDelegate {
+  private let bar = UITabBar()
+  private let channel: FlutterMethodChannel
+  init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
+    channel = FlutterMethodChannel(name: "com.findez.app/native-tabs/\(id)", binaryMessenger: messenger)
+    super.init()
+    bar.frame = frame
+    bar.items = [("Ask", "bubble.left", "bubble.left.fill"),
+                 ("Spaces", "square.grid.2x2", "square.grid.2x2.fill"),
+                 ("More", "ellipsis", "ellipsis")].enumerated().map { index, tab in
+      let item = UITabBarItem(title: tab.0, image: UIImage(systemName: tab.1), selectedImage: UIImage(systemName: tab.2))
+      item.tag = index
+      item.accessibilityIdentifier = "findez.tab.\(tab.0.lowercased())"
+      return item
+    }
+    bar.delegate = self
+    bar.tintColor = .label
+    configure(args)
+    channel.setMethodCallHandler { [weak self] call, result in
+      if call.method == "configure" { self?.configure(call.arguments); result(nil) }
+      else { result(FlutterMethodNotImplemented) }
+    }
+  }
+  private func configure(_ args: Any?) {
+    let values = args as? [String: Any] ?? [:]
+    bar.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
+    if let index = values["selected"] as? Int, let items = bar.items, items.indices.contains(index), bar.selectedItem !== items[index] {
+      bar.selectedItem = items[index]
+    }
+  }
+  func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+    channel.invokeMethod("selected", arguments: item.tag)
+  }
+  func view() -> UIView { bar }
+  deinit { channel.setMethodCallHandler(nil); bar.delegate = nil }
 }
