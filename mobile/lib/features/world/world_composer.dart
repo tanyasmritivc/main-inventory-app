@@ -17,6 +17,10 @@ class WorldComposer extends StatefulWidget {
     required this.onChanged,
     required this.onAttach,
     required this.onVoice,
+    this.onVoiceStart,
+    this.onVoiceEnd,
+    this.onVoiceCancel,
+    this.voiceTranscript = '',
     required this.onSend,
     required this.busy,
     required this.listening,
@@ -30,6 +34,8 @@ class WorldComposer extends StatefulWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final VoidCallback? onAttach, onVoice, onSend;
+  final VoidCallback? onVoiceStart, onVoiceEnd, onVoiceCancel;
+  final String voiceTranscript;
   final bool busy, listening, compact;
   @override
   State<WorldComposer> createState() => _WorldComposerState();
@@ -121,6 +127,7 @@ class _WorldComposerState extends State<WorldComposer>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) widget.onVoiceCancel?.call();
     _active = state == AppLifecycleState.resumed;
     _reset();
   }
@@ -148,6 +155,18 @@ class _WorldComposerState extends State<WorldComposer>
               widget.sourceChips!,
               const SizedBox(height: 8),
             ],
+            if (widget.listening)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  widget.voiceTranscript.isEmpty
+                      ? 'Listening... Release to send'
+                      : widget.voiceTranscript,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             TextField(
               controller: widget.controller,
               focusNode: widget.focusNode,
@@ -208,14 +227,34 @@ class _WorldComposerState extends State<WorldComposer>
                     ),
                   ),
                 const Spacer(),
-                LiquidIconButton(
-                  tooltip: widget.listening
-                      ? 'Stop voice input'
-                      : 'Voice input',
-                  onPressed: widget.onVoice,
-                  icon: widget.listening
-                      ? CupertinoIcons.mic_fill
-                      : CupertinoIcons.mic,
+                Semantics(
+                  button: true,
+                  label: widget.listening
+                      ? 'Send voice message'
+                      : 'Voice input. Hold to speak, release to send',
+                  onTap: widget.onVoice,
+                  child: Listener(
+                    onPointerDown: widget.onVoiceStart == null
+                        ? null
+                        : (_) => widget.onVoiceStart!(),
+                    onPointerUp: widget.onVoiceStart == null
+                        ? null
+                        : (_) => widget.onVoiceEnd?.call(),
+                    onPointerCancel: (_) => widget.onVoiceCancel?.call(),
+                    child: ExcludeSemantics(
+                      child: AbsorbPointer(
+                        child: LiquidIconButton(
+                          tooltip: widget.listening
+                              ? 'Release to send'
+                              : 'Hold to speak',
+                          onPressed: widget.onVoice,
+                          icon: widget.listening
+                              ? CupertinoIcons.mic_fill
+                              : CupertinoIcons.mic,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 if (widget.onSend != null || widget.busy) ...[
                   const SizedBox(width: 8),

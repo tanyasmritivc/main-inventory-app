@@ -1,3 +1,5 @@
+import 'voice_capture.dart';
+import 'chat_history_sheet.dart';
 import 'dart:math' as math;
 import 'chat_photo_attachment_card.dart';
 import '../../core/chat_source.dart';
@@ -17,7 +19,6 @@ import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
 import 'package:dio/dio.dart' as dio;
@@ -25,7 +26,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
@@ -214,14 +214,7 @@ class _ChatPageState extends State<ChatPage>
   // Conversation history
   String? get _currentConversationId => _session.conversationId;
   set _currentConversationId(String? value) => _session.conversationId = value;
-  // Retained for the intentionally detached history panel (68f5e83).
-  // ignore: unused_field
   bool _historyOpen = false;
-  final _historySearch = TextEditingController();
-  bool _historySearching = false;
-  bool _historyLoading = false;
-  bool _historyLoadFailed = false;
-  List<ConversationSummary> _conversations = [];
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
@@ -247,8 +240,30 @@ class _ChatPageState extends State<ChatPage>
   AskPhoto? _photo;
   bool _pickingPhoto = false;
 
-  final SpeechToText _speech = SpeechToText();
-  bool _isListening = false;
+  late final VoiceCapture _voice = VoiceCapture(
+    recorder: DeviceVoiceRecorder(),
+    onSend: (words) {
+      if (!mounted || _sending) return;
+      widget.api.assertCurrentContext();
+      final draft = _controller.text.trim();
+      unawaited(_submit(draft.isEmpty ? words : '$draft $words'));
+    },
+    onError: () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Voice input could not start. Check microphone and speech permissions, then try again.',
+            ),
+          ),
+        );
+      }
+    },
+  )..addListener(_voiceChanged);
+  bool get _isListening => _voice.active;
+  void _voiceChanged() {
+    if (mounted) setState(() {});
+  }
 
   List<DocumentEntry>? _pendingDocChoices;
 
@@ -401,6 +416,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _voice.cancel();
     _requestGeneration++;
     final active = _activeReply;
     _activeReply = null;
@@ -2010,10 +2026,7 @@ class _ChatPageState extends State<ChatPage>
       return;
     }
 
-    if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
-    }
+    if (_isListening) _voice.cancel();
 
     if (!mounted) return;
     unawaited(HapticFeedback.lightImpact());
@@ -2242,7 +2255,7 @@ class _ChatPageState extends State<ChatPage>
         ? _ChatSession()
         : _ChatSession._internal();
     _controller = TextEditingController();
-    if (widget.api.worldKey == null) unawaited(_speech.initialize());
+
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2288,28 +2301,11 @@ class _ChatPageState extends State<ChatPage>
     }
   }
 
-  Future<void> _toggleListening() async {
-    if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
+  void _toggleListening() {
+    if (_voice.active) {
+      unawaited(_voice.release());
     } else {
-      final available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (result) {
-            setState(() {
-              _controller.text = result.recognizedWords;
-              _controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: _controller.text.length),
-              );
-            });
-          },
-          listenFor: const Duration(seconds: 30),
-          pauseFor: const Duration(seconds: 3),
-          localeId: 'en_US',
-        );
-      }
+      unawaited(_voice.start());
     }
   }
 
@@ -2324,55 +2320,59 @@ class _ChatPageState extends State<ChatPage>
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
     _controller.dispose();
-    _historySearch.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
-    unawaited(_speech.stop());
+    _voice.dispose();
     super.dispose();
   }
 
   // ── Conversation History ─────────────────────────────────────────────────
 
-  String _relativeTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${dt.day}/${dt.month}';
-  }
-
   Future<void> _openHistory() async {
-    if (_historyLoading) return;
-    setState(() {
-      _historyOpen = true;
-      _historyLoading = true;
-      _historyLoadFailed = false;
-      _conversations = [];
-    });
+    if (_historyOpen) return;
+    _historyOpen = true;
+    _focusNode.unfocus();
+    final generation = _requestGeneration;
     try {
-      final convs = await widget.api.listConversations();
-      if (mounted) {
-        setState(() {
-          _conversations = convs;
-          _historyLoading = false;
-        });
+      final selected = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (_) => FractionallySizedBox(
+          heightFactor: .86,
+          child: ChatHistorySheet(
+            api: widget.api,
+            currentId: _currentConversationId,
+            onDeleted: (id) {
+              if (mounted && id == _currentConversationId) {
+                _currentConversationId = null;
+              }
+            },
+          ),
+        ),
+      );
+      if (!mounted || generation != _requestGeneration || selected == null) {
+        return;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _historyLoading = false;
-          _historyLoadFailed = true;
-        });
+      widget.api.assertCurrentContext();
+      if (selected == ChatHistorySheet.newChat) {
+        _resetChat();
+      } else {
+        await _loadConversation(selected);
       }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      }
+    } finally {
+      _historyOpen = false;
     }
   }
 
-  void _closeHistory() => setState(() => _historyOpen = false);
-
   Future<bool> _loadConversation(String id) async {
-    _closeHistory();
     _resetChat();
     final generation = _requestGeneration;
     final owner = Supabase.instance.client.auth.currentUser?.id;
@@ -2422,476 +2422,6 @@ class _ChatPageState extends State<ChatPage>
       ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
     return false;
-  }
-
-  Future<void> _deleteConversation(String id) async {
-    // Optimistic removal: Dismissible has already animated the row away.
-    final idx = _conversations.indexWhere((c) => c.id == id);
-    if (idx == -1) return;
-    final removed = _conversations[idx];
-    setState(() {
-      _conversations.removeAt(idx);
-      if (_currentConversationId == id) _currentConversationId = null;
-    });
-    try {
-      await widget.api.deleteConversation(id);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _conversations.insert(idx, removed));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
-      }
-    }
-  }
-
-  // Retained while the history UI is intentionally detached (68f5e83).
-  // ignore: unused_element
-  Widget _buildHistoryPanel() {
-    if (widget.worldHeading != null) return _buildWorldHistory();
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.adaptive(context, Color(0x14FFFFFF)),
-            border: Border(
-              right: BorderSide(
-                color: AppTheme.adaptive(context, Color(0x26FFFFFF)),
-                width: 1,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
-                  child: Row(
-                    children: [
-                      AppText(
-                        'Chat History',
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white),
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: _closeHistory,
-                        icon: Icon(
-                          Icons.close,
-                          color: AppTheme.foreground(
-                            context,
-                            Colors.white.withValues(alpha: 0.60),
-                          ),
-                          size: 20,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GestureDetector(
-                    onTap: () {
-                      _closeHistory();
-                      _resetChat();
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      decoration: BoxDecoration(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0xFFF2F2F7).withValues(alpha: 0.10),
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppTheme.adaptive(
-                            context,
-                            const Color(0xFFF2F2F7).withValues(alpha: 0.40),
-                          ),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add,
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0xFFF2F2F7),
-                            ),
-                            size: 16,
-                          ),
-                          SizedBox(width: 6),
-                          AppText(
-                            'New Chat',
-                            style: TextStyle(
-                              color: AppTheme.foreground(
-                                context,
-                                Color(0xFFF2F2F7),
-                              ),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: _historyLoading
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: AppTheme.adaptive(context, Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : _historyLoadFailed
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AppText(
-                                "Couldn't load history.",
-                                style: TextStyle(
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Colors.white.withValues(alpha: 0.35),
-                                  ),
-                                  fontSize: 13,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _openHistory,
-                                child: AppText(
-                                  'Retry',
-                                  style: TextStyle(
-                                    color: AppTheme.foreground(
-                                      context,
-                                      Colors.white,
-                                    ),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _conversations.isEmpty
-                      ? Center(
-                          child: AppText(
-                            'No past conversations',
-                            style: TextStyle(
-                              color: AppTheme.foreground(
-                                context,
-                                Colors.white.withValues(alpha: 0.35),
-                              ),
-                              fontSize: 13,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          itemCount: _conversations.length,
-                          itemBuilder: (context, i) {
-                            final c = _conversations[i];
-                            final isActive = c.id == _currentConversationId;
-                            return Dismissible(
-                              key: Key(c.id),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 16),
-                                color: AppTheme.adaptive(
-                                  context,
-                                  const Color(0x33FF3B30),
-                                ),
-                                child: Icon(
-                                  Icons.delete_outline,
-                                  color: AppTheme.foreground(
-                                    context,
-                                    Color(0xFFFF3B30),
-                                  ),
-                                  size: 18,
-                                ),
-                              ),
-                              onDismissed: (_) =>
-                                  unawaited(_deleteConversation(c.id)),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => unawaited(_loadConversation(c.id)),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: AppTheme.adaptive(
-                                          context,
-                                          Color(0x0FFFFFFF),
-                                        ),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            AppText(
-                                              c.title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: AppTheme.foreground(
-                                                  context,
-                                                  Colors.white,
-                                                ),
-                                                fontSize: 13,
-                                                fontWeight: isActive
-                                                    ? FontWeight.w600
-                                                    : FontWeight.w400,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            AppText(
-                                              _relativeTime(c.updatedAt),
-                                              style: TextStyle(
-                                                color: AppTheme.foreground(
-                                                  context,
-                                                  Color(0x66FFFFFF),
-                                                ),
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (isActive)
-                                        Icon(
-                                          Icons.radio_button_checked,
-                                          color: AppTheme.foreground(
-                                            context,
-                                            Color(0xFFF2F2F7),
-                                          ),
-                                          size: 12,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWorldHistory() {
-    final query = _historySearch.text.trim().toLowerCase();
-    final rows = _conversations
-        .where((c) => c.title.toLowerCase().contains(query))
-        .toList();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final scrollWhole =
-            constraints.maxHeight < 480 &&
-            MediaQuery.textScalerOf(context).scale(16) > 22;
-        final historyBody = _historyLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _historyLoadFailed
-            ? Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text("Couldn't load history."),
-                      TextButton(
-                        onPressed: _openHistory,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : rows.isEmpty
-            ? Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        CupertinoIcons.chat_bubble_2,
-                        size: 42,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: .3),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        query.isEmpty
-                            ? 'Start your first chat'
-                            : 'No matching chats',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        query.isEmpty
-                            ? 'Ask about your things or add something new.'
-                            : 'Try a different title.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : ListView.separated(
-                shrinkWrap: scrollWhole,
-                physics: scrollWhole
-                    ? const NeverScrollableScrollPhysics()
-                    : null,
-                itemCount: rows.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, i) {
-                  final c = rows[i];
-                  return Dismissible(
-                    key: Key(c.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: const Icon(CupertinoIcons.trash),
-                    ),
-                    onDismissed: (_) => unawaited(_deleteConversation(c.id)),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 6,
-                      ),
-                      title: Text(
-                        c.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: Text(_relativeTime(c.updatedAt)),
-                      ),
-                      trailing: c.id == _currentConversationId
-                          ? const Icon(CupertinoIcons.checkmark, size: 17)
-                          : null,
-                      onTap: () => unawaited(_loadConversation(c.id)),
-                    ),
-                  );
-                },
-              );
-        final content = Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-          child: Column(
-            mainAxisSize: scrollWhole ? MainAxisSize.min : MainAxisSize.max,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Chats',
-                      style: Theme.of(context).textTheme.headlineLarge,
-                    ),
-                  ),
-                  LiquidIconButton(
-                    tooltip: 'Search chats',
-                    icon: CupertinoIcons.search,
-                    onPressed: () => setState(() {
-                      _historySearching = !_historySearching;
-                      if (!_historySearching) _historySearch.clear();
-                    }),
-                  ),
-                  const SizedBox(width: 8),
-                  LiquidIconButton(
-                    tooltip: 'Close history',
-                    icon: CupertinoIcons.xmark,
-                    onPressed: _closeHistory,
-                  ),
-                ],
-              ),
-              if (_historySearching)
-                Padding(
-                  padding: const EdgeInsets.only(top: 18),
-                  child: LiquidSurface(
-                    radius: 26,
-                    quiet: true,
-                    shadow: false,
-                    child: TextField(
-                      controller: _historySearch,
-                      autofocus: true,
-                      onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        hintText: 'Search chats',
-                        prefixIcon: Icon(CupertinoIcons.search),
-                        filled: false,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              if (scrollWhole) historyBody else Expanded(child: historyBody),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: LiquidSurface(
-                  radius: 30,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      _closeHistory();
-                      _resetChat();
-                    },
-                    icon: const Icon(CupertinoIcons.plus, size: 20),
-                    label: const Text('New chat'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-        return scrollWhole ? SingleChildScrollView(child: content) : content;
-      },
-    );
   }
 
   Widget _buildHeader() {
@@ -3648,6 +3178,12 @@ class _ChatPageState extends State<ChatPage>
                           ? null
                           : _worldAttachmentMenu,
                       onVoice: _sending ? null : _toggleListening,
+                      onVoiceStart: _sending
+                          ? null
+                          : () => unawaited(_voice.start()),
+                      onVoiceEnd: () => unawaited(_voice.release()),
+                      onVoiceCancel: _voice.cancel,
+                      voiceTranscript: _voice.transcript,
                       onSend: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
@@ -3693,13 +3229,6 @@ class _ChatPageState extends State<ChatPage>
             _sources.isNotEmpty) &&
         (!_sending || _canQueueFollowUp);
 
-    if (_historyOpen) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        resizeToAvoidBottomInset: !widget.inPageView,
-        body: _buildHistoryPanel(),
-      );
-    }
     if (widget.worldHeading != null &&
         (_worldHome || _session.messages.isEmpty)) {
       return _worldLanding(canSend, keyboardVisible || compactComposer);
@@ -3795,6 +3324,10 @@ class _ChatPageState extends State<ChatPage>
                     ? null
                     : _worldAttachmentMenu,
                 onVoice: _sending ? null : _toggleListening,
+                onVoiceStart: _sending ? null : () => unawaited(_voice.start()),
+                onVoiceEnd: () => unawaited(_voice.release()),
+                onVoiceCancel: _voice.cancel,
+                voiceTranscript: _voice.transcript,
                 onSend: canSend
                     ? () => unawaited(_submit(_controller.text))
                     : null,
@@ -3961,6 +3494,12 @@ class _ChatPageState extends State<ChatPage>
                       ? null
                       : _worldAttachmentMenu,
                   onVoice: _sending ? null : _toggleListening,
+                  onVoiceStart: _sending
+                      ? null
+                      : () => unawaited(_voice.start()),
+                  onVoiceEnd: () => unawaited(_voice.release()),
+                  onVoiceCancel: _voice.cancel,
+                  voiceTranscript: _voice.transcript,
                   onSend: canSend
                       ? () => unawaited(_submit(_controller.text))
                       : null,

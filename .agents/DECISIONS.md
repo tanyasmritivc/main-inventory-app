@@ -1,3 +1,10 @@
+## October 22 - Chat history sheet and unified Space scrolling
+
+History is a route-owned bottom sheet, keeping the composer mounted. Avatar stays
+on Chat only; Spaces has header search and a manual New space action. Space detail
+uses one lazy sliver viewport rather than nested lists. Voice hold/release sends a
+completed transcript once, with explicit cancellation and permission failure paths.
+
 ## October 22 — Chat executes clear edits and completes creation tasks
 
 The user explicitly requests confirmation only for creation/deletion. New clients

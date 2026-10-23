@@ -28,7 +28,7 @@ Future<void> showAccountMenu(
           ),
           title: Text(profile.name.isEmpty ? 'Your profile' : profile.name),
           subtitle: const Text('Edit profile'),
-          trailing: const Icon(Icons.chevron_right),
+
           onTap: () => Navigator.of(sheet).push(
             MaterialPageRoute<void>(
               builder: (_) => Scaffold(
@@ -42,7 +42,7 @@ Future<void> showAccountMenu(
           contentPadding: const EdgeInsets.symmetric(horizontal: 24),
           leading: const Icon(Icons.notifications_none),
           title: const Text('Notifications'),
-          trailing: const Icon(Icons.chevron_right),
+
           onTap: () => Navigator.of(sheet).push(
             MaterialPageRoute<void>(
               builder: (_) => NotificationsPage(api: api),

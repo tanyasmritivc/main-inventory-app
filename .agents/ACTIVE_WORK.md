@@ -1,3 +1,11 @@
+## October 22 - Mobile shell refinement, beta 115 in preparation
+
+Mobile-only branch fix/mobile-fluid-shell-20261022. History now uses a modal sheet;
+compact fluid navigation, plain grouped settings, header Space search/manual New
+space, lazy Space scrolling, visible chat gradients and release-to-send voice.
+Validation/release in progress. No database/API changes. See
+`docs/plans/mobile-fluid-shell-20261022.md` for scope and device acceptance steps.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google
