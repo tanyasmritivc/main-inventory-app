@@ -17,6 +17,8 @@ create table public.team_spaces (
 );
 \ir ../../supabase/migrations/001_init.sql
 alter table public.items add column brand text, add column part_number text,
+    add column subcategory text, add column tags text[],
+    add column confidence double precision, add column catalog_id uuid,
     add column space_id uuid references public.spaces on delete cascade;
 create policy items_update_own on public.items for update using(auth.uid()=user_id) with check(auth.uid()=user_id);
 alter table public.teams enable row level security;
@@ -24,6 +26,7 @@ alter table public.team_memberships enable row level security;
 \ir ../../supabase/migrations/032_api_key_authentication.sql
 \ir ../../supabase/migrations/033_fix_team_membership_rls_recursion.sql
 \ir ../../supabase/migrations/034_api_inventory_queries.sql
+\ir ../../supabase/migrations/036_capture_reviews.sql
 
 insert into public.teams values
 ('10000000-0000-0000-0000-000000000001','Team A','20000000-0000-0000-0000-000000000001'),
@@ -135,5 +138,103 @@ select pg_temp.check((select count(*)=0 from public.items),'ownership change rem
 reset role;
 \echo API database integration checks passed.
 
+-- Durable capture review isolation, privileges, and idempotent resolution.
+select set_config('request.jwt.claims','{}',false);
+insert into public.capture_reviews(
+    review_id,user_id,source_key,name,category,quantity,image_url,scan_evidence
+) values
+('60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','photo:a:0','Unidentified item','Other',1,'https://images.test/crop.jpg','{"needs_review":true}'),
+('60000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','photo:b:0','Private capture','Other',1,null,'{"needs_review":true}');
+
+set role authenticated;
+select set_config('request.jwt.claims','{"sub":"20000000-0000-0000-0000-000000000001"}',false);
+select pg_temp.check((select count(*)=1 from public.capture_reviews),'review queue hides other users');
+do $$ begin
+    begin update public.capture_reviews set status='resolved';
+    raise exception 'authenticated client mutated review queue';
+    exception when insufficient_privilege then raise notice 'PASS: review mutations require API validation'; end;
+    begin perform public.resolve_capture_review(
+      '60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',
+      '{"name":"Bolt","category":"Hardware","quantity":2,"location":"Shelf A"}',
+      '30000000-0000-0000-0000-000000000001',null
+    ); raise exception 'authenticated client executed review resolver';
+    exception when insufficient_privilege then raise notice 'PASS: review resolver is service-role-only'; end;
+end $$;
+
+reset role;
+set role service_role;
+select public.resolve_capture_review(
+  '60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',
+  '{"name":"Bolt","category":"Hardware","quantity":2,"location":"Shelf A","image_url":"https://images.test/crop.jpg"}',
+  '30000000-0000-0000-0000-000000000001',null
+);
+select public.resolve_capture_review(
+  '60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',
+  '{"name":"Bolt","category":"Hardware","quantity":2,"location":"Shelf A","image_url":"https://images.test/crop.jpg"}',
+  '30000000-0000-0000-0000-000000000001',null
+);
+reset role;
+select pg_temp.check((select status='resolved' and resolved_item_id is not null from public.capture_reviews where review_id='60000000-0000-0000-0000-000000000001'),'review resolution is recorded');
+select pg_temp.check((select count(*)=1 from public.items where name='Bolt' and user_id='20000000-0000-0000-0000-000000000001'),'review resolution is idempotent');
+select pg_temp.check((select image_url='https://images.test/crop.jpg' from public.items where name='Bolt'),'captured image survives review resolution');
+
 -- Public reference examples share this disposable schema and session helpers.
 \ir ../../../tests/api_docs/semantics.sql
+\ir ask_answer_context.sql
+\ir space_review_lifecycle.sql
+
+\ir team_categories.sql
+
+\ir onboarding_answers.sql
+\ir item_import_data.sql
+\ir document_storage.sql
+\ir workspace_inventories.sql
+
+\ir organization_access.sql
+\ir member_invitation_consent.sql
+\ir workspace_directory.sql
+\ir organization_delete.sql
+
+\ir account_memory_integration.sql
+
+\ir inventory_delete.sql
+
+\ir inventory_content_delete.sql
+
+\ir account_deletion.sql
+
+\ir workspace_creation_codes.sql
+
+\ir ../../supabase/migrations/052_invitation_push_target.sql
+\ir invitation_push_target.sql
+\ir catalog_write_permissions.sql
+\ir resource_permissions.sql
+
+\ir private_item_images.sql
+\ir capture_original_gallery.sql
+
+\ir chat_item_actions.sql
+
+\ir organization_admin_access.sql
+\ir organization_leave.sql
+
+\ir resource_removal.sql
+
+\ir ../../supabase/migrations/071_account_deletion_shared_content.sql
+\ir ../../supabase/migrations/071_account_deletion_shared_content.sql
+\ir account_deletion_shared_content.sql
+
+\ir ../../supabase/migrations/072_effective_workspace_directory_access.sql
+\ir ../../supabase/migrations/072_effective_workspace_directory_access.sql
+\ir effective_workspace_directory_access.sql
+
+\ir world_chat.sql
+
+\ir world_item_management.sql
+\ir world_task_actions.sql
+\ir world_direct_actions.sql
+\ir chat_capture.sql
+
+\ir inventory_reorder_deletion.sql
+
+\ir connector_import_ci.sql

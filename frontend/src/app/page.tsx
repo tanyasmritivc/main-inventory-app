@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 
-import { LandingMorph } from "@/components/site/landing-morph";
-import { MarketingFooter } from "@/components/site/product-marketing";
+import { LandingLab } from "@/components/site/landing-lab";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const geist = Geist({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-geist", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--fzl-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { absolute: "FindEZ — Understands your environment" },
+  title: { absolute: "FindEZ | Know what you have. Find what you need." },
   description:
-    "FindEZ understands your environment. Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
+    "Capture physical items, organize them by Space, and find what you need through search or Ask FindEZ. Share inventory with your team.",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "FindEZ — Understands your environment",
+    title: "FindEZ | Know what you have. Find what you need.",
     description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
     url: "https://findez.ai/",
     siteName: "FindEZ",
@@ -16,16 +21,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "FindEZ — Understands your environment",
+    title: "FindEZ | Know what you have. Find what you need.",
     description: "Turn photos of physical objects into searchable inventory, organized by space and ready to answer your questions.",
   },
 };
 
-export default function LandingPage() {
-  return (
-    <>
-      <LandingMorph />
-      <MarketingFooter theme="light" />
-    </>
-  );
+export default async function LandingPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return <LandingLab className={`${geist.variable} ${mono.variable}`} siteNavigation initialSignedIn={Boolean(user)} />;
 }

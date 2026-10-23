@@ -3,12 +3,14 @@ import uuid
 import httpx
 
 from app.core.config import get_settings
+from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 
 
 EEZY_SYSTEM_PROMPT = """You are EEZY, the AI assistant for FindEZ AI.
 You help users track, find, and manage their inventory.
-You specialize in robotics parts, tools, and equipment.
-Always be concise, helpful, and specific."""
+Help with belongings, supplies, parts, tools, and equipment for homes, businesses, labs, schools, teams, and industry.
+Use the supplied inventory context and be clear when information is missing.
+Always be concise, helpful, and specific.""" + "\n" + CHAT_STYLE_INSTRUCTION
 
 
 async def ask_eezy(message: str, context: str = "") -> str:
@@ -45,4 +47,4 @@ async def ask_eezy(message: str, context: str = "") -> str:
         )
         response.raise_for_status()
         data = response.json()
-        return data["choices"][0]["message"].get("content") or ""
+        return format_chat_reply(data["choices"][0]["message"].get("content") or "")

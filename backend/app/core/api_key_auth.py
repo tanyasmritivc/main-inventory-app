@@ -145,6 +145,15 @@ def authenticate_api_key(
     if expired:
         raise api_error(request, 401, "expired_api_key", "The API key has expired.")
 
+    try:
+        active = get_supabase_admin().rpc('findez_actor_active', {'p_actor': str(matched['org_id'])}).execute().data
+    except Exception:
+        raise api_error(request, 503, 'authentication_unavailable', 'Account access could not be verified.') from None
+    if active is False:
+        raise api_error(request, 401, 'invalid_api_key', 'The API key owner is unavailable or suspended.')
+    if active is not True:
+        raise api_error(request, 503, 'authentication_unavailable', 'Account access could not be verified.')
+
     principal = APIKeyPrincipal(
         key_id=str(matched["id"]),
         workspace_id=str(matched["workspace_id"]) if matched.get("workspace_id") else None,

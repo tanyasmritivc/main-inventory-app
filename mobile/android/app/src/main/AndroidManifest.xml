@@ -37,6 +37,16 @@
                     android:host="login-callback" />
             </intent-filter>
 
+            <!-- Explicit invitation fallback; HTTPS verification requires the
+                 Android release signing association and is not claimed here. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="findez" android:host="space-invite" />
+                <data android:scheme="findez" android:host="team-invite" />
+            </intent-filter>
+
         </activity>
 
         <meta-data

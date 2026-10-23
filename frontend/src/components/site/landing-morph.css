@@ -66,7 +66,7 @@
   .fzL header.on-dark{color:var(--cream);background:transparent;border-bottom-color:transparent}
   .fzL header.on-dark.stuck{background:rgba(11,37,25,.72);border-bottom-color:var(--hair-lite)}
   .fzL .mark{font-size:19px;letter-spacing:-.045em;font-weight:400;text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:11px}
-  .fzL .logo{width:28px;height:28px;display:block;flex:none}
+  .fzL .logo{width:108px;height:29px;display:block;flex:none}
   .fzL header .mark{display:inline-flex;align-items:center;gap:9px}
   .fzL header .mark img{width:28px;height:28px;border-radius:6px}
   .fzL header .top-links{display:flex;align-items:center;gap:clamp(14px,2.2vw,30px);margin-left:auto}

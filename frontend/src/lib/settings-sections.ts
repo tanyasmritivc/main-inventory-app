@@ -1,0 +1,13 @@
+export const SETTINGS_SECTIONS = {
+  profile: "Profile",
+  appearance: "Appearance",
+  memory: "AI memory",
+  plans: "Plans",
+  developer: "Developer",
+  help: "Help and information",
+  account: "Account",
+} as const;
+export type SettingsSection = keyof typeof SETTINGS_SECTIONS;
+export function isSettingsSection(value: string): value is SettingsSection {
+  return Object.hasOwn(SETTINGS_SECTIONS, value);
+}

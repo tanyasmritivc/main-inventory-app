@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for", "")
-    if xff:
-        return xff.split(",")[0].strip()
+    # Uvicorn resolves forwarded addresses only from the configured local proxy.
+    # Raw forwarding headers are client-controlled and must not override it.
     return request.client.host if request.client else "unknown"
 
 
@@ -113,6 +112,23 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     @app.on_event("startup")
+    async def start_inventory_cleanup():
+        import asyncio
+        from app.services.deletion_cleanup import retry_inventory_file_cleanup
+        app.state.inventory_cleanup_task = asyncio.create_task(retry_inventory_file_cleanup())
+
+    @app.on_event("shutdown")
+    async def stop_inventory_cleanup():
+        import asyncio
+        task = getattr(app.state, 'inventory_cleanup_task', None)
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    @app.on_event("startup")
     async def startup_health_check():
         logger.info("FindEZ API starting — ENV=%s", os.getenv("ENV", "production"))
         try:
@@ -130,7 +146,12 @@ def create_app() -> FastAPI:
         request_id = request_id[:64]
         request.state.correlation_id = request_id
         start = time.time()
-        response = await call_next(request)
+        from app.services.resource_access import request_actor
+        actor_token = request_actor.set(None)
+        try:
+            response = await call_next(request)
+        finally:
+            request_actor.reset(actor_token)
         response.headers["x-correlation-id"] = request_id
         duration_ms = round((time.time() - start) * 1000)
         logger.info(

@@ -1,0 +1,5 @@
+Name,Quantity,Category,Barcode,Notes
+AA batteries,10,Supplies,001234,Unopened pack
+USB-C cables,4,Cables,005678,One metre
+AA batteries,2,Supplies,001234,Review duplicate before adding
+HDMI cable,-2,Cables,,Invalid quantity for review

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
-from jose import jwt
+import jwt
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
@@ -76,17 +76,27 @@ def _send(
     if thread_id:
         aps["thread-id"] = thread_id
     payload = {"aps": aps, **(data or {})}
-    with httpx.Client(http2=True, timeout=10.0) as client:
-        response = client.post(
-            f"https://{host}/3/device/{token}",
-            headers={
-                "authorization": f"bearer {_authorization()}",
-                "apns-topic": topic,
-                "apns-push-type": "alert",
-                "apns-priority": "10",
-            },
-            json=payload,
-        )
+    response = None
+    for attempt in range(3):
+        try:
+            with httpx.Client(http2=True, timeout=10.0) as client:
+                response = client.post(
+                    f"https://{host}/3/device/{token}",
+                    headers={"authorization": f"bearer {_authorization()}",
+                             "apns-topic": topic, "apns-push-type": "alert", "apns-priority": "10"},
+                    json=payload,
+                )
+            if response.status_code != 429 and response.status_code < 500:
+                break
+        except httpx.HTTPError:
+            # Exception URLs can contain private device tokens. Keep logs generic.
+            if attempt == 2:
+                logger.warning("APNs transport unavailable after bounded retries")
+                return False
+        if attempt < 2:
+            time.sleep(attempt + 1)
+    if response is None:
+        return False
     if response.status_code == 200:
         return True
     reason = ""
@@ -108,6 +118,7 @@ def _deliver_to_recipients(
     summary: str,
     action: str,
     recipient_ids: list[str],
+    inventory_id: str | None = None,
 ) -> None:
     try:
         client = get_supabase_admin()
@@ -127,10 +138,14 @@ def _deliver_to_recipients(
         user_ids = list({user_id for user_id in recipient_ids if user_id and user_id != actor_id})
         if not user_ids:
             return
+        members = client.table("team_memberships").select("user_id").eq("team_id", team_id).in_("user_id", user_ids).execute().data or []
+        user_ids = [user_id for user_id in user_ids if user_id in {row['user_id'] for row in members}]
+        if not user_ids:
+            return
         devices = client.table("push_devices").select(
             "user_id,device_token,environment"
         ).in_("user_id", user_ids).eq("enabled", True).execute().data or []
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         recipient_rows = client.table("team_notification_recipients").select(
             "user_id,activity_id"
         ).in_("user_id", user_ids).gte("created_at", cutoff).execute().data or []
@@ -159,16 +174,21 @@ def _deliver_to_recipients(
             for user_id in user_ids
         }
         for device in devices:
+            # Recheck at delivery, since membership can change while queued.
+            if inventory_id and not client.rpc('findez_inventory_role', {
+                'p_inventory': inventory_id, 'p_actor': device.get('user_id'),
+            }).execute().data:
+                continue
             _send(
                 device,
                 title=title,
                 body=f"{actor_name} {described_action}",
-                data={"team_id": team_id, "action": action},
+                data={"team_id": team_id, "action": action, "recipient_user_id": device.get("user_id")},
                 badge=unread_counts.get(device.get("user_id"), 1),
                 thread_id=f"team-{team_id}",
             )
     except Exception:
-        logger.exception("Team push delivery failed")
+        logger.warning("Team push delivery could not finish")
 
 
 def enqueue_notifications(
@@ -177,6 +197,7 @@ def enqueue_notifications(
     summary: str,
     action: str,
     recipient_ids: list[str],
+    inventory_id: str | None = None,
 ) -> None:
     if _credentials() is not None and recipient_ids:
         _executor.submit(
@@ -186,6 +207,7 @@ def enqueue_notifications(
             summary,
             action,
             recipient_ids,
+            inventory_id,
         )
 
 
@@ -197,3 +219,26 @@ def send_test(user_id: str) -> int:
         1 for device in devices
         if _send(device, title="FindEZ notifications are ready", body="Team activity can now reach this iPhone.")
     )
+
+
+def _deliver_invitation(invitation_id: str) -> None:
+    try:
+        client = get_supabase_admin()
+        target = client.rpc('findez_invitation_push_target', {'p_invitation': invitation_id}).execute().data
+        if not target:
+            return
+        devices = client.table('push_devices').select('device_token,environment').eq('user_id', target).eq('enabled', True).execute().data or []
+        for device in devices:
+            # A canceled/accepted invitation or revoked sender must not be pushed.
+            if client.rpc('findez_invitation_push_target', {'p_invitation': invitation_id}).execute().data != target:
+                return
+            _send(device, title='FindEZ invitation',
+                  body='You have a new invitation. Open Notifications to review it.',
+                  data={'action':'access_invitation','invitation_id':invitation_id,'recipient_user_id':target})
+    except Exception:
+        logger.warning('Invitation phone alert unavailable; invitation remains in inbox')
+
+
+def enqueue_invitation(invitation_id: str) -> None:
+    if _credentials() is not None:
+        _executor.submit(_deliver_invitation, invitation_id)

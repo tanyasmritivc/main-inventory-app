@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any
+import json
 
 import httpx
 
@@ -26,10 +27,21 @@ class _Completions:
     def __init__(self, owner: "AgentGatewayClient") -> None:
         self._owner = owner
 
-    def create(self, **kwargs: Any) -> SimpleNamespace:
-        extra_headers = kwargs.pop("extra_headers", None) or {}
+    def create(self, **kwargs: Any):
+        extra_headers = dict(kwargs.pop("extra_headers", None) or {})
+        from app.services.inventory_scope import current_inventory
+        scope = current_inventory.get()
+        if scope:
+            # The gateway also retains conversation state. Namespace at its
+            # transport boundary, including callers that bypass the helper.
+            import hashlib
+            thread = str(extra_headers.get('X-Agent-Conversation-ID', 'default'))
+            identity = f'{scope.inventory_id}:{scope.actor_id}:{thread}'
+            extra_headers['X-Agent-Conversation-ID'] = 'inventory-' + hashlib.sha256(identity.encode()).hexdigest()
         payload = dict(kwargs)
-        payload["stream"] = False
+        payload["stream"] = bool(payload.get("stream"))
+        if payload["stream"]:
+            return self._stream(payload, extra_headers)
         with httpx.Client(timeout=self._owner.timeout) as client:
             response = client.post(
                 self._owner.url,
@@ -39,9 +51,31 @@ class _Completions:
         response.raise_for_status()
         return _as_namespace(response.json())
 
+    def _stream(self, payload: dict, extra_headers: dict):
+        with httpx.Client(timeout=self._owner.timeout) as client:
+            with client.stream("POST", self._owner.url,
+                    headers={**self._owner.headers, **extra_headers}, json=payload) as response:
+                response.raise_for_status()
+                if 'text/event-stream' not in response.headers.get('content-type', ''):
+                    raise RuntimeError('The model gateway did not return an event stream')
+                data = []
+                for line in response.iter_lines():
+                    if line.startswith('data:'):
+                        data.append(line[5:].lstrip(' '))
+                    elif not line and data:
+                        value = '\n'.join(data)
+                        data = []
+                        if value == '[DONE]':
+                            return
+                        event = json.loads(value)
+                        if not isinstance(event, dict) or event.get('error'):
+                            raise RuntimeError('The model stream failed')
+                        yield _as_namespace(event)
+                raise RuntimeError('The model stream ended without completion')
+
 
 class AgentGatewayClient:
-    def __init__(self) -> None:
+    def __init__(self, *, request_timeout_seconds: float | None = None) -> None:
         settings = get_settings()
         self.url = (
             str(settings.findez_agent_base_url).rstrip("/") + "/chat/completions"
@@ -50,9 +84,8 @@ class AgentGatewayClient:
             "Authorization": f"Bearer {settings.findez_agent_key}",
             "Content-Type": "application/json",
         }
-        self.timeout = httpx.Timeout(
-            connect=15.0, read=180.0, write=30.0, pool=15.0
-        )
+        self.timeout = (httpx.Timeout(request_timeout_seconds) if request_timeout_seconds is not None
+                        else httpx.Timeout(connect=15.0, read=180.0, write=30.0, pool=15.0))
         self.chat = SimpleNamespace(completions=_Completions(self))
 
     def close(self) -> None:
@@ -64,13 +97,15 @@ def gateway_completion(
     messages: list[dict[str, Any]],
     conversation_id: str,
     max_tokens: int = 500,
+    request_timeout_seconds: float | None = None,
     **kwargs: Any,
 ) -> SimpleNamespace:
     settings = get_settings()
-    client = AgentGatewayClient()
+    client = (AgentGatewayClient() if request_timeout_seconds is None
+              else AgentGatewayClient(request_timeout_seconds=request_timeout_seconds))
     try:
         return client.chat.completions.create(
-            model=settings.findez_agent_model,
+            model=kwargs.pop("model", settings.findez_agent_model),
             messages=messages,
             max_tokens=max_tokens,
             extra_headers={

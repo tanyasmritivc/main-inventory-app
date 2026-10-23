@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"
+    findez_chat_vision_model: str = "glm-5.3-flash-agent"
+    # Grounded extraction remains opt-in until compared with FIND on real photos.
+    findez_chat_extraction: str = "find"
     findez_agent_timezone: str = "America/Los_Angeles"
 
     # FIND is the server-side inventory-photo ingestion pipeline used by both
@@ -90,7 +93,7 @@ class Settings(BaseSettings):
     # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
     # Does not affect Stripe code or DB data — safe to remove when billing goes live.
     pilot_mode: bool = False
-    # ISO-8601 timestamp when the pilot ends, e.g. "2026-09-11T23:59:59Z".
+    # ISO-8601 timestamp when the pilot ends, e.g. "2026-11-01T23:59:59Z".
     # Surfaced in /me/limits as pilot_ends_at and pilot_notice. Informational only —
     # limits do not flip automatically; pilot_mode must be toggled manually.
     pilot_ends_at: str | None = None
