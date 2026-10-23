@@ -262,9 +262,9 @@ export function ScanCenterClient() {
         )}
 
         {mode === "spreadsheet" && <div className="scan-choice"><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)} disabled={!space}>Choose file</button>{!space && <span>Choose a Space first</span>}</div>}
-        {mode === "bom" && <div className="scan-choice"><Link className="product-button primary" href="/project-kits">Open kits</Link></div>}
+        {mode === "bom" && <div className="scan-choice"><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)}>Import BOM file</button><Link className="product-button" href="/project-kits">Open kits</Link></div>}
       </div>
-      {token && <Dialog open={spreadsheetOpen} onOpenChange={setSpreadsheetOpen}><DialogContent><SpreadsheetImportModal spaceName={space} token={token} onSuccess={(count) => { setSaved(`${count} item${count === 1 ? "" : "s"} imported into ${space}.`); }} /></DialogContent></Dialog>}
+      {token && <Dialog open={spreadsheetOpen} onOpenChange={setSpreadsheetOpen}><DialogContent><SpreadsheetImportModal kind={mode === "bom" ? "bom" : "inventory"} spaceName={space} token={token} onSuccess={(count) => { setSaved(`${count} item${count === 1 ? "" : "s"} imported into ${space}.`); }} /></DialogContent></Dialog>}
     </section>
   );
 }
