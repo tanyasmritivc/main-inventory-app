@@ -1,6 +1,6 @@
 # FindEZ chat: behavior contract and October 22 fixes
 
-Status: implemented and tested in isolated API/mobile branches; production activation requires migrations 077 and 078. This document separates the product contract from current capabilities. It does not claim the entire future vision is shipped.
+Status: API `223b95b` and explicitly approved migrations 077/078 are live. Apple acknowledged TestFlight 1.1.1 (112), mobile source `2b2ea7c`; processing and tester availability were not polled, and physical-device acceptance is unverified. This document separates the product contract from current capabilities. It does not claim the entire future vision is shipped.
 
 ## The product
 
@@ -125,3 +125,12 @@ Use a disposable test inventory. Confirm creation/deletion cards when instructed
 - Migrations 077/078 must be approved and applied before publishing the dependent runtime. Preserve unrelated VM files and keep rollback artifacts.
 - Publish a new TestFlight build under standing authorization. Do not replace the public App Store submission without a separate request.
 - Native simulator tests do not prove physical camera, network interruption, VoiceOver, or TestFlight device acceptance.
+
+## October 22 delivery evidence
+
+- Backend: 1,355 Python tests plus 10 subtests passed; PostgreSQL fixtures passed. Fresh isolated production-copy replay applied both migrations twice and preserved all 91 tables' original data.
+- Mobile: 793 Flutter tests passed with one optional visual skip; clean analysis; 33 focused native iOS tests and two visually inspected light/dark cases passed. The unfiltered native exploratory suite's seven host-only assumptions remain documented in TESTING.md.
+- Both final runtime commits passed all five CI jobs. Seven configured-model synthetic scenarios passed.
+- Real deployed HTTPS/model/database QA passed single-confirmation creation/addition, repeated-card idempotency, immediate quantities, same-request retry, single-confirmation new-Space move, existing-Space direct move and current resource navigation. Only a disposable test account was used and removed; customer inventory was not modified.
+- Apple validation and upload succeeded for 1.1.1 (112), delivery `2141c0fa-35c8-41ab-b935-1c6f108dccb3`. Signed artifacts, privacy/configuration verification, test logs and deployment receipts are preserved in `Documents/FindEZ/AppStore/1.1.1-build112`.
+- Physical-device acceptance and TestFlight availability remain unverified. The capability audit above remains the boundary between this delivery and future work.
