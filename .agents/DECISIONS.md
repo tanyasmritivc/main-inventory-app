@@ -1,3 +1,9 @@
+## October 23 - Keep the original quiet chat background
+
+User rejected the stronger beta 115 chat gradient. Retain the beta 114 background:
+black in dark mode and the original warm light landing background. Preserve the
+sheet, navigation, settings, Space and voice refinements independently.
+
 ## October 22 - Chat history sheet and unified Space scrolling
 
 History is a route-owned bottom sheet, keeping the composer mounted. Avatar stays

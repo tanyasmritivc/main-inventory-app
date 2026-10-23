@@ -1,3 +1,11 @@
+## October 23 - Restore the previous chat background
+
+User rejected beta 115's stronger gradient. Restore the exact beta 114 background:
+black in dark mode; warm off-white with the original subtle landing glow in light
+mode. All other beta 115 UI/voice changes remain. Beta 116 in preparation. Existing
+23 shell tests passed (including both themes); analysis clean. No new tests needed
+for this exact visual restoration.
+
 ## October 23 - Mobile UI refinement uploaded as beta 115
 
 Apple acknowledged 1.1.1 (115), delivery ba84b6af-5da2-47a8-9dad-78666abc095b.

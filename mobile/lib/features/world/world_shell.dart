@@ -577,24 +577,14 @@ class _WorldShellState extends State<WorldShell> {
       backgroundColor: dark ? Colors.black : const Color(0xFFFCFAF7),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: _tab == 0
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  stops: const [0, .42, .78, 1],
-                  colors: dark
-                      ? const [
-                          Color(0xFF080A10),
-                          Color(0xFF121825),
-                          Color(0xFF29202D),
-                          Color(0xFF3C2720),
-                        ]
-                      : const [
-                          Color(0xFFFCFAF7),
-                          Color(0xFFF1EDF7),
-                          Color(0xFFE7E7F4),
-                          Color(0xFFF2D8C7),
-                        ],
+          gradient: !dark && !_chatFocused && _tab == 0
+              ? RadialGradient(
+                  center: const Alignment(.3, 1.2),
+                  radius: 1.15,
+                  colors: [
+                    const Color(0xFFEE9B6C).withValues(alpha: dark ? .18 : .22),
+                    Colors.transparent,
+                  ],
                 )
               : null,
         ),
