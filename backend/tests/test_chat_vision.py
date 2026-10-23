@@ -71,3 +71,12 @@ def test_grounding_invalid_output_retries_once_then_fails():
     with patch.object(g,'gateway_completion',return_value=NS(choices=[NS(message=NS(content='Done'))])) as gateway:
         with pytest.raises(ValueError):g._json('Find objects',[photo()],g.Grounding)
     assert gateway.call_count==2
+
+
+def test_retention_uses_schema_compatible_hidden_assistant_receipt():
+    photo={'mode':'chat','source_path':'actor/ask.jpg'}
+    with patch('app.services.world_chat.save_answer') as save:
+        v.retain('actor','personal','cid','turn',photo)
+    save.assert_called_once_with('actor','personal','cid','',{
+        'attachment_receipt':True,'turn_id':'turn','chat_photo':photo,
+    })

@@ -26,9 +26,9 @@ def retained_image(actor, photo):
 
 def retain(actor, key, cid, turn_id, photo):
     from app.services import world_chat as world
-    from app.services.supabase_client import get_supabase_raw
-    world.conversation(actor, key, cid)
-    result = (get_supabase_raw().table('messages').update({'answer_context': {'chat_photo': photo}})
-              .eq('id', turn_id).eq('conversation_id', cid).eq('role', 'user').execute().data or [])
-    if len(result) != 1:
-        raise RuntimeError('The chat attachment could not be retained')
+    # Existing schema permits answer_context only on assistant records. Keep a
+    # hidden receipt before generation, using save_answer's verified write path.
+    # The user turn remains immutable; retries still share its operation ID.
+    world.save_answer(actor, key, cid, '', {
+        'attachment_receipt': True, 'turn_id': turn_id, 'chat_photo': photo,
+    })

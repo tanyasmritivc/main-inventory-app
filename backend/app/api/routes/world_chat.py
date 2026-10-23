@@ -85,7 +85,7 @@ def conversation(world_id: str, conversation_id: UUID, user: AuthenticatedUser =
         capture_id = context.get('chat_capture_id')
         if capture_id:
             context['chat_capture'] = load(user.user_id, world.world_key(world_id), str(conversation_id), capture_id)['answer_context']['chat_capture']
-    return {'conversation': value, 'messages': [row for row in rows if not (row.get('answer_context') or {}).get('direct_receipt')]}
+    return {'conversation': value, 'messages': [row for row in rows if not any((row.get('answer_context') or {}).get(flag) for flag in ('direct_receipt', 'attachment_receipt'))]}
 
 
 @router.delete('/conversations/{conversation_id}')
