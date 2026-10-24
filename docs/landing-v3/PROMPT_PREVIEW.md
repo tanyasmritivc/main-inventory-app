@@ -1,3 +1,9 @@
+> Superseded October 24: the user removed this demo. Landing Send now opens
+> `/signup?prompt=...` directly with a nonblocking 160ms fade. The bounded prompt
+> handoff, tab-local draft restoration, auth and onboarding behavior remain.
+> The preview component, stylesheet and illustrative parser have been removed.
+> The remainder of this file is the historical delivery record.
+
 # Public prompt preview
 
 ## Behavior

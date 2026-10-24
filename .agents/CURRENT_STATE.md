@@ -1,3 +1,12 @@
+## October 24 — Direct landing prompt to authentication
+
+User superseded the public demo: Send now navigates immediately to signup with
+the bounded original prompt. A 160ms composer fade runs during navigation; no
+preview modal, example inventory, or artificial wait. Reduced motion skips the
+fade. Existing signup/signin/onboarding/Ask prompt retention stays intact.
+Branch `fix/landing-direct-auth-20261024`; implementation checked locally, release
+verification pending. Earlier prompt-preview delivery below is historical.
+
 ## October 24 — Public prompt preview live on self-hosted web
 
 Runtime `ad13f91515e42f5bfc89a337ff818e50a07cd77e` / PR183 is live from

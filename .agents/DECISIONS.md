@@ -1,3 +1,10 @@
+## October 24 — Landing prompts go directly to authentication
+
+User explicitly removed the interactive inventory demo. Submit opens signup
+immediately, with a brief nonblocking fade. Keep the original request through
+authentication and setup into editable Ask; never create anonymous inventory.
+This supersedes the public demonstration decision below.
+
 ## October 24 - Public prompt demonstrations are not saved inventory
 
 The public landing composer demonstrates a prompt before signup. Do not claim
