@@ -39,9 +39,10 @@ void main() {
           .toList();
       update(() => selected = 1);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 150));
-      expect(opacity()[0], inExclusiveRange(.4, .6));
-      expect(opacity()[1], inExclusiveRange(.4, .6));
+      await tester.pump(const Duration(milliseconds: 50));
+      // No delayed ease-in: the destination is visibly appearing at 50ms.
+      expect(opacity()[0], inExclusiveRange(.65, .8));
+      expect(opacity()[1], inExclusiveRange(.2, .35));
       final before = opacity();
       update(() => selected = 2);
       await tester.pump();

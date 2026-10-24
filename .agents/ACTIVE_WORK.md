@@ -1,3 +1,11 @@
+## October 24 - Rounded mobile icons and tab fade in progress
+
+Branch `fix/mobile-echo-icons-smooth-tabs-20261024`, based on beta 118.
+Mobile-only app icon replacement and coordinated header/content/footer fades;
+native Liquid Glass retained with gentler layer timing. Build 119 candidate.
+See `docs/plans/mobile-echo-icons-motion-20261024.md`. Native build/test run first
+hit low disk; disposable build caches cleared, rerunning interrupted checks.
+
 ## October 23 - Blue echo, tab motion and Settings type delivered as beta 118
 
 Apple acknowledged 1.1.1 (118), delivery `7ea3cc3c-c89b-4ec3-ab84-a4d1862ce1bb`.

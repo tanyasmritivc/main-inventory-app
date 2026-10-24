@@ -24,6 +24,9 @@ class _NativeBottomTabsState extends State<NativeBottomTabs> {
   Map<String, Object> get _configuration => {
     'selected': widget.selected,
     'dark': Theme.of(context).brightness == Brightness.dark,
+    'reduceMotion':
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context),
   };
   Future<void> _configure() async {
     await _channel?.invokeMethod<void>('configure', _configuration);

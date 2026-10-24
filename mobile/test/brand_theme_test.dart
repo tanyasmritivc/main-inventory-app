@@ -132,7 +132,7 @@ void main() {
     )!;
     expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
     expect(icon.getPixel(0, 0).toList(), [255, 255, 255]);
-    expect(icon.getPixel(600, 300).toList(), [232, 89, 12]);
+    expect(icon.getPixel(750, 250).toList(), [232, 89, 12]);
     expect(icon.getPixel(400, 400).toList(), [17, 17, 18]);
   });
 

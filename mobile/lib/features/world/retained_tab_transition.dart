@@ -8,6 +8,10 @@ class RetainedTabTransition extends StatefulWidget {
     required this.index,
     required this.children,
   });
+  static const duration = Duration(milliseconds: 340);
+  // Immediate visible feedback, with a gentle settle rather than a slow start.
+  static const curve = Curves.easeOutQuad;
+
   final int index;
   final List<Widget> children;
 
@@ -19,7 +23,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
+    duration: RetainedTabTransition.duration,
     value: 1,
   );
   late List<double> _from = _target;
@@ -31,7 +35,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
   );
 
   List<double> _values(int selected) {
-    final progress = Curves.easeInOutCubic.transform(_controller.value);
+    final progress = RetainedTabTransition.curve.transform(_controller.value);
     return List.generate(widget.children.length, (i) {
       final end = i == selected ? 1.0 : 0.0;
       return _from[i] + (end - _from[i]) * progress;

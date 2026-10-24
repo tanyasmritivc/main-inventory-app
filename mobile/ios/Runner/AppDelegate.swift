@@ -269,6 +269,7 @@ private final class NativeTabsFactory: NSObject, FlutterPlatformViewFactory {
 private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDelegate {
   private let bar = UITabBar()
   private let channel: FlutterMethodChannel
+  private var reduceMotion = false
   init(frame: CGRect, id: Int64, messenger: FlutterBinaryMessenger, args: Any?) {
     channel = FlutterMethodChannel(name: "com.findez.app/native-tabs/\(id)", binaryMessenger: messenger)
     super.init()
@@ -284,6 +285,8 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
     bar.delegate = self
     bar.tintColor = .label
     configure(args)
+    NotificationCenter.default.addObserver(self, selector: #selector(updateMotion),
+      name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
     channel.setMethodCallHandler { [weak self] call, result in
       if call.method == "configure" { self?.configure(call.arguments); result(nil) }
       else { result(FlutterMethodNotImplemented) }
@@ -291,14 +294,33 @@ private final class NativeTabsView: NSObject, FlutterPlatformView, UITabBarDeleg
   }
   private func configure(_ args: Any?) {
     let values = args as? [String: Any] ?? [:]
+    reduceMotion = values["reduceMotion"] as? Bool ?? false
+    updateMotion()
     bar.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
     if let index = values["selected"] as? Int, let items = bar.items, items.indices.contains(index), bar.selectedItem !== items[index] {
       bar.selectedItem = items[index]
     }
   }
+  // Pace UIKit's own Liquid Glass animations through the public layer clock.
+  // Do not inspect private subviews or delay the Flutter selection callback.
+  @objc private func updateMotion() {
+    let speed: Float = (reduceMotion || UIAccessibility.isReduceMotionEnabled) ? 1 : 0.7
+    let layer = bar.layer
+    guard layer.speed != speed else { return }
+    let now = CACurrentMediaTime()
+    let localTime = layer.convertTime(now, from: nil)
+    let parentTime = layer.superlayer?.convertTime(now, from: nil) ?? now
+    layer.speed = speed
+    layer.timeOffset = localTime
+    layer.beginTime = parentTime
+  }
   func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
     channel.invokeMethod("selected", arguments: item.tag)
   }
   func view() -> UIView { bar }
-  deinit { channel.setMethodCallHandler(nil); bar.delegate = nil }
+  deinit {
+    NotificationCenter.default.removeObserver(self)
+    channel.setMethodCallHandler(nil)
+    bar.delegate = nil
+  }
 }
