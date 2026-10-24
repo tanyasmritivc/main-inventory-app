@@ -1,3 +1,15 @@
+## October 24 - Authoritative logo correction (build 123 preparation)
+
+User reselected findez-logo-svg.zip and the original seven standalone SVGs,
+superseding the later launcher variations. Exact originals/checksums and the live
+web audit are in docs/brand-authoritative-20261024. All 15 public web logo/icon
+assets already match; no website runtime change needed. Mobile in-app mark,
+wordmark and theme already match. Replaced the differing iOS/Android launcher
+and bundled app-icon assets. Other platform exports were already correct.
+Nav bar, page fades, backend, database and layouts remain unchanged. Build 123
+has 847 passing Flutter tests (one optional skip), clean analysis and 46 exact
+icon export checks. Signed release/upload pending; no public App Store submission.
+
 ## October 24 — Attach menus and quick page entry delivered (beta 122; PR 188)
 
 Apple acknowledged 1.1.1 (122), delivery `be073265-056e-4e33-b8f3-c8b9e4e453a9`.
