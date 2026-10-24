@@ -43,11 +43,11 @@ test("keeps the focused inventory and account navigation reachable", () => {
     screen.getByRole("complementary").classList.contains("is-hover-expandable"),
   ).toBe(false);
 });
-test("uses the mobile mark without changing the public mark", () => {
+test("uses the supplied Blue echo mark throughout navigation", () => {
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
   expect(
-    container.querySelector(".app-sidebar-logo path")?.getAttribute("d"),
-  ).toBe("M25.25 40.75H55.25V70.75");
+    container.querySelector(".app-sidebar-logo path")?.getAttribute("fill"),
+  ).toBe("#A9D6F5");
 });
 test.each(APP_NAV_ITEMS.filter((i) => i.route !== "/docs/api"))(
   "selects only $label on its route",

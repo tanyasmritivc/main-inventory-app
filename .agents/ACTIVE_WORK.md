@@ -1,3 +1,10 @@
+## October 23 - Blue echo web branding (active)
+
+Branch `feat/brand-blue-echo-web-20261023`, based on deployed landing-v3.
+Use the supplied primary kit for shared logos, favicon/touch/social/search assets
+and shared typography. Self-hosted web release only; backend/database unchanged.
+Mobile changes are isolated in the sibling mobile worktree.
+
 ## October 23 — Landing v3 live on self-hosted web
 
 User authorized deployment. Homepage implementation `cf29d1f` on `feat/landing-v3`

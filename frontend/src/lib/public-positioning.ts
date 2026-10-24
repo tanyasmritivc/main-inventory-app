@@ -3,7 +3,7 @@ export const PUBLIC_SITE_URL = "https://findez.ai";
 export const PUBLIC_SITE_TITLE = "FindEZ AI | AI memory for the physical world";
 export const PUBLIC_SITE_DESCRIPTION =
   "Turn the physical world into memory. Scan photos and barcodes, save items in Spaces, and ask FindEZ AI what you have and where it is.";
-export const PUBLIC_SITE_UPDATED_AT = "2026-10-18";
+export const PUBLIC_SITE_UPDATED_AT = "2026-10-23";
 
 // Public product facts only. Never include account, inventory or conversation data.
 export const PUBLIC_SITE_STRUCTURED_DATA = {
@@ -14,7 +14,7 @@ export const PUBLIC_SITE_STRUCTURED_DATA = {
       "@id": `${PUBLIC_SITE_URL}/#organization`,
       name: "AI Robots Inc.",
       url: PUBLIC_SITE_URL,
-      logo: `${PUBLIC_SITE_URL}/apple-touch-icon.png`,
+      logo: `${PUBLIC_SITE_URL}/brand/findez-logo-512.png`,
     },
     {
       "@type": "WebSite",
