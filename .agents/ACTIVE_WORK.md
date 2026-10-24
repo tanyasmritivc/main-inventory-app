@@ -1,10 +1,20 @@
-## October 24 - Rounded mobile icons and tab fade in progress
+## October 24 - Rounded app icons and tab fades delivered as beta 119
 
-Branch `fix/mobile-echo-icons-smooth-tabs-20261024`, based on beta 118.
-Mobile-only app icon replacement and coordinated header/content/footer fades;
-native Liquid Glass retained with gentler layer timing. Build 119 candidate.
-See `docs/plans/mobile-echo-icons-motion-20261024.md`. Native build/test run first
-hit low disk; disposable build caches cleared, rerunning interrupted checks.
+Apple acknowledged 1.1.1 (119), delivery `6a2505b0-3175-4743-abe6-56bb4d30f3ed`.
+Runtime `0156e671784e280d0a2a6118676d0eda748c1ade`, PR184, all five CI gates
+passed (run 40066591685). Local Flutter suite: 822 passed, one optional skip;
+analysis clean. Native iOS 26.5 simulator shell inspected in both themes.
+Physical-device motion/feel remains pending.
+
+Exact supplied rounded light/dark app artwork replaces launcher icons. Complete
+retained pages, including headers/footer actions, fade without relayout jumps;
+340ms ease-out responds immediately. Native Liquid Glass is retained with gentler
+layer timing and no delayed selection callback. Reduced motion is respected.
+Signed archive/export each verified 32 device executables, strict signing and 24
+privacy manifests; Apple validation passed. Artifacts preserved under
+`~/Documents/FindEZ/AppStore/1.1.1-build119`. Processing/tester availability not
+polled; no public App Store submission. Web/backend/database unchanged.
+See `docs/plans/mobile-echo-icons-motion-20261024.md`.
 
 ## October 23 - Blue echo, tab motion and Settings type delivered as beta 118
 
