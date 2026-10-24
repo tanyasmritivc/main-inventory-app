@@ -1,3 +1,4 @@
+import 'chat_progress.dart';
 import 'package:mobile/core/private_image.dart';
 import '../../core/app_theme.dart';
 import 'dart:typed_data';
@@ -226,16 +227,7 @@ class _AskAnswerViewState extends State<AskAnswerView> {
           const SizedBox(height: 12),
         ],
         if (widget.answer.trim().isEmpty && widget.isLoading)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-            child: Semantics(
-              liveRegion: true,
-              child: AppText(
-                widget.pendingMessage,
-                style: TextStyle(color: secondary, fontSize: 16),
-              ),
-            ),
-          )
+          ChatProgress(message: widget.pendingMessage)
         else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),

@@ -1,3 +1,4 @@
+import 'chat_progress.dart';
 import 'voice_capture.dart';
 import 'chat_history_sheet.dart';
 import 'dart:math' as math;
@@ -1429,7 +1430,7 @@ class _ChatPageState extends State<ChatPage>
       final m = _session.messages[assistantIndex];
       if (m.role != 'assistant') return;
       setState(() {
-        _session.messages[assistantIndex] = m.copyWith(content: 'Thinking…');
+        if (m.content.isEmpty) _progress ??= 'Understanding your request…';
       });
       _scrollToBottom();
     });
@@ -3388,15 +3389,7 @@ class _ChatPageState extends State<ChatPage>
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: AppText(
-                    _progress!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0xFF8E8E93),
-                      ),
-                    ),
-                  ),
+                  child: ChatProgress(message: _progress!),
                 ),
                 const SizedBox(height: 10),
               ],

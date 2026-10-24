@@ -1,0 +1,14 @@
+{
+  "version": "1.1.1",
+  "build": 125,
+  "source_commit": "52a82725900e32c2021d71a48d9ac55d58d7d94f",
+  "uploaded": true,
+  "ipa_sha256": "de441e88902c521203d63db8581d06d95c0314d194ad2e37cbc8570ed4504f9e",
+  "delivery_uuid": "e5f4a8f8-2426-4a60-8d99-4a86a23beffb",
+  "processing": "pending, not polled",
+  "tester_availability": "unverified",
+  "icon_exports_verified": 46,
+  "launcher_icon_matches_supplied_svg": true,
+  "apple_validation": true,
+  "shine_direction": "left-to-right"
+}
