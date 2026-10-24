@@ -1,3 +1,14 @@
+## October 24 — Smart Space search (build121 preparation)
+
+Lane `fix/mobile-smart-space-search-20261024` fixes the visible part-number/search
+mismatch. Space, global and Team-space discovery now share deterministic keyword
+matching across saved item details and imported column values, identifier-format
+variants, plural/adaptor variants and conservative word typos. Numeric identifiers
+are not fuzzy. Existing Space/category/low-stock scope stays intact. Full Flutter
+suite:847 passed,1 optional skip;21 focused search checks passed. Backend search
+has a separate API lane/PR186. No UI/native motion changes. Build121 delivery is
+pending; see `docs/plans/smart-space-search-20261024.md`.
+
 ## October 24 - Quiet composer and history typography delivered as beta120
 
 Apple acknowledged 1.1.1 (120), delivery `71ce9f9d-276c-4610-8897-690b2b3b208c`.

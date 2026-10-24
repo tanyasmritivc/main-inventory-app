@@ -460,11 +460,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 0)) {
       return false;
     }
-    final q = _spaceSearchQuery.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    return item.name.toLowerCase().contains(q) ||
-        (item.brand?.toLowerCase().contains(q) ?? false) ||
-        item.category.toLowerCase().contains(q);
+    return item.searchScore(_spaceSearchQuery) > 0;
   }
 
   void _onCategoryPillTapped(String cat) {
@@ -1981,52 +1977,6 @@ class _InventoryPageState extends State<InventoryPage>
     }
   }
 
-  bool _containsToken(String haystack, String token) {
-    if (haystack.isEmpty || token.isEmpty) return false;
-    return haystack.toLowerCase().contains(token.toLowerCase());
-  }
-
-  int _scoreForToken(
-    InventoryItem it,
-    String token, {
-    required String fullQuery,
-  }) {
-    final name = it.name;
-    final category = it.category;
-    final location = it.location;
-    final notes = (it.notes ?? '');
-
-    final nameLower = name.toLowerCase();
-    final tokenLower = token.toLowerCase();
-    final fullLower = fullQuery.toLowerCase();
-
-    var score = 0;
-
-    if (nameLower == fullLower) return 10000;
-    if (nameLower.startsWith(fullLower) && fullLower.isNotEmpty) score += 7000;
-
-    if (nameLower == tokenLower) score += 4500;
-    if (nameLower.startsWith(tokenLower)) score += 2200;
-    if (nameLower.contains(tokenLower)) score += 1500;
-
-    if (_containsToken(category, token)) score += 900;
-
-    final tags = it.tags ?? const <String>[];
-    for (final t in tags) {
-      if (_containsToken(t, token)) {
-        score += 750;
-        break;
-      }
-    }
-
-    if (_containsToken(location, token)) score += 600;
-    if (_containsToken(notes, token)) score += 450;
-    if (_containsToken(it.purchaseSource ?? '', token)) score += 350;
-    if (_containsToken(it.barcode ?? '', token)) score += 250;
-
-    return score;
-  }
-
   List<InventoryItem> _smartLocalSearch(
     String rawQuery, {
     List<String> extraTerms = const [],
@@ -2035,21 +1985,16 @@ class _InventoryPageState extends State<InventoryPage>
     final q = rawQuery.trim();
     if (q.isEmpty) return base;
 
-    final tokens = <String>{
-      ...q
-          .split(RegExp(r'\s+'))
-          .map((t) => t.trim())
-          .where((t) => t.isNotEmpty),
-      ...extraTerms.map((t) => t.trim()).where((t) => t.isNotEmpty),
-    }.toList();
-
     final scored = <({InventoryItem item, int score})>[];
     for (final it in base) {
-      var s = 0;
-      for (final tok in tokens) {
-        s += _scoreForToken(it, tok, fullQuery: q);
+      var score = it.searchScore(q);
+      if (score == 0) {
+        for (final alternative in extraTerms) {
+          final candidate = it.searchScore(alternative);
+          if (candidate > 0) score = 1;
+        }
       }
-      if (s > 0) scored.add((item: it, score: s));
+      if (score > 0) scored.add((item: it, score: score));
     }
 
     scored.sort((a, b) {
