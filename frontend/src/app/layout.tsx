@@ -52,12 +52,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/findez-favicon.svg", sizes: "any", type: "image/svg+xml" },
-      { url: "/favicon.png?v=blue-echo", sizes: "96x96", type: "image/png" },
-      { url: "/favicon.ico?v=blue-echo", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/brand/findez-favicon.svg?v=echo-20261024", sizes: "any", type: "image/svg+xml" },
+      { url: "/favicon.png?v=echo-20261024", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico?v=echo-20261024", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
     ],
-    shortcut: "/favicon.ico?v=blue-echo",
-    apple: [{ url: "/apple-touch-icon.png?v=blue-echo", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico?v=echo-20261024",
+    apple: [{ url: "/apple-touch-icon.png?v=echo-20261024", sizes: "180x180", type: "image/png" }],
   },
 };
 
