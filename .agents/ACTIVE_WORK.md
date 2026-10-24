@@ -1,3 +1,13 @@
+## October 23 — Landing v3 live on self-hosted web
+
+User authorized deployment. Homepage implementation `cf29d1f` on `feat/landing-v3`
+(PR #180) is live from `/home/ubuntu/findez-web-releases/landing-v3-20261023/frontend`.
+Build ID `8xw5tjSXdVhKej4STQ101`; production build and public HTTPS route/asset checks
+passed. Preserved 366 unrelated files and existing server configuration; only the
+web service working directory changed. Backend/database/mobile unchanged.
+Previous connector release retained for rollback. Self-hosted only; no Vercel
+activation. Validation, browser advisory, limits and rollback: `docs/landing-v3/README.md`.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google

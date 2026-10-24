@@ -387,16 +387,21 @@ Manager. Distinguish prepared assets from uploaded assets and a local reply
 draft from a sent message. Simulator results do not constitute physical-device
 acceptance.
 
-### Landing copy and signed-in navigation
+### Landing v3 homepage
 
-Run the full web coverage suite, TypeScript, changed-file ESLint and production
-webpack build. `landing-page` verifies server-initialized Dashboard, anonymous
-signup, public rendering when user verification fails, browser sign-in/out events,
-desktop/mobile marketing actions and listener cleanup. Browser-check the hero
-without the removed paragraph and Dashboard opening `/home` in an existing
-signed-in session. Check anonymous initial HTML separately and keep public API
-files, interior source and production data unchanged. All five CI jobs must pass
-on the PR head before finishing.
+Run `npm run test:ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`
+from `frontend/`. The build requires the existing public Supabase URL/anon-key
+configuration for unrelated prerendered authentication pages; non-secret build
+placeholders suffice for static verification. Do not commit environment files.
+`landing-page` checks copy, links, encoded signup prompts, preserved metadata and
+shared SiteNav session cleanup. `landing-v3-motion` checks negative entering
+progress, smoothing/reduced motion and all major scene states at desktop/mobile
+sizes. `landing-v3-webgl` checks unavailable/throwing contexts and renderer failure.
+Browser-check the full scroll sequence at 1440×900 and 390×844, console hydration,
+page width, reduced motion and returning tools. See `docs/landing-v3/README.md`.
+The homepage now always sends acquisition actions to signup per the prototype;
+interior shared SiteNav retains its authenticated Dashboard behavior.
+All five CI jobs must pass on the PR head before finishing.
 
 ### Persistent web navigation and hover sidebar
 
