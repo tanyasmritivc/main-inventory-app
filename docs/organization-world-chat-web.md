@@ -72,6 +72,12 @@ actual deployed sources and an unauthenticated world-directory 401 response.
 
 ## Release
 
+Release reconciliation retains the already-deployed agent approval page, client,
+tests and middleware prefix from `305e3e0`. The live file guard found that addition
+to `protected-routes`; it is preserved alongside the new `/worlds` prefix. Focused
+auth/approval tests: 18 passed; TypeScript passed. The unchanged approval client
+has one existing hooks warning in addition to this branch's 52 baseline warnings.
+
 Self-hosted web candidate and CI checks pending. Production authenticated chat
 and write verification still requires the user's signed-in session; local fixtures
 and existing API tests are not a live model/database round-trip.

@@ -5,6 +5,7 @@
  * `requireUser()` on the server; a test keeps this list and those pages in sync.
  */
 export const PROTECTED_ROUTE_PREFIXES = [
+  "/agent-approvals",
   "/assist",
   "/spaces",
   "/restock",
