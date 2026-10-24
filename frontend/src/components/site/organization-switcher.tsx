@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { worldHref } from "@/lib/world-navigation";
 import Link from "next/link";
 import { Building2, Check, ChevronDown, FolderKanban, Mail, Plus, RefreshCw, UserRound } from "lucide-react";
 import { accountRequest } from "@/lib/account-request";
@@ -55,7 +56,7 @@ function AccountSwitcher({ accountId, organization, personal, onNavigate }: Prop
           <DropdownMenuItem onSelect={event => { event.preventDefault(); setLoading(true); setError(""); setRevision(value => value + 1); }}><RefreshCw size={16} />Try again</DropdownMenuItem>
         </> : <div className={styles.list}>
           {organizations.map(org => <DropdownMenuItem key={org.organization_id} asChild textValue={org.name}>
-            <Link href={`/organizations/${encodeURIComponent(org.organization_id)}`} onClick={onNavigate} aria-current={organization?.id === org.organization_id ? "true" : undefined}>
+            <Link href={worldHref(org.organization_id)} onClick={onNavigate} aria-current={organization?.id === org.organization_id ? "true" : undefined}>
               <span className={styles.avatar}>{Array.from(org.name)[0]?.toUpperCase()}</span>
               <span className={styles.rowCopy}><span>{org.name}</span><small>{org.role === "owner" ? "Owner" : org.role === "admin" ? "Admin" : "Member"}</small></span>
               {organization?.id === org.organization_id && <Check size={16} className={styles.check} aria-label="Selected" />}
@@ -64,7 +65,7 @@ function AccountSwitcher({ accountId, organization, personal, onNavigate }: Prop
           {!organizations.length && <p className={styles.message}>Your organizations will appear here.</p>}
         </div>}
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild><Link href="/workspaces/personal" onClick={onNavigate}><UserRound size={16} />Personal{personal && <Check size={16} className={styles.check} aria-label="Selected" />}</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link href={worldHref("personal")} onClick={onNavigate}><UserRound size={16} />Personal{personal && <Check size={16} className={styles.check} aria-label="Selected" />}</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href="/workspaces" onClick={onNavigate}><FolderKanban size={16} />All workspaces</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link href="/organizations" onClick={onNavigate}><Building2 size={16} />Manage organizations</Link></DropdownMenuItem>
         <DropdownMenuSeparator />

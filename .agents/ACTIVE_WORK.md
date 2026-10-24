@@ -1,3 +1,13 @@
+## October 24 — Organization chat and direct Space items
+
+Active web-only branch `feat/organization-workspace-chat-20261024`, based on
+`5b18b11`. Organization chat reuses deployed `/worlds` API (mobile source of truth),
+private world history, durable request IDs, reviewed creation and authorized
+resource links. Spaces directory spans accessible inventories; item views retain
+existing editing. Organization tools replace per-inventory dashboards. Older
+inventory conversations remain available in Tools. No backend, database or mobile
+changes. Validation and self-hosted rollout in progress.
+
 ## October 24 — Desktop organization navigation
 
 Web-only `feat/desktop-organization-shell-20261024`, based on `1699f86`.

@@ -40,7 +40,7 @@ export async function readAskEvents(
       throw new Error(
         event.code === "photo_timeout"
           ? "Photo analysis took too long. Try a clearer photo."
-          : event.error ||
+          : event.error || event.message ||
             "Your question could not be completed. Please try again.",
       );
     }
@@ -70,6 +70,7 @@ export async function askQuestion({
   message,
   photo,
   conversationId,
+  worldId, requestId,
   signal,
   onDelta,
   onStatus,
@@ -77,6 +78,7 @@ export async function askQuestion({
   onDone,
 }: {
   accountId: string;
+  worldId?: string; requestId?: string;
   message: string;
   photo?: File;
   conversationId?: string | null;
@@ -102,14 +104,16 @@ export async function askQuestion({
   const token = await accountToken(accountId);
   assertInventory(selected);
   const form = new FormData();
+  const capabilities = worldId ? { supports_item_management: true, supports_task_actions: true, request_id: requestId } : {};
   if (photo) {
     form.append("file", photo);
     form.append("message", message);
     form.append("supports_item_actions", "true");
+    for (const [key, value] of Object.entries(capabilities)) if (value !== undefined) form.append(key, String(value));
     if (conversationId) form.append("conversation_id", conversationId);
   }
   const response = await fetch(
-    `${apiBase()}${inventoryApiPath(photo ? "/ai_photo_question" : "/ai_command?stream=true", selected)}`,
+    `${apiBase()}${worldId ? `/worlds/${encodeURIComponent(worldId)}${photo ? "/ai_photo_question" : "/ai_command"}` : inventoryApiPath(photo ? "/ai_photo_question" : "/ai_command?stream=true", selected)}`,
     {
       method: "POST",
       signal,
@@ -120,7 +124,7 @@ export async function askQuestion({
       },
       body: photo
         ? form
-        : JSON.stringify({ message, conversation_id: conversationId || null, supports_item_actions: true }),
+        : JSON.stringify({ message, conversation_id: conversationId || null, supports_item_actions: true, ...capabilities }),
     },
   );
   if (!response.ok || !response.body)

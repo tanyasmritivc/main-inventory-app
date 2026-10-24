@@ -1,3 +1,4 @@
+import { worldNavigation, worldHref } from "./world-navigation";
 import { Boxes, Building2, FileStack, FolderKanban, History, MapPin, Users, Home, Settings } from "lucide-react";
 import type { AppNavItem } from "@/components/site/app-sidebar";
 import type { InventoryWorkspace } from "@/lib/inventory-selection";
@@ -14,9 +15,9 @@ export type WorkspaceView = "overview" | "settings" | "inventories" | "people" |
 export type OrganizationView = "workspaces" | "people" | "settings";
 export function organizationNavigation(id: string, name: string, view: OrganizationView): NavigationContext {
   const home = `/organizations/${encodeURIComponent(id)}`;
-  return { organization: { id, name }, breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
-    activeRoute: view === "workspaces" ? home : `${home}?view=${view}`,
-    items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }, { label: "Settings", route: `${home}?view=settings`, icon: Settings, section: "Organization" }] };
+  const navigation = worldNavigation(id, name);
+  return {...navigation, activeRoute: view === "workspaces" ? worldHref(id,"workspaces") : `${home}?view=${view}`};
+
 }
 export function workspaceNavigation(workspace: InventoryWorkspace, view: WorkspaceView): NavigationContext {
   const home = `/workspaces/${encodeURIComponent(workspace.workspace_id)}`;
@@ -30,8 +31,8 @@ export function workspaceNavigation(workspace: InventoryWorkspace, view: Workspa
       { label: "Activity", route: `${home}?view=activity`, icon: History, section: "Workspace" },
       { label: "Settings", route: `${home}?view=settings`, icon: Settings, section: "Workspace" });
   }
-  return { organization: workspace.organization_id ? { id: workspace.organization_id, name: workspace.organization_name || "Organization" } : undefined, personal: workspace.kind === "personal", homeHref: "/organizations", activeRoute: view === "inventories" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items,
-    breadcrumbs: [workspace.organization_id ? { label: workspace.organization_name || "Organization", href: `/organizations/${encodeURIComponent(workspace.organization_id)}` } : { label: "Workspaces", href: "/workspaces" }, { label: workspace.name, href: home }] };
+  return { organization: workspace.organization_id ? { id: workspace.organization_id, name: workspace.organization_name || "Organization" } : undefined, personal: workspace.kind === "personal", homeHref: "/organizations", activeRoute: view === "inventories" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items: [...worldNavigation(workspace.organization_id || "personal",workspace.organization_name || "Personal").items, ...items],
+    breadcrumbs: [workspace.organization_id ? { label: workspace.organization_name || "Organization", href: worldHref(workspace.organization_id) } : { label: "Workspaces", href: "/workspaces" }, { label: workspace.name, href: home }] };
 }
 export const DIRECTORY_NAVIGATION: AppNavItem[] = [
   { label: "Organizations", route: "/organizations", icon: Building2, section: "FindEZ" },

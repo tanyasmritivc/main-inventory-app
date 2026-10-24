@@ -10,7 +10,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { activeInventory, requireInventoryContext, selectInventory } from "@/lib/inventory-selection";
 
 const router={push:jest.fn(),replace:jest.fn()};
-let pathname="/home", query="inventory=a";
+let pathname="/inventory", query="inventory=a";
 jest.mock("next/navigation",()=>({useRouter:()=>router,usePathname:()=>pathname,useSearchParams:()=>new URLSearchParams(query)}));
 jest.mock("@/lib/account-request",()=>({accountRequest:jest.fn()}));
 jest.mock("@/lib/use-api-session",()=>({useApiSession:jest.fn()}));
@@ -19,7 +19,7 @@ jest.mock("@/components/site/app-shell",()=>({AppShell:({children}:{children:Rea
 const personal={workspace_id:"personal",name:"Personal",kind:"personal",team_id:null,role:"owner"};
 const inventory={inventory_id:"a",name:"Workshop parts",owner_user_id:"actor",team_id:null,is_default:true,item_count:1105};
 beforeEach(()=>{
-  jest.clearAllMocks();selectInventory(null);requireInventoryContext(false);pathname="/home";query="inventory=a";
+  jest.clearAllMocks();selectInventory(null);requireInventoryContext(false);pathname="/inventory";query="inventory=a";
   jest.mocked(useApiSession).mockReturnValue({accountId:"actor",loading:false,error:null} as ReturnType<typeof useApiSession>);
   jest.mocked(accountRequest).mockImplementation(async(_account,path,options)=>{
     if(path==="/inventory-workspaces") return {workspaces:[personal,{...personal,workspace_id:"team",name:"Shared workshop",kind:"team",team_id:"team"}]} as never;
@@ -42,7 +42,7 @@ test("the first screen chooses a workspace and the second opens an explicit inve
   expect(router.push).not.toHaveBeenCalled();
   unmount();render(<WorkspaceDirectory workspaceId="personal"/>);
   const selected=await screen.findByRole("link",{name:/Workshop parts 1,105 items/});
-  expect(selected.getAttribute("href")).toBe("/home?inventory=a");
+  expect(selected.getAttribute("href")).toBe("/inventory?inventory=a");
   expect(activeInventory()).toBeNull();
   expect(screen.getByRole("heading",{name:"Personal",level:1})).toBeTruthy();
   expect(screen.getByRole("searchbox",{name:"Search inventories"})).toBeTruthy();
@@ -155,3 +155,11 @@ test("account change discards a rename dialog and ignores its late saved name",a
  await act(async()=>finish({workspace:{name:"Private renamed"}}));
  expect(screen.queryByRole("dialog")).toBeNull();expect(screen.queryByText("Private renamed")).toBeNull();
 });
+
+ test("legacy inventory chat resolves its organization before redirecting and never mounts scoped chat",async()=>{
+ pathname="/assist";query="inventory=a&q=Find+bolts";
+ jest.mocked(accountRequest).mockResolvedValue({inventory:{...inventory,workspace:{...personal,organization_id:"org"},can_edit:true}});
+ render(<InventoryBoundary><p>Old scoped chat</p></InventoryBoundary>);
+ await waitFor(()=>expect(router.replace).toHaveBeenCalledWith("/worlds/org?q=Find+bolts"));
+ expect(screen.queryByText("Old scoped chat")).toBeNull();
+ });

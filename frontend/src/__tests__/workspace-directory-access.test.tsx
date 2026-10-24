@@ -21,7 +21,7 @@ test("visible restricted inventories lead to access review and disclose no item 
  jest.mocked(accountRequest).mockResolvedValue({workspace,inventories:[restricted,{...restricted,inventory_id:"tools",name:"Tools",can_open:true,item_count:12}],total:2,next_offset:null});
  render(<WorkspaceDirectory workspaceId="ftc"/>);
  expect((await screen.findByRole("link",{name:/Electrical/})).getAttribute("href")).toBe("/inventory-access-request/electrical");
- expect(screen.getByRole("link",{name:/Tools/}).getAttribute("href")).toBe("/home?inventory=tools");
+ expect(screen.getByRole("link",{name:/Tools/}).getAttribute("href")).toBe("/inventory?inventory=tools");
  expect(screen.getAllByText("Approved summary",{selector:"span"})).toHaveLength(2);
  expect(screen.queryByRole("button",{name:/Rename Electrical/})).toBeNull();
  expect(jest.mocked(accountRequest).mock.calls.every(c=>c[1].includes("/directory?"))).toBe(true);

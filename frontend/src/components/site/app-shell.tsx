@@ -20,6 +20,7 @@ import {
 import { AppThemeProvider } from "@/components/site/use-app-theme";
 import Link from "@/components/site/inventory-link";
 import { DIRECTORY_NAVIGATION, type NavigationContext } from "@/lib/context-navigation";
+import { worldHref, worldNavigation } from "@/lib/world-navigation";
 import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -225,17 +226,15 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     {label:"Help and information",route:"/settings/help",icon:BookOpen,section:"Account settings"},
     {label:"Account",route:"/settings/account",icon:Settings,section:"Account settings"},
   ];
+  const world = inventory ? worldNavigation(inventory.workspace.organization_id || "personal", inventory.workspace.organization_name || "Personal", ["/inventory","/home","/spaces"].includes(pathname) ? "spaces" : "tools") : undefined;
   const navigationItems = accountPage ? accountItems : context?.items || (inventory?.can_open === false ? [
     { label: "Workspace", route: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}`, icon: ArrowLeft, section: "Workspace" },
     { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "Administration" },
-  ] : inventory ? [
-    ...APP_NAV_ITEMS.filter((item) => !["/workspaces", "/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route)).map((item) => ({...item, label: ({"/home":"Home","/inventory":"Items","/spaces":"Spaces","/documents":"Documents"} as Record<string,string>)[item.route] || item.label})),
-    { label: "Inventory settings", route: "/inventory-access", icon: Users, section: "You" },
-  ] : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
+  ] : world ? world.items : [...DIRECTORY_NAVIGATION, ...APP_NAV_ITEMS.filter((item) => ["/notifications", "/settings", "/settings/api-keys", "/docs/api"].includes(item.route))]);
   const breadcrumbs = accountPage ? [{label:"Account",href:"/settings"}] : context?.breadcrumbs || (inventory ? [
-    inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: `/organizations/${inventory.workspace.organization_id}` } : { label: "Workspaces", href: "/workspaces" },
+    inventory.workspace.organization_id ? { label: inventory.workspace.organization_name || "Organization", href: worldHref(inventory.workspace.organization_id) } : { label: "Workspaces", href: "/workspaces" },
     { label: inventory.workspace.name, href: `/workspaces/${encodeURIComponent(inventory.workspace.workspace_id)}` },
-    { label: inventory.name, href: `/${inventory.can_open === false ? "inventory-access" : "home"}?inventory=${encodeURIComponent(inventory.inventory_id)}` },
+    { label: inventory.name, href: `/${inventory.can_open === false ? "inventory-access" : "inventory"}?inventory=${encodeURIComponent(inventory.inventory_id)}` },
   ] : []);
   const commandItems = navigationItems.filter((item) =>
     [item.label, item.section, ...(item.keywords ?? [])]
@@ -247,7 +246,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     <AppThemeProvider>
       {!accountPage && <AccountVerification prompt />}
       <div
-        className={`app-frame ${shellStyles.shell} ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
+        className={`app-frame ${shellStyles.shell} ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${(pathname === "/assist" || (pathname.startsWith("/worlds/") && context?.activeRoute === context?.homeHref)) ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">
           Skip to content
@@ -264,8 +263,8 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
           pinned={accountPage || sidebarPinned}
           onPin={accountPage ? undefined : togglePin}
           items={navigationItems}
-          activeRoute={accountPage ? pathname.startsWith("/settings/api-keys") ? "/settings/developer" : pathname === "/settings" ? "/settings/profile" : pathname : context?.activeRoute}
-          homeHref={context?.homeHref || (inventory ? `/home?inventory=${encodeURIComponent(inventory.inventory_id)}` : "/organizations")}
+          activeRoute={accountPage ? pathname.startsWith("/settings/api-keys") ? "/settings/developer" : pathname === "/settings" ? "/settings/profile" : pathname : context?.activeRoute || world?.activeRoute}
+          homeHref={context?.homeHref || world?.homeHref || "/organizations"}
         />
         <header className="app-topbar">
           <button

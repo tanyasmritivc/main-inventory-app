@@ -6,6 +6,7 @@ export const APP_THEME_STORAGE_KEY = "findez-app-theme";
 export const INTERIOR_PATH_PREFIXES = [
   "/join/access",
   "/organizations",
+  "/worlds",
   "/inventory-access",
   "/workspaces",
   "/home",

@@ -24,6 +24,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/sharing",
   "/teams",
   "/organizations",
+  "/worlds",
   "/inventory-access",
   "/inventory-access-request",
   "/workspaces",

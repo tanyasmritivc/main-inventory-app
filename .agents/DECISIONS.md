@@ -1,3 +1,12 @@
+## 2026-10-24 — Desktop chat belongs to the organization
+
+User supersedes inventory-scoped desktop chat/dashboard. Reuse the deployed
+mobile `/worlds` API and private actor/world history; no parallel backend/schema.
+New chat, Spaces and tools live at organization level. Opening a Space goes
+straight to editable items. Preserve workspace administration and legacy private
+inventory chat archives. Organization scope never grants additional inventory
+access. See `docs/organization-world-chat-web.md`.
+
 ## October 24 — Desktop organization-first shell
 
 Use the mobile organization hierarchy in the desktop sidebar: authenticated

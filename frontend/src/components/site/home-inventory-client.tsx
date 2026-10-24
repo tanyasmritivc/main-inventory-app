@@ -1,4 +1,5 @@
 "use client";
+import {worldHref} from "@/lib/world-navigation";
 import { purchaseSource } from "@/lib/purchase-source";
 import { privateImageSrc } from "@/lib/private-image";
 import { csvCell } from "@/lib/csv-export";
@@ -1273,7 +1274,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spac
         <div>
           <button
             type="button"
-            onClick={() => { setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
+            onClick={() => { const selected=activeInventory(); if(selected){router.push(worldHref(selected.workspace.organization_id || 'personal','spaces'));return;} setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
             style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
           >
             ← My Spaces

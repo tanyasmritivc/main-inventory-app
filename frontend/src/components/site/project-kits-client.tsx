@@ -8,7 +8,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
 
-export function ProjectKitsClient() {
+export function ProjectKitsClient({initialKit}:{initialKit?:string} = {}) {
   const { token } = useApiSession();
   const { confirmAction } = useAppDialog();
   const [spaces, setSpaces] = useState<string[]>([]);
@@ -31,6 +31,10 @@ export function ProjectKitsClient() {
 
   useEffect(() => { if (!token) return; getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if(!token || !initialKit)return;let live=true;
+    getProjectKit({token,kitId:initialKit}).then(kit=>{if(!live)return;if(kit.id!==initialKit)throw new Error("This project could not be verified.");setLocation(kit.location);setSelected(kit);}).catch(e=>{if(live)setError(userFacingError(e,"This project could not be opened."));});
+    return()=>{live=false;};
+  },[token,initialKit]);
 
   async function create(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !file || !name.trim() || !location) return;

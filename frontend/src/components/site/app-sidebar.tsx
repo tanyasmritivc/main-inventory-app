@@ -303,7 +303,7 @@ export function AppSidebar({
                         }
                         aria-label={item.label}
                         title={item.label}
-                        onClick={closeDrawer}
+                        onClick={(event) => { if (item.label === "New chat" && !event.metaKey && !event.ctrlKey && !event.shiftKey) window.dispatchEvent(new Event("findez-new-world-chat")); closeDrawer(); }}
                       >
                         <Icon size={17} strokeWidth={1.7} />
                         <span>{item.label}</span>

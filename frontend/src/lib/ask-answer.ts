@@ -1,4 +1,5 @@
 import { parseChatItemAction, type ChatItemAction } from "@/lib/chat-item-action-model";
+import {parseWorldAction,parseWorldResource,type WorldAction,type WorldResource} from "./world-chat";
 export type AskSource = { kind: string; label: string; detail: string };
 export type AskRow = {
   id: string;
@@ -15,6 +16,7 @@ export type AskAnswerContext = {
   rowsTruncated: boolean;
   photoUrl?: string;
   pendingActions?: ChatItemAction[];
+  worldActions?:WorldAction[]; resourceLinks?:WorldResource[];
 };
 
 export function parseAskContext(value: unknown): AskAnswerContext | undefined {
@@ -73,6 +75,8 @@ export function parseAskContext(value: unknown): AskAnswerContext | undefined {
     });
   }
   return {
+    worldActions: (Array.isArray(raw.world_actions)?raw.world_actions:[]).slice(0,8).map(parseWorldAction).filter((a):a is WorldAction=>!!a),
+    resourceLinks: (Array.isArray(raw.resource_links)?raw.resource_links:[]).slice(0,20).map(parseWorldResource).filter((a):a is WorldResource=>!!a),
     pendingActions: (Array.isArray(raw.pending_actions) ? raw.pending_actions : []).slice(0, 8).map(parseChatItemAction).filter((action): action is ChatItemAction => !!action),
     sources,
     rows,

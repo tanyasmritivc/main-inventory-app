@@ -1,4 +1,5 @@
 "use client";
+import { WorldActionCard, WorldResourceLinks } from "./world-chat-cards";
 import { privateImageSrc } from "@/lib/private-image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -25,20 +26,22 @@ type Message = ConversationMessage & {
   live?: boolean;
   revision?: number;
 };
-export function AssistClient({ initialQuery = "" }: { initialQuery?: string }) {
+type AssistProps = { initialQuery?: string; worldId?: string; title?: string };
+export function AssistClient({ initialQuery = "", worldId, title }: AssistProps) {
   const { accountId } = useApiSession();
   return (
     <AssistClientWorkspace
-      key={accountId || "signed-out"}
+      key={`${accountId || "signed-out"}:${worldId || "inventory"}`}
+      worldId={worldId} title={title}
       initialQuery={initialQuery}
     />
   );
 }
 function AssistClientWorkspace({
-  initialQuery = "",
-}: {
-  initialQuery?: string;
-}) {
+  initialQuery = "", worldId, title = "Ask FindEZ",
+}: AssistProps) {
+  const prefix = worldId ? `/worlds/${encodeURIComponent(worldId)}` : "";
+  const retry = useRef<{text:string; photo?:File; conversationId:string|null; id:string} | undefined>(undefined);
   const { accountId, error: sessionError } = useApiSession(),
     { confirmAction } = useAppDialog();
   const owner = useRef(accountId);
@@ -70,11 +73,11 @@ function AssistClientWorkspace({
       generation = epoch.current;
     const list = await accountRequest<ConversationSummary[]>(
       account,
-      "/conversations",
+      `${prefix}/conversations`,
     );
     if (owner.current === account && epoch.current === generation)
       setConversations(list);
-  }, [accountId]);
+  }, [accountId, prefix]);
   useEffect(() => {
     epoch.current++;
     request.current++;
@@ -91,7 +94,7 @@ function AssistClientWorkspace({
     try {
       setInput(
         initialQuery ||
-          localStorage.getItem(`findez-ask-draft:${accountId}`) ||
+          localStorage.getItem(`findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`) ||
           "",
       );
     } catch {
@@ -105,7 +108,7 @@ function AssistClientWorkspace({
       controller.current?.abort();
       epoch.current++;
     };
-  }, [accountId, initialQuery, loadHistory]);
+  }, [accountId, initialQuery, loadHistory, worldId]);
   useEffect(() => {
     if (!photo) {
       setPreview(undefined);
@@ -119,7 +122,7 @@ function AssistClientWorkspace({
     setInput(value);
     if (accountId) {
       try {
-        localStorage.setItem(`findez-ask-draft:${accountId}`, value);
+        localStorage.setItem(`findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`, value);
       } catch {
         /* The visible draft remains available for retry. */
       }
@@ -136,7 +139,7 @@ function AssistClientWorkspace({
     try {
       const result = await accountRequest<{
         messages: (ConversationMessage & { answer_context?: unknown })[];
-      }>(account, `/conversations/${encodeURIComponent(id)}`);
+      }>(account, `${prefix}/conversations/${encodeURIComponent(id)}`);
       if (
         owner.current === account &&
         epoch.current === generation &&
@@ -159,6 +162,8 @@ function AssistClientWorkspace({
     }
   }
   function newChat() {
+    controller.current?.abort(); epoch.current++; retry.current = undefined;
+    setSending(false); setPendingMessageId(null); setStatus("");
     request.current++;
     setOpening(false);
     setConversationId(null);
@@ -167,6 +172,11 @@ function AssistClientWorkspace({
     setPhoto(undefined);
     draft("");
   }
+  useEffect(() => {
+    const fresh = () => newChat();
+    window.addEventListener("findez-new-world-chat", fresh);
+    return () => window.removeEventListener("findez-new-world-chat", fresh);
+  });
   async function removeConversation(id: string) {
     if (
       !accountId ||
@@ -183,7 +193,7 @@ function AssistClientWorkspace({
     try {
       await accountRequest(
         account,
-        `/conversations/${encodeURIComponent(id)}`,
+        `${prefix}/conversations/${encodeURIComponent(id)}`,
         { method: "DELETE" },
       );
       if (owner.current !== account) return;
@@ -216,6 +226,8 @@ function AssistClientWorkspace({
       now = new Date().toISOString(),
       userId = crypto.randomUUID(),
       assistantId = crypto.randomUUID();
+    if (!retry.current || retry.current.text !== text || retry.current.photo !== photo || retry.current.conversationId !== conversationId)
+      retry.current = {text, photo, conversationId, id: crypto.randomUUID()};
     const control = new AbortController();
     controller.current = control;
     const current = () =>
@@ -239,7 +251,7 @@ function AssistClientWorkspace({
     const timer = window.setTimeout(() => control.abort(), 180_000);
     try {
       await askQuestion({
-        accountId: account,
+        accountId: account, worldId, requestId: retry.current.id,
         message: text,
         photo,
         conversationId,
@@ -281,6 +293,7 @@ function AssistClientWorkspace({
             : msg,
         ),
       );
+      retry.current = undefined;
       setConversationId(final.conversationId);
       setPhoto(undefined);
       draft("");
@@ -383,7 +396,7 @@ function AssistClientWorkspace({
         </button>
       </header>
       <div className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}>
-        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>Ask FindEZ</h1>
+        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>{title}</h1>
         <div className="ask-thread">
           {opening ? (
             <p role="status">Opening conversation…</p>
@@ -415,13 +428,15 @@ function AssistClientWorkspace({
                     </p>
                   )}
                   {!m.failed && accountId && m.context?.pendingActions?.map((action) => <ChatItemActionCard
-                    key={`${action.id}-${action.status}`} action={action} accountId={accountId}
+                    key={`${action.id}-${action.status}`} action={action} accountId={accountId} worldId={worldId}
                     onReply={(reply) => {
                       if (owner.current !== accountId) return;
                       setMessages((messages) => messages.some((message) => message.id === reply.id) ? messages : [...messages,
                         { id: reply.id, role: "assistant", content: reply.content, created_at: new Date().toISOString(), live: true }]);
                       void loadHistory().catch(() => setError("Your change is confirmed, but history could not refresh."));
                     }} />)}
+                  {!m.failed && accountId && worldId && m.context?.worldActions?.map(action => <WorldActionCard key={action.id} action={action} accountId={accountId} worldId={worldId} />)}
+                  {!m.failed && accountId && worldId && <WorldResourceLinks links={m.context?.resourceLinks || []} accountId={accountId} worldId={worldId} />}
                   {!m.failed && m.context && (!!m.context.sources.length || !!m.context.rows.length) && (
                     <details className="ask-evidence">
                       <summary>Sources</summary>
@@ -485,7 +500,7 @@ function AssistClientWorkspace({
         {!messages.length && !opening && (
           <div className="ask-empty">
             <p className="workspace-muted">
-              Find an item, check stock, or attach a photo.
+              {worldId ? "Find items, organize Spaces, and check stock across your organization." : "Find an item, check stock, or attach a photo."}
             </p>
           </div>
         )}

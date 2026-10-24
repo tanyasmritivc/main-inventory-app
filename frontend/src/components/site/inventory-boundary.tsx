@@ -7,6 +7,7 @@ import { useApiSession } from "@/lib/use-api-session";
 import { activeInventory, isInventoryPage, permissionFingerprint, requireInventoryContext, selectInventory, type InventorySelection } from "@/lib/inventory-selection";
 import { AppShell } from "@/components/site/app-shell";
 import { signInPath } from "@/lib/auth-paths";
+import { worldHref } from "@/lib/world-navigation";
 import { ApiError } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
@@ -14,6 +15,7 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
   const { accountId, loading, error: sessionError } = useApiSession();
   const pathname = usePathname(), params = useSearchParams(), router = useRouter();
   const inventoryId = params.get("inventory");
+  const initialQuestion = params.get("q")?.slice(0,4000);
   const required = isInventoryPage(pathname);
   const administration = pathname === "/inventory-access";
   const [verified, setVerified] = useState<InventorySelection | null>(null);
@@ -45,6 +47,11 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
           selectInventory(null); setVerified(null);
           throw new Error("This inventory's permissions changed. Choose an authorized inventory.");
         }
+        if (pathname === "/assist") {
+          const base = worldHref(inventory.workspace.organization_id || "personal");
+          router.replace(base + (initialQuestion ? `?${new URLSearchParams({q: initialQuestion})}` : "")); return;
+        }
+        if (pathname === "/home") { router.replace(`/inventory?inventory=${encodeURIComponent(inventoryId)}`); return; }
         const value = { ...inventory, accountId };
         const current = activeInventory();
         if (!current || permissionFingerprint(current) !== permissionFingerprint(value)) {
@@ -66,7 +73,7 @@ export function InventoryBoundary({ children }: { children: React.ReactNode }) {
     document.addEventListener("visibilitychange", check);
     window.addEventListener("findez-permissions-changed", check);
     return () => { live = false; window.clearInterval(timer); window.removeEventListener("focus", check); document.removeEventListener("visibilitychange", check); window.removeEventListener("findez-permissions-changed", check); selectInventory(null); };
-  }, [accountId, inventoryId, required, administration, router]);
+  }, [accountId, inventoryId, required, administration, router, pathname, initialQuestion]);
   useEffect(() => () => { selectInventory(null); }, []);
   const ready = !loading && accountId && (!required || (verified?.inventory_id === inventoryId && verified.accountId === accountId && activeInventory() === verified));
   if (!ready) return (

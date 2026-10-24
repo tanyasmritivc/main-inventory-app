@@ -80,9 +80,9 @@ test("page search opens with its input focused, filters destinations and closes 
   const dialog = screen.getByRole("dialog", { name: "Navigate FindEZ" });
   const input = within(dialog).getByRole("textbox", { name: "Search features and pages" });
   expect(document.activeElement).toBe(input);
-  await user.type(input, "documents");
-  await user.click(within(dialog).getByRole("button", { name: "Documents" }));
-  expect(mockNavigate).toHaveBeenCalledWith("/documents?inventory=tools");
+  await user.type(input, "tools");
+  await user.click(within(dialog).getByRole("button", { name: "Tools" }));
+  expect(mockNavigate).toHaveBeenCalledWith("/worlds/personal?view=tools");
   expect(screen.queryByRole("dialog")).toBeNull();
   await user.click(trigger);
   expect(screen.getByRole("textbox", { name: "Search features and pages" })).toHaveProperty("value", "");
@@ -221,14 +221,14 @@ test("uploads the photo under the field required by the current backend", async 
   });
 });
 
-test("organization navigation contains only its management destinations",async()=>{
+test("organization navigation includes shared chat and management destinations",async()=>{
  mockPathname="/organizations/acme";
  render(<AppShell context={organizationNavigation("acme","Acme","people")}><h1>People</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"People"}).getAttribute("aria-current")).toBe("page");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
  expect(screen.queryByRole("link",{name:"Find"})).toBeNull();
- expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/organizations/acme");
+ expect(screen.getByRole("link",{name:"Workspaces"}).getAttribute("href")).toBe("/worlds/acme?view=workspaces");
 });
 test("workspace navigation selects only the current section and retains its parent organization",async()=>{
  const workspace={workspace_id:"ftc",name:"Robotics",kind:"team" as const,team_id:"ftc",role:"owner" as const,organization_id:"acme",organization_name:"Acme"};
@@ -236,7 +236,7 @@ test("workspace navigation selects only the current section and retains its pare
  render(<AppShell context={workspaceNavigation(workspace,"locations")}><h1>Locations</h1></AppShell>);
  await screen.findByRole("link",{name:/Local tester.*Profile and settings/});
  expect(screen.getByRole("link",{name:"Locations"}).getAttribute("aria-current")).toBe("page");
- expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/organizations/acme");
+ expect(screen.getByRole("link",{name:"Acme"}).getAttribute("href")).toBe("/worlds/acme");
  expect(screen.getByRole("link",{name:"Inventories"}).getAttribute("href")).toBe("/workspaces/ftc");
  expect(screen.queryByRole("link",{name:"Capture"})).toBeNull();
 });

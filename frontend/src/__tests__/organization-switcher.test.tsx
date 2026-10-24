@@ -18,13 +18,13 @@ test("dropdown shows authorized organizations, current selection and existing de
   expect(accountRequest).not.toHaveBeenCalled();
   await userEvent.click(screen.getByRole("button", { name: /Switch organization/ }));
   const acme = await screen.findByRole("menuitem", { name: /Acme robotics/ });
-  expect(acme.getAttribute("href")).toBe("/organizations/team-a");
+  expect(acme.getAttribute("href")).toBe("/worlds/team-a");
   expect(acme.getAttribute("aria-current")).toBe("true");
   const names = screen.getAllByRole("menuitem").map(el => el.textContent);
   expect(names[0]).toContain("Acme robotics");
   expect(names[1]).toContain("Workshop");
   expect(accountRequest).toHaveBeenCalledWith("alice", "/organizations");
-  for (const [name, href] of Object.entries({ Personal: "/workspaces/personal", "All workspaces": "/workspaces", "Manage organizations": "/organizations", "New organization": "/organizations?new=1", "Review invitation": "/join/access" })) {
+  for (const [name, href] of Object.entries({ Personal: "/worlds/personal", "All workspaces": "/workspaces", "Manage organizations": "/organizations", "New organization": "/organizations?new=1", "Review invitation": "/join/access" })) {
     expect(screen.getByRole("menuitem", { name }).getAttribute("href")).toBe(href);
   }
   expect(screen.queryByText(/credits|upgrade/i)).toBeNull();
