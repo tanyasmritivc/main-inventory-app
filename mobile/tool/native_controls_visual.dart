@@ -136,7 +136,16 @@ class _AuditState extends State<_Audit> {
           const SizedBox(height: 24),
           Row(
             children: [
-              NativeChatMenuButton(enabled: true, onSelected: record),
+              SizedBox(
+                width: 160,
+                height: 48,
+                child: Stack(
+                  children: [
+                    const Center(child: Text('Attach')),
+                    NativeChatMenuButton(enabled: true, onSelected: record),
+                  ],
+                ),
+              ),
               const SizedBox(width: 20),
               AppMenuButton(
                 items: const [

@@ -1,3 +1,4 @@
+import 'native_chat_menu_button.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -175,40 +176,57 @@ class _SourceMenuState extends State<_SourceMenu> {
                         for (final choice in filtered)
                           SizedBox(
                             height: rowHeight,
-                            child: ListTile(
-                              dense: true,
-                              minVerticalPadding: 0,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              horizontalTitleGap: 12,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              leading: Icon(choice.$2, size: 18),
-                              title: Text(
-                                choice.$3,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ExcludeSemantics(
+                                  excluding:
+                                      choice.$1 == 'attach' &&
+                                      widget.nativeAttach,
+                                  child: ListTile(
+                                    dense: true,
+                                    minVerticalPadding: 0,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    horizontalTitleGap: 12,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    leading: Icon(choice.$2, size: 18),
+                                    title: Text(
+                                      choice.$3,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    trailing: choice.$4
+                                        ? const Icon(
+                                            CupertinoIcons.chevron_right,
+                                            size: 14,
+                                          )
+                                        : null,
+                                    onTap: () {
+                                      if (choice.$1 == 'attach' &&
+                                          widget.nativeAttach) {
+                                        Navigator.pop(context, 'attach');
+                                      } else if (choice.$4) {
+                                        navigate(choice.$1);
+                                      } else {
+                                        Navigator.pop(context, choice.$1);
+                                      }
+                                    },
+                                  ),
                                 ),
-                              ),
-                              trailing: choice.$4
-                                  ? const Icon(
-                                      CupertinoIcons.chevron_right,
-                                      size: 14,
-                                    )
-                                  : null,
-                              onTap: () {
                                 if (choice.$1 == 'attach' &&
-                                    widget.nativeAttach) {
-                                  Navigator.pop(context, 'attach');
-                                } else if (choice.$4) {
-                                  navigate(choice.$1);
-                                } else {
-                                  Navigator.pop(context, choice.$1);
-                                }
-                              },
+                                    widget.nativeAttach)
+                                  NativeChatMenuButton(
+                                    enabled: true,
+                                    onSelected: (value) =>
+                                        Navigator.pop(context, value),
+                                  ),
+                              ],
                             ),
                           ),
                       ],

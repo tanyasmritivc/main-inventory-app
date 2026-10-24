@@ -1,3 +1,15 @@
+## October24 — Mobile Attach menu, photo preview and quick page fade
+
+Lane `fix/mobile-chat-attachments-20261024`, build122. Keep nav bar files and the
+native tab bar implementation byte-for-byte unchanged. Only page content fade
+shortens from340ms to150ms; retained drafts and Reduce Motion are preserved.
+The composer + opens the existing compact FindEZ source/context/tool menu. Only
+its Attach row hosts the native iOS Photo Library/Take Photo/Choose Files menu.
+All three composer layouts reuse a real byte-backed64px photo preview, with
+replace/remove controls and unchanged explicit Send/Auto Extract behavior.
+Full Flutter suite847 passed (1 optional skip),67 focused tests and clean analysis.
+Native simulator/release checks pending. No backend/web/schema changes.
+
 ## October 24 — Smart search delivered (beta121; PR187)
 
 Apple acknowledged1.1.1(121), delivery8604efa5-2f43-40ff-96e8-e051dc2a5a11.

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:mobile/features/chat/native_chat_menu_button.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -159,17 +158,6 @@ void main() {
             profile.$2 == 1 &&
             profile.$3 == 0) {
           await worldAuditCapture?.call('ask-${brightness.name}');
-        }
-        if (usesNativeChatMenu) {
-          // UIKit owns menu rows; Flutter's finder cannot inspect native UIMenu.
-          expect(find.byType(NativeChatMenuButton), findsOneWidget);
-          expect(
-            tester.getSize(find.byType(NativeChatMenuButton)),
-            const Size(48, 48),
-          );
-          expect(tester.takeException(), isNull);
-          await tester.pumpWidget(const SizedBox());
-          return;
         }
         await tester.ensureVisible(find.byTooltip('Capture or attach'));
         await tester.pumpAndSettle();

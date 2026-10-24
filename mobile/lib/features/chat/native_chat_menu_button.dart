@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 bool get usesNativeChatMenu => !kIsWeb && Platform.isIOS;
 
-/// Native anchor for the compact source menu and system attachment submenu.
+/// Transparent native hit target over the FindEZ Attach row only.
 class NativeChatMenuButton extends StatefulWidget {
   const NativeChatMenuButton({
     super.key,
@@ -50,7 +50,7 @@ class NativeChatMenuButtonState extends State<NativeChatMenuButton> {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 48,
+    width: double.infinity,
     height: 48,
     child: UiKitView(
       viewType: 'com.findez.app/chat-menu',

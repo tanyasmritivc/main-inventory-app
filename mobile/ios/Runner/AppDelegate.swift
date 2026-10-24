@@ -210,8 +210,8 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
     button.frame = frame
     button.backgroundColor = .clear
     button.tintColor = .label
-    button.accessibilityLabel = "Capture or attach"
-    button.accessibilityHint = "Opens attachment and context options"
+    button.accessibilityLabel = "Attach"
+    button.accessibilityHint = "Photo Library, Take Photo, or Choose Files"
     button.showsMenuAsPrimaryAction = true
     if #available(iOS 16.0, *) { button.preferredMenuElementOrder = .fixed }
     func action(_ id: String, _ title: String, _ icon: String) -> UIAction {
@@ -220,23 +220,9 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
       }
     }
     button.menu = UIMenu(children: [
-      action("auto_extract", "Auto Extract", "sparkles"),
-      UIMenu(title: "Attach", image: UIImage(systemName: "paperclip"), children: [
-        action("library", "Photo Library", "photo.on.rectangle"),
-        action("camera", "Take Photo", "camera"),
-        action("file", "Choose Files", "folder")
-      ]),
-      UIMenu(title: "Inventory tools", image: UIImage(systemName: "shippingbox"), children: [
-        action("spreadsheet", "Import inventory", "tablecells"),
-        action("barcode", "Scan barcode", "barcode.viewfinder")
-      ]),
-      UIMenu(title: "Add context", image: UIImage(systemName: "text.bubble"), children: [
-        action("space", "Spaces", "square.grid.2x2"),
-        action("item", "Items", "shippingbox"),
-        action("project", "Projects", "folder"),
-        action("document", "Documents and notes", "doc.text"),
-        action("connections", "Connections", "link")
-      ])
+      action("library", "Photo Library", "photo.on.rectangle"),
+      action("camera", "Take Photo", "camera"),
+      action("file", "Choose Files", "folder")
     ])
     configure(args)
     channel.setMethodCallHandler { [weak self] call, result in
@@ -248,8 +234,8 @@ private final class ChatMenuView: NSObject, FlutterPlatformView {
     let values = args as? [String: Any] ?? [:]
     button.isEnabled = values["enabled"] as? Bool ?? true
     button.overrideUserInterfaceStyle = values["dark"] as? Bool == true ? .dark : .light
-    button.setImage(UIImage(systemName: "plus", withConfiguration:
-      UIImage.SymbolConfiguration(pointSize: 19, weight: .light)), for: .normal)
+    // Flutter paints the row consistently with the surrounding FindEZ menu.
+    button.setImage(nil, for: .normal)
   }
   func view() -> UIView { button }
   deinit { channel.setMethodCallHandler(nil) }
