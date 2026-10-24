@@ -30,3 +30,18 @@ Manual acceptance on build121:
 
 TestFlight/CI/signature receipts will follow delivery. Physical-device acceptance
 remains unverified until the customer checks their own inventory.
+
+## Delivery receipt
+
+Apple acknowledged1.1.1(121):8604efa5-2f43-40ff-96e8-e051dc2a5a11.
+Sourcec4fe0b8 / PR187. All five CI jobs passed (run40071676839), clean Flutter
+analysis,32 device executables in archive/export,24 privacy manifests, strict
+signature/production config and Apple validation passed. Build retains the
+pre-existing default launch-image warning; launch/icon assets were not changed.
+Processing/tester availability were not polled, physical-device acceptance
+unverified, no public App Store submission. IPA/archives and receipts are preserved
+under Documents/FindEZ/AppStore/1.1.1-build121.
+
+Backend39ed171 / PR186 is live and passed real HTTPS/real-model tests with synthetic
+accounts: formatting, descriptors, notes/tags, typo tolerance and scope isolation.
+Stock unchanged; both accounts removed. No customer records used or modified.

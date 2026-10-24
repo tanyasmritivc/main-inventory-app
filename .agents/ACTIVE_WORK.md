@@ -1,3 +1,20 @@
+## October 24 — Smart search delivered (beta121; PR187)
+
+Apple acknowledged1.1.1(121), delivery8604efa5-2f43-40ff-96e8-e051dc2a5a11.
+Runtimec4fe0b8 passed all five CI jobs (run40071676839),847 Flutter tests
+(one optional skip),21 focused search checks and clean analysis. Signed archive
+and export each passed32 iOS executable checks;24 privacy manifests, production
+HTTPS config, strict signature and Apple validation passed. Processing/tester
+availability were not polled; physical-device acceptance remains unverified.
+No public App Store submission. IPA SHA256:
+42ab988f74bd263bf6237ef6361101d360de6cb16e86291ad94fb10a0112f0ff.
+Artifacts: `Documents/FindEZ/AppStore/1.1.1-build121`.
+
+Companion backend39ed171 / PR186 is live. Five authenticated search variants,
+cross-user denial and three real-model chat lookups passed on temporary synthetic
+inventory; stock stayed unchanged and both test accounts were removed. No customer
+data changed. See `docs/plans/smart-space-search-20261024.md` for acceptance.
+
 ## October 24 — Smart Space search (build121 preparation)
 
 Lane `fix/mobile-smart-space-search-20261024` fixes the visible part-number/search
