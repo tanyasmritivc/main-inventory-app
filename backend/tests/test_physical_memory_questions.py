@@ -20,6 +20,7 @@ class Query:
         self.store, self.table = (store, table)
         self.filters, self.fields, self.operation, self.payload = ([], '*', 'read', None)
         self.maximum = 1000
+        self.offset = 0
         self.sorts = []
 
     def select(self, fields='*', **kwargs):
@@ -40,6 +41,10 @@ class Query:
 
     def limit(self, value):
         self.maximum = value
+        return self
+
+    def range(self, start, end):
+        self.offset, self.maximum = start, end - start + 1
         return self
 
     def order(self, key, desc=False):
@@ -69,7 +74,7 @@ class Query:
             for row in rows:
                 row.update(self.payload)
             self.store.writes += len(rows)
-        rows = rows[:self.maximum]
+        rows = rows[self.offset:self.offset + self.maximum]
         if self.fields != '*':
             rows = [{key.strip(): row.get(key.strip()) for key in self.fields.split(',')} for row in rows]
         return SimpleNamespace(data=deepcopy(rows))
@@ -268,3 +273,39 @@ def test_invalid_model_filters_fail_before_item_read(memory, filters):
     with pytest.raises(ValueError):
         inventory_query.query_inventory(user_id='owner', terms=[], filters=filters)
     assert not memory.reads
+
+@pytest.mark.parametrize('query', ['PN-F', 'pn f156', 'PNF156', 'F156', 'steel black',
+    'drawer spring', 'supplies acme', 'fragile', 'McMaster', 'stainless', 'black sprign'])
+def test_smart_search_reads_saved_details_and_identifiers(memory, query):
+    memory.rows['items'] = [
+        {'item_id': 'target', 'user_id': 'owner', 'inventory_id': 'inventory-a',
+         'name': 'Black steel spring', 'part_number': 'PN-F156', 'category': 'Supplies',
+         'brand': 'Acme', 'location': 'Drawer B', 'tags': ['fragile'],
+         'purchase_source': 'McMaster', 'import_data': {'fields': [{'name': 'Finish', 'value': 'stainless'}]},
+         'quantity': 14},
+        {'item_id': 'foreign', 'user_id': 'other', 'inventory_id': 'inventory-b',
+         'name': 'Black steel spring', 'part_number': 'PN-F156'},
+    ]
+    assert [r['item_id'] for r in items_repo.search_items_basic(user_id='owner', q=query)] == ['target']
+    answer = inventory_query.query_inventory(user_id='owner', terms=[query])
+    assert [r['item_id'] for r in answer['items']] == ['target']
+    assert answer['known_units'] == 14 and answer['complete']
+    assert memory.writes == 0
+
+
+def test_smart_query_finds_rare_match_beyond_first_database_page(memory):
+    base = {'user_id': 'owner', 'inventory_id': 'inventory-a', 'created_at': '2026-10-01', 'quantity': 1}
+    memory.rows['items'] = [{**base, 'item_id': f'{i:04}', 'name': 'Bolt'} for i in range(620)]
+    memory.rows['items'].append({**base, 'item_id': '9999', 'name': 'HDMI adaptor', 'notes': 'Black cable'})
+    result = inventory_query.query_inventory(user_id='owner', terms=['black adpator'])
+    assert [row['item_id'] for row in result['items']] == ['9999']
+    assert result['items'][0]['_match_basis'] == 'likely text match'
+    assert result['complete'] and result['known_units'] == 1
+
+
+def test_smart_query_scan_limit_discloses_incomplete_result(memory):
+    base = {'user_id': 'owner', 'inventory_id': 'inventory-a', 'name': 'Bolt'}
+    memory.rows['items'] = [{**base, 'item_id': str(i)} for i in range(10001)]
+    result = inventory_query.query_inventory(user_id='owner', terms=['spring'])
+    assert not result['complete'] and result['truncated'] and result['items'] == []
+    assert len(memory.reads) == 20

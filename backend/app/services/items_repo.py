@@ -592,10 +592,10 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     if not q:
         return list_items(user_id=user_id)
     if current_inventory.get():
-        fields=('name','part_number','brand','category','subcategory','location','notes','purchase_source','barcode')
-        target=q.casefold()
-        return [item for item in list_items(user_id=user_id)
-                if any(target in str(item.get(field) or '').casefold() for field in fields)]
+        from app.services.item_search import score_item, match_basis
+        ranked = [(score_item(item, q), item) for item in list_items(user_id=user_id)]
+        ranked.sort(key=lambda pair: pair[0], reverse=True)
+        return [{**item, '_match_basis': match_basis(score)} for score, item in ranked if score]
 
     supabase = get_supabase_admin()
     pattern = f"%{q}%"
@@ -623,26 +623,29 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
 
 
 def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501) -> dict:
-    """Bounded Ask read through the existing inventory/actor authorization client.
+    """Search authorized pages before limiting matches, with a bounded scan.
 
-    Candidate terms are ORed, then the question resolver checks every requested
-    term and filter. No user text is interpolated into PostgREST grammar.
-    The extra row detects incomplete results; aggregates must disclose that state.
+    A SQL substring prefilter loses typos, formatting variants and imported
+    fields. Scan up to 10,000 scoped records, keeping one extra match as a
+    completeness sentinel. No user text enters PostgREST grammar.
     """
-    import re
-    safe = list(dict.fromkeys(term for term in terms
-                             if re.fullmatch(r'[a-z0-9][a-z0-9.-]{0,79}', term)))[:12]
+    from app.services.item_search import score_item
     limit = min(max(limit, 2), 501)
-    query = get_supabase_admin().table('items').select('*').eq('user_id', user_id)
-    if safe:
-        fields = ('name', 'part_number', 'brand', 'barcode', 'category',
-                  'subcategory', 'location', 'notes')
-        query = query.or_(','.join(f'{field}.ilike.%{term}%'
-                                  for term in safe for field in fields))
-    response = _execute_with_retry(lambda: query.order('created_at', desc=True)
-                                   .order('item_id').limit(limit).execute())
-    rows = response.data or []
-    return {'items': rows[:limit - 1], 'truncated': len(rows) >= limit}
+    client = get_supabase_admin()
+    matches = []
+    text = ' '.join(terms)
+    for offset in range(0, 10000, 500):
+        response = _execute_with_retry(lambda: client.table('items').select('*').eq('user_id', user_id)
+            .order('created_at', desc=True).order('item_id').range(offset, offset + 499).execute())
+        page = response.data or []
+        for row in page:
+            if score_item(row, text):
+                matches.append(row)
+                if len(matches) >= limit:
+                    return {'items': matches[:limit - 1], 'truncated': True}
+        if len(page) < 500:
+            return {'items': matches, 'truncated': False}
+    return {'items': matches, 'truncated': True}
 
 
 def update_item_from_chat(*, user_id: str, item_id: str, updates: dict,

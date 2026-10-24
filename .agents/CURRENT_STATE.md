@@ -1,3 +1,29 @@
+## October 24 — Smart search live (PR186)
+
+Backend runtime39ed171 is live on the self-hosted service. All five CI jobs passed;
+guarded publication preserved112 unrelated backend files, health/database checks
+passed and anonymous search stayed denied. No schema changes. Real HTTPS QA
+passed five authenticated search variants, cross-user denial and three real-model
+chat prompts (typo, formatted part number, description), returning the correct
+saved item in3.7/2.3/2.6s. Search left stock unchanged; both temporary accounts and
+their inventory were removed. No customer records were used. Full local Python
+suite:1,433 tests plus10 subtests. Companion mobile PR187 targets build121.
+Receipts: `Documents/FindEZ/Audits/smart-search-20261024` and
+`/home/ubuntu/findez-smart-search-20261024`. Details/acceptance in
+`docs/plans/smart-search-20261024.md`.
+
+## October 24 — Smart inventory discovery (release preparation)
+
+Lane `fix/api-smart-inventory-search-20261024` owns only backend search. Scoped
+chat search now matches keywords across saved fields, tags and imported values;
+part-number formatting/prefixes and conservative word spelling are supported.
+Numeric identifiers are never fuzzy. Query retrieval scans authorized pages
+before applying its 500-match / 10,000-record limits and reports incompleteness.
+Chat is instructed to use descriptive keywords and broaden failed lookups.
+Writes, permissions and schema are unchanged. Full Python suite: 1,433 passed,
+10 subtests, 451 existing warnings. Production activation/CI pending; see
+`docs/plans/smart-search-20261024.md`. Companion mobile lane targets build121.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google
