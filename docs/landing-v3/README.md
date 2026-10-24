@@ -57,5 +57,41 @@ Random tool orientations vary on each load, as in the prototype.
 The prototype's mobile photo review panel extends below the viewport during its
 pinned scene; comparison at 390×844 confirmed the same crop in the reference and
 the port. That geometry is retained rather than silently redesigning the source.
-Physical iPhone/Safari acceptance and production deployment are not claimed.
-No backend, database, mobile or production configuration changes are included.
+Physical iPhone/Safari acceptance remains unverified. No backend, database or
+mobile changes are included.
+
+
+## Self-hosted deployment — October 23, 2026
+
+User explicitly authorized self-hosted deployment. Implementation `cf29d1f`
+(PR #180, branch `feat/landing-v3`) is live at https://findez.ai from:
+`/home/ubuntu/findez-web-releases/landing-v3-20261023/frontend`.
+Next build ID: `8xw5tjSXdVhKej4STQ101`.
+
+The isolated release copies the previously running connector release and applies
+only the frontend patch. SHA-256 comparison preserved 366 unrelated files,
+including existing production environment/configuration. The existing installed
+node_modules is reused without modification. Production `npm run build --
+--webpack` passed with the real self-hosted configuration. All five repository CI
+jobs passed on the implementation commit.
+
+Before activation, eight route responses matched the previous runtime (including
+its existing `/dashboard` 404). After activation, public HTTPS checks passed for
+`/`, `/signup`, `/signin`, `/pricing`, `/docs/api`, `/privacy`, `/terms`, 19 referenced
+assets, exact homepage title/copy and the workbench image hash. Chrome verified
+live rendering, typing and 3D tools; no hydration/application errors were seen.
+Chrome did report an unused-preloaded-CSS advisory. Full desktop/mobile scroll
+inspection was performed locally before release, as documented above.
+
+Only the `findez-web` WorkingDirectory drop-in changed, followed by service restart.
+The backend PID remained unchanged. Previous runtime and drop-in are preserved:
+`/home/ubuntu/findez-web-releases/connectors-20261022/frontend` and
+`/home/ubuntu/findez-web-releases/landing-v3-20261023/previous-web-rebuild.conf`.
+To roll back, restore that drop-in to
+`/etc/systemd/system/findez-web.service.d/web-rebuild.conf`, run systemd daemon-reload
+and restart `findez-web`. The server-side private deployment receipt records
+source hashes and verification results. The temporary candidate server was stopped.
+
+Disk preparation removed only rebuildable `.next/cache` directories in four
+inactive October 16–17 web releases, freeing about 3.6 GB; their runnable builds
+and all source data remain intact. No Vercel deployment was used for activation.
