@@ -2,9 +2,9 @@
 
 Mobile-only follow-up to beta119, based on the supplied FindEZ/Lovable screenshots.
 
-- History uses the existing native toolbar control in plain mode: a 20pt clock
+- History uses the existing native toolbar control in plain mode: a 18pt clock
   inside its 44pt hit area, without the glass circle. Other platforms use a plain
-  20pt Cupertino clock.
+  18pt Cupertino clock.
 - Composer uses a scoped, flatter frosted surface, 20pt corners, uniform translucent
   cool-neutral fill and a subtle hairline. The old highlight/bevel and shadow are
   removed here without changing shared surfaces. High contrast uses an opaque fill.
@@ -21,8 +21,10 @@ contains synthetic history rows and applies the production appearance scaler.
 
 ## Verification
 
-Full Flutter suite: 826 passed, one optional skip; analysis clean. Native visual
-audit and production packaging pending. No upload yet.
+Full Flutter suite: 826 passed, one optional skip; analysis clean. Final focused controls/history/voice/composer checks: 19 passed. Native iOS26.5
+simulator verified Default dark history, search/filter/clear, Larger light history
+with wrapped titles, and composer/header presentation. Physical-device appearance
+and voice acceptance remain pending. Production packaging pending. No upload yet.
 
 ## Manual acceptance
 

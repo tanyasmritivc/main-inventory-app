@@ -360,6 +360,10 @@ private final class NativeControl: NSObject, FlutterPlatformView {
     configuration.baseForegroundColor = .label
     configuration.image = UIImage(systemName: data["symbol"] as? String ?? "ellipsis",
       withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .regular))
+    if let size = data["symbolSize"] as? NSNumber {
+      configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+        pointSize: min(28, max(12, CGFloat(size.doubleValue))), weight: .regular)
+    }
     button.configuration = configuration
     button.accessibilityLabel = data["label"] as? String
     button.isEnabled = data["enabled"] as? Bool == true

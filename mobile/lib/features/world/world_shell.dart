@@ -588,12 +588,13 @@ class _WorldShellState extends State<WorldShell> {
                     symbol: 'clock',
                     label: 'Chat history',
                     glass: false,
+                    symbolSize: 18,
                     onPressed: _history,
                   )
                 : IconButton(
                     tooltip: 'Chat history',
                     onPressed: _history,
-                    icon: const Icon(CupertinoIcons.clock, size: 20),
+                    icon: const Icon(CupertinoIcons.clock, size: 18),
                   ),
           ),
         if (index == 1)
