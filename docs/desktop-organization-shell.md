@@ -18,7 +18,7 @@
 
 ## Validation
 
-- Web Jest: 489 tests in 63 suites passed, including six added regressions.
+- Web Jest: 508 tests in 66 suites passed, including six added regressions.
 - `npx tsc --noEmit`: passed.
 - `npm run lint`: zero errors, 52 existing warnings.
 - `npm run build -- --webpack`: passed with local placeholder build credentials;
@@ -26,7 +26,28 @@
 - Browser review in an isolated local frontend copy using fictional organizations,
   users and inventory. Fixture-only authentication/API overrides are outside Git
   and must never be deployed. No customer writes or memberships changed.
-- Self-hosted deployment and final narrow browser checks pending.
+- Browser checks cover Organizations, Workspaces, Home, Ask, Items, Spaces,
+  Documents, Review, Activity, Capture and profile layout. Light/dark and 390px
+  navigation checked; Escape closes the organization menu without dismissing its
+  parent drawer. Capture tab scrollbar regression fixed and visually rechecked.
+- Reconciled existing live account-verification and organization-settings code
+  from `2afb817` before release. No live feature was overwritten.
+- All five CI gates passed: run `40120059401`.
+- Self-hosted release live, runtime `4b879d98d836756f591bf498cf4e459295e66add`,
+  build `XAq7FeqLtoueYFUgAFjOs`. 21 route statuses and six brand assets verified;
+  360 unrelated source/public files preserved; backend PID unchanged.
+- Live browser Organizations entry correctly redirects to sign-in with its return
+  route. Authenticated visual checks used isolated fixtures, not a customer login.
+
+## Deployment receipt
+
+- PR: https://github.com/tanyasmritivc/main-inventory-app/pull/191
+- Live directory: `/home/ubuntu/findez-web-releases/desktop-shell-20261024/frontend`.
+- Previous directory: `/home/ubuntu/findez-web-releases/direct-auth-20261024/frontend`.
+- Server receipt: `/home/ubuntu/findez-web-releases/desktop-shell-20261024/deployment-receipt.json`.
+- Rollback: restore that release's `previous-web-rebuild.conf` to the existing
+  `findez-web.service.d/web-rebuild.conf`, daemon-reload and restart `findez-web`.
+  The prior release remains intact. No Vercel deployment or database changes.
 
 ## Manual verification
 
