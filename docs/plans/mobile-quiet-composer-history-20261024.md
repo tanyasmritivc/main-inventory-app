@@ -24,7 +24,10 @@ contains synthetic history rows and applies the production appearance scaler.
 Full Flutter suite: 826 passed, one optional skip; analysis clean. Final focused controls/history/voice/composer checks: 19 passed. Native iOS26.5
 simulator verified Default dark history, search/filter/clear, Larger light history
 with wrapped titles, and composer/header presentation. Physical-device appearance
-and voice acceptance remain pending. Production packaging pending. No upload yet.
+and voice acceptance remain pending. Signed production build120 passed verification of 32 device executables in both
+archive and export, strict code signing, 24 privacy manifests and production HTTPS
+configuration. All five CI jobs passed on e70bdc43b397cc9b9cb3f1ee669ba90c4dc3f85f
+(run40068444703). Apple validation and upload succeeded.
 
 ## Manual acceptance
 
@@ -38,3 +41,14 @@ and voice acceptance remain pending. Production packaging pending. No upload yet
    inside a conversation, keyboard open, and source chips.
 
 Physical-device acceptance is separate from synthetic simulator verification.
+
+## Delivery receipt
+
+Build120 acknowledged by Apple: `71ce9f9d-276c-4610-8897-690b2b3b208c`.
+Runtime `e70bdc43b397cc9b9cb3f1ee669ba90c4dc3f85f`; PR185; CI40068444703 passed all five jobs.
+IPA SHA-256: `01da9c7d41f5cb2d3465da13adec8300cd6aa13a8343ae69af1de50fce036cfe`.
+Archive, IPA and receipts preserved privately under
+`~/Documents/FindEZ/AppStore/1.1.1-build120`.
+The existing unused LaunchImage placeholder emits Flutter's advisory; the
+production launch storyboard is unchanged. Processing/tester availability were
+not polled. No public App Store submission. Physical iPhone acceptance pending.

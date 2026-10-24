@@ -1,9 +1,23 @@
-## October 24 - Quiet composer and history typography (in progress)
+## October 24 - Quiet composer and history typography delivered as beta120
 
-Branch `fix/mobile-quiet-composer-history-20261024`, based on beta119/PR184.
-Mobile-only: plain history clock; flatter translucent composer with plain mic;
-native history respects app text-size preference and OS Dynamic Type. Build120
-reserved. Full tests and native light/dark/size visual audit pending; no upload yet.
+Apple acknowledged 1.1.1 (120), delivery `71ce9f9d-276c-4610-8897-690b2b3b208c`.
+Runtime `e70bdc43b397cc9b9cb3f1ee669ba90c4dc3f85f`, PR185 stacked on PR184. All five CI jobs
+passed (40068444703). Full Flutter suite: 826 passed, one optional skip; final
+focused native/history/voice/composer tests: 19 passed; analysis clean.
+
+Ask now has a plain compact 18pt history clock with a 44pt hit area. Composer
+has a flatter, softly translucent surface and plain microphone. History uses the
+app text-size preference for titles, dates, search and empty states, with OS
+Dynamic Type applied once. Native iOS26.5 simulator verified dark/light composer,
+Default dark and Larger light history, wrapping and history search/clear.
+Physical iPhone appearance/voice acceptance remains pending.
+
+Signed archive/export each verified 32 iOS device executables; strict signing,
+24 privacy manifests and production HTTPS configuration passed. Apple validation
+and upload succeeded. Private artifacts: `~/Documents/FindEZ/AppStore/1.1.1-build120`.
+Processing/tester availability not polled; no public submission. Backgrounds,
+native Liquid Glass tabs, web/backend/database unchanged. See
+`docs/plans/mobile-quiet-composer-history-20261024.md`.
 
 ## October 24 - Rounded app icons and tab fades delivered as beta 119
 
