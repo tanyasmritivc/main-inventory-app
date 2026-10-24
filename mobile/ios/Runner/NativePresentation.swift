@@ -358,8 +358,9 @@ private final class NativeControl: NSObject, FlutterPlatformView {
     if #available(iOS 26.0, *), data["glass"] as? Bool == true { configuration = .glass() }
     configuration.cornerStyle = .capsule
     configuration.baseForegroundColor = .label
+    let symbolSize = min(28, max(12, CGFloat((data["symbolSize"] as? NSNumber)?.doubleValue ?? 20)))
     configuration.image = UIImage(systemName: data["symbol"] as? String ?? "ellipsis",
-      withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .regular))
+      withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolSize, weight: .regular))
     if let size = data["symbolSize"] as? NSNumber {
       configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
         pointSize: min(28, max(12, CGFloat(size.doubleValue))), weight: .regular)
