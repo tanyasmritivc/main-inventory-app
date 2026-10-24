@@ -1,3 +1,10 @@
+## October 24 — Latest echo brand selection (in progress)
+
+The user reselected findez-logo-echo.zip and app-icon-*-2.svg. Standalone icons
+exactly match round/ in the ZIP; this now supersedes the earlier authoritative
+brand choice. See docs/brand-echo-current-20261024. This release also includes the
+reversed left-to-right activity shimmer. Existing navigation remains untouched.
+
 ## October 24 — Shiny chat activity and draft labels (candidate beta125)
 
 Mobile-only feat/chat-progress-mobile-20261024 adds native Flutter soft status
