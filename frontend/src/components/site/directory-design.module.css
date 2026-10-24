@@ -26,6 +26,38 @@
 .flow :global(.context-people-list) { border:1px solid var(--app-border,#dedede); border-radius:9px; overflow:hidden; }
 .flow :global(.context-person) { padding:18px 22px; border-bottom:1px solid var(--app-border,#ededed); }
 .flow :global(.context-person:last-child) { border-bottom:0; }
+.flow :global(.member-row) { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; align-items:center; }
+.flow :global(.member-summary) { display:flex; align-items:center; gap:12px; min-width:0; }
+.flow :global(.member-summary strong) { white-space:normal; overflow-wrap:break-word; }
+.flow :global(.member-controls) { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+.flow :global(.member-controls .product-select) { width:160px; max-width:100%; min-width:0; margin:0; }
+.flow :global(.member-controls .directory-rename) { margin:0; min-height:40px; }
+.flow :global(.pending-invitations .context-person) { display:flex; flex-wrap:wrap; gap:16px; }
+.flow :global(.pending-invitations .context-person > div) { flex:1 1 220px; }
+.flow :global(.pending-invitations .context-person > button) { flex-shrink:0; }
+.flow :global(.resource-settings) { display:grid; gap:24px; width:100%; max-width:880px; }
+.flow :global(.resource-settings-card) { border:1px solid var(--app-border); border-radius:12px; background:var(--app-surface); overflow:hidden; }
+.flow :global(.resource-settings-card > header) { padding:22px 24px; border-bottom:1px solid var(--app-border); }
+.flow :global(.resource-settings-card h2) { margin:0; font-size:17px; font-weight:600; }
+.flow :global(.resource-settings-card header p), .flow :global(.resource-settings-note) { margin:8px 0 0; color:var(--app-muted); font-size:13px; line-height:1.6; }
+.flow :global(.resource-settings-note) { padding:16px 24px; margin:0; }
+.flow :global(.resource-setting-row), .flow :global(.resource-setting-link) { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:20px 24px; }
+.flow :global(.resource-setting-row + .resource-setting-row), .flow :global(.resource-setting-link + .resource-setting-link) { border-top:1px solid var(--app-border); }
+.flow :global(.resource-setting-row > div), .flow :global(.resource-setting-link > span) { display:grid; gap:6px; min-width:0; overflow-wrap:anywhere; }
+.flow :global(.resource-setting-row > .product-button) { flex-shrink:0; }
+.flow :global(.resource-setting-row strong), .flow :global(.resource-setting-link strong) { font-size:14px; font-weight:500; }
+.flow :global(.resource-setting-row span), .flow :global(.resource-setting-row small), .flow :global(.resource-setting-link small) { color:var(--app-muted); font-size:13px; line-height:1.5; }
+.flow :global(.resource-setting-link) { color:inherit; text-decoration:none; }
+.flow :global(.resource-setting-link:hover) { background:var(--app-surface-2); }
+.flow :global(.resource-setting-link svg) { flex-shrink:0; color:var(--app-muted); }
+.flow :global(.resource-danger .product-button) { color:var(--danger-ink,#b42318); }
+@media(max-width:600px) {
+ .flow :global(.member-row) { grid-template-columns:minmax(0,1fr); gap:12px; padding:16px; }
+ .flow :global(.member-controls) { justify-content:space-between; padding-left:42px; }
+ .flow :global(.member-controls .product-select) { width:min(180px,70%); }
+ .flow :global(.resource-setting-row) { flex-wrap:wrap; gap:14px; }
+ .flow :global(.resource-settings-card > header), .flow :global(.resource-setting-row), .flow :global(.resource-setting-link) { padding:18px; }
+}
 .flow :global(.workspace-settings) { max-width:760px; border:1px solid var(--app-border,#dedede); border-radius:10px; padding:24px; }
 @media(max-width:700px) { .flow { padding:0 0 24px; } .flow :global(.product-page-header) { align-items:flex-start; flex-wrap:wrap; } .flow :global(.directory-search) { max-width:none; } }
 

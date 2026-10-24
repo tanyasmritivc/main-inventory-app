@@ -29,7 +29,7 @@ function Pending({ scope, resourceId, revision }: { scope: AccessInvitation["sco
     let active = true;
     void accountRequest<{ invitations: AccessInvitation[] }>(accountId, `/access-invitations?scope=${scope}&resource_id=${encodeURIComponent(resourceId)}`).then((result) => {
       if (active) { if (!Array.isArray(result.invitations)) throw new Error("Invitations could not be loaded."); setRows(result.invitations); setError(""); }
-    }).catch((reason) => { if (active) setError(userFacingError(reason, "Invitations could not be loaded.")); });
+    }).catch((reason) => { if (active) { setRows([]); setError(userFacingError(reason, "Invitations could not be loaded.")); } });
     return () => { active = false; };
   }, [accountId, scope, resourceId, revision, reload]);
   async function cancel(id: string) {
