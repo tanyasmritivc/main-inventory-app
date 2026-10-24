@@ -46,3 +46,13 @@ model can propose semantic synonyms; deterministic search does not invent facts.
 
 Deployment and TestFlight receipts will be added after activation. Physical
 customer-device acceptance remains separate from synthetic automated checks.
+
+## Backend activation receipt
+
+Runtime39ed171 / PR186 is live. All five CI jobs passed (run40071455764).
+Four-file selective publication preserved112 unrelated files; API/database health
+and anonymous-search denial passed. Real HTTPS tests used two temporary synthetic
+accounts: five search variants, cross-user denial, and three real-model chat
+prompts returned the saved part (3.7/2.3/2.6seconds). Before/after stock was identical.
+Both accounts/inventory were removed. No customer data was used or changed.
+No schema migration. Receipt directory: Documents/FindEZ/Audits/smart-search-20261024.
