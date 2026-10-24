@@ -339,3 +339,21 @@ def test_nullable_optional_prose_and_unknown_count_do_not_discard_an_object():
     )
     long = identity(notes="x" * 2000)
     assert len(long.notes) == 1000
+
+
+def test_low_confidence_guess_is_an_unknown_candidate_not_a_named_item():
+    item = g._item(
+        g.Box(label="fragment", box=[0, 0, 1000, 1000]),
+        g.Identity(
+            index=0,
+            name="Carrot",
+            category="Food",
+            tags=["vegetable"],
+            identity_confidence=0.4,
+            uncertainty="Could be an orange plastic handle.",
+        ),
+        None,
+    )
+    assert item["name"] == "Unknown item" and item["category"] == "Uncategorized"
+    assert item["tags"] == [] and item["confidence"] == 0.4
+    assert "Possible description, not verified: Carrot" in item["notes"]

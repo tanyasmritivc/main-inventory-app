@@ -397,13 +397,23 @@ def _item(candidate, identity, source_url):
         )
         return value if re.search(pattern, (text or "").casefold()) else None
 
+    weak_identity = (
+        identity.identity_confidence is not None and identity.identity_confidence < 0.5
+    )
+    if weak_identity:
+        evidence.review_reasons.append(
+            "Visual identity is too uncertain to name this item reliably."
+        )
+        notes = ("Possible description, not verified: " + identity.name + ". " + notes)[
+            :2000
+        ]
     return ExtractedInventoryItem(
-        name=identity.name,
-        category=identity.category,
-        subcategory=identity.subcategory,
+        name="Unknown item" if weak_identity else identity.name,
+        category="Uncategorized" if weak_identity else identity.category,
+        subcategory=None if weak_identity else identity.subcategory,
         brand=marked(identity.brand),
         part_number=marked(identity.part_number),
-        tags=identity.tags,
+        tags=[] if weak_identity else identity.tags,
         quantity=quantity,
         barcode=barcode,
         confidence=identity.identity_confidence,
