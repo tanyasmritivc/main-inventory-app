@@ -33,16 +33,14 @@ class UpdateBoardTask(BaseModel):
 
 
 def _membership(team_id: str, user_id: str) -> dict:
-    rows = get_supabase_admin().table("team_memberships").select(
-        "member_id,role").eq("team_id", team_id).eq("user_id", user_id).limit(1).execute().data or []
-    if not rows:
-        raise HTTPException(403, "You are not a member of this team.")
-    return rows[0]
+    from app.services.permissions import workspace_membership
+    return workspace_membership(get_supabase_admin(), team_id, user_id)
 
 
 def _require_editor(team_id: str, user_id: str) -> dict:
     membership = _membership(team_id, user_id)
-    if membership["role"] == "viewer":
+    from app.services.permissions import EDIT_ROLES, workspace_role
+    if workspace_role(membership["role"]) not in EDIT_ROLES:
         raise HTTPException(403, "You have view-only access to this team board.")
     return membership
 
@@ -50,10 +48,10 @@ def _require_editor(team_id: str, user_id: str) -> dict:
 def _validate_assignee(team_id: str, assigned_to: str | None) -> None:
     if not assigned_to:
         return
-    rows = get_supabase_admin().table("team_memberships").select("member_id").eq(
-        "team_id", team_id).eq("user_id", assigned_to).limit(1).execute().data or []
-    if not rows:
-        raise HTTPException(422, "Choose a current team member as the assignee.")
+    try:
+        _membership(team_id, assigned_to)
+    except HTTPException:
+        raise HTTPException(422, "Choose a current team member as the assignee.") from None
 
 
 def _record(
@@ -110,10 +108,13 @@ def create_board_task(
     payload.update({
         "team_id": team_id,
         "created_by": user.user_id,
+        "assigned_by": user.user_id if body.assigned_to else None,
         "title": body.title.strip(),
         "description": body.description.strip(),
     })
-    created = get_supabase_admin().table("team_board_tasks").insert(payload).execute().data or []
+    query = get_supabase_admin().table("team_board_tasks").insert(payload)
+    query.headers = {**query.headers, "x-findez-actor": user.user_id}
+    created = query.execute().data or []
     if not created:
         raise HTTPException(500, "The team task could not be created.")
     _record(
@@ -150,6 +151,8 @@ def update_board_task(
     if body.clear_assignee:
         updates["assigned_to"] = None
     _validate_assignee(team_id, updates.get("assigned_to"))
+    if "assigned_to" in updates and updates["assigned_to"] != existing[0].get("assigned_to"):
+        updates["assigned_by"] = user.user_id if updates["assigned_to"] else None
     if "title" in updates:
         updates["title"] = updates["title"].strip()
         if not updates["title"]:
@@ -157,8 +160,10 @@ def update_board_task(
     if "description" in updates:
         updates["description"] = updates["description"].strip()
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-    changed = get_supabase_admin().table("team_board_tasks").update(updates).eq(
-        "task_id", task_id).eq("team_id", team_id).execute().data or []
+    query = get_supabase_admin().table("team_board_tasks").update(updates).eq(
+        "task_id", task_id).eq("team_id", team_id)
+    query.headers = {**query.headers, "x-findez-actor": user.user_id}
+    changed = query.execute().data or []
     if not changed:
         raise HTTPException(500, "The team task could not be updated.")
     completed = updates.get("status") == "done"

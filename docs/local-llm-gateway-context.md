@@ -1,4 +1,11 @@
-# Local LLM gateway — context for Codex / OpenCode
+# Local LLM gateway | historical migration context
+
+This document records an earlier model migration proposal. For the deployed
+system, use `.agents/ARCHITECTURE.md`: FIND processes inventory photos and the
+private agent gateway handles language tasks; the OpenAI runtime was removed.
+FindEZ serves homes, businesses, labs, schools, teams and industry. Robotics
+examples and legacy category names below describe the original integration,
+not a restriction on the product's audiences or supported inventory.
 
 Everything known about the private inference gateway, what FindEZ needs from it, and the
 exact code change required to switch the app off OpenAI. Written to be pasted into another
@@ -78,11 +85,13 @@ already exists, so "screws" doesn't collapse three different screw sizes into on
 ### Job B — photo extraction (the blocker)
 
 `POST /inventory/extract_from_image` and `/extract_from_image`. A photo of a pile of
-robotics parts goes in; structured JSON comes out — one `ExtractedInventoryItem` per part,
+physical items goes in; structured JSON comes out, one `ExtractedInventoryItem` per item,
 with `name`, `brand`, `part_number`, `category`, `subcategory`, `quantity`, `confidence`.
 
 The model must return `null` rather than invent a brand or part number. Categories are
-robotics-first: `Robot Parts`, `Hardware`, `Tools`, `Raw Materials`, `Batteries`, `Safety`.
+listed in the historical category contract: `Robot Parts`, `Hardware`, `Tools`,
+`Raw Materials`, `Batteries`, `Safety`. Retaining those keys does not limit which
+people or organizations can use FindEZ.
 
 **This is the job the gateway cannot currently do.** See section 4.
 
@@ -183,8 +192,10 @@ end, then measure quality against `gpt-4o` on the same photos before committing.
 ### What to send with the ask
 
 `docs/local-llm-eval-pack.md` already contains the verbatim production prompts and JSON
-schemas for these jobs. Pair it with real photos of FTC/FRC parts and the exact JSON
-`gpt-4o` returns for each, so quality can be compared directly rather than by impression.
+schemas for these historical jobs. A current evaluation should use representative
+photos from homes, businesses, labs and industry as well as robotics. Compare
+outputs with reviewed expected identifications and structured results for each
+use case.
 
 ---
 

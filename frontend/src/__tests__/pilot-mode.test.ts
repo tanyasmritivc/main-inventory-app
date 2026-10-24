@@ -56,12 +56,12 @@ describe('PILOT_COPY', () => {
     expect(PILOT_COPY.title).toBe('Free Pilot');
   });
 
-  test('notice mentions September 11, 2026', () => {
-    expect(PILOT_COPY.notice).toContain('September 11, 2026');
+  test('notice keeps November 1, 2026 as the final free-pilot day', () => {
+    expect(PILOT_COPY.notice).toContain('through November 1, 2026');
   });
 
-  test('notice mentions September 12', () => {
-    expect(PILOT_COPY.notice).toContain('September 12');
+  test('notice starts the following-day plans on November 2', () => {
+    expect(PILOT_COPY.notice).toContain('begin November 2');
   });
 
   test('notice says users will not be charged automatically', () => {
@@ -72,13 +72,19 @@ describe('PILOT_COPY', () => {
     expect(PILOT_COPY.notice).toContain('Unlimited access');
   });
 
-  test('buttonLabel is defined', () => {
-    expect(typeof PILOT_COPY.buttonLabel).toBe('string');
-    expect(PILOT_COPY.buttonLabel.length).toBeGreaterThan(0);
+  test('buttonLabel uses the same following-day date', () => {
+    expect(PILOT_COPY.buttonLabel).toBe('Available Nov 2');
   });
 
-  test('pricingNote is defined', () => {
-    expect(typeof PILOT_COPY.pricingNote).toBe('string');
-    expect(PILOT_COPY.pricingNote.length).toBeGreaterThan(0);
+  test('pricingNote uses the same following-day date', () => {
+    expect(PILOT_COPY.pricingNote).toBe(
+      'Plans shown below will be available starting November 2. No action needed now.',
+    );
+  });
+
+  test('no pilot copy retains the retired September deadline', () => {
+    for (const copy of Object.values(PILOT_COPY)) {
+      expect(copy).not.toMatch(/September|Sept\b/);
+    }
   });
 });

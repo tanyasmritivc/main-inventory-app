@@ -1,8 +1,12 @@
 "use client";
+import { activeInventory, assertInventory, canEditInventory } from "@/lib/inventory-selection";
+import { MoveSpaceInventory } from "@/components/site/move-space-inventory";
+import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "@/components/site/inventory-link";
+
 import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import { getAccessToken } from "@/lib/session";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
@@ -20,6 +24,7 @@ import {
   getJoinedShares,
   getItemCheckouts,
   getMyShares,
+  getReviewItems,
   getSpaces,
   itemDisplayDescription,
   itemDisplayName,
@@ -28,6 +33,7 @@ import {
   renameSpace,
   searchItems,
   updateItem,
+  updateReviewItem,
 } from "@/lib/api";
 import { buildSpaceIndex, groupItemsBySpace, itemsInSpace, normalizeLocationName, resolveDisplaySpaces, spaceNameForItem } from "@/lib/spaces";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +50,13 @@ import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 // ── Style constants ──────────────────────────────────────────────────────────
+import { ItemPhotoGallery } from "@/components/site/item-photo-gallery";
+import { ItemDetails } from "@/components/site/item-details";
+import { useApiSession } from "@/lib/use-api-session";
+import { useRestock } from "@/lib/use-restock";
+import { userFacingError } from "@/lib/user-facing-error";
+import { needsBuying } from "@/lib/restock-plan";
+
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 const inputStyle: React.CSSProperties = {
@@ -191,12 +204,13 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
 function InventoryStats({
   items,
   spaces,
+  lowStock,
 }: {
   items: InventoryItem[];
   spaces: string[];
+  lowStock: number;
 }) {
   const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
-  const lowStock = items.filter((item) => (item.quantity ?? 0) <= 1).length;
 
   return (
     <section className="inventory-stats" aria-label="Inventory totals">
@@ -209,15 +223,20 @@ function InventoryStats({
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string }) {
-  const router = useRouter();
+export function HomeInventoryClient(props: { mode?: 'home' | 'inventory' | 'spaces'; locationFilter?: string; itemFilter?: string }) {
+  const router = useInventoryRouter();
   const { confirmAction, promptValue } = useAppDialog();
+  const { accountId } = useApiSession();
+  const restock = useRestock(accountId);
+  const { adopt: adoptRestock } = restock;
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [query, setQuery] = useState('');
   const [homePrompt, setHomePrompt] = useState('');
   const [activeCheckouts, setActiveCheckouts] = useState<Record<string, unknown>[]>([]);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -231,6 +250,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   const [createSpaceError, setCreateSpaceError] = useState<string | null>(null);
   const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
+  const canEdit = canEditInventory();
+  const [movingSpace, setMovingSpace] = useState<Space | null>(null);
   const [joinSpaceOpen, setJoinSpaceOpen] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinSpaceError, setJoinSpaceError] = useState<string | null>(null);
@@ -314,7 +335,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
   // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    return (await getAccessToken()) ?? '';
+    const inventory=activeInventory();
+    const value=(await getAccessToken()) ?? '';
+    assertInventory(inventory);
+    return value;
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -327,7 +351,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
-      if (!q) setAllItems(res?.items ?? []);
+      if (!q) { setAllItems(res?.items ?? []); adoptRestock((res?.items ?? []).map(item => item.item_id)); }
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to load inventory'));
     } finally {
@@ -336,19 +360,23 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   }
 
   useEffect(() => {
+    let active=true;
     const init = async () => {
       setLoading(true);
       try {
         const t = (await getAccessToken()) ?? '';
-        if (!t) return;
+        if (!t || !active) return;
         setToken(t);
-        const [itemsResult, spacesResult, checkoutsResult] = await Promise.allSettled([
+        const [itemsResult, spacesResult, checkoutsResult, reviewsResult] = await Promise.allSettled([
           searchItems({ token: t, query: '' }),
           getSpaces({ token: t }),
           getActiveCheckouts({ token: t }),
+          getReviewItems({ token: t, limit: 1 }),
         ]);
 
+        if (!active) return;
         if (itemsResult.status === 'fulfilled') {
+          adoptRestock((itemsResult.value?.items ?? []).map(item => item.item_id));
           setAllItems(itemsResult.value?.items ?? []);
           setItems(itemsResult.value?.items ?? []);
         } else {
@@ -367,15 +395,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         if (checkoutsResult.status === 'fulfilled') {
           setActiveCheckouts(checkoutsResult.value.checkouts ?? []);
         }
+        if (reviewsResult.status === 'fulfilled') {
+          setPendingReviewCount(reviewsResult.value.pending_count);
+        }
       } catch (e) {
         console.error(e);
       } finally {
-        setLoading(false);
-        setInitSettled(true);
+        if (active) { setLoading(false); setInitSettled(true); }
       }
     };
     void init();
-  }, []);
+    return () => { active=false; };
+  }, [adoptRestock]);
 
   useEffect(() => {
     if (!query.trim() || !token) return;
@@ -510,11 +541,21 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       if (!t) return;
       const res = await extractFromImageMulti({ token: t, file });
       if (res.items.length > 0) {
-        await bulkCreate({
-          token: t,
-          items: res.items.map((it: ExtractedInventoryItem) => ({ ...it, location: targetSpace })),
-        });
+        const located = res.items.map((it: ExtractedInventoryItem) => ({ ...it, location: targetSpace }));
+        const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
+        const ready = located.filter((item) => !item.scan_evidence?.needs_review);
+        for (const item of uncertain) {
+          if (!item.review_id) {
+            throw new Error('An uncertain item was not safely stored. Please scan the photo again.');
+          }
+          if (item.review_status !== 'pending' && item.review_status !== 'preview') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+          await updateReviewItem({ token: t, reviewId: item.review_id, item });
+        }
+        if (ready.length > 0) await bulkCreate({ token: t, items: ready });
+        if (uncertain.length > 0) setSuccess(`${uncertain.length} uncertain item${uncertain.length === 1 ? '' : 's'} saved in Review.`);
         await load(t, '');
+        const reviews = await getReviewItems({ token: t, limit: 1 });
+        setPendingReviewCount(reviews.pending_count);
       }
     } catch (err: any) {
       if (!handleApiError(err)) {
@@ -558,9 +599,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   async function refreshAll(t?: string) {
     const tok = t || token || (await refreshToken());
     if (!tok) return;
-    const [itemsResult, spacesResult] = await Promise.allSettled([
+    const [itemsResult, spacesResult, reviewsResult] = await Promise.allSettled([
       searchItems({ token: tok, query: '' }),
       getSpaces({ token: tok }),
+      getReviewItems({ token: tok, limit: 1 }),
     ]);
     if (itemsResult.status === 'fulfilled') {
       setAllItems(itemsResult.value?.items ?? []);
@@ -573,6 +615,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       const reason = spacesResult.reason;
       console.error('[refreshAll] getSpaces failed:', reason instanceof Error ? reason.message : reason);
       setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
+    }
+    if (reviewsResult.status === 'fulfilled') {
+      setPendingReviewCount(reviewsResult.value.pending_count);
     }
   }
 
@@ -639,8 +684,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   }
 
   async function onRenameSpace(space: Space) {
+    const inventory=activeInventory();
     const name = (await promptValue({ title: 'Rename Space', label: 'Space name', initialValue: space.name, confirmLabel: 'Rename' }))?.trim();
-    if (!name) return;
+    if (!name || activeInventory()!==inventory) return;
     const normalized = normalizeLocation(name);
     if (!normalized || normalized === space.name) return;
     setLoading(true);
@@ -659,7 +705,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   }
 
   async function onDeleteSpace(space: Space) {
-    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "Items will remain in Inventory but will no longer be linked to this Space.", confirmLabel: 'Delete Space', danger: true })) return;
+    const inventory=activeInventory();
+    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "This Space, its saved items, and any pending identifications will be permanently deleted.", confirmLabel: 'Delete Space', danger: true })) return;
+    if (activeInventory()!==inventory) return;
     setLoading(true);
     setError(null);
     try {
@@ -715,7 +763,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       await updateItem({ token: t, item_id: itemId, updates })
       if (viewingSharedSpace) await loadSharedSpace(viewingSharedSpace.shareId)
     } catch (err) {
-      console.error('Update failed:', err)
+      setError(userFacingError(err, 'The item could not be updated.'))
     }
   }
 
@@ -727,7 +775,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       await deleteItem({ token: t, item_id: itemId })
       setSharedSpaceItems((prev: any[]) => prev.filter((i: any) => i.item_id !== itemId))
     } catch (err) {
-      console.error('Delete failed:', err)
+      setError(userFacingError(err, 'The item could not be deleted.'))
     }
   }
 
@@ -776,7 +824,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
   const showInventoryTable = !selectedSpace && (query.trim().length > 0 || props.mode === 'inventory');
 
-  const lowStockCount = allItems.filter((item) => item.quantity <= 1).length;
+  const lowStockCount = allItems.filter((item) => needsBuying(restock.plan[item.item_id], item.quantity)).length;
   const overdueCount = activeCheckouts.filter((checkout) => {
     const due = checkout.due_back_at;
     return typeof due === 'string' && new Date(due).getTime() < Date.now();
@@ -786,8 +834,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     event.preventDefault();
     const prompt = homePrompt.trim();
     if (!prompt) return;
-    window.localStorage.setItem('findez-assist-draft', prompt);
-    router.push('/assist');
+    router.push(`/assist?q=${encodeURIComponent(prompt)}`);
   }
 
   const tableColumns = useMemo(() => {
@@ -810,9 +857,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
-    cols.push({ field: 'actions', label: 'Actions' })
+    if (canEdit) cols.push({ field: 'actions', label: 'Actions' })
     return cols
-  }, [visibleItems])
+  }, [visibleItems, canEdit])
 
   const gridTemplate = useMemo(() => {
     return tableColumns.map(col => {
@@ -856,9 +903,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   }
 
   async function checkOut(item: InventoryItem) {
+    const inventory=activeInventory();
     const borrower = await promptValue({ title: `Check out “${itemDisplayName(item)}”`, label: 'Checked out to', placeholder: 'Person or team', confirmLabel: 'Continue' });
     if (!borrower?.trim()) return;
     const due = await promptValue({ title: 'When is it due back?', message: 'Choose a date, or cancel to leave the due date blank.', label: 'Due date', inputType: 'date', confirmLabel: 'Set due date' });
+    if (activeInventory()!==inventory) return;
     const t = token || (await refreshToken());
     if (!t) return;
     try {
@@ -913,18 +962,19 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : 'Inventory'}</h1>
+          <h1>{viewingSharedSpace?.spaceName ?? (selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : props.mode === 'spaces' ? 'Spaces' : 'Find')}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
-        {!selectedSpace && (
+        {!selectedSpace && !viewingSharedSpace && canEdit && (
           <div className="product-actions">
-            <button
+            {props.mode === "inventory" && <Link href="/scan" className="product-button primary">Add items</Link>}
+            {!activeInventory() && <button
               type="button"
               onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
               className="product-button"
             >
               Join
-            </button>
+            </button>}
             <button
               type="button"
               onClick={() => setCreateSpaceOpen(true)}
@@ -941,18 +991,19 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           <form className="home-command" onSubmit={openAssist}>
             <Search size={18} aria-hidden="true" />
             <input value={homePrompt} onChange={(event) => setHomePrompt(event.target.value)} placeholder="Ask about your inventory" aria-label="Ask FindEZ" />
-            <button type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
+            <button disabled={!canEdit} type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
             <button type="submit" className="home-command-submit" disabled={!homePrompt.trim()}>Ask<ArrowRight size={16} /></button>
           </form>
 
           <section className="home-attention" aria-label="Needs your attention">
             <div className="home-section-label"><h2>Needs your attention</h2></div>
-            {lowStockCount === 0 && overdueCount === 0 ? (
+            {lowStockCount === 0 && overdueCount === 0 && pendingReviewCount === 0 ? (
               <p className="home-quiet">Nothing needs your attention.</p>
             ) : (
               <div className="home-attention-row">
+                {pendingReviewCount > 0 && <Link href="/review"><strong>{pendingReviewCount}</strong><span>uncertain capture{pendingReviewCount === 1 ? '' : 's'} to review</span><ArrowRight size={15} /></Link>}
                 {overdueCount > 0 && <Link href="/checkout"><strong>{overdueCount}</strong><span>overdue check-out{overdueCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
-                {lowStockCount > 0 && <Link href="/collections"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
+                {lowStockCount > 0 && <Link href="/restock"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
               </div>
             )}
           </section>
@@ -964,7 +1015,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         <div className="inventory-search-control">
           <Search size={15} />
           <input
-            placeholder="Search inventory"
+            aria-label="Search items by name, category, or description" placeholder="Search items"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="spaces-search"
@@ -976,7 +1027,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       {success ? <p role="status" style={{ fontSize: 13, color: 'var(--success-ink)', marginBottom: 12 }}>{success}</p> : null}
 
       {!selectedSpace && props.mode !== 'home' && !showInventoryTable && initSettled && !loading && (
-        <InventoryStats items={allItems} spaces={spaces} />
+        <InventoryStats items={allItems} spaces={spaces} lowStock={lowStockCount} />
       )}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
@@ -996,12 +1047,15 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           </div>
           {(visibleItems ?? []).map((item) => (
             <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
-                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+              <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                {item.image_url && <Image unoptimized width={42} height={42} src={item.image_url} alt="" style={{ width: 42, height: 42, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />}
+                <div style={{ minWidth: 0 }}>
+                  <button type="button" style={{ textAlign: "left", background: "transparent", border: 0, padding: 0, fontSize: 13, fontWeight: 590, color: "var(--text-primary)" }} onClick={() => setDetailItem(item)}>{itemDisplayName(item)}</button>
+                  {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+                </div>
               </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
-              <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
+              <div style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{spaceNameForItem(item, spaceIndex)}</div>
             </div>
           ))}
@@ -1018,15 +1072,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
             ← My Spaces
           </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>
-              {viewingSharedSpace.spaceName}
-            </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.13)' : 'rgba(0,0,0,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.26)' : 'rgba(0,0,0,0.25)'}`, color: viewingSharedSpace.isOwned ? 'var(--light-muted)' : 'var(--copper)' }}>
-              {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
-            </span>
-          </div>
 
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
             <span>{sharedSpaceLoading ? '…' : `${sharedSpaceItems.length} items`}</span>
@@ -1054,10 +1099,19 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       try {
                         const res = await extractFromImageMulti({ token: t, file })
                         if (res.items?.length) {
-                          await bulkCreate({
-                            token: t,
-                            items: res.items.map((i: any) => ({ ...i, location: viewingSharedSpace.spaceName }))
-                          })
+                          const located = res.items.map((item) => ({ ...item, location: viewingSharedSpace.spaceName }));
+                          const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
+                          const ready = located.filter((item) => !item.scan_evidence?.needs_review);
+                          for (const item of uncertain) {
+                            if (!item.review_id) throw new Error('Uncertain capture was not stored safely.');
+                            if (item.review_status !== 'pending' && item.review_status !== 'preview') throw new Error('This photo was already reviewed. Take a new photo to capture it again.');
+                            await updateReviewItem({ token: t, reviewId: item.review_id, item });
+                          }
+                          if (ready.length) await bulkCreate({ token: t, items: ready });
+                          if (uncertain.length) {
+                            setPendingReviewCount((count) => Math.max(count, uncertain.length));
+                            setSuccess(`${uncertain.length} uncertain item${uncertain.length === 1 ? '' : 's'} saved in Review.`);
+                          }
                           await loadSharedSpace(viewingSharedSpace.shareId)
                         }
                       } catch (err) {
@@ -1129,10 +1183,11 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         <div
                           key="name"
                           onClick={() => setExpandedSharedItemId(expandedSharedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
-                          {itemDisplayName(item)}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
                       if (col.field === 'actions') return (
@@ -1155,7 +1210,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
@@ -1191,6 +1246,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
+                      <ItemPhotoGallery itemId={item.item_id} context={{ kind: "shared", shareId: viewingSharedSpace.shareId }} canEdit={viewingSharedSpace.permission === "edit"} onChanged={next => setSharedSpaceItems(current => current.map(i => i.item_id === next.item_id ? next : i))}/>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
@@ -1247,12 +1303,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             ← My Spaces
           </button>
 
-          <div style={{ marginBottom: 4 }}>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
-          </div>
-
           {/* Toolbar */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20, marginBottom: 20 }}>
+            {canEdit && <>
             <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' }}>
               Upload Image
               <input
@@ -1266,7 +1319,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             <button type="button" onClick={() => openSpreadsheet(selectedSpace ?? '')} style={toolbarBtnStyle}>Import Spreadsheet</button>
             <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
-            <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
+            {!activeInventory()?.team_id && <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>}
+            </>}
             <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
@@ -1299,7 +1353,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           {visibleItems.length === 0 && !loading ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>
+              {canEdit && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>}
             </div>
           ) : (
             <>
@@ -1338,14 +1392,15 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         <div
                           key="name"
                           onClick={() => setExpandedItemId(expandedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
-                          {itemDisplayName(item)}
+                          {item.image_url && <Image unoptimized width={38} height={38} src={item.image_url} alt="" style={{ width: 38, height: 38, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{itemDisplayName(item)}</span>
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: needsBuying(restock.plan[item.item_id], item.quantity) ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
@@ -1388,6 +1443,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
+                      <ItemPhotoGallery itemId={item.item_id} canEdit={canEdit} onChanged={next => { setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
@@ -1402,7 +1458,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                         ))
                       }
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
-                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button disabled={!canEdit} onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
                         <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedItemId(null)}
@@ -1439,16 +1495,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             </button>
           </div>
         )}
-        <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>
+        {props.mode !== 'spaces' && <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>}
         <div className="inventory-space-list">
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;
             const itemsInSpace = itemsBySpace[space] ?? [];
-            const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
+            const lowStock = itemsInSpace.filter((item) => needsBuying(restock.plan[item.item_id], item.quantity)).length;
             return (
               <div
                 key={space}
                 className="inventory-space-card"
+                role="button" tabIndex={0} aria-label={`Open Space ${space}`}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openSpace(space); } }}
                 onClick={() => openSpace(space)}
               >
                 <span className="space-card-icon"><Boxes size={17} /></span>
@@ -1458,7 +1516,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                 </div>
                 <div className="space-card-actions">
                   {/* Upload image */}
-                  <label
+                  {canEdit && <label
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
@@ -1471,9 +1529,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       style={{ display: 'none' }}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f, space); }}
                     />
-                  </label>
+                  </label>}
                   {/* Share */}
-                  <button
+                  {canEdit && !activeInventory()?.team_id && <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
@@ -1481,9 +1539,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                   >
                     <Share2 size={14} />
-                  </button>
+                  </button>}
                   {/* Rename/Delete only for canonical spaces that have a server record */}
-                  {spaceObj && (
+                  {spaceObj && canEdit && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -1499,6 +1557,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" side="top">
                         <DropdownMenuItem onSelect={() => void onRenameSpace(spaceObj)}>Rename space</DropdownMenuItem>
+                        {activeInventory() && <DropdownMenuItem onSelect={() => setMovingSpace(spaceObj)}>Move to inventory</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1602,12 +1661,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
       {/* ── Dialogs ───────────────────────────────────────────────────────── */}
 
+      {movingSpace && <MoveSpaceInventory space={movingSpace} onClose={() => setMovingSpace(null)} onMoved={() => { setMovingSpace(null); setSelectedSpace(null); void refreshAll(); }} />}
       {/* New Space */}
       <Dialog open={createSpaceOpen} onOpenChange={(open) => { setCreateSpaceOpen(open); if (!open) { setCreateSpaceError(null); setNewSpaceName(''); } }}>
         <DialogContent className="findez-form-dialog" style={{ maxWidth: 560 }}>
           <DialogHeader>
             <DialogTitle>Create a Space</DialogTitle>
-            <DialogDescription>A Space is a real location—like a room, cabinet, shelf, or parts bin.</DialogDescription>
+            <DialogDescription>A Space is a real location, like a room, cabinet, shelf, or parts bin.</DialogDescription>
           </DialogHeader>
           <div className="findez-form-body">
             <div className="findez-form-row">
@@ -1775,6 +1835,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Item details</DialogTitle>{detailItem && <><ItemDetails item={detailItem} canEdit={canEdit} onChanged={next => { setDetailItem(next); setAllItems(current => current.map(i => i.item_id === next.item_id ? next : i)); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/><div className="workspace-actions"><Link href={`/documents?item=${encodeURIComponent(detailItem.item_id)}`} className="workspace-button">Documents and notes</Link><Link href="/restock" className="workspace-button">Restock</Link><button disabled={!canEdit} className="workspace-button" onClick={() => { openEdit(detailItem); setDetailItem(null); }}>Edit item</button><button disabled={!canEdit} className="workspace-button" onClick={() => void checkOut(detailItem)}>Lend item</button></div></>}</DialogContent></Dialog>
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>

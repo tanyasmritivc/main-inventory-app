@@ -1,0 +1,416 @@
+"""Organization administration and inventory-specific access, backed by audited RPCs."""
+from uuid import UUID
+from typing import Literal
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel, Field, StrictBool, field_validator
+from postgrest.exceptions import APIError
+
+from app.core.auth import AuthenticatedUser, get_current_user
+from app.services.supabase_client import get_supabase_raw
+from app.api.routes.inventory_workspaces import _workspace, _inventory, inventory_role
+from app.services.access_invitations import invite_or_change
+
+router = APIRouter(tags=['collaboration'])
+logger = logging.getLogger(__name__)
+
+
+def manage(actor, action, data):
+    try:
+        result = get_supabase_raw().rpc('findez_manage_collaboration', {
+            'p_actor': actor, 'p_action': action, 'p_data': data,
+        }).execute().data
+    except APIError as exc:
+        messages = {'42501': (403, 'You do not have permission to make this change.'),
+                    'P0002': (404, 'Record not found. New members need an existing FindEZ account.'),
+                    '23505': (409, 'This name or assignment already exists.'),
+                    '23514': (422, 'Check the member, role and parent workspace. Remove workspace assignments before removing organization membership.'),
+                    '23503': (422, 'Choose an existing member or location.')}
+        if action == 'workspace_create' and exc.code in ('23505', '23514'):
+            raise HTTPException(409, 'The workspace could not be created. Refresh the organization and try again.')
+        if exc.code in messages:
+            status, message = messages[exc.code]
+            raise HTTPException(status, message)
+        raise
+    if not result:
+        raise HTTPException(503, 'The change could not be confirmed saved. Refresh before retrying.')
+    return result
+
+
+def organization(org_id, actor):
+    raw = get_supabase_raw()
+    rows = raw.table('app_organization_members').select('role').eq('organization_id', str(org_id)).eq('user_id', actor).execute().data or []
+    if not rows:
+        raise HTTPException(403, 'You do not have access to this organization.')
+    orgs = raw.table('app_organizations').select('*').eq('organization_id', str(org_id)).execute().data or []
+    if not orgs:
+        raise HTTPException(404, 'Organization not found.')
+    return {**orgs[0], 'role': rows[0]['role']}
+
+
+def members_with_names(rows, raw=None):
+    # Callers have already authorized the parent and selected its member IDs.
+    # Return only presentation fields, never profile paths or arbitrary profiles.
+    import re
+    from app.services.storage import create_profile_photo_signed_url
+    ids = list({r['user_id'] for r in rows})
+    profiles = (raw or get_supabase_raw()).table('profiles').select('id,display_name,first_name,last_name,avatar_path,avatar_color').in_('id', ids).execute().data if ids else []
+    presentation = {}
+    for profile in profiles or []:
+        uid = profile['id']
+        if uid not in ids:
+            continue
+        url = ''
+        path = profile.get('avatar_path')
+        if isinstance(path, str) and re.fullmatch(re.escape(str(uid)) + r'/avatar\.(?:jpg|jpeg|png|webp|heic|heif)', path):
+            try:
+                url = create_profile_photo_signed_url(storage_path=path, owner_id=uid)
+            except Exception:
+                logger.warning('Member photo unavailable; using initials')
+        presentation[uid] = {
+            'display_name': profile.get('display_name') or ' '.join(filter(None, [profile.get('first_name'), profile.get('last_name')])) or 'Member',
+            'avatar_color': profile.get('avatar_color') or '#636366', 'avatar_url': url,
+        }
+    return [{**row, **presentation.get(row['user_id'], {'display_name': 'Member', 'avatar_color': '#636366', 'avatar_url': ''})} for row in rows]
+
+
+class Name(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+    @field_validator('name', mode='before')
+    @classmethod
+    def trim_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
+class OrganizationMember(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    role: Literal['member', 'admin'] = 'member'
+
+
+class OrganizationRole(BaseModel):
+    role: Literal['member', 'admin']
+
+
+class Role(BaseModel):
+    role: Literal['admin', 'editor', 'viewer', 'none', 'inherit']
+
+
+class Policy(BaseModel):
+    access_mode: Literal['workspace', 'restricted']
+    default_role: Literal['viewer', 'editor'] = 'viewer'
+
+
+class Location(Name):
+    parent_id: UUID | None = None
+
+
+class AttachLocation(BaseModel):
+    location_id: UUID
+
+
+@router.get('/organizations')
+def organizations(user: AuthenticatedUser = Depends(get_current_user)):
+    raw = get_supabase_raw()
+    memberships = raw.table('app_organization_members').select('organization_id,role').eq('user_id', user.user_id).execute().data or []
+    ids = [m['organization_id'] for m in memberships]
+    rows = raw.table('app_organizations').select('*').in_('organization_id', ids).order('name').execute().data if ids else []
+    roles = {m['organization_id']: m['role'] for m in memberships}
+    return {'organizations': [{**r, 'role': roles[r['organization_id']]} for r in rows or []]}
+
+
+@router.post('/organizations')
+def create_organization(body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    return {'organization': manage(user.user_id, 'organization_create', body.model_dump())}
+
+
+@router.get('/organizations/{organization_id}')
+def organization_overview(organization_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    org = organization(organization_id, user.user_id)
+    raw = get_supabase_raw()
+    # Organization administration can discover workspace names, not contents.
+    memberships = raw.table('team_memberships').select('team_id,role').eq('user_id', user.user_id).execute().data or []
+    ids = [m['team_id'] for m in memberships]
+    query = raw.table('teams').select('team_id,name,organization_id,owner_user_id').eq('organization_id', str(organization_id))
+    if org['role'] not in ('owner', 'admin'):
+        query = query.in_('team_id', ids)
+    workspaces = query.order('name').execute().data if ids or org['role'] in ('owner', 'admin') else []
+    workspaces = [{**w, 'can_open': w['team_id'] in ids or org['role'] in ('owner', 'admin')} for w in workspaces or []]
+    members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', str(organization_id)).execute().data or []
+    attachable = raw.table('teams').select('team_id,name').eq('owner_user_id', user.user_id).is_('organization_id', 'null').execute().data if org['role'] in ('owner', 'admin') else []
+    return {'organization': org, 'workspaces': workspaces or [], 'members': members_with_names(members), 'attachable': attachable or []}
+
+
+@router.patch('/organizations/{organization_id}')
+def rename_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    org = organization(organization_id, user.user_id)
+    if org['role'] not in ('owner', 'admin'):
+        raise HTTPException(403, 'Only organization owners and admins can rename it.')
+    query = get_supabase_raw().table('app_organizations').update({'name': body.name}).eq('organization_id', str(organization_id))
+    query.headers = {**query.headers, 'x-findez-actor': user.user_id}
+    try:
+        rows = query.execute().data or []
+    except APIError as exc:
+        if exc.code == '42501':
+            raise HTTPException(403, 'Your permission changed. Refresh and try again.') from None
+        raise
+    if not rows:
+        raise HTTPException(409, 'The organization changed. Refresh before trying again.')
+    return {'organization': {**rows[0], 'role': org['role']}}
+
+
+@router.delete('/organizations/{organization_id}')
+def delete_empty_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = get_supabase_raw().rpc('findez_delete_empty_organization', {
+            'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'Only the organization owner can delete it.'),
+                  'P0002': (404, 'Organization not found.'),
+                  '23503': (409, 'Only organizations with no workspaces can be deleted.'),
+                  '40P01': (409, 'The organization is being updated. Try again.'),
+                  '40001': (409, 'The organization name changed. Reopen the confirmation.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message)
+        raise
+    if not isinstance(result, dict) or result.get('deleted') is not True or result.get('organization_id') != str(organization_id):
+        raise HTTPException(503, 'Deletion could not be confirmed. Refresh before retrying.')
+    return {'deleted': True, 'organization_id': str(organization_id)}
+
+
+@router.delete('/organizations/{organization_id}/leave')
+def leave_organization(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        result = get_supabase_raw().rpc('findez_leave_organization', {
+            'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'You do not belong to this organization.'),
+                  'P0002': (404, 'Organization not found.'),
+                  '23514': (409, 'Transfer organization ownership before leaving.'),
+                  '23503': (409, 'Transfer ownership of your workspaces in this organization before leaving.'),
+                  '40001': (409, 'The organization changed. Reopen the confirmation and try again.'),
+                  '40P01': (409, 'The organization is being updated. Try again.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message) from None
+        raise
+    if not isinstance(result, dict) or result.get('left') is not True or result.get('organization_id') != str(organization_id):
+        raise HTTPException(503, 'Leaving could not be confirmed. Refresh before retrying.')
+    return {'left': True, 'organization_id': str(organization_id)}
+
+
+@router.post('/organizations/{organization_id}/members')
+def add_organization_member(organization_id: UUID, body: OrganizationMember, user: AuthenticatedUser = Depends(get_current_user)):
+    return invite_or_change(user.user_id, 'organization', str(organization_id), body.role, email=body.email)
+
+
+@router.put('/organizations/{organization_id}/members/{member_id}')
+def change_organization_role(organization_id: UUID, member_id: UUID, body: OrganizationRole, user: AuthenticatedUser = Depends(get_current_user)):
+    return manage(user.user_id, 'organization_member', {
+        'organization_id': str(organization_id), 'user_id': str(member_id), 'role': body.role,
+    })
+
+
+@router.delete('/organizations/{organization_id}/members/{member_id}')
+def remove_organization_member(organization_id: UUID, member_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    result = _removal_rpc('findez_remove_organization_member', {
+        'p_actor': user.user_id, 'p_organization': str(organization_id), 'p_member': str(member_id),
+    })
+    if not isinstance(result, dict) or result.get('removed') is not True or result.get('user_id') != str(member_id):
+        raise HTTPException(503, 'Member removal could not be confirmed. Refresh before retrying.')
+    return result
+
+
+@router.post('/organizations/{organization_id}/workspaces')
+def create_project(organization_id: UUID, body: Name, user: AuthenticatedUser = Depends(get_current_user)):
+    return {'workspace': manage(user.user_id, 'workspace_create', {**body.model_dump(), 'organization_id': str(organization_id)})}
+
+
+@router.put('/inventory-workspaces/{workspace_id}/members/{member_id}')
+def assign_workspace_member(workspace_id: UUID, member_id: UUID, body: Role, user: AuthenticatedUser = Depends(get_current_user)):
+    return invite_or_change(user.user_id, 'workspace', str(workspace_id), body.role, member_id=str(member_id))
+
+
+@router.get('/inventory-workspaces/{workspace_id}/overview')
+def workspace_overview(workspace_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    workspace = _workspace(str(workspace_id), user.user_id)
+    raw = get_supabase_raw()
+    members = raw.table('team_memberships').select('user_id,role').eq('team_id', str(workspace_id)).execute().data or []
+    candidates = []
+    if workspace.get('organization_id') and workspace['role'] in ('owner', 'mentor'):
+        candidates = raw.table('app_organization_members').select('user_id,role').eq('organization_id', workspace['organization_id']).execute().data or []
+    if workspace.get('organization_id'):
+        parent_members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', workspace['organization_id']).execute().data or []
+        from app.services.permissions import workspace_roster
+        members = workspace_roster(members, parent_members)
+    # Physical location library is administration-only; inventory users see only
+    # explicit attachments through the scoped Spaces route.
+    locations = raw.table('app_physical_locations').select('*').eq('team_id', str(workspace_id)).order('created_at').execute().data if workspace['role'] in ('owner','mentor') else []
+    return {'workspace': workspace, 'members': members_with_names(members), 'candidates': members_with_names(candidates), 'locations': locations or []}
+
+
+@router.get('/inventories/{inventory_id}/access')
+def inventory_access(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    inv = _inventory(str(inventory_id), user.user_id, administration=True)
+    if not inv.get('team_id'):
+        return {'inventory': inv, 'members': members_with_names([{'user_id': user.user_id, 'role': 'owner', 'source': 'personal'}]), 'candidates': [], 'locations': []}
+    raw = get_supabase_raw()
+    members = raw.table('team_memberships').select('user_id,role').eq('team_id', inv['team_id']).execute().data or []
+    grants = raw.table('app_inventory_members').select('user_id,inventory_id,role').eq('inventory_id', str(inventory_id)).execute().data or []
+    organization_members = raw.table('app_organization_members').select('user_id,role').eq('organization_id', inv['workspace']['organization_id']).execute().data or [] if inv['workspace'].get('organization_id') else []
+    known = {m['user_id'] for m in members}
+    members += [{'user_id': m['user_id'], 'role': 'owner' if m['role'] == 'owner' else 'mentor'} for m in organization_members if m['role'] in ('owner', 'admin') and m['user_id'] not in known]
+    effective = []
+    for member in members:
+        override = next((g for g in grants if g['user_id'] == member['user_id']), None)
+        role = inventory_role(inv, {**inv['workspace'], 'role': member['role'], 'organization_role': next((m['role'] for m in organization_members if m['user_id'] == member['user_id']), None)}, member['user_id'], [override] if override else [])
+        if role or inv['can_manage']:
+            effective.append({**member, 'workspace_role': member['role'], 'role': role or 'none',
+                'override': override['role'] if override else 'inherit', 'source': 'inventory' if override else 'workspace'})
+    locations = raw.table('app_physical_locations').select('*').eq('team_id', inv['team_id']).order('created_at').execute().data if inv['can_manage'] else []
+    return {'inventory': inv, 'members': members_with_names(effective), 'locations': locations or []}
+
+
+class TransferOwner(Name):
+    user_id: UUID
+    confirmed: StrictBool
+
+
+def _transfer_owner(scope, resource, body, user):
+    if body.confirmed is not True:
+        raise HTTPException(422, 'Confirm the ownership transfer before continuing.')
+    try:
+        saved = get_supabase_raw().rpc('findez_transfer_resource_owner', {
+            'p_actor': user.user_id, 'p_scope': scope, 'p_resource': str(resource),
+            'p_target': str(body.user_id), 'p_name': body.name,
+        }).execute().data
+    except APIError as exc:
+        errors = {'42501': (403, 'Only the owner or an organization administrator can transfer ownership.'),
+                  '23514': (422, 'Choose a current member with a confirmed, active account.'),
+                  '22023': (409, 'The name changed. Reopen the transfer confirmation.'),
+                  '40P01': (409, 'Permissions are being updated. Try again.'),
+                  '40001': (409, 'Permissions changed. Refresh before trying again.')}
+        if exc.code in errors:
+            status, message = errors[exc.code]
+            raise HTTPException(status, message) from None
+        raise
+    if not isinstance(saved, dict) or saved.get('transferred') is not True or saved.get('scope') != scope or saved.get('resource_id') != str(resource) or saved.get('owner_user_id') != str(body.user_id):
+        raise HTTPException(503, 'The ownership transfer could not be confirmed. Refresh before retrying.')
+    return saved
+
+
+@router.post('/organizations/{organization_id}/transfer-owner')
+def transfer_organization_owner(organization_id: UUID, body: TransferOwner, user: AuthenticatedUser = Depends(get_current_user)):
+    return _transfer_owner('organization', organization_id, body, user)
+
+
+@router.post('/inventory-workspaces/{workspace_id}/transfer-owner')
+def transfer_workspace_owner(workspace_id: UUID, body: TransferOwner, user: AuthenticatedUser = Depends(get_current_user)):
+    return _transfer_owner('workspace', workspace_id, body, user)
+
+
+@router.patch('/inventories/{inventory_id}/access')
+def change_policy(inventory_id: UUID, body: Policy, user: AuthenticatedUser = Depends(get_current_user)):
+    return manage(user.user_id, 'inventory_policy', {**body.model_dump(), 'inventory_id': str(inventory_id)})
+
+
+@router.put('/inventories/{inventory_id}/access/{member_id}')
+def change_inventory_member(inventory_id: UUID, member_id: UUID, body: Role, user: AuthenticatedUser = Depends(get_current_user)):
+    return invite_or_change(user.user_id, 'inventory', str(inventory_id), body.role, member_id=str(member_id))
+
+
+@router.get('/inventories/{inventory_id}/audit')
+def inventory_audit(inventory_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    _inventory(str(inventory_id), user.user_id)
+    rows = get_supabase_raw().table('app_access_audit').select('*').eq('inventory_id', str(inventory_id)).order('created_at', desc=True).limit(100).execute().data or []
+    return {'activity': rows}
+
+
+@router.post('/inventory-workspaces/{workspace_id}/locations')
+def create_location(workspace_id: UUID, body: Location, user: AuthenticatedUser = Depends(get_current_user)):
+    return {'location': manage(user.user_id, 'location_create', {**body.model_dump(mode='json'), 'team_id': str(workspace_id)})}
+
+
+@router.post('/inventories/{inventory_id}/locations')
+def attach_location(inventory_id: UUID, body: AttachLocation, user: AuthenticatedUser = Depends(get_current_user)):
+    return {'space': manage(user.user_id, 'location_attach', {**body.model_dump(mode='json'), 'inventory_id': str(inventory_id)})}
+
+
+@router.post('/organizations/{organization_id}/workspaces/{workspace_id}')
+def attach_workspace(organization_id: UUID, workspace_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    return manage(user.user_id, 'workspace_attach', {'organization_id': str(organization_id), 'team_id': str(workspace_id)})
+
+
+@router.get('/inventory-workspaces/{workspace_id}/audit')
+def workspace_audit(workspace_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    workspace = _workspace(str(workspace_id), user.user_id)
+    raw = get_supabase_raw()
+    rows = raw.table('app_access_audit').select('*').eq('team_id', str(workspace_id)).order('created_at', desc=True).limit(100).execute().data or []
+    visible = []
+    for row in rows:
+        if row.get('inventory_id'):
+            try:
+                _inventory(row['inventory_id'], user.user_id)
+            except HTTPException as exc:
+                if exc.status_code in (403, 404):
+                    continue
+                raise
+        visible.append(row)
+    return {'activity': visible}
+
+
+RemovalKind = Literal['organization', 'workspace', 'inventory', 'space']
+
+
+def _removal_rpc(function, params):
+    try:
+        return get_supabase_raw().rpc(function, params).execute().data
+    except APIError as exc:
+        errors = {
+            '42501': (403, 'You cannot make this change. Admins cannot remove the organization Owner.'),
+            'P0002': (404, 'This resource is no longer available.'),
+            '22023': (409, 'Choose an available destination and reopen the confirmation.'),
+            '40001': (409, 'The resource changed. Reopen the confirmation.'),
+            '40P01': (409, 'Another update is in progress. Try again.'),
+            '23505': (409, 'A destination already uses this name. Choose another destination.'),
+            '23514': (409, 'The contents changed. Reopen the confirmation before trying again.'),
+            '23503': (409, 'The contents changed. Reopen the confirmation before trying again.'),
+            'PGRST202': (503, 'This update is not available yet. Please try again later.'),
+        }
+        status, message = errors.get(exc.code, (503, 'The change could not be saved. Please try again.'))
+        raise HTTPException(status, message) from None
+
+
+class ResourceRemoval(Name):
+    action: Literal['move', 'delete']
+    destination_id: UUID | None = None
+    model_config = {'extra': 'forbid'}
+
+
+@router.get('/resource-removal/{kind}/{resource_id}')
+def removal_preview(kind: RemovalKind, resource_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    result = _removal_rpc('findez_removal_preview', {'p_actor': user.user_id, 'p_kind': kind, 'p_id': str(resource_id)})
+    if not isinstance(result, dict) or result.get('id') != str(resource_id) or result.get('kind') != kind:
+        raise HTTPException(503, 'The contents could not be checked. Try again.')
+    return result
+
+
+@router.post('/resource-removal/{kind}/{resource_id}')
+def remove_resource(kind: RemovalKind, resource_id: UUID, body: ResourceRemoval, background_tasks: BackgroundTasks,
+                    user: AuthenticatedUser = Depends(get_current_user)):
+    result = _removal_rpc('findez_remove_resource', {
+        'p_actor': user.user_id, 'p_kind': kind, 'p_id': str(resource_id), 'p_name': body.name,
+        'p_action': body.action, 'p_destination': str(body.destination_id) if body.destination_id else None,
+    })
+    if not isinstance(result, dict) or result.get('id') != str(resource_id) or result.get('kind') != kind or result.get('action') != body.action or result.get('deleted') is not True and result.get('moved') is not True:
+        raise HTTPException(503, 'The change could not be confirmed. Refresh before retrying.')
+    from app.services.items_repo import invalidate_inventory_cache
+    invalidate_inventory_cache(user.user_id)
+    from app.services.deletion_cleanup import clean_inventory_files
+    for inventory_id in result.get('cleanup_inventories', []):
+        background_tasks.add_task(clean_inventory_files, str(UUID(inventory_id)))
+    return result

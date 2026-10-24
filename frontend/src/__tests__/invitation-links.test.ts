@@ -3,6 +3,7 @@ import LegacySpaceInvitationPage from "@/app/join/page";
 import { generateMetadata as spaceMetadata } from "@/app/join/[code]/page";
 import { generateMetadata as teamMetadata } from "@/app/join/team/[code]/page";
 import { APP_STORE_URL, invitationAppSchemeLink, invitationUniversalLink, isIosDevice } from "@/lib/app-store";
+import { invitationHandoff, normalizeInvitationCode } from "@/lib/invitation";
 
 jest.mock("next/navigation", () => ({ redirect: jest.fn(), useRouter: () => ({ replace: jest.fn() }) }));
 
@@ -32,4 +33,11 @@ test("invitation pages advertise the app with the invitation as the Smart App Ba
   expect(team.itunes).toEqual({ appId: "6760401697", appArgument: "https://www.findez.ai/join/team/TEAM12" });
   const invalid = await spaceMetadata({ params: Promise.resolve({ code: "x" }) });
   expect(invalid.itunes).toEqual({ appId: "6760401697" });
+});
+
+test("malformed or overlong codes cannot be normalized into another invitation", () => {
+  for (const code of ["ABC123extra", "ABC!23", "ABC123/", "ABC%23"]) expect(normalizeInvitationCode(code)).toBe("");
+  expect(normalizeInvitationCode("abc123")).toBe("ABC123");
+  expect(invitationHandoff("/join/ABC123?download=1", 100)).toEqual({ v: 1, kind: "space", code: "ABC123", created_at: 100 });
+  for (const path of ["//evil.test/join/ABC123", "/join/ABC123extra", "/join/ABC123?role=owner", "/join/team/ABC123/extra"]) expect(invitationHandoff(path)).toBeNull();
 });

@@ -1,6 +1,7 @@
 
 from datetime import datetime, timezone
 import logging
+import json
 import re
 import threading as _threading
 import time
@@ -10,6 +11,8 @@ import httpx
 
 from app.services.supabase_client import get_supabase_admin
 from app.services.spaces_repo import SpaceLimitExceeded, count_spaces, get_or_create_space
+from app.services.inventory_scope import current_inventory, inventory_cache_key
+from fastapi import HTTPException
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +24,7 @@ _CACHE_TTL = 60  # seconds
 
 def _get_cached_inventory(user_id: str) -> list | None:
     with _CACHE_LOCK:
-        entry = _INVENTORY_CACHE.get(user_id)
+        entry = _INVENTORY_CACHE.get(inventory_cache_key(user_id))
         if entry and (time.time() - entry[1]) < _CACHE_TTL:
             return entry[0]
     return None
@@ -29,12 +32,14 @@ def _get_cached_inventory(user_id: str) -> list | None:
 
 def _set_cached_inventory(user_id: str, items: list) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE[user_id] = (items, time.time())
+        _INVENTORY_CACHE[inventory_cache_key(user_id)] = (items, time.time())
 
 
 def invalidate_inventory_cache(user_id: str) -> None:
     with _CACHE_LOCK:
-        _INVENTORY_CACHE.pop(user_id, None)
+        for key in list(_INVENTORY_CACHE):
+            if key == user_id or ':' in key:
+                _INVENTORY_CACHE.pop(key, None)
 
 
 def _singularize_word(word: str) -> str:
@@ -154,6 +159,8 @@ def _resolve_space_id(*, user_id: str, location: str) -> str | None:
         return space.get("id") if space else None
     except SpaceLimitExceeded:
         raise
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Failed to resolve space for location %s", loc)
         return None
@@ -213,12 +220,33 @@ def list_items(*, user_id: str) -> list[dict]:
     if cached is not None:
         return cached
     supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
-    )
-    items = resp.data or []
+    items = []
+    if current_inventory.get():
+        # PostgREST caps each response. Walk the selected inventory, with a
+        # stable tie breaker, so large inventories are actually searchable.
+        offset = 0
+        while True:
+            resp = _execute_with_retry(lambda: supabase.table("items").select("*").eq("user_id", user_id)
+                .order("created_at", desc=True).order("item_id").range(offset, offset + 499).execute())
+            page = resp.data or []
+            items.extend(page)
+            if len(page) < 500:
+                break
+            offset += len(page)
+    else:
+        resp = _execute_with_retry(
+            lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        )
+        items = resp.data or []
     _set_cached_inventory(user_id, items)
     return items
+
+
+def _bulk_item_key(item: dict) -> str:
+    key = f"{_normalize_item_name(str(item.get('name') or ''))}::{str(item.get('location') or '').strip().lower()}"
+    if item.get('import_data'):
+        key += '::' + json.dumps(item['import_data'], sort_keys=True, ensure_ascii=False)
+    return key
 
 
 def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -233,7 +261,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             continue
         n = _normalize_item_name(str(it.get("name") or ""))
         if n:
-            key = f"{n}::{(it.get('location') or '').strip().lower()}"
+            key = _bulk_item_key(it)
             if key not in existing_by_norm:
                 existing_by_norm[key] = it
 
@@ -270,6 +298,9 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             failures.append({"index": idx, "reason": "invalid name"})
             continue
 
+        if it.get('import_data'):
+            norm = _bulk_item_key(it)
+
         if norm not in aggregated:
             aggregated[norm] = {
                 "name": name,
@@ -284,6 +315,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": it.get("barcode"),
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
+                "import_data": it.get("import_data"),
                 "catalog_id": None,
             }
             aggregated_qty[norm] = 0
@@ -330,7 +362,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 catalog_id=str(base["catalog_id"]),
             )
 
-        existing = existing_by_norm.get(f"{norm}::{loc_key}")
+        existing = existing_by_norm.get(_bulk_item_key(base))
         if existing and isinstance(existing, dict):
             item_id = str(existing.get("item_id") or "")
             if not item_id:
@@ -372,6 +404,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": base.get("barcode"),
                 "purchase_source": base.get("purchase_source"),
                 "notes": base.get("notes"),
+                **({"import_data": base["import_data"]} if base.get("import_data") else {}),
                 "catalog_id": base.get("catalog_id"),
             }
         )
@@ -475,6 +508,9 @@ def delete_item(*, user_id: str, item_id: str) -> bool:
 
 def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     supabase = get_supabase_admin()
+    if current_inventory.get():
+        # Validate before creating a location or changing any related record.
+        supabase.record('items','item_id',item_id)
 
     allowed = {
         "name",
@@ -555,6 +591,11 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     q = (q or "").strip()
     if not q:
         return list_items(user_id=user_id)
+    if current_inventory.get():
+        from app.services.item_search import score_item, match_basis
+        ranked = [(score_item(item, q), item) for item in list_items(user_id=user_id)]
+        ranked.sort(key=lambda pair: pair[0], reverse=True)
+        return [{**item, '_match_basis': match_basis(score)} for score, item in ranked if score]
 
     supabase = get_supabase_admin()
     pattern = f"%{q}%"
@@ -579,6 +620,77 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     )
 
     return resp.data or []
+
+
+def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501) -> dict:
+    """Search authorized pages before limiting matches, with a bounded scan.
+
+    A SQL substring prefilter loses typos, formatting variants and imported
+    fields. Scan up to 10,000 scoped records, keeping one extra match as a
+    completeness sentinel. No user text enters PostgREST grammar.
+    """
+    from app.services.item_search import score_item
+    limit = min(max(limit, 2), 501)
+    client = get_supabase_admin()
+    matches = []
+    text = ' '.join(terms)
+    for offset in range(0, 10000, 500):
+        response = _execute_with_retry(lambda: client.table('items').select('*').eq('user_id', user_id)
+            .order('created_at', desc=True).order('item_id').range(offset, offset + 499).execute())
+        page = response.data or []
+        for row in page:
+            if score_item(row, text):
+                matches.append(row)
+                if len(matches) >= limit:
+                    return {'items': matches[:limit - 1], 'truncated': True}
+        if len(page) < 500:
+            return {'items': matches, 'truncated': False}
+    return {'items': matches, 'truncated': True}
+
+
+def update_item_from_chat(*, user_id: str, item_id: str, updates: dict,
+                          expected_item: dict | None = None) -> dict | None:
+    """One compare-and-set for literal chat edits; no inferred identity/stock writes.
+
+    The established general item editor remains unchanged. Unknown write outcomes
+    are not retried, and the old snapshot cannot overwrite concurrent changes.
+    """
+    if not updates or set(updates) - {'name', 'category', 'location', 'notes'}:
+        raise ValueError('Use the item editor for this change')
+    limits = {'name': 200, 'category': 100, 'location': 200, 'notes': 2000}
+    if any(not isinstance(value, str) or not value.strip() or len(value) > limits[key]
+           for key, value in updates.items()):
+        raise ValueError('Invalid item field')
+    client = get_supabase_admin()
+    rows = client.table('items').select('*').eq('user_id', user_id).eq('item_id', item_id).limit(1).execute().data or []
+    if not rows:
+        return None
+    before = rows[0]
+    compared = ('name', 'category', 'location', 'space_id', 'notes', 'quantity')
+    if expected_item is not None and (expected_item.get('item_id') != item_id or any(
+        expected_item.get(key) != before.get(key) for key in compared
+    )):
+        invalidate_inventory_cache(user_id)
+        return None
+    payload = dict(updates)
+    if 'location' in payload:
+        from app.services.spaces_repo import list_spaces
+        spaces = [s for s in list_spaces(user_id=user_id)
+                  if str(s.get('name') or '').casefold() == payload['location'].casefold()]
+        if len(spaces) != 1:
+            raise ValueError('Choose one existing space')
+        payload['location'], payload['space_id'] = spaces[0]['name'], spaces[0]['id']
+    if all(before.get(k) == v for k, v in payload.items()):
+        return before  # A replay of the same absolute edit is already satisfied.
+    query = client.table('items').update(payload).eq('user_id', user_id).eq('item_id', item_id)
+    for key in compared:
+        value = before.get(key)
+        query = query.is_(key, 'null') if value is None else query.eq(key, value)
+    try:
+        result = query.execute().data or []
+        return result[0] if result else None
+    finally:
+        invalidate_inventory_cache(user_id)
 
 
 def _merge_by_item_id(primary: list[dict], secondary: list[dict]) -> list[dict]:

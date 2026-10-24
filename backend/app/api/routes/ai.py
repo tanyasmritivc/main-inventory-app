@@ -1,9 +1,10 @@
 import asyncio
 import json as json_module
 import logging
+from contextvars import copy_context
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -12,8 +13,6 @@ from app.core.limiter import limiter
 from app.schemas.ai import AICommandRequest, AICommandResponse
 from app.services.ai_agent import (
     iter_ai_command_events_async,
-    iter_ai_command_sse,
-    iter_ai_command_sse_async,
     run_ai_command,
 )
 from app.services.ai_memory import (
@@ -24,220 +23,194 @@ from app.services.ai_memory import (
     save_conversation,
 )
 from app.services.documents_repo import create_activity
+from app.services.ask_photo_questions import answer_photo_question, remember_photo_answer
+from app.services.find_pipeline import FindPipelineError
+from app.services.item_photos import MAX_ITEM_PHOTO_BYTES, _jpeg_bytes
 from app.services.ai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
-from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat
+from app.services.limits import ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat, check_and_increment_scan
 
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
 
 
-def _wrap_sse(gen):
-    done_sent = False
-    try:
-        for chunk in gen:
-            if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
-                done_sent = True
-            yield chunk
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            yield 'event: end\n'
-            yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
+def _authorized_stream(iterator):
+    """Retain only server-validated scope after yield dependencies exit.
 
+    FastAPI versions can finish request dependencies before consuming the body.
+    Context is installed in the consuming task, not trusted from client IDs.
+    """
+    from app.services.inventory_scope import current_inventory
+    from app.services.resource_access import ActorAccess, request_actor
+    inventory = current_inventory.get()
+    actor = request_actor.get()
+    actor_id = actor.actor_id if actor else None
 
-def _wrap_sse_with_conv(gen, conversation_id: str):
-    """SSE wrapper that buffers assistant text and persists messages to the DB."""
-    client = get_supabase_admin()
-    done_sent = False
-    delta_buffer: list[str] = []
-
-    try:
-        for chunk in gen:
-            if not isinstance(chunk, str):
+    async def consume():
+        inventory_token = current_inventory.set(inventory)
+        actor_token = request_actor.set(ActorAccess(actor_id) if actor_id else None)
+        try:
+            async for chunk in iterator:
                 yield chunk
-                continue
-
-            is_done = '"type": "done"' in chunk or '"type":"done"' in chunk
-            is_delta = '"type": "delta"' in chunk or '"type":"delta"' in chunk
-
-            if is_delta:
-                for line in chunk.split('\n'):
-                    if line.startswith('data:'):
-                        try:
-                            evt = json_module.loads(line[5:].strip())
-                            d = evt.get('delta') or ''
-                            if d:
-                                delta_buffer.append(d)
-                        except Exception:
-                            pass
-
-            if is_done:
-                done_sent = True
-                assistant_text = ''.join(delta_buffer)
-                intercepted = False
-                for line in chunk.split('\n'):
-                    if not line.startswith('data:'):
-                        continue
-                    try:
-                        evt = json_module.loads(line[5:].strip())
-                        if evt.get('type') != 'done':
-                            continue
-                        full_msg = assistant_text or evt.get('assistant_message') or ''
-                        try:
-                            client.table("messages").insert({
-                                "conversation_id": conversation_id,
-                                "role": "assistant",
-                                "content": full_msg,
-                            }).execute()
-                            client.table("conversations").update({
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }).eq("id", conversation_id).execute()
-                        except Exception:
-                            logger.exception("Failed to persist assistant message")
-                        evt['conversation_id'] = conversation_id
-                        yield f'data: {json_module.dumps(evt)}\n\n'
-                        intercepted = True
-                        break
-                    except Exception:
-                        pass
-                if not intercepted:
-                    yield chunk
-                continue
-
-            yield chunk
-
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            assistant_text = ''.join(delta_buffer)
+        finally:
             try:
-                client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "role": "assistant",
-                    "content": assistant_text,
-                }).execute()
-                client.table("conversations").update({
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", conversation_id).execute()
-            except Exception:
-                logger.exception("Failed to persist assistant message in fallback")
-            done_evt = {
-                "type": "done",
-                "tool": None,
-                "result": None,
-                "assistant_message": assistant_text or "Let me think about that...",
-                "conversation_id": conversation_id,
-            }
-            yield 'event: end\n'
-            yield f'data: {json_module.dumps(done_evt)}\n\n'
+                await iterator.aclose()
+            finally:
+                request_actor.reset(actor_token)
+                current_inventory.reset(inventory_token)
+    return consume()
 
 
-async def _wrap_sse_async(async_gen):
-    """Async version of _wrap_sse — passes through chunks from an async generator."""
-    done_sent = False
-    try:
-        async for chunk in async_gen:
-            if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
-                done_sent = True
-            yield chunk
-    except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            yield 'event: end\n'
-            yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
+def _authorized_background(function, *args):
+    context = copy_context()
+    async def run():
+        await asyncio.create_task(function(*args), context=context.copy())
+    return run
 
 
-async def _wrap_sse_with_conv_async(async_gen, conversation_id: str):
-    """Async SSE wrapper that buffers assistant text and persists messages to DB."""
+def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: str | None) -> str:
     client = get_supabase_admin()
-    done_sent = False
-    delta_buffer: list[str] = []
+    if conversation_id:
+        rows = client.table('conversations').select('id').eq('id', conversation_id).eq('user_id', user_id).limit(1).execute().data
+        if not rows:
+            raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+    else:
+        rows = client.table('conversations').insert({'user_id': user_id, 'title': message[:60]}).execute().data
+        conversation_id = ((rows or [{}])[0]).get('id')
+        if not conversation_id:
+            raise RuntimeError('Conversation insert returned no identity')
+    client.table('messages').insert({'conversation_id': conversation_id, 'role': 'user', 'content': message}).execute()
+    return conversation_id
 
+
+def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
+    client = get_supabase_admin()
+    record = {
+        'conversation_id': conversation_id, 'role': 'assistant',
+        'content': answer['assistant_message'], 'answer_context': answer.get('answer_context'),
+    }
+    if (answer.get('answer_context') or {}).get('pending_actions'):
+        # A review card is actionable only after its exact frozen payload is
+        # durable. A stable identity also reconciles a lost insert response.
+        from uuid import uuid4
+        record['id'] = str(uuid4())
+        def saved():
+            rows = client.table('messages').select('id,content,answer_context').eq('id', record['id']).eq('conversation_id', conversation_id).limit(1).execute().data
+            return isinstance(rows, list) and len(rows) == 1 and all(rows[0].get(key) == record[key] for key in ('id', 'content', 'answer_context'))
+        try:
+            client.table('messages').insert(record).execute()
+        except Exception:
+            if not saved():
+                raise RuntimeError('The Chat review could not be saved') from None
+        if not saved():
+            raise RuntimeError('The Chat review could not be verified')
+    else:
+        client.table('messages').insert(record).execute()
+    client.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).execute()
+
+
+@router.post('/ai_photo_question', response_model=None)
+@limiter.limit('10/minute')
+async def ai_photo_question_route(
+    request: Request,
+    file: UploadFile = File(...),
+    message: str = Form('What is in this photo? Do I already have it?', max_length=2000),
+    conversation_id: str | None = Form(None, max_length=100),
+    supports_item_actions: bool = Form(False),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> StreamingResponse:
+    raw = await file.read(MAX_ITEM_PHOTO_BYTES + 1)
+    if len(raw) > MAX_ITEM_PHOTO_BYTES:
+        raise HTTPException(413, 'Choose a photo smaller than 10 MB.')
     try:
-        async for chunk in async_gen:
-            if not isinstance(chunk, str):
-                yield chunk
-                continue
-
-            is_done = '"type": "done"' in chunk or '"type":"done"' in chunk
-            is_delta = '"type": "delta"' in chunk or '"type":"delta"' in chunk
-
-            if is_delta:
-                for line in chunk.split('\n'):
-                    if line.startswith('data:'):
-                        try:
-                            evt = json_module.loads(line[5:].strip())
-                            d = evt.get('delta') or ''
-                            if d:
-                                delta_buffer.append(d)
-                        except Exception:
-                            pass
-
-            if is_done:
-                done_sent = True
-                assistant_text = ''.join(delta_buffer)
-                intercepted = False
-                for line in chunk.split('\n'):
-                    if not line.startswith('data:'):
-                        continue
-                    try:
-                        evt = json_module.loads(line[5:].strip())
-                        if evt.get('type') != 'done':
-                            continue
-                        full_msg = assistant_text or evt.get('assistant_message') or ''
-                        try:
-                            client.table("messages").insert({
-                                "conversation_id": conversation_id,
-                                "role": "assistant",
-                                "content": full_msg,
-                            }).execute()
-                            client.table("conversations").update({
-                                "updated_at": datetime.now(timezone.utc).isoformat(),
-                            }).eq("id", conversation_id).execute()
-                        except Exception:
-                            logger.exception("Failed to persist assistant message")
-                        evt['conversation_id'] = conversation_id
-                        yield f'data: {json_module.dumps(evt)}\n\n'
-                        intercepted = True
-                        break
-                    except Exception:
-                        pass
-                if not intercepted:
-                    yield chunk
-                continue
-
-            yield chunk
-
+        jpeg = await asyncio.to_thread(_jpeg_bytes, raw)
+    except ValueError:
+        raise bad_request('Choose a valid photo smaller than 10 MB and 25 megapixels.')
+    question = message.strip() or 'What is in this photo? Do I already have it?'
+    if conversation_id:
+        def check_owner():
+            rows = get_supabase_admin().table('conversations').select('id').eq('id', conversation_id).eq('user_id', user.user_id).limit(1).execute().data
+            if not rows:
+                raise HTTPException(404, 'This conversation is unavailable. Start a new chat.')
+        try:
+            await asyncio.to_thread(check_owner)
+        except HTTPException:
+            raise
+        except Exception:
+            raise bad_gateway('Your conversation could not be checked. Please try again.')
+    try:
+        await asyncio.to_thread(check_and_increment_scan, user.user_id)
+        await asyncio.to_thread(check_and_increment_chat, user.user_id)
+    except (ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded):
+        raise HTTPException(403, 'Your account photo or chat limit has been reached.')
     except Exception:
-        logger.exception("AI command stream generator failed")
-    finally:
-        if not done_sent:
-            assistant_text = ''.join(delta_buffer)
+        raise bad_gateway('Your account limits could not be checked. Please try again.')
+    try:
+        conv_id = await asyncio.to_thread(_prepare_ask_conversation, user_id=user.user_id, message=question, conversation_id=conversation_id)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception('Could not save the photo question')
+        raise bad_gateway('Your photo question could not be saved. Please try again.')
+
+    effective_user_id = user.user_id
+    async def generate():
+        chunks = asyncio.Queue(maxsize=32)
+        async def on_delta(text):
+            await chunks.put(text)
+        async def on_reset():
+            await chunks.put(None)
+        task = asyncio.create_task(answer_photo_question(user_id=effective_user_id, message=question, image_bytes=jpeg, on_delta=on_delta, on_reset=on_reset, allow_item_actions=supports_item_actions))
+        try:
+            yield b'data: {"type":"status","message":"Reading your photo..."}\n\n'
+            while not task.done() or not chunks.empty():
+                try:
+                    text = await asyncio.wait_for(chunks.get(), timeout=.1)
+                    if text is None:
+                        yield b'data: {"type":"reset"}\n\n'
+                    else:
+                        yield f"data: {json_module.dumps({'type': 'delta', 'delta': text})}\n\n".encode()
+                except asyncio.TimeoutError:
+                    continue
+            answer = await task
             try:
-                client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "role": "assistant",
-                    "content": assistant_text,
-                }).execute()
-                client.table("conversations").update({
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", conversation_id).execute()
+                await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
             except Exception:
-                logger.exception("Failed to persist assistant message in fallback")
-            done_evt = {
-                "type": "done",
-                "tool": None,
-                "result": None,
-                "assistant_message": assistant_text or "Let me think about that...",
-                "conversation_id": conversation_id,
-            }
-            yield 'event: end\n'
-            yield f'data: {json_module.dumps(done_evt)}\n\n'
+                logger.exception('Photo answer snapshot could not be saved')
+                yield b'data: {"type":"error","code":"history_save_failed"}\n\n'
+                yield b'data: [DONE]\n\n'
+                return
+            try:
+                await asyncio.to_thread(remember_photo_answer, user_id=effective_user_id, message=question, answer=answer['assistant_message'])
+            except Exception:
+                logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
+            yield f"data: {json_module.dumps({'type': 'done', 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except FindPipelineError as exc:
+            code = 'photo_timeout' if exc.status_code == 504 else 'photo_failed'
+            yield f"data: {json_module.dumps({'type': 'error', 'code': code})}\n\n".encode()
+            yield b'data: [DONE]\n\n'
+        except Exception:
+            logger.exception('Photo question could not be completed')
+            yield b'data: {"type":"error","code":"photo_failed"}\n\n'
+            yield b'data: [DONE]\n\n'
+        finally:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+    return StreamingResponse(_authorized_stream(generate()), media_type='text/event-stream', headers={'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no'})
+
+
+
+
+
+
+
+
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
@@ -278,9 +251,12 @@ async def ai_command_route(
     accept = (request.headers.get("accept") or "").lower()
     wants_stream = bool(stream) or ("text/event-stream" in accept)
 
+    if payload.supports_item_actions and not wants_stream:
+        raise bad_request('Chat item review requires the streaming Chat connection.')
+
     if wants_stream:
         try:
-            # Setup conversation persistence (best-effort — AI always works even if DB fails)
+            # Never silently claim an answer was saved if its history write fails.
             conv_id: str | None = payload.conversation_id
             try:
                 supabase = get_supabase_admin()
@@ -294,7 +270,7 @@ async def ai_command_route(
                         .execute()
                     )
                     if not check.data:
-                        conv_id = None
+                        raise HTTPException(404, 'This conversation no longer exists or is not accessible. Start a new chat.')
                 if not conv_id:
                     title = payload.message[:60]
                     res = (
@@ -303,15 +279,19 @@ async def ai_command_route(
                         .execute()
                     )
                     conv_id = ((res.data or [{}])[0]).get("id")
+                    if not conv_id:
+                        raise RuntimeError('Conversation insert returned no identity')
                 if conv_id:
                     supabase.table("messages").insert({
                         "conversation_id": conv_id,
                         "role": "user",
                         "content": payload.message,
                     }).execute()
+            except HTTPException:
+                raise
             except Exception:
-                logger.exception("Failed to setup conversation — continuing without persistence")
-                conv_id = None
+                logger.exception("Failed to set up conversation history")
+                raise bad_gateway("Your chat could not be saved. Please try again.")
 
             # Fetch memory context (best-effort — failures are silent)
             memory_context = ""
@@ -328,16 +308,18 @@ async def ai_command_route(
                 logger.exception("Memory context fetch failed — continuing without")
                 memory_context = ""
 
+            effective_user_id, first_name = user.user_id, user.first_name
             async def generate():
                 delta_buffer: list[str] = []
                 try:
                     async for item in iter_ai_command_events_async(
-                        user_id=user.user_id,
+                        user_id=effective_user_id,
                         message=payload.message,
-                        first_name=user.first_name,
+                        first_name=first_name,
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
                         conversation_id=conv_id,
+                        allow_item_actions=payload.supports_item_actions,
                     ):
                         if item.get("type") == "delta":
                             content = item.get("delta") or ""
@@ -346,35 +328,36 @@ async def ai_command_route(
                                 data = f"data: {json_module.dumps({'content': content})}\n\n"
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
+                        elif item.get("type") == "reset":
+                            delta_buffer.clear()
+                            yield b'data: {"type":"reset"}\n\n'
                         elif item.get("type") == "done":
-                            full_response = "".join(delta_buffer)
+                            full_response = item.get("assistant_message") or "".join(delta_buffer)
+                            if not full_response:
+                                raise RuntimeError("The model returned no completed answer")
+                            answer_context = item.get("answer_context")
                             if conv_id:
                                 try:
-                                    sb = get_supabase_admin()
-                                    sb.table("messages").insert({
-                                        "conversation_id": conv_id,
-                                        "role": "assistant",
-                                        "content": full_response or "Let me think about that...",
-                                    }).execute()
-                                    sb.table("conversations").update({
-                                        "updated_at": datetime.now(timezone.utc).isoformat(),
-                                    }).eq("id", conv_id).execute()
+                                    await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer={
+                                        'assistant_message': full_response, 'answer_context': answer_context})
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
-                            asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
-                            asyncio.create_task(log_query(user.user_id, payload.message))
-                            asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
+                                    yield b'data: {"type":"error","error":"Your answer could not be saved. Please try again."}\n\n'
+                                    yield b"data: [DONE]\n\n"
+                                    return
+                            asyncio.create_task(extract_and_save_memory(effective_user_id, payload.message, full_response))
+                            asyncio.create_task(log_query(effective_user_id, payload.message))
+                            asyncio.create_task(save_conversation(effective_user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
-                            if nav_hint:
-                                yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
+                            yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
-                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    yield b'data: {"type":"error","error":"Ask is temporarily unavailable. Please try again."}\n\n'
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
-                generate(),
+                _authorized_stream(generate()),
                 media_type="text/event-stream",
                 headers={
                     "X-Accel-Buffering": "no",
@@ -382,6 +365,8 @@ async def ai_command_route(
                     "Connection": "keep-alive",
                 },
             )
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("AI command stream failed")
             raise bad_gateway("AI temporarily unavailable. Please try again.")
@@ -408,14 +393,17 @@ async def ai_command_route(
         logger.exception("Failed to write ai_chat activity")
 
     assistant_message = out.get("assistant_message") or ""
-    background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
-    background_tasks.add_task(log_query, user.user_id, payload.message)
-    background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
+    if not assistant_message:
+        raise bad_gateway("AI temporarily unavailable. Please try again.")
+    background_tasks.add_task(_authorized_background(extract_and_save_memory, user.user_id, payload.message, assistant_message))
+    background_tasks.add_task(_authorized_background(log_query, user.user_id, payload.message))
+    background_tasks.add_task(_authorized_background(save_conversation, user.user_id, payload.message, assistant_message))
 
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),
-        assistant_message=assistant_message or "Let me think about that...",
+        assistant_message=assistant_message,
+        answer_context=out.get("answer_context"),
     )
 
 
@@ -449,7 +437,7 @@ def ai_upload_route(
         finally:
             if not done_sent:
                 yield 'event: end\n'
-                yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
+                yield 'data: {"type":"error","error":"File analysis could not be completed. Please try again."}\n\n'
 
     gen = iter_assist_file_analysis_sse(
         filename=file.filename or "upload",
@@ -466,3 +454,34 @@ def ai_upload_route(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+from typing import Literal
+from uuid import UUID
+from pydantic import BaseModel
+
+
+class ChatActionDecision(BaseModel):
+    decision: Literal['confirm', 'cancel']
+
+
+@router.get('/ai_actions/{action_id}')
+async def chat_action_status(action_id: UUID, user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_item_actions import change_action
+    return await asyncio.to_thread(change_action, actor=user.actor_id or user.user_id, action_id=str(action_id), decision='read')
+
+
+@router.post('/ai_actions/{action_id}')
+@limiter.limit('20/minute')
+async def chat_action_decision(request: Request, action_id: UUID, payload: ChatActionDecision,
+                               user: AuthenticatedUser = Depends(get_current_user)):
+    from app.services.chat_item_actions import change_action, completed_reply
+    action = await asyncio.to_thread(change_action, actor=user.actor_id or user.user_id, action_id=str(action_id), decision=payload.decision)
+    if action['status'] == 'confirmed':
+        try:
+            text, reply_id = await asyncio.to_thread(completed_reply, actor=user.actor_id or user.user_id, action=action)
+            return {'action': action, 'assistant_message': text, 'reply_id': reply_id}
+        except Exception:
+            logger.warning('Confirmed Chat item receipt retained; model/history reply unavailable')
+            return {'action': action, 'answer_error': 'The item change is confirmed, but its AI reply could not load. Retry this same card to load the answer safely.'}
+    return {'action': action}

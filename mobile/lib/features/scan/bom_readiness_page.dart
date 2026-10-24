@@ -1,3 +1,4 @@
+import '../../core/app_theme.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class BomReadinessPage extends StatefulWidget {
   const BomReadinessPage({
@@ -86,20 +88,20 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         .join('\n');
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Missing-parts list copied.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: AppText('Missing-parts list copied.')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final result = _result;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.adaptive(context, Colors.black),
       appBar: AppBar(
-        title: const Text('Build Readiness'),
+        title: const AppText('Build Readiness'),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
       ),
       body: SafeArea(
         child: result == null ? _emptyView() : _resultsView(result),
@@ -112,37 +114,39 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(
+        Icon(
           Icons.fact_check_outlined,
           size: 68,
-          color: Color(0xFF6997DD),
+          color: AppTheme.foreground(context, Color(0xFF6997DD)),
         ),
         const SizedBox(height: 20),
-        const Text(
+        AppText(
           'Can you build it today?',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white,
+            color: AppTheme.foreground(context, Colors.white),
             fontSize: 26,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 10),
-        Text(
+        AppText(
           'Choose a BOM to compare every required part with ${widget.location}. Your inventory will not be changed.',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white60,
+          style: TextStyle(
+            color: AppTheme.foreground(context, Colors.white60),
             fontSize: 16,
             height: 1.4,
           ),
         ),
         if (_error != null) ...[
           const SizedBox(height: 18),
-          Text(
+          AppText(
             _error!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.danger),
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.danger),
+            ),
           ),
         ],
         const SizedBox(height: 28),
@@ -155,12 +159,15 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.upload_file),
-          label: Text(_loading ? 'Analyzing…' : 'Choose BOM'),
+          label: AppText(_loading ? 'Analyzing…' : 'Choose BOM'),
         ),
         const SizedBox(height: 12),
-        const Text(
+        AppText(
           'Supported columns: Name or Part Number, and Quantity',
-          style: TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(
+            color: AppTheme.foreground(context, Colors.white38),
+            fontSize: 12,
+          ),
         ),
       ],
     ),
@@ -179,57 +186,71 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: AppTheme.adaptive(context, const Color(0xFF171717)),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
               children: [
-                Text(
+                AppText(
                   '${summary.readinessPercent}%',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontSize: 40,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                Text(
+                AppText(
                   'ready in ${result.location}',
-                  style: const TextStyle(color: Colors.white60, fontSize: 15),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white60),
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 LinearProgressIndicator(
                   value: summary.readinessPercent / 100,
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(8),
-                  backgroundColor: Colors.white12,
+                  backgroundColor: AppTheme.adaptive(context, Colors.white12),
                   color: summary.readinessPercent == 100
-                      ? AppColors.success
-                      : const Color(0xFF6997DD),
+                      ? AppTheme.adaptive(context, AppColors.success)
+                      : AppTheme.adaptive(context, const Color(0xFF6997DD)),
                 ),
                 const SizedBox(height: 12),
-                Text(
+                AppText(
                   '${summary.readyLines} ready · ${summary.partialLines} partial · ${summary.missingLines} missing',
-                  style: const TextStyle(color: Colors.white54),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white54),
+                  ),
                 ),
               ],
             ),
           ),
         ),
         if (_error != null)
-          Text(_error!, style: const TextStyle(color: AppColors.danger)),
+          AppText(
+            _error!,
+            style: TextStyle(
+              color: AppTheme.foreground(context, AppColors.danger),
+            ),
+          ),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
             itemCount: result.items.length,
-            separatorBuilder: (_, _) =>
-                const Divider(color: Colors.white12, height: 1),
+            separatorBuilder: (_, _) => Divider(
+              color: AppTheme.adaptive(context, Colors.white12),
+              height: 1,
+            ),
             itemBuilder: (_, index) {
               final item = result.items[index];
               final ready = item.status == 'ready';
               final partial = item.status == 'partial';
               final color = ready
-                  ? AppColors.success
-                  : (partial ? AppColors.warning : AppColors.danger);
+                  ? AppTheme.adaptive(context, AppColors.success)
+                  : (partial
+                        ? AppTheme.adaptive(context, AppColors.warning)
+                        : AppTheme.adaptive(context, AppColors.danger));
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(vertical: 5),
                 leading: Icon(
@@ -238,21 +259,23 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                       : (partial ? Icons.timelapse : Icons.cancel),
                   color: color,
                 ),
-                title: Text(
+                title: AppText(
                   item.partNumber ?? item.name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   [
                     if (item.partNumber != null) item.name,
                     if (item.brand != null) item.brand!,
                   ].join(' · '),
-                  style: const TextStyle(color: Colors.white54),
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white54),
+                  ),
                 ),
-                trailing: Text(
+                trailing: AppText(
                   '${item.availableQuantity}/${item.requiredQuantity}',
                   style: TextStyle(
                     color: color,
@@ -271,7 +294,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _loading ? null : _chooseBom,
-                  child: const Text('Check Another'),
+                  child: const AppText('Check Another'),
                 ),
               ),
               if (missingCount > 0) ...[
@@ -280,7 +303,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   child: FilledButton.icon(
                     onPressed: _copyMissing,
                     icon: const Icon(Icons.copy),
-                    label: Text('Copy Missing ($missingCount)'),
+                    label: AppText('Copy Missing ($missingCount)'),
                   ),
                 ),
               ],

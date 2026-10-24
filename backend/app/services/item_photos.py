@@ -1,11 +1,12 @@
 import io
 import logging
 from urllib.parse import unquote, urlsplit
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from PIL import Image, ImageOps
 
 from app.core.config import get_settings
+from app.services.resource_access import require_inventory_write
 from app.services.item_events_repo import log_event
 from app.services.items_repo import update_item
 from app.services.storage import delete_image, upload_image
@@ -17,6 +18,49 @@ logger = logging.getLogger(__name__)
 MAX_ITEM_PHOTO_BYTES = 10 * 1024 * 1024
 MAX_ITEM_PHOTO_PIXELS = 25_000_000
 MAX_ITEM_PHOTOS = 10
+ORIGINAL_SCAN_PHOTO = "Original scan photo"
+
+
+def retain_capture_original(*, user_id: str, item: dict, source_frame_url: str | None) -> None:
+    """Attach the shared source once, without changing the primary crop.
+
+    Use the normal scoped/guarded client: a copied URL cannot bypass private
+    image authorization. A lost insert response is reconciled by stable ID.
+    """
+    source = str(source_frame_url or "").strip()
+    if not source or source == str(item.get("image_url") or "").strip():
+        return
+    client = get_supabase_admin()
+    item_id = str(item["item_id"])
+    event_id = str(uuid5(NAMESPACE_URL, f"findez:capture-original:v1:{item_id}"))
+    originals = (client.table("item_events").select("event_id,image_url")
+                 .eq("user_id", user_id).eq("item_id", item_id)
+                 .eq("event_type", "photo").eq("content", ORIGINAL_SCAN_PHOTO).execute().data or [])
+    if originals:
+        if any(row.get("image_url") == source for row in originals):
+            return
+        raise ValueError("This capture already has a different original photo")
+
+    def receipt():
+        return (client.table("item_events").select("event_id,image_url")
+                .eq("user_id", user_id).eq("item_id", item_id)
+                .eq("event_id", event_id).eq("event_type", "photo").execute().data or [])
+
+    if any(row.get("image_url") == source for row in receipt()):
+        return
+    from datetime import datetime, timezone
+    try:
+        client.table("item_events").insert({
+            "event_id": event_id, "item_id": item_id, "user_id": user_id,
+            "event_type": "photo", "content": ORIGINAL_SCAN_PHOTO,
+            "image_url": source, "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception:
+        # Retry may race or lose the response after commit. Never claim success
+        # until the actual, scope-bound photo receipt is available.
+        logger.warning("Original photo insert unavailable; checking receipt")
+    if not any(row.get("image_url") == source for row in receipt()):
+        raise RuntimeError("The original scan photo could not be confirmed saved")
 
 
 def _get_item(*, user_id: str, item_id: str) -> dict:
@@ -40,7 +84,7 @@ def _photo_events(*, user_id: str, item_id: str) -> list[dict]:
     return (
         get_supabase_admin()
         .table("item_events")
-        .select("event_id,image_url,created_at")
+        .select("event_id,image_url,created_at,content")
         .eq("user_id", user_id)
         .eq("item_id", item_id)
         .eq("event_type", "photo")
@@ -85,6 +129,11 @@ def _photos_for_item(*, item: dict, events: list[dict]) -> list[dict]:
     elif primary_url:
         photos.sort(key=lambda photo: not photo["is_primary"])
 
+    originals = {event.get("image_url") for event in events
+                 if event.get("content") == ORIGINAL_SCAN_PHOTO}
+    # The crop stays first; the original stays second even after other gallery
+    # events arrive. Other photos retain their existing newest-first order.
+    photos.sort(key=lambda photo: (not photo["is_primary"], photo["image_url"] not in originals))
     return photos[:MAX_ITEM_PHOTOS]
 
 
@@ -164,11 +213,13 @@ def _storage_path(*, user_id: str, image_url: str) -> str | None:
 
 
 def _image_url_is_referenced(*, user_id: str, image_url: str) -> bool:
-    client = get_supabase_admin()
+    # Cleanup is a global reference-existence check, never a content read for
+    # the caller. A restricted/pending sibling must retain its shared source.
+    from app.services.supabase_client import get_supabase_raw
+    client = get_supabase_raw()
     items = (
         client.table("items")
         .select("item_id")
-        .eq("user_id", user_id)
         .eq("image_url", image_url)
         .limit(1)
         .execute()
@@ -180,7 +231,6 @@ def _image_url_is_referenced(*, user_id: str, image_url: str) -> bool:
     events = (
         client.table("item_events")
         .select("event_id")
-        .eq("user_id", user_id)
         .eq("event_type", "photo")
         .eq("image_url", image_url)
         .limit(1)
@@ -188,13 +238,21 @@ def _image_url_is_referenced(*, user_id: str, image_url: str) -> bool:
         .data
         or []
     )
-    return bool(events)
+    if events:
+        return True
+    for field in ("image_url", "source_frame_url"):
+        reviews = (client.table("capture_reviews").select("review_id")
+                   .eq("status", "pending").eq(field, image_url).limit(1).execute().data or [])
+        if reviews:
+            return True
+    return False
 
 
 def add_item_photo(
     *, user_id: str, item_id: str, filename: str, content: bytes
 ) -> tuple[dict, list[dict]]:
     item = _get_item(user_id=user_id, item_id=item_id)
+    require_inventory_write(item.get('inventory_id'))
     events = _photo_events(user_id=user_id, item_id=item_id)
     photos = _photos_for_item(item=item, events=events)
     if len(photos) >= MAX_ITEM_PHOTOS:
@@ -246,6 +304,7 @@ def delete_item_photo(
     *, user_id: str, item_id: str, photo_id: str
 ) -> tuple[dict, list[dict]]:
     item = _get_item(user_id=user_id, item_id=item_id)
+    require_inventory_write(item.get('inventory_id'))
     events = _photo_events(user_id=user_id, item_id=item_id)
     photos = _photos_for_item(item=item, events=events)
     target = next((photo for photo in photos if photo["photo_id"] == photo_id), None)

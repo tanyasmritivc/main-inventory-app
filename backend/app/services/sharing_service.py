@@ -1,9 +1,25 @@
 
 import secrets
 import string
+from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import create_profile_photo_signed_url
+
+
+def invitation_is_current(share: dict) -> bool:
+    if share.get('is_active') is False:
+        return False
+    expires = share.get('expires_at')
+    if not expires:
+        return True
+    try:
+        deadline = datetime.fromisoformat(str(expires).replace('Z', '+00:00'))
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        return deadline > datetime.now(timezone.utc)
+    except (ValueError, TypeError):
+        return False
 
 
 def generate_unique_code(client) -> str:
@@ -21,7 +37,7 @@ def generate_unique_code(client) -> str:
     raise ValueError('Could not generate unique code')
 
 
-def create_share(*, user_id: str, share_name: str, permission: str) -> dict:
+def create_share(*, user_id: str, share_name: str, permission: str, space_id: str | None = None) -> dict:
     client = get_supabase_admin()
     code = generate_unique_code(client)
     result = client.table('team_shares').insert({
@@ -30,11 +46,15 @@ def create_share(*, user_id: str, share_name: str, permission: str) -> dict:
         'share_name': share_name,
         'permission': permission,
         'is_active': True,
+        **({'space_id': space_id} if space_id else {}),
     }).execute()
     return result.data[0] if result.data else {}
 
 
 def get_my_shares(*, user_id: str) -> list:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get() and current_inventory.get().team_id:
+        return []
     client = get_supabase_admin()
     shares = (
         client.table('team_shares')
@@ -69,8 +89,10 @@ def join_share(*, user_id: str, share_code: str) -> dict:
     if not share.data:
         raise ValueError('Share not found or revoked')
     s = share.data[0]
+    if not invitation_is_current(s):
+        raise ValueError('Share not found or revoked')
     if s['owner_user_id'] == user_id:
-        raise ValueError('You cannot join your own share')
+        return s
     existing = (
         client.table('team_members')
         .select('member_id')
@@ -79,15 +101,18 @@ def join_share(*, user_id: str, share_code: str) -> dict:
         .execute()
     )
     if existing.data:
-        raise ValueError('Already a member')
-    client.table('team_members').insert({
+        return s
+    client.table('team_members').upsert({
         'share_id': s['share_id'],
         'member_user_id': user_id,
-    }).execute()
+    }, on_conflict='share_id,member_user_id', ignore_duplicates=True).execute()
     return s
 
 
 def get_joined_shares(*, user_id: str) -> list:
+    from app.services.inventory_scope import current_inventory
+    if current_inventory.get():
+        return []
     client = get_supabase_admin()
     memberships = (
         client.table('team_members')
@@ -95,7 +120,18 @@ def get_joined_shares(*, user_id: str) -> list:
         .eq('member_user_id', user_id)
         .execute()
     )
-    return memberships.data or []
+    rows = memberships.data or []
+    from app.services.resource_access import request_actor, fences
+    from app.services.supabase_client import get_supabase_raw
+    if request_actor.get():
+        denied = {row['inventory_id'] for row in fences(get_supabase_raw()) if row['role'] is None}
+        def visible(row):
+            share = row.get('team_shares') or {}
+            if isinstance(share, list):
+                return all(entry.get('inventory_id') not in denied for entry in share)
+            return share.get('inventory_id') not in denied
+        rows = [row for row in rows if visible(row)]
+    return rows
 
 
 def revoke_share(*, user_id: str, share_id: str) -> bool:
@@ -127,10 +163,16 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
     s, _ = get_share_access(requesting_user_id=requesting_user_id, share_id=share_id)
     from app.services.items_repo import search_items_basic
     all_items = search_items_basic(user_id=s['owner_user_id'], q='')
-    space_name = (s.get('share_name') or '').strip().lower()
-    if space_name:
-        return [item for item in all_items if (item.get('location') or '').strip().lower() == space_name]
-    return all_items
+    return [item for item in all_items if _share_contains(s,item)]
+
+
+def _share_contains(share: dict, item: dict) -> bool:
+    if share.get('inventory_id') and item.get('inventory_id') != share['inventory_id']:
+        return False
+    if share.get('space_id'):
+        return item.get('space_id') == share['space_id']
+    name = (share.get('share_name') or '').strip().lower()
+    return not name or (item.get('location') or '').strip().lower() == name
 
 
 def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, bool]:
@@ -147,8 +189,12 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
         raise ValueError('Share not found')
 
     result = share.data[0]
+    if not invitation_is_current(result):
+        raise ValueError('Share not found')
+    from app.services.resource_access import inventory_can_write
+    writable = inventory_can_write(result.get('inventory_id'))
     if result['owner_user_id'] == requesting_user_id:
-        return result, True
+        return result, writable
 
     membership = (
         client.table('team_members')
@@ -159,7 +205,7 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
     )
     if not membership.data:
         raise ValueError('Not authorized')
-    return result, result.get('permission') == 'edit'
+    return result, writable and result.get('permission') == 'edit'
 
 
 def _get_share_item(*, share: dict, item_id: str) -> dict:
@@ -171,7 +217,7 @@ def _get_share_item(*, share: dict, item_id: str) -> dict:
     for item in owner_items:
         if item.get('item_id') != item_id:
             continue
-        if not space_name or (item.get('location') or '').strip().lower() == space_name:
+        if _share_contains(share,item):
             return item
         break
     raise ValueError('Item not found in this space')
@@ -239,10 +285,7 @@ def get_share_item_events(*, requesting_user_id: str, share_id: str, item_id: st
     from app.services.items_repo import search_items_basic
     owner_items = search_items_basic(user_id=s['owner_user_id'], q='')
     space_name = (s.get('share_name') or '').strip().lower()
-    if space_name:
-        space_items = [i for i in owner_items if (i.get('location') or '').strip().lower() == space_name]
-    else:
-        space_items = owner_items
+    space_items = [i for i in owner_items if _share_contains(s,i)]
     item_ids_in_space = {i['item_id'] for i in space_items if i.get('item_id')}
     if item_id not in item_ids_in_space:
         raise ValueError('Item not found in this share')
@@ -297,7 +340,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
         owner_profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', s['owner_user_id']).execute()
         owner_display = (owner_profile.data[0].get('display_name') or owner_email.split('@')[0]) if owner_profile.data else owner_email.split('@')[0]
         owner_data = owner_profile.data[0] if owner_profile.data else {}
-        owner_avatar_url = create_profile_photo_signed_url(storage_path=owner_data['avatar_path']) if owner_data.get('avatar_path') else ''
+        owner_avatar_url = create_profile_photo_signed_url(storage_path=owner_data['avatar_path'], owner_id=s['owner_user_id']) if owner_data.get('avatar_path') else ''
         result.append({
             'user_id': s['owner_user_id'],
             'display_name': owner_display,
@@ -328,7 +371,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
             profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', m['member_user_id']).execute()
             display = (profile.data[0].get('display_name') or email.split('@')[0]) if profile.data else email.split('@')[0]
             profile_data = profile.data[0] if profile.data else {}
-            avatar_url = create_profile_photo_signed_url(storage_path=profile_data['avatar_path']) if profile_data.get('avatar_path') else ''
+            avatar_url = create_profile_photo_signed_url(storage_path=profile_data['avatar_path'], owner_id=m['member_user_id']) if profile_data.get('avatar_path') else ''
             result.append({
                 'user_id': m['member_user_id'],
                 'member_id': m['member_id'],

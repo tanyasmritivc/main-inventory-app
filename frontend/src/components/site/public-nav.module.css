@@ -1,0 +1,7 @@
+.header { display:flex; justify-content:space-between; align-items:center; gap:24px; width:min(1120px,100%); margin:auto; padding:22px 28px; background:#fff; color:#171717; }
+.brand { display:flex; align-items:center; gap:10px; font-size:17px; font-weight:600; text-decoration:none; }
+.header nav { display:flex; align-items:center; gap:24px; font-size:13px; }
+.header nav a { text-decoration:none; color:#454545; }
+.header a:hover { color:#a64414; }
+.header a:focus-visible { outline:2px solid #a64414; outline-offset:5px; }
+@media(max-width:480px) { .header {padding:18px 20px;} .header nav {gap:18px;} }

@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
+from app.services.access_invitations import notification_rows, invitation_rpc
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
-NOTIFICATION_HISTORY_DAYS = 14
+NOTIFICATION_HISTORY_DAYS = 30
 
 
 def _history_cutoff() -> str:
@@ -18,6 +19,32 @@ def _team_ids(user_id: str) -> list[str]:
         "user_id", user_id
     ).execute().data or []
     return [row["team_id"] for row in rows]
+
+
+def _visible_activity(client, user_id: str, activity: list[dict]) -> list[dict]:
+    teams = set(_team_ids(user_id))
+    inventory_access, spaces = {}, {}
+    visible = []
+    for row in activity:
+        if row.get('team_id') not in teams:
+            continue
+        metadata = row.get('metadata') or {}
+        inventory = metadata.get('inventory_id')
+        space = metadata.get('space_id')
+        if space and not inventory:
+            if space not in spaces:
+                rows = client.table('spaces').select('inventory_id').eq('id', space).limit(1).execute().data or []
+                spaces[space] = rows[0].get('inventory_id') if rows else None
+            inventory = spaces[space]
+            if not inventory:
+                continue
+        if inventory:
+            if inventory not in inventory_access:
+                inventory_access[inventory] = bool(client.rpc('findez_inventory_role', {'p_inventory':inventory,'p_actor':user_id}).execute().data)
+            if not inventory_access[inventory]:
+                continue
+        visible.append(row)
+    return visible
 
 
 def _task_title_from_summary(summary: str) -> str:
@@ -73,6 +100,7 @@ def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, s
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    invitations = notification_rows(user.user_id)
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(
@@ -80,12 +108,15 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     ).execute().data or []
     activity_ids = [row["activity_id"] for row in recipient_rows]
     if not activity_ids:
-        return {"notifications": [], "unread_count": 0}
+        return {"notifications": invitations, "unread_count": sum(not row['is_read'] for row in invitations)}
     activity = client.table("team_activity").select("*").in_(
         "activity_id", activity_ids
     ).gte("created_at", _history_cutoff()).order(
         "created_at", desc=True
-    ).limit(100).execute().data or []
+    ).limit(1000).execute().data or []
+    activity = _visible_activity(client, user.user_id, activity)
+    if not activity:
+        return {"notifications":invitations,"unread_count":sum(not row['is_read'] for row in invitations)}
     team_ids = list({row["team_id"] for row in activity if row.get("team_id")})
     teams = client.table("teams").select("team_id,name").in_(
         "team_id", team_ids
@@ -142,12 +173,13 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
             "display_text": display_text,
             "is_read": is_read,
         })
-    return {"notifications": result, "unread_count": unread}
+    return {"notifications": invitations + result, "unread_count": unread + sum(not row['is_read'] for row in invitations)}
 
 
 @router.post("/read")
 def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    invitation_rpc(user.user_id, 'read')
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(
