@@ -18,12 +18,24 @@ let mockPrompt = "";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh, replace: jest.fn() }),
-  useSearchParams: () => new URLSearchParams({ redirect: mockRedirect, prompt: mockPrompt }),
+  useSearchParams: () =>
+    new URLSearchParams({ redirect: mockRedirect, prompt: mockPrompt }),
 }));
 jest.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: () => ({ auth: { signInWithOAuth, signUp, signInWithPassword, resend, resetPasswordForEmail }, from }),
+  createSupabaseBrowserClient: () => ({
+    auth: {
+      signInWithOAuth,
+      signUp,
+      signInWithPassword,
+      resend,
+      resetPasswordForEmail,
+    },
+    from,
+  }),
 }));
-jest.mock("@/components/site/app-dialog-provider", () => ({ useAppDialog: () => ({ showNotice: jest.fn() }) }));
+jest.mock("@/components/site/app-dialog-provider", () => ({
+  useAppDialog: () => ({ showNotice: jest.fn() }),
+}));
 
 const PENDING_KEY = "findez_pending_signup_profile";
 
@@ -32,7 +44,10 @@ async function submitSignup() {
   await userEvent.type(screen.getByLabelText("First name"), "Ada");
   await userEvent.type(screen.getByLabelText("Last name"), "Lovelace");
   await userEvent.type(screen.getByLabelText("Email"), "  ada@example.com ");
-  await userEvent.type(screen.getByLabelText("Password"), "correct horse battery");
+  await userEvent.type(
+    screen.getByLabelText("Password"),
+    "correct horse battery",
+  );
   await userEvent.click(screen.getByRole("checkbox", { name: /at least 13/ }));
   await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 }
@@ -45,7 +60,10 @@ beforeEach(() => {
 });
 
 test("signup sends a trimmed email and a confirmation link back through /auth/callback", async () => {
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: null },
+    error: null,
+  });
   await submitSignup();
 
   await waitFor(() => expect(signUp).toHaveBeenCalled());
@@ -54,55 +72,90 @@ test("signup sends a trimmed email and a confirmation link back through /auth/ca
   const redirect = new URL(args.options.emailRedirectTo);
   expect(redirect.origin).toBe(window.location.origin);
   expect(redirect.pathname).toBe("/auth/callback");
-  expect(redirect.searchParams.get("next")).toBe("/onboarding");
+  expect(redirect.searchParams.get("next")).toBe("/worlds");
   expect(args.options.data.display_name).toBe("Ada Lovelace");
   expect(args.options.data.terms_version).toBe("2026-10-18");
   expect(args.options.data.eligibility_attested).toBe(true);
-  expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(false);
+  expect(Number.isNaN(Date.parse(args.options.data.terms_accepted_at))).toBe(
+    false,
+  );
 });
 test("signup cannot send account data before eligibility and Terms are affirmed", async () => {
   const { container } = render(<AuthForm mode="signup" />);
   fireEvent.submit(container.querySelector("form")!);
-  expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Confirm your eligibility and accept the Terms of Service to create an account.");
+  expect(await screen.findByRole("alert")).toHaveProperty(
+    "textContent",
+    "Confirm your eligibility and accept the Terms of Service to create an account.",
+  );
   expect(signUp).not.toHaveBeenCalled();
 });
 
 test("when confirmation is required (no session) the user is told to check their email", async () => {
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: null },
+    error: null,
+  });
   await submitSignup();
 
-  expect((await screen.findByRole("status")).textContent).toMatch(/check your email/i);
+  expect((await screen.findByRole("status")).textContent).toMatch(
+    /check your email/i,
+  );
   expect(screen.getByRole("status").textContent).toContain("ada@example.com");
   expect(push).not.toHaveBeenCalled();
   // No session means the browser cannot write the profile; the pending profile is
   // kept so AppShell can complete it after confirmation.
   expect(upsert).not.toHaveBeenCalled();
-  expect(JSON.parse(window.localStorage.getItem(PENDING_KEY) ?? "{}")).toMatchObject({ displayName: "Ada Lovelace" });
+  expect(
+    JSON.parse(window.localStorage.getItem(PENDING_KEY) ?? "{}"),
+  ).toMatchObject({ displayName: "Ada Lovelace" });
 });
 
 test("when signup returns a session the profile is saved and the user continues", async () => {
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: { user: { id: "u1" } } }, error: null });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: { user: { id: "u1" } } },
+    error: null,
+  });
   upsert.mockResolvedValue({ error: null });
   await submitSignup();
 
-  await waitFor(() => expect(push).toHaveBeenCalledWith("/onboarding"));
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/worlds"));
   expect(from).toHaveBeenCalledWith("profiles");
-  expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ id: "u1", first_name: "Ada", last_name: "Lovelace" }));
+  expect(upsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      id: "u1",
+      first_name: "Ada",
+      last_name: "Lovelace",
+    }),
+  );
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
 test("a profile save failure is shown instead of being swallowed", async () => {
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: { user: { id: "u1" } } }, error: null });
-  upsert.mockResolvedValue({ error: { message: "permission denied for table profiles" } });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: { user: { id: "u1" } } },
+    error: null,
+  });
+  upsert.mockResolvedValue({
+    error: { message: "permission denied for table profiles" },
+  });
   await submitSignup();
 
-  expect((await screen.findByRole("alert")).textContent).toMatch(/profile details could not be saved/i);
-  expect(screen.getByRole("link", { name: "Continue to FindEZ" }).getAttribute("href")).toBe("/onboarding");
+  expect((await screen.findByRole("alert")).textContent).toMatch(
+    /profile details could not be saved/i,
+  );
+  expect(
+    screen
+      .getByRole("link", { name: "Continue to FindEZ" })
+      .getAttribute("href"),
+  ).toBe("/worlds");
   expect(push).not.toHaveBeenCalled();
 });
 
 test("a signup error is shown and nothing is saved", async () => {
-  signUp.mockResolvedValue({ data: { user: null, session: null }, error: new Error("User already registered") });
+  signUp.mockResolvedValue({
+    data: { user: null, session: null },
+    error: new Error("User already registered"),
+  });
   await submitSignup();
 
   expect(await screen.findByRole("alert")).toBeTruthy();
@@ -118,62 +171,106 @@ test("sign-in trims the email and keeps the existing redirect", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
   await waitFor(() => expect(push).toHaveBeenCalledWith("/inventory"));
-  expect(signInWithPassword).toHaveBeenCalledWith({ email: "ada@example.com", password: "secret-password" });
+  expect(signInWithPassword).toHaveBeenCalledWith({
+    email: "ada@example.com",
+    password: "secret-password",
+  });
 });
 
 test("signup preserves an install invitation in account metadata before email confirmation", async () => {
   mockRedirect = "/join/team/TEAM23?download=1";
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: null },
+    error: null,
+  });
   await submitSignup();
   await screen.findByRole("status");
-  expect(signUp.mock.calls[0][0].options.data.findez_pending_invitation).toEqual({ v: 1, kind: "team", code: "TEAM23", created_at: expect.any(Number) });
-  expect(new URL(signUp.mock.calls[0][0].options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
-  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/signin?redirect=%2Fjoin%2Fteam%2FTEAM23%3Fdownload%3D1");
+  expect(
+    signUp.mock.calls[0][0].options.data.findez_pending_invitation,
+  ).toEqual({
+    v: 1,
+    kind: "team",
+    code: "TEAM23",
+    created_at: expect.any(Number),
+  });
+  expect(
+    new URL(signUp.mock.calls[0][0].options.emailRedirectTo).searchParams.get(
+      "next",
+    ),
+  ).toBe(mockRedirect);
+  expect(
+    screen.getByRole("link", { name: "Sign in" }).getAttribute("href"),
+  ).toBe("/signin?redirect=%2Fjoin%2Fteam%2FTEAM23%3Fdownload%3D1");
 });
 
 test("reset password keeps the verified recovery callback destination", async () => {
- resetPasswordForEmail.mockResolvedValue({ error:null });
- render(<AuthForm mode="signin" />);
- await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
- await userEvent.click(screen.getByRole("button", { name:"Forgot password?" }));
- await waitFor(()=>expect(resetPasswordForEmail).toHaveBeenCalledWith("ada@example.com", { redirectTo:`${window.location.origin}/auth/callback?next=/reset-password` }));
- expect(signInWithPassword).not.toHaveBeenCalled();
+  resetPasswordForEmail.mockResolvedValue({ error: null });
+  render(<AuthForm mode="signin" />);
+  await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Forgot password?" }),
+  );
+  await waitFor(() =>
+    expect(resetPasswordForEmail).toHaveBeenCalledWith("ada@example.com", {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    }),
+  );
+  expect(signInWithPassword).not.toHaveBeenCalled();
 });
 test("requests a fresh confirmation for the entered email and preserves invitation destination", async () => {
- mockRedirect="/join/team/TEAM23?download=1";
- resend.mockResolvedValue({error:null});
- render(<AuthForm mode="signin" />);
- await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
- await userEvent.click(screen.getByRole("button", {name:"Resend confirmation email"}));
- await screen.findByRole("status");
- const input=resend.mock.calls[0][0];
- expect(input.email).toBe("ada@example.com");expect(input.type).toBe("signup");
- expect(new URL(input.options.emailRedirectTo).searchParams.get("next")).toBe(mockRedirect);
- expect(push).not.toHaveBeenCalled();expect(signUp).not.toHaveBeenCalled();
+  mockRedirect = "/join/team/TEAM23?download=1";
+  resend.mockResolvedValue({ error: null });
+  render(<AuthForm mode="signin" />);
+  await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Resend confirmation email" }),
+  );
+  await screen.findByRole("status");
+  const input = resend.mock.calls[0][0];
+  expect(input.email).toBe("ada@example.com");
+  expect(input.type).toBe("signup");
+  expect(new URL(input.options.emailRedirectTo).searchParams.get("next")).toBe(
+    mockRedirect,
+  );
+  expect(push).not.toHaveBeenCalled();
+  expect(signUp).not.toHaveBeenCalled();
 });
 test("resend rejects empty email and reports throttling without claiming delivery", async () => {
- resend.mockResolvedValue({error:new Error("email rate limit exceeded")});
- render(<AuthForm mode="signin" />);
- await userEvent.click(screen.getByRole("button",{name:"Resend confirmation email"}));
- expect(resend).not.toHaveBeenCalled();
- await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
- await userEvent.click(screen.getByRole("button",{name:"Resend confirmation email"}));
- expect((await screen.findByRole("alert")).textContent).toContain("Too many attempts");
- expect(screen.queryByRole("status")).toBeNull();
+  resend.mockResolvedValue({ error: new Error("email rate limit exceeded") });
+  render(<AuthForm mode="signin" />);
+  await userEvent.click(
+    screen.getByRole("button", { name: "Resend confirmation email" }),
+  );
+  expect(resend).not.toHaveBeenCalled();
+  await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Resend confirmation email" }),
+  );
+  expect((await screen.findByRole("alert")).textContent).toContain(
+    "Too many attempts",
+  );
+  expect(screen.queryByRole("status")).toBeNull();
 });
-
 
 test("preview prompt survives email confirmation and the sign-in alternative", async () => {
   mockPrompt = "Add 10 AA batteries & 2 cables";
-  signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
+  signUp.mockResolvedValue({
+    data: { user: { id: "u1" }, session: null },
+    error: null,
+  });
   await submitSignup();
   const callback = new URL(signUp.mock.calls[0][0].options.emailRedirectTo);
   const next = new URL(callback.searchParams.get("next")!, "https://findez.ai");
-  expect(next.pathname).toBe("/onboarding");
-  expect(next.searchParams.get("prompt")).toBe(mockPrompt);
-  const signin = new URL(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")!, "https://findez.ai");
+  expect(next.pathname).toBe("/worlds");
+  expect(next.searchParams.get("q")).toBe(mockPrompt);
+  const signin = new URL(
+    screen.getByRole("link", { name: "Sign in" }).getAttribute("href")!,
+    "https://findez.ai",
+  );
   expect(signin.searchParams.get("prompt")).toBe(mockPrompt);
-  expect(screen.getByLabelText("Your preview request").textContent).toContain(mockPrompt);
+  expect(screen.getByLabelText("Your preview request").textContent).toContain(
+    mockPrompt,
+  );
   expect(push).not.toHaveBeenCalled();
 });
 
@@ -182,12 +279,16 @@ test("signing in resumes the prompt without creating inventory", async () => {
   signInWithPassword.mockResolvedValue({ error: null });
   render(<AuthForm mode="signin" />);
   await userEvent.type(screen.getByLabelText("Email"), "ada@example.com");
-  await userEvent.type(screen.getByLabelText("Password"), "correct horse battery");
+  await userEvent.type(
+    screen.getByLabelText("Password"),
+    "correct horse battery",
+  );
   await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
-  await waitFor(() => expect(push).toHaveBeenCalledWith("/assist?q=Find+my+drill"));
+  await waitFor(() =>
+    expect(push).toHaveBeenCalledWith("/worlds?q=Find+my+drill"),
+  );
   expect(from).not.toHaveBeenCalled();
 });
-
 
 test("OAuth signup uses the same prompt handoff after legal consent", async () => {
   mockPrompt = "Create a space for my tools";
@@ -196,8 +297,15 @@ test("OAuth signup uses the same prompt handoff after legal consent", async () =
   await userEvent.type(screen.getByLabelText("First name"), "Ada");
   await userEvent.type(screen.getByLabelText("Last name"), "Lovelace");
   await userEvent.click(screen.getByRole("checkbox", { name: /at least 13/ }));
-  await userEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Continue with Google" }),
+  );
   await waitFor(() => expect(signInWithOAuth).toHaveBeenCalled());
   const callback = new URL(signInWithOAuth.mock.calls[0][0].options.redirectTo);
-  expect(new URL(callback.searchParams.get("next")!, "https://findez.ai").searchParams.get("prompt")).toBe(mockPrompt);
+  expect(
+    new URL(
+      callback.searchParams.get("next")!,
+      "https://findez.ai",
+    ).searchParams.get("q"),
+  ).toBe(mockPrompt);
 });

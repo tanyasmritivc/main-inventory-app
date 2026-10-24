@@ -1,4 +1,9 @@
-import { activeInventory, assertInventory, inventoryApiPath } from "@/lib/inventory-selection";
+import { sourcePayload, type ChatSource } from "./chat-sources";
+import {
+  activeInventory,
+  assertInventory,
+  inventoryApiPath,
+} from "@/lib/inventory-selection";
 import { apiBase, ApiError } from "@/lib/api";
 import { accountToken } from "@/lib/account-request";
 import { parseAskContext, type AskAnswerContext } from "@/lib/ask-answer";
@@ -40,7 +45,8 @@ export async function readAskEvents(
       throw new Error(
         event.code === "photo_timeout"
           ? "Photo analysis took too long. Try a clearer photo."
-          : event.error || event.message ||
+          : event.error ||
+            event.message ||
             "Your question could not be completed. Please try again.",
       );
     }
@@ -70,7 +76,11 @@ export async function askQuestion({
   message,
   photo,
   conversationId,
-  worldId, requestId,
+  worldId,
+  requestId,
+  sources = [],
+  autoExtract = false,
+  onCapture,
   signal,
   onDelta,
   onStatus,
@@ -78,7 +88,11 @@ export async function askQuestion({
   onDone,
 }: {
   accountId: string;
-  worldId?: string; requestId?: string;
+  worldId?: string;
+  requestId?: string;
+  sources?: ChatSource[];
+  autoExtract?: boolean;
+  onCapture?: (conversationId: string, context: AskAnswerContext) => void;
   message: string;
   photo?: File;
   conversationId?: string | null;
@@ -100,16 +114,29 @@ export async function askQuestion({
   )
     throw new Error("Choose a photo smaller than 10 MB.");
   const selected = activeInventory();
-  if (selected && selected.accountId !== accountId) throw new Error("Your account changed. Reopen this page.");
+  if (selected && selected.accountId !== accountId)
+    throw new Error("Your account changed. Reopen this page.");
   const token = await accountToken(accountId);
   assertInventory(selected);
   const form = new FormData();
-  const capabilities = worldId ? { supports_item_management: true, supports_task_actions: true, request_id: requestId } : {};
+  const capabilities = worldId
+    ? {
+        supports_item_management: true,
+        supports_task_actions: true,
+        supports_capture: true,
+        request_id: requestId,
+      }
+    : {};
   if (photo) {
     form.append("file", photo);
+    if (worldId) {
+      form.append("sources", JSON.stringify(sources.map(sourcePayload)));
+      if (autoExtract) form.append("auto_extract", "true");
+    }
     form.append("message", message);
     form.append("supports_item_actions", "true");
-    for (const [key, value] of Object.entries(capabilities)) if (value !== undefined) form.append(key, String(value));
+    for (const [key, value] of Object.entries(capabilities))
+      if (value !== undefined) form.append(key, String(value));
     if (conversationId) form.append("conversation_id", conversationId);
   }
   const response = await fetch(
@@ -124,7 +151,13 @@ export async function askQuestion({
       },
       body: photo
         ? form
-        : JSON.stringify({ message, conversation_id: conversationId || null, supports_item_actions: true, ...capabilities }),
+        : JSON.stringify({
+            message,
+            conversation_id: conversationId || null,
+            supports_item_actions: true,
+            ...capabilities,
+            ...(worldId ? { sources: sources.map(sourcePayload) } : {}),
+          }),
     },
   );
   if (!response.ok || !response.body)
@@ -139,6 +172,10 @@ export async function askQuestion({
     );
   await readAskEvents(response.body, (event) => {
     assertInventory(selected);
+    if (event.type === "capture" && event.conversation_id) {
+      const context = parseAskContext(event.answer_context);
+      if (context) onCapture?.(event.conversation_id, context);
+    }
     if (event.type === "reset") onReset?.();
     if (event.content || event.delta)
       onDelta(event.content || event.delta || "");

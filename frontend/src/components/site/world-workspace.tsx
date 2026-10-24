@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { rememberWorld } from "@/lib/world-entry";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { Boxes, FolderKanban, MapPin, Plus, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
@@ -128,6 +129,7 @@ function WorldContent({
         if (live) {
           if (data.world !== worldId)
             throw new Error("The organization could not be verified.");
+          rememberWorld(accountId, worldId);
           setDirectory(data);
           setName(label);
           setError("");

@@ -1,3 +1,13 @@
+## October 24 - Direct account entry and mobile-parity chat menu
+
+Released web-only `feat/direct-world-entry-chat-menu-20261024`, based on `2ffa0c7`.
+Replace the post-auth organization directory with validated last-world/Personal
+entry; keep organization management in Settings. Reuse deployed mobile chat source,
+file and capture APIs for a compact plus menu. No backend/schema/mobile changes.
+Runtime `18f3b06` / PR193 is live, build `CGFdjEkOiFJ8kmwO5iqVl`. All five CI
+jobs passed (40135129405); 556 local frontend tests. Route/assets preservation
+checks passed. Browser visual and real signed-in save acceptance remain manual.
+
 ## October 24 — Organization chat and direct Space items
 
 Active web-only branch `feat/organization-workspace-chat-20261024`, based on

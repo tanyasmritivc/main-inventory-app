@@ -1,3 +1,19 @@
+## October 24 — Direct organization entry and chat sources live
+
+Web PR193 (`feat/direct-world-entry-chat-menu-20261024`), runtime `18f3b06`, is
+live on self-hosted web. Ordinary sign-in/signup enters the last authorized world
+or Personal; organization management lives in Settings. The web plus menu reuses
+mobile's deployed sources, file, barcode and durable capture APIs. Imports and
+extraction require reviewed saving. No Google/unfinished connector placeholders.
+
+Local: 556 tests / 76 suites, TypeScript and webpack build passed; lint zero errors
+and 53 existing warnings. All five CI jobs passed on runtime (40135129405).
+Server build `CGFdjEkOiFJ8kmwO5iqVl`, 23 route statuses, world/settings auth redirects
+and six brand assets verified. Preserved 361 unrelated files and backend PID.
+No schema/backend/mobile changes. Browser visual acceptance blocked by
+`cgWindowNotFound`; real signed-in AI/save and physical camera remain unverified.
+See `docs/direct-world-entry-chat-menu.md` for exact manual checks and receipts.
+
 ## October 24 - Organization chat and direct Space items live
 
 Web-only PR192, branch `feat/organization-workspace-chat-20261024`, runtime

@@ -5,7 +5,7 @@ test.each(['signup', 'recovery', 'magiclink', 'invite', 'email_change', 'email']
  expect(parseEmailLink(fragment(type))).toEqual({ tokenHash, type, destination: type === 'recovery' ? '/reset-password' : '/onboarding' });
 });
 test.each(['', '#type=recovery', '#token_hash=short&type=recovery', fragment('sms'), fragment() + '&type=recovery', fragment() + '&token_hash=' + tokenHash])('rejects malformed proof: %s', (value) => expect(parseEmailLink(value)).toBeNull());
-test.each(['https://attacker.example', '//attacker.example', '/\\attacker.example', 'javascript:alert(1)', 'io.supabase.flutter://login-callback', 'https://findez.ai.attacker.example/auth/callback', 'https://findez.ai/auth/callback?next=//attacker.example', '/auth/callback?next=/auth/confirm', '/reset-password'])('blocks unsafe destinations: %s', (redirect) => expect(parseEmailLink(fragment('signup', redirect))?.destination).toBe('/home'));
+test.each(['https://attacker.example', '//attacker.example', '/\\attacker.example', 'javascript:alert(1)', 'io.supabase.flutter://login-callback', 'https://findez.ai.attacker.example/auth/callback', 'https://findez.ai/auth/callback?next=//attacker.example', '/auth/callback?next=/auth/confirm', '/reset-password'])('blocks unsafe destinations: %s', (redirect) => expect(parseEmailLink(fragment('signup', redirect))?.destination).toBe('/worlds'));
 test('preserves local invitations and forces recovery to reset', () => {
  expect(parseEmailLink(fragment('signup', 'https://www.findez.ai/auth/callback?next=%2Fjoin%2Fteam%2Fqa-code'))?.destination).toBe('/join/team/qa-code');
  expect(parseEmailLink(fragment('recovery', 'https://attacker.example'))?.destination).toBe('/reset-password');

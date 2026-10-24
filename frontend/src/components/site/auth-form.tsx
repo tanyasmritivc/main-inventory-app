@@ -52,13 +52,27 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
   e.currentTarget.style.background = "var(--light-panel)";
 }
 
-export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
+export function AuthForm({
+  mode = "signin",
+  onToggleMode,
+  onSuccess,
+}: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/home";
+  const redirect = searchParams.get("redirect") || "/worlds";
   const prompt = previewPrompt(searchParams.get("prompt"));
-  const normalizedRedirect = previewAuthDestination(normalizeAuthNext(redirect), prompt, false);
-  const successRedirect = previewAuthDestination(mode === "signup" ? signupDestination(normalizeAuthNext(redirect)) : normalizedRedirect, prompt, mode === "signup");
+  const normalizedRedirect = previewAuthDestination(
+    normalizeAuthNext(redirect),
+    prompt,
+    false,
+  );
+  const successRedirect = previewAuthDestination(
+    mode === "signup"
+      ? signupDestination(normalizeAuthNext(redirect))
+      : normalizedRedirect,
+    prompt,
+    mode === "signup",
+  );
   const promptQuery = prompt ? `&prompt=${encodeURIComponent(prompt)}` : "";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -80,19 +94,27 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
   function signupProfileValues() {
     if (!legalAccepted) {
-      setError("Confirm your eligibility and accept the Terms of Service to create an account.");
+      setError(
+        "Confirm your eligibility and accept the Terms of Service to create an account.",
+      );
       return null;
     }
     const cleanFirstName = firstName.trim();
     const cleanLastName = lastName.trim();
-    const displayName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ");
+    const displayName = [cleanFirstName, cleanLastName]
+      .filter(Boolean)
+      .join(" ");
     const cleanProfileRole = profileRole.trim();
     const cleanOrganization = organization.trim();
     if (!cleanFirstName || !cleanLastName) {
       setError("Enter your first and last name to create an account.");
       return null;
     }
-    if (cleanFirstName.length > 50 || cleanLastName.length > 50 || displayName.length > 100) {
+    if (
+      cleanFirstName.length > 50 ||
+      cleanLastName.length > 50 ||
+      displayName.length > 100
+    ) {
       setError("Name must be under 100 characters.");
       return null;
     }
@@ -100,14 +122,26 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       setError("Role and organization must each be under 120 characters.");
       return null;
     }
-    return { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization, termsVersion: LEGAL_VERSION, termsAcceptedAt: new Date().toISOString(), eligibilityAttested: true };
+    return {
+      cleanFirstName,
+      cleanLastName,
+      displayName,
+      cleanProfileRole,
+      cleanOrganization,
+      termsVersion: LEGAL_VERSION,
+      termsAcceptedAt: new Date().toISOString(),
+      eligibilityAttested: true,
+    };
   }
 
   function rememberOAuthSignupProfile() {
     if (mode !== "signup") return true;
     const profile = signupProfileValues();
     if (!profile) return false;
-    window.localStorage.setItem(PENDING_SIGNUP_PROFILE_KEY, JSON.stringify(profile));
+    window.localStorage.setItem(
+      PENDING_SIGNUP_PROFILE_KEY,
+      JSON.stringify(profile),
+    );
     return true;
   }
 
@@ -123,12 +157,17 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     setError(null);
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: authCallbackUrl() }
+        provider: "google",
+        options: { redirectTo: authCallbackUrl() },
       });
       if (oauthError) throw oauthError;
     } catch (reason) {
-      setError(userFacingError(reason, "Google sign-in could not start. Please try again."));
+      setError(
+        userFacingError(
+          reason,
+          "Google sign-in could not start. Please try again.",
+        ),
+      );
       setLoading(false);
     }
   };
@@ -139,12 +178,17 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     setError(null);
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: { redirectTo: authCallbackUrl() }
+        provider: "apple",
+        options: { redirectTo: authCallbackUrl() },
       });
       if (oauthError) throw oauthError;
     } catch (reason) {
-      setError(userFacingError(reason, "Apple sign-in could not start. Please try again."));
+      setError(
+        userFacingError(
+          reason,
+          "Apple sign-in could not start. Please try again.",
+        ),
+      );
       setLoading(false);
     }
   };
@@ -156,16 +200,29 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       setError("Enter your email address first.");
       return;
     }
-    setResendingConfirmation(true); setError(null); setNotice(null);
+    setResendingConfirmation(true);
+    setError(null);
+    setNotice(null);
     try {
       const { error: resendError } = await supabase.auth.resend({
-        type: "signup", email: cleanEmail, options: { emailRedirectTo: authCallbackUrl() },
+        type: "signup",
+        email: cleanEmail,
+        options: { emailRedirectTo: authCallbackUrl() },
       });
       if (resendError) throw resendError;
-      setNotice("If this account still needs confirmation, a new link is on its way. Use the latest email. You can open it on any device. If you already confirmed, sign in with your password.");
+      setNotice(
+        "If this account still needs confirmation, a new link is on its way. Use the latest email. You can open it on any device. If you already confirmed, sign in with your password.",
+      );
     } catch (reason) {
-      setError(userFacingError(reason, "A new confirmation email could not be requested. Please try again."));
-    } finally { setResendingConfirmation(false); }
+      setError(
+        userFacingError(
+          reason,
+          "A new confirmation email could not be requested. Please try again.",
+        ),
+      );
+    } finally {
+      setResendingConfirmation(false);
+    }
   }
 
   async function sendPasswordReset() {
@@ -178,9 +235,12 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     setResetSending(true);
     setError(null);
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-      });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        cleanEmail,
+        {
+          redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        },
+      );
       if (resetError) throw resetError;
       await showNotice({
         title: "Check your email",
@@ -188,7 +248,12 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         confirmLabel: "Done",
       });
     } catch (reason) {
-      setError(userFacingError(reason, "The reset email could not be sent. Please try again."));
+      setError(
+        userFacingError(
+          reason,
+          "The reset email could not be sent. Please try again.",
+        ),
+      );
     } finally {
       setResetSending(false);
     }
@@ -206,7 +271,13 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       if (mode === "signup") {
         const profile = signupProfileValues();
         if (!profile) return;
-        const { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization } = profile;
+        const {
+          cleanFirstName,
+          cleanLastName,
+          displayName,
+          cleanProfileRole,
+          cleanOrganization,
+        } = profile;
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: cleanEmail,
           password,
@@ -215,7 +286,11 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             emailRedirectTo: authCallbackUrl(),
             data: {
               ...(invitationHandoff(normalizedRedirect)
-                ? { [INVITATION_METADATA_KEY]: invitationHandoff(normalizedRedirect) } : {}),
+                ? {
+                    [INVITATION_METADATA_KEY]:
+                      invitationHandoff(normalizedRedirect),
+                  }
+                : {}),
               display_name: displayName,
               full_name: displayName,
               given_name: cleanFirstName,
@@ -234,23 +309,28 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           // Email confirmation is required. The profile fields travel in auth
           // metadata; keep them locally so AppShell can finish the profile after
           // the user confirms their email.
-          window.localStorage.setItem(PENDING_SIGNUP_PROFILE_KEY, JSON.stringify(profile));
-          setNotice(`Check your email. We sent a confirmation link to ${cleanEmail}. Open it to finish creating your account.`);
+          window.localStorage.setItem(
+            PENDING_SIGNUP_PROFILE_KEY,
+            JSON.stringify(profile),
+          );
+          setNotice(
+            `Check your email. We sent a confirmation link to ${cleanEmail}. Open it to finish creating your account.`,
+          );
           return;
         }
 
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({
-            id: data.session.user.id,
-            display_name: displayName,
-            first_name: cleanFirstName,
-            last_name: cleanLastName,
-            profile_role: cleanProfileRole,
-            organization: cleanOrganization,
-          });
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: data.session.user.id,
+          display_name: displayName,
+          first_name: cleanFirstName,
+          last_name: cleanLastName,
+          profile_role: cleanProfileRole,
+          organization: cleanOrganization,
+        });
         if (profileError) {
-          setError("Your account was created, but your profile details could not be saved. You can update them in Settings.");
+          setError(
+            "Your account was created, but your profile details could not be saved. You can update them in Settings.",
+          );
           setContinueHref(successRedirect);
           return;
         }
@@ -271,7 +351,12 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       router.push(normalizedRedirect);
       router.refresh();
     } catch (err: unknown) {
-      setError(userFacingError(err, "Authentication could not be completed. Please try again."));
+      setError(
+        userFacingError(
+          err,
+          "Authentication could not be completed. Please try again.",
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -281,45 +366,115 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     <div className={`auth-card-frame ${prompt ? previewStyles.enter : ""}`}>
       <div className="auth-card">
         {/* Logo mark */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
-          <FindEZWordmark width={112} height={30} style={{ color: "var(--ink)", flexShrink: 0 }} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            marginBottom: 28,
+          }}
+        >
+          <FindEZWordmark
+            width={112}
+            height={30}
+            style={{ color: "var(--ink)", flexShrink: 0 }}
+          />
         </div>
-        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--text-secondary)",
+            textAlign: "center",
+            marginTop: "-8px",
+            marginBottom: "16px",
+            letterSpacing: "-0.005em",
+          }}
+        >
           A product of AI Robots Inc
         </div>
 
-        {prompt && <aside className={previewStyles.handoff} aria-label="Your preview request">
-          <span>YOUR WORLD, NEXT</span><p>{prompt}</p>
-          <small>Your request will be ready in chat after account setup. Review it there to create and save your inventory.</small>
-        </aside>}
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
+        {prompt && (
+          <aside
+            className={previewStyles.handoff}
+            aria-label="Your preview request"
+          >
+            <span>YOUR WORLD, NEXT</span>
+            <p>{prompt}</p>
+            <small>
+              Your request will be ready in chat after account setup. Review it
+              there to create and save your inventory.
+            </small>
+          </aside>
+        )}
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: "var(--ink)",
+            margin: "0 0 4px",
+            letterSpacing: "-0.035em",
+          }}
+        >
           {mode === "signup" ? "Create account" : "Welcome back"}
         </h1>
-        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            margin: "0 0 24px",
+            letterSpacing: "-0.01em",
+          }}
+        >
           {mode === "signup"
             ? "Create your account to use FindEZ on the web and iPhone."
             : "Sign in to manage your FindEZ account."}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            marginBottom: "20px",
+          }}
+        >
           <button
             type="button"
             disabled={loading}
             onClick={handleGoogleSignIn}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '10px', width: '100%', padding: '11px 16px',
-              background: 'var(--light-raised)',
-              border: '1px solid var(--light-line)',
-              borderRadius: '10px', color: 'var(--ink)', fontSize: '14px',
-              fontWeight: 500, cursor: 'pointer',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              width: "100%",
+              padding: "11px 16px",
+              background: "var(--light-raised)",
+              border: "1px solid var(--light-line)",
+              borderRadius: "10px",
+              color: "var(--ink)",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
             }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z"/>
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.6 0-14.2 4.2-17.7 10.7z"/>
-              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-2.9-11.3-7.1l-6.5 5C9.8 39.8 16.4 44 24 44z"/>
-              <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C41 35.1 44 30 44 24c0-1.3-.1-2.7-.4-4z"/>
+              <path
+                fill="#FFC107"
+                d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z"
+              />
+              <path
+                fill="#FF3D00"
+                d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.6 0-14.2 4.2-17.7 10.7z"
+              />
+              <path
+                fill="#4CAF50"
+                d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-2.9-11.3-7.1l-6.5 5C9.8 39.8 16.4 44 24 44z"
+              />
+              <path
+                fill="#1976D2"
+                d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C41 35.1 44 30 44 24c0-1.3-.1-2.7-.4-4z"
+              />
             </svg>
             Continue with Google
           </button>
@@ -329,32 +484,54 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             disabled={loading}
             onClick={handleAppleSignIn}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '10px', width: '100%', padding: '11px 16px',
-              background: 'var(--light-raised)',
-              border: '1px solid var(--light-line)',
-              borderRadius: '10px', color: 'var(--ink)', fontSize: '14px',
-              fontWeight: 500, cursor: 'pointer',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              width: "100%",
+              padding: "11px 16px",
+              background: "var(--light-raised)",
+              border: "1px solid var(--light-line)",
+              borderRadius: "10px",
+              color: "var(--ink)",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 814 1000" fill="currentColor">
-              <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.3-155.5-127.4C46 790.9 0 663.6 0 541.8c0-194 127.4-296.9 250.2-296.9 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 814 1000"
+              fill="currentColor"
+            >
+              <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.3-155.5-127.4C46 790.9 0 663.6 0 541.8c0-194 127.4-296.9 250.2-296.9 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
             </svg>
             Continue with Apple
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--light-line)' }} />
-          <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>or</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--light-line)' }} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          <div
+            style={{ flex: 1, height: "1px", background: "var(--light-line)" }}
+          />
+          <span style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
+            or
+          </span>
+          <div
+            style={{ flex: 1, height: "1px", background: "var(--light-line)" }}
+          />
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          style={{ display: "grid", gap: 18 }}
-        >
-      <style>{`.auth-card input:-webkit-autofill, .auth-card textarea:-webkit-autofill {
+        <form onSubmit={onSubmit} style={{ display: "grid", gap: 18 }}>
+          <style>{`.auth-card input:-webkit-autofill, .auth-card textarea:-webkit-autofill {
         -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
         -webkit-text-fill-color: #000000 !important;
         caret-color: #000000;
@@ -365,201 +542,376 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
         border: 1px solid rgba(0,0,0,0.4) !important;
       }`}</style>
-      {mode === "signup" ? (
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+          {mode === "signup" ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                }}
+              >
+                <div style={{ display: "grid", gap: 6 }}>
+                  <Label htmlFor="first_name" className="sr-only">
+                    First name
+                  </Label>
+                  <Input
+                    id="first_name"
+                    name="first_name"
+                    type="text"
+                    autoComplete="given-name"
+                    required
+                    maxLength={50}
+                    placeholder="First name"
+                    style={fieldStyle}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    onFocus={focusField}
+                    onBlur={blurField}
+                  />
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <Label htmlFor="last_name" className="sr-only">
+                    Last name
+                  </Label>
+                  <Input
+                    id="last_name"
+                    name="last_name"
+                    type="text"
+                    autoComplete="family-name"
+                    required
+                    maxLength={50}
+                    placeholder="Last name"
+                    style={fieldStyle}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    onFocus={focusField}
+                    onBlur={blurField}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                }}
+              >
+                <div style={{ display: "grid", gap: 6 }}>
+                  <Label htmlFor="profile_role" className="sr-only">
+                    Role (optional)
+                  </Label>
+                  <Input
+                    id="profile_role"
+                    name="profile_role"
+                    type="text"
+                    autoComplete="organization-title"
+                    maxLength={120}
+                    placeholder="Role (optional)"
+                    style={fieldStyle}
+                    value={profileRole}
+                    onChange={(e) => setProfileRole(e.target.value)}
+                    onFocus={focusField}
+                    onBlur={blurField}
+                  />
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <Label htmlFor="organization" className="sr-only">
+                    Organization (optional)
+                  </Label>
+                  <Input
+                    id="organization"
+                    name="organization"
+                    type="text"
+                    autoComplete="organization"
+                    maxLength={120}
+                    placeholder="Organization"
+                    style={fieldStyle}
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    onFocus={focusField}
+                    onBlur={blurField}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div style={{ display: "grid", gap: 6 }}>
-            <Label htmlFor="first_name" className="sr-only">First name</Label>
+            <Label htmlFor="email" className="sr-only">
+              Email
+            </Label>
             <Input
-              id="first_name"
-              name="first_name"
-              type="text"
-              autoComplete="given-name"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete={mode === "signup" ? "email" : "username"}
               required
-              maxLength={50}
-              placeholder="First name"
+              placeholder="Email"
               style={fieldStyle}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               onFocus={focusField}
               onBlur={blurField}
             />
           </div>
+
           <div style={{ display: "grid", gap: 6 }}>
-            <Label htmlFor="last_name" className="sr-only">Last name</Label>
+            <Label htmlFor="password" className="sr-only">
+              Password
+            </Label>
+            {mode === "signin" ? (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  disabled={loading || resetSending || resendingConfirmation}
+                  onClick={sendPasswordReset}
+                  style={{
+                    padding: 0,
+                    border: 0,
+                    background: "transparent",
+                    color: "var(--copper)",
+                    fontSize: 11,
+                    cursor: loading || resetSending ? "not-allowed" : "pointer",
+                    opacity: resetSending ? 0.55 : 1,
+                  }}
+                >
+                  {resetSending ? "Sending…" : "Forgot password?"}
+                </button>
+              </div>
+            ) : null}
             <Input
-              id="last_name"
-              name="last_name"
-              type="text"
-              autoComplete="family-name"
+              id="password"
+              name="password"
+              type="password"
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
               required
-              maxLength={50}
-              placeholder="Last name"
+              minLength={8}
+              placeholder={
+                mode === "signup"
+                  ? "Password (at least 8 characters)"
+                  : "Password"
+              }
               style={fieldStyle}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               onFocus={focusField}
               onBlur={blurField}
             />
           </div>
-          </div>
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <Label htmlFor="profile_role" className="sr-only">Role (optional)</Label>
-              <Input
-                id="profile_role"
-                name="profile_role"
-                type="text"
-                autoComplete="organization-title"
-                maxLength={120}
-                placeholder="Role (optional)"
-                style={fieldStyle}
-                value={profileRole}
-                onChange={(e) => setProfileRole(e.target.value)}
-                onFocus={focusField}
-                onBlur={blurField}
-              />
-            </div>
-            <div style={{ display: "grid", gap: 6 }}>
-              <Label htmlFor="organization" className="sr-only">Organization (optional)</Label>
-              <Input
-                id="organization"
-                name="organization"
-                type="text"
-                autoComplete="organization"
-                maxLength={120}
-                placeholder="Organization"
-                style={fieldStyle}
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
-                onFocus={focusField}
-                onBlur={blurField}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
 
-      <div style={{ display: "grid", gap: 6 }}>
-        <Label htmlFor="email" className="sr-only">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete={mode === "signup" ? "email" : "username"}
-          required
-          placeholder="Email"
-          style={fieldStyle}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onFocus={focusField}
-          onBlur={blurField}
-        />
-      </div>
+          {mode === "signup" ? (
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: "var(--text-secondary)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={legalAccepted}
+                onChange={(event) => setLegalAccepted(event.target.checked)}
+              />
+              <span>
+                I&apos;m at least 13, have any required guardian permission, and
+                accept the{" "}
+                <Link href="/terms" target="_blank" rel="noopener noreferrer">
+                  Terms of Service
+                </Link>
+                . Read our{" "}
+                <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+          ) : null}
 
-      <div style={{ display: "grid", gap: 6 }}>
-        <Label htmlFor="password" className="sr-only">Password</Label>
-        {mode === "signin" ? (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          {error ? (
+            <p
+              role="alert"
+              style={{
+                margin: 0,
+                color: "var(--danger-ink)",
+                fontSize: 12,
+                lineHeight: 1.5,
+                fontWeight: 500,
+              }}
+            >
+              {error}
+            </p>
+          ) : null}
+
+          {notice ? (
+            <p
+              role="status"
+              style={{
+                margin: 0,
+                color: "var(--text-primary)",
+                fontSize: 12,
+                lineHeight: 1.5,
+                fontWeight: 500,
+              }}
+            >
+              {notice}
+            </p>
+          ) : null}
+
+          {continueHref ? (
+            <Link
+              href={continueHref}
+              style={{ color: "var(--copper)", fontSize: 13, fontWeight: 600 }}
+            >
+              Continue to FindEZ
+            </Link>
+          ) : null}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: 11,
+              borderRadius: 8,
+              background: "var(--control-primary)",
+              color: "#000000",
+              fontSize: 14,
+              fontWeight: 510,
+              letterSpacing: "-0.02em",
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.6 : 1,
+              transition: "opacity 200ms",
+            }}
+          >
+            {loading
+              ? mode === "signup"
+                ? "Creating account…"
+                : "Signing in…"
+              : mode === "signup"
+                ? "Create account"
+                : "Sign in"}
+          </Button>
+          {(mode === "signin" || notice) && (
             <button
               type="button"
               disabled={loading || resetSending || resendingConfirmation}
-              onClick={sendPasswordReset}
-              style={{ padding: 0, border: 0, background: "transparent", color: "var(--copper)", fontSize: 11, cursor: loading || resetSending ? "not-allowed" : "pointer", opacity: resetSending ? 0.55 : 1 }}
+              onClick={() => void resendConfirmation()}
+              style={{
+                padding: 8,
+                border: 0,
+                background: "transparent",
+                color: "var(--copper)",
+                fontSize: 12,
+                cursor: "pointer",
+              }}
             >
-              {resetSending ? "Sending…" : "Forgot password?"}
+              {resendingConfirmation
+                ? "Requesting confirmation..."
+                : "Resend confirmation email"}
             </button>
-          </div>
-        ) : null}
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          required
-          minLength={8}
-          placeholder={mode === "signup" ? "Password (at least 8 characters)" : "Password"}
-          style={fieldStyle}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onFocus={focusField}
-          onBlur={blurField}
-        />
-      </div>
-
-      {mode === "signup" ? (
-        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
-          <input type="checkbox" checked={legalAccepted} onChange={(event) => setLegalAccepted(event.target.checked)} />
-          <span>I&apos;m at least 13, have any required guardian permission, and accept the <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</Link>. Read our <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
-        </label>
-      ) : null}
-
-      {error ? (
-        <p role="alert" style={{ margin: 0, color: "var(--danger-ink)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
-      ) : null}
-
-      {notice ? (
-        <p role="status" style={{ margin: 0, color: "var(--text-primary)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{notice}</p>
-      ) : null}
-
-      {continueHref ? (
-        <Link href={continueHref} style={{ color: "var(--copper)", fontSize: 13, fontWeight: 600 }}>Continue to FindEZ</Link>
-      ) : null}
-
-      <Button
-        type="submit"
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: 11,
-          borderRadius: 8,
-          background: "var(--control-primary)",
-          color: "#000000",
-          fontSize: 14,
-          fontWeight: 510,
-          letterSpacing: "-0.02em",
-          border: "none",
-          cursor: loading ? "not-allowed" : "pointer",
-          opacity: loading ? 0.6 : 1,
-          transition: "opacity 200ms",
-        }}
-      >
-        {loading ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create account" : "Sign in")}
-      </Button>
-      {(mode === "signin" || notice) && <button
-        type="button" disabled={loading || resetSending || resendingConfirmation}
-        onClick={() => void resendConfirmation()}
-        style={{padding:8,border:0,background:"transparent",color:"var(--copper)",fontSize:12,cursor:"pointer"}}
-      >{resendingConfirmation ? "Requesting confirmation..." : "Resend confirmation email"}</button>}
+          )}
         </form>
-        {mode === "signin" && <p style={{ marginTop: 16, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>By continuing, you accept the <Link href="/terms">Terms of Service</Link> and confirm you meet the account eligibility requirements, including age 13 or older. See the <Link href="/privacy">Privacy Policy</Link> for data handling.</p>}
+        {mode === "signin" && (
+          <p
+            style={{
+              marginTop: 16,
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: "var(--text-secondary)",
+            }}
+          >
+            By continuing, you accept the{" "}
+            <Link href="/terms">Terms of Service</Link> and confirm you meet the
+            account eligibility requirements, including age 13 or older. See the{" "}
+            <Link href="/privacy">Privacy Policy</Link> for data handling.
+          </p>
+        )}
 
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "var(--text-secondary)", letterSpacing: "-0.008em" }}>
+        <p
+          style={{
+            marginTop: 20,
+            textAlign: "center",
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            letterSpacing: "-0.008em",
+          }}
+        >
           {mode === "signup" ? (
-            <>Already have an account?{" "}
-              {onToggleMode
-                ? <button onClick={() => onToggleMode("signin")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
-                : <Link href={`/signin?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
-              }
+            <>
+              Already have an account?{" "}
+              {onToggleMode ? (
+                <button
+                  onClick={() => onToggleMode("signin")}
+                  style={{
+                    color: "var(--copper)",
+                    textDecoration: "underline",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "inherit",
+                    padding: 0,
+                    letterSpacing: "-0.008em",
+                  }}
+                >
+                  Sign in
+                </button>
+              ) : (
+                <Link
+                  href={`/signin?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`}
+                  style={{
+                    color: "var(--copper)",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Sign in
+                </Link>
+              )}
             </>
           ) : (
-            <>Don&apos;t have an account?{" "}
-              {onToggleMode
-                ? <button onClick={() => onToggleMode("signup")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
-                : <Link href={`/signup?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
-              }
+            <>
+              Don&apos;t have an account?{" "}
+              {onToggleMode ? (
+                <button
+                  onClick={() => onToggleMode("signup")}
+                  style={{
+                    color: "var(--copper)",
+                    textDecoration: "underline",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "inherit",
+                    padding: 0,
+                    letterSpacing: "-0.008em",
+                  }}
+                >
+                  Sign up
+                </button>
+              ) : (
+                <Link
+                  href={`/signup?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`}
+                  style={{
+                    color: "var(--copper)",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Sign up
+                </Link>
+              )}
             </>
           )}
         </p>
       </div>
-      </div>
+    </div>
   );
 
   if (onSuccess) return card;
 
-  return (
-    <div className="auth-page-shell">
-      {card}
-    </div>
-  );
+  return <div className="auth-page-shell">{card}</div>;
 }

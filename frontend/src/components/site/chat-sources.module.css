@@ -1,0 +1,176 @@
+.plus {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  color: inherit;
+  cursor: pointer;
+}
+.plus:hover {
+  background: var(--light-line);
+}
+.plus:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.menu {
+  width: 236px;
+  max-width: calc(100vw - 24px);
+  padding: 5px;
+  border-radius: 12px;
+  box-shadow: 0 10px 35px #0002;
+  background: var(--light-panel);
+  color: var(--text-primary);
+  border: 1px solid var(--light-line);
+}
+.menu [role="menuitem"] {
+  min-height: 38px;
+  font-size: 13px;
+  gap: 10px;
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+.menu svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.6;
+}
+.dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: 85dvh;
+  overflow: auto;
+  background: var(--light-panel);
+  color: var(--text-primary);
+}
+.stack {
+  display: grid;
+  gap: 14px;
+}
+.stack label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.stack input,
+.stack select,
+.stack textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--light-line);
+  border-radius: 8px;
+  background: var(--light-page);
+  color: inherit;
+  min-width: 0;
+}
+.results {
+  display: grid;
+  gap: 4px;
+  max-height: 320px;
+  overflow: auto;
+}
+.results button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  padding: 11px;
+  border: 1px solid var(--light-line);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+.results button:hover {
+  background: var(--light-page);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 9px;
+  background: var(--light-page);
+  border: 1px solid var(--light-line);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.card {
+  border: 1px solid var(--light-line);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  max-width: 700px;
+  background: var(--light-panel);
+}
+.card h3,
+.card p {
+  margin: 0;
+}
+.muted {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.rows {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+}
+.row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 72px;
+  gap: 9px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--light-line);
+}
+.row input[type="checkbox"] {
+  width: 16px;
+  margin-top: 10px;
+}
+.row input {
+  padding: 7px;
+  width: 100%;
+  border: 1px solid var(--light-line);
+  border-radius: 6px;
+  background: var(--light-page);
+  color: inherit;
+}
+.row small {
+  grid-column: 2/-1;
+  color: var(--text-secondary);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.row details {
+  grid-column: 2/-1;
+  font-size: 12px;
+}
+.row details label {
+  display: grid;
+  margin: 8px 0;
+  gap: 3px;
+}
