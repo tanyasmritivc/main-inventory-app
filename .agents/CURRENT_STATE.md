@@ -1,3 +1,15 @@
+## October 24 — Smart inventory discovery (release preparation)
+
+Lane `fix/api-smart-inventory-search-20261024` owns only backend search. Scoped
+chat search now matches keywords across saved fields, tags and imported values;
+part-number formatting/prefixes and conservative word spelling are supported.
+Numeric identifiers are never fuzzy. Query retrieval scans authorized pages
+before applying its 500-match / 10,000-record limits and reports incompleteness.
+Chat is instructed to use descriptive keywords and broaden failed lookups.
+Writes, permissions and schema are unchanged. Full Python suite: 1,433 passed,
+10 subtests, 451 existing warnings. Production activation/CI pending; see
+`docs/plans/smart-search-20261024.md`. Companion mobile lane targets build121.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google
