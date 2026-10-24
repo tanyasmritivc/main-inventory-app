@@ -53,11 +53,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/brand/findez-favicon.svg", sizes: "any", type: "image/svg+xml" },
-      { url: "/favicon.png", sizes: "96x96", type: "image/png" },
-      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/favicon.png?v=blue-echo", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico?v=blue-echo", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico?v=blue-echo",
+    apple: [{ url: "/apple-touch-icon.png?v=blue-echo", sizes: "180x180", type: "image/png" }],
   },
 };
 
