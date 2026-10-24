@@ -1,4 +1,3 @@
-import '../chat/native_chat_menu_button.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -204,27 +203,19 @@ class _WorldComposerState extends State<WorldComposer>
             SizedBox(height: widget.compact ? 12 : 14),
             Row(
               children: [
-                if (usesNativeChatMenu && widget.onSourceSelected != null)
-                  NativeChatMenuButton(
-                    key: widget.attachmentKey,
-                    enabled: widget.onAttach != null,
-                    menuOpen: widget.menuOpen,
-                    onSelected: widget.onSourceSelected!,
-                  )
-                else
-                  IconButton(
-                    key: widget.attachmentKey,
-                    tooltip: widget.menuOpen
-                        ? 'Close attachment menu'
-                        : 'Capture or attach',
-                    onPressed: widget.onAttach,
-                    icon: Icon(
-                      widget.menuOpen
-                          ? CupertinoIcons.xmark
-                          : CupertinoIcons.plus,
-                      size: 19,
-                    ),
+                IconButton(
+                  key: widget.attachmentKey,
+                  tooltip: widget.menuOpen
+                      ? 'Close attachment menu'
+                      : 'Capture or attach',
+                  onPressed: widget.onAttach,
+                  icon: Icon(
+                    widget.menuOpen
+                        ? CupertinoIcons.xmark
+                        : CupertinoIcons.plus,
+                    size: 19,
                   ),
+                ),
                 const Spacer(),
                 Semantics(
                   button: true,

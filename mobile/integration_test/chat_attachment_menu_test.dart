@@ -5,6 +5,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/chat/native_chat_menu_button.dart';
+import 'package:mobile/features/chat/chat_source_menu.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -13,48 +14,75 @@ void main() {
       final controller = TextEditingController();
       final focus = FocusNode();
       final selected = <String>[];
+      final anchor = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.create(brightness),
-          home: Scaffold(
-            appBar: AppBar(title: const Text('Ask')),
-            body: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Ask about a photo, or use Auto Extract to review items.',
+          home: Builder(
+            builder: (context) => Scaffold(
+              appBar: AppBar(title: const Text('Ask')),
+              body: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Expanded(
+                      child: Center(
+                        child: Text(
+                          'Ask about a photo, or use Auto Extract to review items.',
+                        ),
                       ),
                     ),
-                  ),
-                  WorldComposer(
-                    controller: controller,
-                    focusNode: focus,
-                    onChanged: (_) {},
-                    onAttach: () {},
-                    onSourceSelected: selected.add,
-                    onVoice: () {},
-                    onSend: () {},
-                    busy: false,
-                    listening: false,
-                    compact: true,
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    WorldComposer(
+                      attachmentKey: anchor,
+                      controller: controller,
+                      focusNode: focus,
+                      onChanged: (_) {},
+                      onAttach: () async {
+                        final value = await showChatSourceMenu(
+                          context,
+                          anchor,
+                          nativeAttach: true,
+                        );
+                        if (value != null) selected.add(value);
+                      },
+                      onSourceSelected: selected.add,
+                      onVoice: () {},
+                      onSend: () {},
+                      busy: false,
+                      listening: false,
+                      compact: true,
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byType(NativeChatMenuButton), findsNothing);
+      await tester.tap(find.byTooltip('Capture or attach'));
+      await tester.pumpAndSettle();
+      for (final label in [
+        'Auto Extract',
+        'Attach',
+        'Inventory tools',
+        'Add context',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(find.byType(NativeChatMenuButton), findsOneWidget);
       expect(
-        tester.getSize(find.byType(NativeChatMenuButton)),
-        const Size(48, 48),
+        tester.getSize(find.byType(NativeChatMenuButton)).width,
+        greaterThan(150),
       );
-      // Native menu interaction is checked separately in the simulator preview.
-      await tester.pump(const Duration(milliseconds: 100));
+      tester
+          .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+          .onSelected('library');
+      await tester.pumpAndSettle();
+      expect(selected, ['library']);
+      expect(find.text('Auto Extract'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       controller.dispose();

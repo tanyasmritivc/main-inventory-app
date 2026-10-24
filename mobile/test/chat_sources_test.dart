@@ -133,16 +133,15 @@ Widget _chat(_Api api, {ValueChanged<VoidCallback>? reset}) => Scaffold(
   ),
 );
 Future<void> menu(WidgetTester tester, String action, {String? parent}) async {
-  if (usesNativeChatMenu) {
-    final value = {'Spaces': 'space', 'Choose files': 'file'}[action]!;
+  await tester.tap(find.byTooltip('Capture or attach'));
+  await tester.pumpAndSettle();
+  if (usesNativeChatMenu && parent == 'Attach') {
     tester
         .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
-        .onSelected(value);
+        .onSelected('file');
     await tester.pumpAndSettle();
     return;
   }
-  await tester.tap(find.byTooltip('Capture or attach'));
-  await tester.pumpAndSettle();
   if (parent != null) {
     await tester.tap(find.text(parent));
     await tester.pumpAndSettle();
@@ -251,13 +250,13 @@ void main() {
     late VoidCallback reset;
     await tester.pumpWidget(frame(_chat(api, reset: (value) => reset = value)));
     await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
     if (usesNativeChatMenu) {
       tester
           .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
           .onSelected('file');
     } else {
-      await tester.tap(find.byTooltip('Capture or attach'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Attach'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Choose files'));
@@ -310,15 +309,6 @@ void main() {
           frame(_chat(_Api()), brightness: brightness, scale: 2, keyboard: 220),
         );
         await tester.pumpAndSettle();
-        if (usesNativeChatMenu) {
-          expect(find.byType(NativeChatMenuButton), findsOneWidget);
-          expect(
-            tester.getSize(find.byType(NativeChatMenuButton)),
-            const Size(48, 48),
-          );
-          expect(tester.takeException(), isNull);
-          return; // Native row layout is inspected separately through iOS UI.
-        }
         await tester.tap(find.byTooltip('Capture or attach'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

@@ -3085,6 +3085,43 @@ class _ChatPageState extends State<ChatPage>
     ],
   );
 
+  Widget _photoPreview() => Padding(
+    key: const Key('ask-photo-preview'),
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      children: [
+        InkWell(
+          onTap: _sending ? null : _attachPhoto,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              _photo!.bytes,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+              semanticLabel: 'Attached photo. Tap to replace.',
+              errorBuilder: (_, _, _) => const SizedBox(
+                width: 64,
+                height: 64,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  semanticLabel: 'Photo preview unavailable',
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(child: Text('Photo attached')),
+        IconButton(
+          tooltip: 'Remove photo',
+          onPressed: _sending ? null : () => setState(() => _photo = null),
+          icon: const Icon(Icons.close, size: 20),
+        ),
+      ],
+    ),
+  );
+
   Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
     builder: (context, bounds) {
       return SingleChildScrollView(
@@ -3101,29 +3138,7 @@ class _ChatPageState extends State<ChatPage>
                   children: [
                     _buildEmptyState(),
                     const SizedBox(height: 12),
-                    if (_photo != null)
-                      Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.memory(
-                              _photo!.bytes,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) =>
-                                  const Icon(Icons.image_outlined),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(child: Text('Photo attached')),
-                          IconButton(
-                            tooltip: 'Remove photo',
-                            onPressed: () => setState(() => _photo = null),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
+                    if (_photo != null) _photoPreview(),
                     WorldComposer(
                       sourceChips: _sourceChips,
                       menuOpen: _sourceMenuOpen,
@@ -3259,17 +3274,7 @@ class _ChatPageState extends State<ChatPage>
                     ],
                   ),
                 ),
-              if (_photo != null)
-                Row(
-                  children: [
-                    const Expanded(child: Text('Photo attached')),
-                    IconButton(
-                      tooltip: 'Remove photo',
-                      onPressed: () => setState(() => _photo = null),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
+              if (_photo != null) _photoPreview(),
               WorldComposer(
                 sourceChips: _sourceChips,
                 menuOpen: _sourceMenuOpen,
@@ -3395,50 +3400,7 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 const SizedBox(height: 10),
               ],
-              if (_photo != null)
-                Padding(
-                  key: const Key('ask-photo-preview'),
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: _sending ? null : _attachPhoto,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.memory(
-                            _photo!.bytes,
-                            width: 64,
-                            height: 64,
-                            fit: BoxFit.cover,
-                            semanticLabel: 'Attached photo. Tap to replace.',
-                            errorBuilder: (_, _, _) => const SizedBox(
-                              width: 64,
-                              height: 64,
-                              child: Center(child: AppText('Photo')),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: AppText(
-                          'Photo attached',
-                          style: TextStyle(
-                            color: AppTheme.foreground(
-                              context,
-                              Color(0xFF9999A2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Remove photo',
-                        onPressed: () => setState(() => _photo = null),
-                        icon: const Icon(Icons.close, size: 20),
-                      ),
-                    ],
-                  ),
-                ),
+              if (_photo != null) _photoPreview(),
               if (widget.worldHeading != null)
                 WorldComposer(
                   sourceChips: _sourceChips,

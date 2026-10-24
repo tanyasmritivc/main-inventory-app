@@ -833,6 +833,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
       expect(find.text('Photo attached'), findsOneWidget);
+      final preview = find.byKey(const Key('ask-photo-preview'));
+      expect(preview, findsOneWidget);
+      final thumbnail = tester.widget<Image>(
+        find.descendant(of: preview, matching: find.byType(Image)),
+      );
+      expect(thumbnail.image, isA<MemoryImage>());
+      expect((thumbnail.image as MemoryImage).bytes, png);
+      // Keep the image visible after typing the accompanying question.
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Describe this photo',
+      );
+      await tester.pump();
+      expect(preview, findsOneWidget);
       await tester.tap(find.byTooltip('Send message'));
       await tester.pumpAndSettle();
       expect(api.photos, hasLength(1));

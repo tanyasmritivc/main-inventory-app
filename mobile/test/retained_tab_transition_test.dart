@@ -41,8 +41,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       // No delayed ease-in: the destination is visibly appearing at 50ms.
-      expect(opacity()[0], inExclusiveRange(.65, .8));
-      expect(opacity()[1], inExclusiveRange(.2, .35));
+      expect(opacity()[0], inExclusiveRange(.4, .5));
+      expect(opacity()[1], inExclusiveRange(.5, .6));
+      // The nav indicator retains its existing 340ms cadence independently.
+      expect(RetainedTabTransition.duration, const Duration(milliseconds: 340));
+      expect(
+        RetainedTabTransition.pageDuration,
+        const Duration(milliseconds: 150),
+      );
       final before = opacity();
       update(() => selected = 2);
       await tester.pump();

@@ -9,6 +9,7 @@ class RetainedTabTransition extends StatefulWidget {
     required this.children,
   });
   static const duration = Duration(milliseconds: 340);
+  static const pageDuration = Duration(milliseconds: 150);
   // Immediate visible feedback, with a gentle settle rather than a slow start.
   static const curve = Curves.easeOutQuad;
 
@@ -23,7 +24,7 @@ class _RetainedTabTransitionState extends State<RetainedTabTransition>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: RetainedTabTransition.duration,
+    duration: RetainedTabTransition.pageDuration,
     value: 1,
   );
   late List<double> _from = _target;

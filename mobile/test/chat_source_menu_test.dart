@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/chat/chat_source_menu.dart';
+import 'package:mobile/features/chat/native_chat_menu_button.dart';
 
 void main() {
   testWidgets(
@@ -50,7 +51,7 @@ void main() {
   );
 
   testWidgets(
-    'native Attach returns to the native anchor without selecting extraction',
+    'native Attach keeps its anchor mounted until a real source is selected',
     (tester) async {
       final anchor = GlobalKey();
       String? selected;
@@ -80,8 +81,17 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Attach'));
       await tester.pumpAndSettle();
-      expect(selected, 'attach');
+      // A Flutter tap must not dismiss the row beneath the native menu.
+      expect(selected, isNull);
+      expect(find.text('Auto Extract'), findsOneWidget);
       expect(find.text('Photo library'), findsNothing);
+      tester
+          .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+          .onSelected('library');
+      await tester.pumpAndSettle();
+      expect(selected, 'library');
+      expect(find.text('Auto Extract'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
 }

@@ -1,3 +1,26 @@
+## October 24 — Attach menus and quick page entry delivered (beta 122; PR 188)
+
+Apple acknowledged 1.1.1 (122), delivery `be073265-056e-4e33-b8f3-c8b9e4e453a9`.
+Nav shell, native tab widget and Swift tab implementation are unchanged from
+build 121. Page opacity alone completes in 150ms. The root + menu and context/tool
+submenus use FindEZ UI; only Attach opens native Photo Library/Take Photo/Choose
+Files. All three composer layouts now show the selected photo thumbnail before
+Send, retaining regular chat versus explicit Auto Extract routing.
+
+Final full Flutter suite: 847 passed, one optional skip. Focused checks: 67 plus
+2 menu regressions; analysis clean. Two native integration checks and iOS 26.5
+manual menu/photo-preview inspection passed. All five CI jobs passed on 4389b88
+(run 40074291896). The binary was built from e6e748c; only a test changed afterward,
+with runtime-source equivalence recorded. Archive/export each passed 32 iOS
+executable checks, strict signing, 24 privacy manifests and production HTTPS
+config. Apple validation passed. IPA SHA256:
+`060fe732667f3cb3f8f205f6f8f128676789236f96e4159ab0ebce7c5099a9c5`.
+
+Private artifacts: `Documents/FindEZ/AppStore/1.1.1-build122`. Processing and tester
+availability were not polled. Physical iPhone acceptance remains unverified; no
+public App Store submission or backend/web/schema changes. See
+`docs/plans/chat-attachments-20261024.md` for manual acceptance.
+
 ## October 24 — Smart search delivered (beta121; PR187)
 
 Apple acknowledged1.1.1(121), delivery8604efa5-2f43-40ff-96e8-e051dc2a5a11.
