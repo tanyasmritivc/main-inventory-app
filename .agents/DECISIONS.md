@@ -1,3 +1,11 @@
+## October 24 - Whole-page tab fades and native glass timing
+
+Headers and tab-specific actions belong inside each retained page's fade so a
+selection cannot relayout outgoing content. Begin the 340ms ease-out immediately;
+do not delay selection callbacks. Native UITabBar stays system-rendered, using
+only the public layer timing API for a gentler clock; respect Reduce Motion.
+User-supplied rounded app SVGs replace launcher artwork only in this mobile lane.
+
 ## October 23 — Native iOS standard controls
 
 Use UIKit for history/settings sheets, simple alerts/choices, UIMenu and standard

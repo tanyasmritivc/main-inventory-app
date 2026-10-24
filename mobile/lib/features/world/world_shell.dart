@@ -551,6 +551,68 @@ class _WorldShellState extends State<WorldShell> {
   Widget build(BuildContext context) =>
       WorldStyle(child: Builder(builder: _buildWorld));
 
+  Widget _tabHeader(BuildContext context, int index) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+    child: Row(
+      children: [
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: index != 0
+                ? Text(
+                    index == 1 ? 'Spaces' : 'More',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  )
+                : OrganizationPill(
+                    api: widget.session.api,
+                    id: widget.session.organizationId,
+                    name: widget.session.organizationName,
+                    glass: true,
+                    labelStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -0.2,
+                    ),
+                    onSelected: widget.session.selectOrganization,
+                  ),
+          ),
+        ),
+        if (index == 0) NotificationBell(api: _chatApi),
+        if (index == 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: LiquidIconButton(
+              tooltip: 'Chat history',
+              onPressed: _history,
+              icon: CupertinoIcons.clock,
+            ),
+          ),
+        if (index == 1)
+          IconButton(
+            tooltip: _searchingSpaces ? 'Close Space search' : 'Search Spaces',
+            icon: Icon(
+              _searchingSpaces ? CupertinoIcons.xmark : CupertinoIcons.search,
+              size: 22,
+            ),
+            onPressed: () => setState(() {
+              _searchingSpaces = !_searchingSpaces;
+              _search.clear();
+            }),
+          ),
+        if (index == 0)
+          IconButton(
+            tooltip: 'Account',
+            onPressed: _account,
+            icon: MemberAvatar(
+              name: _profile.name,
+              photoUrl: _profile.photoUrl,
+              size: 36,
+            ),
+          ),
+      ],
+    ),
+  );
+
   Widget _buildWorld(BuildContext context) {
     if (!_loadedNavigation) {
       return Scaffold(
@@ -594,129 +656,79 @@ class _WorldShellState extends State<WorldShell> {
           top: !focused,
           child: Column(
             children: [
-              if (!focused)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: _tab != 0
-                              ? Text(
-                                  _tab == 1 ? 'Spaces' : 'More',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineLarge,
-                                )
-                              : OrganizationPill(
-                                  api: widget.session.api,
-                                  id: widget.session.organizationId,
-                                  name: widget.session.organizationName,
-                                  glass: true,
-                                  labelStyle: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: -0.2,
-                                  ),
-                                  onSelected: widget.session.selectOrganization,
-                                ),
-                        ),
-                      ),
-                      if (_tab == 0) NotificationBell(api: _chatApi),
-                      if (_tab == 0)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: LiquidIconButton(
-                            tooltip: 'Chat history',
-                            onPressed: _history,
-                            icon: CupertinoIcons.clock,
-                          ),
-                        ),
-                      if (_tab == 1)
-                        IconButton(
-                          tooltip: _searchingSpaces
-                              ? 'Close Space search'
-                              : 'Search Spaces',
-                          icon: Icon(
-                            _searchingSpaces
-                                ? CupertinoIcons.xmark
-                                : CupertinoIcons.search,
-                            size: 22,
-                          ),
-                          onPressed: () => setState(() {
-                            _searchingSpaces = !_searchingSpaces;
-                            _search.clear();
-                          }),
-                        ),
-                      if (_tab == 0)
-                        IconButton(
-                          tooltip: 'Account',
-                          onPressed: _account,
-                          icon: MemberAvatar(
-                            name: _profile.name,
-                            photoUrl: _profile.photoUrl,
-                            size: 36,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               Expanded(
                 key: const ValueKey('world-content'),
                 child: RetainedTabTransition(
                   index: _tab,
                   children: [
-                    ChatPage(
-                      key: ValueKey(_world),
-                      api: _chatApi,
-                      inPageView: true,
-                      worldHeading: _directory == null
-                          ? 'Your physical world, remembered.'
-                          : _directory?['has_items'] != true
-                          ? 'Create your inventory world.'
-                          : "Find what's in your world.",
-                      onChatStateChanged: (value) {
-                        if (mounted) setState(() => _chatFocused = value);
-                      },
-                      onRegisterOpenHistory: (callback) {
-                        _history = callback;
-                      },
-                      onBack: () {
-                        if (mounted) setState(() => _chatFocused = false);
-                      },
-                      onCaptureAction: _capture,
-                      onOpenDestination: _openChatResource,
-                      onInventoryMutated: () {
-                        _revision++;
-                        unawaited(_load());
-                      },
+                    Column(
+                      children: [
+                        if (!_chatFocused) _tabHeader(context, 0),
+                        Expanded(
+                          child: ChatPage(
+                            key: ValueKey(_world),
+                            api: _chatApi,
+                            inPageView: true,
+                            worldHeading: _directory == null
+                                ? 'Your physical world, remembered.'
+                                : _directory?['has_items'] != true
+                                ? 'Create your inventory world.'
+                                : "Find what's in your world.",
+                            onChatStateChanged: (value) {
+                              if (mounted) setState(() => _chatFocused = value);
+                            },
+                            onRegisterOpenHistory: (callback) {
+                              _history = callback;
+                            },
+                            onBack: () {
+                              if (mounted) setState(() => _chatFocused = false);
+                            },
+                            onCaptureAction: _capture,
+                            onOpenDestination: _openChatResource,
+                            onInventoryMutated: () {
+                              _revision++;
+                              unawaited(_load());
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    _spaces(context),
-                    _more(context),
+                    Column(
+                      children: [
+                        _tabHeader(context, 1),
+                        Expanded(child: _spaces(context)),
+                        if (!keyboard &&
+                            _inventories.any((row) => row['can_edit'] == true))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 12),
+                            child: LiquidSurface(
+                              radius: 28,
+                              child: TextButton.icon(
+                                onPressed: _creatingSpace ? null : _newSpace,
+                                icon: const Icon(CupertinoIcons.plus, size: 19),
+                                label: Text(
+                                  _creatingSpace ? 'Creating...' : 'New space',
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 22,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        _tabHeader(context, 2),
+                        Expanded(child: _more(context)),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              if (_tab == 1 &&
-                  !keyboard &&
-                  _inventories.any((row) => row['can_edit'] == true))
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 12),
-                  child: LiquidSurface(
-                    radius: 28,
-                    child: TextButton.icon(
-                      onPressed: _creatingSpace ? null : _newSpace,
-                      icon: const Icon(CupertinoIcons.plus, size: 19),
-                      label: Text(_creatingSpace ? 'Creating...' : 'New space'),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               if (!focused && !keyboard)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(54, 8, 54, 10),
@@ -747,9 +759,11 @@ class _WorldShellState extends State<WorldShell> {
                                               context,
                                             )
                                             ? 0
-                                            : 360,
+                                            : RetainedTabTransition
+                                                  .duration
+                                                  .inMilliseconds,
                                       ),
-                                      curve: Curves.easeInOutCubicEmphasized,
+                                      curve: RetainedTabTransition.curve,
                                       child: FractionallySizedBox(
                                         widthFactor: 1 / 3,
                                         heightFactor: 1,

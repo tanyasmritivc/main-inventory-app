@@ -73,7 +73,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(configurations.last, {'selected': 0, 'dark': false});
+      expect(configurations.last, {
+        'selected': 0,
+        'dark': false,
+        'reduceMotion': false,
+      });
       platformCalls.clear();
       await tester.tap(find.byType(UiKitView));
       await tester.pumpAndSettle();
@@ -114,7 +118,11 @@ void main() {
         dark = true;
       });
       await tester.pumpAndSettle();
-      expect(configurations.last, {'selected': 2, 'dark': true});
+      expect(configurations.last, {
+        'selected': 2,
+        'dark': true,
+        'reduceMotion': false,
+      });
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
       await nativeEvent(0);

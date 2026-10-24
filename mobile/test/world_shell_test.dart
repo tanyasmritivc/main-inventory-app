@@ -11,6 +11,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/place_session.dart';
 import 'package:mobile/features/world/world_shell.dart';
+import 'package:mobile/features/world/retained_tab_transition.dart';
 import 'package:mobile/features/world/world_action_card.dart';
 import 'package:mobile/features/world/world_composer.dart';
 import 'package:mobile/features/workspaces/organization_pill.dart';
@@ -203,6 +204,62 @@ void main() {
       });
     }
   }
+  testWidgets('whole page fades without outgoing header or footer relayout', (
+    tester,
+  ) async {
+    final fallback = fixture.respond;
+    fixture.respond = (request) {
+      if (request.path.endsWith('/directory')) {
+        return {
+          'has_items': false,
+          'inventories': [
+            {
+              'inventory_id': 'inventory-a',
+              'name': 'Workshop',
+              'can_edit': true,
+            },
+          ],
+        };
+      }
+      return fallback(request);
+    };
+    await mount(tester);
+    final heading = find.text('Create your inventory world.');
+    final before = tester.getRect(heading);
+    await tester.tap(find.byTooltip('Spaces'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    // Outgoing Ask must not jump when Spaces reveals its footer action.
+    expect(tester.getRect(heading), before);
+    final transition = find.byType(RetainedTabTransition);
+    expect(
+      find.descendant(of: transition, matching: find.byType(OrganizationPill)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: transition,
+        matching: find.byTooltip('Search Spaces'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: transition, matching: find.text('New space')),
+      findsOneWidget,
+    );
+    final content = tester.getRect(find.byKey(const ValueKey('world-content')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('More'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(
+      tester.getRect(find.byKey(const ValueKey('world-content'))),
+      content,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Spaces is reachable and does not replace Ask with a dashboard', (
     tester,
   ) async {
