@@ -1,3 +1,23 @@
+## October 23 - Blue echo, tab motion and Settings type delivered as beta 118
+
+Apple acknowledged 1.1.1 (118), delivery `7ea3cc3c-c89b-4ec3-ab84-a4d1862ce1bb`.
+Runtime `28187b5d719bab41ccd52288cd315fcf4a4265c3`, PR181. All five CI jobs
+passed on that exact commit (run 40049512512). Full Flutter suite: 821 passed,
+one optional skip; analysis clean. Native Settings Default dark/light visually
+verified on iOS 26.5 simulator. Physical-device acceptance remains pending.
+
+Native Liquid Glass remains, with retained 300ms content transitions and Reduce
+Motion support. Native Settings matches app size preferences and Dynamic Type.
+Primary Blue echo icons/logos and bundled Plus Jakarta Sans / Geist Mono applied.
+Plain chat background preserved. Web branding delivered in separate PR182.
+
+The initial archive's simulator objective_c framework was caught before upload.
+Preserved that rejected local candidate, cleaned Flutter caches and rebuilt.
+Final archive/export: all 32 Mach-O executables target iOS devices, strict signing,
+24 privacy manifests and HTTPS production configuration verified. Apple validation
+and upload succeeded. Processing was not polled; no public App Store submission.
+Receipt: `docs/plans/mobile-blue-echo-20261023.md`.
+
 ## October 23 - Native iOS controls delivered as beta 117
 
 Apple acknowledged 1.1.1 (117), delivery `81e1133e-f035-4b0c-bf55-af1197d5eaa3`.

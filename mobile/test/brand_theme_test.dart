@@ -24,10 +24,10 @@ void main() {
     expect(BrandColors.ink.toARGB32(), 0xFF111112);
     expect(BrandColors.signal.toARGB32(), 0xFFE8590C);
     expect(BrandColors.paper.toARGB32(), 0xFFFFFFFF);
-    expect(BrandColors.surface.toARGB32(), 0xFFF7F7F6);
-    expect(BrandColors.hairline.toARGB32(), 0xFFE6E6E2);
-    expect(BrandColors.inkSoft.toARGB32(), 0xFF5B5B60);
-    expect(BrandColors.inkMuted.toARGB32(), 0xFF96969C);
+    expect(BrandColors.surface.toARGB32(), 0xFFF7FAFD);
+    expect(BrandColors.hairline.toARGB32(), 0xFFE8E8EA);
+    expect(BrandColors.inkSoft.toARGB32(), 0xFF55565B);
+    expect(BrandColors.inkMuted.toARGB32(), 0xFF8C8D92);
     expect(BrandColors.warning.toARGB32(), 0xFF8A5A00);
     expect(BrandColors.success.toARGB32(), 0xFF2F7D5A);
     expect(BrandColors.danger.toARGB32(), 0xFFC9363E);
@@ -137,15 +137,16 @@ void main() {
   });
 
   test(
-    'original mark and outlined wordmark retain overlap and square joins',
+    'Blue echo mark and outlined wordmark retain supplied geometry',
     () async {
       for (final name in ['findez-mark.svg', 'findez-wordmark.svg']) {
         final svg = await rootBundle.loadString('assets/brand/$name');
-        expect(svg, contains('M25.25 40.75H55.25V70.75'));
-        expect(svg, contains('M50.25 30.75H65.25V45.75'));
-        // The supplied mark uses SVG's default miter joins and butt caps.
+        expect(svg, contains('fill="#A9D6F5"'));
+        expect(svg, contains('M54.25 24.25 H67.25'));
+        // Keep the supplied filled vector paths, without added strokes.
         expect(svg, isNot(contains('stroke-linejoin="round"')));
         expect(svg, isNot(contains('stroke-linecap="round"')));
+        expect(svg, contains('fill="#111112"'));
         expect(svg, isNot(contains('<text')));
         expect(svg, isNot(contains('Gradient')));
       }

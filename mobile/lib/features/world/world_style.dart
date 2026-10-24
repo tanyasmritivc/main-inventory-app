@@ -9,28 +9,24 @@ class WorldStyle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final ink = dark ? const Color(0xFFF4F3F1) : const Color(0xFF262320);
-    final muted = dark ? const Color(0xFFA8A5A2) : const Color(0xFF716B66);
-    final native =
-        theme.platform == TargetPlatform.iOS ||
-        theme.platform == TargetPlatform.macOS;
+    final ink = dark ? const Color(0xFFF4F3F1) : const Color(0xFF111112);
+    final muted = dark ? const Color(0xFFA8A5A2) : const Color(0xFF55565B);
     TextStyle text(
       double size, {
       FontWeight weight = FontWeight.w400,
       bool secondary = false,
     }) => TextStyle(
-      fontFamily: native ? 'CupertinoSystemText' : null,
+      fontFamily: 'PlusJakartaSans',
       fontSize: size,
       fontWeight: weight,
       letterSpacing: -.25,
       height: 1.35,
       color: secondary ? muted : ink,
     );
-    final title = text(30, weight: FontWeight.w500).copyWith(
-      fontFamily: native ? 'CupertinoSystemDisplay' : null,
-      letterSpacing: -.7,
-      height: 1.15,
-    );
+    final title = text(
+      30,
+      weight: FontWeight.w600,
+    ).copyWith(fontFamily: 'PlusJakartaSans', letterSpacing: -.7, height: 1.15);
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(24),
       borderSide: BorderSide(color: ink.withValues(alpha: .10), width: .7),
@@ -41,7 +37,7 @@ class WorldStyle extends StatelessWidget {
           textTheme: theme.textTheme.copyWith(
             headlineLarge: title,
             headlineMedium: title.copyWith(fontSize: 26),
-            titleLarge: text(20, weight: FontWeight.w500),
+            titleLarge: text(20, weight: FontWeight.w600),
             titleMedium: text(17, weight: FontWeight.w500),
             titleSmall: text(15, weight: FontWeight.w500),
             bodyLarge: text(16),
@@ -62,7 +58,7 @@ class WorldStyle extends StatelessWidget {
             border: border,
             enabledBorder: border,
             focusedBorder: border.copyWith(
-              borderSide: const BorderSide(color: Color(0xFFC45A28)),
+              borderSide: const BorderSide(color: Color(0xFFE8590C)),
             ),
             fillColor: ink.withValues(alpha: .035),
             contentPadding: const EdgeInsets.symmetric(

@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../app_theme.dart';
 import 'brand_colors.dart';
 
-/// Original outlined artwork, not a font approximation or whole-image tint.
+/// Supplied Blue echo outlined artwork, not a font approximation or whole-image tint.
 class FindEZWordmark extends StatelessWidget {
   const FindEZWordmark({super.key, this.width = 208});
 

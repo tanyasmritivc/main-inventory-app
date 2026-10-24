@@ -106,7 +106,7 @@ void main() {
           matching: find.byType(RichText),
         ),
       );
-      expect(heading.text.style?.fontWeight, FontWeight.w500);
+      expect(heading.text.style?.fontWeight, FontWeight.w600);
       final hint = tester.widget<RichText>(
         find.descendant(
           of: find.text('Describe your inventory…'),

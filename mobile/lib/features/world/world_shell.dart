@@ -1,4 +1,5 @@
 import 'native_bottom_tabs.dart';
+import 'retained_tab_transition.dart';
 import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
@@ -663,7 +664,7 @@ class _WorldShellState extends State<WorldShell> {
                 ),
               Expanded(
                 key: const ValueKey('world-content'),
-                child: IndexedStack(
+                child: RetainedTabTransition(
                   index: _tab,
                   children: [
                     ChatPage(

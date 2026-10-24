@@ -105,7 +105,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
             Text(
               'Add ${setup.isTeam ? setup.orgName : setup.workspacePurpose} to your account?',
               style: const TextStyle(
-                fontFamily: 'PlaceGeist',
+                fontFamily: 'PlusJakartaSans',
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
               ),
@@ -159,7 +159,7 @@ class _WorldSetupGateState extends State<WorldSetupGate> {
                     child: Text(
                       "We couldn't finish setting up. Try again.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: 'PlaceGeist', fontSize: 18),
+                      style: TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 18),
                     ),
                   ),
                   if (snapshot.error is SetupOutcomeUncertain) ...[
