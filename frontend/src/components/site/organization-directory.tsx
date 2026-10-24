@@ -4,7 +4,7 @@ import { usePermissionRefresh } from "@/lib/use-permission-refresh";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Building2, FolderKanban, UserRound } from "lucide-react";
 import { AppShell } from "@/components/site/app-shell";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { accountRequest } from "@/lib/account-request";
@@ -32,18 +32,27 @@ export function OrganizationActions({ organization, onRename, onDelete, disabled
   <DropdownMenuContent align="end" className="organization-actions-menu" onCloseAutoFocus={(event) => { if (openingDialog.current) { event.preventDefault(); openingDialog.current = false; } }}>{canRename && <DropdownMenuItem onSelect={() => { openingDialog.current = true; onRename(); }}>Rename</DropdownMenuItem>}{onLeave && <DropdownMenuItem onSelect={() => { openingDialog.current = true; onLeave(); }}>Leave organization</DropdownMenuItem>}{canDelete && <><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onSelect={() => { openingDialog.current = true; onDelete(); }}>Delete</DropdownMenuItem></>}</DropdownMenuContent>
  </DropdownMenu></div>;
 }
-export function OrganizationDirectory({ organizationId, view = "workspaces" }: { organizationId?: string; view?: OrganizationView }) {
+export function OrganizationDirectory({ organizationId, view = "workspaces", startCreate = false }: { organizationId?: string; view?: OrganizationView; startCreate?: boolean }) {
  const { accountId } = useApiSession();
- return <Directory key={`${accountId}:${organizationId}:${view}`} organizationId={organizationId} view={view} />;
+ return <Directory key={`${accountId}:${organizationId}:${view}`} organizationId={organizationId} view={view} startCreate={startCreate} />;
 }
-function Directory({ organizationId, view }: { organizationId?: string; view: OrganizationView }) {
+function Directory({ organizationId, view, startCreate }: { organizationId?: string; view: OrganizationView; startCreate: boolean }) {
  const { accountId, error: sessionError } = useApiSession(), router = useRouter();
  const [organizations, setOrganizations] = useState<Org[]>([]), [overview, setOverview] = useState<Overview | null>(null);
  const [rename, setRename] = useState<RenameTarget | null>(null);
  const [leaving, setLeaving] = useState<Org | null>(null);
  const [deleting, setDeleting] = useState<OrganizationTarget | null>(null);
  const [query, setQuery] = useState("");
- const [mode, setMode] = useState<"organization" | "workspace" | "member" | "attach" | null>(null);
+ const [mode, setMode] = useState<"organization" | "workspace" | "member" | "attach" | null>(startCreate && !organizationId ? "organization" : null);
+ const [createRequested, setCreateRequested] = useState(startCreate);
+ if (createRequested !== startCreate) {
+  setCreateRequested(startCreate);
+  if (startCreate && !organizationId) setMode("organization");
+ }
+ // Consume the navigation intent so Cancel followed by New organization works again.
+ useEffect(() => {
+  if (startCreate && !organizationId) router.replace("/organizations", { scroll: false });
+ }, [startCreate, organizationId, router]);
  const [existingWorkspace, setExistingWorkspace] = useState("");
  const [delivery, setDelivery] = useState<InvitationDelivery | null>(null);
  const [name, setName] = useState(""), [email, setEmail] = useState(""), [role, setRole] = useState("member");
@@ -108,10 +117,10 @@ function Directory({ organizationId, view }: { organizationId?: string; view: Or
    {!overview?.members.some((m) => matches(m.display_name)) && <p className="workspace-muted">No matching people.</p>}
    {manager && <PendingInvitations scope="organization" resourceId={organizationId} revision={revision} />}
   </> : <>
-   <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}>{ws.can_open === false ? <div className="context-card-link"><strong>{ws.name}</strong><span>Not assigned to this workspace</span></div> : <Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><strong>{ws.name}</strong><span>Workspace</span></Link>}{accountId && (ws.owner_user_id === accountId || ["owner", "admin"].includes(overview.organization.role)) && <div className={styles.actions}><WorkspaceManagementActions id={ws.team_id} name={ws.name} accountId={accountId} onRenamed={()=>setRevision(v=>v+1)} onDeleted={()=>setRevision(v=>v+1)} /></div>}</div>)}</div>
+   <div className="context-card-grid">{overview?.workspaces.filter((ws) => matches(ws.name)).map((ws) => <div className="context-card context-inventory-card" key={ws.team_id}>{ws.can_open === false ? <div className="context-card-link"><span className={styles.cardIcon}><FolderKanban size={20} aria-hidden="true" /></span><strong>{ws.name}</strong><span>Not assigned to this workspace</span></div> : <Link className="context-card-link" href={`/workspaces/${ws.team_id}`}><span className={styles.cardIcon}><FolderKanban size={20} aria-hidden="true" /></span><strong>{ws.name}</strong><span>Workspace</span></Link>}{accountId && (ws.owner_user_id === accountId || ["owner", "admin"].includes(overview.organization.role)) && <div className={styles.actions}><WorkspaceManagementActions id={ws.team_id} name={ws.name} accountId={accountId} onRenamed={()=>setRevision(v=>v+1)} onDeleted={()=>setRevision(v=>v+1)} /></div>}</div>)}</div>
    {!overview?.workspaces.some((ws) => matches(ws.name)) && <div className={styles.empty}><h2>{query ? "No matching workspaces" : "No workspaces yet"}</h2><p>{query ? "Try another name." : manager ? "Create a workspace for your team or project." : "You have not been assigned to a workspace."}</p>{manager && !query && <button className="product-button" onClick={()=>open("workspace")}>Create workspace</button>}</div>}
   </> : <>
-   <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && <OrganizationActions canRename={["owner", "admin"].includes(org.role)} onLeave={()=>setLeaving(org)} canDelete={org.owner_user_id === accountId} organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>
+   <div className="context-card-grid">{matches("Personal") && <Link className="context-card" href="/workspaces/personal"><span className={styles.cardIcon}><UserRound size={20} aria-hidden="true" /></span><strong>Personal</strong><span>Private inventory</span></Link>}{organizations.filter((org) => matches(org.name)).map((org) => <div className="context-card context-inventory-card context-organization-card" key={org.organization_id}><Link className="context-card-link" href={`/organizations/${org.organization_id}`}><span className={styles.cardIcon}><Building2 size={20} aria-hidden="true" /></span><strong>{org.name}</strong><span>{org.role.charAt(0).toUpperCase() + org.role.slice(1)}</span></Link>{accountId && <OrganizationActions canRename={["owner", "admin"].includes(org.role)} onLeave={()=>setLeaving(org)} canDelete={org.owner_user_id === accountId} organization={org} disabled={busy} onRename={() => setRename({kind:"organization",id:org.organization_id,name:org.name})} onDelete={() => setDeleting(org)} />}</div>)}</div>
    {query && !matches("Personal") && !organizations.some((org) => matches(org.name)) && <p className="workspace-muted">No matching organizations.</p>}
   </>}
   {accountId && rename && <RenameResourceDialog key={`${rename.kind}:${rename.id}`} accountId={accountId} target={rename} onClose={() => setRename(null)} onSaved={(savedName) => {

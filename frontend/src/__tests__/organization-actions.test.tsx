@@ -7,7 +7,7 @@ import { OrganizationDirectory } from "@/components/site/organization-directory"
 import { accountRequest } from "@/lib/account-request";
 import { useApiSession } from "@/lib/use-api-session";
 
-const router = { push: jest.fn() };
+const router = { push: jest.fn(), replace: jest.fn() };
 const org = { organization_id: "acme", name: "Acme", role: "owner", owner_user_id: "owner" };
 jest.mock("@/components/site/app-shell", () => ({ AppShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
 jest.mock("next/navigation", () => ({ useRouter: () => router }));
@@ -89,4 +89,17 @@ test("owner opens move-or-delete organization choices with affected counts",asyn
  expect(await screen.findByText(/12 items/)).toBeTruthy();
  expect(screen.getByRole('radio',{name:'Keep workspaces outside this organization'})).toBeTruthy();
  expect(screen.getByRole('radio',{name:'Delete organization and all its contents'})).toBeTruthy();
+});
+
+test("switcher new-organization destination opens the existing reviewable creation form", async () => {
+  const { rerender } = render(<OrganizationDirectory startCreate />);
+  expect(await screen.findByRole("dialog", { name: "New organization" })).toBeTruthy();
+  expect(screen.getByRole("textbox", { name: "Organization name" })).toHaveProperty("value", "");
+  expect(jest.mocked(accountRequest).mock.calls.some(call => call[2]?.method)).toBe(false);
+  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(router.replace).toHaveBeenCalledWith("/organizations", { scroll: false });
+  rerender(<OrganizationDirectory startCreate={false} />);
+  rerender(<OrganizationDirectory startCreate />);
+  expect(await screen.findByRole("dialog", { name: "New organization" })).toBeTruthy();
 });

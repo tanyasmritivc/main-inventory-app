@@ -1,3 +1,12 @@
+## October 24 — Desktop organization-first shell
+
+Use the mobile organization hierarchy in the desktop sidebar: authenticated
+organizations and Personal, with existing create and invitation flows. The selector
+navigates between authorized directories; it does not switch accounts or imply new
+access. Keep workspace/inventory context and all existing tools. Desktop navigation
+is expanded by default and respects a previously saved collapsed preference. Keep
+the public landing/auth design separate and deploy only on the self-hosted server.
+
 ## October 24 — Landing prompts go directly to authentication
 
 User explicitly removed the interactive inventory demo. Submit opens signup

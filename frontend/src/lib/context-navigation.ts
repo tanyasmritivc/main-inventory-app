@@ -3,6 +3,8 @@ import type { AppNavItem } from "@/components/site/app-sidebar";
 import type { InventoryWorkspace } from "@/lib/inventory-selection";
 
 export type NavigationContext = {
+  organization?: { id: string; name: string };
+  personal?: boolean;
   breadcrumbs: { label: string; href: string }[];
   items: AppNavItem[];
   activeRoute: string;
@@ -12,7 +14,7 @@ export type WorkspaceView = "overview" | "settings" | "inventories" | "people" |
 export type OrganizationView = "workspaces" | "people";
 export function organizationNavigation(id: string, name: string, view: OrganizationView): NavigationContext {
   const home = `/organizations/${encodeURIComponent(id)}`;
-  return { breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
+  return { organization: { id, name }, breadcrumbs: [{ label: "Organizations", href: "/organizations" }, { label: name, href: home }], homeHref: "/organizations",
     activeRoute: view === "people" ? `${home}?view=people` : home,
     items: [{ label: "Workspaces", route: home, icon: FolderKanban, section: "Organization" }, { label: "People", route: `${home}?view=people`, icon: Users, section: "Organization" }] };
 }
@@ -28,7 +30,7 @@ export function workspaceNavigation(workspace: InventoryWorkspace, view: Workspa
       { label: "Activity", route: `${home}?view=activity`, icon: History, section: "Workspace" },
       { label: "Settings", route: `${home}?view=settings`, icon: Settings, section: "Workspace" });
   }
-  return { homeHref: "/organizations", activeRoute: view === "inventories" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items,
+  return { organization: workspace.organization_id ? { id: workspace.organization_id, name: workspace.organization_name || "Organization" } : undefined, personal: workspace.kind === "personal", homeHref: "/organizations", activeRoute: view === "inventories" || workspace.kind === "personal" ? home : `${home}?view=${view}`, items,
     breadcrumbs: [workspace.organization_id ? { label: workspace.organization_name || "Organization", href: `/organizations/${encodeURIComponent(workspace.organization_id)}` } : { label: "Workspaces", href: "/workspaces" }, { label: workspace.name, href: home }] };
 }
 export const DIRECTORY_NAVIGATION: AppNavItem[] = [
