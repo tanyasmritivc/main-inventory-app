@@ -1,3 +1,14 @@
+## October 24 — Chat activity disclosure (candidate)
+
+Web-only feat/chat-progress-web-20261024 adapts the supplied React Bits shimmer
+for actual server status messages, with a native details disclosure, theme support,
+Reduce Motion, offscreen/hidden-tab pause and no animation-frame React rendering.
+Text capture cards say Inventory draft. No navigation or auth changes.
+557 Jest tests /77 suites and TypeScript pass. Changed lint has only3 existing
+assist-client warnings. Local build compiled but lacks Supabase build environment;
+production-configured server build and publication pending. Backend activity and
+text drafts are delivered in their separate API lane.
+
 ## October 24 — Direct organization entry and chat sources live
 
 Web PR193 (`feat/direct-world-entry-chat-menu-20261024`), runtime `18f3b06`, is

@@ -1,4 +1,5 @@
 "use client";
+import { ChatProgress } from "./chat-progress";
 import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
 import { ChatContextPicker } from "./chat-context-picker";
 import { ChatCaptureCard } from "./chat-capture-card";
@@ -776,14 +777,9 @@ function AssistClientWorkspace({
                       <div className="ask-body">{m.content}</div>
                     )
                   ) : (
-                    <p
-                      className="ask-pending"
-                      role={m.id === pendingMessageId ? "status" : undefined}
-                    >
-                      {m.id === pendingMessageId
-                        ? status
-                        : "The answer did not finish."}
-                    </p>
+                    m.id === pendingMessageId ? (
+                      <ChatProgress key={m.id} message={status} />
+                    ) : <p className="ask-pending">The answer did not finish.</p>
                   )}
                   {accountId &&
                     worldId &&
