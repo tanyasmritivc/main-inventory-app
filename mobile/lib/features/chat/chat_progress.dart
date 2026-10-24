@@ -162,7 +162,7 @@ class _ShinyStatusTextState extends State<ShinyStatusText>
           blendMode: BlendMode.srcIn,
           shaderCallback: (bounds) {
             final eased = .5 - math.cos(math.pi * _controller.value) / 2;
-            final center = 1.22 - 1.44 * eased;
+            final center = -.22 + 1.44 * eased;
             return LinearGradient(
               begin: const Alignment(-1, .58),
               end: const Alignment(1, -.58),
