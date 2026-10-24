@@ -1,3 +1,12 @@
+## October 24 — Latest rounded echo artwork supersedes previous icon selection
+
+Use docs/brand-echo-current-20261024 as the current artwork source. The user supplied
+findez-logo-echo.zip with standalone findez-app-icon-dark-2.svg/light-2.svg; those
+standalone files exactly match round/ in the ZIP, not soft/. Preserve that variant's
+1.42 app/favicon scale, rounded paths and original colors. Prior brand selection
+receipts remain historical. Activity shine now travels left to right at the user's
+request with unchanged two-second timing. Navigation motion remains untouched.
+
 ## October 24 — Direct account entry and shared chat sources
 
 Ordinary web authentication opens authorized organization/Personal chat directly.

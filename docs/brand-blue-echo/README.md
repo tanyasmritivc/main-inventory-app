@@ -1,3 +1,6 @@
+> Historical selection: superseded by the user’s later October 24 request.
+> Current artwork and receipts: [brand-echo-current-20261024](../brand-echo-current-20261024/README.md).
+
 # Blue echo rollout - October 23, 2026
 
 The supplied `findez-brand-kit.zip` is authoritative. `kit/` preserves its brand
