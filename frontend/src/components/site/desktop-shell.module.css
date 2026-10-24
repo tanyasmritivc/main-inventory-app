@@ -41,7 +41,6 @@
 .shell.shell :global(.scan-input-action) { display:flex; flex-wrap:wrap; gap:8px; }
 .shell.shell :global(.scan-input-action input) { flex:1 1 180px; min-width:0; }
 .shell.shell :global(.scan-destination) { flex-wrap:wrap; gap:8px; }
-.shell.shell :global(.source-tabs) { overflow-x:auto; scrollbar-width:thin; }
 .shell.shell :global(.source-tabs button) { flex-shrink:0; }
 .shell.shell.shell :global(.ask-workspace) { background:var(--app-bg); min-height:calc(100dvh - 60px); }
 .shell.shell:global(.is-ask-workspace) :global(.app-content) { max-width:none; padding:0; }
