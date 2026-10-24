@@ -1,9 +1,14 @@
-## October 23 - Blue echo web branding (active)
+## October 23 - Blue echo web branding delivered
 
-Branch `feat/brand-blue-echo-web-20261023`, based on deployed landing-v3.
-Use the supplied primary kit for shared logos, favicon/touch/social/search assets
-and shared typography. Self-hosted web release only; backend/database unchanged.
-Mobile changes are isolated in the sibling mobile worktree.
+Self-hosted `findez-web` serves runtime `ccb15ac80a37438ca5b6726aac6a8e1cbc4337ed`,
+PR182, build `E_0tL8htuWZYnnxCVcbL1`. Live directory:
+`/home/ubuntu/findez-web-releases/brand-blue-echo-icons-20261023/frontend`.
+Primary kit logos, browser/touch icons, search/social metadata and shared fonts
+are live. Fixed icon version URLs refresh Chrome's cached old favicon on reload.
+Ten route statuses and six exact asset hashes verified; backend PID unchanged.
+All five CI jobs passed (run 40062624865). Local 472 web tests, TypeScript and
+production build passed; lint retains 52 pre-existing warnings, no errors.
+See `docs/brand-blue-echo/DEPLOYMENT.md`. Google recrawl remains external.
 
 ## October 23 — Landing v3 live on self-hosted web
 
