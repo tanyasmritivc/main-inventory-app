@@ -2,6 +2,7 @@
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
 import Link from "@/components/site/inventory-link";
+import { OrganizationSwitcher, type SelectedOrganization } from "./organization-switcher";
 import { FindEZMark, FindEZWordmark } from "./findez-brand";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -141,6 +142,7 @@ export function AppSidebar({
   items = APP_NAV_ITEMS,
   activeRoute,
   homeHref = "/home",
+  accountId, organization, personal,
 }: {
   onToggle: () => void;
   sidebarOpen: boolean;
@@ -152,6 +154,9 @@ export function AppSidebar({
   items?: AppNavItem[];
   activeRoute?: string;
   homeHref?: string;
+  accountId?: string | null;
+  organization?: SelectedOrganization;
+  personal?: boolean;
 }) {
   const pathname = usePathname(),
     router = useInventoryRouter();
@@ -277,6 +282,7 @@ export function AppSidebar({
             {pinned ? <PinOff size={16} /> : <Pin size={16} />}
           </button>}
         </div>
+        {accountId !== undefined && <OrganizationSwitcher accountId={accountId} organization={organization} personal={personal} onNavigate={closeDrawer} />}
         <nav className="app-sidebar-nav">
           {[...new Set(items.map((item) => item.section))].map(
             (section) => (

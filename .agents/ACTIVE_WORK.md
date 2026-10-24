@@ -1,3 +1,18 @@
+## October 24 — Desktop organization navigation
+
+Web-only `feat/desktop-organization-shell-20261024`, based on `1699f86`.
+Adds an authenticated organization selector to the existing sidebar, default
+expanded desktop navigation, consistent page spacing and directory card hierarchy.
+Personal, all workspaces, creation and invitation actions reuse existing routes.
+No feature removal, permission changes, backend, database or Flutter edits.
+508 web tests / 66 suites, TypeScript, production build pass; lint has zero errors
+and the same 52 baseline warnings. Browser review uses isolated fictional fixtures,
+never customer writes. Narrow-screen review passed. Preserved live account
+verification and organization settings from `2afb817`. All five CI gates passed (40120059401). Runtime `4b879d9` / PR191 is live
+on self-hosted web, build `XAq7FeqLtoueYFUgAFjOs`. 21 route statuses and six
+brand assets verified; preserved 360 unrelated files and the backend PID.
+See `docs/desktop-organization-shell.md` for scope and verification.
+
 ## October 24 — Direct landing prompt to authentication
 
 User superseded the public demo: Send now navigates immediately to signup with

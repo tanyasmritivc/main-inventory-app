@@ -2,6 +2,7 @@
 import type { SettingsSection } from "@/lib/settings-sections";
 import { requestAccountDeletion, AccountDeletionError } from "@/lib/delete-account";
 import { MemorySettings } from "@/components/site/memory-settings";
+import { AccountVerification } from "./account-verification";
 import { ProfilePhotoCropper } from "./profile-photo-cropper";
 import { useInventoryRouter } from "@/components/site/inventory-link";
 
@@ -468,6 +469,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
           <ChevronRight size={16} />
         </a>
       </section>}
+      {section === "account" && <AccountVerification />}
       {section === "account" && <section className="settings-panel" id="account">
         <header>
           <h2>Account management</h2>

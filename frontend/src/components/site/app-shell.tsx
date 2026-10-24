@@ -24,6 +24,8 @@ import type { InventorySelection } from "@/lib/inventory-selection";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 import { AccountMenu } from "./account-menu";
+import shellStyles from "./desktop-shell.module.css";
+import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
@@ -33,9 +35,9 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(true);
   useEffect(() => {
-    try { setSidebarPinned(localStorage.getItem("findez-navigation-pinned") === "true"); } catch { /* Session preference still works. */ }
+    try { setSidebarPinned(localStorage.getItem("findez-navigation-pinned") !== "false"); } catch { /* Session preference still works. */ }
   }, []);
   const togglePin = useCallback(() => {
     const next = !sidebarPinned;
@@ -49,6 +51,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   const [commandOpen, setCommandOpen] = useState(false);
   const commandTrigger = useRef<HTMLButtonElement>(null);
   const [commandQuery, setCommandQuery] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState("");
   const [userEmail,setUserEmail]=useState("");
   const accountPage=pathname==="/settings"||pathname.startsWith("/settings/");
@@ -68,6 +71,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
       const { data } = await supabase.auth.getSession();
       if (!current()) return;
       const user = data.session?.user;
+      setUserId(user?.id || null);
       if (notificationAccount !== user?.id) {
         notificationAccount = user?.id;
         notificationGeneration++;
@@ -163,6 +167,7 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) return;
       generation++;
+      setUserId(null);
       setUserName("Your account");
       setUserInitial("");
       setAvatarUrl(undefined);
@@ -240,13 +245,17 @@ export function AppShell({ children, inventory, context }: { children: React.Rea
   );
   return (
     <AppThemeProvider>
+      {!accountPage && <AccountVerification prompt />}
       <div
-        className={`app-frame ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
+        className={`app-frame ${shellStyles.shell} ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >
         <a className="app-skip-link" href="#app-main">
           Skip to content
         </a>
         <AppSidebar
+          accountId={userId}
+          organization={context?.organization || (inventory?.workspace.organization_id ? { id: inventory.workspace.organization_id, name: inventory.workspace.organization_name || "Organization" } : undefined)}
+          personal={context?.personal || inventory?.workspace.kind === "personal"}
           onToggle={toggleSidebar}
           sidebarOpen={sidebarOpen}
           userName={userName}
