@@ -1,5 +1,6 @@
 ## October 24 — Chat activity disclosure (candidate)
 
+The shine now sweeps left to right at the user’s request, retaining its timing and softness.
 Web-only feat/chat-progress-web-20261024 adapts the supplied React Bits shimmer
 for actual server status messages, with a native details disclosure, theme support,
 Reduce Motion, offscreen/hidden-tab pause and no animation-frame React rendering.
