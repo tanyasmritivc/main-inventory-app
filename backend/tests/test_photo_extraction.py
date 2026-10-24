@@ -320,3 +320,22 @@ def test_all_identity_failures_return_error_instead_of_success():
     with patch.object(g, "_json", side_effect=[ground, httpx.ReadTimeout("gateway")]):
         with pytest.raises(ValueError, match="No detected object"):
             g.extract(image_bytes(), None, None)
+
+
+def test_nullable_optional_prose_and_unknown_count_do_not_discard_an_object():
+    item = identity(
+        visible_text=None,
+        notes=None,
+        tags=None,
+        quantity=None,
+        quantity_basis="visible_individuals",
+        quantity_confidence=0.99,
+    )
+    assert item.visible_text == "" and item.notes == "" and item.tags == []
+    assert (
+        item.quantity == 1
+        and item.quantity_basis == "unknown"
+        and item.quantity_confidence is None
+    )
+    long = identity(notes="x" * 2000)
+    assert len(long.notes) == 1000
