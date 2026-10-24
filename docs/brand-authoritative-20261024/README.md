@@ -36,4 +36,19 @@ separate from TestFlight delivery; no public release is implied.
 Validation: 847 Flutter tests passed (one optional skip), analysis clean, and
 46 raster icon exports exactly match the supplied SVG pixels/dimensions/opacity.
 All mobile Dart/native behavior source and tests are byte-for-byte unchanged from
-build 122. Signed build and upload receipt pending.
+build 122. The signed IPA launcher icon was decoded and compared against the corrected source
+pixels with an exact match. Both archive/export passed 32 iOS executable checks,
+strict signing, 24 privacy manifests and production HTTPS configuration.
+All five CI jobs passed on runtime 1ddc102 (run 40075508703; PR 189).
+
+Apple validated and acknowledged 1.1.1 (123), delivery `cc77bb73-b867-44c6-b7d7-8add63508fd8`.
+IPA SHA256: `29773e4d7b367af0c3b28f7d8a111cb76542f49f59cdf6b77aa6a36a441389ed`.
+Private artifacts: Documents/FindEZ/AppStore/1.1.1-build123. Processing/tester
+availability was not polled. Public App Store publishing and physical home-screen
+acceptance remain separate.
+
+Manual verification: install TestFlight 1.1.1 (123) when available, then compare
+the launcher in light/dark appearance against source/findez-app-icon-*.svg. Check
+FindEZ's auth/welcome wordmark. On the web, reload findez.ai and inspect the header
+and browser tab; the existing assets already match. Search-engine cache refresh
+and public App Store artwork are not implied by a beta upload.
