@@ -115,7 +115,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
         matching = None
         stage = 'load_draft'
         try:
-            yield encode({'type': 'status', 'message': 'Thinking...', 'conversation_id': cid})
+            yield encode({'type': 'status', 'message': 'Understanding your request…', 'conversation_id': cid})
             from app.services.chat_item_actions import use_photo, photo_facts
             from app.services import chat_capture
             draft_row = await asyncio.to_thread(chat_capture.load, actor, key, cid) if supports_capture and not photo else None
@@ -124,11 +124,14 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                         None if photo else await asyncio.to_thread(world.latest_photo, actor, key, cid))
             if supports_photo_attachment and not photo:
                 retained = await asyncio.to_thread(world.latest_photo, actor, key, cid) or retained
+            if draft and draft.get('source_kind') == 'text':
+                retained = None
             evidence = photo_facts(retained) if supports_photo_attachment or not draft or draft['status'] != 'saved' else {}
             from app.services import chat_vision
             image_content = None
             if photo:
                 from app.services.storage import upload_image
+                yield encode({'type': 'status', 'message': 'Preparing your photo…'})
                 stored = await asyncio.to_thread(upload_image, user_id=actor, filename=f'ask-{uuid4().hex}.jpg', content=photo)
                 retained = {'items': [], 'source_url': stored.url}
                 if auto_extract:
@@ -136,7 +139,26 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     yield encode({'type': 'status', 'message': 'Extracting items...'})
                     await asyncio.to_thread(check_and_increment_scan, actor)
                     from app.services.photo_extraction import extract_inventory_items
-                    result = await extract_inventory_items(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
+                    progress = asyncio.Queue()
+                    loop = asyncio.get_running_loop()
+                    def report(message):
+                        loop.call_soon_threadsafe(progress.put_nowait, message)
+                    extraction = asyncio.create_task(extract_inventory_items(
+                        filename='photo.jpg', image_bytes=photo, content_type='image/jpeg',
+                        user_id=actor, source_frame_url=stored.url, on_progress=report))
+                    try:
+                        while not extraction.done() or not progress.empty():
+                            try:
+                                update = await asyncio.wait_for(progress.get(), timeout=0.2)
+                            except asyncio.TimeoutError:
+                                continue
+                            yield encode({'type': 'status', 'message': update})
+                        result = await extraction
+                    finally:
+                        # A worker thread cannot be cancelled mid-upload. Settle it
+                        # before source cleanup; do not leave an unobserved task.
+                        if not extraction.done():
+                            await asyncio.shield(extraction)
                     from app.services.item_photos import _storage_path
                     for item in result.get('items', [])[:20]:
                         clean = {k: item.get(k) for k in ('name', 'category', 'quantity', 'confidence', 'brand', 'part_number')}
@@ -161,10 +183,11 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                 draft = None
                 stage = 'load_chat_photo'
                 image_content = await asyncio.to_thread(chat_vision.retained_image, actor, retained)
+            yield encode({'type': 'status', 'message': 'Preparing your response…'})
             stage = 'chat_reply'
             from app.services.world_user_context import load as load_user_context
             user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
-            with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft) as capture:
+            with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft, enabled=supports_capture) as capture:
                 async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}))):
                     if event['type'] == 'done':
                         if stored:

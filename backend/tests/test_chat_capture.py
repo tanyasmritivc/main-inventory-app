@@ -224,3 +224,40 @@ def test_saved_capture_facts_keep_counts_without_unbounded_item_links():
     assert result['receipt']['resource_links'] == [{'kind': 'space', 'id': SPACE}]
     assert 'items' not in result
     assert len(json.dumps(result)) < 800
+
+
+def test_description_draft_preserves_pantry_counts_without_stock_writes(store):
+    with c.use_capture(ACTOR, WORLD, CID, None) as state:
+        result = c.draft_description({'place': 'Pantry', 'items': [
+            {'name': 'Peanut butter jar', 'quantity': 1, 'notes': 'Almost out'},
+            {'name': 'Takis packets', 'quantity': 2},
+            {'name': 'Apples', 'quantity': 6}]})
+        draft = state['draft']
+        assert not result['saved'] and draft['source_kind'] == 'text'
+        assert [r['item']['quantity'] for r in draft['items']] == [1, 2, 6]
+        assert 'Almost out' in draft['items'][0]['item']['notes']
+        assert all('Pantry' in r['item']['notes'] for r in draft['items'])
+        assert draft['inventory_id'] is None and draft['source_url'] is None
+        assert not store.bulk.called and not store.review.called
+        with pytest.raises(ValueError):
+            c.draft_description({'items': [{'name': 'Duplicate'}]})
+    assert c.current_capture.get() is None
+
+
+def test_unknown_description_count_requires_explicit_edit_before_save(store):
+    with c.use_capture(ACTOR, WORLD, CID, None) as state:
+        c.draft_description({'items': [{'name': 'Screws'}]})
+        draft = destination(state['draft'])
+        with pytest.raises(HTTPException, match='missing quantities'):
+            c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
+        assert not store.bulk.called
+        draft = c.edit(ACTOR, WORLD, CID, draft['id'], draft['revision'],
+                       {'items': [{'index': 0, 'quantity': 12}]})
+        assert draft['summary']['unknown_quantity_indices'] == []
+
+
+def test_old_client_cannot_create_description_draft(store):
+    with c.use_capture(ACTOR, WORLD, CID, None, enabled=False):
+        with pytest.raises(ValueError):
+            c.draft_description({'items': [{'name': 'Apples', 'quantity': 6}]})
+    assert not store.db.rows

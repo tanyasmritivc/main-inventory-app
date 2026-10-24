@@ -1,3 +1,10 @@
+## October 24 — Draft before hierarchy
+
+User-described belongings can become a private editable draft before destination
+selection. Never write stock or pick an ambiguous workspace implicitly. Preserve
+qualitative remaining-stock notes; unknown quantities require explicit editing.
+Progress labels describe public work, not model chain of thought.
+
 ## October 24 — Temporary GLM Auto Extract provider
 
 User explicitly requests GLM across web/mobile extraction while FIND improves

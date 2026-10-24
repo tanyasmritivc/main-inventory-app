@@ -134,7 +134,7 @@ def test_all_batches_validate_before_upload_and_preserve_summary():
     def model(prompt, images, schema):
         if schema is g.Grounding:
             return g.Grounding(items=boxes, partial=False)
-        indices = [int(re.search(r'"index": (\d+)', prompt).group(1))]
+        indices = [int(value) for value in re.findall(r'"index": (\d+)', prompt)]
         return g.Identities(
             items=[
                 g.Identity(
@@ -230,16 +230,7 @@ def test_partial_upload_failure_removes_only_new_crop():
         g.Box(label="a", box=[0, 0, 400, 1000]),
         g.Box(label="b", box=[600, 0, 1000, 1000]),
     ]
-    ids = [
-        g.Identities(items=[identity()]),
-        g.Identities(
-            items=[
-                g.Identity(
-                    index=1, name="tool", category="Tools", uncertainty="Verify."
-                )
-            ]
-        ),
-    ]
+    ids = [g.Identities(items=[identity(), identity().model_copy(update={"index": 1})])]
     with patch.object(
         g, "_json", side_effect=[g.Grounding(items=boxes, partial=False), *ids]
     ), patch(
@@ -287,32 +278,26 @@ def test_network_timeout_does_not_retry_an_inflight_paid_request():
     assert call.call_count == 1
 
 
-def test_one_failed_identity_is_explicit_unknown_partial_not_lost():
+def test_one_failed_batch_is_explicit_unknown_partial_not_lost():
     import httpx
-
-    boxes = [
-        g.Box(label="pliers", box=[0, 0, 400, 1000]),
-        g.Box(label="bag", box=[600, 0, 1000, 1000]),
-    ]
-
+    boxes = [g.Box(label=name, box=coords) for name, coords in [
+        ('pliers', [0, 0, 300, 1000]), ('hammer', [350, 0, 600, 1000]),
+        ('bag', [650, 0, 1000, 1000])]]
     def model(prompt, images, schema):
         if schema is g.Grounding:
             return g.Grounding(items=boxes, partial=False)
         if '"candidate": "bag"' in prompt:
-            raise httpx.ReadTimeout("gateway")
-        return g.Identities(items=[identity(identity_confidence=0.8)])
-
-    with patch.object(g, "_json", side_effect=model):
+            raise httpx.ReadTimeout('gateway')
+        return g.Identities(items=[identity(identity_confidence=.8),
+                                  identity(identity_confidence=.8).model_copy(update={'index': 1})])
+    with patch.object(g, '_json', side_effect=model):
         result = g.extract(image_bytes(), None, None)
-    assert len(result["items"]) == 2 and result["summary"]["partial"]
-    unknown = result["items"][1]
-    assert unknown["name"] == "Unknown item" and unknown["confidence"] is None
-    assert unknown["scan_evidence"]["needs_review"]
-    assert result["summary"]["unknown_count"] == 1
-    assert any(
-        "partial extraction" in r
-        for r in result["items"][0]["scan_evidence"]["review_reasons"]
-    )
+    assert len(result['items']) == 3 and result['summary']['partial']
+    unknown = result['items'][2]
+    assert unknown['name'] == 'Unknown item' and unknown['confidence'] is None
+    assert unknown['scan_evidence']['needs_review']
+    assert result['summary']['unknown_count'] == 1
+    assert any('partial extraction' in r for r in result['items'][0]['scan_evidence']['review_reasons'])
 
 
 def test_all_identity_failures_return_error_instead_of_success():
@@ -399,3 +384,41 @@ def test_dimensions_are_bound_to_their_own_printed_units(
         None,
     )["scan_evidence"]
     assert (value["length_mm"], value["width_mm"]) == expected
+
+
+def test_real_work_stages_are_reported_in_order_without_provider_content():
+    statuses = []
+    box = g.Box(label='private label', box=[0, 0, 1000, 1000])
+    with patch.object(g, '_json', side_effect=lambda prompt, images, schema:
+                      g.Grounding(items=[box], partial=False) if schema is g.Grounding
+                      else g.Identities(items=[identity()])):
+        g.extract(image_bytes(), None, None, on_progress=statuses.append)
+    assert statuses[0] == 'Finding objects in your photo…'
+    assert 'Checked 1 of 1 objects…' in statuses
+    assert statuses[-1] == 'Preparing your editable draft…'
+    assert 'private label' not in str(statuses)
+
+
+def test_two_crop_sheet_is_single_image_and_maps_reversed_indices_safely():
+    boxes = [g.Box(label='red', box=[0, 0, 400, 1000]), g.Box(label='blue', box=[600, 0, 1000, 1000])]
+    calls = []
+    def model(prompt, images, schema):
+        calls.append(schema)
+        assert len(images) == 1
+        if schema is g.Grounding:
+            return g.Grounding(items=boxes, partial=False)
+        assert Image.open(io.BytesIO(images[0])).size == (1280, 680)
+        return g.Identities(items=[identity(identity_confidence=.9).model_copy(update={'index': 1, 'name': 'Blue tool'}),
+                                  identity(identity_confidence=.9).model_copy(update={'name': 'Red tool'})])
+    with patch.object(g, '_json', side_effect=model):
+        result = g.extract(image_bytes(), None, None)
+    assert [i['name'] for i in result['items']] == ['Red tool', 'Blue tool']
+    assert len(calls) == 2
+
+
+def test_duplicate_batch_indices_cannot_assign_an_identity_to_the_wrong_crop():
+    boxes = [g.Box(label='a', box=[0, 0, 400, 1000]), g.Box(label='b', box=[600, 0, 1000, 1000])]
+    with patch.object(g, '_json', side_effect=[g.Grounding(items=boxes, partial=False),
+                                              g.Identities(items=[identity(), identity()])]):
+        with pytest.raises(ValueError, match='No detected object'):
+            g.extract(image_bytes(), None, None)

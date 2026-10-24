@@ -16,7 +16,8 @@ async def extract_inventory_items(
     image_bytes,
     content_type="image/jpeg",
     user_id=None,
-    source_frame_url=None
+    source_frame_url=None,
+    on_progress=None,
 ):
     settings = get_settings()
     if settings.findez_extraction_provider == "find":
@@ -30,7 +31,13 @@ async def extract_inventory_items(
     from app.services.glm_extraction import extract
 
     try:
-        return await asyncio.to_thread(extract, image_bytes, user_id, source_frame_url)
+        return await asyncio.to_thread(
+            extract,
+            image_bytes,
+            user_id,
+            source_frame_url,
+            **({"on_progress": on_progress} if on_progress else {}),
+        )
     except Exception as error:
         # Do not change providers silently or expose gateway content to clients.
         raise PhotoExtractionError(

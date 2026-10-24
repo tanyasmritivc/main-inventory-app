@@ -230,3 +230,21 @@ def test_capture_import_rejects_unauthorized_world_before_parse(transport):
         result = transport.client.post(f'/worlds/{WORLD}/captures/spreadsheet', files={'file':('items.csv', b'Name\nDrill', 'text/csv')})
     assert result.status_code == 403
     parse.assert_not_called(); transport.prepare.assert_not_called()
+
+
+def test_extraction_activity_is_forwarded_before_the_draft(transport):
+    from app.services import chat_capture as capture
+    import asyncio
+    out = io.BytesIO(); Image.new('RGB', (20, 20)).save(out, format='PNG')
+    async def extract(**kwargs):
+        kwargs['on_progress']('Finding objects in your photo…')
+        await asyncio.sleep(.001)
+        kwargs['on_progress']('Checking confidence and trimming item photos…')
+        return {'items': [], 'summary': {}}
+    with patch('app.services.storage.upload_image', return_value=NS(url='https://fixture.test/source', path='fixture/source')), \
+         patch('app.services.photo_extraction.extract_inventory_items', side_effect=extract), \
+         patch.object(capture, 'create', return_value={'id': 'draft', 'status': 'draft', 'items': []}), \
+         patch.object(world, 'stream_turn', return_value=events()):
+        response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
+            data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
+    assert response.text.index('Finding objects') < response.text.index('Checking confidence') < response.text.index('"type": "capture"')

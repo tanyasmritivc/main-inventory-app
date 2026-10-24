@@ -1,3 +1,10 @@
+## October 24 — Activity progress and draft-first inventory (candidate)
+
+Backend feat/extraction-progress-api-20261024 owns GLM batching, public SSE activity
+and description drafts. 1,465 tests +10 subtests passed; synthetic real-model pantry
+and photo probes passed. No database changes. Publication pending CI. Details:
+`docs/plans/chat-progress-20261024.md`. Mobile/web use separate implementation lanes.
+
 ## October 24 — GLM Auto Extract live (PR194)
 
 Runtime3b8805e is active on the self-hosted FindEZ backend with

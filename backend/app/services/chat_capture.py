@@ -41,7 +41,7 @@ def create(actor, key, cid, items, source_url, summary=None, *, source_kind="pho
     if len(items) > (10000 if source_kind == 'spreadsheet' else 200):
         raise HTTPException(422, 'A chat draft supports up to 200 items. Split this capture into smaller batches.')
     clean = []
-    for raw in (items if source_kind == 'spreadsheet' else enrich_scan_items_from_verified_catalog(items)):
+    for raw in (items if source_kind in ('spreadsheet', 'text') else enrich_scan_items_from_verified_catalog(items)):
         item = ExtractedInventoryItem.model_validate(raw).model_dump(exclude_none=True)
         for field in ('review_id', 'review_status', 'review_token', 'client_request_id'):
             item.pop(field, None)
@@ -52,7 +52,7 @@ def create(actor, key, cid, items, source_url, summary=None, *, source_kind="pho
     draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft',
              'items': clean, 'summary': summary or {}, 'inventory_id': None, 'space_id': None,
              'destination_label': None, 'source_url': source_url, 'source_kind': source_kind}
-    world.save_answer(actor, key, cid, f'Auto Extract found {len(clean)} item(s). Review the draft before saving.',
+    world.save_answer(actor, key, cid, f'{"Your description contains" if source_kind == "text" else "Auto Extract found"} {len(clean)} item(s). Review the draft before saving.',
                       {'chat_capture': draft}, message_id=draft['id'])
     return draft
 
@@ -136,6 +136,9 @@ def edit(actor, key, cid, capture_id, revision, changes):
                 fields[field] = fields[field].strip()
                 if not fields[field]:
                     raise HTTPException(422, 'Give the item a name and category.')
+        if 'quantity' in fields:
+            unknown = draft.get('summary', {}).get('unknown_quantity_indices', [])
+            draft.setdefault('summary', {})['unknown_quantity_indices'] = [i for i in unknown if i != update.index]
         target['item'].update(fields)
         ExtractedInventoryItem.model_validate(target['item'])
     draft['revision'] += 1
@@ -145,7 +148,7 @@ def edit(actor, key, cid, capture_id, revision, changes):
 def facts(draft):
     if not draft:
         return None
-    value = {k: draft.get(k) for k in ('id', 'revision', 'status', 'inventory_id', 'space_id', 'destination_label', 'location')} | {
+    value = {k: draft.get(k) for k in ('id', 'revision', 'status', 'source_kind', 'inventory_id', 'space_id', 'destination_label', 'location')} | {
         'observation_count': len(draft['items']),
         'selected_observation_count': sum(bool(row['selected']) for row in draft['items'])}
     receipt = draft.get('receipt')
@@ -155,14 +158,14 @@ def facts(draft):
         value['receipt']['resource_links'] = [link for link in receipt.get('resource_links', []) if link.get('kind') == 'space'][:1]
     if draft.get('status') != 'saved':
         value['items'] = [{'index': row['index'], 'selected': row['selected'],
-                          **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'scan_evidence')}}
+                          **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'notes', 'scan_evidence')}}
                          for row in draft['items']]
     return value
 
 
 @contextmanager
-def use_capture(actor, key, cid, draft):
-    state = {'actor': actor, 'world': key, 'cid': cid, 'draft': draft}
+def use_capture(actor, key, cid, draft, *, enabled=True):
+    state = {'actor': actor, 'world': key, 'cid': cid, 'draft': draft, 'enabled': enabled}
     token = current_capture.set(state)
     try:
         yield state
@@ -212,6 +215,9 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
     if not draft.get('inventory_id') or not draft.get('space_id'):
         raise HTTPException(422, 'Choose an inventory and a Space before saving.')
     selected = [r for r in draft['items'] if r['selected']]
+    unknown = draft.get('summary', {}).get('unknown_quantity_indices', [])
+    if any(row['index'] in unknown for row in selected):
+        raise HTTPException(422, 'Confirm the missing quantities in your draft before saving.')
     if not selected:
         raise HTTPException(422, 'Select at least one extracted item.')
     with world.in_inventory(actor, key, draft['inventory_id']) as inv:
@@ -264,3 +270,42 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
             if latest['status'] == 'saved':
                 return latest
             raise HTTPException(409, 'Saving is in progress. Refresh and retry this same draft.') from None
+
+
+class DescribedItem(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    name: str = Field(min_length=1, max_length=200)
+    category: str = Field(default='Other', min_length=1, max_length=100)
+    quantity: int | None = Field(default=None, ge=0, le=100000)
+    notes: str = Field(default='', max_length=1600)
+
+
+class DescriptionDraft(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    items: list[DescribedItem] = Field(min_length=1, max_length=100)
+    place: str | None = Field(default=None, max_length=100)
+
+
+def draft_description(args):
+    """Stage user-described belongings without choosing a storage destination."""
+    state = current_capture.get()
+    if not state or not state.get('enabled'):
+        raise ValueError('This client cannot review a draft.')
+    if state['draft'] and state['draft']['status'] != 'saved':
+        raise ValueError('Refine the existing draft or review it before starting another.')
+    description = DescriptionDraft.model_validate(args, strict=True)
+    items = []
+    for entry in description.items:
+        notes = entry.notes
+        if description.place:
+            notes += f'\nDescribed location: {description.place}.'
+        if entry.quantity is None:
+            notes += '\nQuantity not provided; 1 is a draft placeholder. Confirm before saving.'
+        items.append(dict(name=entry.name.strip(), category=entry.category.strip(),
+                          quantity=entry.quantity if entry.quantity is not None else 1,
+                          notes=notes.strip(), confidence=None))
+    state['draft'] = create(state['actor'], state['world'], state['cid'], items, None,
+                            {'described_place': description.place,
+                             'unknown_quantity_indices': [i for i, entry in enumerate(description.items) if entry.quantity is None]}, source_kind='text')
+    return {'capture_draft': facts(state['draft']), 'saved': False,
+            'next_step': 'The editable draft is ready. Ask only what is needed to choose its destination or confirm unknown quantities. Nothing is saved to inventory.'}
