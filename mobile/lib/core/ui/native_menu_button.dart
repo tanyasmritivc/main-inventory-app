@@ -66,12 +66,14 @@ class NativeToolbarButton extends StatefulWidget {
     this.items = const [],
     this.onSelected,
     this.glass = true,
+    this.symbolSize,
   });
   final String symbol, label;
   final VoidCallback? onPressed;
   final List<AppMenuItem> items;
   final ValueChanged<String>? onSelected;
   final bool glass;
+  final double? symbolSize;
   @override
   State<NativeToolbarButton> createState() => _NativeToolbarButtonState();
 }
@@ -82,6 +84,7 @@ class _NativeToolbarButtonState extends State<NativeToolbarButton> {
     'symbol': widget.symbol,
     'label': widget.label,
     'glass': widget.glass,
+    if (widget.symbolSize != null) 'symbolSize': widget.symbolSize,
     'enabled':
         widget.onPressed != null ||
         (widget.items.isNotEmpty && widget.onSelected != null),

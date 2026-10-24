@@ -1,7 +1,7 @@
 import '../chat/native_chat_menu_button.dart';
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
-import '../../core/ui/liquid_surface.dart';
 import 'package:flutter/material.dart';
 
 /// A quiet, two-row composer. All capture and voice behavior belongs to Chat.
@@ -143,8 +143,7 @@ class _WorldComposerState extends State<WorldComposer>
 
   @override
   Widget build(BuildContext context) {
-    return LiquidSurface(
-      radius: 26,
+    return _ComposerSurface(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 10, 10),
         child: Column(
@@ -243,14 +242,17 @@ class _WorldComposerState extends State<WorldComposer>
                     onPointerCancel: (_) => widget.onVoiceCancel?.call(),
                     child: ExcludeSemantics(
                       child: AbsorbPointer(
-                        child: LiquidIconButton(
+                        child: IconButton(
                           tooltip: widget.listening
                               ? 'Release to send'
                               : 'Hold to speak',
                           onPressed: widget.onVoice,
-                          icon: widget.listening
-                              ? CupertinoIcons.mic_fill
-                              : CupertinoIcons.mic,
+                          icon: Icon(
+                            widget.listening
+                                ? CupertinoIcons.mic_fill
+                                : CupertinoIcons.mic,
+                            size: 21,
+                          ),
                         ),
                       ),
                     ),
@@ -282,6 +284,42 @@ class _WorldComposerState extends State<WorldComposer>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A flat frosted writing surface, without the bevel used on floating controls.
+class _ComposerSurface extends StatelessWidget {
+  const _ComposerSurface({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final highContrast = MediaQuery.highContrastOf(context);
+    const radius = BorderRadius.all(Radius.circular(20));
+    final surface = DecoratedBox(
+      decoration: BoxDecoration(
+        color: (dark ? const Color(0xFF272B33) : const Color(0xFFFFFFFF))
+            .withValues(alpha: highContrast ? 1 : .78),
+        borderRadius: radius,
+        border: Border.all(
+          color: (dark ? Colors.white : const Color(0xFF373D48)).withValues(
+            alpha: highContrast ? .45 : (dark ? .07 : .08),
+          ),
+          width: .5,
+        ),
+      ),
+      child: child,
+    );
+    return ClipRRect(
+      borderRadius: radius,
+      child: highContrast
+          ? surface
+          : BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: surface,
+            ),
     );
   }
 }

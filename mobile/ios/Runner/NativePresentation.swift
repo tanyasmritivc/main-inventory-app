@@ -206,7 +206,8 @@ private final class NativeListController: UITableViewController, UISearchResults
     let label = UILabel()
     label.text = (search?.searchBar.text ?? "").isEmpty ? (data["empty"] as? String ?? "No items") : "No matching results"
     label.textColor = .secondaryLabel; label.textAlignment = .center
-    label.font = .preferredFont(forTextStyle: .body); label.adjustsFontForContentSizeCategory = true
+    label.font = page["textSizeFactor"] != nil ? appFont(15, style: .body) : .preferredFont(forTextStyle: .body)
+    label.adjustsFontForContentSizeCategory = true
     label.numberOfLines = 0
     if data["loading"] as? Bool == true {
       let spinner = UIActivityIndicatorView(style: .medium); spinner.startAnimating()
@@ -216,6 +217,8 @@ private final class NativeListController: UITableViewController, UISearchResults
       navigationController?.navigationBar.titleTextAttributes = [
         .font: appFont(17, style: .headline, weight: .medium)
       ]
+      search?.searchBar.searchTextField.font = appFont(15, style: .body)
+      search?.searchBar.searchTextField.adjustsFontForContentSizeCategory = true
     }
     tableView.reloadData()
   }
@@ -355,8 +358,13 @@ private final class NativeControl: NSObject, FlutterPlatformView {
     if #available(iOS 26.0, *), data["glass"] as? Bool == true { configuration = .glass() }
     configuration.cornerStyle = .capsule
     configuration.baseForegroundColor = .label
+    let symbolSize = min(28, max(12, CGFloat((data["symbolSize"] as? NSNumber)?.doubleValue ?? 20)))
     configuration.image = UIImage(systemName: data["symbol"] as? String ?? "ellipsis",
-      withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .regular))
+      withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolSize, weight: .regular))
+    if let size = data["symbolSize"] as? NSNumber {
+      configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+        pointSize: min(28, max(12, CGFloat(size.doubleValue))), weight: .regular)
+    }
     button.configuration = configuration
     button.accessibilityLabel = data["label"] as? String
     button.isEnabled = data["enabled"] as? Bool == true
