@@ -323,20 +323,14 @@ def _item(candidate, identity, source_url):
     )
     # A quoted label alone must not authorize invented numeric dimensions.
     quote = (identity.measurement_quote or "").casefold()
-    factor = (
-        25.4
-        if re.search(r'\b(?:in|inch|inches)\b|["″]', quote)
-        else (
-            10
-            if re.search(r"\bcm\b", quote)
-            else 1 if re.search(r"\bmm\b", quote) else None
-        )
-    )
-    labeled = (
-        [float(n) * factor for n in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", quote)]
-        if factor
-        else []
-    )
+    labeled = []
+    # Bind each number/dimension group to its own printed unit. A part code
+    # or a fraction denominator is not a measured size. Support 20mm, M3x20mm,
+    # 20×30 mm, and mixed-unit labels without assigning one unit to every number.
+    pattern = r"(?<![a-wyz0-9./])((?:\d+(?:\.\d+)?\s*[x×]\s*)*\d+(?:\.\d+)?)\s*(mm|cm|in(?:ch(?:es)?)?|[\"″])(?=$|[^a-z])"
+    for numbers, unit in re.findall(pattern, quote):
+        factor = 1 if unit == "mm" else 10 if unit == "cm" else 25.4
+        labeled.extend(float(n) * factor for n in re.findall(r"\d+(?:\.\d+)?", numbers))
     supported = lambda n: n is not None and any(
         math.isclose(n, v, rel_tol=0.005, abs_tol=0.01) for v in labeled
     )

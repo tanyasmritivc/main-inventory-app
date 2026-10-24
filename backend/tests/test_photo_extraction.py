@@ -372,3 +372,30 @@ def test_unidentifiable_object_can_return_null_name_and_category():
         uncertainty="Only an edge fragment is visible.",
     )
     assert row.name == "Unknown item" and row.category == "Uncategorized"
+
+
+@pytest.mark.parametrize(
+    "quote,length,width,expected",
+    [
+        ("M3x20mm", 20, 3, (20, None)),
+        ("2 cm x 30 mm", 20, 30, (20, 30)),
+        ("20×30mm", 20, 30, (20, 30)),
+        ("1/4in", 101.6, None, (None, None)),
+        ("PN-F156 20mm", 156, 20, (None, 20)),
+    ],
+)
+def test_dimensions_are_bound_to_their_own_printed_units(
+    quote, length, width, expected
+):
+    value = g._item(
+        g.Box(label="part", box=[0, 0, 1000, 1000]),
+        identity(
+            visible_text=quote,
+            measurement_quote=quote,
+            measurement_basis="printed_label",
+            length_mm=length,
+            width_mm=width,
+        ),
+        None,
+    )["scan_evidence"]
+    assert (value["length_mm"], value["width_mm"]) == expected

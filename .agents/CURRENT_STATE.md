@@ -5,8 +5,10 @@ PR194. Initial backend activation dfff1fc passed CI and candidate API QA but a l
 chat probe exposed the gateway's required final-action envelope. Provider was
 restored to FIND; finalization instructions now wrap JSON correctly, disable
 external tools and preserve explicit partial/unknown review behavior. Corrected
-local suite: 1,453 tests +10 subtests, 452 warnings. Final real-image/API checks and
-reactivation are in progress. No database or client changes. See
+local suite: 1,458 tests +10 subtests, 452 warnings. Candidate real API QA passed
+extraction (24.9s), private crop access/cross-user denial, review and resolution,
+chat Auto Extract and ordinary photo chat without unintended stock writes.
+Reactivation awaits final CI. No database or client changes. See
 `docs/plans/glm-auto-extract-20261024.md`.
 
 ## October 24 — Smart search live (PR186)

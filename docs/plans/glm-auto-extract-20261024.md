@@ -107,3 +107,25 @@ preview/private-image/review/save QA (15.8s), but the broader live chat check
 exposed the gateway issue. The provider was restored to FIND while correcting
 that integration. The corrected candidate passes 1,453 Python tests plus
 10 subtests (452 warnings); final activation results will be appended below.
+
+
+Corrected candidate API QA passed against real GLM and disposable accounts:
+24.9-second extraction identified the flange at 0.85 model confidence and kept
+an orange edge fragment unknown at 0.35. It verified full response keys, identity
+confidence, signed preview, private crop access, unrelated-account denial,
+explicit review/save and retained crop. Chat Auto Extract produced a crop/evidence
+draft; ordinary photo questions did not. Neither chat operation wrote stock.
+Both accounts, their inventory and uploaded objects were cleaned up. A cluttered
+workbench probe returned eight candidates in 100.1s (six identified, two unknown,
+partial). This is a limited smoke test, not an accuracy benchmark. Physical-device
+acceptance is still manual.
+
+Final local checks after measurement-unit safeguards: 1,458 passed,
+10 subtests passed, 452 warnings. Labeled dimensions support joined units and
+mixed-unit groups; unsupported fractions remain unknown. Confidence below 0.5
+shows Unknown item with the tentative description only in notes.
+
+Rollback: set `FINDEZ_EXTRACTION_PROVIDER=find` in the FindEZ systemd environment,
+run `systemctl daemon-reload` and restart `findez`. The current override is
+`/etc/systemd/system/findez.service.d/90-glm-extraction.conf`. Confirm `/health`
+and `/health/db`; FIND code and credentials have not been changed.
