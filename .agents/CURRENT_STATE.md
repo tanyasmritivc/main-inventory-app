@@ -1,15 +1,26 @@
-## October 24 — GLM extraction final validation
+## October 24 — GLM Auto Extract live (PR194)
 
-Shared provider switch and full item/evidence/crop pipeline are implemented in
-PR194. Initial backend activation dfff1fc passed CI and candidate API QA but a live
-chat probe exposed the gateway's required final-action envelope. Provider was
-restored to FIND; finalization instructions now wrap JSON correctly, disable
-external tools and preserve explicit partial/unknown review behavior. Corrected
-local suite: 1,458 tests +10 subtests, 452 warnings. Candidate real API QA passed
-extraction (24.9s), private crop access/cross-user denial, review and resolution,
-chat Auto Extract and ordinary photo chat without unintended stock writes.
-Reactivation awaits final CI. No database or client changes. See
-`docs/plans/glm-auto-extract-20261024.md`.
+Runtime3b8805e is active on the self-hosted FindEZ backend with
+`FINDEZ_EXTRACTION_PROVIDER=glm`. All five CI gates passed (40139152299).
+Guarded releases preserved unrelated live source; API/database health and
+unauthenticated denial passed. Initial dfff1fc activation was briefly restored
+to FIND after a gateway finalization error; the corrected release is now live.
+
+Local suite:1,458 tests +10 subtests passed,452 warnings. Real HTTPS QA passed
+full-field extraction (18.3s), confidence/crop preservation, signed previews,
+private-image and cross-user permissions, explicit review/save, chat Auto Extract
+and ordinary photo questions without unintended stock writes. Both temporary
+accounts and their inventory/storage objects were removed. No customer data used.
+No schema, frontend, mobile UI or app binary change. FIND code/credentials stay
+intact for separate development and explicit rollback.
+
+Limit:up to8 candidates; cluttered scene probe took100.1s with6 identified and2
+unknown. Unknown facts stay null, weak guesses stay Unknown item, confidence is
+uncalibrated, physical sizes require readable labels, and crops are rectangular.
+Physical-device acceptance remains manual. Setup, exact manual checks, costs and
+rollback: `docs/plans/glm-auto-extract-20261024.md`. Receipts:
+`Documents/FindEZ/Audits/glm-auto-extract-20261024` and
+`/home/ubuntu/findez-glm-active-20261024`.
 
 ## October 24 — Smart search live (PR186)
 

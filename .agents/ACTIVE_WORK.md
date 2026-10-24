@@ -1,9 +1,10 @@
-## October 24 - GLM extraction takeover
+## October 24 — GLM Auto Extract complete (PR194)
 
-Active isolated backend lane `feat/glm-auto-extract-20261024`. Unify photo
-extraction selection, preserve item/evidence contracts and FIND implementation,
-validate GLM crop/field quality before self-hosted activation. No schema/client
-changes planned. User explicitly requests GLM while FIND improves separately.
+Backend runtime3b8805e is live with the shared GLM provider switch. FIND remains
+available unchanged for development/rollback. Five CI gates,1,458 local tests
+plus10 subtests, and real HTTPS extraction/private-crop/review/save/chat QA pass.
+No schema or client changes. See `docs/plans/glm-auto-extract-20261024.md` for
+setup, model/crop limits, costs and manual device acceptance.
 
 ## October 24 — Smart search live (PR186)
 

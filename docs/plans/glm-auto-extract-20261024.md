@@ -129,3 +129,43 @@ Rollback: set `FINDEZ_EXTRACTION_PROVIDER=find` in the FindEZ systemd environmen
 run `systemctl daemon-reload` and restart `findez`. The current override is
 `/etc/systemd/system/findez.service.d/90-glm-extraction.conf`. Confirm `/health`
 and `/health/db`; FIND code and credentials have not been changed.
+
+
+## Final activation receipt
+
+- Live backend runtime: `3b8805e1dcf2e04b212c61016793b69e23cff1ad`.
+- PR: https://github.com/tanyasmritivc/main-inventory-app/pull/194
+- All five runtime CI jobs passed: run `40139152299`.
+- Provider `glm` confirmed in the running service environment; API/database
+  health passed. Guarded final overlay preserved116 unrelated backend files.
+- Real HTTPS QA passed extraction (18.3s, two candidates), complete item keys,
+  confidence/crop preservation, private preview and cross-account image/extraction
+  denial, explicit review/save, chat Auto Extract and ordinary photo questions.
+  Neither chat path wrote stock. Both synthetic accounts, their inventory and
+  uploaded files were removed. No customer records used.
+- Initial integration failures were investigated and the previous provider was
+  restored during correction; the final release passed both candidate and live
+  end-to-end checks. This does not establish model accuracy parity with FIND.
+- Local receipts: `Documents/FindEZ/Audits/glm-auto-extract-20261024`.
+  Server receipts: `/home/ubuntu/findez-glm-active-20261024`.
+- No schema migration, new secret, frontend deploy or mobile build required.
+  Physical-device acceptance remains manual using the steps above.
+
+## Files changed
+
+- `backend/app/services/photo_extraction.py`: shared provider selection and safe
+  error handling; unchanged FIND implementation stays available.
+- `backend/app/services/glm_extraction.py`: typed evidence, bounded grounding and
+  identification, gateway finalization, original-pixel crop handling, unknown and
+  partial-result behavior, storage cleanup and full response mapping.
+- `backend/app/core/config.py`: explicit provider setting and legacy flag notes.
+- `backend/app/api/routes/items.py`, `backend/app/api/routes/world_chat.py`,
+  `backend/app/services/ai_service.py`,
+  `backend/app/services/ask_photo_questions.py`: use the shared provider at existing
+  extraction entry points; preserve authorization, preview/save and normal chat.
+- `backend/tests/test_photo_extraction.py`, `test_chat_vision.py`,
+  `test_capture_previews.py`, `test_world_chat_routes.py`,
+  `test_ask_photo_questions.py`: validation, crop/privacy/failure/provider coverage
+  and existing route regressions.
+- `.agents/{CURRENT_STATE,ACTIVE_WORK,ARCHITECTURE,DECISIONS}.md` and this runbook:
+  current provider decision, release status, setup, limits and verification.
