@@ -1,4 +1,4 @@
-## October 24 - Public prompt preview release candidate
+## October 24 - Public prompt preview delivered
 
 Web-only branch `feat/landing-prompt-preview-20261024`, based on delivered Blue
 Echo web runtime. Landing prompts now open an accessible, morphing, interactive
@@ -8,8 +8,12 @@ anonymous inventory writes or new model endpoint. Explicit item/count phrases
 are parsed locally; contextual examples are labeled and never saved as facts.
 Local checks: 488 tests / 62 suites passed, production build and TypeScript passed,
 lint 0 errors / 52 unchanged warnings. Desktop 1440x900 and phone 390x844 preview,
-filter/details and auth handoff inspected in Chrome. Self-hosted deployment is
-pending. See `docs/landing-v3/PROMPT_PREVIEW.md` for limits and acceptance steps.
+filter/details and auth handoff inspected in Chrome. Runtime `ad13f915` / PR183
+is live on self-hosted `findez-web`, build `cHXcB07Do-U3qk0tvDwjj`. All five CI
+jobs passed (40064433580); 12 live route statuses and six asset bytes verified.
+Preserved 357 unrelated files and backend PID. Live mobile preview and signup
+request retention verified. See `docs/landing-v3/PROMPT_PREVIEW.md` for receipt,
+limits and acceptance steps.
 
 ## October 23 - Blue echo web branding delivered
 

@@ -52,7 +52,7 @@ blocked/corrupt browser storage does not prevent previewing.
 - `npx tsc --noEmit`: passed; final production build also checked TypeScript.
 - `npm run lint`: 0 errors, 52 pre-existing warnings, no new warnings.
 - `npm run build -- --webpack`: passed with placeholder local Supabase public
-  configuration; release candidate must also build with preserved server config.
+  configuration; release also built successfully with preserved server config.
 - Chrome UI inspected at 1440x900 and 390x844. Named inventory, Space and counts,
   example project preview, item expansion, filtering, close/edit and signup prompt
   banner verified. Auth account creation uses mocks; no real account was created.
@@ -80,4 +80,23 @@ blocked/corrupt browser storage does not prevent previewing.
 
 Self-hosted `findez-web` only. Candidate overlays must verify touched-file hashes
 against Blue Echo runtime and preserve unrelated live files/configuration. Keep
-previous release and service drop-in for rollback. No Vercel deployment.
+previous release and service drop-in for rollback. No Vercel deployment invoked.
+
+Activated October 24 UTC (October 23 Pacific):
+
+- Runtime commit: `ad13f91515e42f5bfc89a337ff818e50a07cd77e`, PR183.
+- All five CI jobs passed: run `40064433580`.
+- Live directory: `/home/ubuntu/findez-web-releases/prompt-preview-20261024/frontend`.
+- Build ID: `cHXcB07Do-U3qk0tvDwjj`.
+- Twelve changed runtime files overlaid after matching their live base hashes;
+  357 unrelated files preserved. Two divergent server test files were left intact.
+- Twelve candidate/live HTTPS route statuses match the previous release, including
+  homepage, auth, public documents, sitemap/robots and authenticated redirect.
+- Six favicon/brand assets match exact candidate bytes. Backend PID unchanged.
+- Live Chrome 390x844: Chat QA / Storage, AA batteries 10, USB-C cables 2, then
+  signup with the complete original prompt verified. No real signup performed.
+- Receipt: `/home/ubuntu/findez-web-releases/prompt-preview-20261024/deployment-receipt.json`.
+- Previous release: `/home/ubuntu/findez-web-releases/brand-blue-echo-icons-20261023/frontend`.
+  To roll back, restore `previous-web-rebuild.conf` from the new release directory
+  to `/etc/systemd/system/findez-web.service.d/web-rebuild.conf`, reload systemd and
+  restart `findez-web` only. Keep both releases' static chunks for existing tabs.
