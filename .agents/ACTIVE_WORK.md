@@ -1,3 +1,7 @@
+## October 23 - Landing v3 (implemented, not deployed)
+
+Web homepage only on `feat/landing-v3`, isolated worktree `/private/tmp/findez-landing-v3-20261023`, based on current web lane 76019be. User ZIP prototype is the design source. Preserve other routes, metadata, cookie notice, backend and mobile. No deployment or native release in this lane. Prototype port, scoped styles, client-only Three.js and shared animation clock complete. Local validation and limitations: `docs/landing-v3/README.md`.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google

@@ -1,0 +1,748 @@
+<title>FindEZ Landing 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ink: #111112; --ink-2: #55565B; --ink-3: #8C8D92; --line: #E8E8EA;
+  --or: #E8590C; --or-ink: #C2410C; --or-tint: #FFE8DA;
+  --bl: #A9D6F5; --bl-tint: #EEF6FD; --bl-deep: #6FA9D6; --night: #0B0B0D;
+  --f: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; }
+body { font-family: var(--f); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+h1, h2 { margin: 0; font-weight: 600; letter-spacing: -.04em; line-height: 1.04; }
+h2 { font-size: clamp(30px, 3.7vw, 54px); }
+h2 .o { color: var(--or); }
+.sub { margin: 16px 0 0; font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; color: var(--ink-2); max-width: 30em; }
+.eye { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; display: block; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; transition: transform .25s ease, box-shadow .25s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn.dk { background: var(--ink); color: #fff; box-shadow: 0 14px 30px rgba(17,17,18,.18); }
+.btn.lt { background: #fff; color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 10px 24px rgba(17,17,18,.06); }
+.btn.wh { background: #fff; color: var(--ink); }
+.btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.wrap { width: min(1200px, calc(100vw - 32px)); margin: 0 auto; }
+a:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid var(--or); outline-offset: 3px; }
+
+/* nav */
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 14px max(16px, calc((100vw - 1200px) / 2)); transition: color .35s ease, background .35s ease; }
+.nav.solid { background: rgba(255,255,255,.72); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.nav.dark { color: #fff; background: rgba(11,11,13,.55); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.brand { display: flex; align-items: center; gap: 9px; font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+.brand svg { display: block; } .brand .ez { color: var(--or); }
+.links { display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 500; }
+.links a { padding: 9px 14px; border-radius: 999px; }
+.links .go { background: var(--ink); color: #fff; margin-left: 6px; transition: background .35s ease, color .35s ease; }
+.nav.dark .go { background: #fff; color: var(--ink); }
+
+/* 3D canvas (hero + closing) */
+#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; display: block; }
+#tip { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; background: #fff; border-radius: 14px; padding: 9px 12px; box-shadow: 0 0 0 1px var(--line), 0 14px 30px rgba(17,17,18,.14); font-size: 13px; opacity: 0; transform: translate(14px, 14px); transition: opacity .15s ease; white-space: nowrap; }
+#tip b { display: block; font-weight: 600; } #tip span { color: var(--ink-2); font-size: 12px; }
+main > section { position: relative; z-index: 2; }
+
+/* 1. chat */
+#heroBg { position: fixed; inset: 0; z-index: 0; background: radial-gradient(60% 50% at 50% 46%, #fff 0%, #fff 40%, rgba(255,255,255,0) 72%), radial-gradient(90% 80% at 50% 120%, #E3F1FC 0%, rgba(227,241,252,0) 60%), linear-gradient(180deg, #F3F9FE 0%, #fff 100%); pointer-events: none; }
+.hero-in { width: min(720px, calc(100vw - 32px)); display: flex; flex-direction: column; align-items: center; gap: 22px; transform: translateY(-2vh); perspective: 1100px; }
+#hero h1 { font-size: clamp(28px, 3.3vw, 44px); text-align: center; }
+.composer { will-change: transform; width: 100%; background: #fff; border-radius: 26px; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 24px 60px rgba(60,110,150,.18); padding: 18px 16px 12px 20px; display: flex; flex-direction: column; gap: 6px; }
+#ask { resize: none; border: 0; outline: 0; background: transparent; font: 400 18px/1.45 var(--f); color: var(--ink); min-height: 54px; padding: 2px 0 0; }
+#ask::placeholder { color: var(--ink-3); }
+.crow { display: flex; align-items: center; gap: 10px; }
+.cb { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.cb.o { box-shadow: inset 0 0 0 1px var(--line); }
+.cb.cam { background: var(--or); } .cb.send { background: var(--ink); } .cb.mic { color: var(--ink-2); }
+.sp { flex: 1; }
+
+/* pinned story */
+.pinS { position: relative; }
+.stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1500px; }
+.tx { position: absolute; will-change: opacity, transform; transform-origin: 0 100%; z-index: 5; }
+.tx.center { text-align: center; transform-origin: 50% 100%; } .tx.center .sub { margin-left: auto; margin-right: auto; }
+.tx.light h2, .tx.light { color: #fff; } .tx.light .sub { color: rgba(255,255,255,.66); } .tx.light .eye { color: rgba(255,255,255,.5); }
+#storyA .stage { background: transparent; }
+#a0 h1 { font-size: clamp(28px, 3.3vw, 44px); }
+#a0s { margin: 10px auto 0; font-size: clamp(13.5px, 1.25vw, 18px); white-space: nowrap; max-width: none; }
+#lComp { background: #fff; }
+#lComp .composer { height: 100%; border-radius: 0; box-shadow: none; background: transparent; }
+.counts { display: flex; gap: 46px; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+.counts b { display: block; font-size: 46px; font-weight: 500; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.counts b.o { color: var(--or); }
+.counts span { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; color: var(--ink-3); text-transform: uppercase; }
+.tx .btn { margin-top: 26px; pointer-events: auto; }
+
+#m { position: absolute; left: 0; top: 0; overflow: hidden; z-index: 3; will-change: left, top, width, height, transform; }
+.ly { position: absolute; inset: 0; }
+#lPhoto { background: #cfcfcf url(bench.jpg) center / cover; }
+#scan { position: absolute; left: 0; right: 0; height: 2px; background: var(--or); box-shadow: 0 0 22px 5px rgba(232,89,12,.55); }
+#scanfade { position: absolute; left: 0; right: 0; top: 0; background: linear-gradient(to bottom, rgba(169,214,245,0), rgba(169,214,245,.28)); }
+.tg { position: absolute; border: 1.5px solid var(--or); border-radius: 4px; }
+.tg span { position: absolute; left: -1.5px; bottom: 100%; font-family: var(--mono); font-size: 11.5px; background: var(--or); color: #fff; padding: 3px 7px; white-space: nowrap; border-radius: 3px 3px 3px 0; }
+.tg.warn { border-style: dashed; } .tg.warn span { background: #fff; color: var(--or-ink); box-shadow: inset 0 0 0 1.5px var(--or); }
+.pcap { position: absolute; left: 16px; right: 16px; bottom: 12px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: rgba(255,255,255,.9); text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+#review { position: absolute; z-index: 6; width: 300px; background: #fff; border-radius: 18px; padding: 14px 14px 10px; box-shadow: 0 0 0 1px rgba(17,17,18,.06), 0 30px 60px rgba(17,17,18,.18); font-size: 13.5px; will-change: transform, opacity; }
+#review .rh { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 8px; } #review .rh small { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); letter-spacing: .1em; font-weight: 400; }
+.rr { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #F1F1F2; }
+.rr b { flex: 1; font-weight: 500; } .rr i { font-style: normal; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); width: 34px; text-align: right; } .rr em { font-style: normal; font-family: var(--mono); font-size: 11.5px; width: 34px; text-align: right; }
+.rr.warn em { color: var(--or-ink); }
+.rq { margin-top: 8px; display: flex; align-items: center; gap: 8px; border-radius: 12px; background: var(--bl-tint); padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); }
+.rq span:last-child { margin-left: auto; font-size: 11.5px; color: var(--ink); background: #fff; padding: 3px 8px; border-radius: 999px; }
+
+#lCard { display: flex; align-items: center; gap: 14px; padding: 10px; background: #fff; }
+#lCard .th { width: 76px; height: 76px; border-radius: 12px; background: url(bench.jpg) 66% 4% / 300% auto; flex: none; }
+#lCard small { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--ink-3); }
+#lCard b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin: 3px 0; }
+#lCard em { font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--or); }
+#graph { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+#graph svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#graph line { stroke: rgba(255,255,255,.28); stroke-width: 1; }
+#graph text { fill: rgba(255,255,255,.5); font-family: var(--mono); font-size: 11px; }
+.node { position: absolute; left: 0; top: 0; padding: 10px 14px; border-radius: 12px; background: rgba(18,18,22,.9); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); color: #fff; font-size: 14px; white-space: nowrap; will-change: transform, opacity; }
+.node small { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: rgba(255,255,255,.55); margin-bottom: 3px; }
+.node.o small { color: var(--or); } .node.b small { color: var(--bl); }
+#orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(232,89,12,.45); pointer-events: none; z-index: 1; }
+
+#lCab { background: linear-gradient(180deg, #F3F8FD, #E6F1FB); perspective: 1300px; display: flex; align-items: center; justify-content: center; }
+#cab { position: relative; transform-style: preserve-3d; will-change: transform; }
+#cabBody { position: absolute; inset: -14px; border-radius: 14px; background: #1D1F25; box-shadow: 0 40px 80px rgba(20,40,70,.35); transform: translateZ(-14px); }
+.dr { position: absolute; border-radius: 6px; background: linear-gradient(180deg, #F8F9FA, #DCDFE4); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12), 0 2px 0 rgba(0,0,0,.35); padding: 5px 6px; font-family: var(--mono); color: #33363c; overflow: hidden; transform-style: preserve-3d; will-change: transform; }
+.dr .pa { background: #fff; border-radius: 3px; height: 100%; padding: 4px 5px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.dr .nm { font-size: 7.5px; line-height: 1.15; color: #555; } .dr .pn { font-size: 11px; font-weight: 500; }
+.dr .qr { position: absolute; right: 9px; top: 9px; width: 16px; height: 16px; background: repeating-conic-gradient(#222 0 25%, #fff 0 50%) 0 0 / 6px 6px; opacity: .8; }
+.dr.hit { box-shadow: 0 0 0 2px var(--or), 0 24px 40px rgba(232,89,12,.35); }
+#rowBox, #drBox { position: absolute; border: 2px solid #fff; border-radius: 8px; pointer-events: none; transform: translateZ(2px); }
+#drBox { border-color: var(--or); }
+#rowBox span, #drBox span { position: absolute; left: -2px; bottom: calc(100% + 4px); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; padding: 3px 7px; border-radius: 4px; background: #fff; color: var(--ink); white-space: nowrap; }
+#drBox span { background: var(--or); color: #fff; }
+#foundC { position: absolute; z-index: 6; background: #fff; border-radius: 16px; padding: 14px 18px; box-shadow: 0 30px 60px rgba(20,40,70,.25); will-change: transform, opacity; }
+#foundC small { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--or); }
+#foundC b { display: block; font-size: 24px; font-weight: 600; letter-spacing: -.03em; margin: 4px 0; }
+#foundC span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-3); }
+#crumbs { position: absolute; z-index: 6; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+#crumbs span { opacity: 0; transform: translateY(8px); transition: opacity .3s ease, transform .3s ease; }
+#crumbs span.on { opacity: 1; transform: none; }
+#crumbs span:last-child { color: var(--or-ink); font-weight: 600; }
+
+#lChat { background: #fff; display: flex; flex-direction: column; }
+.chd { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid #F1F1F2; font-weight: 600; font-size: 15px; }
+.chd i { width: 8px; height: 8px; border-radius: 50%; background: var(--or); }
+.chb { flex: 1; padding: 18px; display: flex; flex-direction: column; gap: 12px; perspective: 900px; }
+.ub { align-self: flex-end; background: var(--ink); color: #fff; font-size: 15px; padding: 11px 15px; border-radius: 18px 18px 6px 18px; min-height: 42px; min-width: 40px; }
+.ab { align-self: flex-start; background: var(--bl-tint); font-size: 15px; line-height: 1.45; padding: 12px 15px; border-radius: 18px 18px 18px 6px; max-width: 88%; }
+.ic { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 0 0 1px var(--line), 0 12px 26px rgba(17,17,18,.08); will-change: transform, opacity; }
+.ic .sw { width: 38px; height: 38px; border-radius: 10px; flex: none; }
+.ic b { display: block; font-size: 14px; font-weight: 600; } .ic span { font-size: 12.5px; color: var(--ink-2); }
+.ic em { margin-left: auto; font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--or-ink); }
+.tags { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 18px; }
+.tags span { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; padding: 6px 10px; border-radius: 999px; background: #F4F5F6; color: var(--ink-2); }
+.fd { transition: opacity .4s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+.hid { opacity: 0; transform: translateY(14px) rotateX(-30deg); }
+
+/* audience */
+#who { background: var(--night); color: #fff; padding: clamp(110px, 16vh, 170px) 0 clamp(120px, 18vh, 180px); overflow: hidden; perspective: 1100px; }
+#who::before { content: ""; position: absolute; left: 50%; top: 30%; width: 900px; height: 500px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(169,214,245,.16), rgba(169,214,245,0)); pointer-events: none; }
+#who h2 { position: relative; text-align: center; max-width: 14em; margin: 0 auto; padding: 0 16px; }
+.rows { position: relative; margin-top: clamp(48px, 7vh, 80px); display: flex; flex-direction: column; gap: 14px; transform-origin: 50% 50%; will-change: transform; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.mrow { display: flex; gap: 12px; width: max-content; will-change: transform; }
+.pill { white-space: nowrap; font-size: clamp(16px, 1.5vw, 21px); font-weight: 500; padding: .62em 1.2em; border-radius: 999px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.25), 0 14px 28px rgba(0,0,0,.35); transition: transform .25s ease; }
+.pill:hover { transform: translateY(-6px) scale(1.06); }
+.pill.o { background: var(--or); color: var(--ink); } .pill.b { background: var(--bl); color: var(--ink); } .pill.g { background: #222227; color: #fff; }
+.pill.l { box-shadow: inset 0 0 0 1px rgba(255,255,255,.3), 0 14px 28px rgba(0,0,0,.3); color: #fff; } .pill.w { background: #fff; color: var(--ink); }
+
+/* business */
+#biz .stage { background: #fff; }
+.spc { position: absolute; width: 270px; border-radius: 22px; background: #fff; padding: 18px; box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(17,17,18,.12); will-change: transform, opacity; }
+.spc .sh { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+.spc .sh i { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-style: normal; font-size: 15px; }
+.spc .li { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--ink-2); }
+.spc .li div { display: flex; justify-content: space-between; } .spc .li em { font-style: normal; font-family: var(--mono); font-size: 11.5px; }
+.spc .ok { color: #1E8E5A; } .spc .no { color: var(--or-ink); }
+.avs { display: flex; margin-top: 14px; } .avs b { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; margin-right: -6px; box-shadow: 0 0 0 2px #fff; }
+#team { position: absolute; width: 320px; border-radius: 24px; background: var(--ink); color: #fff; padding: 20px; box-shadow: 0 40px 80px rgba(17,17,18,.3); will-change: transform, opacity; }
+#team small { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--bl); }
+#team b { display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin: 6px 0 12px; }
+#team .ts { display: flex; gap: 8px; flex-wrap: wrap; } #team .ts span { font-size: 12.5px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.1); }
+
+/* app carousel */
+#app .stage { background: linear-gradient(180deg, #fff 0%, #EEF6FD 100%); }
+#ring { position: absolute; left: 50%; top: 0; transform-style: preserve-3d; will-change: transform; }
+.ph { position: absolute; left: 0; top: 0; border-radius: 40px; background: #0C0C0E; padding: 8px; box-shadow: 0 40px 80px rgba(40,70,110,.25); backface-visibility: hidden; will-change: transform, opacity; }
+.ph .scr { position: absolute; inset: 8px; border-radius: 33px; background: #fff; overflow: hidden; display: flex; flex-direction: column; font-size: 12px; }
+.ph .isl { position: absolute; left: 50%; top: 10px; width: 70px; height: 21px; margin-left: -35px; border-radius: 14px; background: #050506; z-index: 3; }
+.ph .bar { padding: 40px 14px 8px; font-weight: 600; font-size: 15px; }
+.ph .bd { flex: 1; padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.ph .pic { height: 46%; border-radius: 16px; background: url(bench.jpg) 45% 30% / cover; position: relative; }
+.ph .pic i { position: absolute; border: 1.5px solid var(--or); border-radius: 3px; }
+.ph .rw { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: #F6F7F8; }
+.ph .rw b { flex: 1; font-weight: 500; } .ph .rw em { font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.ph .rw.w { background: var(--or-tint); } .ph .rw.w em { color: var(--or-ink); }
+.ph .pb { margin: auto 12px 14px; background: var(--ink); color: #fff; text-align: center; padding: 11px; border-radius: 999px; font-weight: 500; }
+.ph .cd { border-radius: 14px; padding: 10px 12px; background: var(--bl-tint); } .ph .cd small { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; color: var(--ink-3); display: block; } .ph .cd b { font-size: 15px; }
+.ph .u { align-self: flex-end; background: var(--ink); color: #fff; padding: 8px 11px; border-radius: 14px 14px 4px 14px; }
+.ph .a { align-self: flex-start; background: var(--bl-tint); padding: 9px 11px; border-radius: 14px 14px 14px 4px; line-height: 1.4; }
+#caps { position: absolute; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; z-index: 5; }
+#caps span { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; padding: 8px 14px; border-radius: 999px; color: var(--ink-3); background: rgba(255,255,255,.7); transition: background .3s ease, color .3s ease; }
+#caps span.on { background: var(--ink); color: #fff; }
+
+/* sync */
+#sync .stage { background: #fff; }
+#lap { position: absolute; transform-style: preserve-3d; will-change: transform; }
+#lap .lid { position: absolute; left: 0; top: 0; right: 0; border-radius: 16px 16px 6px 6px; background: #17181B; padding: 10px; }
+#lap .lscr { background: #fff; border-radius: 8px; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+#lap .base { position: absolute; left: -6%; right: -6%; height: 16px; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, #D7DADF, #B9BDC4); }
+.lhd { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #F1F1F2; font-size: 13px; font-weight: 600; }
+.lhd em { margin-left: auto; font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.lbd { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.lbd .rw { display: flex; gap: 8px; align-items: center; padding: 7px 9px; background: #F6F7F8; border-radius: 9px; } .lbd .rw b { flex: 1; font-weight: 500; } .lbd .rw em { font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.lbd .rw.nw { background: var(--or-tint); }
+#sph { position: absolute; border-radius: 34px; background: #0C0C0E; padding: 7px; box-shadow: 0 30px 60px rgba(17,17,18,.25); will-change: transform; }
+#sph .scr { position: absolute; inset: 7px; border-radius: 28px; background: #fff; overflow: hidden; }
+#sph .pic { position: absolute; left: 8px; right: 8px; top: 34px; height: 46%; border-radius: 14px; background: url(bench.jpg) 66% 10% / 300%; }
+#sph .sv { position: absolute; left: 10px; right: 10px; bottom: 12px; background: var(--ink); color: #fff; text-align: center; padding: 9px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+#fly { position: absolute; z-index: 6; display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 12px; padding: 7px 10px 7px 7px; font-size: 12.5px; font-weight: 600; box-shadow: 0 20px 40px rgba(17,17,18,.2); white-space: nowrap; will-change: transform, opacity; }
+#fly i { width: 26px; height: 26px; border-radius: 7px; background: url(bench.jpg) 66% 4% / 300%; }
+
+/* closing */
+#end { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; justify-content: center; text-align: center; }
+#end h2 { font-size: clamp(34px, 5vw, 72px); max-width: 12em; margin: 0 auto; }
+#end .btns { justify-content: center; }
+.rv { will-change: opacity, transform; }
+
+footer { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: space-between; padding: 30px max(16px, calc((100vw - 1200px) / 2)) 40px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); background: #fff; }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  .links .lg { display: none; }
+  #ask { font-size: 16px; }
+  .counts { gap: 30px; margin-top: 18px; padding-top: 16px; } .counts b { font-size: 34px; }
+  .tx .btn { margin-top: 16px; }
+  #review { width: 240px; font-size: 12px; }
+  .spc { width: 220px; } #team { width: 260px; }
+}
+@media (prefers-reduced-motion: reduce) { .fd, #crumbs span, .pill { transition: none; } }
+</style>
+
+<div id="heroBg" aria-hidden="true"></div>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="tip" role="tooltip"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#hero" aria-label="FindEZ home"><svg width="26" height="26" viewBox="18.75 22.25 55 55" aria-hidden="true">
+      <path d="M25.250 39.750 A4.5 4.5 0 0 1 29.750 35.250 L56.250 35.250 A4.5 4.5 0 0 1 60.750 39.750 L60.750 66.250 A4.5 4.5 0 0 1 56.250 70.750 L54.250 70.750 A4.5 4.5 0 0 1 49.750 66.250 L49.750 50.750 A4.5 4.5 0 0 0 45.250 46.250 L29.750 46.250 A4.5 4.5 0 0 1 25.250 41.750Z" fill="#A9D6F5" transform="translate(-4.5 4.5)"/>
+      <path d="M25.250 39.750 A4.5 4.5 0 0 1 29.750 35.250 L56.250 35.250 A4.5 4.5 0 0 1 60.750 39.750 L60.750 66.250 A4.5 4.5 0 0 1 56.250 70.750 L54.250 70.750 A4.5 4.5 0 0 1 49.750 66.250 L49.750 50.750 A4.5 4.5 0 0 0 45.250 46.250 L29.750 46.250 A4.5 4.5 0 0 1 25.250 41.750Z" fill="currentColor"/>
+      <path d="M49.750 28.750 A4.5 4.5 0 0 1 54.250 24.250 L67.250 24.250 A4.5 4.5 0 0 1 71.750 28.750 L71.750 41.750 A4.5 4.5 0 0 1 67.250 46.250 L65.250 46.250 A4.5 4.5 0 0 1 60.750 41.750 L60.750 39.750 A4.5 4.5 0 0 0 56.250 35.250 L54.250 35.250 A4.5 4.5 0 0 1 49.750 30.750Z" fill="#E8590C"/>
+    </svg><span>Find<span class="ez">EZ</span></span></a>
+  <nav class="links">
+    <a class="lg" href="https://www.findez.ai/docs/api">Developers</a>
+    <a class="lg" href="https://apps.apple.com/us/app/findez-ai/id6760401697">iOS App</a>
+    <a class="go" href="https://www.findez.ai/signup">Get started ↗</a>
+  </nav>
+</header>
+
+<main>
+<!-- 2-5. capture -> memory -> exact place -> ask, one pinned story -->
+<section class="pinS" id="storyA" style="height:560vh" aria-label="FindEZ">
+  <div class="stage" id="stA">
+    <div id="orbit"></div>
+    <div id="graph"><svg aria-hidden="true"></svg></div>
+
+    <div class="tx center" id="a0"><h1>Describe your world.</h1><p class="sub" id="a0s">Snap a shelf or type a list to build an inventory.</p></div>
+    <div class="tx" id="a1">
+      <h2>Take a picture.<br><span class="o">Review. Save.</span></h2>
+      <p class="sub">FindEZ suggests objects, quantities and confidence from your photo. Review the results, choose a Space and save the items you want to remember.</p>
+      <div class="counts"><div><b id="cntA">0</b><span>Objects found</span></div><div><b class="o" id="cntB">0</b><span>Needs a look</span></div></div>
+    </div>
+    <div class="tx light" id="a2">
+      <h2>Knowing what it is is useful. Knowing everything around it is memory.</h2>
+      <p class="sub">Keep the charger from your bench photo with its saved location, notes and documents. Ask FindEZ about the details you have recorded.</p>
+    </div>
+    <div class="tx center" id="a3"><h2>Not just “Workshop”. Exactly where.</h2></div>
+    <div class="tx" id="a4">
+      <h2>Ask about the things you saved.</h2>
+      <p class="sub">Ask what you have, how many are left or where you saved them. Follow the answer back to your inventory records.</p>
+    </div>
+
+    <div id="m">
+      <div class="ly" id="lComp">
+    <form class="composer" id="cform" action="https://www.findez.ai/signup">
+      <label for="ask" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Describe what to add</label>
+      <textarea id="ask" rows="2" placeholder="Start an inventory for my garage"></textarea>
+      <div class="crow">
+        <button class="cb o" type="button" aria-label="Attach" data-go><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111112" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="cb cam" type="button" aria-label="Take a photo" data-go><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#111112" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
+        <div class="sp"></div>
+        <button class="cb mic" type="button" aria-label="Speak" data-go><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button>
+        <button class="cb send" type="submit" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+      </div>
+    </form>
+
+      </div>
+      <div class="ly" id="lPhoto"><div id="scanfade"></div><div id="scan"></div><div id="tags"></div><div class="pcap"><span>ONE PHOTO</span><span id="pcapR">SCANNING</span></div></div>
+      <div class="ly" id="lCard"><span class="th"></span><span><small>FROM YOUR BENCH PHOTO</small><b>Battery charger, 18V</b><em>CONFIDENCE 0.97</em></span></div>
+      <div class="ly" id="lCab"><div id="cab"><div id="cabBody"></div><div id="rowBox"><span>ROW 5</span></div><div id="drBox"><span>DRAWER PN-F40</span></div></div></div>
+      <div class="ly" id="lChat">
+        <div class="chd"><i></i>Ask FindEZ</div>
+        <div class="chb">
+          <div class="ub"><span id="qt"></span></div>
+          <div class="ab fd hid" id="ans">AA batteries in the office desk drawer. The garage pack has 18 left.</div>
+          <div class="ic fd hid" id="ic1"><span class="sw" style="background:radial-gradient(circle at 35% 30%,#BFE0F7,#6FA9D6)"></span><span><b>AA batteries</b><span>Office › Desk drawer</span></span></div>
+          <div class="ic fd hid" id="ic2"><span class="sw" style="background:radial-gradient(circle at 35% 30%,#FFB27E,#E8590C)"></span><span><b>Battery pack, 18V</b><span>Garage</span></span><em>18 left</em></div>
+        </div>
+        <div class="tags fd hid" id="tgs"><span>ITEMS · 2</span><span>SPACES · 2</span><span>QUANTITIES</span></div>
+      </div>
+    </div>
+
+    <div id="review" aria-hidden="true">
+      <div class="rh">Workshop › Workbench <small>TODAY</small></div>
+      <div class="rr"><b>Battery charger, 18V</b><i>x1</i><em>0.97</em></div>
+      <div class="rr"><b>Duct tape</b><i>x1</i><em>0.93</em></div>
+      <div class="rr"><b>Socket head screws</b><i>x40</i><em>0.91</em></div>
+      <div class="rr warn"><b>Gearbox housing</b><i>x2</i><em>0.79</em></div>
+      <div class="rq"><span>⌕</span><span>Where’s the duct tape</span><span>Workbench › Middle</span></div>
+    </div>
+    <div id="foundC" aria-hidden="true"><small>FOUND</small><b>M4 set screws</b><span>DRAWER PN-F40 · ROW 5 · PARTS CABINET</span></div>
+    <div id="crumbs" aria-hidden="true"><span>Workshop</span><span>›</span><span>Workbench</span><span>›</span><span>Parts cabinet</span><span>›</span><span>Row 5</span><span>›</span><span>Drawer PN-F40</span><span>›</span><span>M4 set screws</span></div>
+  </div>
+</section>
+
+<!-- 6. who -->
+<section id="who" aria-label="Who uses FindEZ">
+  <h2 class="rv">One memory for anyone who owns, shares or manages things.</h2>
+  <div class="rows" id="rows"></div>
+</section>
+
+<!-- 7. business -->
+<section class="pinS" id="biz" style="height:170vh">
+  <div class="stage" id="stB">
+    <div class="tx" id="b1">
+      <h2>Bring your team’s<br>inventory together.</h2>
+      <p class="sub">Give your team one place to capture items, record where they belong and check what’s available.</p>
+      <p class="sub" style="margin-top:10px">Planning to use FindEZ at work? Talk to us about your team and setup.</p>
+      <a class="btn dk" href="mailto:info@findez.ai?subject=FindEZ%20business%20inquiry">Business inquiries ↗</a>
+    </div>
+    <div class="spc" id="sp1"><div class="sh"><i style="background:var(--or-tint)">⚙</i>Pit cart</div><div class="li"><div>REV HD motors <em class="ok">2 in</em></div><div>Battery packs <em class="no">1 out</em></div><div>Hex keys <em class="ok">set</em></div></div><div class="avs"><b style="background:#FFD7BF">MK</b><b style="background:#BFE0F7">JS</b></div></div>
+    <div class="spc" id="sp2"><div class="sh"><i style="background:var(--bl-tint)">▦</i>Lab storeroom</div><div class="li"><div>Multimeters <em class="ok">4 in</em></div><div>Soldering irons <em class="no">2 out</em></div><div>Calipers <em class="ok">3 in</em></div></div><div class="avs"><b style="background:#E7E7EA">AL</b><b style="background:#FFD7BF">RP</b><b style="background:#BFE0F7">DN</b></div></div>
+    <div class="spc" id="sp3"><div class="sh"><i style="background:#F2F2F4">▤</i>Shop shelves</div><div class="li"><div>M4 set screws <em class="ok">Drawer PN-F40</em></div><div>Duct tape <em class="ok">3 in</em></div><div>Drill <em class="no">1 out</em></div></div><div class="avs"><b style="background:#BFE0F7">TS</b></div></div>
+    <div id="team"><small>ONE PLACE FOR THE TEAM</small><b>Team inventory</b><div class="ts"><span>Pit cart</span><span>Lab storeroom</span><span>Shop shelves</span><span>6 members</span></div></div>
+  </div>
+</section>
+
+<!-- 8. app -->
+<section class="pinS" id="app" style="height:260vh">
+  <div class="stage" id="stC">
+    <div class="tx center" id="c1"><h2>Capture. Ask. Find.</h2><p class="sub">Everything you own, remembered, in one app that stays in sync with the web.</p></div>
+    <div id="ring"></div>
+    <div id="caps"><span>CAPTURE</span><span>REVIEW</span><span>HOME</span><span>ASK</span></div>
+  </div>
+</section>
+
+<!-- 9. sync -->
+<section class="pinS" id="sync" style="height:170vh">
+  <div class="stage" id="stD">
+    <div class="tx" id="d1">
+      <h2>Your things, remembered. Anywhere.</h2>
+      <p class="sub">Capture on your iPhone. Review, organize and ask on the web. Sign in with the same account to use your saved inventory on both.</p>
+      <a class="btn dk" href="https://apps.apple.com/us/app/findez-ai/id6760401697">Get FindEZ for iPhone</a>
+    </div>
+    <div id="lap"><div class="lid"><div class="lscr"><div class="lhd">findez.ai · Workshop <em id="lcnt">18 items</em></div><div class="lbd" id="lbd">
+      <div class="rw nw" id="newRow" style="display:none"><b>Battery charger, 18V</b><em>Workbench</em></div>
+      <div class="rw"><b>Duct tape</b><em>Workbench</em></div><div class="rw"><b>Socket head screws</b><em>Bin 4 · x40</em></div><div class="rw"><b>M4 set screws</b><em>Drawer PN-F40</em></div><div class="rw"><b>Gearbox housing</b><em>Workbench · x2</em></div><div class="rw"><b>Spur gear</b><em>Bin 2</em></div>
+    </div></div></div><div class="base"></div></div>
+    <div id="sph"><div class="scr"><div class="pic"></div><div class="sv">Save to Workshop</div></div></div>
+    <div id="fly"><i></i>Battery charger, 18V</div>
+  </div>
+</section>
+
+<!-- 10. closing -->
+<section id="end">
+  <div class="rv" style="padding:0 16px">
+    <h2>Take a picture. FindEZ remembers.</h2>
+    <div class="btns"><a class="btn dk" href="https://www.findez.ai/signup">Try FindEZ on the web</a><a class="btn lt" href="https://apps.apple.com/us/app/findez-ai/id6760401697">Get the iPhone app</a></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>© 2026 AI Robots Inc.</span>
+  <nav><a href="https://www.findez.ai/pricing">Plans</a><a href="https://www.findez.ai/docs/api">Developers</a><a href="https://apps.apple.com/us/app/findez-ai/id6760401697">iOS App</a><a href="https://www.findez.ai/privacy">Privacy</a><a href="https://www.findez.ai/terms">Terms</a><a href="mailto:info@findez.ai">Contact</a></nav>
+</footer>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const win = (t, a0, a1, b0, b1) => Math.min(a0 < 0 ? 1 : seg(t, a0, a1), b0 > 99 ? 1 : 1 - seg(t, b0, b1));
+  const FZ = window.FZ = { mx: 0, my: 0, tx: 0, ty: 0, heroVis: 1, endVis: 0, reduce };
+  addEventListener('pointermove', e => { FZ.mx = e.clientX / innerWidth - .5; FZ.my = e.clientY / innerHeight - .5; }, { passive: true });
+
+  /* chat box */
+  const ask = $('#ask');
+  const prompts = ['Start an inventory for my garage', 'Create a Workshop space for my robotics team', 'Add 20 M3 screws, a soldering iron and 2 multimeters', 'Snap a shelf and list everything on it', 'Import my parts spreadsheet'];
+  let pi = 0, pc = 0, pd = 1;
+  if (!reduce) setInterval(() => {
+    if (document.activeElement === ask || ask.value) return;
+    const s = prompts[pi]; pc += pd;
+    if (pc > s.length + 18) pd = -1;
+    if (pc <= 0 && pd < 0) { pd = 1; pi = (pi + 1) % prompts.length; }
+    ask.placeholder = s.slice(0, clamp(pc, 0, s.length));
+  }, 55);
+  ask.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#cform').submit(); } });
+  $$('[data-go]').forEach(b => b.addEventListener('click', () => { location.href = 'https://www.findez.ai/signup'; }));
+
+  /* text that rises in, drifts up while held, and leaves upward */
+  function setText(el, p, a0, a1, b0, b1) {
+    const i = a0 < 0 ? 1 : seg(p, a0, a1), o = b0 > 99 ? 0 : seg(p, b0, b1), hp = seg(p, a1, b0 > 99 ? 1 : b0), v = Math.min(i, 1 - o);
+    const y = (1 - ease(i)) * 90 - ease(o) * 90 + (.5 - hp) * 40;
+    el.style.opacity = v; el.style.transform = `translate3d(0,${y.toFixed(1)}px,0) rotateX(${((1 - i) * -24 + o * 18).toFixed(1)}deg)`;
+    el.style.pointerEvents = v > .5 ? 'auto' : 'none'; el.style.visibility = v < .01 ? 'hidden' : 'visible';
+  }
+  const R = (el, r) => { el.style.left = r.x + 'px'; el.style.top = r.y + 'px'; el.style.width = r.w + 'px'; el.style.height = r.h + 'px'; };
+  const LR = (a, b, k) => ({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), w: lerp(a.w, b.w, k), h: lerp(a.h, b.h, k) });
+  const prog = el => { const r = el.getBoundingClientRect(); return clamp(-r.top / Math.max(1, r.height - innerHeight)); };
+  const mixc = (a, b, k) => a.map((v, i) => lerp(v, b[i], k));
+  const rgb = c => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  let W, H, mob, C, left;
+
+  /* ================= A: capture -> memory -> exact place -> ask ================= */
+  const sA = $('#storyA'), stA = $('#stA'), M = $('#m'), rev = $('#review'), foundC = $('#foundC'), crumbs = $$('#crumbs span'), crumbBox = $('#crumbs');
+  const A0 = $('#a0'), A = [1, 2, 3, 4].map(i => $('#a' + i)), LY = ['#lComp', '#lPhoto', '#lCard', '#lCab', '#lChat'].map($);
+  const TAGS = [['battery pack 18V', .95, 44, 1, 13, 29], ['battery charger 18V', .97, 57, 5, 25, 33], ['duct tape', .93, 25.1, 19.3, 16.7, 20.7], ['spur gear', .84, 8.2, 40, 9.1, 11.7], ['socket head screws', .91, 16.4, 40, 30.9, 45], ['gearbox housing', .79, 50, 56.7, 42.7, 36.7]];
+  const tagEls = TAGS.map(([n, c, x, y, w, h]) => { const d = document.createElement('div'); d.className = 'tg' + (c < .8 ? ' warn' : ''); d.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%;opacity:0`; d.innerHTML = `<span>${n} ${c.toFixed(2)}</span>`; $('#tags').appendChild(d); return d; });
+  const NODES = [['LOCATION', 'Workshop › Workbench', 'lives in', ''], ['PURCHASE', 'March · $49', 'bought', 'o'], ['DOCUMENTS', 'Manual · Receipt', 'has', ''], ['WORKS WITH', '18V drill batteries', 'charges', 'o'], ['PROJECT', 'Drivetrain rebuild', 'used for', 'b'], ['LAST SEEN', 'Today, in your bench photo', 'seen', '']];
+  const svg = $('#graph svg'), orbit = $('#orbit');
+  const nodeEls = NODES.map(([k, v, e, c], i) => {
+    const d = document.createElement('div'); d.className = 'node ' + c; d.innerHTML = `<small>${k}</small>${v}`; $('#graph').appendChild(d);
+    const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'), tx = document.createElementNS('http://www.w3.org/2000/svg', 'text'); tx.textContent = e; svg.appendChild(ln); svg.appendChild(tx);
+    return { d, ln, tx, yo: [-130, -90, 10, 120, 110, -10][i] };
+  });
+  /* parts cabinet */
+  const cab = $('#cab'), COLS = 8, ROWS = 6, DW = 96, DH = 58, GAP = 8, CW = COLS * DW + (COLS - 1) * GAP, CH = ROWS * DH + (ROWS - 1) * GAP;
+  cab.style.width = CW + 'px'; cab.style.height = CH + 'px';
+  const ROW5 = ['alloy steel socket head screw', 'armor coat socket head cap', 'setscrew alloy steel', 'flat head screw 25mm', 'cup point hex socket', 'button socket cap black', 'ZINC NUT', 'Set screw size m4'];
+  const GEN = ['1/4-20 x 2-1/4', 'grade 8 steel nut', 'cup point set screw', 'hex socket set screw', 'M3 x 8 socket', 'M5 washer', 'nylon lock nut', 'spacer 10mm', 'zinc washer', 'button head M4', 'standoff M3', 'thumb screw'];
+  let drF40 = null;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const n = 1 + r * COLS + c, d = document.createElement('div'); d.className = 'dr';
+    d.style.cssText = `left:${c * (DW + GAP)}px;top:${r * (DH + GAP)}px;width:${DW}px;height:${DH}px`;
+    d.innerHTML = `<div class="pa"><span class="nm">${r === 4 ? ROW5[c] : GEN[(n * 7) % GEN.length]}</span><span class="pn">PN-F${n}</span></div><i class="qr"></i>`; cab.appendChild(d);
+    if (n === 40) drF40 = d;
+  }
+  const row5Y = 4 * (DH + GAP) + DH / 2, f40X = 7 * (DW + GAP) + DW / 2;
+  Object.assign($('#rowBox').style, { left: '-8px', top: (4 * (DH + GAP) - 7) + 'px', width: (CW + 16) + 'px', height: (DH + 14) + 'px' });
+  Object.assign($('#drBox').style, { left: (7 * (DW + GAP) - 5) + 'px', top: (4 * (DH + GAP) - 5) + 'px', width: (DW + 10) + 'px', height: (DH + 10) + 'px' });
+
+  let KA = [], gC = { x: 0, y: 0 }, gR = 330;
+  function layoutA() {
+    const tw = Math.min(450, C * .4);
+    A.forEach(el => el.style.transform = 'none');
+    [0, 1, 3].forEach(i => { const el = A[i]; if (mob) { el.style.left = '16px'; el.style.width = (W - 32) + 'px'; el.style.top = '80px'; } else { el.style.left = left + 'px'; el.style.width = tw + 'px'; el.style.top = Math.max(84, (H - el.offsetHeight) / 2) + 'px'; } });
+    A[2].style.left = '16px'; A[2].style.width = (W - 32) + 'px'; A[2].style.top = (mob ? 80 : Math.max(84, H * .1)) + 'px';
+    let k0, k1, k2, k3, k4;
+    { const w = Math.min(720, W - 32), h = mob ? 128 : 136; k0 = { x: (W - w) / 2, y: H / 2 - h / 2 + (mob ? 26 : 22), w, h }; A0.style.transform = 'none'; A0.style.left = '16px'; A0.style.width = (W - 32) + 'px'; A0.style.top = (k0.y - A0.offsetHeight - 22) + 'px'; }
+    if (mob) {
+      const w = W - 32, h = w / 1.833, y = Math.max(80 + A[0].offsetHeight + 20, H - h - 150); k1 = { x: 16, y, w, h };
+      gC = { x: W / 2, y: H * .64 }; gR = Math.min(150, W * .36); k2 = { x: gC.x - 150, y: gC.y - 44, w: 300, h: 88 };
+      const y3 = 80 + A[2].offsetHeight + 18; k3 = { x: 12, y: y3, w: W - 24, h: H - y3 - 86 };
+      const y4 = 80 + A[3].offsetHeight + 18; k4 = { x: 16, y: y4, w: W - 32, h: H - y4 - 18 };
+    } else {
+      const w = Math.min(620, C * .52), h = w / 1.833; k1 = { x: left + C - w, y: (H - h) / 2 + 10, w, h };
+      gC = { x: left + C * .75, y: H / 2 + 10 }; gR = Math.min(300, C * .23); k2 = { x: gC.x - 180, y: gC.y - 48, w: 360, h: 96 };
+      const y3 = Math.max(84, H * .1) + A[2].offsetHeight + 26; k3 = { x: left, y: y3, w: C, h: H - y3 - 74 };
+      const w4 = Math.min(440, C * .42), h4 = Math.min(480, H - 150); k4 = { x: left + C - w4, y: (H - h4) / 2 + 10, w: w4, h: h4 };
+    }
+    KA = [k0, k1, k2, k3, k4];
+    Object.assign(k0, { r: 26, bg: [255, 255, 255], rx: 0, ry: 0 });
+    Object.assign(k1, { r: 22, bg: [20, 20, 22], rx: 6, ry: -12 }); Object.assign(k2, { r: 18, bg: [255, 255, 255], rx: 0, ry: 0 });
+    Object.assign(k3, { r: 26, bg: [234, 243, 251], rx: 0, ry: 0 }); Object.assign(k4, { r: 24, bg: [255, 255, 255], rx: 4, ry: -10 });
+    orbit.style.left = (gC.x - (mob ? 90 : 120)) + 'px'; orbit.style.top = (gC.y - (mob ? 90 : 120)) + 'px'; orbit.style.width = orbit.style.height = (mob ? 180 : 240) + 'px';
+    crumbBox.style.left = '16px'; crumbBox.style.right = '16px'; crumbBox.style.top = (k3.y + k3.h + 18) + 'px';
+  }
+  const TL = [[0, 0], [.02, 0], [.085, 1], [.21, 1], [.28, 2], [.44, 2], [.5, 3], [.68, 3], [.74, 4], [1, 4]];
+  const Q = 'Where are my batteries?';
+  function renderA(p) {
+    let i = 0; while (i < TL.length - 2 && p > TL[i + 1][0]) i++;
+    const [ta, a] = TL[i], [tb, b] = TL[i + 1], k = a === b ? 0 : ease(seg(p, ta, tb)), Ka = KA[a], Kb = KA[b];
+    const hold = a === b ? (.5 - seg(p, ta, tb)) * 46 : 0;
+    const r = LR(Ka, Kb, k); R(M, r);
+    const sw = a === b ? 0 : Math.sin(Math.PI * k);
+    M.style.borderRadius = lerp(Ka.r, Kb.r, k) + 'px';
+    M.style.background = rgb(mixc(Ka.bg, Kb.bg, k));
+    M.style.boxShadow = `0 ${lerp(20, 40, sw)}px ${lerp(50, 90, sw)}px rgba(17,17,18,${(.16 + .1 * sw).toFixed(2)})`;
+    M.style.transform = `translate3d(0,${hold.toFixed(1)}px,${(sw * 120).toFixed(1)}px) rotateX(${(lerp(Ka.rx, Kb.rx, k) - FZ.ty * 7).toFixed(2)}deg) rotateY(${(lerp(Ka.ry, Kb.ry, k) + FZ.tx * 10 + sw * 14).toFixed(2)}deg)`;
+    const lv = [1 - seg(p, .03, .06), win(p, .03, .06, .23, .27), win(p, .25, .28, .45, .48), win(p, .47, .5, .68, .71), seg(p, .7, .74)];
+    LY.forEach((el, j) => { el.style.opacity = lv[j]; el.style.visibility = lv[j] < .01 ? 'hidden' : 'visible'; el.style.pointerEvents = lv[j] > .5 ? 'auto' : 'none'; });
+    M.style.pointerEvents = 'auto';
+    /* stage colour */
+    const dark = win(p, .23, .27, .44, .48), tint = seg(p, .68, .74), bga = seg(p, 0, .07);
+    const bc = mixc(mixc([255, 255, 255], [238, 246, 253], tint), [11, 11, 13], dark); stA.style.background = `rgba(${bc[0] | 0},${bc[1] | 0},${bc[2] | 0},${bga.toFixed(3)})`;
+    FZ.heroVis = 1 - seg(p, 0, .075);
+    stA.dataset.dark = dark > .5 ? 1 : 0;
+    setText(A0, p, -1, 0, .008, .045); setText(A[0], p, .045, .09, .22, .26); setText(A[1], p, .26, .3, .43, .47); setText(A[2], p, .48, .52, .66, .69); setText(A[3], p, .71, .75, 100, 101);
+    /* capture: scan, tags, counters, floating review panel */
+    const sc = seg(p, .065, .14);
+    $('#scan').style.top = sc * 100 + '%'; $('#scan').style.opacity = p > .065 && p < .142 ? 1 : 0;
+    $('#scanfade').style.height = sc * 100 + '%'; $('#scanfade').style.opacity = 1 - seg(p, .15, .2);
+    let n = 0, warn = 0;
+    tagEls.forEach((t, j) => { const o = seg(p, .09 + j * .013, .105 + j * .013); t.style.opacity = o; t.style.transform = `scale(${lerp(.85, 1, o)})`; if (o > .5) { n++; if (TAGS[j][1] < .8) warn = 1; } });
+    $('#cntA').textContent = n; $('#cntB').textContent = warn; $('#pcapR').textContent = n === 6 ? '6 OBJECTS FOUND' : 'SCANNING';
+    const ro = win(p, .15, .175, .21, .24);
+    rev.style.opacity = ro; rev.style.visibility = ro < .01 ? 'hidden' : 'visible';
+    const k1 = KA[1], rx0 = mob ? W - 16 - 240 : k1.x - 70, ry0 = mob ? k1.y + k1.h - 30 : k1.y + k1.h - 150;
+    rev.style.left = rx0 + 'px'; rev.style.top = ry0 + 'px';
+    rev.style.transform = `perspective(1200px) translate3d(0,${((1 - ro) * 40).toFixed(1)}px,${(60 * ro).toFixed(1)}px) rotateX(${(4 - FZ.ty * 6).toFixed(2)}deg) rotateY(${(-10 + FZ.tx * 10).toFixed(2)}deg)`;
+    /* memory graph */
+    const gv = win(p, .27, .3, .44, .48);
+    orbit.style.opacity = gv * .9; orbit.style.transform = `rotateX(70deg) scale(${lerp(.6, 1, gv)})`;
+    const rot = p * 6 + FZ.tx * .8, f = 900;
+    nodeEls.forEach((nd, j) => {
+      const o = Math.min(seg(p, .28 + j * .012, .31 + j * .012), 1 - seg(p, .44, .48));
+      const ang = j / NODES.length * Math.PI * 2 + rot, x = Math.cos(ang) * gR, z = Math.sin(ang) * gR * .6, y = nd.yo * (mob ? .8 : 1) - FZ.ty * 30;
+      const spread = 1 + seg(p, .44, .48) * .6, s = f / (f - z), sx = gC.x + x * s * spread, sy = gC.y + y * s * spread, depth = (z / (gR * .6) + 1) / 2;
+      nd.d.style.opacity = o * (.45 + .55 * depth); nd.d.style.visibility = o < .01 ? 'hidden' : 'visible';
+      nd.d.style.transform = `translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) translate(-50%,-50%) scale(${(s * (mob ? .82 : 1)).toFixed(3)})`; nd.d.style.zIndex = z > 0 ? 4 : 1;
+      nd.ln.setAttribute('x1', gC.x); nd.ln.setAttribute('y1', gC.y); nd.ln.setAttribute('x2', sx); nd.ln.setAttribute('y2', sy); nd.ln.style.opacity = o * (.5 + .5 * depth);
+      nd.tx.setAttribute('x', (gC.x + sx) / 2 + 6); nd.tx.setAttribute('y', (gC.y + sy) / 2 - 4); nd.tx.style.opacity = o * depth;
+    });
+    /* cabinet zoom */
+    const K3 = KA[3], base = Math.min(K3.w * .82 / CW, K3.h * .8 / CH);
+    const z0 = ease(seg(p, .47, .52)), z1 = ease(seg(p, .52, .56)), z2 = ease(seg(p, .565, .61));
+    let sc2 = lerp(base * .88, base, z0), rx = lerp(18, 10, z0), ry = lerp(-20, -12, z0), fx = CW / 2, fy = CH / 2;
+    sc2 = lerp(sc2, base * 1.2, z1); rx = lerp(rx, 5, z1); ry = lerp(ry, -6, z1); fy = lerp(fy, row5Y, z1);
+    sc2 = lerp(sc2, base * (mob ? 3.4 : 2.9), z2); rx = lerp(rx, 2, z2); ry = lerp(ry, -3, z2); fx = lerp(fx, f40X, z2);
+    cab.style.transform = `scale(${sc2.toFixed(4)}) rotateX(${(rx - FZ.ty * 5).toFixed(2)}deg) rotateY(${(ry + FZ.tx * 7).toFixed(2)}deg) translate(${(CW / 2 - fx).toFixed(1)}px,${(CH / 2 - fy).toFixed(1)}px)`;
+    $('#rowBox').style.opacity = win(p, .53, .55, .68, .71); $('#drBox').style.opacity = win(p, .58, .595, .68, .71);
+    drF40.style.transform = `translateZ(${(seg(p, .585, .61) * 40).toFixed(1)}px)`; drF40.classList.toggle('hit', p > .595);
+    const fc = win(p, .605, .625, .68, .71);
+    foundC.style.opacity = fc; foundC.style.visibility = fc < .01 ? 'hidden' : 'visible';
+    foundC.style.left = (K3.x + (mob ? 14 : 28)) + 'px'; foundC.style.top = (K3.y + K3.h - (mob ? 100 : 120)) + 'px';
+    foundC.style.transform = `perspective(900px) translate3d(0,${((1 - fc) * 30).toFixed(1)}px,${(fc * 50).toFixed(1)}px) rotateY(${(8 + FZ.tx * 8).toFixed(2)}deg)`;
+    const cut = [.5, .5, .515, .515, .53, .53, .55, .55, .59, .59, .615];
+    crumbs.forEach((c, j) => c.classList.toggle('on', p > cut[j] && p < .69));
+    /* ask */
+    $('#qt').textContent = Q.slice(0, Math.round(seg(p, .76, .81) * Q.length));
+    [['#ans', .83], ['#ic1', .85], ['#ic2', .87], ['#tgs', .89]].forEach(([s, t]) => $(s).classList.toggle('hid', p < t));
+  }
+
+  /* ================= who ================= */
+  const LISTS = [[['Families', 'w'], ['Students', 'g'], ['Makers', 'l'], ['Robotics teams', 'o'], ['Makerspaces', 'b'], ['Schools', 'g'], ['Labs', 'l'], ['Roommates', 'b']],
+    [['Small businesses', 'g'], ['Contractors', 'l'], ['Warehouses', 'o'], ['Organizations', 'w'], ['Studios', 'b'], ['Workshops', 'g'], ['Offices', 'l'], ['Equipment teams', 'b']]];
+  const rowsEl = $('#rows');
+  const MR = LISTS.map((list, i) => { const r = document.createElement('div'); r.className = 'mrow'; const h = list.map(([t, c]) => `<span class="pill ${c}">${t}</span>`).join(''); r.innerHTML = h + h + h + h; rowsEl.appendChild(r); return { el: r, x: -Math.random() * 300, dir: i ? 1 : -1, w: 0 }; });
+
+  /* ================= business ================= */
+  const stB = $('#biz'), b1 = $('#b1'), SP = ['#sp1', '#sp2', '#sp3'].map($), team = $('#team');
+  let bC = { x: 0, y: 0 };
+  /* ================= app ================= */
+  const appS = $('#app'), c1 = $('#c1'), ring = $('#ring'), caps = $$('#caps span');
+  const SCREENS = [
+    `<div class="bar">Capture</div><div class="bd"><div class="pic"><i style="left:52%;top:8%;width:30%;height:36%"></i><i style="left:20%;top:44%;width:30%;height:42%"></i><i style="left:30%;top:22%;width:16%;height:22%"></i></div><div class="rw"><b>6 objects found</b><em>1 needs a look</em></div></div><div class="pb">Review</div>`,
+    `<div class="bar">Review</div><div class="bd"><div class="rw"><b>Battery charger, 18V</b><em>0.97</em></div><div class="rw"><b>Duct tape</b><em>0.93</em></div><div class="rw"><b>Socket head screws</b><em>x40</em></div><div class="rw w"><b>Gearbox housing</b><em>0.79</em></div><div class="rw"><b>Spur gear</b><em>0.84</em></div></div><div class="pb">Save to Workshop</div>`,
+    `<div class="bar">Home</div><div class="bd"><div class="cd"><small>DECISIONS NEEDED</small><b>1 item to review</b></div><div class="rw"><b>Workshop</b><em>18 items</em></div><div class="rw"><b>Garage</b><em>pack · 18 left</em></div><div class="rw"><b>Office</b><em>desk drawer</em></div></div>`,
+    `<div class="bar">Ask</div><div class="bd"><div class="u">Where are my batteries?</div><div class="a">AA batteries in the office desk drawer. The garage pack has 18 left.</div></div>`];
+  const PH = SCREENS.map(s => { const d = document.createElement('div'); d.className = 'ph'; d.innerHTML = `<div class="isl"></div><div class="scr">${s}</div>`; ring.appendChild(d); return d; });
+  let phW = 0, phH = 0, step = 26;
+  /* ================= sync ================= */
+  const syncS = $('#sync'), d1 = $('#d1'), lap = $('#lap'), sph = $('#sph'), fly = $('#fly');
+  let LAP = {}, SPH = {};
+
+  function layout() {
+    W = innerWidth; H = innerHeight; mob = W < 820; C = Math.min(1200, W - (mob ? 32 : 64)); left = (W - C) / 2;
+    layoutA();
+    /* business */
+    [b1, d1].forEach(el => { el.style.transform = 'none'; if (mob) { el.style.left = '16px'; el.style.width = (W - 32) + 'px'; el.style.top = '80px'; } else { el.style.left = left + 'px'; el.style.width = Math.min(460, C * .42) + 'px'; el.style.top = Math.max(84, (H - el.offsetHeight) / 2) + 'px'; } });
+    bC = mob ? { x: W / 2, y: Math.max(80 + b1.offsetHeight + 150, H * .68) } : { x: left + C * .72, y: H / 2 };
+    /* app */
+    c1.style.transform = 'none'; c1.style.left = '16px'; c1.style.width = (W - 32) + 'px'; c1.style.top = (mob ? 80 : Math.max(80, H * .08)) + 'px';
+    const top = (mob ? 80 : Math.max(80, H * .08)) + c1.offsetHeight + 22; phH = Math.min(mob ? 420 : 520, H - top - 76); phW = phH * .49;
+    ring.style.top = top + 'px'; PH.forEach(d => { d.style.width = phW + 'px'; d.style.height = phH + 'px'; d.style.marginLeft = (-phW / 2) + 'px'; });
+    $('#caps').style.top = (top + phH + 18) + 'px'; step = mob ? 32 : 24;
+    /* sync */
+    if (mob) { const lw = W - 60, lh = lw * .62, y = Math.max(80 + d1.offsetHeight + 40, H - lh - 60); LAP = { x: 44, y, w: lw, h: lh }; }
+    else { const lw = Math.min(560, C * .5), lh = lw * .62; LAP = { x: left + C - lw, y: (H - lh) / 2 - 10, w: lw, h: lh }; }
+    Object.assign(lap.style, { left: LAP.x + 'px', top: LAP.y + 'px', width: LAP.w + 'px', height: LAP.h + 'px' });
+    lap.querySelector('.lid').style.height = LAP.h + 'px'; lap.querySelector('.base').style.top = LAP.h + 'px';
+    const sh = LAP.h * (mob ? .9 : 1.0), sw = sh * .49; SPH = { x: LAP.x - sw * (mob ? .35 : .9), y: LAP.y + LAP.h * .2, w: sw, h: sh };
+    Object.assign(sph.style, { left: SPH.x + 'px', top: SPH.y + 'px', width: SPH.w + 'px', height: SPH.h + 'px' });
+  }
+
+  function renderB(p) {
+    setText(b1, p, -.7, -.25, 100, 101);
+    const k = ease(seg(p, .1, .55)), inn = ease(seg(p, -.8, -.1));
+    const F = mob ? [[-70, -95, -9, -50], [40, -10, 5, 0], [-40, 85, -4, 50]] : [[-170, -120, -10, -60], [60, -10, 5, 0], [-90, 130, -5, 60]];
+    SP.forEach((el, i) => {
+      const [dx, dy, rz, z] = F[i], x = bC.x + lerp(dx, (i - 1) * 10, k), y = bC.y + lerp(dy, -60 + i * 10, k) + (1 - inn) * 200;
+      el.style.left = '0'; el.style.top = '0';
+      el.style.opacity = inn * (1 - k * .55);
+      el.style.transform = `perspective(1200px) translate3d(${(x - el.offsetWidth / 2).toFixed(1)}px,${(y - el.offsetHeight / 2).toFixed(1)}px,${lerp(z, -80 - i * 30, k).toFixed(1)}px) rotateX(${(lerp(10, 4, k) - FZ.ty * 6).toFixed(1)}deg) rotateY(${(lerp(-20, -6, k) + FZ.tx * 10).toFixed(1)}deg) rotateZ(${lerp(rz, 0, k).toFixed(1)}deg)`;
+    });
+    const tv = ease(seg(p, .4, .65));
+    team.style.left = '0'; team.style.top = '0'; team.style.opacity = tv; team.style.visibility = tv < .01 ? 'hidden' : 'visible';
+    team.style.transform = `perspective(1200px) translate3d(${(bC.x - team.offsetWidth / 2).toFixed(1)}px,${(bC.y - team.offsetHeight / 2 + 40 + (1 - tv) * 60).toFixed(1)}px,${(tv * 60).toFixed(1)}px) rotateX(${(4 - FZ.ty * 6).toFixed(1)}deg) rotateY(${(-6 + FZ.tx * 10).toFixed(1)}deg)`;
+  }
+  function renderC(p) {
+    setText(c1, p, -.7, -.25, 100, 101);
+    const f = clamp(p, 0, 1) * 3.1 - .05, inn = ease(seg(p, -.75, -.1));
+    PH.forEach((d, i) => {
+      const th = (i - clamp(f, 0, 3)) * step, a = Math.abs(th);
+      d.style.opacity = inn * clamp(1.15 - a / (step * 2.2));
+      d.style.transform = `translateY(${((1 - inn) * 160).toFixed(1)}px) translateZ(${(-phW * 2.6).toFixed(1)}px) rotateY(${(th + FZ.tx * 8).toFixed(2)}deg) translateZ(${(phW * 2.6).toFixed(1)}px) rotateX(${(-FZ.ty * 6).toFixed(2)}deg)`;
+      d.style.zIndex = 10 - Math.round(a);
+    });
+    caps.forEach((c, i) => c.classList.toggle('on', Math.round(clamp(f, 0, 3)) === i));
+    $('#caps').style.opacity = inn;
+  }
+  function renderD(p) {
+    setText(d1, p, -.7, -.25, 100, 101);
+    const inn = ease(seg(p, -.8, -.1));
+    lap.style.opacity = inn; sph.style.opacity = inn;
+    lap.style.transform = `perspective(1400px) translateY(${((1 - inn) * 120).toFixed(1)}px) rotateX(${(8 - FZ.ty * 6).toFixed(1)}deg) rotateY(${(-16 + FZ.tx * 10).toFixed(1)}deg)`;
+    sph.style.transform = `perspective(1200px) translate3d(0,${((1 - inn) * 180).toFixed(1)}px,60px) rotateY(${(16 + FZ.tx * 10).toFixed(1)}deg) rotateZ(-4deg)`;
+    const k = ease(seg(p, .08, .55)), fo = win(p, .05, .1, .55, .6);
+    const sx = SPH.x + SPH.w * .5, sy = SPH.y + SPH.h * .32, tx = LAP.x + LAP.w * .45, ty = LAP.y + 70;
+    fly.style.opacity = fo; fly.style.visibility = fo < .01 ? 'hidden' : 'visible';
+    fly.style.left = '0'; fly.style.top = '0';
+    fly.style.transform = `perspective(1000px) translate3d(${lerp(sx, tx, k).toFixed(1)}px,${(lerp(sy, ty, k) - Math.sin(Math.PI * k) * 90).toFixed(1)}px,${(Math.sin(Math.PI * k) * 140).toFixed(1)}px) translate(-50%,-50%) rotateY(${(Math.sin(Math.PI * k) * -20).toFixed(1)}deg)`;
+    const done = p > .55; $('#newRow').style.display = done ? 'flex' : 'none'; $('#lcnt').textContent = done ? '19 items' : '18 items';
+  }
+
+  /* ================= loop ================= */
+  const nav = $('#nav'), who = $('#who'), end = $('#end'), rvs = $$('.rv');
+  const sm = { a: 0, b: 0, c: 0, d: 0 };
+  let lastT = performance.now(), lastY = scrollY, vel = 0;
+  function frame(now) {
+    const dt = Math.min(64, now - lastT); lastT = now;
+    if (!reduce) { FZ.tx += (FZ.mx - FZ.tx) * .07; FZ.ty += (FZ.my - FZ.ty) * .07; }
+    const er = end.getBoundingClientRect(); FZ.endVis = clamp((innerHeight - er.top) / innerHeight * 1.2);
+    $('#heroBg').style.opacity = Math.max(FZ.heroVis, FZ.endVis);
+    const smooth = (key, el, fn) => { const r = el.getBoundingClientRect(); if (r.bottom < -50 || r.top > innerHeight + 50) return; const t = r.top > 0 && key !== 'a' ? clamp((innerHeight - r.top) / innerHeight) - 1 : prog(el); sm[key] = reduce ? t : sm[key] + (t - sm[key]) * .15; if (Math.abs(t - sm[key]) < .0004) sm[key] = t; fn(sm[key]); };
+    smooth('a', sA, renderA); smooth('b', stB, renderB); smooth('c', appS, renderC); smooth('d', syncS, renderD);
+    /* who: rows lie back and straighten as they arrive; marquee speeds up with scroll */
+    vel = lerp(vel, scrollY - lastY, .2); lastY = scrollY;
+    const wr = who.getBoundingClientRect();
+    if (wr.bottom > 0 && wr.top < innerHeight) {
+      const q = ease(clamp((innerHeight - wr.top) / innerHeight));
+      rowsEl.style.transform = `rotateX(${lerp(50, 16, q).toFixed(1)}deg) rotateZ(${lerp(-8, -3, q).toFixed(1)}deg) translateZ(${lerp(-150, 0, q).toFixed(0)}px)`;
+      MR.forEach(m => { if (!m.w) m.w = m.el.scrollWidth / 4; m.x += (reduce ? 0 : (.04 + Math.min(1.2, Math.abs(vel) * .02)) * dt) * m.dir; if (m.x <= -m.w) m.x += m.w; if (m.x > 0) m.x -= m.w; m.el.style.transform = `translate3d(${m.x.toFixed(1)}px,0,0)`; });
+    }
+    rvs.forEach(el => { const r = el.getBoundingClientRect(), v = ease(clamp((innerHeight - r.top) / (innerHeight * .45))); el.style.opacity = v; el.style.transform = `translate3d(0,${((1 - v) * 60).toFixed(1)}px,0) rotateX(${((1 - v) * -20).toFixed(1)}deg)`; });
+    /* nav */
+    const ar = sA.getBoundingClientRect(), inA = ar.top <= 1 && ar.bottom >= innerHeight - 1 && stA.dataset.dark === '1';
+    const dark = inA || (wr.top < 40 && wr.bottom > 40);
+    nav.classList.toggle('dark', dark); nav.classList.toggle('solid', !dark && scrollY > innerHeight * .5);
+    requestAnimationFrame(frame);
+  }
+  layout();
+  addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+/* 3D items around the chat box; they leave as the page scrolls and come back for the closing call to action */
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+const S = { rough: .32, clear: .7 };
+const FZ = window.FZ, reduce = FZ.reduce, PI = Math.PI;
+const cv = document.getElementById('gl'), tip = document.getElementById('tip');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { cv.remove(); throw e; }
+renderer.setPixelRatio(Math.min(1.75, devicePixelRatio || 1));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.setClearColor(0xffffff, 0);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(renderer), .04).texture;
+const cam = new THREE.PerspectiveCamera(32, 1, .1, 100); cam.position.set(0, 0, 20);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe7f9, .6));
+const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-4, 7, 9); scene.add(key);
+const root = new THREE.Group(); scene.add(root);
+const HALF = Math.tan(THREE.MathUtils.degToRad(16));
+const HEX = { or: '#E8590C', ink: '#1b1b1e', blue: '#93CBF1', white: '#ffffff', steel: '#CDD2D8', ice: '#C4E4FA', wood: '#F3EFE8' };
+if (S.look === 'points') Object.assign(HEX, { white: '#8EC4EE', steel: '#7E8A98', ice: '#9FD0F4', blue: '#5FA8DE' });
+function pal(c) { const col = new THREE.Color(HEX[c]); if (S.pastel) col.lerp(new THREE.Color('#ffffff'), c === 'ink' ? .5 : c === 'or' ? .22 : .3); return col; }
+const sg = S.lowpoly ? 7 : S.look === 'lines' ? 16 : 26, ch = S.chunky || 1;
+function P(geo, c, p = [0, 0, 0], r = [0, 0, 0]) {
+  let g = geo.index ? geo.toNonIndexed() : geo.clone(); if (g.attributes.uv) g.deleteAttribute('uv');
+  const col = pal(c), n = g.attributes.position.count, arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { arr[i * 3] = col.r; arr[i * 3 + 1] = col.g; arr[i * 3 + 2] = col.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(...r)), new THREE.Vector3(1, 1, 1)));
+  return g;
+}
+const Cyl = (a, b, h, s = sg) => new THREE.CylinderGeometry(a, b, h, s), Tor = (R, t, s = sg) => new THREE.TorusGeometry(R, t, Math.max(6, s / 3 | 0), s * 2);
+const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d), RB = (w, h, d, r) => new RoundedBoxGeometry(w, h, d, S.lowpoly ? 2 : 4, r);
+const MODELS = {
+  iron: () => [P(new THREE.CapsuleGeometry(.14 * ch, .42, Math.max(3, sg / 4 | 0), sg), 'or', [0, -.18, 0]), P(Tor(.15 * ch, .03 * ch), 'ink', [0, -.02, 0], [PI / 2, 0, 0]), P(Tor(.15 * ch, .03 * ch), 'ink', [0, -.34, 0], [PI / 2, 0, 0]),
+    P(Cyl(.05 * ch, .05 * ch, .4), 'steel', [0, .26, 0]), P(new THREE.ConeGeometry(.05 * ch, .18, sg), 'steel', [0, .55, 0]), P(Cyl(.045 * ch, .045 * ch, .14), 'ink', [0, -.5, 0])],
+  battery: () => [P(Cyl(.2, .2, .5), 'ink', [0, -.08, 0]), P(Cyl(.205, .205, .2), 'or', [0, .27, 0]), P(Cyl(.08, .08, .06), 'steel', [0, .4, 0])],
+  tape: () => [P(Tor(.3, .14), 'blue'), P(Tor(.17, .035), 'white')],
+  drill: () => [P(RB(.64, .27, .25, .09), 'or', [0, .22, 0]), P(Cyl(.13, .13, .07), 'ink', [-.33, .22, 0], [0, 0, PI / 2]), P(Cyl(.075 * ch, .09 * ch, .16), 'steel', [.39, .22, 0], [0, 0, PI / 2]),
+    P(Cyl(.022 * ch, .022 * ch, .22), 'steel', [.56, .22, 0], [0, 0, PI / 2]), P(RB(.18, .44, .2, .06), 'ink', [-.06, -.08, 0], [0, 0, -.22]), P(RB(.36, .13, .27, .04), 'ink', [-.1, -.34, 0]), P(Box(.05, .1, .06), 'or', [.07, .02, 0])],
+  bolt: () => { const a = [P(Cyl(.2, .2, .12, 6), 'steel', [0, .3, 0]), P(Cyl(.08 * ch, .08 * ch, .55), 'steel', [0, -.04, 0])]; for (let i = 0; i < 5; i++) a.push(P(Tor(.085 * ch, .018 * ch), 'steel', [0, -.27 + i * .09, 0], [PI / 2, 0, 0])); return a; },
+  cable: () => [P(Tor(.28, .045 * ch), 'white', [0, 0, 0]), P(Tor(.25, .045 * ch), 'white', [.03, -.02, .07], [0, 0, .5]), P(Tor(.31, .045 * ch), 'white', [-.02, .02, -.07], [0, 0, 1.1]), P(RB(.12, .22, .08, .03), 'ink', [.32, -.26, 0]), P(Box(.08, .08, .05), 'steel', [.32, -.41, 0])],
+  bin: () => [P(Box(.9, .05, .6), 'blue', [0, -.3, 0]), P(Box(.9, .4, .04), 'blue', [0, -.1, .3]), P(Box(.9, .48, .04), 'blue', [0, -.06, -.3]), P(Box(.04, .44, .6), 'blue', [-.45, -.08, 0]), P(Box(.04, .44, .6), 'blue', [.45, -.08, 0]), P(Box(.3, .1, .015), 'or', [0, -.08, .325])],
+  meter: () => [P(RB(.5, .8, .17, .07), 'or'), P(Box(.36, .2, .02), 'ink', [0, .2, .09]), P(Cyl(.11, .11, .04), 'white', [0, -.08, .09], [PI / 2, 0, 0]), P(Box(.02, .09, .02), 'ink', [0, -.04, .115]),
+    P(Cyl(.028, .028, .03), 'ink', [-.12, -.3, .09], [PI / 2, 0, 0]), P(Cyl(.028, .028, .03), 'ink', [0, -.3, .09], [PI / 2, 0, 0]), P(Cyl(.028, .028, .03), 'or', [.12, -.3, .09], [PI / 2, 0, 0])]
+};
+const SHAPES = { box: () => RB(1, 1, 1, .24), ball: () => new THREE.SphereGeometry(.5, 48, 32), ring: () => new THREE.TorusGeometry(.5, .19, 32, 96), pill: () => new THREE.CapsuleGeometry(.3, .75, 12, 32), disc: () => new THREE.CylinderGeometry(.5, .5, .24, 48) };
+
+const HERO_D = [['drill', -.84, .52, -1.0, 1.9], ['tape', -.6, -.64, .6, 1.5], ['meter', .82, .56, -.4, 1.8], ['iron', .74, -.56, 0, 1.7], ['battery', -.46, .8, 1.2, .7], ['bin', .97, -.02, -2.2, 1.3], ['bolt', .4, -.86, 1.4, 1.0], ['cable', -.97, -.08, -2.6, 1.3], ['battery', .62, .7, 1.6, .6], ['tape', -.24, -.92, -1.2, 1.0], ['bolt', .28, .76, -2.8, 1.0]];
+const HERO_M = [['drill', -.72, .58, -1.0, 1.4], ['meter', .74, .6, -.4, 1.4], ['battery', -.08, .64, 1.0, .6], ['tape', -.66, -.68, .4, 1.3], ['iron', .66, -.66, 0, 1.4], ['bolt', -.1, -.88, 1.4, .7], ['cable', -.92, -.1, -2.4, 1.0]];
+const NAMES = { iron: 'Soldering iron', battery: 'AA batteries', tape: 'Duct tape', drill: 'Cordless drill', bolt: 'Socket head screws', cable: 'USB-C cable', bin: 'Parts bin', meter: 'Multimeter' };
+const LOCS = { iron: 'Workshop › Workbench', battery: 'Office › Desk drawer', tape: 'Workbench › Middle', drill: 'Garage › Shelf 2', bolt: 'Bin 4 · x40', cable: 'Office › Drawer 1', bin: 'Workshop › Shelf 1', meter: 'Lab › Drawer 2' };
+const GEO = {}; const geoOf = t => GEO[t] || (GEO[t] = mergeGeometries(MODELS[t]()));
+let items = [], mode = '';
+function build(m) {
+  items.forEach(it => root.remove(it.o)); items = [];
+  (m === 'm' ? HERO_M : HERO_D).forEach(([type, fx, fy, z, s], i) => {
+    const mat = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: S.rough, clearcoat: S.clear, clearcoatRoughness: .2 });
+    const o = new THREE.Mesh(geoOf(type), mat); root.add(o);
+    items.push({ type, fx, fy, z, s, o, e: new THREE.Euler(Math.random() * 6, Math.random() * 6, Math.random() * 6), sp: [(Math.random() - .5) * .5, (Math.random() - .5) * .6], ph: Math.random() * 6.28, bs: .35 + Math.random() * .35, hov: 0, kick: 0, dir: new THREE.Vector3(fx, fy, .4).normalize() });
+  });
+}
+let W = 1, H = 1;
+function layout() { W = innerWidth; H = innerHeight; renderer.setSize(W, H, false); cam.aspect = W / H; cam.updateProjectionMatrix(); const m = W / H < .9 || W < 820 ? 'm' : 'd'; if (m !== mode) { mode = m; build(m); } }
+addEventListener('resize', layout); layout();
+let pX = -1, pY = -1, onUI = false, hovered = null;
+addEventListener('pointermove', e => { pX = e.clientX; pY = e.clientY; onUI = !!(e.target.closest && e.target.closest('a,button,textarea,form,.nav,footer')); }, { passive: true });
+addEventListener('pointerdown', e => { if (hovered && !(e.target.closest && e.target.closest('a,button,textarea,form'))) hovered.kick = 1; });
+const pv = new THREE.Vector3(), clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const vis = Math.max(FZ.heroVis, FZ.endVis), dt = Math.min(.05, clock.getDelta()), t = clock.elapsedTime;
+  cv.style.opacity = vis; if (vis < .01 || document.hidden) { tip.style.opacity = 0; return; }
+  root.rotation.y = FZ.tx * .22; root.rotation.x = FZ.ty * .12; root.updateMatrixWorld();
+  const away = 1 - vis;
+  hovered = null; let best = 1e9;
+  for (const it of items) {
+    const hz = HALF * (20 - it.z), bob = reduce ? 0 : Math.sin(t * it.bs + it.ph) * .18;
+    it.o.position.set(it.fx * hz * cam.aspect + it.dir.x * away * 6, it.fy * hz + bob + it.dir.y * away * 6 + Math.sin(it.kick * PI) * .4, it.z + away * 6);
+    it.kick *= .94; it.hov += ((it === hovered ? 1 : 0) - it.hov) * .18;
+    if (!reduce) { it.e.x += it.sp[0] * dt * (1 + it.kick * 8); it.e.y += it.sp[1] * dt * (1 + it.kick * 8); }
+    it.o.rotation.copy(it.e); it.o.scale.setScalar(it.s * (1 + .2 * it.hov));
+    if (!onUI && pX >= 0) {
+      pv.copy(it.o.position).applyMatrix4(root.matrixWorld).project(cam);
+      const x = (pv.x + 1) / 2 * W, y = (1 - pv.y) / 2 * H, r = it.s * .55 * H / (2 * HALF * (20 - it.z)) + 8, d = Math.hypot(x - pX, y - pY);
+      if (d < r && d < best) { best = d; hovered = it; }
+    }
+  }
+  items.forEach(it => { it.hov += ((it === hovered ? 1 : 0) - it.hov) * .1; });
+  if (hovered && vis > .5) { tip.innerHTML = `<b>${NAMES[hovered.type]}</b><span>${LOCS[hovered.type]}</span>`; tip.style.left = pX + 'px'; tip.style.top = pY + 'px'; tip.style.opacity = 1; document.body.style.cursor = 'pointer'; }
+  else { tip.style.opacity = 0; document.body.style.cursor = ''; }
+  renderer.render(scene, cam);
+}
+tick();
+</script>

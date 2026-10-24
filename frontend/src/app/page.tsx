@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-
-import { LandingLab } from "@/components/site/landing-lab";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import { LandingV3 } from "@/components/landing-v3/LandingV3";
 import { PUBLIC_SITE_DESCRIPTION, PUBLIC_SITE_STRUCTURED_DATA, PUBLIC_SITE_TITLE, PUBLIC_SITE_URL } from "@/lib/public-positioning";
-
-const geist = localFont({
-  src: [{ path: "./fonts/geist-400.ttf", weight: "400" }, { path: "./fonts/geist-500.ttf", weight: "500" }],
-  variable: "--fzl-geist", display: "swap",
-});
-const mono = localFont({
-  src: [{ path: "./fonts/geist-mono-400.ttf", weight: "400" }, { path: "./fonts/geist-mono-500.ttf", weight: "500" }],
-  variable: "--fzl-mono", display: "swap",
-});
-
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--landing-jakarta", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--landing-mono", display: "swap" });
 export const metadata: Metadata = {
   title: { absolute: PUBLIC_SITE_TITLE },
   description: PUBLIC_SITE_DESCRIPTION,
@@ -32,14 +22,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LandingPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function LandingPage() {
   return <>
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }}
-    />
-    <LandingLab className={`${geist.variable} ${mono.variable}`} siteNavigation initialSignedIn={Boolean(user)} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(PUBLIC_SITE_STRUCTURED_DATA).replace(/</g, "\\u003c") }} />
+    <LandingV3 className={`${jakarta.variable} ${mono.variable}`} />
   </>;
 }

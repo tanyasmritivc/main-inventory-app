@@ -1,3 +1,9 @@
+## October 23 — Landing v3 prepared, not deployed
+
+Homepage-only replacement on `feat/landing-v3`, based on web lane `76019be`.
+Other routes, metadata and cookie banner preserved. Source prototype and validation
+notes live in `docs/landing-v3/`. No backend, database or mobile changes.
+
 ## October 22 — Connector release live; beta 114 uploaded
 
 User approved migration 079 and activation. Migration/backend/web are live; Google

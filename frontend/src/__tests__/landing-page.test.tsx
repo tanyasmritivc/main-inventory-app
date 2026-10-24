@@ -1,97 +1,51 @@
 /** @jest-environment jsdom */
-
-import { act, render, screen, within } from "@testing-library/react";
-
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import LandingPage, { metadata } from "@/app/page";
 import { SiteNav } from "@/components/site/nav";
-
-const getUser = jest.fn();
+const push = jest.fn();
 const unsubscribe = jest.fn();
 let authChanged: (event: string, session: object | null) => void;
+jest.mock("next/font/google", () => ({
+  Plus_Jakarta_Sans: () => ({ variable: "landing-jakarta" }),
+  Geist_Mono: () => ({ variable: "landing-mono" }),
+}));
+jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
+jest.mock("@/components/landing-v3/useScrollProgress", () => ({ useScrollProgress: () => ({ motion: {current: {}}, registerTools: jest.fn() }) }));
+jest.mock("@/lib/supabase/browser", () => ({ createSupabaseBrowserClient: () => ({ auth: {
+  onAuthStateChange: (listener: typeof authChanged) => { authChanged = listener; return { data: { subscription: { unsubscribe } } }; },
+} }) }));
+jest.mock("next/navigation", () => ({ usePathname: () => "/pricing", useRouter: () => ({ push }) }));
+beforeEach(() => jest.clearAllMocks());
 
-jest.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: async () => ({ auth: { getUser } }),
-}));
-jest.mock("next/font/local", () => ({
-  __esModule: true,
-  default: ({ variable }: { variable: string }) => ({ variable: variable === "--fzl-geist" ? "lab-geist" : "lab-mono" }),
-}));
-jest.mock("@/components/site/landing-lab-engine", () => ({
-  ...jest.requireActual("@/components/site/landing-lab-engine"),
-  initLandingLab: () => () => {},
-}));
-jest.mock("@/components/site/hero-morph-engine", () => ({ ...jest.requireActual("@/components/site/hero-morph-engine"), init: () => () => {} }));
-jest.mock("@/components/site/landing-scenes-engine", () => ({ initLandingScenes: () => () => {} }));
-jest.mock("@/lib/supabase/browser", () => ({
-  createSupabaseBrowserClient: () => ({
-    auth: {
-      onAuthStateChange: (listener: typeof authChanged) => {
-        authChanged = listener;
-        return { data: { subscription: { unsubscribe } } };
-      },
-    },
-  }),
-}));
-jest.mock("next/navigation", () => ({ usePathname: () => "/pricing" }));
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  getUser.mockResolvedValue({ data: { user: null }, error: null });
-});
-
-test("the homepage publishes the approved Lab design with its original destinations", async () => {
+test("homepage preserves the requested copy, sections, metadata and destinations", async () => {
   render(await LandingPage());
-  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-    "FindEZ gives the physical world a memory.",
-  );
-  expect(document.querySelectorAll(".fzLab")).toHaveLength(1);
-  expect(document.querySelector(".fzLab.lab-geist.lab-mono")).toBeTruthy();
-  expect(screen.queryByText(/FindEZ for iPhone is coming soon/)).toBeNull();
-  for (const id of ["hero", "graph", "zoom", "ask", "who", "app", "waitlist", "end"]) {
-    expect(document.getElementById(id)).toBeTruthy();
-  }
+  expect(screen.getByRole("heading", {level: 1}).textContent).toBe("Describe your world.");
+  expect(screen.getByText("Snap a shelf or type a list to build an inventory.")).toBeTruthy();
+  for (const id of ["storyA", "who", "biz", "app", "sync", "end"]) expect(document.getElementById(id)).toBeTruthy();
+  expect(document.querySelectorAll("[data-drawer]")).toHaveLength(48);
   const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
-  expect(header.getAllByRole("link").map(link => link.textContent)).toEqual(["Developers", "iOS App", "Get started↗"]);
-  expect(header.getByRole("link", { name: "Developers" }).getAttribute("href")).toBe("/docs/api");
-  expect(header.getByRole("link", { name: "iOS App" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
-  const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  expect(header.getByRole("link", {name: "Get started ↗"}).getAttribute("href")).toBe("/signup");
+  const footer = within(screen.getByRole("navigation", {name: "Footer navigation"}));
   const destinations = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
-  for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", { name }).getAttribute("href")).toBe(href);
-  expect(screen.getByRole("navigation", { name: "Footer navigation" }).closest("footer")?.id).toBe("end");
-  expect(screen.getAllByText("© 2026 AI Robots Inc.")).toHaveLength(1);
-  for (const link of screen.getAllByRole("link", { name: "Get started" })) {
-    expect(link.getAttribute("href")).toBe("/signup");
-  }
-  for (const link of screen.getAllByRole("link", { name: "Try FindEZ on the web" })) expect(link.getAttribute("href")).toBe("/signup");
-  expect(screen.queryByRole("button", { name: /Join waitlist/i })).toBeNull();
-  expect(screen.queryByText(/You are on the list/)).toBeNull();
-  expect(screen.getByRole("link", { name: "Get FindEZ for iPhone" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
+  for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", {name}).getAttribute("href")).toBe(href);
+  expect(screen.getByRole("link", {name: "Business inquiries ↗"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
+  expect(metadata.title).toEqual({absolute: "FindEZ AI | AI memory for the physical world"});
+  expect(metadata.alternates).toEqual({canonical: "/"});
+  expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
 });
 
-test("the homepage preserves the signed-in Dashboard and follows session changes", async () => {
-  getUser.mockResolvedValue({ data: { user: { id: "returning-user" } }, error: null });
-  const { unmount } = render(await LandingPage());
-  const header = within(screen.getByRole("navigation", { name: "Main navigation" }));
-  expect(header.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  act(() => authChanged("SIGNED_OUT", null));
-  expect(header.getByRole("link", { name: "Get started" }).getAttribute("href")).toBe("/signup");
-  act(() => authChanged("SIGNED_IN", { user: { id: "new-user" } }));
-  expect(header.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe("/home");
-  unmount();
-  expect(unsubscribe).toHaveBeenCalledTimes(1);
-});
-
-test("an unavailable auth response leaves the public homepage available", async () => {
-  getUser.mockResolvedValue({ data: { user: null }, error: { message: "Auth unavailable" } });
+test("the composer forwards encoded text and its attachment controls open signup", async () => {
   render(await LandingPage());
-  expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
-  expect(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("link", { name: "Get started" }).getAttribute("href")).toBe("/signup");
-});
-
-test("the published homepage keeps its public search metadata", () => {
-  expect(metadata.alternates).toEqual({ canonical: "/" });
-  expect(metadata.robots).toBeUndefined();
-  expect(metadata.openGraph).toMatchObject({ url: "https://findez.ai/" });
+  fireEvent.change(screen.getByRole("textbox"), {target: {value: "  M3 screws & tools / 20  "}});
+  fireEvent.submit(document.getElementById("cform")!);
+  expect(push).toHaveBeenLastCalledWith("/signup?prompt=M3%20screws%20%26%20tools%20%2F%2020");
+  fireEvent.change(screen.getByRole("textbox"), {target: {value: "   "}});
+  fireEvent.submit(document.getElementById("cform")!);
+  expect(push).toHaveBeenLastCalledWith("/signup");
+  for (const name of ["Attach", "Take a photo", "Speak"]) {
+    fireEvent.click(screen.getByRole("button", {name}));
+    expect(push).toHaveBeenLastCalledWith("/signup");
+  }
 });
 
 test("simple public navigation follows session changes and unsubscribes", () => {
