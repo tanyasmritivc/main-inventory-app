@@ -298,7 +298,7 @@ def test_one_failed_identity_is_explicit_unknown_partial_not_lost():
     def model(prompt, images, schema):
         if schema is g.Grounding:
             return g.Grounding(items=boxes, partial=False)
-        if '"index": 1' in prompt:
+        if '"candidate": "bag"' in prompt:
             raise httpx.ReadTimeout("gateway")
         return g.Identities(items=[identity(identity_confidence=0.8)])
 
@@ -309,6 +309,10 @@ def test_one_failed_identity_is_explicit_unknown_partial_not_lost():
     assert unknown["name"] == "Unknown item" and unknown["confidence"] is None
     assert unknown["scan_evidence"]["needs_review"]
     assert result["summary"]["unknown_count"] == 1
+    assert any(
+        "partial extraction" in r
+        for r in result["items"][0]["scan_evidence"]["review_reasons"]
+    )
 
 
 def test_all_identity_failures_return_error_instead_of_success():
@@ -357,3 +361,14 @@ def test_low_confidence_guess_is_an_unknown_candidate_not_a_named_item():
     assert item["name"] == "Unknown item" and item["category"] == "Uncategorized"
     assert item["tags"] == [] and item["confidence"] == 0.4
     assert "Possible description, not verified: Carrot" in item["notes"]
+
+
+def test_unidentifiable_object_can_return_null_name_and_category():
+    row = g.Identity(
+        index=0,
+        name=None,
+        category=None,
+        identity_confidence=0.1,
+        uncertainty="Only an edge fragment is visible.",
+    )
+    assert row.name == "Unknown item" and row.category == "Uncategorized"

@@ -39,7 +39,8 @@ remain reviewable, including high-confidence candidates.
 
 EXIF orientation is applied before inference and cropping. Model input is JPEG
 without metadata. Up to eight foreground objects are grounded per request;
-cluttered/overlapping scenes or limits produce `summary.partial=true`. Each crop
+cluttered/overlapping scenes or limits produce `summary.partial=true` and an
+explicit review reason visible in existing clients. Each crop
 is identified independently, with at most two concurrent calls. Original pixels
 supply the final crop, with validated bounds, optional tighter refinement and a
 small edge margin. Near-duplicate detections are removed. Tiny label-only
@@ -88,3 +89,21 @@ After activation, on both web and mobile:
    inaccessible to unrelated accounts.
 
 Deployment and real-provider verification results are recorded below when run.
+
+## Gateway integration finding
+
+The deployed gateway is an agent, not a raw model completion proxy. Its OpenAPI
+`RunOptions` supports `enabled_tools` and `max_steps`. Extraction explicitly
+disables external tools, bounds the run to two steps, and instructs finalization
+to put serialized JSON inside the final action's nonempty `answer`. Asking for
+bare JSON while forbidding all tools intermittently caused HTTP 502 with
+"Final action did not contain a non-empty answer". Preserve this distinction.
+Each identification call contains one image, so assembly uses the trusted request
+index rather than the model's global index. Unknown prose/category/count values
+are normalized without inventing identity or count confidence.
+
+Initial activation of dfff1fc passed all five CI gates and candidate API
+preview/private-image/review/save QA (15.8s), but the broader live chat check
+exposed the gateway issue. The provider was restored to FIND while correcting
+that integration. The corrected candidate passes 1,453 Python tests plus
+10 subtests (452 warnings); final activation results will be appended below.

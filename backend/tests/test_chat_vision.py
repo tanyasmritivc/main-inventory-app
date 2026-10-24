@@ -64,6 +64,8 @@ def test_grounding_validates_final_json_without_inventory_tools():
     assert result.items==[]
     args=gateway.call_args.kwargs
     assert 'tools' not in args
+    assert args['options']=={'enabled_tools': [], 'max_steps': 2}
+    assert 'non-empty answer field' in args['messages'][0]['content']
     assert 'schema' in args['messages'][1]['content'][0]['text']
 
 
