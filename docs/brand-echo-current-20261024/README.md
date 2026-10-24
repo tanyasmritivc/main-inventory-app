@@ -14,4 +14,9 @@ Organization/social logos are regenerated from these sources. Browser metadata
 uses a new version key. Search engines control when their cached icon refreshes.
 Public App Store artwork is not published by a TestFlight upload.
 
-Delivery and verification receipts will follow the build and self-hosted release.
+Web delivery: runtime d537e30 / PR196 is live, build 7YIcfO0FBtR_GUUnTaHy7.
+All five runtime CI checks (40143400021), production build and eight routes pass.
+Fifteen live public assets exactly match the source exports. Homepage metadata
+advertises the new echo-20261024 cache version. The old release and backend process
+were preserved. See live-web-asset-audit.json and deployment-receipt.json.
+Mobile is delivered separately in PR197. Public App Store publication is separate.

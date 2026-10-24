@@ -1,21 +1,18 @@
-## October 24 — Latest echo brand selection (in progress)
+## October 24 — Chat activity and current echo branding live (PR196)
 
-The user reselected findez-logo-echo.zip and app-icon-*-2.svg. Standalone icons
-exactly match round/ in the ZIP; this now supersedes the earlier authoritative
-brand choice. See docs/brand-echo-current-20261024. This release also includes the
-reversed left-to-right activity shimmer. Existing navigation remains untouched.
+Runtime d537e3018a194c6e44765cfdf55690085567325a is live on the self-hosted website.
+Actual activity has a two-second left-to-right soft shine and expandable history;
+Reduce Motion shows static text. Light/dark appearance and disclosure were checked
+in a local component preview. Text captures are labeled Inventory draft.
+The user's latest ZIP round/ artwork and matching standalone app-icon-*-2.svg
+are canonical. Browser/touch/social/legacy assets and metadata versions are updated;
+all 15 live public assets match the supplied exports. Search caches refresh separately.
 
-## October 24 — Chat activity disclosure (candidate)
-
-The shine now sweeps left to right at the user’s request, retaining its timing and softness.
-Web-only feat/chat-progress-web-20261024 adapts the supplied React Bits shimmer
-for actual server status messages, with a native details disclosure, theme support,
-Reduce Motion, offscreen/hidden-tab pause and no animation-frame React rendering.
-Text capture cards say Inventory draft. No navigation or auth changes.
-557 Jest tests /77 suites and TypeScript pass. Changed lint has only3 existing
-assist-client warnings. Local build compiled but lacks Supabase build environment;
-production-configured server build and publication pending. Backend activity and
-text drafts are delivered in their separate API lane.
+557 tests /77 suites, TypeScript, scoped lint (3 existing warnings), production
+server build and eight route checks pass. All five runtime CI jobs passed
+(40143400021). Build 7YIcfO0FBtR_GUUnTaHy7 is active. Old web release preserved and
+backend PID unchanged by publication. No auth/navigation/database changes.
+See docs/chat-progress-web-20261024.md and docs/brand-echo-current-20261024.
 
 ## October 24 - Direct account entry and mobile-parity chat menu
 
