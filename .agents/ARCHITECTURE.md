@@ -1,6 +1,6 @@
 ## October21 capture integration (implementation lane, not yet production)
 
-World chat Auto Extract uses FIND and a canonical messages.answer_context.chat_capture
+World chat Auto Extract uses the selected extraction provider and a canonical messages.answer_context.chat_capture
 draft. Explicit capability negotiation preserves old clients. Draft edits use JSONB
 compare-and-swap; explicit save reuses capture_save and review_queue under a freshly
 authorized inventory scope.075 supplies durable, private draft-image access.
@@ -164,12 +164,15 @@ There is no OpenAI runtime dependency or fallback.
 Photo flow:
 
 1. Web or mobile uploads an authenticated image to FastAPI.
-2. `find_pipeline.py` runs detection, identification, OCR/barcode processing,
-   and measurement. Model and infrastructure details stay on the server.
+2. `photo_extraction.py` selects `FINDEZ_EXTRACTION_PROVIDER` (`find` or `glm`)
+   for every photo extraction entry point. FIND remains intact for separate
+   development/rollback. GLM uses the existing gateway, validates item/evidence
+   JSON and crops original image pixels. Unsupported readings remain unknown;
+   model confidence is not calibrated accuracy. No silent provider fallback.
 3. FastAPI maps identity, detection, text, barcode, measurement, assumptions,
    warnings, and review reasons into public `scan_evidence`.
-4. The uploaded source image and available per-item crops are copied to the
-   `item-images` bucket before the FIND job is deleted in `finally`. Fetch the
+4. The uploaded source image and available per-item crops are stored in the
+   `item-images` bucket. When FIND is selected, its job is deleted in `finally`. Fetch the
    documented item-ID crop endpoint even when result rows omit crop URLs. The
    fallback bbox is x/y/width/height in the stored frame, scaled back to upload
    dimensions. Low identification confidence never disables crop retrieval. Masks
@@ -198,8 +201,9 @@ Language flow:
    streams the result to the client.
 
 The gateway also supports summaries, search parsing, barcode fallback, spreadsheet
-mapping, and memory extraction. Image uploads for inventory use FIND, not the
-language gateway.
+mapping, and memory extraction. GLM Auto Extract also uses the gateway when
+selected. Ordinary photo questions remain direct vision chat and do not become
+Auto Extract. See `docs/plans/glm-auto-extract-20261024.md` for limitations.
 
 ## Integration and MCP
 
@@ -227,7 +231,7 @@ source and fallback copy.
 ## Major dependencies
 
 - Both clients depend on Supabase Auth and FastAPI.
-- FastAPI depends on Supabase, FIND for photo analysis, and the agent gateway for
+- FastAPI depends on Supabase, the selected photo provider, and the agent gateway for
   language tasks.
 - FIND and gateway credentials remain backend-only.
 - Team API access depends on migration `034` workspace synchronization and RLS.

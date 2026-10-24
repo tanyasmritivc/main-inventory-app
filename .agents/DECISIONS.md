@@ -1,3 +1,13 @@
+## October 24 — Temporary GLM Auto Extract provider
+
+User explicitly requests GLM across web/mobile extraction while FIND improves
+separately. Use one backend provider switch, preserving FIND unchanged and all
+existing item/evidence, scoped preview, catalog enrichment and save contracts.
+Never silently fall back. Do not fabricate dimensions, confidence, part numbers,
+barcodes, purchase source or location to fill a column. Mark GLM confidence as
+uncalibrated and keep candidates reviewable. No schema or mobile UI changes.
+Activation is conditional on real provider and crop verification.
+
 ## October 22 — Chat executes clear edits and completes creation tasks
 
 The user explicitly requests confirmation only for creation/deletion. New clients

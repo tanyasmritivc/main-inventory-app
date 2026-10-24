@@ -1,3 +1,10 @@
+## October 24 - GLM extraction takeover
+
+Active isolated backend lane `feat/glm-auto-extract-20261024`. Unify photo
+extraction selection, preserve item/evidence contracts and FIND implementation,
+validate GLM crop/field quality before self-hosted activation. No schema/client
+changes planned. User explicitly requests GLM while FIND improves separately.
+
 ## October 24 — Smart search live (PR186)
 
 Backend runtime39ed171 is live on the self-hosted service. All five CI jobs passed;

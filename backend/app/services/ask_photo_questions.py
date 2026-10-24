@@ -18,7 +18,7 @@ from app.services.memory_context import load_preferences, style_instruction
 from app.services.inventory_scope import current_inventory
 from app.services.catalog_service import enrich_scan_items_from_verified_catalog, barcode_candidates, _normalized_brand
 from app.services.items_repo import _singularize_word
-from app.services.find_pipeline import extract_inventory_items_with_find
+from app.services.photo_extraction import extract_inventory_items
 from app.services.saved_photo_search import search_saved_photos
 from app.services.storage import delete_image, upload_image, _external_storage_url
 from app.services.supabase_client import get_supabase_admin
@@ -182,7 +182,7 @@ def photo_evidence(*, identified: list[dict], inventory: list[dict], photo_url: 
 async def answer_photo_question(*, user_id: str, message: str, image_bytes: bytes, on_delta=None, on_reset=None, allow_item_actions=False) -> dict:
     stored = await asyncio.to_thread(upload_image, user_id=user_id, filename=f'ask-{uuid4().hex}.jpg', content=image_bytes)
     try:
-        data = await extract_inventory_items_with_find(
+        data = await extract_inventory_items(
             filename='photo.jpg', image_bytes=image_bytes, content_type='image/jpeg',
             user_id=user_id, source_frame_url=stored.url)
         identified = await asyncio.to_thread(enrich_scan_items_from_verified_catalog, data.get('items') or [])

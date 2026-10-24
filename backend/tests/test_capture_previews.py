@@ -32,7 +32,7 @@ def test_upload_preview_never_writes_the_review_queue(path):
     with patch.object(items, '_prepare_scan_image', return_value=(b'jpeg', 'photo.jpg')), \
          patch.object(items, 'check_and_increment_scan'), \
          patch.object(items, 'upload_image', return_value=StoredImage('user-1/source.jpg', 'https://storage.test/user-1/source.jpg')), \
-         patch.object(items, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [uncertain()]})), \
+         patch.object(items, 'extract_inventory_items', new=AsyncMock(return_value={'items': [uncertain()]})), \
          patch.object(items, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
          patch.object(items, 'create_activity'), \
          patch.object(items, 'enqueue_uncertain_items') as enqueue, \
@@ -63,7 +63,7 @@ def test_older_capture_clients_keep_the_existing_pending_review_contract():
     with patch.object(items, '_prepare_scan_image', return_value=(b'jpeg', 'photo.jpg')), \
          patch.object(items, 'check_and_increment_scan'), \
          patch.object(items, 'upload_image', return_value=StoredImage('user-1/source.jpg', 'https://storage.test/user-1/source.jpg')), \
-         patch.object(items, 'extract_inventory_items_with_find', new=AsyncMock(return_value={'items': [uncertain()]})), \
+         patch.object(items, 'extract_inventory_items', new=AsyncMock(return_value={'items': [uncertain()]})), \
          patch.object(items, 'enrich_scan_items_from_verified_catalog', side_effect=lambda rows: rows), \
          patch.object(items, 'create_activity'), \
          patch.object(items, 'enqueue_uncertain_items', return_value=[saved]) as enqueue:

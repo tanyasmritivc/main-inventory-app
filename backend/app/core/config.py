@@ -1,3 +1,4 @@
+from typing import Literal
 
 from functools import lru_cache
 
@@ -34,19 +35,20 @@ class Settings(BaseSettings):
     supabase_storage_public: bool = True
     supabase_storage_signed_url_ttl_seconds: int = 3600
 
-    # All language tasks use the self-hosted FTCTools agent gateway. Photo
-    # recognition uses FIND below. There is intentionally no external fallback.
+    # Language and GLM vision tasks use the existing FTCTools agent gateway.
+    # Extraction selects one provider below; there is no silent fallback.
     findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"
     findez_chat_vision_model: str = "glm-5.3-flash-agent"
-    # Grounded extraction remains opt-in until compared with FIND on real photos.
+    # Shared photo extraction switch; FIND remains available for separate development.
+    findez_extraction_provider: Literal["find", "glm"] = "find"
+    # Deprecated chat-only flag retained for environment compatibility.
     findez_chat_extraction: str = "find"
     findez_agent_timezone: str = "America/Los_Angeles"
 
-    # FIND is the server-side inventory-photo ingestion pipeline used by both
-    # web and mobile through POST /inventory/extract_from_image. Keep its
-    # bearer token out of client bundles and source control.
+    # FIND stays available as an explicit extraction provider for development
+    # and rollback. Keep its bearer token out of client bundles and source control.
     find_api_base_url: AnyHttpUrl | None = None
     find_api_key: str | None = None
     # The current FIND appliance exposes HTTP only. Keep this false everywhere

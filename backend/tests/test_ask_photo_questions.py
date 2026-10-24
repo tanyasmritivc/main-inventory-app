@@ -121,7 +121,7 @@ def test_accessible_inventory_deduplicates_only_authorized_live_reads():
 
 def test_failed_analysis_cleans_only_new_source_before_review():
     with patch.object(photos, 'upload_image', return_value=StoredImage(PATH, URL)), \
-         patch.object(photos, 'extract_inventory_items_with_find', new=AsyncMock(side_effect=FindPipelineError('SECRET'))), \
+         patch.object(photos, 'extract_inventory_items', new=AsyncMock(side_effect=FindPipelineError('SECRET'))), \
          patch.object(photos, 'delete_image') as delete, patch('app.services.review_queue.enqueue_uncertain_items') as review:
         with pytest.raises(FindPipelineError):
             asyncio.run(photos.answer_photo_question(user_id='user-1', message='What is this?', image_bytes=image()))
@@ -273,7 +273,7 @@ def test_failed_photo_snapshot_is_visible_and_not_remembered(route_io):
 @pytest.mark.parametrize('question',['What is this? Do I own it?','How does this work?','Add this item'])
 def test_every_photo_question_gets_its_answer_from_model(identified,question):
     reply=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='A model-written photo answer.'))])
-    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':identified})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[item()]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={'answer_format':'bullets'}),patch('app.services.review_queue.enqueue_uncertain_items') as enqueue:
+    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items',new=AsyncMock(return_value={'items':identified})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[item()]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={'answer_format':'bullets'}),patch('app.services.review_queue.enqueue_uncertain_items') as enqueue:
         result=asyncio.run(photos.answer_photo_question(user_id='user-1',message=question,image_bytes=image()))
     model.assert_called_once()
     assert result['assistant_message']=='A model-written photo answer.'
@@ -289,7 +289,7 @@ def test_every_photo_question_gets_its_answer_from_model(identified,question):
 @pytest.mark.parametrize('failure',['exception','empty'])
 def test_photo_model_failure_has_no_scripted_answer_and_cleans_preview(failure):
     reply=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=''))])
-    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply,side_effect=RuntimeError('PRIVATE') if failure=='exception' else None) as model,patch.object(photos,'load_preferences',return_value={}),patch.object(photos,'delete_image') as delete:
+    with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply,side_effect=RuntimeError('PRIVATE') if failure=='exception' else None) as model,patch.object(photos,'load_preferences',return_value={}),patch.object(photos,'delete_image') as delete:
         with pytest.raises(RuntimeError): asyncio.run(photos.answer_photo_question(user_id='user-1',message='What is this?',image_bytes=image()))
     model.assert_called_once()
     delete.assert_called_once_with(path=PATH)
@@ -309,7 +309,7 @@ def test_existing_entry_photo_request_supplies_truthful_actions_and_keeps_model_
     reply = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='I cannot attach this photo to all Garage entries from Chat. Open an existing item and use Add photo.'))])
     token = current_inventory.set(InventoryScope('inventory', 'actor', 'owner', None, 'viewer'))
     try:
-        with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items_with_find',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={}):
+        with patch.object(photos,'upload_image',return_value=StoredImage(PATH,URL)),patch.object(photos,'extract_inventory_items',new=AsyncMock(return_value={'items':[item()]})),patch.object(photos,'enrich_scan_items_from_verified_catalog',side_effect=lambda rows:rows),patch.object(photos,'accessible_inventory',return_value=[]),patch.object(photos,'gateway_completion',return_value=reply) as model,patch.object(photos,'load_preferences',return_value={}):
             result=asyncio.run(photos.answer_photo_question(user_id='user-1',message='add this to all the entries in garage',image_bytes=image()))
     finally:
         current_inventory.reset(token)

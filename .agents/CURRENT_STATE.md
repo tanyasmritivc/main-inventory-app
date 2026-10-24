@@ -1,3 +1,14 @@
+## October 24 — GLM extraction candidate (not activated)
+
+Backend lane `feat/glm-auto-extract-20261024` adds one provider switch across
+capture and explicit chat Auto Extract, full item/evidence validation, bounded
+per-object GLM identification and original-pixel crops. FIND remains unchanged.
+Local suite: 1,450 tests +10 subtests passed, 452 warnings. Real gateway probes
+exposed multi-image timeouts and intermittent 502s; per-crop requests and explicit
+partial/unknown behavior are under real-image validation. Production remains
+unchanged until crop/provider acceptance and CI pass. Details:
+`docs/plans/glm-auto-extract-20261024.md`.
+
 ## October 24 — Smart search live (PR186)
 
 Backend runtime39ed171 is live on the self-hosted service. All five CI jobs passed;

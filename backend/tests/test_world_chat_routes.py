@@ -78,7 +78,7 @@ def test_ordinary_photo_goes_directly_to_chat_without_find_or_scan(transport):
     with patch.object(route, 'check_and_increment_scan') as scan, \
          patch('app.services.storage.upload_image', return_value=stored), \
          patch('app.services.storage.delete_image') as cleanup, \
-         patch('app.services.find_pipeline.extract_inventory_items_with_find') as find, \
+         patch('app.services.photo_extraction.extract_inventory_items') as find, \
          patch.object(world, 'photo_matches') as gallery, \
          patch.object(world, 'stream_turn', return_value=events()) as stream:
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'message': 'Read this label'}, files={'file': ('motor.png', out.getvalue(), 'image/png')})
@@ -155,7 +155,7 @@ def test_capture_is_durable_and_visible_before_model_reply_without_gallery_delay
                'answer_context': {'chat_capture_id': draft['id']}}
     with patch.object(route, 'check_and_increment_scan'), \
          patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), \
-         patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': []})), \
+         patch('app.services.photo_extraction.extract_inventory_items', new=AsyncMock(return_value={'items': []})), \
          patch.object(capture, 'create', return_value=draft) as create, \
          patch.object(world, 'photo_matches') as gallery, \
          patch.object(world, 'stream_turn', side_effect=stream):
@@ -174,7 +174,7 @@ def test_capture_survives_a_failed_model_reply_after_extraction(transport, caplo
     with patch.object(route, 'check_and_increment_scan'), \
          patch('app.services.storage.upload_image', return_value=NS(path='private/photo', url='https://api.test/private.jpg')), \
          patch('app.services.storage.delete_image') as cleanup, \
-         patch('app.services.find_pipeline.extract_inventory_items_with_find', new=AsyncMock(return_value={'items': []})), \
+         patch('app.services.photo_extraction.extract_inventory_items', new=AsyncMock(return_value={'items': []})), \
          patch.object(capture, 'create', return_value=draft), \
          patch.object(world, 'stream_turn', side_effect=RuntimeError('SECRET provider detail')):
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question', data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})

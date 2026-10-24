@@ -15,7 +15,7 @@ from app.services.agent_gateway_client import gateway_completion
 from app.services.completion_stream import completion_events
 from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.document_text_extractor import extract_text_from_upload
-from app.services.find_pipeline import FindPipelineError, extract_inventory_items_with_find
+from app.services.photo_extraction import extract_inventory_items
 
 
 logger = logging.getLogger(__name__)
@@ -157,7 +157,7 @@ def iter_assist_file_analysis_sse(*, filename: str, mime_type: str | None, conte
     try:
         if is_image:
             analysis_bytes, analysis_name = _jpeg_for_find(content, name)
-            data = asyncio.run(extract_inventory_items_with_find(filename=analysis_name,
+            data = asyncio.run(extract_inventory_items(filename=analysis_name,
                 image_bytes=analysis_bytes, content_type='image/jpeg'))
             evidence = json.dumps(provider_data({'photo_observations':data.get('items') or [], 'inventory_changed':False}))
         else:

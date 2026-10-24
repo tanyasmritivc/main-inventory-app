@@ -41,7 +41,7 @@ def test_grounding_refines_crops_and_retains_review_uncertainty():
     upload=Mock(return_value=NS(path='actor/crop.jpg',url='https://image.test/crop'))
     with patch.object(g,'_json',side_effect=[ground,identified]) as model:
         result=g.extract(photo(),'actor','https://image.test/original',upload=upload)
-    assert len(model.call_args_list[1].args[1])==2
+    assert len(model.call_args_list[1].args[1])==1
     assert result['summary']['partial'] is True
     item=result['items'][0]
     assert item['scan_evidence']['needs_review'] is True

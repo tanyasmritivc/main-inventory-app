@@ -68,9 +68,9 @@ from app.services.ai_service import (
     interpret_barcode,
     parse_search_query_to_keywords,
 )
-from app.services.find_pipeline import (
-    FindPipelineError,
-    extract_inventory_items_with_find,
+from app.services.photo_extraction import (
+    PhotoExtractionError,
+    extract_inventory_items,
 )
 from app.core.limiter import limiter
 from app.services.storage import upload_image
@@ -566,7 +566,7 @@ async def extract_from_image_route(
         content=analysis_bytes,
     )
     try:
-        data = await extract_inventory_items_with_find(
+        data = await extract_inventory_items(
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",
@@ -574,11 +574,11 @@ async def extract_from_image_route(
             source_frame_url=stored.url,
         )
         items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
-    except FindPipelineError as exc:
-        logger.warning("FIND single item extraction failed: %s", exc.public_message)
+    except PhotoExtractionError as exc:
+        logger.warning("Photo single item extraction failed: %s", exc.public_message)
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
-        logger.exception("FIND single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
+        logger.exception("Photo single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
 
     try:
@@ -654,16 +654,16 @@ async def inventory_extract_from_image_route(
     )
 
     try:
-        data = await extract_inventory_items_with_find(
+        data = await extract_inventory_items(
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",
             user_id=user.user_id,
             source_frame_url=stored.url,
         )
-    except FindPipelineError as exc:
+    except PhotoExtractionError as exc:
         logger.warning(
-            "FIND inventory extraction failed (file=%s, size=%d, status=%d)",
+            "Photo inventory extraction failed (file=%s, size=%d, status=%d)",
             file.filename,
             len(analysis_bytes),
             exc.status_code,
@@ -671,7 +671,7 @@ async def inventory_extract_from_image_route(
         raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
         logger.exception(
-            "FIND inventory extraction failed unexpectedly (file=%s, size=%d)",
+            "Photo inventory extraction failed unexpectedly (file=%s, size=%d)",
             file.filename,
             len(analysis_bytes),
         )

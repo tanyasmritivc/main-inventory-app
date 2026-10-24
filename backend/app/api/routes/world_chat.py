@@ -135,13 +135,8 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                     stage = 'extract_photo'
                     yield encode({'type': 'status', 'message': 'Extracting items...'})
                     await asyncio.to_thread(check_and_increment_scan, actor)
-                    from app.core.config import get_settings
-                    if get_settings().findez_chat_extraction == 'glm_grounded':
-                        from app.services.glm_extraction import extract
-                        result = await asyncio.to_thread(extract, photo, actor, stored.url)
-                    else:
-                        from app.services.find_pipeline import extract_inventory_items_with_find
-                        result = await extract_inventory_items_with_find(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
+                    from app.services.photo_extraction import extract_inventory_items
+                    result = await extract_inventory_items(filename='photo.jpg', image_bytes=photo, content_type='image/jpeg', user_id=actor, source_frame_url=stored.url)
                     from app.services.item_photos import _storage_path
                     for item in result.get('items', [])[:20]:
                         clean = {k: item.get(k) for k in ('name', 'category', 'quantity', 'confidence', 'brand', 'part_number')}
