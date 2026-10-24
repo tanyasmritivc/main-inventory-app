@@ -25,7 +25,7 @@ export function LandingV3({ className = '' }: { className?: string }) {
     <a className="go" href="/signup">Get started ↗</a>
   </nav>
 </header>
-<main><StoryA /><Who /><Business /><AppCarousel /><Sync /><Closing /></main>
+<main><StoryA fontClass={className} onPreviewChange={open => { if (root.current) root.current.dataset.previewOpen = String(open); }} /><Who /><Business /><AppCarousel /><Sync /><Closing /></main>
 <footer>
   <span>© 2026 AI Robots Inc.</span>
   <nav aria-label="Footer navigation"><a href="/pricing">Plans</a><a href="/docs/api">Developers</a><a href="https://apps.apple.com/us/app/findez-ai/id6760401697">iOS App</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:info@findez.ai">Contact</a></nav>

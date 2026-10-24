@@ -74,3 +74,16 @@ test("directory failure shows retry and never exposes questions", async () => {
 test("finished user cannot see onboarding again", async () => {
   localStorage.setItem(doneSetupKey("actor"), "1"); await mount(); expect(replace).toHaveBeenCalledWith("/home?inventory=default"); expect(screen.queryByText("Get started")).toBeNull();
 });
+
+
+test("skipping setup retains the preview prompt and authorized default inventory", async () => {
+  await act(async () => { render(<WebOnboarding userId="actor" initialPrompt="Add 10 AA batteries" />); });
+  await act(async () => { click("Skip for now"); });
+  expect(replace).toHaveBeenCalledWith("/assist?q=Add+10+AA+batteries&inventory=default");
+  expect((accountRequest as jest.Mock).mock.calls.every(c => !c[2]?.method)).toBe(true);
+});
+test("already configured users keep the preview request", async () => {
+  localStorage.setItem(doneSetupKey("actor"), "1");
+  await act(async () => { render(<WebOnboarding userId="actor" initialPrompt="Find my drill" />); });
+  expect(replace).toHaveBeenCalledWith("/assist?q=Find+my+drill&inventory=default");
+});

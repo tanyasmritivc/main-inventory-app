@@ -1,9 +1,37 @@
 import { PhotoTags, MemoryGraph, Drawers } from './SceneDetails';
 import { useRouter } from 'next/navigation';
-import { submitPrompt } from './navigation';
+import { useEffect, useRef, useState } from 'react';
+import { previewPrompt, PREVIEW_PROMPT_LIMIT } from '@/lib/landing-preview';
+import { PromptPreview, type PreviewOrigin } from './PromptPreview';
 
-export function StoryA() {
+export function StoryA({ fontClass = '', onPreviewChange }: { fontClass?: string; onPreviewChange?: (open: boolean) => void }) {
   const router = useRouter();
+  const input = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    // A short-lived, tab-local draft lets Back from signup return to the user's words.
+    try {
+      const draft = JSON.parse(sessionStorage.getItem('findez_public_preview_draft') || 'null');
+      if (draft && typeof draft.at === 'number' && Date.now() - draft.at >= 0 && Date.now() - draft.at < 30 * 60 * 1000 && input.current) input.current.value = previewPrompt(draft.prompt);
+    } catch { /* Preview still works when browser storage is unavailable. */ }
+  }, []);
+  function rememberPrompt(prompt: string) {
+    try {
+      if (prompt) sessionStorage.setItem('findez_public_preview_draft', JSON.stringify({ prompt, at: Date.now() }));
+      else sessionStorage.removeItem('findez_public_preview_draft');
+    } catch { /* Do not block a local demo on storage permissions. */ }
+  }
+  const [preview, setPreview] = useState<{ prompt: string; origin: PreviewOrigin } | null>(null);
+  function closePreview() { setPreview(null); onPreviewChange?.(false); }
+  function openPreview(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (preview) return;
+    const prompt = previewPrompt(new FormData(event.currentTarget).get('prompt'));
+    if (!prompt) { event.currentTarget.querySelector('textarea')?.focus(); return; }
+    rememberPrompt(prompt);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPreview({ prompt, origin: { left: rect.left, top: rect.top, width: rect.width, height: rect.height } });
+    onPreviewChange?.(true);
+  }
   return (
 <section className="pinS" id="storyA" style={{"height": "560vh"}} aria-label="FindEZ">
   <div className="stage" id="stA">
@@ -28,9 +56,9 @@ export function StoryA() {
 
     <div id="m">
       <div className="ly" id="lComp">
-    <form className="composer" id="cform" action="/signup" method="get" onSubmit={(event) => submitPrompt(event, router.push)}>
+    <form className="composer" id="cform" action="/signup" method="get" onSubmit={openPreview}>
       <label htmlFor="ask" style={{"position": "absolute", "width": "1px", "height": "1px", "overflow": "hidden", "clip": "rect(0 0 0 0)"}}>Describe what to add</label>
-      <textarea id="ask" name="prompt" rows={2} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Start an inventory for my garage"></textarea>
+      <textarea ref={input} id="ask" name="prompt" rows={2} maxLength={PREVIEW_PROMPT_LIMIT} onBlur={event => rememberPrompt(previewPrompt(event.currentTarget.value))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Start an inventory for my garage"></textarea>
       <div className="crow">
         <button className="cb o" type="button" aria-label="Attach" data-go="" onClick={() => router.push('/signup')}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111112" strokeWidth="1.8" strokeLinecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
         <button className="cb cam" type="button" aria-label="Take a photo" data-go="" onClick={() => router.push('/signup')}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#111112" strokeWidth="1.8" strokeLinejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="13" r="3.4"></circle></svg></button>
@@ -67,6 +95,7 @@ export function StoryA() {
     <div id="foundC" aria-hidden="true"><small>FOUND</small><b>M4 set screws</b><span>DRAWER PN-F40 · ROW 5 · PARTS CABINET</span></div>
     <div id="crumbs" aria-hidden="true"><span>Workshop</span><span>›</span><span>Workbench</span><span>›</span><span>Parts cabinet</span><span>›</span><span>Row 5</span><span>›</span><span>Drawer PN-F40</span><span>›</span><span>M4 set screws</span></div>
   </div>
+  {preview && <PromptPreview {...preview} fontClass={fontClass} onClose={closePreview} />}
 </section>
   );
 }

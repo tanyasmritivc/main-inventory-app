@@ -1,10 +1,5 @@
-import type { FormEvent } from 'react';
+import { previewPrompt } from '@/lib/landing-preview';
 export function signupUrl(prompt: string) {
-  const text = prompt.trim();
+  const text = previewPrompt(prompt);
   return text ? `/signup?prompt=${encodeURIComponent(text)}` : '/signup';
-}
-export function submitPrompt(event: FormEvent<HTMLFormElement>, navigate: (url: string) => void) {
-  event.preventDefault();
-  const prompt = String(new FormData(event.currentTarget).get('prompt') ?? '');
-  navigate(signupUrl(prompt));
 }

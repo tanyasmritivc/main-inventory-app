@@ -1,3 +1,16 @@
+## October 24 - Public prompt preview release candidate
+
+Web-only branch `feat/landing-prompt-preview-20261024`, based on delivered Blue
+Echo web runtime. Landing prompts now open an accessible, morphing, interactive
+unsaved preview before signup. The original bounded request survives email/OAuth,
+onboarding and existing-account sign-in, then prefills authenticated Ask. No
+anonymous inventory writes or new model endpoint. Explicit item/count phrases
+are parsed locally; contextual examples are labeled and never saved as facts.
+Local checks: 488 tests / 62 suites passed, production build and TypeScript passed,
+lint 0 errors / 52 unchanged warnings. Desktop 1440x900 and phone 390x844 preview,
+filter/details and auth handoff inspected in Chrome. Self-hosted deployment is
+pending. See `docs/landing-v3/PROMPT_PREVIEW.md` for limits and acceptance steps.
+
 ## October 23 - Blue echo web branding delivered
 
 Self-hosted `findez-web` serves runtime `ccb15ac80a37438ca5b6726aac6a8e1cbc4337ed`,

@@ -1,4 +1,5 @@
 "use client";
+import { continuePreview, previewPrompt } from "@/lib/landing-preview";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -59,13 +60,14 @@ function NameField({ label, value, placeholder, maxLength, helper, onChange, onC
   </form>;
 }
 
-export function WebOnboarding({ userId }: { userId: string }) {
+export function WebOnboarding({ userId, initialPrompt = "" }: { userId: string; initialPrompt?: string }) {
+  const prompt = previewPrompt(initialPrompt);
   const { accountId, loading: sessionLoading, error: sessionError } = useApiSession();
-  if (!sessionLoading && accountId !== userId) return <div className={styles.loading} role="alert"><p>{sessionError || "Your account changed. Sign in to continue."}</p><Link href="/signin?redirect=%2Fonboarding">Sign in</Link></div>;
-  return <SetupAccount key={userId} userId={userId} />;
+  if (!sessionLoading && accountId !== userId) return <div className={styles.loading} role="alert"><p>{sessionError || "Your account changed. Sign in to continue."}</p><Link href={`/signin?redirect=${encodeURIComponent(`/onboarding${prompt ? `?${new URLSearchParams({ prompt })}` : ""}`)}`}>Sign in</Link></div>;
+  return <SetupAccount key={userId} userId={userId} prompt={prompt} />;
 }
 
-function SetupAccount({ userId }: { userId: string }) {
+function SetupAccount({ userId, prompt }: { userId: string; prompt: string }) {
   const router = useRouter();
   const [draft, setDraft] = useState<SetupDraft | null>(null), current = useRef<SetupDraft | null>(null);
   const [error, setError] = useState(""), [loadAttempt, setLoadAttempt] = useState(0);
@@ -85,11 +87,11 @@ function SetupAccount({ userId }: { userId: string }) {
     let live = true;
     async function load() {
       try {
-        if (localStorage.getItem(doneSetupKey(userId))) { router.replace(await personalDashboard(userId)); return; }
+        if (localStorage.getItem(doneSetupKey(userId))) { router.replace(continuePreview(await personalDashboard(userId), prompt)); return; }
         const pending = readSetup(localStorage, userId);
         const eligible = await checkSetupEligibility(userId, pending);
         if (!live) return;
-        if (!eligible) { router.replace("/organizations"); return; }
+        if (!eligible) { router.replace(continuePreview("/organizations", prompt)); return; }
         saveSetup(localStorage, userId, pending);
         current.current = pending; setDraft(pending); setError("");
         const options = pending.step === "purpose" ? PURPOSES[pending.path || "team"] : INVENTORIES[pending.path || "team"];
@@ -99,7 +101,7 @@ function SetupAccount({ userId }: { userId: string }) {
     }
     void load();
     return () => { live = false; };
-  }, [userId, loadAttempt, router]);
+  }, [userId, loadAttempt, router, prompt]);
 
   function cancelAdvance() { if (timer.current) clearTimeout(timer.current); timer.current = null; setAdvance(null); }
   function update(patch: Partial<SetupDraft>) {
@@ -157,7 +159,7 @@ function SetupAccount({ userId }: { userId: string }) {
           if (mounted.current) { current.current = value; setDraft(value); }
         });
       });
-      if (mounted.current) router.replace(destination);
+      if (mounted.current) router.replace(continuePreview(destination, prompt));
     } catch { if (mounted.current) setError("We couldn't finish setting up. Try again."); }
     finally { saving.current = false; if (mounted.current) setBusy(false); }
   }
@@ -180,7 +182,7 @@ function SetupAccount({ userId }: { userId: string }) {
         if (latest.step === "setup" || Object.values(latest.createdIds).some(Boolean)) throw new Error("Setup is already saving.");
         const href = await personalDashboard(userId);
         finishSetup(localStorage, userId);
-        if (mounted.current) router.replace(href);
+        if (mounted.current) router.replace(continuePreview(href, prompt));
       });
     } catch { if (mounted.current) setError("Your dashboard could not be opened. Try again."); }
     finally { saving.current = false; if (mounted.current) setBusy(false); }
