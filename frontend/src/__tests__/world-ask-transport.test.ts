@@ -76,3 +76,57 @@ test("an account change before sending prevents all network calls", async () => 
   ).rejects.toThrow("Account changed");
   expect(fetched).not.toHaveBeenCalled();
 });
+
+test("context uses strict server references and Auto Extract preserves a draft even if the answer fails", async () => {
+  const capture = {
+    id: "11111111-1111-4111-8111-111111111111",
+    revision: 1,
+    status: "draft",
+    items: [
+      {
+        index: 0,
+        selected: true,
+        item: { name: "Bolt", category: "Hardware", quantity: 1 },
+      },
+    ],
+  };
+  fetched.mockResolvedValue(
+    new Response(
+      `data: ${JSON.stringify({ type: "capture", conversation_id: "saved", answer_context: { chat_capture: capture } })}\n\ndata: {"type":"error","message":"Answer unavailable"}\n\n`,
+      { status: 200 },
+    ),
+  );
+  const receive = jest.fn();
+  await expect(
+    askQuestion({
+      accountId: "actor",
+      worldId: "org",
+      message: "Extract",
+      photo: new File(["image"], "photo.jpg", { type: "image/jpeg" }),
+      autoExtract: true,
+      sources: [
+        {
+          kind: "item",
+          inventory_id: "inventory",
+          resource_id: "item",
+          name: "Display only",
+        },
+      ],
+      onCapture: receive,
+      signal: new AbortController().signal,
+      onDelta: jest.fn(),
+      onStatus: jest.fn(),
+      onDone: jest.fn(),
+    }),
+  ).rejects.toThrow("Answer unavailable");
+  const form = fetched.mock.calls[0][1].body;
+  expect(form.get("auto_extract")).toBe("true");
+  expect(form.get("supports_capture")).toBe("true");
+  expect(JSON.parse(form.get("sources"))).toEqual([
+    { kind: "item", inventory_id: "inventory", resource_id: "item" },
+  ]);
+  expect(receive).toHaveBeenCalledWith(
+    "saved",
+    expect.objectContaining({ capture }),
+  );
+});

@@ -7,19 +7,19 @@ const trustedOrigins = new Set(["https://findez.ai", "https://www.findez.ai", "h
 
 function emailDestination(redirectTo: string | null, type: EmailLinkType) {
   if (type === "recovery") return "/reset-password";
-  let target = redirectTo || "/home";
+  let target = redirectTo || "/worlds";
   if (!target.startsWith("/")) {
     try {
       const url = new URL(target);
-      if (!trustedOrigins.has(url.origin)) return "/home";
+      if (!trustedOrigins.has(url.origin)) return "/worlds";
       target = url.pathname + url.search;
-    } catch { return "/home"; }
+    } catch { return "/worlds"; }
   }
   target = normalizeAuthNext(target);
   const parsed = new URL(target, "https://findez.ai");
   if (parsed.pathname === "/auth/callback") target = normalizeAuthNext(parsed.searchParams.get("next"));
   // An email must not send the newly authenticated session into another auth flow.
-  if (/^\/(?:auth(?:\/|$)|reset-password(?:[/?#]|$)|signin(?:[/?#]|$)|signup(?:[/?#]|$))/.test(target)) return "/home";
+  if (/^\/(?:auth(?:\/|$)|reset-password(?:[/?#]|$)|signin(?:[/?#]|$)|signup(?:[/?#]|$))/.test(target)) return "/worlds";
   return normalizeAuthNext(target);
 }
 

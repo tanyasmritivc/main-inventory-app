@@ -55,3 +55,25 @@ test('organization history and drafts are isolated, and retry retains the durabl
  view.rerender(<AssistClient worldId="org-a"/>);
  await waitFor(()=>expect((screen.getByRole('textbox',{name:'Your question'}) as HTMLTextAreaElement).value).toBe('Add five bolts'));
 });
+
+test('spreadsheet uploads create reviewable drafts without calling the chat model and stay in their originating chat', async () => {
+ const {askQuestion}=await import('@/lib/ask-stream');
+ let finish!:(r:unknown)=>void;
+ const capture={id:'11111111-1111-4111-8111-111111111111',revision:1,status:'draft',source_kind:'spreadsheet',items:[{index:0,selected:true,item:{name:'M3 screws',category:'Hardware',quantity:20}}]};
+ jest.mocked(accountRequest).mockImplementation(async(_actor,path)=>{
+  if(path.endsWith('/captures/spreadsheet'))return new Promise(resolve=>{finish=resolve;}) as never;
+  if(path.endsWith('/spaces'))return {inventories:[]} as never;
+  return [] as never;
+ });
+ const view=render(<AssistClient worldId="org-a"/>);
+ await waitFor(()=>expect(accountRequest).toHaveBeenCalledWith('fixture-account','/worlds/org-a/conversations'));
+ fireEvent.change(view.container.querySelector('input[accept=".csv,.xlsx"]')!,{target:{files:[new File(['name,quantity\nM3 screws,20'],'items.csv',{type:'text/csv'})]}});
+ await waitFor(()=>expect(finish).toBeDefined());
+ fireEvent(window,new Event('findez-new-world-chat'));
+ await import('@testing-library/react').then(({act})=>act(async()=>finish({conversation_id:'chat',capture})));
+ await screen.findByRole('region',{name:'Extraction draft'});
+ expect(screen.getByRole('textbox',{name:'Name for row 1'})).toHaveProperty('value','M3 screws');
+ expect(screen.getByRole('button',{name:'Add to chat'})).toHaveProperty('disabled',false);
+ expect(askQuestion).not.toHaveBeenCalled();
+ expect(screen.getByRole('button',{name:'Confirm and save'})).toHaveProperty('disabled',true);
+});

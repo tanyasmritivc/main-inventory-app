@@ -1,13 +1,36 @@
 "use client";
+import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
+import { ChatContextPicker } from "./chat-context-picker";
+import { ChatCaptureCard } from "./chat-capture-card";
+import { BarcodeScanner } from "./zxing-scanner";
+import {
+  addChatSource,
+  parseCapture,
+  type ChatSource,
+} from "@/lib/chat-sources";
+import sourceStyles from "./chat-sources.module.css";
 import { WorldActionCard, WorldResourceLinks } from "./world-chat-cards";
 import { privateImageSrc } from "@/lib/private-image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, MessageSquarePlus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import {
+  ImagePlus,
+  MessageSquarePlus,
+  RefreshCw,
+  Send,
+  Trash2,
+  X,
+} from "lucide-react";
 import { activeInventory } from "@/lib/inventory-selection";
 import { ChatItemActionCard } from "@/components/site/chat-item-action";
 import { AskMarkdown } from "@/components/site/ask-markdown";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/api";
 import { accountRequest } from "@/lib/account-request";
 import {
@@ -27,21 +50,37 @@ type Message = ConversationMessage & {
   revision?: number;
 };
 type AssistProps = { initialQuery?: string; worldId?: string; title?: string };
-export function AssistClient({ initialQuery = "", worldId, title }: AssistProps) {
+export function AssistClient({
+  initialQuery = "",
+  worldId,
+  title,
+}: AssistProps) {
   const { accountId } = useApiSession();
   return (
     <AssistClientWorkspace
       key={`${accountId || "signed-out"}:${worldId || "inventory"}`}
-      worldId={worldId} title={title}
+      worldId={worldId}
+      title={title}
       initialQuery={initialQuery}
     />
   );
 }
 function AssistClientWorkspace({
-  initialQuery = "", worldId, title = "Ask FindEZ",
+  initialQuery = "",
+  worldId,
+  title = "Ask FindEZ",
 }: AssistProps) {
   const prefix = worldId ? `/worlds/${encodeURIComponent(worldId)}` : "";
-  const retry = useRef<{text:string; photo?:File; conversationId:string|null; id:string} | undefined>(undefined);
+  const retry = useRef<
+    | {
+        text: string;
+        photo?: File;
+        conversationId: string | null;
+        signature: string;
+        id: string;
+      }
+    | undefined
+  >(undefined);
   const { accountId, error: sessionError } = useApiSession(),
     { confirmAction } = useAppDialog();
   const owner = useRef(accountId);
@@ -65,7 +104,156 @@ function AssistClientWorkspace({
     [opening, setOpening] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
-  const photoInput = useRef<HTMLInputElement>(null);
+  const photoInput = useRef<HTMLInputElement>(null),
+    cameraInput = useRef<HTMLInputElement>(null),
+    fileInput = useRef<HTMLInputElement>(null),
+    extractInput = useRef<HTMLInputElement>(null),
+    spreadsheetInput = useRef<HTMLInputElement>(null);
+  const [sources, setSources] = useState<ChatSource[]>([]),
+    [autoExtract, setAutoExtract] = useState(false),
+    [sourceBusy, setSourceBusy] = useState(false),
+    [contextKind, setContextKind] = useState<
+      "space" | "item" | "project" | "document"
+    >(),
+    [barcodeOpen, setBarcodeOpen] = useState(false),
+    [barcode, setBarcode] = useState(""),
+    [cameraOpen, setCameraOpen] = useState(false);
+  const sourceLock = useRef(false);
+  const unavailable = sending || opening || sourceBusy;
+  function chooseSource(choice: ChatChoice) {
+    if (unavailable) return;
+    if (choice === "auto_extract") extractInput.current?.click();
+    else if (choice === "library") photoInput.current?.click();
+    else if (choice === "camera") cameraInput.current?.click();
+    else if (choice === "file") fileInput.current?.click();
+    else if (choice === "spreadsheet") spreadsheetInput.current?.click();
+    else if (choice === "barcode") {
+      setBarcode("");
+      setCameraOpen(false);
+      setBarcodeOpen(true);
+    } else setContextKind(choice);
+  }
+  function addSource(source: ChatSource) {
+    try {
+      const next = addChatSource(sources, source);
+      setSources(next);
+      setContextKind(undefined);
+      setError("");
+    } catch (e) {
+      setError(userFacingError(e, "Could not attach this source."));
+    }
+  }
+  async function uploadSource(
+    file?: File,
+    kind: "file" | "spreadsheet" = "file",
+    code?: string,
+  ) {
+    if (
+      !accountId ||
+      !worldId ||
+      unavailable ||
+      sourceLock.current ||
+      (!file && !code)
+    )
+      return;
+    if (file && (!file.size || file.size > 10 * 1024 * 1024)) {
+      setError("Choose a nonempty file smaller than 10 MB.");
+      return;
+    }
+    if (file && kind === "file" && file.type.startsWith("image/")) {
+      attach(file);
+      return;
+    }
+    if (
+      file &&
+      !new RegExp(
+        kind === "spreadsheet" ? "\\.(csv|xlsx)$" : "\\.(pdf|txt|md)$",
+        "i",
+      ).test(file.name)
+    ) {
+      setError(
+        kind === "spreadsheet"
+          ? "Choose a CSV or Excel (.xlsx) file."
+          : "Choose a photo, PDF, TXT or Markdown file. Use Import inventory for spreadsheets.",
+      );
+      return;
+    }
+    const account = accountId,
+      generation = epoch.current;
+    const current = () =>
+      owner.current === account && epoch.current === generation;
+    sourceLock.current = true;
+    setSourceBusy(true);
+    setError("");
+    setCameraOpen(false);
+    try {
+      const body = new FormData();
+      if (file) body.append("file", file);
+      if (conversationId) body.append("conversation_id", conversationId);
+      if (kind === "file" && !code) {
+        const result = await accountRequest<ChatSource>(
+          account,
+          `${prefix}/chat-files`,
+          { method: "POST", body },
+        );
+        if (
+          result.kind !== "file" ||
+          typeof result.text !== "string" ||
+          !result.text ||
+          result.text.length > 24000 ||
+          typeof result.name !== "string"
+        )
+          throw new Error("The file could not be verified.");
+        if (current()) setSources(addChatSource(sources, result));
+      } else {
+        const result = await accountRequest<{
+          conversation_id: string;
+          capture: unknown;
+        }>(account, `${prefix}/captures/${code ? "barcode" : "spreadsheet"}`, {
+          method: "POST",
+          body: code
+            ? { barcode: code, conversation_id: conversationId }
+            : body,
+        });
+        const capture = parseCapture(result.capture);
+        if (!capture || !result.conversation_id)
+          throw new Error(
+            "The draft could not be verified. Check history before trying again.",
+          );
+        if (current()) {
+          setConversationId(result.conversation_id);
+          setBarcodeOpen(false);
+          setMessages((m) => [
+            ...m,
+            {
+              id: capture.id,
+              role: "assistant",
+              content: code
+                ? "Review the barcode result before saving."
+                : "Review the imported items before saving.",
+              created_at: new Date().toISOString(),
+              context: { capture, sources: [], rows: [], rowsTruncated: false },
+            },
+          ]);
+          void loadHistory().catch(() => {
+            if (current())
+              setError("The draft is saved, but history could not refresh.");
+          });
+        }
+      }
+    } catch (e) {
+      if (current())
+        setError(
+          userFacingError(
+            e,
+            "This attachment could not be processed. Check history before retrying an import.",
+          ),
+        );
+    } finally {
+      sourceLock.current = false;
+      if (current()) setSourceBusy(false);
+    }
+  }
   const [historyOpen, setHistoryOpen] = useState(false);
   const loadHistory = useCallback(async () => {
     if (!accountId) return;
@@ -94,7 +282,9 @@ function AssistClientWorkspace({
     try {
       setInput(
         initialQuery ||
-          localStorage.getItem(`findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`) ||
+          localStorage.getItem(
+            `findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`,
+          ) ||
           "",
       );
     } catch {
@@ -122,7 +312,10 @@ function AssistClientWorkspace({
     setInput(value);
     if (accountId) {
       try {
-        localStorage.setItem(`findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`, value);
+        localStorage.setItem(
+          `findez-ask-draft:${accountId}${worldId ? `:world:${worldId}` : ""}`,
+          value,
+        );
       } catch {
         /* The visible draft remains available for retry. */
       }
@@ -145,6 +338,9 @@ function AssistClientWorkspace({
         epoch.current === generation &&
         ticket === request.current
       ) {
+        setSources([]);
+        setPhoto(undefined);
+        setAutoExtract(false);
         setConversationId(id);
         setMessages(
           result.messages.map((m) => ({
@@ -162,14 +358,26 @@ function AssistClientWorkspace({
     }
   }
   function newChat() {
-    controller.current?.abort(); epoch.current++; retry.current = undefined;
-    setSending(false); setPendingMessageId(null); setStatus("");
+    // A draft upload may already be committed. Keep it in its originating chat
+    // until its receipt returns, including when New chat comes from the sidebar.
+    if (sourceLock.current) return;
+    controller.current?.abort();
+    epoch.current++;
+    retry.current = undefined;
+    setSending(false);
+    setPendingMessageId(null);
+    setStatus("");
     request.current++;
     setOpening(false);
     setConversationId(null);
     setMessages([]);
     setError("");
     setPhoto(undefined);
+    setSources([]);
+    setAutoExtract(false);
+    setContextKind(undefined);
+    setBarcodeOpen(false);
+    setCameraOpen(false);
     draft("");
   }
   useEffect(() => {
@@ -204,7 +412,7 @@ function AssistClientWorkspace({
         setError(userFacingError(e, "Could not delete this conversation."));
     }
   }
-  function attach(file?: File) {
+  function attach(file?: File, extract = false) {
     if (!file) return;
     if (
       !file.type.startsWith("image/") ||
@@ -214,20 +422,38 @@ function AssistClientWorkspace({
       setError("Choose a photo smaller than 10 MB.");
       return;
     }
+    setAutoExtract(extract);
     setPhoto(file);
     setError("");
   }
   async function send(e: React.FormEvent) {
     e.preventDefault();
-    if (!accountId || sending || opening || (!input.trim() && !photo)) return;
+    if (!accountId || unavailable || (!input.trim() && !photo)) return;
     const account = accountId,
       generation = epoch.current,
-      text = input.trim() || "What is in this photo, and do I already own it?",
+      text =
+        input.trim() ||
+        (autoExtract
+          ? "Auto extract the items in this photo. Keep a draft for review before saving."
+          : "What is in this photo?"),
       now = new Date().toISOString(),
       userId = crypto.randomUUID(),
       assistantId = crypto.randomUUID();
-    if (!retry.current || retry.current.text !== text || retry.current.photo !== photo || retry.current.conversationId !== conversationId)
-      retry.current = {text, photo, conversationId, id: crypto.randomUUID()};
+    const signature = JSON.stringify({ sources, autoExtract });
+    if (
+      !retry.current ||
+      retry.current.signature !== signature ||
+      retry.current.text !== text ||
+      retry.current.photo !== photo ||
+      retry.current.conversationId !== conversationId
+    )
+      retry.current = {
+        text,
+        photo,
+        conversationId,
+        signature,
+        id: crypto.randomUUID(),
+      };
     const control = new AbortController();
     controller.current = control;
     const current = () =>
@@ -239,7 +465,13 @@ function AssistClientWorkspace({
     setMessages((m) => [
       ...m,
       { id: userId, role: "user", content: text, created_at: now },
-      { id: assistantId, role: "assistant", content: "", created_at: now, live: true },
+      {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        created_at: now,
+        live: true,
+      },
     ]);
     let final:
       | {
@@ -248,10 +480,26 @@ function AssistClientWorkspace({
           context?: AskAnswerContext;
         }
       | undefined;
+    let receivedCapture = false;
     const timer = window.setTimeout(() => control.abort(), 180_000);
     try {
       await askQuestion({
-        accountId: account, worldId, requestId: retry.current.id,
+        accountId: account,
+        worldId,
+        requestId: retry.current.id,
+        sources,
+        autoExtract,
+        onCapture: (id, context) => {
+          if (current()) {
+            receivedCapture = true;
+            setConversationId(id);
+            setMessages((m) =>
+              m.map((msg) =>
+                msg.id === assistantId ? { ...msg, context } : msg,
+              ),
+            );
+          }
+        },
         message: text,
         photo,
         conversationId,
@@ -267,8 +515,14 @@ function AssistClientWorkspace({
             );
         },
         onReset: () => {
-          if (current()) setMessages((m) => m.map((msg) => msg.id === assistantId
-            ? { ...msg, content: "", revision: (msg.revision ?? 0) + 1 } : msg));
+          if (current())
+            setMessages((m) =>
+              m.map((msg) =>
+                msg.id === assistantId
+                  ? { ...msg, content: "", revision: (msg.revision ?? 0) + 1 }
+                  : msg,
+              ),
+            );
         },
         onStatus: (value) => {
           if (current()) setStatus(value);
@@ -288,7 +542,7 @@ function AssistClientWorkspace({
             ? {
                 ...msg,
                 content: final?.content ?? msg.content,
-                context: final?.context,
+                context: final?.context || msg.context,
               }
             : msg,
         ),
@@ -296,6 +550,8 @@ function AssistClientWorkspace({
       retry.current = undefined;
       setConversationId(final.conversationId);
       setPhoto(undefined);
+      setSources([]);
+      setAutoExtract(false);
       draft("");
       try {
         await loadHistory();
@@ -306,9 +562,16 @@ function AssistClientWorkspace({
       }
     } catch (reason) {
       if (current()) {
+        if (receivedCapture) {
+          setPhoto(undefined);
+          setAutoExtract(false);
+          retry.current = undefined;
+        }
         setMessages((m) =>
           m.map((msg) =>
-            msg.id === assistantId ? { ...msg, content: "", failed: true } : msg,
+            msg.id === assistantId
+              ? { ...msg, content: "", failed: true }
+              : msg,
           ),
         );
         setError(
@@ -332,21 +595,96 @@ function AssistClientWorkspace({
   }
   return (
     <section className="ask-workspace">
+      {contextKind && accountId && worldId && (
+        <ChatContextPicker
+          key={`${worldId}:${contextKind}`}
+          accountId={accountId}
+          worldId={worldId}
+          kind={contextKind}
+          onSelect={addSource}
+          onClose={() => setContextKind(undefined)}
+        />
+      )}
+      <Dialog
+        open={barcodeOpen}
+        onOpenChange={(open) => {
+          if (!sourceBusy) {
+            setBarcodeOpen(open);
+            setCameraOpen(false);
+          }
+        }}
+      >
+        <DialogContent className={sourceStyles.dialog}>
+          <DialogTitle>Scan barcode</DialogTitle>
+          <DialogDescription>
+            Scan with your camera or enter the code. Review the result before
+            saving.
+          </DialogDescription>
+          {cameraOpen ? (
+            <BarcodeScanner
+              onDetected={(code) => {
+                setBarcode(code);
+                setCameraOpen(false);
+              }}
+            />
+          ) : (
+            <button
+              className="workspace-button"
+              disabled={sourceBusy}
+              onClick={() => setCameraOpen(true)}
+            >
+              Open camera
+            </button>
+          )}
+          <form
+            className={sourceStyles.stack}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void uploadSource(undefined, "spreadsheet", barcode.trim());
+            }}
+          >
+            <label>
+              Barcode
+              <input
+                value={barcode}
+                maxLength={100}
+                onChange={(e) => setBarcode(e.target.value)}
+                disabled={sourceBusy}
+              />
+            </label>
+            <button
+              className="workspace-button primary"
+              disabled={sourceBusy || !barcode.trim()}
+            >
+              {sourceBusy ? "Looking up..." : "Look up barcode"}
+            </button>
+          </form>
+          {error && <p role="alert">{error}</p>}
+        </DialogContent>
+      </Dialog>
       <header className="ask-toolbar">
         <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
           <DialogTrigger asChild>
-            <button className="workspace-button" disabled={sending}>History</button>
+            <button className="workspace-button" disabled={unavailable}>
+              History
+            </button>
           </DialogTrigger>
-          <DialogContent className="workspace-dialog ask-history-dialog" aria-describedby={undefined}>
+          <DialogContent
+            className="workspace-dialog ask-history-dialog"
+            aria-describedby={undefined}
+          >
             <div className="app-frame ask-history-surface">
-              <aside className="workspace-history" aria-label="Conversation history">
+              <aside
+                className="workspace-history"
+                aria-label="Conversation history"
+              >
                 <div className="workspace-section-heading">
                   <DialogTitle>History</DialogTitle>
                   <button
                     className="workspace-button"
                     aria-label="Refresh history"
                     title="Refresh history"
-                    disabled={sending}
+                    disabled={unavailable}
                     onClick={() =>
                       void loadHistory().catch(() =>
                         setError("Could not refresh history."),
@@ -361,15 +699,17 @@ function AssistClientWorkspace({
                     <button
                       className="ask-history-title"
                       title={c.title || "New conversation"}
-                      aria-current={c.id === conversationId ? "true" : undefined}
-                      disabled={sending}
+                      aria-current={
+                        c.id === conversationId ? "true" : undefined
+                      }
+                      disabled={unavailable}
                       onClick={() => void openConversation(c.id)}
                     >
                       {c.title || "New conversation"}
                     </button>
                     <button
                       className="ask-history-delete"
-                      disabled={sending}
+                      disabled={unavailable}
                       aria-label={`Delete ${c.title || "conversation"}`}
                       onClick={() => void removeConversation(c.id)}
                     >
@@ -389,19 +729,23 @@ function AssistClientWorkspace({
         <button
           className="workspace-button"
           onClick={newChat}
-          disabled={sending}
+          disabled={unavailable}
         >
           <MessageSquarePlus size={15} />
           New conversation
         </button>
       </header>
-      <div className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}>
-        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>{title}</h1>
+      <div
+        className={`ask-chat${!messages.length && !opening ? " is-empty" : ""}`}
+      >
+        <h1 className={messages.length || opening ? "sr-only" : "ask-title"}>
+          {title}
+        </h1>
         <div className="ask-thread">
           {opening ? (
             <p role="status">Opening conversation…</p>
           ) : (
-            messages.map((m) => {
+            messages.map((m, messageIndex) => {
               const photoUrl = trustedAskPhotoUrl(
                 m.context?.photoUrl,
                 accountId,
@@ -409,89 +753,190 @@ function AssistClientWorkspace({
                 activeInventory()?.inventory_id,
               );
               return (
-                <article className={`ask-message${m.role === "user" ? " is-user" : ""}`} key={m.id}>
+                <article
+                  className={`ask-message${m.role === "user" ? " is-user" : ""}`}
+                  key={m.id}
+                >
                   <strong>{m.role === "assistant" ? "FindEZ" : "You"}</strong>
                   {photoUrl && (
-                    <img src={privateImageSrc(photoUrl, accountId)} alt="Photo used for this question" />
+                    <img
+                      src={privateImageSrc(photoUrl, accountId)}
+                      alt="Photo used for this question"
+                    />
                   )}
                   {m.content ? (
-                    m.role === "assistant" ? <AskMarkdown key={`${m.id}-${m.revision ?? 0}`} animate={!!m.live && !m.failed}>{m.content}</AskMarkdown> : <div className="ask-body">{m.content}</div>
+                    m.role === "assistant" ? (
+                      <AskMarkdown
+                        key={`${m.id}-${m.revision ?? 0}`}
+                        animate={!!m.live && !m.failed}
+                      >
+                        {m.content}
+                      </AskMarkdown>
+                    ) : (
+                      <div className="ask-body">{m.content}</div>
+                    )
                   ) : (
-                    <p className="ask-pending" role={m.id === pendingMessageId ? "status" : undefined}>
-                      {m.id === pendingMessageId ? status : "The answer did not finish."}
+                    <p
+                      className="ask-pending"
+                      role={m.id === pendingMessageId ? "status" : undefined}
+                    >
+                      {m.id === pendingMessageId
+                        ? status
+                        : "The answer did not finish."}
                     </p>
                   )}
+                  {accountId &&
+                    worldId &&
+                    conversationId &&
+                    m.context?.capture &&
+                    messages.findLastIndex(
+                      (msg) =>
+                        msg.context?.capture?.id === m.context?.capture?.id,
+                    ) === messageIndex && (
+                      <ChatCaptureCard
+                        key={m.context.capture.id}
+                        capture={m.context.capture}
+                        accountId={accountId}
+                        worldId={worldId}
+                        conversationId={conversationId}
+                      />
+                    )}
                   {m.failed && (
                     <p className="workspace-muted">
                       This answer was interrupted. Check history before relying
                       on it.
                     </p>
                   )}
-                  {!m.failed && accountId && m.context?.pendingActions?.map((action) => <ChatItemActionCard
-                    key={`${action.id}-${action.status}`} action={action} accountId={accountId} worldId={worldId}
-                    onReply={(reply) => {
-                      if (owner.current !== accountId) return;
-                      setMessages((messages) => messages.some((message) => message.id === reply.id) ? messages : [...messages,
-                        { id: reply.id, role: "assistant", content: reply.content, created_at: new Date().toISOString(), live: true }]);
-                      void loadHistory().catch(() => setError("Your change is confirmed, but history could not refresh."));
-                    }} />)}
-                  {!m.failed && accountId && worldId && m.context?.worldActions?.map(action => <WorldActionCard key={action.id} action={action} accountId={accountId} worldId={worldId} />)}
-                  {!m.failed && accountId && worldId && <WorldResourceLinks links={m.context?.resourceLinks || []} accountId={accountId} worldId={worldId} />}
-                  {!m.failed && m.context && (!!m.context.sources.length || !!m.context.rows.length) && (
-                    <details className="ask-evidence">
-                      <summary>Sources</summary>
-                    <ul className="ask-sources" aria-label="Sources checked">
-                      {m.context.sources.map((s, i) => (
-                        <li key={i}>
-                          <strong>{s.label}</strong>
-                          {s.detail && (
-                            <span>
-                              {s.detail}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  {!!m.context.rows.length && (
-                    <div className="workspace-table-wrap">
-                      <table className="workspace-table">
-                        <thead>
-                          <tr>
-                            <th>Item</th>
-                            <th>{m.context.rows.some(r => r.requiredQuantity !== undefined) ? "Available" : "Recorded quantity"}</th>
-                            {m.context.rows.some(r => r.requiredQuantity !== undefined) && <th>Needed</th>}
-                            <th>Recorded location</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {m.context.rows.map((r, i) => (
-                            <tr key={`${r.id}-${i}`}>
-                              <td>{r.name}{r.matchBasis && <small className="workspace-muted" style={{ display: "block" }}>{r.matchBasis}</small>}</td>
-                              <td>{r.availableQuantity ?? "Unknown"}</td>
-                              {m.context?.rows.some(row => row.requiredQuantity !== undefined) && <td>{r.requiredQuantity ?? ""}</td>}
-                              <td>
-                                {!r.location || r.location.toLowerCase() === "unsorted" ? "Not set" : r.location}
-                                {r.status ? (
-                                  <span
-                                    className={`workspace-badge ${r.status}`}
-                                  >
-                                    {r.status}
-                                  </span>
-                                ) : null}
-                              </td>
-                            </tr>
+                  {!m.failed &&
+                    accountId &&
+                    m.context?.pendingActions?.map((action) => (
+                      <ChatItemActionCard
+                        key={`${action.id}-${action.status}`}
+                        action={action}
+                        accountId={accountId}
+                        worldId={worldId}
+                        onReply={(reply) => {
+                          if (owner.current !== accountId) return;
+                          setMessages((messages) =>
+                            messages.some((message) => message.id === reply.id)
+                              ? messages
+                              : [
+                                  ...messages,
+                                  {
+                                    id: reply.id,
+                                    role: "assistant",
+                                    content: reply.content,
+                                    created_at: new Date().toISOString(),
+                                    live: true,
+                                  },
+                                ],
+                          );
+                          void loadHistory().catch(() =>
+                            setError(
+                              "Your change is confirmed, but history could not refresh.",
+                            ),
+                          );
+                        }}
+                      />
+                    ))}
+                  {!m.failed &&
+                    accountId &&
+                    worldId &&
+                    m.context?.worldActions?.map((action) => (
+                      <WorldActionCard
+                        key={action.id}
+                        action={action}
+                        accountId={accountId}
+                        worldId={worldId}
+                      />
+                    ))}
+                  {!m.failed && accountId && worldId && (
+                    <WorldResourceLinks
+                      links={m.context?.resourceLinks || []}
+                      accountId={accountId}
+                      worldId={worldId}
+                    />
+                  )}
+                  {!m.failed &&
+                    m.context &&
+                    (!!m.context.sources.length || !!m.context.rows.length) && (
+                      <details className="ask-evidence">
+                        <summary>Sources</summary>
+                        <ul
+                          className="ask-sources"
+                          aria-label="Sources checked"
+                        >
+                          {m.context.sources.map((s, i) => (
+                            <li key={i}>
+                              <strong>{s.label}</strong>
+                              {s.detail && <span>{s.detail}</span>}
+                            </li>
                           ))}
-                        </tbody>
-                      </table>
-                      {m.context.rowsTruncated && (
-                        <p className="workspace-muted">
-                          Showing the first 100 checked records.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                    </details>
-                  )}
+                        </ul>
+                        {!!m.context.rows.length && (
+                          <div className="workspace-table-wrap">
+                            <table className="workspace-table">
+                              <thead>
+                                <tr>
+                                  <th>Item</th>
+                                  <th>
+                                    {m.context.rows.some(
+                                      (r) => r.requiredQuantity !== undefined,
+                                    )
+                                      ? "Available"
+                                      : "Recorded quantity"}
+                                  </th>
+                                  {m.context.rows.some(
+                                    (r) => r.requiredQuantity !== undefined,
+                                  ) && <th>Needed</th>}
+                                  <th>Recorded location</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {m.context.rows.map((r, i) => (
+                                  <tr key={`${r.id}-${i}`}>
+                                    <td>
+                                      {r.name}
+                                      {r.matchBasis && (
+                                        <small
+                                          className="workspace-muted"
+                                          style={{ display: "block" }}
+                                        >
+                                          {r.matchBasis}
+                                        </small>
+                                      )}
+                                    </td>
+                                    <td>{r.availableQuantity ?? "Unknown"}</td>
+                                    {m.context?.rows.some(
+                                      (row) =>
+                                        row.requiredQuantity !== undefined,
+                                    ) && <td>{r.requiredQuantity ?? ""}</td>}
+                                    <td>
+                                      {!r.location ||
+                                      r.location.toLowerCase() === "unsorted"
+                                        ? "Not set"
+                                        : r.location}
+                                      {r.status ? (
+                                        <span
+                                          className={`workspace-badge ${r.status}`}
+                                        >
+                                          {r.status}
+                                        </span>
+                                      ) : null}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {m.context.rowsTruncated && (
+                              <p className="workspace-muted">
+                                Showing the first 100 checked records.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </details>
+                    )}
                 </article>
               );
             })
@@ -500,7 +945,9 @@ function AssistClientWorkspace({
         {!messages.length && !opening && (
           <div className="ask-empty">
             <p className="workspace-muted">
-              {worldId ? "Find items, organize Spaces, and check stock across your organization." : "Find an item, check stock, or attach a photo."}
+              {worldId
+                ? "Find items, organize Spaces, and check stock across your organization."
+                : "Find an item, check stock, or attach a photo."}
             </p>
           </div>
         )}
@@ -511,14 +958,47 @@ function AssistClientWorkspace({
         )}
         <form className="ask-composer" onSubmit={(e) => void send(e)}>
           <div className="ask-composer-box">
+            {sourceBusy && <p role="status">Preparing your attachment...</p>}
+            {!!sources.length && (
+              <div className={sourceStyles.chips}>
+                {sources.map((source, i) => (
+                  <div className={sourceStyles.chip} key={i}>
+                    <span title={source.name}>
+                      {source.name}
+                      {source.kind === "file" && source.truncated
+                        ? " (excerpt)"
+                        : ""}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={unavailable}
+                      aria-label={`Remove ${source.name}`}
+                      onClick={() =>
+                        setSources((v) => v.filter((_, n) => n !== i))
+                      }
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {autoExtract && photo && (
+              <p className={sourceStyles.muted}>
+                Auto Extract: creates an item draft for your review.
+              </p>
+            )}
             {preview && (
               <div className="ask-photo-preview">
-                <img src={privateImageSrc(preview, accountId)} alt="Attached photo" />
+                <img
+                  src={privateImageSrc(preview, accountId)}
+                  alt="Attached photo"
+                />
                 <span className="workspace-muted">{photo?.name}</span>
                 <button
                   className="workspace-button"
                   type="button"
-                  disabled={sending}
+                  disabled={unavailable}
                   aria-label="Remove attached photo"
                   onClick={() => setPhoto(undefined)}
                 >
@@ -532,7 +1012,7 @@ function AssistClientWorkspace({
               placeholder="Ask about your inventory…"
               maxLength={4000}
               value={input}
-              disabled={sending}
+              disabled={unavailable}
               onChange={(e) => draft(e.target.value)}
             />
             <input
@@ -545,16 +1025,65 @@ function AssistClientWorkspace({
                 e.target.value = "";
               }}
             />
+            {worldId && (
+              <>
+                <input
+                  ref={cameraInput}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  onChange={(e) => {
+                    attach(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={extractInput}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    attach(e.target.files?.[0], true);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="image/*,.pdf,.txt,.md"
+                  hidden
+                  onChange={(e) => {
+                    void uploadSource(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={spreadsheetInput}
+                  type="file"
+                  accept=".csv,.xlsx"
+                  hidden
+                  onChange={(e) => {
+                    void uploadSource(e.target.files?.[0], "spreadsheet");
+                    e.target.value = "";
+                  }}
+                />
+              </>
+            )}
             <div className="workspace-actions">
-              <button
-                type="button"
-                className="workspace-button"
-                disabled={sending}
-                onClick={() => photoInput.current?.click()}
-              >
-                <ImagePlus size={16} />
-                Attach photo
-              </button>
+              {worldId ? (
+                <ChatPlusMenu disabled={unavailable} onSelect={chooseSource} />
+              ) : (
+                <button
+                  type="button"
+                  className="workspace-button"
+                  disabled={unavailable}
+                  onClick={() => photoInput.current?.click()}
+                >
+                  <ImagePlus size={16} />
+                  Attach photo
+                </button>
+              )}
               {sending ? (
                 <button
                   type="button"
@@ -566,7 +1095,9 @@ function AssistClientWorkspace({
               ) : (
                 <button
                   className="workspace-button primary"
-                  disabled={!accountId || opening || (!input.trim() && !photo)}
+                  disabled={
+                    !accountId || unavailable || (!input.trim() && !photo)
+                  }
                 >
                   <Send size={15} />
                   Ask

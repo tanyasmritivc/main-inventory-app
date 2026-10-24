@@ -1,3 +1,12 @@
+## October 24 — Direct account entry and shared chat sources
+
+Ordinary web authentication opens authorized organization/Personal chat directly.
+Remembered choices are actor-scoped and revalidated; Settings owns organization
+management. Reuse the deployed mobile source/capture APIs in the web plus menu.
+Only explicit Auto Extract invokes extraction. Ordinary attachments remain chat
+context; import/barcode drafts require reviewed, revision-bound saving. Keep
+unfinished connectors hidden. See `docs/direct-world-entry-chat-menu.md`.
+
 ## 2026-10-24 — Desktop chat belongs to the organization
 
 User supersedes inventory-scoped desktop chat/dashboard. Reuse the deployed

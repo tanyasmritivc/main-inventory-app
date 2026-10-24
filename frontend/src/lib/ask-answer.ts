@@ -1,5 +1,14 @@
-import { parseChatItemAction, type ChatItemAction } from "@/lib/chat-item-action-model";
-import {parseWorldAction,parseWorldResource,type WorldAction,type WorldResource} from "./world-chat";
+import { parseCapture, type ChatCapture } from "./chat-sources";
+import {
+  parseChatItemAction,
+  type ChatItemAction,
+} from "@/lib/chat-item-action-model";
+import {
+  parseWorldAction,
+  parseWorldResource,
+  type WorldAction,
+  type WorldResource,
+} from "./world-chat";
 export type AskSource = { kind: string; label: string; detail: string };
 export type AskRow = {
   id: string;
@@ -11,12 +20,14 @@ export type AskRow = {
   matchBasis?: string;
 };
 export type AskAnswerContext = {
+  capture?: ChatCapture;
   sources: AskSource[];
   rows: AskRow[];
   rowsTruncated: boolean;
   photoUrl?: string;
   pendingActions?: ChatItemAction[];
-  worldActions?:WorldAction[]; resourceLinks?:WorldResource[];
+  worldActions?: WorldAction[];
+  resourceLinks?: WorldResource[];
 };
 
 export function parseAskContext(value: unknown): AskAnswerContext | undefined {
@@ -55,7 +66,11 @@ export function parseAskContext(value: unknown): AskAnswerContext | undefined {
     const name = text(value.name),
       availableQuantity = count(value.available_quantity),
       requiredQuantity = count(value.required_quantity);
-    if (!name || (availableQuantity === undefined && value.available_quantity !== null)) continue;
+    if (
+      !name ||
+      (availableQuantity === undefined && value.available_quantity !== null)
+    )
+      continue;
     rows.push({
       id: text(value.id),
       name,
@@ -70,14 +85,32 @@ export function parseAskContext(value: unknown): AskAnswerContext | undefined {
             : availableQuantity === 0
               ? "missing"
               : "low",
-      matchBasis: ["barcode match", "brand and part-number match", "possible name match"].includes(value.match_basis)
-        ? value.match_basis : undefined,
+      matchBasis: [
+        "barcode match",
+        "brand and part-number match",
+        "possible name match",
+      ].includes(value.match_basis)
+        ? value.match_basis
+        : undefined,
     });
   }
   return {
-    worldActions: (Array.isArray(raw.world_actions)?raw.world_actions:[]).slice(0,8).map(parseWorldAction).filter((a):a is WorldAction=>!!a),
-    resourceLinks: (Array.isArray(raw.resource_links)?raw.resource_links:[]).slice(0,20).map(parseWorldResource).filter((a):a is WorldResource=>!!a),
-    pendingActions: (Array.isArray(raw.pending_actions) ? raw.pending_actions : []).slice(0, 8).map(parseChatItemAction).filter((action): action is ChatItemAction => !!action),
+    capture: parseCapture(raw.chat_capture),
+    worldActions: (Array.isArray(raw.world_actions) ? raw.world_actions : [])
+      .slice(0, 8)
+      .map(parseWorldAction)
+      .filter((a): a is WorldAction => !!a),
+    resourceLinks: (Array.isArray(raw.resource_links) ? raw.resource_links : [])
+      .slice(0, 20)
+      .map(parseWorldResource)
+      .filter((a): a is WorldResource => !!a),
+    pendingActions: (Array.isArray(raw.pending_actions)
+      ? raw.pending_actions
+      : []
+    )
+      .slice(0, 8)
+      .map(parseChatItemAction)
+      .filter((action): action is ChatItemAction => !!action),
     sources,
     rows,
     rowsTruncated: raw.rows_truncated === true,
@@ -108,8 +141,11 @@ export function trustedAskPhotoUrl(
       parts[1] === "v1" &&
       parts[2] === "object" &&
       ["public", "sign"].includes(parts[3]) &&
-      ((parts[5] === owner && /^(?:[a-f0-9]{32}-)?ask-[a-f0-9]{32}\.jpg$/.test(parts[6])) ||
-        (!!inventoryId && /^[a-f0-9-]{36}$/i.test(parts[5]) && parts[6].startsWith(`${inventoryId}-`) &&
+      ((parts[5] === owner &&
+        /^(?:[a-f0-9]{32}-)?ask-[a-f0-9]{32}\.jpg$/.test(parts[6])) ||
+        (!!inventoryId &&
+          /^[a-f0-9-]{36}$/i.test(parts[5]) &&
+          parts[6].startsWith(`${inventoryId}-`) &&
           /^[a-f0-9-]{36}-[a-f0-9]{32}-ask-[a-f0-9]{32}\.jpg$/.test(parts[6])))
       ? value
       : undefined;
