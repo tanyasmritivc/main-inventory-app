@@ -92,4 +92,16 @@ picker. Live camera scanning needs HTTPS and user camera permission.
 
 ## Release
 
-Pending checks, CI and self-hosted activation. No Vercel deployment requested.
+Runtime `18f3b06e612ae80512bbe60c41edb45dcab3b198`, PR193, is live.
+All five CI jobs passed in run `40135129405`. Server production build passed.
+Build ID: `CGFdjEkOiFJ8kmwO5iqVl`.
+Live directory: `/home/ubuntu/findez-web-releases/direct-entry-20261024/frontend`.
+Rollback directory: `/home/ubuntu/findez-web-releases/organization-world-20261024/frontend`.
+Receipt: `/home/ubuntu/findez-web-releases/direct-entry-20261024/deployment-receipt.json`.
+
+Candidate and public live checks verified 23 route statuses, protected world
+redirects and six brand assets. Settings uses the shared streaming layout: its
+signed-out HTTP 200 shell contains the Next.js sign-in redirect and no management
+content; the check verifies this instead of incorrectly expecting only HTTP 307.
+Preserved 361 unrelated source/public files and the backend service PID. Only the
+web service restarted. No Vercel deployment was requested or used.
