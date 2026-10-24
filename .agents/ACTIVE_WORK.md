@@ -1,3 +1,17 @@
+## October 24 — Direct landing prompt to authentication
+
+User superseded the public demo: Send now navigates immediately to signup with
+the bounded original prompt. A 160ms composer fade runs during navigation; no
+preview modal, example inventory, or artificial wait. Reduced motion skips the
+fade. Existing signup/signin/onboarding/Ask prompt retention stays intact.
+Live runtime `33543a7` / PR190, branch `fix/landing-direct-auth-20261024`.
+483 tests / 62 suites, TypeScript and production builds passed; ESLint 0 errors
+and 52 existing warnings. All five CI gates passed (40117394503). Self-hosted
+build `QbQGQXxQY5zOUd7kkZfdp` preserves 362 unrelated files and the backend PID.
+Twelve route statuses and six brand assets verified. Live browser Send opened
+signup directly with the original prompt; no account was created. Earlier
+prompt-preview delivery below is historical.
+
 ## October 24 - Public prompt preview delivered
 
 Web-only branch `feat/landing-prompt-preview-20261024`, based on delivered Blue

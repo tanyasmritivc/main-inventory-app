@@ -38,47 +38,30 @@ test("homepage preserves the requested copy, sections, metadata and destinations
   expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
 });
 
-test("composer opens an explorable demo before signup and preserves the request", async () => {
-  jest.useFakeTimers();
+test.each([false, true])("composer goes directly to auth with reduced motion %s", async reduced => {
+  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }) });
   render(await LandingPage());
-  fireEvent.change(screen.getByRole("textbox"), {target: {value: "Add 10 AA batteries and 2 cables"}});
+  const prompt = "Add 20 M3 screws & 2 cables";
+  fireEvent.change(screen.getByRole("textbox"), {target: {value: prompt}});
   fireEvent.submit(document.getElementById("cform")!);
-  act(() => jest.runOnlyPendingTimers());
-  expect(push).not.toHaveBeenCalled();
-  const dialog = within(screen.getByRole("dialog"));
-  expect(dialog.getByText("AA batteries")).toBeTruthy();
-  expect(dialog.getByText("Qty 10")).toBeTruthy();
-  fireEvent.change(dialog.getByRole("textbox", {name: "Filter preview items"}), {target: {value: "batter"}});
-  expect(dialog.queryByText("cables")).toBeNull();
-  fireEvent.click(dialog.getByRole("button", {name: /AA batteries/}));
-  expect(dialog.getByText(/Confirm the quantity when you save/)).toBeTruthy();
-  fireEvent.click(dialog.getByRole("button", {name: "Sign up to save"}));
-  fireEvent.click(dialog.getByRole("button", {name: "Open full app"}));
-  act(() => jest.runOnlyPendingTimers());
+  fireEvent.submit(document.getElementById("cform")!);
+  expect(screen.queryByRole("dialog")).toBeNull();
   expect(push).toHaveBeenCalledTimes(1);
-  expect(push).toHaveBeenCalledWith("/signup?prompt=Add%2010%20AA%20batteries%20and%202%20cables");
-  jest.useRealTimers();
+  expect(push).toHaveBeenCalledWith(`/signup?prompt=${encodeURIComponent(prompt)}`);
+  expect(screen.getByRole("button", {name: "Send"})).toHaveProperty("disabled", true);
+  expect(JSON.parse(sessionStorage.getItem("findez_public_preview_draft")!).prompt).toBe(prompt);
 });
 
-test("empty prompts stay in the composer; edit restores focus and cancel never navigates", async () => {
-  jest.useFakeTimers();
+test("empty prompts focus the composer; attachment controls still open signup", async () => {
   render(await LandingPage());
-  const input = screen.getByRole("textbox");
   fireEvent.submit(document.getElementById("cform")!);
-  expect(screen.queryByRole("dialog")).toBeNull();
-  fireEvent.change(input, {target: {value: "Organize my garage"}});
-  fireEvent.submit(document.getElementById("cform")!);
-  fireEvent.click(screen.getByRole("button", {name: "Edit prompt"}));
-  act(() => jest.runOnlyPendingTimers());
-  expect(screen.queryByRole("dialog")).toBeNull();
-  expect(input).toHaveProperty("value", "Organize my garage");
-  expect(document.activeElement).toBe(input);
+  expect(document.activeElement).toBe(screen.getByRole("textbox"));
   expect(push).not.toHaveBeenCalled();
+  expect(screen.queryByRole("dialog")).toBeNull();
   for (const name of ["Attach", "Take a photo", "Speak"]) {
     fireEvent.click(screen.getByRole("button", {name}));
     expect(push).toHaveBeenLastCalledWith("/signup");
   }
-  jest.useRealTimers();
 });
 
 test("simple public navigation follows session changes and unsubscribes", () => {
@@ -96,30 +79,17 @@ test("simple public navigation follows session changes and unsubscribes", () => 
 });
 
 
-test("animated preview stages cancel safely and IME Enter does not submit", async () => {
-  jest.useFakeTimers();
-  Object.defineProperty(window, "matchMedia", { writable: true, value: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) });
-  const cancel = jest.fn();
-  const animate = jest.fn(() => ({ cancel }));
-  Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, value: animate });
-  const { unmount } = render(await LandingPage());
+test("Enter submits directly while Shift Enter and IME composition do not", async () => {
+  render(await LandingPage());
   const input = screen.getByRole("textbox");
   fireEvent.change(input, { target: { value: "Add 10 screws" } });
   fireEvent.keyDown(input, { key: "Enter", isComposing: true });
-  expect(screen.queryByRole("dialog")).toBeNull();
-  fireEvent.submit(document.getElementById("cform")!);
-  expect(screen.getByText("Your words, taking shape.")).toBeTruthy();
-  expect(animate).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ duration: 650 }));
-  fireEvent.click(screen.getByRole("button", { name: "Close preview" }));
-  act(() => jest.advanceTimersByTime(2000));
-  expect(screen.queryByRole("dialog")).toBeNull();
-  expect(cancel).toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
   expect(push).not.toHaveBeenCalled();
-  unmount();
-  delete (HTMLElement.prototype as unknown as { animate?: unknown }).animate;
-  jest.useRealTimers();
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(push).toHaveBeenCalledWith("/signup?prompt=Add%2010%20screws");
+  expect(screen.queryByRole("dialog")).toBeNull();
 });
-
 
 test("Back can recover the recent prompt without restoring expired or corrupt drafts", async () => {
   sessionStorage.setItem("findez_public_preview_draft", JSON.stringify({ at: Date.now(), prompt: "Add 4 cables" }));
