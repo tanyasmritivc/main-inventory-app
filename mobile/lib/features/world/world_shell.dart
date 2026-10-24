@@ -4,6 +4,8 @@ import '../notifications/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../../core/ui/liquid_surface.dart';
+import '../../core/ui/native_menu_button.dart';
+import '../../core/ui/native_presentation.dart';
 import 'world_style.dart';
 import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
@@ -581,11 +583,18 @@ class _WorldShellState extends State<WorldShell> {
         if (index == 0)
           Padding(
             padding: const EdgeInsets.only(right: 10),
-            child: LiquidIconButton(
-              tooltip: 'Chat history',
-              onPressed: _history,
-              icon: CupertinoIcons.clock,
-            ),
+            child: usesNativePresentation
+                ? NativeToolbarButton(
+                    symbol: 'clock',
+                    label: 'Chat history',
+                    glass: false,
+                    onPressed: _history,
+                  )
+                : IconButton(
+                    tooltip: 'Chat history',
+                    onPressed: _history,
+                    icon: const Icon(CupertinoIcons.clock, size: 20),
+                  ),
           ),
         if (index == 1)
           IconButton(

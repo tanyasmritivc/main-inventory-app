@@ -19,7 +19,24 @@ Future<void> main() async {
     if (request.path.endsWith('/notifications')) {
       return {'notifications': [], 'unread_count': 0};
     }
-    if (request.path.endsWith('/conversations')) return [];
+    if (request.path.endsWith('/conversations')) {
+      return [
+        for (final (id, title) in [
+          ('chat-a', 'Create a sample inventory for my workshop'),
+          ('chat-b', 'Where did I put the drill?'),
+          (
+            'chat-c',
+            'Extract the items from this spreadsheet and help me choose where to save them.',
+          ),
+        ])
+          {
+            'id': id,
+            'title': title,
+            'created_at': '2026-10-23T18:00:00Z',
+            'updated_at': '2026-10-23T18:00:00Z',
+          },
+      ];
+    }
     if (request.path.endsWith('/directory')) {
       return {
         'has_items': true,
@@ -61,6 +78,14 @@ Future<void> main() async {
           theme: AppTheme.create(Brightness.light),
           darkTheme: AppTheme.create(Brightness.dark),
           themeMode: appearance.themeMode,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: appearance.textScaler(
+                MediaQuery.textScalerOf(context),
+              ),
+            ),
+            child: child!,
+          ),
           home: WorldShell(session: session),
         ),
       ),

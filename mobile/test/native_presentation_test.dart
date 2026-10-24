@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/chat/chat_history_sheet.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/appearance_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoryApi extends ApiClient {
   HistoryApi() : super(baseUrl: 'https://test.invalid');
@@ -164,6 +166,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(presented['load'], isTrue);
+      expect(presented['textSizeFactor'], AppTextSize.standard.factor);
       var model = await action('load') as Map;
       List rows(Map m) =>
           ((m['sections'] as List).first as Map)['rows'] as List;
@@ -193,4 +196,47 @@ void main() {
       expect(await pending, ChatHistorySheet.newChat);
     },
   );
+  for (final size in AppTextSize.values) {
+    testWidgets('native history follows ${size.name} after load and retry', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        AppearanceController.textSizeKey: size.name,
+      });
+      final appearance = AppearanceController();
+      await appearance.load();
+      late BuildContext context;
+      await tester.pumpWidget(
+        AppearanceScope(
+          controller: appearance,
+          child: MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(textScaler: TextScaler.linear(2)),
+              child: Builder(
+                builder: (c) {
+                  context = c;
+                  return const Scaffold();
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      final api = HistoryApi();
+      final pending = showChatHistory(context, api: api);
+      await tester.pumpAndSettle();
+      // Do not multiply the OS scale into the native preference a second time.
+      expect(presented['textSizeFactor'], size.factor);
+      expect((await action('load') as Map)['textSizeFactor'], size.factor);
+      api.fail = true;
+      final failed = await action('delete:a') as Map;
+      expect(failed['error'], isNotNull);
+      expect(failed['textSizeFactor'], size.factor);
+      completion.complete(null);
+      await tester.pumpAndSettle();
+      await pending;
+      await tester.pumpWidget(const SizedBox());
+      appearance.dispose();
+    });
+  }
 }

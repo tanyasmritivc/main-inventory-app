@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/appearance_controller.dart';
 import '../../core/ui/liquid_surface.dart';
 
 Future<String?> showChatHistory(
@@ -29,8 +30,11 @@ Future<String?> showChatHistory(
     );
   }
   List<ConversationSummary> rows = [];
+  final appearance = AppearanceScope.maybeOf(context);
   Map<String, dynamic> model({bool loading = false, String? error}) => {
     'title': 'Chats',
+    // UIKit applies system Dynamic Type; send only the app's size preference.
+    'textSizeFactor': (appearance?.textSize ?? AppTextSize.standard).factor,
     'search': true,
     'searchPlaceholder': 'Search chats',
     'large': true,

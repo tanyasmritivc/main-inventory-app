@@ -1,3 +1,10 @@
+## October 24 - Quiet composer and history typography (in progress)
+
+Branch `fix/mobile-quiet-composer-history-20261024`, based on beta119/PR184.
+Mobile-only: plain history clock; flatter translucent composer with plain mic;
+native history respects app text-size preference and OS Dynamic Type. Build120
+reserved. Full tests and native light/dark/size visual audit pending; no upload yet.
+
 ## October 24 - Rounded app icons and tab fades delivered as beta 119
 
 Apple acknowledged 1.1.1 (119), delivery `6a2505b0-3175-4743-abe6-56bb4d30f3ed`.
