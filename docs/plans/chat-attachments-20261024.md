@@ -19,8 +19,12 @@ Typing retains the photo; send uses the same photo/request. Regular uploads stay
 ordinary chat attachments, and Auto Extract remains explicit.
 
 Checks:67 focused tests and847 full host tests passed (1 optional skip), Flutter
-analysis clean. Native Attach menu integration/manual visual QA and signed build122
-receipts will follow. Physical iPhone acceptance remains separate.
+analysis clean. Two native integration checks passed in light/dark mode. Manual
+iOS26.5 simulator QA verified custom root/context menus, native Attach choices,
+Photo Library selection and a thumbnail retained alongside a typed prompt. Native
+Attach owns its touch gestures; the Flutter row cannot dismiss the source menu
+underneath it. Signed build122 receipts will follow. Physical iPhone acceptance
+remains separate.
 
 Manual acceptance:
 1. Switch Ask/Spaces/More. Content enters quickly; nav motion stays as before.

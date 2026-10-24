@@ -207,16 +207,17 @@ class _SourceMenuState extends State<_SourceMenu> {
                                             size: 14,
                                           )
                                         : null,
-                                    onTap: () {
-                                      if (choice.$1 == 'attach' &&
-                                          widget.nativeAttach) {
-                                        Navigator.pop(context, 'attach');
-                                      } else if (choice.$4) {
-                                        navigate(choice.$1);
-                                      } else {
-                                        Navigator.pop(context, choice.$1);
-                                      }
-                                    },
+                                    onTap:
+                                        choice.$1 == 'attach' &&
+                                            widget.nativeAttach
+                                        ? null
+                                        : () {
+                                            if (choice.$4) {
+                                              navigate(choice.$1);
+                                            } else {
+                                              Navigator.pop(context, choice.$1);
+                                            }
+                                          },
                                   ),
                                 ),
                                 if (choice.$1 == 'attach' &&

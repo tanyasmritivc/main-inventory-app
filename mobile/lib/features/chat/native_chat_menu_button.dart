@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -54,6 +55,10 @@ class NativeChatMenuButtonState extends State<NativeChatMenuButton> {
     height: 48,
     child: UiKitView(
       viewType: 'com.findez.app/chat-menu',
+      // The enclosing Flutter list must not consume the native menu tap.
+      gestureRecognizers: {
+        Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+      },
       creationParamsCodec: const StandardMessageCodec(),
       creationParams: {
         'enabled': widget.enabled,

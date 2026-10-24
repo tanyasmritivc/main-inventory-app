@@ -8,7 +8,10 @@ its Attach row hosts the native iOS Photo Library/Take Photo/Choose Files menu.
 All three composer layouts reuse a real byte-backed64px photo preview, with
 replace/remove controls and unchanged explicit Send/Auto Extract behavior.
 Full Flutter suite847 passed (1 optional skip),67 focused tests and clean analysis.
-Native simulator/release checks pending. No backend/web/schema changes.
+Two native integration checks passed in light/dark mode. Manual iOS26.5 simulator
+verified the custom root/context menus, native Attach choices, Photo Library
+selection and thumbnail retained alongside a typed prompt. Final build122 release
+checks pending. No backend/web/schema changes.
 
 ## October 24 — Smart search delivered (beta121; PR187)
 
