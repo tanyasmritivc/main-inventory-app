@@ -134,7 +134,7 @@ export function ChatCaptureCard({
             ? "Inventory import"
             : draft.source_kind === "barcode"
               ? "Barcode result"
-              : "Auto Extract"}
+              : draft.source_kind === "text" ? "Inventory draft" : "Auto Extract"}
         </h3>
         <p className={styles.muted}>
           {draft.items.length} candidates. Review identities and quantities
