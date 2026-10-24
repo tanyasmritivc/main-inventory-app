@@ -1,3 +1,14 @@
+## October 24 — Shiny chat activity and draft labels (candidate beta124)
+
+Mobile-only feat/chat-progress-mobile-20261024 adds native Flutter soft status
+shine and a compact down-chevron with actual received activity. Dynamic text,
+light/dark and Reduce Motion supported; animations dispose and stop offscreen.
+Fallback status no longer masquerades as assistant reply text. Text drafts are
+labeled Inventory draft. Navigation bar and its movement are unchanged.
+849 Flutter tests pass (one optional skip), analysis clean. Signed1.1.1(124) built
+with production configuration. CI, archive checks and Apple upload pending.
+Backend batching/draft-first behavior and web are separate release lanes.
+
 ## October 24 - Authoritative brand icons delivered (beta 123; PR 189)
 
 User-selected findez-logo-svg.zip and seven standalone SVGs are canonical, with

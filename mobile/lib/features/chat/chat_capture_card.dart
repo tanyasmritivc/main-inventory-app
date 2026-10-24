@@ -494,7 +494,13 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      saved ? 'Extraction saved' : 'Auto Extract',
+                      saved
+                          ? (_draft['source_kind'] == 'text'
+                                ? 'Items saved'
+                                : 'Extraction saved')
+                          : _draft['source_kind'] == 'text'
+                          ? 'Inventory draft'
+                          : 'Auto Extract',
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
