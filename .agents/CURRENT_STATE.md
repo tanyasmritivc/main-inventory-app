@@ -1,3 +1,21 @@
+## October 24 - Organization chat and direct Space items live
+
+Web-only PR192, branch `feat/organization-workspace-chat-20261024`, runtime
+`7077b2f`, is live on self-hosted web. Organization selection opens New chat,
+Spaces, Search and Tools using the deployed mobile `/worlds` API. Space links open
+editable items directly; legacy dashboard/chat links redirect after authorization.
+Management tools and earlier private inventory chats remain available. History and
+drafts stay actor/world-scoped; organization scope does not expand access.
+
+All five CI gates passed (40123190890); final web CI: 532 tests / 71 suites.
+TypeScript, local and production-configured server builds passed. Lint has no new
+errors; preserved existing agent approval route has its original hooks warning.
+Build `cKvXUqYCWc3CAo3M7VXGS`: 21 route statuses, world auth redirects, six brand
+assets and 349 unrelated files verified. Backend PID unchanged; no mobile/schema
+changes. Fictional desktop/light/dark/narrow-layout and item-edit visual checks
+passed. Signed-in production AI/write round-trip remains unverified. See
+`docs/organization-world-chat-web.md` for details and manual checks.
+
 ## October 24 — Desktop organization navigation
 
 Web-only `feat/desktop-organization-shell-20261024`, based on `1699f86`.

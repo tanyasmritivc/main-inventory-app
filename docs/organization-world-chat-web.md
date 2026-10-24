@@ -78,6 +78,18 @@ to `protected-routes`; it is preserved alongside the new `/worlds` prefix. Focus
 auth/approval tests: 18 passed; TypeScript passed. The unchanged approval client
 has one existing hooks warning in addition to this branch's 52 baseline warnings.
 
-Self-hosted web candidate and CI checks pending. Production authenticated chat
-and write verification still requires the user's signed-in session; local fixtures
-and existing API tests are not a live model/database round-trip.
+Runtime `7077b2fe0e72b29dca67de52efbca29e6245a674` is deployed on the self-hosted
+web service from `/home/ubuntu/findez-web-releases/organization-world-20261024/frontend`.
+Build ID: `cKvXUqYCWc3CAo3M7VXGS`. All five CI gates passed in run `40123190890`;
+the final CI web suite passed 532 tests in 71 suites. Production-configured server
+build, candidate checks and live checks passed. Verified 21 existing route statuses,
+new world authentication redirects and six branding assets; 349 unrelated source
+and asset files were preserved. Backend PID remained unchanged; no database or
+mobile deployment. PR: https://github.com/tanyasmritivc/main-inventory-app/pull/192.
+
+The server release directory contains `deployment-receipt.json`, `manifest.json`,
+`checks.json` and the previous systemd drop-in for rollback. Previous web release:
+`/home/ubuntu/findez-web-releases/desktop-shell-20261024/frontend`.
+
+Production authenticated chat and write verification remains unperformed; local
+fixtures and existing API tests are not a live model/database round-trip.

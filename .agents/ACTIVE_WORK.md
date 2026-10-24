@@ -6,7 +6,11 @@ private world history, durable request IDs, reviewed creation and authorized
 resource links. Spaces directory spans accessible inventories; item views retain
 existing editing. Organization tools replace per-inventory dashboards. Older
 inventory conversations remain available in Tools. No backend, database or mobile
-changes. Validation and self-hosted rollout in progress.
+changes. Released as runtime `7077b2f` / PR192, self-hosted build
+`cKvXUqYCWc3CAo3M7VXGS`. All five CI jobs passed (40123190890), including
+532 web tests. Live route/assets and preservation checks passed. Signed-in
+production AI/write acceptance remains unverified; see
+`docs/organization-world-chat-web.md`.
 
 ## October 24 — Desktop organization navigation
 
