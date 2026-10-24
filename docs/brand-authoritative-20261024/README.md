@@ -1,3 +1,6 @@
+> Historical selection: superseded by the user’s later October 24 request.
+> Current artwork and receipts: [brand-echo-current-20261024](../brand-echo-current-20261024/README.md).
+
 # Authoritative FindEZ artwork - October 24, 2026
 
 The user explicitly reselected findez-logo-svg.zip and the seven individually
