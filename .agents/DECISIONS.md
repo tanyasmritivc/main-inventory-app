@@ -1,3 +1,11 @@
+## October 24 - Authoritative brand source supersedes later icon variants
+
+Use docs/brand-authoritative-20261024/source and its source-manifest.json as the
+current artwork authority. The user explicitly reselected the original seven
+SVGs/findez-logo-svg.zip over later echo/round icon variants. Web and in-app
+wordmarks already match; regenerate launcher sizes without changing geometry,
+adding strokes, recoloring the orange/blue or changing the UI/nav motion.
+
 ## October 24 - Whole-page tab fades and native glass timing
 
 Headers and tab-specific actions belong inside each retained page's fade so a

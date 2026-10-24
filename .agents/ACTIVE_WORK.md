@@ -1,3 +1,25 @@
+## October 24 - Authoritative brand icons delivered (beta 123; PR 189)
+
+User-selected findez-logo-svg.zip and seven standalone SVGs are canonical, with
+originals/checksums in docs/brand-authoritative-20261024. The later round/echo
+launcher variants are superseded. Mobile iOS/Android and bundled/legacy launcher
+copies are corrected; all 46 generated exports match the source pixels, size and
+opacity. The launcher extracted from the signed IPA also matches exactly.
+Mobile in-app logos/theme and all 15 live web branding/browser/touch/social/legacy
+assets already match this set; no web redeployment was needed. All mobile Dart,
+native UI/nav, page fades and behavior source remain unchanged from build 122.
+
+Apple acknowledged 1.1.1 (123), delivery `cc77bb73-b867-44c6-b7d7-8add63508fd8`.
+Runtime 1ddc102 / PR 189 passed all five CI jobs (40075508703), 847 Flutter tests
+(one optional skip) and clean analysis. Archive/export each passed 32 iOS device
+executable checks, strict signing, 24 privacy manifests and production HTTPS
+configuration. Apple validation passed. IPA SHA256:
+`29773e4d7b367af0c3b28f7d8a111cb76542f49f59cdf6b77aa6a36a441389ed`.
+
+Artifacts: Documents/FindEZ/AppStore/1.1.1-build123. Processing/tester availability
+was not polled; physical home-screen acceptance remains unverified. No public
+App Store submission, backend/schema change or web behavior change.
+
 ## October 24 — Attach menus and quick page entry delivered (beta 122; PR 188)
 
 Apple acknowledged 1.1.1 (122), delivery `be073265-056e-4e33-b8f3-c8b9e4e453a9`.
