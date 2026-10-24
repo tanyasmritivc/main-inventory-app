@@ -1,3 +1,5 @@
+import 'package:mobile/core/ui/glass_control.dart';
+import '../../core/app_theme.dart';
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
@@ -6,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 enum _ImportState { ready, uploading, success }
 
@@ -175,11 +178,11 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     return PopScope(
       canPop: _state != _ImportState.uploading,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.adaptive(context, Colors.black),
         appBar: AppBar(
-          title: const Text('Import Spreadsheet'),
+          title: const AppText('Import spreadsheet'),
           centerTitle: true,
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.adaptive(context, Colors.black),
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: _state != _ImportState.uploading,
         ),
@@ -230,107 +233,56 @@ class _ReadyView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
       children: [
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: const Color(0xFF171717),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x1FFFFFFF)),
+        AppText(
+          'Save to',
+          style: TextStyle(
+            color: AppTheme.textSecondary(context),
+            fontSize: 13,
           ),
-          child: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0x1AFFFFFF),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.table_chart_outlined,
-                  color: Colors.white,
-                  size: 30,
-                ),
+        ),
+        const SizedBox(height: 8),
+        AppText(
+          location,
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 28),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: onChooseFile,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Import a spreadsheet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Items will be organized and added to “$location”.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: onChooseFile,
-                  icon: const Icon(Icons.folder_open_outlined, size: 20),
-                  label: const Text('Choose Spreadsheet'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: const StadiumBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Excel (.xlsx) or CSV · Maximum 10 MB',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12),
-              ),
-            ],
+            ),
+            child: const AppText('Choose file'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppText(
+          'Excel (.xlsx) or CSV, up to 10 MB',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textSecondary(context),
+            fontSize: 13,
           ),
         ),
         if (errorMessage != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0x1AFF453A),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x4DFF453A)),
-            ),
-            child: Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFFF6961), fontSize: 13),
+          const SizedBox(height: 20),
+          AppText(
+            errorMessage!,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontSize: 14,
             ),
           ),
         ],
-        const SizedBox(height: 24),
-        const _InfoRow(
-          icon: Icons.cloud_upload_outlined,
-          title: 'Processed securely',
-          subtitle:
-              'The file is sent to FindEZ for processing, not parsed on your phone.',
-        ),
-        const _InfoRow(
-          icon: Icons.auto_awesome_outlined,
-          title: 'Columns mapped automatically',
-          subtitle:
-              'Names, quantities, categories, brands, and part numbers are detected.',
-        ),
-        const _InfoRow(
-          icon: Icons.inventory_2_outlined,
-          title: 'Added in one import',
-          subtitle:
-              'Valid rows are saved together and your inventory refreshes afterward.',
-        ),
       ],
     );
   }
@@ -354,38 +306,41 @@ class _UploadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 34,
               height: 34,
               child: CircularProgressIndicator(
-                color: Colors.white,
+                color: AppTheme.adaptive(context, Colors.white),
                 strokeWidth: 2.5,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            AppText(
               'Importing your inventory…',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               '$filename\nAdding items to “$location”',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0x73FFFFFF),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                 fontSize: 13,
                 height: 1.45,
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
+            AppText(
               'Keep FindEZ open while the file is processed.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -419,37 +374,43 @@ class _SuccessView extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0x1A30D158),
+              decoration: BoxDecoration(
+                color: AppTheme.adaptive(context, Color(0x1A30D158)),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_rounded,
-                color: Color(0xFF30D158),
+                color: AppTheme.foreground(context, Color(0xFF30D158)),
                 size: 38,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            AppText(
               'Import complete',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(context, Colors.white),
                 fontSize: 23,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+              style: TextStyle(
+                color: AppTheme.foreground(context, Color(0x99FFFFFF)),
+                fontSize: 15,
+              ),
             ),
             if (result.failures > 0) ...[
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFFFF9F0A), fontSize: 13),
+                style: TextStyle(
+                  color: AppTheme.foreground(context, Color(0xFFFF9F0A)),
+                  fontSize: 13,
+                ),
               ),
             ],
             const SizedBox(height: 28),
@@ -458,79 +419,21 @@ class _SuccessView extends StatelessWidget {
               height: 50,
               child: FilledButton(
                 onPressed: onViewItems,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: const StadiumBorder(),
+                style: GlassControl.buttonStyle(
+                  context,
+                  radius: 99,
+                  base: FilledButton.styleFrom(shape: const StadiumBorder()),
                 ),
-                child: const Text('View Items'),
+                child: const AppText('View Items'),
               ),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: onImportAnother,
-              child: const Text('Import Another'),
+              child: const AppText('Import Another'),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0x0FFFFFFF),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, color: const Color(0xB3FFFFFF), size: 20),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Color(0x73FFFFFF),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -39,11 +39,16 @@
 }
 
 :root {
-  --ink: #000000;
+  --ink: #111112;
+  --blue-echo: #a9d6f5;
+  --blue-tint: #eef6fd;
+  --orange-tint: #ffe8da;
+  --orange-ink: #c2410c;
+  --night: #0b0b0d;
   --canvas: #ffffff;
   --surface-earth: #ffffff;
   --surface-raised: #f5f5f5;
-  --bone: #000000;
+  --bone: #111112;
   --stone: #575757;
   --smoke: #929292;
   --forest: #000000;
@@ -72,9 +77,9 @@
   --brand-accent: var(--clay);
   --brand-accent-dim: rgba(232,89,12,.10);
   --brand-accent-border: rgba(232,89,12,.34);
-  --brand-accent-strong: #c7490a;
+  --brand-accent-strong: #c2410c;
   --ob-accent: var(--clay);
-  --ob-accent-hover: #c7490a;
+  --ob-accent-hover: #c2410c;
   --ob-accent-soft: rgba(232,89,12,.10);
   --ob-accent-ring: rgba(232,89,12,.28);
   --radius-card: 4px;
@@ -82,8 +87,11 @@
   --radius-input: 3px;
   --sidebar-width: 200px;
   --topbar-height: 48px;
-  --font-main: 'Helvetica Neue', 'HelveticaNeue', Helvetica, var(--font-inter), Arial, sans-serif;
-  --font-mono: 'SF Mono', ui-monospace, 'Cascadia Code', monospace;
+  --font-main: var(--font-jakarta), Arial, sans-serif;
+  --font-inter: var(--font-jakarta);
+  --font-syne: var(--font-jakarta);
+  --font-dm-sans: var(--font-jakarta);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --surface: var(--surface-earth);
   --surface-hover: #f5f5f5;
   --surface-active: #eaeaea;
@@ -354,7 +362,7 @@ kbd { padding: 2px 6px; border: 1px solid rgba(255,255,255,.1); border-radius: 5
 
 /* ── Reset ────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-* { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+* { font-family: var(--font-main); }
 
 html { font-size: 14px; scroll-behavior: smooth; }
 
@@ -1560,3 +1568,18 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
   .label-toolbar { align-items: stretch; flex-direction: column; padding-bottom: 10px; }.label-toolbar .product-input { max-width: none; }
   .team-title-row { max-width: calc(100% - 90px); }.app-frame .team-title-select { min-width: 0; max-width: 100%; }
 }
+
+/* Only newly received answer text fades; earlier text remains steady. */
+@keyframes ask-chunk-in { from { opacity: 0; } to { opacity: 1; } }
+.ask-chunk { animation: ask-chunk-in 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .ask-chunk { animation: none !important; } }
+
+.ask-action-card { margin: 18px 0; padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); }
+.ask-action-card ul { list-style: none; margin: 12px 0; padding: 0; max-height: 320px; overflow-y: auto; }
+.ask-action-card li { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.ask-action-card li span, .ask-action-card li small { display: block; }
+.ask-action-card li small { opacity: .7; margin-top: 4px; }
+.ask-action-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+
+.member-identity-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; vertical-align: middle; }
+.member-identity-label > span:last-child { overflow-wrap: anywhere; }

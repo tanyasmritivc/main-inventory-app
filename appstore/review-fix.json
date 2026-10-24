@@ -1,0 +1,159 @@
+{
+  "app": "FindEZ AI",
+  "captured_version": "1.0.7",
+  "captured_build": "58",
+  "capture_method": "native simctl screenshot; no image editing or UI reconstruction",
+  "devices": {
+    "iphone": "iPhone 17 Pro Max, iOS 26.2, Dark",
+    "ipad": "iPad Pro 13-inch (M5), iOS 26.2, Light"
+  },
+  "data": "dedicated review account; existing sample inventory",
+  "inventory_writes": false,
+  "ask_checks": "Two typed questions returned Servo extension cable in Sample Workshop with quantity 2",
+  "uploaded": false,
+  "screenshots": [
+    {
+      "device": "ipad",
+      "file": "ipad/01-home.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "53b595a441dc36ec6cc7cce9bf5f0b2b19e9ad701c581b53fcdc7051875edf06",
+      "md5": "cba6eada2b0b6bc4cdbcb5b62033b218",
+      "visually_verified": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/02-capture.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "8b0ef1394bccda457a295fa699abfb785b00f2726eccc46d0ed800e30e1154bf",
+      "md5": "e7564dac60c56e636b70bae8a33ea4bd",
+      "visually_verified": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/03-spaces.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "25057a2ee8679ee2ee8cc904892eeb72d87497dd612ee871a0a0838260aec7e4",
+      "md5": "d4233b5a274b473ace1897633c4e9f8a",
+      "visually_verified": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/04-inventory.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "9cce5b24c7c8e7286fc666e300300603d45452dfd4132b24e1f220204f9a524a",
+      "md5": "508bb7e1879d9b405ba995eba3b2ca47",
+      "visually_verified": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/05-item-details.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "9a4b41233d9ae26a825edbda9385047da295ebc40a1284b0d083f73d24fea069",
+      "md5": "1b3910cee05e2a6d3bc4c3f327da7e5c",
+      "visually_verified": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/06-ask.png",
+      "width": 2064,
+      "height": 2752,
+      "sha256": "be7edaa8c4828b61a9592f8b16dbe96dd42aeaf93fbf40cfa3efbc2950444e75",
+      "md5": "cbed87ce374aa7eb747f4fe9097bf398",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/01-home.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "14f2aaa4b57fcb82af6c59c3838476e4bf019f5ca787960827ec1144af5fc6cf",
+      "md5": "ac2a9264a4cb1cd2bc2412ed8e277b99",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/02-capture.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "9e9ba6e727316191615a6b5a840ce0b56a3d7baadf2269405545ea26ff6408a4",
+      "md5": "540093180e667e819e9efee12673f699",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/03-spaces.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "c8d1d03e15b268528939b11f7d2ea5aadd9e036c1a5e6a63192fd40b72bc3713",
+      "md5": "0117493b1b5c585f4dc46acdddb2eddb",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/04-inventory.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "b60f2322643eb9365cd8b4ff6901d5b485a3b098803ce8680bd47ad5e00dd8c5",
+      "md5": "683a727e96cab2c5d9282803f0202fea",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/05-item-details.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "96db3523044386b13951dacfa968f3e605bdcd0e26d448080b29398b7a379fe1",
+      "md5": "38e0f691beef3b2e5a24f06d72117b24",
+      "visually_verified": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/06-ask.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "a504dbb210d7d7421c2b52b128a53778b3cd38b5be6cd322987c65275d292f72",
+      "md5": "461f08acba4f7c4ebe0209f167bc90cd",
+      "visually_verified": true
+    }
+  ],
+  "media_manager_read_checks": {
+    "iphone_primary": "Dynamic Island large display: six direct original assets",
+    "ipad_primary": "13-inch display: six direct original assets",
+    "other_phone_and_ipad_sizes": "inherit primary assets; zero separate uploads"
+  },
+  "candidate": {
+    "version": "1.0.7",
+    "build": "59",
+    "runtime_commit": "68fbe55",
+    "native_simulator_build": true,
+    "native_privacy_effective_date_verified": true,
+    "compiled_policy_disclosures_verified": true,
+    "obsolete_openai_processor_text_absent": true,
+    "signed_archive": "complete",
+    "uploaded": false,
+    "exported_signature_valid": true,
+    "app_store_profile": true,
+    "production_configuration_verified": true,
+    "ipa": "/Users/tanyasmritivictorcharles/Documents/FindEZ/AppStore/1.0.7-review-fix/FindEZ-1.0.7-59.ipa",
+    "ipa_sha256": "f955090596197783cf3818b396c5ee040928f4f9f002630611cea08123e78296",
+    "apple_server_validation": false
+  },
+  "ci": {
+    "run": 37866116183,
+    "jobs": 5,
+    "state": "success",
+    "commit": "68fbe55"
+  },
+  "app_store_actions": {
+    "reply_sent": false,
+    "screenshots_uploaded": false,
+    "binary_uploaded": false,
+    "resubmitted": false,
+    "release_type": "MANUAL"
+  }
+}
