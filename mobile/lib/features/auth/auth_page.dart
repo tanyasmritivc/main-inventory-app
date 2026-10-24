@@ -727,7 +727,7 @@ class _AuthPageState extends State<AuthPage> {
     style: AppTypography.bodyStyleOf(
       context,
       const TextStyle(
-        fontFamily: 'PlaceGeist',
+        fontFamily: 'PlusJakartaSans',
         fontSize: 16,
         color: Color(0xFF302D38),
       ),
@@ -769,7 +769,7 @@ class _AuthPageState extends State<AuthPage> {
       side: BorderSide(color: const Color(0xFF302D38), width: 1.8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: const TextStyle(
-        fontFamily: 'PlaceGeist',
+        fontFamily: 'PlusJakartaSans',
         fontSize: 18,
         fontWeight: FontWeight.w500,
       ),
@@ -807,7 +807,7 @@ class _AuthPageState extends State<AuthPage> {
           _headline,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontFamily: 'PlaceGeist',
+            fontFamily: 'PlusJakartaSans',
             fontSize: 30,
             fontWeight: FontWeight.w600,
             letterSpacing: -.75,
@@ -821,7 +821,7 @@ class _AuthPageState extends State<AuthPage> {
         _subtitle,
         textAlign: TextAlign.center,
         style: const TextStyle(
-          fontFamily: 'PlaceGeist',
+          fontFamily: 'PlusJakartaSans',
           fontSize: 15,
           height: 1.45,
           color: Color(0xFF6B6965),
@@ -852,7 +852,7 @@ class _AuthPageState extends State<AuthPage> {
         'By continuing, you acknowledge that you have read and agreed to our',
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontFamily: 'PlaceGeist',
+          fontFamily: 'PlusJakartaSans',
           fontSize: 12.5,
           height: 1.45,
           color: Color(0xFF6B6965),
@@ -909,7 +909,7 @@ class _AuthPageState extends State<AuthPage> {
                   'or use email',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'PlaceGeist',
+                    fontFamily: 'PlusJakartaSans',
                     fontSize: 13,
                     color: Color(0xFF6B6965),
                   ),
@@ -1110,12 +1110,12 @@ class _AuthPageState extends State<AuthPage> {
         brightness: Brightness.light,
       ),
       textTheme: Theme.of(context).textTheme.apply(
-        fontFamily: 'PlaceGeist',
+        fontFamily: 'PlusJakartaSans',
         bodyColor: const Color(0xFF302D38),
       ),
       inputDecorationTheme: InputDecorationTheme(
         labelStyle: const TextStyle(
-          fontFamily: 'PlaceGeist',
+          fontFamily: 'PlusJakartaSans',
           fontSize: 16,
           color: Color(0xFF6B6965),
         ),
@@ -1138,7 +1138,7 @@ class _AuthPageState extends State<AuthPage> {
           backgroundColor: const Color(0xFF302D38),
           foregroundColor: Colors.white,
           textStyle: const TextStyle(
-            fontFamily: 'PlaceGeist',
+            fontFamily: 'PlusJakartaSans',
             fontSize: 17,
             fontWeight: FontWeight.w500,
           ),
@@ -1241,7 +1241,7 @@ class _AuthPageState extends State<AuthPage> {
                               child: const Text(
                                 'Continue with Email',
                                 style: TextStyle(
-                                  fontFamily: 'PlaceGeist',
+                                  fontFamily: 'PlusJakartaSans',
                                   fontSize: 18,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1259,7 +1259,7 @@ class _AuthPageState extends State<AuthPage> {
                             child: Text(
                               _moreOptions ? 'Fewer options' : 'More options',
                               style: const TextStyle(
-                                fontFamily: 'PlaceGeist',
+                                fontFamily: 'PlusJakartaSans',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFF302D38),

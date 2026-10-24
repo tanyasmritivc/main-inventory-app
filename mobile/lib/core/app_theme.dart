@@ -76,17 +76,18 @@ class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       useMaterial3: true,
+      fontFamily: 'PlusJakartaSans',
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.4,
         ),
         titleLarge: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.3,
         ),
         titleMedium: TextStyle(
@@ -266,7 +267,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           color: adapt(Colors.white),
           fontSize: 20,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
         contentTextStyle: TextStyle(
           color: adapt(AppColors.muted),

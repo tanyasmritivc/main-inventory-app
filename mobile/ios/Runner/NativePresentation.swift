@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import CoreText
 
 /// System presentations only. Dart remains responsible for data and permissions.
 final class NativePresentation: NSObject, UIAdaptivePresentationControllerDelegate {
@@ -211,7 +212,49 @@ private final class NativeListController: UITableViewController, UISearchResults
       let spinner = UIActivityIndicatorView(style: .medium); spinner.startAnimating()
       tableView.backgroundView = spinner
     } else { tableView.backgroundView = visibleSections.allSatisfy { ($0["rows"] as? [[String: Any]] ?? []).isEmpty } ? label : nil }
+    if page["textSizeFactor"] != nil {
+      navigationController?.navigationBar.titleTextAttributes = [
+        .font: appFont(17, style: .headline, weight: .medium)
+      ]
+    }
     tableView.reloadData()
+  }
+  // Match Flutter's 15pt body / 13pt detail at the same app-size factor.
+  // UIFontMetrics applies the system Dynamic Type curve exactly once.
+  private static let registerBrandFont: Void = {
+    if let url = Bundle.main.url(forResource: "Frameworks/App.framework/flutter_assets/assets/fonts/PlusJakartaSans", withExtension: "ttf") {
+      CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+    }
+  }()
+  private func appFont(_ size: CGFloat, style: UIFont.TextStyle,
+                       weight: UIFont.Weight = .regular) -> UIFont {
+    let factor = min(1.3, max(0.8, (page["textSizeFactor"] as? NSNumber)?.doubleValue ?? 1))
+    _ = Self.registerBrandFont
+    let pointSize = size * CGFloat(factor)
+    let base = UIFont(name: "PlusJakartaSans-Regular", size: pointSize)
+      ?? .systemFont(ofSize: pointSize, weight: weight)
+    let descriptor = base.fontDescriptor.addingAttributes([
+      .traits: [UIFontDescriptor.TraitKey.weight: weight]
+    ])
+    return UIFontMetrics(forTextStyle: style).scaledFont(
+      for: UIFont(descriptor: descriptor, size: pointSize),
+      compatibleWith: traitCollection)
+  }
+  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+    super.traitCollectionDidChange(previousTraitCollection)
+    if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
+      update(page)
+    }
+  }
+  override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    guard page["textSizeFactor"] != nil, let header = view as? UITableViewHeaderFooterView else { return }
+    header.textLabel?.font = appFont(13, style: .footnote, weight: .medium)
+    header.textLabel?.adjustsFontForContentSizeCategory = true
+  }
+  override func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
+    guard page["textSizeFactor"] != nil, let footer = view as? UITableViewHeaderFooterView else { return }
+    footer.textLabel?.font = appFont(12, style: .footnote)
+    footer.textLabel?.adjustsFontForContentSizeCategory = true
   }
   private var visibleSections: [[String: Any]] {
     let query = search?.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -235,6 +278,11 @@ private final class NativeListController: UITableViewController, UISearchResults
     let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
     var content = cell.defaultContentConfiguration()
     content.text = data["title"] as? String; content.secondaryText = data["subtitle"] as? String
+    if page["textSizeFactor"] != nil {
+      content.textProperties.font = appFont(15, style: .body)
+      content.secondaryTextProperties.font = appFont(13, style: .subheadline)
+      content.imageProperties.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+    }
     content.textProperties.numberOfLines = 0
     content.secondaryTextProperties.numberOfLines = 0
     content.textProperties.color = data["destructive"] as? Bool == true ? .systemRed : .label

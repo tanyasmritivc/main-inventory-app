@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/world/native_bottom_tabs.dart';
+import 'package:mobile/features/world/retained_tab_transition.dart';
 
 // Native touch/animation audit: run normally, without WidgetTester pointer timing.
 // This entry point uses no APIs or customer data. Production targets lib/main.dart.
@@ -35,19 +36,21 @@ class _AuditState extends State<_Audit> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 60),
-            Text(
-              ['Ask', 'Spaces', 'More'][selected],
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 30,
-                color: dark ? Colors.white : Colors.black,
+            Expanded(
+              child: RetainedTabTransition(
+                index: selected,
+                children: [
+                  for (final title in ['Ask', 'Spaces', 'More'])
+                    Center(
+                      child: Text(title, style: const TextStyle(fontSize: 30)),
+                    ),
+                ],
               ),
             ),
             TextButton(
               onPressed: () => setState(() => dark = !dark),
               child: const Text('Switch appearance'),
             ),
-            const Spacer(),
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Center(

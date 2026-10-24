@@ -430,7 +430,7 @@ class _ResultRow extends StatelessWidget {
                 row.status!,
                 style: TextStyle(
                   color: colors.$1,
-                  fontFamily: 'monospace',
+                  fontFamily: 'GeistMono',
                   fontSize: 12,
                   letterSpacing: 0.5,
                 ),

@@ -96,6 +96,12 @@ void main() {
         return result.future;
       }
 
+      expect(model['textSizeFactor'], AppTextSize.standard.factor);
+      final resized = await action('size:large');
+      expect(resized['textSizeFactor'], AppTextSize.large.factor);
+      final preferences = (resized['sections'] as List)[1] as Map;
+      final appearancePage = (preferences['rows'] as List).first['children'];
+      expect(appearancePage['textSizeFactor'], AppTextSize.large.factor);
       final changed = await action('theme:dark');
       expect(changed['dark'], true);
       expect(appearance.themeMode, ThemeMode.dark);
@@ -104,6 +110,8 @@ void main() {
       final failed = await action('theme:light');
       expect(failed['error'], isNotNull);
       expect(failed['dark'], true);
+      final failedSize = await action('size:small');
+      expect(failedSize['textSizeFactor'], AppTextSize.large.factor);
       await action('scan', true);
       expect(
         (await SharedPreferences.getInstance()).getBool('confirm_before_save'),

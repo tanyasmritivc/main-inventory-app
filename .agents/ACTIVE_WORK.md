@@ -1,3 +1,12 @@
+## October 23 - Tab motion and Settings type correction (active)
+
+Mobile-only `fix/mobile-tab-motion-settings-type-20261023`, based on beta 117.
+Retain native Liquid Glass tabs; replace instant content swapping with a retained
+300ms dissolve. Match native Settings fonts to the app preference and Dynamic Type.
+New primary Blue echo kit applied to mobile icons, logos and bundled typography.
+Validation and beta 118 delivery pending. Backend/database unchanged. Web branding
+is isolated in the sibling brand-blue-echo worktree for self-hosted deployment.
+
 ## October 23 - Native iOS controls delivered as beta 117
 
 Apple acknowledged 1.1.1 (117), delivery `81e1133e-f035-4b0c-bf55-af1197d5eaa3`.

@@ -37,6 +37,8 @@ Future<void> showNativeAccountMenu(
       ? {}
       : {
           'title': 'Settings',
+          'textSizeFactor':
+              (appearance?.textSize ?? AppTextSize.standard).factor,
           'large': true,
           'dark': appearance?.themeMode == ThemeMode.system
               ? MediaQuery.platformBrightnessOf(context) == Brightness.dark
@@ -71,6 +73,7 @@ Future<void> showNativeAccountMenu(
                         '${appearance.themeMode.name} · ${appearance.textSize.label} text',
                     'children': {
                       'pageID': 'appearance',
+                      'textSizeFactor': appearance.textSize.factor,
                       'title': 'Appearance',
                       'sections': [
                         {
@@ -102,7 +105,7 @@ Future<void> showNativeAccountMenu(
                               },
                           ],
                           'footer':
-                              'App text sizes also follow your phone\'s accessibility settings. System controls use Dynamic Type.',
+                              'Text sizes also follow your phone\'s accessibility settings.',
                         },
                       ],
                     },
