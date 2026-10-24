@@ -1,3 +1,4 @@
+import 'item_search.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -620,11 +621,7 @@ class ApiClient {
       ).map(InventoryItem.fromJson).toList();
       final normalized = query.trim().toLowerCase();
       if (normalized.isNotEmpty) {
-        items = items.where((item) {
-          return item.name.toLowerCase().contains(normalized) ||
-              item.category.toLowerCase().contains(normalized) ||
-              (item.partNumber ?? '').toLowerCase().contains(normalized);
-        }).toList();
+        items = items.where((item) => item.searchScore(query) > 0).toList();
       }
       return SearchItemsResult(items: items, parsed: const {});
     }
@@ -2303,6 +2300,28 @@ class InventoryItem {
   final String? catalogId;
   final ImportedItemData? importData;
   final DateTime createdAt;
+
+  /// Search the details users can actually see, including imported columns.
+  int searchScore(String query) => scoreItemSearch(
+    query: query,
+    name: name,
+    identifiers: [partNumber ?? '', barcode ?? ''],
+    fields: [
+      name,
+      partNumber ?? '',
+      barcode ?? '',
+      category,
+      location,
+      brand ?? '',
+      subcategory ?? '',
+      notes ?? '',
+      purchaseSource ?? '',
+      ...?tags,
+      ...?importData?.fields
+          .where((field) => field.value != null)
+          .map((field) => field.displayValue),
+    ],
+  );
 
   /// The identifier users scan first in inventory lists. Catalogued parts are
   /// commonly organized by part number, so prefer it whenever one is present.
