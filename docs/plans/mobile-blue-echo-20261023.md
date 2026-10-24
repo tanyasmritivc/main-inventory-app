@@ -23,3 +23,30 @@ Physical-device acceptance is pending. Beta 118 delivery receipt follows upload.
 Artwork export source/script live in the sibling web brand branch:
 `docs/brand-blue-echo` and `scripts/export-brand-v3.cjs --mobile-root ...`.
 Fonts use their bundled SIL Open Font Licenses; no runtime font fetch is needed.
+
+## Delivery receipt
+
+Apple acknowledged 1.1.1 (118), delivery `7ea3cc3c-c89b-4ec3-ab84-a4d1862ce1bb`.
+Runtime `28187b5d719bab41ccd52288cd315fcf4a4265c3`, PR181. Exact-commit CI run
+40049512512 passed all five jobs. IPA SHA-256:
+`3e2fe0c05e9e0543760e840f224a634af9933a298faed10082f8c9d7e7881529`.
+
+All 32 archive and exported Mach-O executables were verified for iOS device
+platforms; strict signature and 24 privacy manifests passed. The first local
+candidate contained a cached simulator framework, was retained for audit and was
+never uploaded. A clean rebuild passed platform checks and Apple validation.
+The existing unused LaunchImage placeholder still produces Flutter's advisory;
+the native launch storyboard uses a plain background, and Flutter splash/loading
+screens use the new wordmark.
+
+Durable signed IPA, zipped archive and private Apple receipts are preserved under
+`~/Documents/FindEZ/AppStore/1.1.1-build118`. Apple processing and tester availability
+are pending and were not polled. No public App Store submission was made.
+
+Manual acceptance once TestFlight offers 118:
+1. Check the home-screen icon and in-app wordmark in light/dark appearance.
+2. Switch Ask, Spaces and More repeatedly; the content should dissolve smoothly
+   and retain drafts/scroll positions. Reduce Motion should remove the dissolve.
+3. Open Settings at Default size, compare to app text, then check Large/Larger.
+4. Confirm the native tab bar remains Liquid Glass and chat stays on the plain
+   background. Physical-device acceptance remains pending.
