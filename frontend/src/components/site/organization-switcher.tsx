@@ -48,7 +48,7 @@ function AccountSwitcher({ accountId, organization, personal, onNavigate }: Prop
           <span className={styles.name}>{name}</span><ChevronDown size={15} className={styles.chevron} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={8} collisionPadding={12} className={styles.menu} aria-label="Switch organization">
+      <DropdownMenuContent align="start" sideOffset={8} collisionPadding={12} className={styles.menu} aria-label="Switch organization" onEscapeKeyDown={event => event.stopPropagation()}>
         <DropdownMenuLabel className={styles.label}>Your organizations</DropdownMenuLabel>
         {loading ? <p className={styles.message} role="status">Loading organizations...</p> : error ? <>
           <p className={styles.message} role="alert">{error}</p>

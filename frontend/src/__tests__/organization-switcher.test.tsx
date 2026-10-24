@@ -37,7 +37,11 @@ test("keyboard Escape restores focus and reopening refreshes memberships", async
   await userEvent.keyboard("{Enter}");
   await screen.findByRole("menuitem", { name: /Workshop/ });
   expect(screen.getByRole("menuitem", { name: /Personal/ }).querySelector('[aria-label="Selected"]')).toBeTruthy();
+  const drawerEscape = jest.fn();
+  document.addEventListener("keydown", drawerEscape);
   await userEvent.keyboard("{Escape}");
+  document.removeEventListener("keydown", drawerEscape);
+  expect(drawerEscape).not.toHaveBeenCalled();
   await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   expect(document.activeElement).toBe(trigger);
   jest.mocked(accountRequest).mockResolvedValue({ organizations: [] });
