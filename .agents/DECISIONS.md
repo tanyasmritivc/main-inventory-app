@@ -1,3 +1,13 @@
+## October 24 - Public prompt demonstrations are not saved inventory
+
+The public landing composer demonstrates a prompt before signup. Do not claim
+anonymous access to private inventory or silently create records. Local parsing
+may show explicit count/item phrases, while suggested examples must remain labeled
+and quantity-unknown. Only the visitor's original request crosses auth and becomes
+an editable Ask draft; actual writes use existing authenticated tools and review.
+OAuth/email confirmation carries the request in the existing callback destination,
+without new credentials or anonymous model costs. Invitations/recovery keep priority.
+
 ## October 19 — explicit removal choices and protected Owner
 
 The user confirmed Admins cannot remove the organization Owner. Owner/Admin

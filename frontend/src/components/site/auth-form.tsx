@@ -14,6 +14,8 @@ import { FindEZWordmark } from "@/components/site/findez-brand";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
 import { normalizeAuthNext } from "@/lib/auth-callback";
 import { LEGAL_VERSION } from "@/lib/legal-content";
+import { previewPrompt, previewAuthDestination } from "@/lib/landing-preview";
+import previewStyles from "./preview-handoff.module.css";
 import { signupDestination } from "@/lib/web-onboarding";
 
 type Mode = "signin" | "signup";
@@ -54,8 +56,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/home";
-  const normalizedRedirect = normalizeAuthNext(redirect);
-  const successRedirect = mode === "signup" ? signupDestination(normalizedRedirect) : normalizedRedirect;
+  const prompt = previewPrompt(searchParams.get("prompt"));
+  const normalizedRedirect = previewAuthDestination(normalizeAuthNext(redirect), prompt, false);
+  const successRedirect = previewAuthDestination(mode === "signup" ? signupDestination(normalizeAuthNext(redirect)) : normalizedRedirect, prompt, mode === "signup");
+  const promptQuery = prompt ? `&prompt=${encodeURIComponent(prompt)}` : "";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { showNotice } = useAppDialog();
@@ -274,7 +278,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   }
 
   const card = (
-    <div className="auth-card-frame">
+    <div className={`auth-card-frame ${prompt ? previewStyles.enter : ""}`}>
       <div className="auth-card">
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
@@ -284,6 +288,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           A product of AI Robots Inc
         </div>
 
+        {prompt && <aside className={previewStyles.handoff} aria-label="Your preview request">
+          <span>YOUR WORLD, NEXT</span><p>{prompt}</p>
+          <small>Your request will be ready in chat after account setup. Review it there to create and save your inventory.</small>
+        </aside>}
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
           {mode === "signup" ? "Create account" : "Welcome back"}
         </h1>
@@ -531,14 +539,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             <>Already have an account?{" "}
               {onToggleMode
                 ? <button onClick={() => onToggleMode("signin")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
-                : <Link href={`/signin?redirect=${encodeURIComponent(normalizedRedirect)}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
+                : <Link href={`/signin?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
               }
             </>
           ) : (
             <>Don&apos;t have an account?{" "}
               {onToggleMode
                 ? <button onClick={() => onToggleMode("signup")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
-                : <Link href={`/signup?redirect=${encodeURIComponent(normalizedRedirect)}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
+                : <Link href={`/signup?redirect=${encodeURIComponent(normalizedRedirect)}${promptQuery}`} style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
               }
             </>
           )}

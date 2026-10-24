@@ -1,3 +1,15 @@
+## October 24 — Public prompt preview live on self-hosted web
+
+Runtime `ad13f91515e42f5bfc89a337ff818e50a07cd77e` / PR183 is live from
+`/home/ubuntu/findez-web-releases/prompt-preview-20261024/frontend`, build
+`cHXcB07Do-U3qk0tvDwjj`. Includes previous Blue Echo branding. Prompt submission
+morphs into an interactive, explicitly unsaved demo, then carries the original
+request through signup/setup to an editable Ask draft. Local parsing and labeled
+examples only; no anonymous AI call or inventory write. All five CI gates passed,
+488 local web tests passed, build/TypeScript passed. Twelve live route statuses,
+six assets, 357 unrelated files and unchanged backend PID verified. Live mobile
+preview/signup handoff inspected. See `docs/landing-v3/PROMPT_PREVIEW.md`.
+
 ## October 23 — Landing v3 live on self-hosted web
 
 User authorized deployment. Homepage implementation `cf29d1f` on `feat/landing-v3`

@@ -50,7 +50,7 @@ export function useScrollProgress(root: RefObject<HTMLDivElement | null>) {
     const painter = createLandingMotion(element, state, createProgressSampler());
     let raf = 0;
     const frame = (now: number) => {
-      if (!document.hidden) { painter.frame(now); state.toolsFrame?.(now); }
+      if (!document.hidden && element.dataset.previewOpen !== "true") { painter.frame(now); state.toolsFrame?.(now); }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
