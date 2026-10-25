@@ -323,6 +323,38 @@ def resolve_resource(actor, world, inventory_id, kind, resource_id):
 MANAGEMENT_TOOLS = frozenset({'world_edit_item', 'world_adjust_quantity', 'world_move_item', 'world_reorders', 'world_reorder_decision', 'world_tracking'})
 
 
+DESTINATION_GUIDANCE = (
+    'When the user names a destination, help resolve it in THIS turn, including the first message. '
+    'Check accessible inventories and use world_spaces for exact Space names/IDs; an inventory name alone does not prove a Space exists. '
+    'Reuse a unique writable matching destination. If the named Space or inventory does not exist, proactively offer its creation '
+    'using the available reviewed structure/task tool now, not merely a promise or a question asking whether they want help. '
+    'For example, for six strawberries in my fridge with no Fridge, present a real creation proposal and say '
+    '"There isn’t a Fridge yet. I can create one for your strawberries." Do not make the user ask again or choose from unrelated inventories. '
+    'Respect an explicitly named parent inventory/workspace. If only a place was named and no matching inventory exists in Personal, '
+    'propose a new inventory named for the place in the Personal workspace, with a same-named Space. '
+    'If a matching writable inventory exists, propose the missing Space there instead of a duplicate inventory. '
+    'In an organization use the explicitly selected or sole writable workspace; with multiple plausible parents, '
+    'offer to create the named place and ask ONE short question to choose the parent. Never silently guess ambiguous existing matches. '
+    'Creation always requires the real confirmation card and permission checks; nothing is saved just by proposing it. '
+    'When an unsaved capture draft exists (including one created during this turn), use world_refine_capture for the same draft '
+    'and record requested_place if needed. A missing destination needs a CREATION-ONLY plan with empty items/moves: '
+    'keep the draft and its counts, photos and Review evidence intact. Its confirmed creation selects the new Space for that draft; '
+    'the draft’s Save items action saves the items. This overrides the combined new-item task policy for existing drafts. '
+    'If no draft exists, a reviewed creation task can include the requested items. '
+    'Do not resolve an old draft destination when the user has changed topic.'
+)
+
+
+def capture_tools(tools, capture):
+    """Refresh capabilities as a draft is created within the same model turn."""
+    draft = capture and capture.get('draft')
+    active = draft and draft['status'] in ('draft', 'saving')
+    return [t for t in tools
+        if (draft and draft['status'] == 'draft' or t['function']['name'] != 'world_refine_capture')
+        and (not active or t['function']['name'] not in ('world_add_items', 'world_draft_items'))
+        and (capture and capture.get('enabled') or t['function']['name'] != 'world_draft_items')]
+
+
 def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None, user_context=None, image_content=None):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
@@ -392,9 +424,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Do not ask the user to choose a destination or save this extraction again. For current stock/details use inventory tools.'})
     available_tools = [t for t in TOOLS
         if (supports_photo_attachment and photo_evidence or t['function']['name'] != 'world_attach_item_photo')
-        and (supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS)
-        and (capture and capture['draft'] and capture['draft']['status'] == 'draft' or t['function']['name'] != 'world_refine_capture')
-        and (not (capture and capture['draft'] and capture['draft']['status'] in ('draft', 'saving')) or t['function']['name'] != 'world_add_items')]
+        and (supports_item_management or t['function']['name'] not in MANAGEMENT_TOOLS)]
 
     if supports_task_actions:
         available_tools = [t for t in available_tools if t['function']['name'] != 'world_structure']
@@ -406,7 +436,6 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     if replayed:
         available_tools = [t for t in available_tools if t['function']['name'] in ('world_directory', 'world_search', 'world_inventory', 'world_spaces', 'world_tracking', 'world_reorders', 'world_query', 'world_projects', 'world_project_readiness', 'world_activity')]
         messages.append({'role': 'system', 'content': 'This is a retry of the SAME request. The durable receipts below already completed. Report their results; never repeat these changes. If only part completed, say which part and ask for a new request for the remainder: ' + json.dumps(model_data(replayed))})
-    available_names = {t['function']['name'] for t in available_tools}
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
     actions, item_actions, trace = [], [], []
@@ -445,13 +474,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     retry_available = True
     prior_states = {a.get('id'): a for row in history for a in row.get('action_states', [])}
     prior_pending = any(a.get('status') == 'pending' for a in prior_states.values())
-    available_tools = [t for t in available_tools if t['function']['name'] != 'world_draft_items' or capture and capture.get('enabled') and (not capture['draft'] or capture['draft']['status'] == 'saved')]
-    available_names = {t['function']['name'] for t in available_tools}
+    messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
+    client_tools = available_tools
     card_repair_available = True
     repairing = False
     generation_limit = 1800
     for step in range(9):
         enabled = step < 8 and not repairing
+        available_tools = capture_tools(client_tools, capture)
         # Retry generation only: executed tools and their durable receipts stay in
         # messages/memo. A transport failure never reruns an inventory mutation.
         while True:
@@ -484,6 +514,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 {'id': c.id, 'type': 'function', 'function': {'name': c.function.name, 'arguments': c.function.arguments}} for c in calls]})
             for call in calls:
                 try:
+                    available_names = {t['function']['name'] for t in capture_tools(client_tools, capture)}
                     if call.function.name not in available_names:
                         raise ValueError('Update FindEZ to review this action.')
                     args = json.loads(call.function.arguments) if len(call.function.arguments) <= 16000 else None

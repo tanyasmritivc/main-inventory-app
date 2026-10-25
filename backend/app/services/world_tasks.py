@@ -100,7 +100,9 @@ def propose(actor, world, args):
             'capture_id': draft['id'], 'place': place}
 
     return {'world_action': action, 'saved': False,
-        'next_step': 'One confirmation creates the listed structure AND adds or moves the listed items. Do not ask for a second confirmation.'}
+        'next_step': ('Offer to create this destination. Confirmation creates it and selects it for the existing draft; '
+                      'the draft stays editable and unsaved until Save items.' if action.get('capture_destination') else
+                      'One confirmation creates the listed structure AND adds or moves the listed items. Do not ask for a second confirmation.')}
 
 
 def confirm(actor, world, action_id, decision, space_limits, item_limits):

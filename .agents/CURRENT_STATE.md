@@ -1,3 +1,21 @@
+## October 24 — Proactive missing destinations deployed (PR212)
+
+API runtime `a5184f6a3aa329879c2b2775fea51271b843a853` is live. All five exact-runtime
+CI jobs passed in 40167398942; 1,483 local Python tests and ten subtests passed.
+Guarded three-file publication preserved 115 unrelated source files. API/database
+health and anonymous denial passed; GLM retained; no schema/client changes.
+Rollback: `/home/ubuntu/findez-proactive-destination-20261024`.
+
+Chat offers real creation cards for missing named Spaces/inventories on the first
+turn, reuses unique existing destinations, and refreshes draft capabilities during
+the turn. Real-model fixtures covered missing/existing Fridge, an explicit new
+Kitchen inventory, a missing Fridge in existing Kitchen, ambiguous parents, and an
+existing unsaved draft. Live HTTPS QA created Fridge with six strawberries in one
+confirmation, denied a foreign account, proved replay did not duplicate stock, and
+reused Fridge in a new chat. Both disposable accounts were removed; no customer
+records were used. Existing-draft confirmation binding also passes unit tests.
+No new app binary is needed. See `docs/plans/proactive-destination-20261024.md`.
+
 ## October 24 - Extraction count units deployed (PR209)
 
 Runtime 962dddc3175202a30933166c57178c13fef0e64f is live. All five CI checks passed

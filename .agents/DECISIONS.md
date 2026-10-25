@@ -1,3 +1,13 @@
+## October 24 — Offer missing destinations on the first turn
+
+A named missing Space/inventory is an opportunity to offer a real creation card,
+not a reason to force another request or list unrelated inventories. Resolve a
+unique existing destination first; preserve an explicit parent. Personal may
+propose a new same-named inventory/Space when no parent exists. Ambiguous team
+parents still require one short choice. Proposals do not authorize creation.
+Existing drafts retain their observations and use creation-only destination plans;
+new complete tasks may combine creation and items in one review.
+
 ## October 24 - Count units and estimated quantities
 
 A product type/region is not a quantity. Return the counted unit and count note;

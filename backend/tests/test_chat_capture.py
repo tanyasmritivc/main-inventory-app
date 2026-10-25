@@ -306,6 +306,63 @@ def test_creation_proposal_binds_only_the_requested_capture_place(store):
         assert 'capture_destination' not in world_tasks.propose(ACTOR, WORLD, plan)['world_action']
 
 
+@pytest.mark.parametrize('existing', [False, True])
+def test_first_turn_can_resolve_destination_after_drafting_without_another_message(store, existing):
+    def response(name=None, args=None):
+        return NS(choices=[NS(message=NS(content='' if name else 'Your draft is ready.', tool_calls=[
+            NS(id=name, function=NS(name=name, arguments=json.dumps(args)))
+        ] if name else []))])
+    workspace = str(uuid4())
+    known = {'workspaces': [{'workspace_id': workspace, 'name': 'Home', 'can_create': True}],
+             'inventories': [{'inventory_id': INV, 'name': 'Home', 'can_edit': True}]}
+    next_response = (response('world_refine_capture', {'inventory_id': INV, 'space_id': SPACE}) if existing else
+                     response('world_create_task', {'workspace_id': workspace, 'inventories': [
+                         {'name': 'Fridge', 'spaces': ['Fridge']}]}))
+    offered = []
+    responses = iter([response('world_draft_items', {'place': 'Fridge', 'items': [
+        {'name': 'Strawberries', 'quantity': 6}]}), next_response, response()])
+    def gateway(**kwargs):
+        offered.append({t['function']['name'] for t in kwargs['tools']})
+        return next(responses)
+    with c.use_capture(ACTOR, WORLD, CID, None) as state, patch.object(w, 'authorize'), \
+         patch.object(w, 'directory', return_value=known), \
+         patch('app.services.spaces_repo.list_spaces', return_value=[{'id': SPACE, 'name': 'Fridge'}]), \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=gateway):
+        events = list(w.stream_turn(ACTOR, WORLD, 'I have like 6 strawberries to add to my fridge', [], CID,
+                                    supports_task_actions=True))
+        draft = state['draft']
+    assert 'world_draft_items' in offered[0] and 'world_refine_capture' not in offered[0]
+    assert 'world_refine_capture' in offered[1]
+    assert not {'world_draft_items', 'world_add_items'} & offered[1]
+    assert draft['status'] == 'draft' and draft['items'][0]['item']['quantity'] == 6
+    if existing:
+        assert draft['space_id'] == SPACE
+        assert not events[-1]['answer_context'].get('world_actions')
+    else:
+        action, = events[-1]['answer_context']['world_actions']
+        assert action['status'] == 'pending'
+        assert action['capture_destination'] == {'conversation_id': CID, 'capture_id': draft['id'], 'place': 'Fridge'}
+        assert action['plan']['inventories'][0]['items'] == []
+        assert draft['space_id'] is None
+    store.bulk.assert_not_called()
+    store.review.assert_not_called()
+
+
+def test_first_turn_cannot_bypass_draft_with_add_items_in_same_tool_batch(store):
+    calls = [NS(id=name, function=NS(name=name, arguments=json.dumps(args))) for name, args in [
+        ('world_draft_items', {'place': 'Fridge', 'items': [{'name': 'Strawberries', 'quantity': 6}]}),
+        ('world_add_items', {'inventory_id': INV, 'items': [{'name': 'Strawberries', 'quantity': 6, 'location': 'Fridge'}]})]]
+    with c.use_capture(ACTOR, WORLD, CID, None), patch.object(w, 'authorize'), \
+         patch.object(w, 'directory', return_value={}), \
+         patch('app.services.chat_item_actions.propose_additions') as additions, \
+         patch('app.services.agent_gateway_client.gateway_completion', side_effect=[
+             NS(choices=[NS(message=NS(content='', tool_calls=calls))]),
+             NS(choices=[NS(message=NS(content='Your draft is ready.', tool_calls=[]))])]):
+        events = list(w.stream_turn(ACTOR, WORLD, 'Add six strawberries to my fridge', [], CID))
+    additions.assert_not_called()
+    assert not events[-1]['answer_context'].get('pending_actions')
+
+
 def test_requested_place_clears_a_different_destination_but_keeps_observations(store):
     draft = destination(c.create(ACTOR, WORLD, CID, [{'name': 'Peas', 'quantity': 3, 'category': 'Produce'}], None))
     updated = c.edit(ACTOR, WORLD, CID, draft['id'], draft['revision'], {'requested_place': 'Pantry'})
