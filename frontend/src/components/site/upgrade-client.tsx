@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// Individual web Pro checkout is retired — payments moved to team season plans.
-// Redirect any visitor to the new pricing page.
+// Legacy upgrade links open the planned Free, Plus and Team comparison.
 export function UpgradeClient() {
   const router = useRouter();
   useEffect(() => { router.replace("/pricing"); }, [router]);

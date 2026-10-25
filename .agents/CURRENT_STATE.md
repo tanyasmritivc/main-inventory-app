@@ -1,3 +1,16 @@
+## October 25 - Standard pricing only
+
+User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Deployed runtime `1f858e782a464ef5100646c664e44683723c1e7b`, build `E4TddXx2Nk6z1B-NC1Plp`. All five CI jobs passed (40221088292), 22 staged/live routes passed, and public browser refresh confirms the discount/eligibility link is absent. Source and rollback preserved. Receipt: `docs/plans/no-offers-web-receipt.json`.
+
+## October 25 - Free, Plus and Team plan comparison (web)
+
+User approved the proposed three-tier prices and asked for both apps to match,
+with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
+or $99/year, Team $29/month or $299/year for five people. Current access and
+server quotas remain unchanged; purchases stay unavailable. See
+`docs/pricing-and-limits.md` for exact allowances and future payment gates.
+Runtime `76bfc93522a15093373c5c2326b5db6877b58791` is live at findez.ai/pricing (PR217). All five CI jobs passed (40219539019); production build `vaVkOWF9huJC5FyrffOPO`, 22 staged/live routes and public browser checks passed. Monthly/annual comparison and unavailable paid buttons verified. Backend and prior release preserved. Receipt: `docs/plans/launch-plans-web-receipt.json`. No public App Store submission.
+
 ## October 25 — Wordmark balance deployed (PR216)
 
 Runtime `04f883b3c8b8567e12bbc2ab1974163d2bc228d2` is live at findez.ai. The Petals mark is 20% smaller beside unchanged lettering in light/dark and landing wordmarks. All five CI jobs passed (40217806792); production build `nvXSrYN7RI1ah94eeMZ_i`, 22 staged/live route checks and public SVG hash/live browser verification passed. Active release: `/home/ubuntu/findez-web-releases/wordmark-balance-20261025/frontend`; rollback: `petals-20261025/frontend`. Five obsolete webpack caches were cleared after ENOSPC; source and compiled rollback releases remain intact. Backend process preserved.
