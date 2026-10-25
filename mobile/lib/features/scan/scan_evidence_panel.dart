@@ -10,11 +10,13 @@ class ScanEvidencePanel extends StatelessWidget {
     required this.evidence,
     this.barcode,
     this.initiallyExpanded = false,
+    this.allowEditLater = false,
   });
 
   final ScanEvidence evidence;
   final String? barcode;
   final bool initiallyExpanded;
+  final bool allowEditLater;
 
   String _percent(double? value) {
     if (value == null) return 'Not available';
@@ -39,13 +41,18 @@ class ScanEvidencePanel extends StatelessWidget {
         ),
       ),
       child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded || evidence.needsReview,
+        initiallyExpanded:
+            initiallyExpanded || (evidence.needsReview && !allowEditLater),
         tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
         iconColor: AppTheme.adaptive(context, Colors.white70),
         collapsedIconColor: AppTheme.adaptive(context, Colors.white54),
         title: AppText(
-          evidence.needsReview ? 'Needs your review' : 'How this was read',
+          allowEditLater
+              ? 'Photo details and confidence'
+              : evidence.needsReview
+              ? 'Needs your review'
+              : 'How this was read',
           style: TextStyle(
             color: evidence.needsReview
                 ? AppTheme.foreground(context, const Color(0xFFF5A623))
@@ -55,7 +62,9 @@ class ScanEvidencePanel extends StatelessWidget {
           ),
         ),
         subtitle: AppText(
-          evidence.needsReview
+          allowEditLater
+              ? 'AI suggestions may need correcting. Edit now or later.'
+              : evidence.needsReview
               ? 'Confirm the uncertain details before this becomes inventory.'
               : 'See the visible details used for this result.',
           style: TextStyle(

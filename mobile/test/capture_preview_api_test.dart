@@ -29,7 +29,15 @@ class CaptureAdapter implements dio.HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
-    final result = options.path == '/inventory/bulk_create'
+    final result = options.path.endsWith('/resolve')
+        ? {
+            'item': {
+              ...preview,
+              'item_id': 'resolved-item',
+              'location': 'Pantry',
+            },
+          }
+        : options.path == '/inventory/bulk_create'
         ? {
             'inserted': [],
             'accepted_indices': [],
@@ -124,6 +132,40 @@ void main() {
     );
     expect(adapter.requests, isEmpty);
   });
+
+  test(
+    'accepted legacy review resolves in place and mixed failures keep their original indices',
+    () async {
+      final adapter = CaptureAdapter();
+      final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+        ..httpClientAdapter = adapter;
+      final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+      final old = ExtractedInventoryItem.fromJson({
+        ...adapter.preview,
+        'review_status': 'pending',
+        'scan_evidence': {'needs_review': false},
+      });
+      final fresh = ExtractedInventoryItem(
+        name: 'Screws',
+        category: 'Hardware',
+        quantity: 4,
+      );
+      final result = await api.bulkCreateInventory(
+        items: [old, fresh],
+        requestIds: ['old', 'new'],
+      );
+      expect(adapter.requests.first.path, '/review-items/preview-1/resolve');
+      expect(adapter.requests.last.data['items'], hasLength(1));
+      expect(adapter.requests.last.data['items'][0]['name'], 'Screws');
+      expect(
+        adapter.requests.last.data['items'][0]['client_request_id'],
+        'new',
+      );
+      expect(result.confirmedIndices(2), {0});
+      expect(result.failures.single['index'], 1);
+      client.close();
+    },
+  );
 
   test('upload is a preview and only Save creates the signed review', () async {
     final adapter = CaptureAdapter();

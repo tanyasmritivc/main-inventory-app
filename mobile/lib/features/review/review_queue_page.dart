@@ -156,7 +156,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
           ),
           SizedBox(height: 8),
           AppText(
-            'When a photo is uncertain, it will wait here instead of becoming incorrect inventory.',
+            'Unknown items saved to this Space will appear here. Tap an item to edit its details.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppTheme.foreground(context, Colors.white60),
@@ -176,7 +176,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
           return Padding(
             padding: const EdgeInsets.fromLTRB(4, 2, 4, 8),
             child: AppText(
-              '${_items.length} ${_items.length == 1 ? 'capture needs' : 'captures need'} a quick decision. Nothing here is in inventory yet.',
+              '${_items.length} ${_items.length == 1 ? 'item saved' : 'items saved'}${widget.location == null ? '' : ' in ${widget.location}'} for review. Tap an item to edit.',
               style: TextStyle(
                 color: AppTheme.foreground(context, Colors.white60),
                 height: 1.4,

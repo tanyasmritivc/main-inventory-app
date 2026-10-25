@@ -1319,8 +1319,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           Expanded(
             child: _reviewAction(
               icon: Icons.photo_library_outlined,
-              title: 'Review images',
-              subtitle: 'Captured items',
+              title: 'Review',
+              subtitle: 'Items to finish',
               onTap: () => Navigator.of(context).push<void>(
                 MaterialPageRoute(
                   builder: (_) => ReviewQueuePage(

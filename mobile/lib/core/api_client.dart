@@ -775,6 +775,50 @@ class ApiClient {
     if (requestIds != null && requestIds.length != items.length) {
       throw ArgumentError('Every capture needs its own request ID.');
     }
+    if (items.any(
+      (item) => !item.needsReview && item.reviewStatus == 'pending',
+    )) {
+      final inserted = <InventoryItem>[];
+      final accepted = <int>[];
+      final failures = <Map<String, dynamic>>[];
+      for (var i = 0; i < items.length; i++) {
+        final item = items[i];
+        try {
+          if (!item.needsReview && item.reviewStatus == 'pending') {
+            final id = item.reviewId;
+            if (id == null || id.isEmpty) {
+              throw StateError('Missing review identity');
+            }
+            inserted.add(await resolveReviewItem(reviewId: id, item: item));
+            accepted.add(i);
+          } else {
+            final result = await bulkCreateInventory(
+              items: [item],
+              requestIds: requestIds == null ? null : [requestIds[i]],
+            );
+            if (result.confirmedIndices(1).contains(0)) {
+              inserted.addAll(result.inserted);
+              accepted.add(i);
+            } else {
+              failures.add({
+                'index': i,
+                'reason': 'Saving could not be confirmed. Retry this item.',
+              });
+            }
+          }
+        } catch (_) {
+          failures.add({
+            'index': i,
+            'reason': 'Saving could not be confirmed. Retry this item.',
+          });
+        }
+      }
+      return BulkCreateResult(
+        inserted: inserted,
+        failures: failures,
+        acceptedIndices: accepted,
+      );
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/bulk_create',
       options: _authOptions(),
@@ -2632,6 +2676,8 @@ class ExtractedInventoryItem {
 class ScanEvidence {
   const ScanEvidence({
     this.quantityBasis,
+    this.quantityUnit,
+    this.quantityNote,
     this.quantityConfidence,
     this.groupedObservations,
     this.identificationReasoning,
@@ -2652,6 +2698,8 @@ class ScanEvidence {
   });
 
   final String? quantityBasis;
+  final String? quantityUnit;
+  final String? quantityNote;
   final double? quantityConfidence;
   final int? groupedObservations;
   bool get quantityMissing =>
@@ -2688,6 +2736,8 @@ class ScanEvidence {
   factory ScanEvidence.fromJson(Map<String, dynamic> json) {
     return ScanEvidence(
       quantityBasis: json['quantity_basis']?.toString(),
+      quantityUnit: json['quantity_unit']?.toString(),
+      quantityNote: json['quantity_note']?.toString(),
       quantityConfidence: _number(json['quantity_confidence']),
       groupedObservations: (json['grouped_observations'] as num?)?.toInt(),
       identificationReasoning: json['identification_reasoning']?.toString(),
@@ -2714,6 +2764,8 @@ class ScanEvidence {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     if (quantityBasis != null) 'quantity_basis': quantityBasis,
+    if (quantityUnit != null) 'quantity_unit': quantityUnit,
+    if (quantityNote != null) 'quantity_note': quantityNote,
     if (quantityConfidence != null) 'quantity_confidence': quantityConfidence,
     if (groupedObservations != null)
       'grouped_observations': groupedObservations,

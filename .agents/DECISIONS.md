@@ -1,3 +1,12 @@
+## October 24 - Save unknown captures in the destination Space's Review
+
+The user clarified that unknown items belong in the Review section of the Space
+chosen when saving, rather than as a Review tag on ordinary stock. Save must not
+block on their missing quantity. Identified, counted items can save directly and
+be edited later. Preserve uncertainty and count units (tablet versus blister strip)
+and never present a default one as a measured count. Review remains scoped to the
+inventory and chosen Space; tapping a record opens the existing editor.
+
 ## October 24 - Space options and stoppable extraction
 
 The user rejected the native iOS Space ellipsis menu; this menu uses Flutter on
