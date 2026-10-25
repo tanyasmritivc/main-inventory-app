@@ -1,5 +1,5 @@
 // Display catalog only. Purchases and server entitlements are not activated here.
-export const PLANS_NOTICE = "Paid plans are coming soon. Current access is unchanged. No payment will be taken.";
+export const PLANS_NOTICE = "Free pre-launch access. Plan quotas are not enforced during this period. There is no automatic cutoff date. Paid plans are coming soon. You will not be charged automatically.";
 export const BILLING_PLANS = [
   { id: "free", name: "Free", description: "Try FindEZ on your own things.", monthly: 0, annual: 0, features: ["100 saved item records", "1 person", "Unlimited Spaces", "10 photo extractions per month", "50 AI messages per month", "Chat, capture and find"] },
   { id: "plus", name: "Plus", description: "For your home, collections and workshop.", monthly: 9.99, annual: 99, features: ["2,500 saved item records", "1 person", "Unlimited Spaces", "50 photo extractions per month", "500 AI messages per month", "Low-stock reminders"] },

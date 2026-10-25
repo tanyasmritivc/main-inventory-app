@@ -633,6 +633,7 @@ export type LimitsResponse = {
   scans: { used: number; max: number | null; daily_used: number; daily_max: number | null; resets_at: string };
   plan?: { name: string; renews_at: string | null } | null;
   pilot_mode?: boolean;
+  limits_enabled?: boolean;
   pilot_ends_at?: string | null;
   pilot_notice?: string | null;
 };

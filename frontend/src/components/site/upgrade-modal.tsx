@@ -2,6 +2,7 @@
 
 import { PLANS_NOTICE } from "@/lib/billing-plans";
 import { useRouter } from 'next/navigation';
+import { useUpgradePermission } from '@/lib/use-upgrade-permission';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -11,7 +12,8 @@ interface UpgradeModalProps {
 
 export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
   const router = useRouter();
-  if (!open) return null;
+  const permitted = useUpgradePermission(open);
+  if (!permitted) return null;
 
   const config = {
     item_limit: {
