@@ -5,7 +5,7 @@ with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
 or $99/year, Team $29/month or $299/year for five people. Current access and
 server quotas remain unchanged; purchases stay unavailable. See
 `docs/pricing-and-limits.md` for exact allowances and future payment gates.
-Validation/release in progress; no public App Store submission.
+Apple accepted TestFlight 1.1.1 (134), runtime `ed1f89e3ce9c49660adb7ad37846fed28159b991` (PR218), delivery `03aa6e45-73df-4174-8f15-2bccb8c255a6`. All five CI jobs passed (40219539005). Clean Flutter analysis, final host tests and two iOS simulator comparison cases passed, covering light/dark and annual prices; large-text regressions passed. Signed archive/export each verified 34 device executables; signing, 26 privacy manifests, production configuration and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. Receipt: `docs/plans/launch-plans-mobile-receipt.json`. Artifacts: Documents/FindEZ/AppStore/1.1.1-build134. No public App Store submission.
 
 ## October 25 — Petals and chat onboarding beta133 delivered (PR214)
 

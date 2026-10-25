@@ -53,3 +53,9 @@ from StoreKit; displayed USD estimates are not checkout prices. Paid access must
 never depend on visiting a success URL or a client-only flag.
 
 Public App Store submission is still held for the user's separate instruction.
+
+## Mobile delivery
+
+Apple accepted TestFlight 1.1.1 (134), runtime `ed1f89e3ce9c49660adb7ad37846fed28159b991` (PR218), delivery `03aa6e45-73df-4174-8f15-2bccb8c255a6`. All five CI jobs passed (40219539005). Clean Flutter analysis, final host tests and two iOS simulator comparison cases passed, covering light/dark and annual prices; large-text regressions passed. Signed archive/export each verified 34 device executables; signing, 26 privacy manifests, production configuration and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. Receipt: `docs/plans/launch-plans-mobile-receipt.json`. Artifacts: Documents/FindEZ/AppStore/1.1.1-build134. No public App Store submission.
+
+No payment SDK or purchase flow was enabled. The displayed catalog does not replace current server entitlements. Provider integration and quota enforcement remain separate activation work.
