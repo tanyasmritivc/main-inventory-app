@@ -1,3 +1,13 @@
+## October 24 — Proactive destination creation (in validation)
+
+Backend-only lane `fix/api-proactive-destination-creation-20261024` fixes first-turn
+missing destinations: suggest an actual creation card immediately, reuse a unique
+writable matching Space/inventory, and ask one parent choice only when ambiguous.
+Draft tools refresh within the turn so an immediately created draft can select its
+Space without another message; duplicate add/draft calls are removed, including in
+the same tool batch. Creation-only plans preserve existing draft evidence and bind
+the confirmed destination. No client or schema changes. Publication pending checks.
+
 ## October 24 - Extraction count units deployed (PR209)
 
 Runtime 962dddc3175202a30933166c57178c13fef0e64f is live. All five CI checks passed

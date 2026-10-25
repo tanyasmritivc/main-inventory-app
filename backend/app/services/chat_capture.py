@@ -341,7 +341,7 @@ def draft_description(args):
                             {'described_place': description.place,
                              'unknown_quantity_indices': [i for i, entry in enumerate(description.items) if entry.quantity is None]}, source_kind='text')
     return {'capture_draft': facts(state['draft']), 'saved': False,
-            'next_step': 'The editable draft is ready. Ask only what is needed to choose its destination or confirm unknown quantities. Nothing is saved to inventory.'}
+            'next_step': 'The editable draft is ready; nothing is saved. Resolve the stated place now: reuse a unique writable matching Space, or offer a real creation-only proposal for the missing destination. Keep these items in this draft, not in the creation plan. Ask one short question only if the destination is genuinely ambiguous, unnamed, or a count needs clarification.'}
 
 
 def attach_created_destination(actor, key, action):
