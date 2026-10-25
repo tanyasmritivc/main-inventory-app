@@ -140,6 +140,8 @@ class CatalogCompatibilityResponse(BaseModel):
 
 
 class ScanEvidence(BaseModel):
+    quantity_unit: str | None = Field(default=None, max_length=40)
+    quantity_note: str | None = Field(default=None, max_length=200)
     quantity_basis: str | None = Field(default=None, max_length=30)
     quantity_confidence: float | None = Field(default=None, ge=0, le=1)
     grouped_observations: int | None = Field(default=None, ge=1, le=200)

@@ -1,3 +1,18 @@
+## October 24 - Extraction count units deployed (PR209)
+
+Runtime 962dddc3175202a30933166c57178c13fef0e64f is live. All five CI checks passed
+(40160782561), with 1480 Python tests and ten subtests. Guarded two-file publication
+preserved 116 unrelated live source files; API/database health and anonymous denial
+passed. GLM remains active; no database migration. Rollback is preserved at
+/home/ubuntu/findez-count-units-20261024.
+
+The extractor distinguishes package units from contents, keeps supported moderately
+confident counts as estimates, and returns additive quantity_unit/quantity_note
+fields. A real isolated check of the user's screenshot photo returned one blister
+strip with foil-hidden tablet contents explicitly uncounted in 14.8 seconds.
+This single example does not establish general counting accuracy. No customer
+inventory was written during the check. Mobile Space Review delivery is PR208.
+
 ## October 24 - Extraction reliability delivered (API203; beta128/PR204)
 
 API runtime `ddaf60fb857acf5eb67fd9d50b1ab4d78877b319` is live with GLM retained; all five CI jobs passed (40152537949), including 1,477 Python tests. The two-file guarded overlay preserved 116 unrelated files; API/database health and anonymous denial passed. Rollback: /home/ubuntu/findez-extraction-reliability-20261024-v2. Real candidate/live API checks passed full fields, confidence/crops, signed previews, cross-account denial and explicit review/save with two disposable accounts per run removed. Live close-up extraction took 16.9s. No customer records or schema changes.

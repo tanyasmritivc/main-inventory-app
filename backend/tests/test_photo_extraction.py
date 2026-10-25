@@ -497,3 +497,36 @@ def test_valid_sibling_response_does_not_repeat_model_request():
     with patch.object(g, "gateway_completion", return_value=NS(choices=[NS(message=NS(content=content))])) as call:
         result = g._json("read", [image_bytes()], g.Identities)
     assert len(result.items) == 1 and call.call_count == 1
+
+
+def test_blister_pack_quantity_is_not_tablet_quantity():
+    result = g._item(g.Box(label="foil blister strip", box=[0, 0, 1000, 1000]),
+        g.Identity(index=0, name="Tablets - blister strip", category="Health",
+            uncertainty="Contents hidden by foil", quantity=1,
+            quantity_basis="visible_packages", quantity_confidence=.98,
+            quantity_unit="blister strip", quantity_note="Foil hides remaining tablets."), "source")
+    assert result["quantity"] == 1
+    assert result["scan_evidence"]["quantity_basis"] == "visible_packages"
+    assert result["scan_evidence"]["quantity_unit"] == "blister strip"
+    assert "contents are not counted" in result["scan_evidence"]["quantity_note"]
+    assert "Quantity unit: blister strip" in result["notes"]
+
+
+def test_supported_visible_count_is_retained_as_estimate_not_replaced_with_one():
+    result = g._item(g.Box(label="tablets", box=[0, 0, 1000, 1000]),
+        identity(quantity=8, quantity_basis="visible_individuals",
+            quantity_confidence=.8, quantity_unit="tablet"), "source")
+    assert result["quantity"] == 8
+    assert result["scan_evidence"]["quantity_basis"] == "estimated_visible"
+    assert result["scan_evidence"]["quantity_confidence"] == .8
+    assert result["scan_evidence"]["quantity_note"].startswith("Estimated visible count")
+    assert result["scan_evidence"]["needs_review"] is True
+
+
+def test_unknown_contents_never_become_a_package_size_or_dosage_count():
+    result = g._item(g.Box(label="blister strip", box=[0, 0, 1000, 1000]),
+        identity(quantity=200, quantity_basis="unknown", quantity_unit="tablet",
+            visible_text="200 mg", quantity_confidence=.99), "source")
+    assert result["quantity"] == 1
+    assert result["scan_evidence"]["quantity_basis"] == "unknown"
+    assert result["scan_evidence"]["quantity_unit"] is None
