@@ -1,3 +1,7 @@
+## October 25 - Plans must be reachable through iOS Settings
+
+iOS uses showNativeAccountMenu, not the Flutter ProfilePage settings surface. Keep the informational Plans entry in both menus, independent of mobilePlansVisible (which gates legacy promotions). Test the platform-selected entry and return navigation, not only PlansPage in isolation.
+
 ## October 25 - Standard pricing only
 
 User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized.

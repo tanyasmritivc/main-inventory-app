@@ -12,6 +12,7 @@ import '../../core/push_notifications.dart';
 import '../../core/ui/native_presentation.dart';
 import '../notifications/notifications_page.dart';
 import 'memory_page.dart';
+import 'plans_page.dart';
 import 'privacy_policy_page.dart';
 import 'profile_editor_page.dart';
 import 'terms_of_service_page.dart';
@@ -57,6 +58,10 @@ Future<void> showNativeAccountMenu(
                   'subtitle': 'Edit profile',
                 },
                 row('notifications', 'Notifications', 'bell'),
+                {
+                  ...row('plans', 'Plans', 'square.stack.3d.up'),
+                  'subtitle': 'Compare Free, Plus and Team',
+                },
               ],
             },
             {
@@ -233,6 +238,8 @@ Future<void> showNativeAccountMenu(
         page = NotificationsPage(api: api);
       case 'memory':
         page = MemoryPage(api: api);
+      case 'plans':
+        page = const PlansPage();
       case 'privacy':
         page = const PrivacyPolicyPage();
       case 'terms':

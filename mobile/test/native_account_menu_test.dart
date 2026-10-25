@@ -8,6 +8,8 @@ import 'package:mobile/core/appearance_controller.dart';
 import 'package:mobile/core/profile_store.dart';
 import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:mobile/features/profile/native_account_menu.dart';
+import 'package:mobile/features/profile/account_menu.dart';
+import 'package:mobile/features/profile/plans_page.dart';
 import 'support/hierarchy_fixture.dart';
 
 class Storage implements AppearanceStorage {
@@ -31,6 +33,79 @@ void main() {
     fixture.respond = (_) => {'user_id': 'actor-a', 'display_name': 'Alex'};
   });
   tearDownAll(() => Supabase.instance.dispose());
+  for (final brightness in Brightness.values) {
+    testWidgets('iOS Settings opens Plans and returns in $brightness', (
+      tester,
+    ) async {
+      debugNativePresentationOverride = true;
+      addTearDown(() => debugNativePresentationOverride = null);
+      final profile = ProfileStore(api: fixture.api);
+      addTearDown(profile.dispose);
+      late Completer<Object?> completion;
+      late Map model;
+      var presentations = 0;
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        NativePresentation.channel,
+        (call) async {
+          if (call.method == 'present') {
+            presentations++;
+            model = call.arguments as Map;
+            completion = Completer<Object?>();
+            return completion.future;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          NativePresentation.channel,
+          null,
+        ),
+      );
+      late Future<void> pending;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () {
+                  pending = showAccountMenu(
+                    context,
+                    api: fixture.api,
+                    profile: profile,
+                  );
+                },
+                child: const Text('Open account'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open account'));
+      await tester.pumpAndSettle();
+      final rows = (model['sections'] as List).expand(
+        (section) => section['rows'] as List,
+      );
+      final plans = rows.singleWhere((row) => row['id'] == 'plans');
+      expect(plans['title'], 'Plans');
+      expect(plans['disclosure'], true);
+      expect(model['dark'], brightness == Brightness.dark);
+      completion.complete({'action': 'plans'});
+      await tester.pumpAndSettle();
+      expect(find.byType(PlansPage), findsOneWidget);
+      expect(find.text(plansNotice), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(presentations, 2);
+      expect(find.byType(PlansPage), findsNothing);
+      completion.complete(null);
+      await tester.pumpAndSettle();
+      await pending;
+      expect(find.text('Open account'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets(
     'native settings persist confirmed preferences and retain prior selection on failure',
     (tester) async {
