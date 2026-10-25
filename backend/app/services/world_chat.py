@@ -370,9 +370,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Only change details requested by the user; never manufacture quantities, names or certainty. '
             'For only-tools requests set selected false on other observations, retaining them in the draft. '
             'Use world_spaces to obtain exact destination Space IDs without loading stock. '
-            'If no inventory was chosen, ask which inventory and Space to use; do not browse stock to choose for the user. '
+            'Use the user’s named place as the destination intent: record requested_place with world_refine_capture. '
+            'If exactly one writable Space matches that name, select it with world_refine_capture; do not ask them to repeat it. '
+            'If it is missing, propose creating that named place with the reviewed structure/task tool. In Personal, use the Personal workspace and a new inventory named for the place with a same-named Space; do not quiz the user about the storage hierarchy. '
+            'In an organization, use an explicitly selected workspace or the sole writable workspace; if multiple workspaces are plausible, ask one short choice. Never guess an existing destination or create anything without the confirmation card. '
             'The extraction is already complete. Do not repeat names, quantities, category counts or an item list unless the user asks; the card displays them. '
-            'Briefly explain the next step and ask only missing destination information. '
+            'Keep the reply to at most two short sentences unless the user requests detail. Do not repeat the item list, internal inventory hierarchy or card instructions. '
+            'Ask only one question at a time. If selected items have missing_quantities, ask for the named count (for example: How many packs of peas are left?). The card also lets them leave that item out for now. '
+            'Never describe an internal quantity placeholder as a real count. Do not offer reorder rules, thresholds or other optional setup during this save flow. '
             'If structure is missing, use the available structure/task creation tool, keep the extraction draft and its photo evidence, then set its destination after confirmation. Never recreate extracted observations as text-only items. '
             'Describe refined results as the current draft, not a completed inventory change. '
             'Refining never saves inventory. The user taps Save items to confirm. A saving draft is frozen; a saved draft has receipts. '
@@ -429,6 +434,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'Preserve the stated place and meaningful details in notes. A peanut butter jar almost out means one jar '
             'with an almost-out note, not zero jars or a made-up remaining percentage. Two packets of Takis means quantity 2 '
             'and six apples means quantity 6. Unknown counts stay null in the tool; ask one short follow-up after drafting. '
+            'The draft card shows the items: do not repeat that list. Ask for a missing count first, otherwise ask Where should these go? if no place was named. '
+            'Use at most two short sentences. Do not offer optional reorder rules or expose workspace/inventory hierarchy. '
             'If destination and counts are already clear, use the existing reviewed creation/add tools. '
             'For an existing unsaved draft, use world_refine_capture; never create duplicate text drafts or lose photo evidence. '
             'Reuse exact accessible places; if genuinely ambiguous, ask one simple destination question after showing the draft. '
@@ -518,6 +525,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         raise RuntimeError('The action result needs receipt recovery') from None
                     result = {'error': error.detail if isinstance(error, HTTPException) else 'Check the destination and action details. No change was saved.'}
                 messages.append({'role': 'tool', 'tool_call_id': call.id, 'content': json.dumps(model_data(result))})
+            if capture and capture['draft'] and capture['draft']['status'] == 'draft':
+                missing = facts(capture['draft']).get('missing_quantities', [])
+                if missing:
+                    messages.append({'role': 'system', 'content':
+                        'The current draft has a missing count: ' + json.dumps(model_data(missing[0])) +
+                        '. Ask ONE short question for this count only. Do not combine it with a destination question, '
+                        'offer example destinations, repeat the item list, or introduce reorder setup. '
+                        'Handle a destination the user already named with tools, but defer asking any new destination question until this count is resolved.'})
             yield {'type': 'status', 'message': 'Preparing your response…'}
             continue
         if not content.strip():
@@ -527,7 +542,11 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         import re
         mentions_card = bool(re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b|\bcard\b.{0,100}\bconfirm\b|\b(?:proposed|prepared)\s+(?:additions|an?\s+(?:edit|change|move|action|card))', content, re.I | re.S))
         refers_to_previous = prior_pending and bool(re.search(r'\b(?:earlier|previous|above)\b', content, re.I))
-        if mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or refers_to_previous):
+        mentions_structure = bool(re.search(
+            r"\b(?:I(?:'ve| have)?|we(?:'ve| have)?)\s+(?:prepared|proposed|created|set up)\b.{0,100}\b(?:inventory|space|workspace)\b",
+            content, re.I | re.S))
+        if (mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or refers_to_previous)
+                or mentions_structure and not (actions or refers_to_previous)):
             if not card_repair_available or step == 8:
                 raise RuntimeError('The reply referenced an action card that does not exist')
             card_repair_available = False

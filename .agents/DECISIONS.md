@@ -1,3 +1,7 @@
+## October 24 — Counts, destinations and drafts
+
+A detected photo region is not one unit. Unknown counts stay explicit until confirmed or omitted. Only disjoint objects with reliable counts and matching visible markings can merge; preserve the union crop and every warning. A confirmed creation-only destination may bind to its original draft without saving stock. An existing draft is never evidence that a separate destination confirmation card exists.
+
 ## October 24 — Draft before hierarchy
 
 User-described belongings can become a private editable draft before destination

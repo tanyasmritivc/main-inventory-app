@@ -29,11 +29,24 @@ class ItemEdit(BaseModel):
 
 
 class DraftEdit(BaseModel):
+    requested_place: str | None = Field(default=None, min_length=1, max_length=100)
     model_config = ConfigDict(extra='forbid')
     inventory_id: str | None = None
     space_id: str | None = None
     items: list[ItemEdit] = Field(default_factory=list, max_length=200)
 
+
+
+def unknown_quantity_indices(draft):
+    unknown = set(draft.get('summary', {}).get('unknown_quantity_indices', []))
+    for row in draft['items']:
+        evidence = row['item'].get('scan_evidence') or {}
+        if evidence.get('quantity_basis') == 'user_confirmed':
+            continue
+        if evidence.get('quantity_basis') == 'unknown' or any(
+                'Quantity is a candidate placeholder' in r for r in evidence.get('review_reasons', [])):
+            unknown.add(row['index'])
+    return sorted(unknown)
 
 def create(actor, key, cid, items, source_url, summary=None, *, source_kind="photo"):
     from app.services import world_chat as world
@@ -49,6 +62,8 @@ def create(actor, key, cid, items, source_url, summary=None, *, source_kind="pho
         # A visual guess of a location is never an authorized destination.
         item.pop('location', None)
         clean.append({'index': len(clean), 'selected': True, 'item': item})
+    summary = deepcopy(summary or {})
+    summary['unknown_quantity_indices'] = unknown_quantity_indices({'summary': summary, 'items': clean})
     draft = {'id': str(uuid4()), 'version': 1, 'revision': 1, 'status': 'draft',
              'items': clean, 'summary': summary or {}, 'inventory_id': None, 'space_id': None,
              'destination_label': None, 'source_url': source_url, 'source_kind': source_kind}
@@ -117,6 +132,13 @@ def edit(actor, key, cid, capture_id, revision, changes):
             if not inv['can_edit'] or not matches:
                 raise HTTPException(403, 'Choose an accessible Space in this inventory.')
             draft.update(space_id=matches[0]['id'], location=matches[0]['name'])
+    if changes.requested_place is not None:
+        place = changes.requested_place.strip()
+        if not place:
+            raise HTTPException(422, 'Give the Space a name.')
+        draft.setdefault('summary', {})['described_place'] = place
+        if draft.get('location') and draft['location'].strip().casefold() != place.casefold():
+            draft.update(inventory_id=None, space_id=None, location=None, destination_label=None)
     seen = set()
     for update in changes.items:
         if update.index >= len(draft['items']) or update.index in seen:
@@ -137,8 +159,14 @@ def edit(actor, key, cid, capture_id, revision, changes):
                 if not fields[field]:
                     raise HTTPException(422, 'Give the item a name and category.')
         if 'quantity' in fields:
-            unknown = draft.get('summary', {}).get('unknown_quantity_indices', [])
+            unknown = unknown_quantity_indices(draft)
+            if target['item'].get('scan_evidence'):
+                target['item']['scan_evidence'].update(quantity_basis='user_confirmed', quantity_confidence=None)
             draft.setdefault('summary', {})['unknown_quantity_indices'] = [i for i in unknown if i != update.index]
+            if update.index in unknown:
+                # Remove the historical implementation note once the user supplies a count.
+                note = fields.get('notes', target['item'].get('notes', ''))
+                fields['notes'] = note.replace('Quantity not provided; 1 is a draft placeholder. Confirm before saving.', '').replace('Quantity not provided.', '').strip()
         target['item'].update(fields)
         ExtractedInventoryItem.model_validate(target['item'])
     draft['revision'] += 1
@@ -157,8 +185,13 @@ def facts(draft):
         value['receipt']['failure_count'] = len(receipt.get('failures', []))
         value['receipt']['resource_links'] = [link for link in receipt.get('resource_links', []) if link.get('kind') == 'space'][:1]
     if draft.get('status') != 'saved':
+        unknown = unknown_quantity_indices(draft)
+        value['requested_place'] = draft.get('summary', {}).get('described_place')
+        value['missing_quantities'] = [row['item']['name'] for row in draft['items'] if row['selected'] and row['index'] in unknown]
         value['items'] = [{'index': row['index'], 'selected': row['selected'],
-                          **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'notes', 'scan_evidence')}}
+                          **{k: row['item'].get(k) for k in ('name', 'category', 'quantity', 'brand', 'part_number', 'notes', 'scan_evidence')},
+                          'quantity': None if row['index'] in unknown else row['item'].get('quantity'),
+                          'notes': (row['item'].get('notes') or '').replace('Quantity not provided; 1 is a draft placeholder. Confirm before saving.', 'Quantity not provided.')}
                          for row in draft['items']]
     return value
 
@@ -215,7 +248,7 @@ def save(actor, key, cid, capture_id, revision, allow_duplicates=False):
     if not draft.get('inventory_id') or not draft.get('space_id'):
         raise HTTPException(422, 'Choose an inventory and a Space before saving.')
     selected = [r for r in draft['items'] if r['selected']]
-    unknown = draft.get('summary', {}).get('unknown_quantity_indices', [])
+    unknown = unknown_quantity_indices(draft)
     if any(row['index'] in unknown for row in selected):
         raise HTTPException(422, 'Confirm the missing quantities in your draft before saving.')
     if not selected:
@@ -300,7 +333,7 @@ def draft_description(args):
         if description.place:
             notes += f'\nDescribed location: {description.place}.'
         if entry.quantity is None:
-            notes += '\nQuantity not provided; 1 is a draft placeholder. Confirm before saving.'
+            notes += '\nQuantity not provided.'
         items.append(dict(name=entry.name.strip(), category=entry.category.strip(),
                           quantity=entry.quantity if entry.quantity is not None else 1,
                           notes=notes.strip(), confidence=None))
@@ -309,3 +342,22 @@ def draft_description(args):
                              'unknown_quantity_indices': [i for i, entry in enumerate(description.items) if entry.quantity is None]}, source_kind='text')
     return {'capture_draft': facts(state['draft']), 'saved': False,
             'next_step': 'The editable draft is ready. Ask only what is needed to choose its destination or confirm unknown quantities. Nothing is saved to inventory.'}
+
+
+def attach_created_destination(actor, key, action):
+    """After explicit creation, select only its matching Space; never save stock."""
+    binding = action.get('capture_destination')
+    if action.get('status') != 'confirmed' or not isinstance(binding, dict):
+        return None
+    row = load(actor, key, binding['conversation_id'], binding['capture_id'])
+    draft = row['answer_context']['chat_capture']
+    if (draft['status'] != 'draft' or draft.get('space_id') or
+            draft.get('summary', {}).get('described_place') != binding.get('place')):
+        return None
+    links = [link for link in action.get('receipt', {}).get('resource_links', [])
+             if link.get('kind') == 'space' and
+             str(link.get('label', '')).strip().casefold() == binding['place'].strip().casefold()]
+    if len(links) != 1:
+        return None
+    return edit(actor, key, binding['conversation_id'], draft['id'], draft['revision'],
+                {'inventory_id': links[0]['inventory_id'], 'space_id': links[0]['id']})
