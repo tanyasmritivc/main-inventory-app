@@ -12,6 +12,22 @@ import '../scan/scan_evidence_panel.dart';
 import '../notifications/notification_bell.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
+/// Opens the existing review sheet for a freshly authorized notification target.
+Future<void> showReviewDetail(
+  BuildContext context, {
+  required ApiClient api,
+  required ReviewItem item,
+}) async {
+  await showModalBottomSheet<_ReviewOutcome>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    useSafeArea: true,
+    enableDrag: false,
+    builder: (_) => _ReviewDetailSheet(api: api, item: item),
+  );
+}
+
 class ReviewQueuePage extends StatefulWidget {
   const ReviewQueuePage({
     super.key,

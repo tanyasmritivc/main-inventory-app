@@ -19,6 +19,11 @@ import UserNotifications
     // iOS needs this delegate before launch finishes to deliver foreground
     // presentation and notification-tap callbacks to the handlers below.
     UNUserNotificationCenter.current().delegate = self
+    UNUserNotificationCenter.current().getNotificationCategories { categories in
+      var updated = categories
+      updated.insert(UNNotificationCategory(identifier: "PERSONALIZATION", actions: [], intentIdentifiers: [], options: [.customDismissAction]))
+      UNUserNotificationCenter.current().setNotificationCategories(updated)
+    }
     if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
       pendingNotification = notification
     }
@@ -170,7 +175,7 @@ import UserNotifications
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    pushChannel?.invokeMethod("notificationReceived", arguments: nil)
+    pushChannel?.invokeMethod("notificationReceived", arguments: notification.request.content.userInfo)
     completionHandler([.banner, .list, .sound, .badge])
   }
 
@@ -180,6 +185,17 @@ import UserNotifications
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
     let userInfo = response.notification.request.content.userInfo
+    if response.actionIdentifier == UNNotificationDismissActionIdentifier {
+      if pushChannel == nil || !pushDartReady {
+        var feedback = userInfo
+        feedback["findez_feedback"] = "dismissed"
+        pendingNotification = feedback
+      } else {
+        pushChannel?.invokeMethod("notificationDismissed", arguments: userInfo)
+      }
+      completionHandler()
+      return
+    }
     if pushChannel == nil || !pushDartReady {
       pendingNotification = userInfo
     } else {

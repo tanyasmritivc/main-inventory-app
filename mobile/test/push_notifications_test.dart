@@ -34,6 +34,7 @@ void main() {
   Completer<Map<String, dynamic>>? registration;
   Completer<bool>? permission;
   bool granted = true;
+  Map<String, dynamic>? initial;
   setUp(() {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     calls = [];
@@ -41,9 +42,11 @@ void main() {
     registration = null;
     permission = null;
     granted = true;
+    initial = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
           calls.add(call.method);
+          if (call.method == 'getInitialNotification') return initial;
           if (call.method == 'authorizationStatus') return status;
           if (call.method == 'requestPermission') {
             final result = await (permission?.future ?? Future.value(granted));
@@ -170,4 +173,64 @@ void main() {
       expect(calls, contains('unregister'));
     },
   );
+  test(
+    'cold launch passes the native pending destination to the auth shell',
+    () async {
+      initial = {
+        'action': 'personalization',
+        'notification_id': 'pending',
+        'recipient_user_id': 'account-a',
+      };
+      final opened = <Map<String, dynamic>>[];
+      await PushNotifications.initialize(
+        onNotificationTap: (payload) async {
+          opened.add(payload);
+        },
+      );
+      expect(opened, [initial]);
+    },
+  );
+  test('dismissal after terminated launch never opens a sheet', () async {
+    initial = {'action': 'personalization', 'findez_feedback': 'dismissed'};
+    await PushNotifications.initialize(
+      onNotificationTap: (_) async {
+        fail('Dismiss is not an open');
+      },
+    );
+  });
+  test('tap waits across the signed-out auth gate', () async {
+    final opened = <Map<String, dynamic>>[];
+    await PushNotifications.initialize(
+      onNotificationTap: (payload) async {
+        opened.add(payload);
+      },
+    );
+    await PushNotifications.stop();
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .handlePlatformMessage(
+          'com.findez.app/push',
+          const StandardMethodCodec().encodeMethodCall(
+            const MethodCall('notificationTapped', {
+              'action': 'personalization',
+              'notification_id': 'queued',
+            }),
+          ),
+          (_) {},
+        );
+    expect(opened, isEmpty);
+    await PushNotifications.initialize(
+      onNotificationTap: (payload) async {
+        opened.add(payload);
+      },
+    );
+    expect(opened.single['notification_id'], 'queued');
+  });
+  test('revoking OS permission unregisters the active server token', () async {
+    final api = _PushApi();
+    status = 'authorized';
+    expect(await PushNotifications.registerIfAuthorized(api), isTrue);
+    status = 'denied';
+    expect(await PushNotifications.registerIfAuthorized(api), isFalse);
+    expect(api.removals, 1);
+  });
 }

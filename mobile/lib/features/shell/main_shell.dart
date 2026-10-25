@@ -16,6 +16,7 @@ import '../../core/pro_status.dart';
 import '../../core/profile_store.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/push_notifications.dart';
+import '../../core/personalization_notifications.dart';
 import '../../core/notification_snapshot.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/frosted_surface.dart';
@@ -482,9 +483,20 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _initializePushNotifications() async {
     try {
       await PushNotifications.initialize(
+        api: widget.api,
         onNotificationTap: (payload) async {
           if (widget.onWorkspaceNotification != null) {
             await widget.onWorkspaceNotification!(payload);
+            return;
+          }
+          if (payload['action'] == 'personalization') {
+            if (mounted) {
+              await PersonalizationNotifications.open(
+                context,
+                widget.api,
+                payload,
+              );
+            }
             return;
           }
           WidgetsBinding.instance.addPostFrameCallback((_) {

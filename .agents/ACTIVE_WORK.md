@@ -1,3 +1,15 @@
+## October 25 — Personalization notification routing (beta139 preparation)
+
+Lane `feat/mobile-personalization` extends existing APNs lifecycle handling and
+opens existing authorized item/review sheets. No screen, layout, theme, navigation
+or composer redesign. Capability registration prevents older clients receiving the
+new destinations. API migration 081/deployment and opt-in are prerequisites; the
+notification worker remains off. No real-user notifications were sent.
+Verified: 925 full-suite tests (one existing optional visual skip), 28 subsequent
+focused lifecycle/destination tests, clean analysis and simulator native build.
+Physical APNs/background/terminated acceptance remains unverified. Build139 signed
+archive/upload status will be recorded separately after Apple acknowledgment.
+
 ## October 25 - Sample onboarding delivered to TestFlight 138 (PR222)
 
 Apple acknowledged 1.1.1 (138), runtime `79cc169f3c488f3b6455585ee0d5de1887afd407`,

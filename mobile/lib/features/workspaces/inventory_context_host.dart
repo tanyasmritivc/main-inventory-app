@@ -12,6 +12,7 @@ import '../../core/place_session.dart';
 import '../../core/last_place.dart';
 import '../../core/invitation_destination.dart';
 import '../../core/push_notifications.dart';
+import '../../core/personalization_notifications.dart';
 import '../notifications/notifications_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -116,6 +117,7 @@ class _InventoryContextHostState extends State<InventoryContextHost>
     Map<String, dynamic>? initialInbox;
     try {
       await PushNotifications.initialize(
+        api: widget.api,
         onNotificationTap: (payload) async {
           if (!mounted ||
               widget.api.accountId != _places.accountId ||
@@ -220,6 +222,10 @@ class _InventoryContextHostState extends State<InventoryContextHost>
         widget.api.accountId != _places.accountId ||
         (payload['recipient_user_id'] != null &&
             payload['recipient_user_id'] != _places.accountId)) {
+      return;
+    }
+    if (payload['action'] == 'personalization') {
+      await PersonalizationNotifications.open(context, widget.api, payload);
       return;
     }
     final target = placeFromNotification(payload, _places.accountId);
