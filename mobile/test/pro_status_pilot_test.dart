@@ -20,8 +20,8 @@ class _StubApi extends ApiClient {
 Map<String, dynamic> _pilotPayload({
   String? endsAt = '2026-11-01T23:59:59Z',
   String? notice =
-      'Free Pilot: Unlimited access through November 1, 2026. '
-      'Standard free-plan limits and optional paid plans begin November 2. '
+      'Free Pilot: Free pre-launch access. Plan quotas are not enforced during this period. '
+      'There is no automatic cutoff date. '
       'You will not be charged automatically.',
 }) => {
   'tier': 'free',
@@ -64,6 +64,28 @@ void main() {
   });
 
   group('ProStatus — pilot mode active', () {
+    test(
+      'pre-launch suppresses upgrade prompts even after an old end date',
+      () async {
+        await ProStatus.refresh(
+          _StubApi({
+            ..._pilotPayload(endsAt: '2000-01-01T00:00:00Z'),
+            'limits_enabled': true,
+          }),
+        );
+        expect(ProStatus.shouldOfferUpgrade, isFalse);
+      },
+    );
+
+    test('unverified cached status never enables upgrade prompts', () async {
+      await ProStatus.refresh(
+        _StubApi({..._nonPilotPayload(), 'limits_enabled': true}),
+      );
+      expect(ProStatus.shouldOfferUpgrade, isTrue);
+      await ProStatus.loadCached();
+      expect(ProStatus.shouldOfferUpgrade, isFalse);
+    });
+
     test('isPilotMode is true after refresh with pilot_mode=true', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
       expect(ProStatus.isPilotMode, isTrue);
@@ -76,9 +98,9 @@ void main() {
 
     test('pilotNotice contains the required text', () async {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
-      expect(ProStatus.pilotNotice, contains('through November 1, 2026'));
+      expect(ProStatus.pilotNotice, contains('Plan quotas are not enforced'));
       expect(ProStatus.pilotNotice, contains('not be charged automatically'));
-      expect(ProStatus.pilotNotice, contains('begin November 2'));
+      expect(ProStatus.pilotNotice, contains('no automatic cutoff date'));
     });
 
     test('isPro is false — pilot is not a paid tier', () async {
@@ -110,7 +132,7 @@ void main() {
       await ProStatus.loadCached();
       expect(ProStatus.isPilotMode, isTrue);
       expect(ProStatus.pilotEndsAt, '2026-11-01T23:59:59Z');
-      expect(ProStatus.pilotNotice, 'Cached notice text');
+      expect(ProStatus.pilotNotice, ProStatus.defaultPilotNotice);
     });
 
     test(
@@ -131,7 +153,7 @@ void main() {
           reason: 'Must fall back to cached pilot=true on API failure',
         );
         expect(ProStatus.pilotEndsAt, '2026-09-11T23:59:59Z');
-        expect(ProStatus.pilotNotice, 'Stale cached notice');
+        expect(ProStatus.pilotNotice, ProStatus.defaultPilotNotice);
       },
     );
 
@@ -144,11 +166,11 @@ void main() {
       },
     );
 
-    test('display fallback uses November 1 without changing billing state', () {
+    test('display fallback has no cutoff without changing billing state', () {
       expect(
         ProStatus.defaultPilotNotice,
-        'Unlimited access through November 1, 2026. '
-        'Standard free-plan limits and optional paid plans begin November 2. '
+        'Free pre-launch access. Plan quotas are not enforced during this period. '
+        'There is no automatic cutoff date. '
         'You will not be charged automatically.',
       );
       expect(ProStatus.isPilotMode, isFalse);
@@ -166,7 +188,7 @@ void main() {
       await ProStatus.refresh(_StubApi(_pilotPayload()));
 
       expect(ProStatus.pilotEndsAt, '2026-11-01T23:59:59Z');
-      expect(ProStatus.pilotNotice, contains('through November 1, 2026'));
+      expect(ProStatus.pilotNotice, contains('Plan quotas are not enforced'));
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('pilot_notice'), ProStatus.pilotNotice);
       expect(prefs.getString('pilot_ends_at'), ProStatus.pilotEndsAt);

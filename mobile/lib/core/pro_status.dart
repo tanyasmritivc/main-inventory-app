@@ -1,14 +1,34 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProStatus {
   /// Display fallback only; billing and access remain controlled by the API.
   static const defaultPilotNotice =
-      'Unlimited access through November 1, 2026. '
-      'Standard free-plan limits and optional paid plans begin November 2. '
+      'Free pre-launch access. Plan quotas are not enforced during this period. '
+      'There is no automatic cutoff date. '
       'You will not be charged automatically.';
 
   static String _tier = 'free';
+  static int _generation = 0;
+  static bool _limitsEnabled = false;
+  static String? _currentAccount() {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? _apiAccount(ApiClient api) {
+    try {
+      return api.accountId;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool get shouldOfferUpgrade => _limitsEnabled && !_isPilotMode;
   static String? _teamName;
   static bool _isPilotMode = false;
   static String? _pilotEndsAt;
@@ -23,17 +43,32 @@ class ProStatus {
   static String? get teamName => _teamName;
 
   static Future<void> refresh(ApiClient api) async {
+    final actor = _apiAccount(api);
+    final run = ++_generation;
+    _limitsEnabled = false;
     try {
       final data = await api.getMyLimits();
+      if (run != _generation || _apiAccount(api) != actor) return;
+      _limitsEnabled =
+          data['limits_enabled'] == true && data['pilot_mode'] == false;
       _tier = (data['tier'] as String?) ?? 'free';
       _teamName = data['plan']?['name'] as String?;
       _isPilotMode = (data['pilot_mode'] as bool?) ?? false;
       _pilotEndsAt = data['pilot_ends_at'] as String?;
       _pilotNotice = data['pilot_notice'] as String?;
       final prefs = await SharedPreferences.getInstance();
+      if (actor != null) {
+        await prefs.setString('plan_owner', actor);
+      } else {
+        await prefs.remove('plan_owner');
+      }
       await prefs.setString('plan_tier', _tier);
       await prefs.setBool('pilot_mode', _isPilotMode);
-      if (_teamName != null) await prefs.setString('team_name', _teamName!);
+      if (_teamName != null) {
+        await prefs.setString('team_name', _teamName!);
+      } else {
+        await prefs.remove('team_name');
+      }
       if (_pilotEndsAt != null) {
         await prefs.setString('pilot_ends_at', _pilotEndsAt!);
       } else {
@@ -45,36 +80,32 @@ class ProStatus {
         await prefs.remove('pilot_notice');
       }
     } catch (_) {
-      final prefs = await SharedPreferences.getInstance();
-      _tier =
-          prefs.getString('plan_tier') ??
-          ((prefs.getBool('is_pro') ?? false) ? 'pro' : 'free');
-      _teamName = prefs.getString('team_name');
-      // Fall back to cached pilot values so we never unexpectedly show a paywall.
-      _isPilotMode = prefs.getBool('pilot_mode') ?? false;
-      _pilotEndsAt = prefs.getString('pilot_ends_at');
-      _pilotNotice = prefs.getString('pilot_notice');
+      if (run != _generation || _apiAccount(api) != actor) return;
+      await _loadFor(actor, run);
     }
   }
 
-  static Future<void> loadCached() async {
+  static Future<void> loadCached() =>
+      _loadFor(_currentAccount(), ++_generation);
+
+  static Future<void> _loadFor(String? actor, int run) async {
     final prefs = await SharedPreferences.getInstance();
-    _tier =
-        prefs.getString('plan_tier') ??
-        ((prefs.getBool('is_pro') ?? false) ? 'pro' : 'free');
-    _teamName = prefs.getString('team_name');
+    if (run != _generation) return;
+    final matches = actor != null && prefs.getString('plan_owner') == actor;
+    _tier = matches ? (prefs.getString('plan_tier') ?? 'free') : 'free';
+    _teamName = matches ? prefs.getString('team_name') : null;
+    // Pilot is a service-wide presentation policy, never a paid entitlement.
     _isPilotMode = prefs.getBool('pilot_mode') ?? false;
     _pilotEndsAt = prefs.getString('pilot_ends_at');
-    _pilotNotice = prefs.getString('pilot_notice');
-  }
-
-  static Future<void> setProImmediate() async {
-    _tier = 'pro';
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('plan_tier', 'pro');
+    // Old app versions cached a fixed November cutoff. It is not an access rule.
+    _pilotNotice = _isPilotMode ? defaultPilotNotice : null;
+    _limitsEnabled =
+        false; // Never offer an upgrade from an unverified cached quota.
   }
 
   static void reset() {
+    _generation++;
+    _limitsEnabled = false;
     _tier = 'free';
     _teamName = null;
     _isPilotMode = false;

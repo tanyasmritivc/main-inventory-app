@@ -6,7 +6,9 @@ import '../../core/ui/app_text.dart';
 import '../../core/ui/glass_control.dart';
 
 const plansNotice =
-    'Paid plans are coming soon. Current access is unchanged. No payment will be taken.';
+    'Free pre-launch access. Plan quotas are not enforced during this period. '
+    'There is no automatic cutoff date. Paid plans are coming soon. '
+    'You will not be charged automatically.';
 
 class FindEZPlan {
   const FindEZPlan(

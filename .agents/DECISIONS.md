@@ -1,3 +1,10 @@
+## October 25 - No automatic pre-launch cutoff
+
+User requests continued use beyond planned Free quotas while gathering testers.
+Keep PILOT_MODE enabled with no end date. Upgrade prompts require a fresh server
+confirmation of non-pilot limits; cached or offline status cannot authorize them.
+Payment activation and enforcement require a later explicit launch decision.
+
 ## October 25 - Plans must be reachable through iOS Settings
 
 iOS uses showNativeAccountMenu, not the Flutter ProfilePage settings surface. Keep the informational Plans entry in both menus, independent of mobilePlansVisible (which gates legacy promotions). Test the platform-selected entry and return navigation, not only PlansPage in isolation.
