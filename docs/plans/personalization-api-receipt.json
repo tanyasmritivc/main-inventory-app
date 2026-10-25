@@ -1,0 +1,15 @@
+{
+  "source_commit": "fbd19aa43e7afebacb8045ddf4438e020340fe75",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/223",
+  "ci_run": 40244303178,
+  "ci_all_five_jobs": "passed",
+  "production_migration_applied": false,
+  "api_deployed": false,
+  "push_dispatch_enabled": false,
+  "real_user_notifications_sent": false,
+  "local_backend_tests": 1525,
+  "sql_assertions": 40,
+  "migration_replay": "passed",
+  "concurrency": "six-worker daily cap; reset generation fence; SQL/Python priority parity passed",
+  "physical_apns_acceptance": "unverified"
+}

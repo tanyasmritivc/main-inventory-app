@@ -1,5 +1,6 @@
 ## October 25 — Personalization implementation (activation pending)
 
+PR223 runtime `fbd19aa` passed all five CI gates (40244303178).
 Lane `feat/personalization-engine` adds migration 081, opted-in activity/aliases,
 scoped deterministic ranking, verified chat controls and conservative APNs outbox.
 No UI changes, production migration, API deployment or real-user sends. Notification
