@@ -1,3 +1,10 @@
+## October 25 - No automatic pre-launch cutoff
+
+User requests continued use beyond planned Free quotas while gathering testers.
+Keep PILOT_MODE enabled with no end date. Upgrade prompts require a fresh server
+confirmation of non-pilot limits; cached or offline status cannot authorize them.
+Payment activation and enforcement require a later explicit launch decision.
+
 ## October 25 - Standard pricing only
 
 User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized.

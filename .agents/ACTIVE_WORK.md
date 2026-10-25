@@ -1,3 +1,17 @@
+## October 25 - Pre-launch access delivered (PR220)
+
+Runtime `b8e5cc80669397cbaf2e3ca1d615c65f9eb463ac` is live; all five exact-source CI gates passed in 40235348641.
+Plan quotas and purchases remain off, with no automatic cutoff.
+Rollback: `/home/ubuntu/findez-web-releases/no-offers-20261025/frontend`. No production schema change.
+Production build, 22 route checks, staged Chrome visual review and public HTTPS notice checks passed. Previous release and backend were preserved. Build ID: xRWAplxSZtohI0lJ31L2E.
+See `docs/plans/prelaunch-access-20261025.md`. Paid subscription integration remains separate and unfinished.
+
+## October 25 - Pre-launch access (web)
+
+Implementation lane `fix/web-prelaunch-access`. 574 Jest tests, TypeScript and changed-file ESLint passed.
+Delivered; see the release receipt above and `docs/plans/prelaunch-access-20261025.md`.
+Keep plan quotas and purchases off until explicit launch instruction.
+
 ## October 25 - Standard pricing only
 
 User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Deployed runtime `1f858e782a464ef5100646c664e44683723c1e7b`, build `E4TddXx2Nk6z1B-NC1Plp`. All five CI jobs passed (40221088292), 22 staged/live routes passed, and public browser refresh confirms the discount/eligibility link is absent. Source and rollback preserved. Receipt: `docs/plans/no-offers-web-receipt.json`.

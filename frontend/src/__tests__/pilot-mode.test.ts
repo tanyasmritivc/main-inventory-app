@@ -56,29 +56,27 @@ describe('PILOT_COPY', () => {
     expect(PILOT_COPY.title).toBe('Free Pilot');
   });
 
-  test('notice keeps November 1, 2026 as the final free-pilot day', () => {
-    expect(PILOT_COPY.notice).toContain('through November 1, 2026');
-  });
-
-  test('notice starts the following-day plans on November 2', () => {
-    expect(PILOT_COPY.notice).toContain('begin November 2');
+  test('pre-launch access has no quota or automatic cutoff', () => {
+    expect(PILOT_COPY.notice).toContain('Plan quotas are not enforced');
+    expect(PILOT_COPY.notice).toContain('no automatic cutoff date');
+    expect(PILOT_COPY.notice).not.toMatch(/November|Nov\b/);
   });
 
   test('notice says users will not be charged automatically', () => {
     expect(PILOT_COPY.notice).toContain('not be charged automatically');
   });
 
-  test('notice mentions unlimited access', () => {
-    expect(PILOT_COPY.notice).toContain('Unlimited access');
+  test('notice mentions pre-launch access', () => {
+    expect(PILOT_COPY.notice).toContain('pre-launch access');
   });
 
-  test('buttonLabel uses the same following-day date', () => {
-    expect(PILOT_COPY.buttonLabel).toBe('Available Nov 2');
+  test('buttonLabel does not promise a launch date', () => {
+    expect(PILOT_COPY.buttonLabel).toBe('Coming soon');
   });
 
-  test('pricingNote uses the same following-day date', () => {
+  test('pricingNote does not promise a launch date', () => {
     expect(PILOT_COPY.pricingNote).toBe(
-      'Plans shown below will be available starting November 2. No action needed now.',
+      'Plans shown below are for launch. Current pre-launch access is unchanged.',
     );
   });
 

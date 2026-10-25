@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useUpgradePermission } from '@/lib/use-upgrade-permission'
 import { BILLING_PLANS, PLANS_NOTICE } from '@/lib/billing-plans'
 
 interface UpgradeGateProps {
@@ -20,7 +21,8 @@ const FEATURE_ICONS: Record<string, string> = {
 }
 
 export function UpgradeGate({ open, onClose, feature, current, limit, message, isPilot }: UpgradeGateProps) {
-  if (!open || isPilot) return null
+  const permitted = useUpgradePermission(open, isPilot)
+  if (!permitted) return null
 
   const icon = FEATURE_ICONS[feature] ?? '⭐'
 
