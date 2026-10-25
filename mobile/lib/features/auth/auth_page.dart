@@ -1,6 +1,7 @@
 import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
@@ -21,11 +22,15 @@ class AuthPage extends StatefulWidget {
     this.onAuthChanged,
     this.fromOnboarding = false,
     this.onBackToSetup,
+    this.initialMethod,
+    this.trialItemCount,
   });
 
   final VoidCallback? onAuthChanged;
   final bool fromOnboarding;
   final VoidCallback? onBackToSetup;
+  final String? initialMethod;
+  final int? trialItemCount;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -65,6 +70,12 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialMethod == 'email') _showEmail = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.initialMethod == 'apple') unawaited(_signInWithApple());
+      if (widget.initialMethod == 'google') unawaited(_signInWithGoogle());
+    });
     _firstName = TextEditingController();
     _lastName = TextEditingController();
     _profileRole = TextEditingController();
@@ -313,7 +324,7 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       OnboardingPrefs.justSignedUp = true;
-      await auth.signInWithIdToken(
+      await _trialIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
@@ -418,7 +429,7 @@ class _AuthPageState extends State<AuthPage> {
 
       final auth = Supabase.instance.client.auth;
 
-      await auth.signInWithIdToken(
+      await _trialIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
@@ -453,6 +464,43 @@ class _AuthPageState extends State<AuthPage> {
         });
       }
     }
+  }
+
+  Future<AuthResponse> _trialIdToken({
+    required OAuthProvider provider,
+    required String idToken,
+    String? nonce,
+    String? accessToken,
+  }) async {
+    final auth = Supabase.instance.client.auth;
+    if (widget.trialItemCount != null &&
+        auth.currentUser?.isAnonymous == true) {
+      try {
+        return await auth.linkIdentityWithIdToken(
+          provider: provider,
+          idToken: idToken,
+          nonce: nonce,
+          accessToken: accessToken,
+        );
+      } on AuthException catch (error) {
+        // Existing accounts and projects with linking disabled use the ordinary
+        // provider flow. The durable trial is claimed by the resulting user.
+        if (![
+          'identity_already_exists',
+          'email_exists',
+          'manual_linking_disabled',
+          'user_already_exists',
+        ].contains(error.code)) {
+          rethrow;
+        }
+      }
+    }
+    return auth.signInWithIdToken(
+      provider: provider,
+      idToken: idToken,
+      nonce: nonce,
+      accessToken: accessToken,
+    );
   }
 
   static const List<String> _blockedDomains = [
@@ -788,13 +836,15 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  String get _headline => widget.fromOnboarding
-      ? 'Your dashboard is ready'
+  String get _headline => widget.trialItemCount != null
+      ? 'Keep these ${widget.trialItemCount} items'
+      : widget.fromOnboarding
+      ? 'Keep your items'
       : _isLogin
       ? 'Welcome back'
       : 'Create your account';
   String get _subtitle => widget.fromOnboarding
-      ? 'Create an account or sign in to open it.'
+      ? 'Make an account and FindEZ remembers them, on every device.'
       : _isLogin
       ? 'Sign in to your inventory.'
       : 'Keep your inventory in one place.';

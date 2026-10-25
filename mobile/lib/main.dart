@@ -19,9 +19,9 @@ import 'core/ui/launch_loading_screen.dart';
 import 'core/ui/findez_wordmark.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
-import 'features/onboarding/onboarding_page.dart';
+import 'features/onboarding/chat_onboarding_page.dart';
+import 'features/onboarding/chat_onboarding_gate.dart';
 import 'features/splash/splash_page.dart';
-import 'features/onboarding/world_setup_gate.dart';
 import 'features/workspaces/inventory_context_host.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
 import 'features/sharing/invitation_host.dart';
@@ -429,12 +429,8 @@ class LaunchAuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<LaunchAuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
-  int _refresh = 0;
-  bool _previewDismissed = false;
   bool _retryingSession = false;
   bool _sessionRetryFailed = false;
-  Future<bool>? _onboardingCompletedFuture;
-  String? _onboardingFutureForUserId;
 
   Future<void> _retrySession() async {
     if (_retryingSession) return;
@@ -453,27 +449,6 @@ class _AuthGateState extends State<LaunchAuthGate> {
     }
   }
 
-  void _bump() {
-    setState(() {
-      _refresh++;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-    });
-  }
-
-  void _ensureOnboardingFuture() {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (_onboardingCompletedFuture == null) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-      return;
-    }
-
-    if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
-      _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Refresh/network failures are stream errors, not proof of sign-out.
@@ -481,20 +456,13 @@ class _AuthGateState extends State<LaunchAuthGate> {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (_previewOnboarding && !_previewDismissed) {
-          return AppGradientBackground(
-            child: OnboardingPage(
-              isReplay: true,
-              onFinished: () => setState(() => _previewDismissed = true),
-            ),
-          );
-        }
+        if (_previewOnboarding) return ChatOnboardingPage(api: widget.api);
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
-        if (session != null) {
+        if (session != null && !session.user.isAnonymous) {
           if (session.isExpired &&
               (snapshot.hasError || _sessionRetryFailed || _retryingSession)) {
             return Scaffold(
@@ -540,64 +508,14 @@ class _AuthGateState extends State<LaunchAuthGate> {
           }
           return ColoredBox(
             color: AppTheme.adaptive(context, const Color(0xFF09090B)),
-            child: WorldSetupGate(
+            child: ChatOnboardingGate(
               key: ValueKey(session.user.id),
               api: widget.api,
             ),
           );
         }
 
-        _ensureOnboardingFuture();
-        return AppGradientBackground(
-          child: FutureBuilder<bool>(
-            key: ValueKey(_refresh),
-            future: _onboardingCompletedFuture,
-            builder: (context, onboardingSnap) {
-              if (onboardingSnap.hasError) {
-                return Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppText(
-                          'Something went wrong.',
-                          style: TextStyle(
-                            color: AppTheme.foreground(context, Colors.white),
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _bump,
-                          child: AppText(
-                            'Retry',
-                            style: TextStyle(
-                              color: AppTheme.foreground(context, Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              if (!onboardingSnap.hasData) {
-                return const LaunchLoadingScreen(
-                  message: 'Getting things ready…',
-                );
-              }
-              final completed = onboardingSnap.data ?? false;
-              if (!completed) {
-                return OnboardingPage(
-                  onFinished: _bump,
-                  onExistingAccount: _bump,
-                );
-              }
-              return WorldAuthEntry(onAuthChanged: _bump);
-            },
-          ),
-        );
+        return ChatOnboardingPage(api: widget.api);
       },
     );
   }

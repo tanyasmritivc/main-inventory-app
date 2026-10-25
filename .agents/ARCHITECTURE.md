@@ -24,18 +24,23 @@ unchanged. The legacy dashboard is no longer an inventory-entry destination. See
 
 This describes the current release foundation. Planned systems are labeled.
 
-## Interactive mobile setup (October 17)
+## Chat-first mobile trial (October 25; local branch)
 
-OnboardingPage keeps intro/choice/name/purpose/inventory/recap on one route.
-WorldModel directly repaints WorldPainter inside RepaintBoundary; small entrance
-and tag widgets animate independently. No HTML/WebView or new rendering package.
-WorldSetupStore serializes versioned local drafts and per-account creation
-receipts. WorldSetupGate claims after auth, requests one existing-account Add/Skip
-choice, then calls the existing organization/workspace/inventory APIs in order.
-InventoryContextHost validates and opens the resulting inventory. Unknown POST
-outcomes reconcile against authorized actor-owned records and never blindly
-repeat. Existing auth provider/email/recovery handlers retain ownership. Optional
-questionnaire is SetupQuestionsPage. See design/onboarding-a/IMPLEMENTATION.md.
+LaunchAuthGate shows ChatOnboardingPage before auth (including anonymous photo
+sessions). Permanent sessions bypass the introduction. Native Flutter renders
+intro, chat, item editing and Keep; ChatOnboardingWorld embeds only the supplied
+local 3D scene in a transparent WebView with a no-WebGL fallback. Describe, list
+parsing and questions run locally. Photo uses the existing extraction API.
+ChatOnboardingStore persists a versioned trial and save receipt on-device.
+ChatOnboardingGate claims retained trials after auth and ChatOnboardingSaver uses
+the existing Personal inventory, get-or-create Space and Confirm Items bulk-save
+contracts. Stable item request IDs and retained receipts make retries idempotent.
+Ask receives the saved Space as initial context before the local receipt clears.
+Apple/Google can link an anonymous identity; normal-login fallback re-extracts
+photos under the permanent account instead of transferring preview credentials.
+The old WorldSetupGate remains only for compatibility with existing prepared
+Option A drafts; legacy setup/replay widgets still have callers. They are no
+longer first-run onboarding. See docs/onboarding-chat/IMPLEMENTATION.md.
 
 ## Account memory (backend activated October 16)
 

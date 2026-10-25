@@ -1,0 +1,498 @@
+[
+  {
+    "space": "Garage",
+    "keyword": "garage|car\\b|driveway",
+    "spots": [
+      "Shelf 1",
+      "Shelf 2",
+      "Pegboard",
+      "Workbench",
+      "Bin A",
+      "Bin B"
+    ],
+    "items": [
+      [
+        "Cordless drill",
+        1
+      ],
+      [
+        "Drill bit set",
+        1
+      ],
+      [
+        "Socket wrench set",
+        1
+      ],
+      [
+        "Hammer",
+        2
+      ],
+      [
+        "Tape measure",
+        1
+      ],
+      [
+        "Extension cord",
+        2
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Duct tape",
+        3
+      ],
+      [
+        "Wood screws",
+        120
+      ],
+      [
+        "Work gloves",
+        2
+      ],
+      [
+        "Flashlight",
+        1
+      ],
+      [
+        "Battery charger",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Workshop",
+    "keyword": "robot|ftc|frc|vex|team|workshop|pit|parts\\b|screw|bolt|\\bnuts?\\b|motor|servo|drill|multimeter|solder|wrench|batter|caliper|gear",
+    "spots": [
+      "Parts cabinet",
+      "Bin 1",
+      "Bin 2",
+      "Pit cart",
+      "Shelf 2",
+      "Drawer A"
+    ],
+    "items": [
+      [
+        "HD hex motor",
+        4
+      ],
+      [
+        "Servo",
+        6
+      ],
+      [
+        "Aluminum channel",
+        10
+      ],
+      [
+        "M3 x 8 screws",
+        200
+      ],
+      [
+        "M4 lock nuts",
+        150
+      ],
+      [
+        "608 bearings",
+        16
+      ],
+      [
+        "Battery pack, 12V",
+        3
+      ],
+      [
+        "Battery charger",
+        1
+      ],
+      [
+        "Control hub",
+        1
+      ],
+      [
+        "Zip ties",
+        300
+      ],
+      [
+        "Allen key set",
+        2
+      ],
+      [
+        "Spare wheels",
+        4
+      ]
+    ]
+  },
+  {
+    "space": "Kitchen",
+    "keyword": "kitchen|pantry|fridge|freezer|food|grocer",
+    "spots": [
+      "Pantry",
+      "Top shelf",
+      "Spice rack",
+      "Fridge",
+      "Freezer",
+      "Drawer 2"
+    ],
+    "items": [
+      [
+        "Rice",
+        2
+      ],
+      [
+        "Pasta",
+        4
+      ],
+      [
+        "Olive oil",
+        1
+      ],
+      [
+        "Flour",
+        1
+      ],
+      [
+        "Canned beans",
+        6
+      ],
+      [
+        "Coffee beans",
+        2
+      ],
+      [
+        "Oats",
+        1
+      ],
+      [
+        "Peanut butter",
+        1
+      ],
+      [
+        "Chili flakes",
+        1
+      ],
+      [
+        "Frozen peas",
+        2
+      ],
+      [
+        "Eggs",
+        12
+      ],
+      [
+        "Dish soap",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Closet",
+    "keyword": "closet|wardrobe|clothes|clothing|bedroom",
+    "spots": [
+      "Hanging rail",
+      "Top shelf",
+      "Drawer 1",
+      "Drawer 2",
+      "Shoe rack",
+      "Under bed"
+    ],
+    "items": [
+      [
+        "Winter jacket",
+        2
+      ],
+      [
+        "Hoodies",
+        4
+      ],
+      [
+        "Jeans",
+        5
+      ],
+      [
+        "White shirts",
+        6
+      ],
+      [
+        "Sneakers",
+        3
+      ],
+      [
+        "Boots",
+        1
+      ],
+      [
+        "Scarves",
+        3
+      ],
+      [
+        "Socks",
+        14
+      ],
+      [
+        "Gym clothes",
+        5
+      ],
+      [
+        "Rain jacket",
+        1
+      ],
+      [
+        "Suitcase",
+        1
+      ],
+      [
+        "Spare hangers",
+        20
+      ]
+    ]
+  },
+  {
+    "space": "Lab",
+    "keyword": "lab\\b|laboratory|school|classroom|science|makerspace|maker",
+    "spots": [
+      "Cabinet A",
+      "Cabinet B",
+      "Drawer 2",
+      "Bench 1",
+      "Shelf 3",
+      "Storeroom"
+    ],
+    "items": [
+      [
+        "Multimeters",
+        8
+      ],
+      [
+        "Soldering irons",
+        6
+      ],
+      [
+        "Safety goggles",
+        24
+      ],
+      [
+        "Breadboards",
+        20
+      ],
+      [
+        "Jumper wires",
+        300
+      ],
+      [
+        "Arduino boards",
+        12
+      ],
+      [
+        "Beakers",
+        30
+      ],
+      [
+        "Nitrile gloves",
+        200
+      ],
+      [
+        "Calipers",
+        6
+      ],
+      [
+        "Glue guns",
+        4
+      ],
+      [
+        "3D printer filament",
+        10
+      ],
+      [
+        "Extension cords",
+        5
+      ]
+    ]
+  },
+  {
+    "space": "Craft room",
+    "keyword": "craft|art|sewing|knit|yarn|paint|studio",
+    "spots": [
+      "Drawer 1",
+      "Drawer 2",
+      "Shelf A",
+      "Bin 3",
+      "Cart",
+      "Pegboard"
+    ],
+    "items": [
+      [
+        "Acrylic paints",
+        24
+      ],
+      [
+        "Paint brushes",
+        30
+      ],
+      [
+        "Canvas boards",
+        10
+      ],
+      [
+        "Yarn",
+        18
+      ],
+      [
+        "Sewing machine",
+        1
+      ],
+      [
+        "Thread spools",
+        40
+      ],
+      [
+        "Fabric scissors",
+        2
+      ],
+      [
+        "Glue gun",
+        1
+      ],
+      [
+        "Glue sticks",
+        50
+      ],
+      [
+        "Cutting mat",
+        1
+      ],
+      [
+        "Markers",
+        36
+      ],
+      [
+        "Washi tape",
+        12
+      ]
+    ]
+  },
+  {
+    "space": "Office",
+    "keyword": "office|desk|stationery|study",
+    "spots": [
+      "Desk drawer",
+      "Shelf 1",
+      "Cabinet",
+      "Cable box",
+      "Top drawer",
+      "Bookshelf"
+    ],
+    "items": [
+      [
+        "Printer paper",
+        3
+      ],
+      [
+        "Pens",
+        24
+      ],
+      [
+        "Notebooks",
+        6
+      ],
+      [
+        "Sticky notes",
+        8
+      ],
+      [
+        "HDMI cable",
+        2
+      ],
+      [
+        "USB-C chargers",
+        3
+      ],
+      [
+        "Stapler",
+        1
+      ],
+      [
+        "AA batteries",
+        12
+      ],
+      [
+        "Headphones",
+        1
+      ],
+      [
+        "Folders",
+        15
+      ],
+      [
+        "Desk lamp",
+        1
+      ],
+      [
+        "Label maker",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Home",
+    "keyword": "^$",
+    "spots": [
+      "Hall closet",
+      "Kitchen drawer",
+      "Garage shelf",
+      "Office",
+      "Under sink",
+      "Linen cupboard"
+    ],
+    "items": [
+      [
+        "Flashlight",
+        2
+      ],
+      [
+        "AA batteries",
+        16
+      ],
+      [
+        "Light bulbs",
+        6
+      ],
+      [
+        "First aid kit",
+        1
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Extension cord",
+        2
+      ],
+      [
+        "Spare keys",
+        3
+      ],
+      [
+        "Duct tape",
+        2
+      ],
+      [
+        "Phone chargers",
+        4
+      ],
+      [
+        "Umbrella",
+        2
+      ],
+      [
+        "Candles",
+        6
+      ],
+      [
+        "Tape measure",
+        1
+      ]
+    ]
+  }
+]

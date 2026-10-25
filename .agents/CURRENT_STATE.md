@@ -1,3 +1,22 @@
+## October 25 - Chat-first onboarding complete locally
+
+Branch `feat/chat-onboarding` replaces first-run structure setup with native
+Snap/Type/Describe trials before signup, local answers, the supplied 3D scene,
+durable drafts and idempotent Personal/Space saves into Ask. Existing permanent
+sessions bypass the trial. Apple/Google linking and email fallback reuse auth.
+No web/backend/schema/env/CI/deploy changes. No push, TestFlight or submission,
+as explicitly requested for this lane.
+
+Validation: clean Flutter analysis; final 44 focused host regressions and all 17
+iOS simulator integration cases passed. The broad host run passed 901 cases with
+one optional skip and one obsolete headline expectation; that expectation was
+corrected and its entire 14-case file passed in the final focused run. One added
+photo re-extraction regression also passes. Manual reference and native visual
+checks covered the scene, list/edit/answer/Keep and Reduce Motion. Camera and
+provider/network peers in integration tests are synthetic; live physical camera,
+production OAuth/anonymous conversion and device acceptance remain outstanding.
+Full implementation, file list and limitations: docs/onboarding-chat/IMPLEMENTATION.md.
+
 ## October 24 - Mobile thorough audit delivered (beta132; PR211)
 
 Runtime `e8372ce2c161c0a2832787409946e171e1d3503a` on `fix/mobile-thorough-audit-20261024`.

@@ -10,6 +10,7 @@ import 'world_style.dart';
 import '../inventory/space_directory.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/chat_source.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_context.dart';
 import '../../core/place_session.dart';
@@ -33,8 +34,15 @@ import '../scan/project_kits_page.dart';
 
 /// Organization is a knowledge boundary; inventory clients remain explicit for writes.
 class WorldShell extends StatefulWidget {
-  const WorldShell({super.key, required this.session});
+  const WorldShell({
+    super.key,
+    required this.session,
+    this.initialChatSource,
+    this.onInitialChatReady,
+  });
   final PlaceSession session;
+  final ChatSource? initialChatSource;
+  final VoidCallback? onInitialChatReady;
   @override
   State<WorldShell> createState() => _WorldShellState();
 }
@@ -678,6 +686,10 @@ class _WorldShellState extends State<WorldShell> {
                           child: ChatPage(
                             key: ValueKey(_world),
                             api: _chatApi,
+                            onInitialSourceReady: widget.onInitialChatReady,
+                            initialSource: _world == 'personal'
+                                ? widget.initialChatSource
+                                : null,
                             inPageView: true,
                             worldHeading: _directory == null
                                 ? 'Your physical world, remembered.'

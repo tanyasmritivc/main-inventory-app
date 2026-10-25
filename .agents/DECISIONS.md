@@ -1,3 +1,15 @@
+## October 25 - Try chat before signup; no structural setup
+
+The new mobile first run offers Snap, Type and Describe before signup. Local
+Describe/Type answers precede the Keep prompt; photo authentication rejection is
+the explicit exception. No organization/workspace/inventory questionnaire.
+Do not embed the reference app: only the provided 3D scene belongs in a WebView.
+Persist the trial locally and preserve ownership plus stable bulk-save request
+IDs through auth and retries. The repository's real API has persisted Spaces:
+use that existing contract despite the prompt's stale no-Spaces-table statement.
+The user's explicit local-only feat/chat-onboarding instruction overrides standing
+push/TestFlight delivery instructions for this change. No production release.
+
 ## October 24 - Save unknown captures in the destination Space's Review
 
 The user clarified that unknown items belong in the Review section of the Space
