@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 import json
+import logging
 import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel, Field, ConfigDict
@@ -12,6 +13,13 @@ from app.api.routes.workspace_directory import directory_rpc
 from app.core.auth import AuthenticatedUser
 from app.services.inventory_scope import InventoryScope, current_inventory
 from app.services.supabase_client import get_supabase_raw
+
+
+# GLM counts internal reasoning against max_tokens as well as tool JSON/text.
+# Keep generation bounded, but allow multi-location inventory plans to finish.
+CHAT_GENERATION_TOKENS = 8192
+CHAT_RETRY_TOKENS = 16384
+logger = logging.getLogger(__name__)
 
 
 def world_key(value):
@@ -490,7 +498,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     client_tools = available_tools
     card_repair_available = True
     repairing = False
-    generation_limit = 1800
+    generation_limit = CHAT_GENERATION_TOKENS
     for step in range(9):
         enabled = step < 8 and not repairing
         available_tools = capture_tools(client_tools, capture)
@@ -512,11 +520,15 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 if not content.strip() and not calls:
                     raise RuntimeError('Empty model response')
                 break
-            except (RuntimeError, httpx.HTTPError):
+            except (RuntimeError, httpx.HTTPError) as error:
+                from app.services.completion_stream import CompletionStreamError
+                reason = error.code if isinstance(error, CompletionStreamError) else 'transport_or_generation'
+                logger.warning('World generation interrupted reason=%s budget=%d retry_available=%s',
+                               reason, generation_limit, retry_available)
                 if not retry_available:
                     raise
                 retry_available = False
-                generation_limit = 2400
+                generation_limit = CHAT_RETRY_TOKENS
                 yield {'type': 'reset'}
         if calls:
             yield {'type': 'reset'}
@@ -620,7 +632,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 raise
             retry_available = False
             repairing = True
-            generation_limit = 2400
+            generation_limit = CHAT_RETRY_TOKENS
             yield {'type': 'reset'}
             messages.append({'role': 'system', 'content':
                 ('Use the current confirmed extraction receipt to describe its earlier save accurately. Do not claim new changes. '

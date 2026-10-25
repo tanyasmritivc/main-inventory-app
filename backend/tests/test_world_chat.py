@@ -206,7 +206,7 @@ def test_capture_reply_retries_interrupted_generation_once_and_resets_text():
          patch('app.services.agent_gateway_client.gateway_completion', side_effect=[broken_stream(),completion('Which inventory and Space should I use?')]) as gateway:
         result = list(w.stream_turn(ACTOR, WORLD, 'Auto extract', [], 'cid'))
     assert gateway.call_count == 2
-    assert gateway.call_args.kwargs['max_tokens'] == 2400
+    assert gateway.call_args.kwargs['max_tokens'] == w.CHAT_RETRY_TOKENS
     assert [e['type'] for e in result] == ['delta','reset','delta','done']
     assert result[-1]['assistant_message'] == 'Which inventory and Space should I use?'
 
@@ -358,3 +358,28 @@ def test_existing_draft_does_not_substitute_for_a_real_destination_proposal():
         result = list(w.stream_turn(ACTOR, WORLD, 'Save to my pantry', [], 'cid', supports_task_actions=True))
     assert result[-1]['answer_context']['world_actions'] == [proposal['world_action']]
     assert gateway.call_count == 3
+
+
+def test_reasoning_exhaustion_retries_with_room_for_structured_inventory_without_partial_writes():
+    from app.services.agent_gateway_client import _as_namespace
+    partial = _as_namespace({'choices':[{'delta':{'tool_calls':[{'index':0,'id':'partial','function':{'name':'world_create_task','arguments':'{"inventories":['}}]},'finish_reason':'length'}]})
+    call = NS(id='complete', function=NS(name='world_create_task', arguments='{}'))
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'world_action':{'id':'review','status':'pending'}}) as execute, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[iter([partial]),completion(calls=[call]),completion('Review these additions.')]) as gateway:
+        result=list(w.stream_turn(ACTOR,WORLD,'Build inventory from my apartment notes',[],'cid',supports_task_actions=True))
+    execute.assert_called_once_with(ACTOR,WORLD,'world_create_task',{})
+    assert [c.kwargs['max_tokens'] for c in gateway.call_args_list] == [8192,16384,16384]
+    assert result[-1]['type']=='done'
+    assert result[-1]['answer_context']['world_actions'][0]['id']=='review'
+
+
+def test_repeated_output_limit_is_bounded_and_never_executes_partial_tool(caplog):
+    from app.services.agent_gateway_client import _as_namespace
+    def interrupted():
+        return iter([_as_namespace({'choices':[{'delta':{'reasoning_content':'PRIVATE'},'finish_reason':'length'}]})])
+    with patch.object(w,'directory',return_value={}), patch.object(w,'execute') as execute, patch('app.services.agent_gateway_client.gateway_completion',side_effect=[interrupted(),interrupted()]) as gateway:
+        with pytest.raises(RuntimeError,match='interrupted'):
+            list(w.stream_turn(ACTOR,WORLD,'My private apartment',[],'cid'))
+    assert gateway.call_count==2
+    execute.assert_not_called()
+    assert 'reason=output_limit' in caplog.text
+    assert 'PRIVATE' not in caplog.text and 'My private apartment' not in caplog.text

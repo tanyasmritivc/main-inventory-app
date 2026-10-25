@@ -1,3 +1,13 @@
+## October25 — Chat generation budget repair
+
+Lane `fix/chat-stream-reliability`. Reproduced the supplied apartment request with
+synthetic inventory and writes blocked: model finish_reason=length at both 1800
+and 2400 tokens, entirely internal reasoning. At8192 it produced a complete tool
+proposal. Increase bounded generation to8192 and one retry to16384, preserving
+receipts and rejecting incomplete tools. Add fixed safe parser reason codes.
+1529 Python tests passed; CI/deployment pending. No schema or web/client layout
+change. Mobile retry row reuse is in its separate lane.
+
 ## October 25 — Personalization API and migration081 deployed (PR223)
 
 User explicitly authorized deployment and migration. Runtime `fbd19aa` is live with
