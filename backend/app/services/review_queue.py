@@ -61,7 +61,7 @@ def _review_payload(
         "name": str(item.get("name") or "Unidentified item")[:200],
         "category": str(item.get("category") or "Other")[:100],
         "subcategory": item.get("subcategory"),
-        "quantity": max(0, min(100000, int(item.get("quantity") or 1))),
+        "quantity": max(0, min(100000, int(item["quantity"] if item.get("quantity") is not None else 1))),
         "brand": item.get("brand"),
         "part_number": item.get("part_number"),
         "barcode": item.get("barcode"),
@@ -181,6 +181,9 @@ def save_capture_preview(*, user_id: str, preview_id: str, item: dict) -> dict:
     edits = {key: value for key, value in item.items()
              if key in _EDITABLE_FIELDS and key != 'image_url'}
     original = {**preview['item'], **edits}
+    if 'quantity' in edits and (item.get('scan_evidence') or {}).get('quantity_basis') == 'user_confirmed':
+        original['scan_evidence'] = {**original.get('scan_evidence', {}),
+            'quantity_basis': 'user_confirmed', 'quantity_confidence': None}
     client = get_supabase_admin()
     client.table('capture_reviews').upsert(
         _review_payload(user_id=user_id, source_key=preview['source_key'], item=original),

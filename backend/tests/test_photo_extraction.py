@@ -422,3 +422,36 @@ def test_duplicate_batch_indices_cannot_assign_an_identity_to_the_wrong_crop():
                                               g.Identities(items=[identity(), identity()])]):
         with pytest.raises(ValueError, match='No detected object'):
             g.extract(image_bytes(), None, None)
+
+
+def test_pile_is_not_one_unit_even_when_model_confidence_is_high():
+    box = g.Box(label='resistor pile', box=[0, 0, 1000, 1000])
+    item = g._item(box, g.Identity(index=0, name='Resistor pile', category='Electronics', uncertainty='Count uncertain',
+        quantity=1, quantity_basis='visible_individuals', quantity_confidence=.99), 'source')
+    assert item['scan_evidence']['quantity_basis'] == 'unknown'
+    counted = g._item(box, g.Identity(index=0, name='Resistors', category='Electronics', uncertainty='Review',
+        quantity=6, quantity_basis='visible_individuals', quantity_confidence=.99), 'source')
+    assert counted['quantity'] == 6
+    assert counted['scan_evidence']['quantity_basis'] == 'visible_individuals'
+
+
+def test_same_marked_bars_group_without_losing_crop_or_count_and_piles_do_not():
+    image = Image.new('RGB', (1000, 1000), 'white')
+    boxes = [g.Box(label='bar', box=[100,100,400,400]), g.Box(label='bar', box=[450,100,750,400])]
+    def prepared(text='CADBURY 5 STAR 40g', basis='visible_individuals'):
+        result = []
+        for box in boxes:
+            item = g._item(box, g.Identity(index=0, name='Cadbury 5 Star 40g', category='Food', uncertainty='Review',
+                brand='Cadbury', visible_text=text, identity_confidence=.98,
+                quantity=1, quantity_basis=basis, quantity_confidence=.97), 'source')
+            result.append((item, b'crop'))
+        return result
+    grouped = g._group_identical(image, [(b,b'') for b in boxes], prepared())
+    assert len(grouped) == 1 and grouped[0][0]['quantity'] == 2
+    assert grouped[0][0]['scan_evidence']['grouped_observations'] == 2
+    assert Image.open(io.BytesIO(grouped[0][1])).width > 650
+    assert len(g._group_identical(image, [(b,b'') for b in boxes], prepared(basis='unknown'))) == 2
+    different = prepared(); different[1][0]['scan_evidence']['ocr_text'] = 'CADBURY 5 STAR 20g'
+    assert len(g._group_identical(image, [(b,b'') for b in boxes], different)) == 2
+    overlapping = [(boxes[0],b''), (boxes[0],b'')]
+    assert len(g._group_identical(image, overlapping, prepared())) == 2

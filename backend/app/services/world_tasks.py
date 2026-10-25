@@ -86,6 +86,19 @@ def propose(actor, world, args):
                     'location': item.get('location') or 'Unsorted', 'snapshot': frozen['snapshot'],
                     'target_location': spaces[move.location.strip().casefold()]})
     action['version'] = 2
+    # Bind a creation-only proposal to its existing draft, never duplicate the
+    # observations into a text-only task. The binding is server-authored.
+    from app.services.chat_capture import current_capture
+    capture = current_capture.get()
+    draft = capture and capture.get('draft')
+    place = (draft or {}).get('summary', {}).get('described_place')
+    if (draft and draft['status'] == 'draft' and not draft.get('space_id') and place
+            and len(task.inventories) == 1 and not task.inventories[0].items
+            and not task.inventories[0].moves and len(task.inventories[0].spaces) == 1
+            and task.inventories[0].spaces[0].strip().casefold() == place.strip().casefold()):
+        action['capture_destination'] = {'conversation_id': capture['cid'],
+            'capture_id': draft['id'], 'place': place}
+
     return {'world_action': action, 'saved': False,
         'next_step': 'One confirmation creates the listed structure AND adds or moves the listed items. Do not ask for a second confirmation.'}
 

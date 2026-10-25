@@ -261,3 +261,73 @@ def test_old_client_cannot_create_description_draft(store):
         with pytest.raises(ValueError):
             c.draft_description({'items': [{'name': 'Apples', 'quantity': 6}]})
     assert not store.db.rows
+
+
+def test_unknown_count_is_not_exposed_as_one_and_note_is_cleared_on_confirmation(store):
+    with c.use_capture(ACTOR, WORLD, CID, None) as state:
+        c.draft_description({'items': [{'name': 'Peas', 'notes': 'Running low'}]})
+        draft = state['draft']
+        assert c.facts(draft)['items'][0]['quantity'] is None
+        assert c.facts(draft)['missing_quantities'] == ['Peas']
+        draft = c.edit(ACTOR, WORLD, CID, draft['id'], draft['revision'],
+                       {'items': [{'index': 0, 'quantity': 1}]})
+        assert c.facts(draft)['items'][0]['quantity'] == 1
+        assert c.facts(draft)['missing_quantities'] == []
+        assert draft['items'][0]['item']['notes'] == 'Running low'
+        assert not store.bulk.called
+
+
+def test_created_destination_selects_existing_draft_without_saving_or_overriding_choice(store):
+    with c.use_capture(ACTOR, WORLD, CID, None) as state:
+        c.draft_description({'place': 'Garage', 'items': [{'name': 'Bolt', 'quantity': 3}]})
+        draft = state['draft']
+    action = {'status': 'confirmed', 'capture_destination': {
+        'conversation_id': CID, 'capture_id': draft['id'], 'place': 'Garage'},
+        'receipt': {'resource_links': [{'kind': 'space', 'id': SPACE,
+            'inventory_id': INV, 'label': 'Garage'}]}}
+    assert c.attach_created_destination(ACTOR, WORLD, {**action, 'status': 'cancelled'}) is None
+    selected = c.attach_created_destination(ACTOR, WORLD, action)
+    assert selected['space_id'] == SPACE and selected['status'] == 'draft'
+    assert selected['items'] == draft['items']
+    assert not store.bulk.called and not store.review.called
+    assert c.attach_created_destination(ACTOR, WORLD, action) is None
+
+
+def test_creation_proposal_binds_only_the_requested_capture_place(store):
+    from app.services import world_tasks
+    plan = {'workspace_id': 'personal', 'inventories': [{'name': 'Pantry', 'spaces': ['Pantry']}]}
+    def propose(*args):
+        return {'id': 'action', 'status': 'pending', 'plan': deepcopy(plan)}
+    with c.use_capture(ACTOR, WORLD, CID, None) as state, patch.object(w, 'propose_structure', side_effect=propose):
+        c.draft_description({'place': 'Pantry', 'items': [{'name': 'Apples', 'quantity': 2}]})
+        action = world_tasks.propose(ACTOR, WORLD, plan)['world_action']
+        assert action['capture_destination']['capture_id'] == state['draft']['id']
+        state['draft']['summary']['described_place'] = 'Kitchen'
+        assert 'capture_destination' not in world_tasks.propose(ACTOR, WORLD, plan)['world_action']
+
+
+def test_requested_place_clears_a_different_destination_but_keeps_observations(store):
+    draft = destination(c.create(ACTOR, WORLD, CID, [{'name': 'Peas', 'quantity': 3, 'category': 'Produce'}], None))
+    updated = c.edit(ACTOR, WORLD, CID, draft['id'], draft['revision'], {'requested_place': 'Pantry'})
+    assert updated['space_id'] is None and updated['inventory_id'] is None
+    assert updated['summary']['described_place'] == 'Pantry'
+    assert updated['items'] == draft['items']
+    assert not store.bulk.called
+
+
+def test_photo_unknown_counts_block_save_until_confirmed_even_for_legacy_drafts(store):
+    draft = c.create(ACTOR, WORLD, CID, [{'name': 'Resistors', 'category': 'Electronics', 'quantity': 1,
+        'scan_evidence': {'needs_review': True, 'quantity_basis': 'unknown'}}], 'photo')
+    assert draft['summary']['unknown_quantity_indices'] == [0]
+    draft = destination(draft)
+    with pytest.raises(HTTPException, match='missing quantities'):
+        c.save(ACTOR, WORLD, CID, draft['id'], draft['revision'])
+    # Historical drafts have only a review reason and no summary flag.
+    stored = store.db.rows[draft['id']]['answer_context']['chat_capture']
+    stored['summary'] = {}
+    stored['items'][0]['item']['scan_evidence'] = {'needs_review': True, 'review_reasons': ['Quantity is a candidate placeholder; confirm the visible count.']}
+    assert c.facts(stored)['items'][0]['quantity'] is None
+    updated = c.edit(ACTOR, WORLD, CID, draft['id'], draft['revision'], {'items': [{'index': 0, 'quantity': 8}]})
+    assert c.facts(updated)['items'][0]['quantity'] == 8
+    assert updated['items'][0]['item']['scan_evidence']['quantity_basis'] == 'user_confirmed'
+    assert not store.bulk.called

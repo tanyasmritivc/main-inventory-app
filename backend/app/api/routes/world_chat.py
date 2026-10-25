@@ -287,7 +287,14 @@ def decide(request: Request, world_id: str, action_id: UUID, body: Decision, use
         raise HTTPException(502, 'This change could not be confirmed. Retry the same card safely.') from None
     if not isinstance(result, dict) or result.get('id') != str(action_id) or result.get('status') not in ('confirmed', 'cancelled'):
         raise HTTPException(503, 'The result could not be confirmed. Retry the same card safely.')
-    return {'action': result}
+    from app.services.chat_capture import attach_created_destination
+    # Creation already has a durable receipt. If the draft changed concurrently,
+    # keep that successful receipt and let its destination be chosen in the card.
+    try:
+        capture = attach_created_destination(user.user_id, key, result)
+    except HTTPException:
+        return {'action': result, 'capture_warning': 'Space created. Your draft changed; choose the destination in the draft to continue.'}
+    return {'action': result, **({'capture': capture} if capture else {})}
 
 
 @router.post('/inventories/{inventory_id}/ai_actions/{action_id}')

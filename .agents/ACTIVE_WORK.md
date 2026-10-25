@@ -1,3 +1,7 @@
+## October 24 — clearer drafts and correct photo quantities (API)
+
+Active owner: Codex, `fix/draft-flow-api-20261024`. See `docs/plans/draft-flow-20261024.md`. Implementation complete; release verification and delivery in progress. No navigation changes or database migration.
+
 ## October 24 — Activity progress and draft-first inventory delivered (PR195)
 
 Runtime e629825f6462a1f14d0f9e9753d6ba48cd9d7af2 is live on the self-hosted API.
