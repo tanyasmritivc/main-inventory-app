@@ -29,3 +29,52 @@ Checks: `flutter analyze`; `flutter test --no-pub --concurrency=1`.
 Focused tests cover blocked dismissal, zero/singular/plural success counts, 600 ms
 hold, final caption, Reduce Motion, 3.2x text on a small display, early teardown,
 retry and exact-route cleanup with nested navigation/another modal.
+
+## Verified behavior
+
+Exact runtime commit: `7fa398c1a4f83fa1c4bdecfc4c2e1e8373365ce8`.
+CI run 40155086930 passed all five jobs, including clean Flutter analysis and
+868 Flutter tests (one optional skip). Thirteen focused loader/capture tests pass.
+
+On iPhone 17 Pro / iOS 26.5 simulator, a native library photo flowed through the
+real Space capture UI with a delayed two-item fixture: blur/dim without a card,
+bob/seeds/progress, captions ending at “Almost done...”, found-it pose with the
+returned count, and the existing Confirm Items sheet. Nothing was saved.
+With the real Settings > Accessibility > Motion > Reduce Motion switch on, Pip
+and the bar stayed still, chips were absent, and the text stayed readable. The
+switch was restored to its original off state. Native iOS uses
+`accessibilityFeatures.reduceMotion`, so the loader observes that flag in addition
+to `MediaQuery.disableAnimations`. Physical-device acceptance is unverified.
+
+The timed captions are not measured extraction stages. No speed or accuracy claim
+is made by this UI-only change. The CSS shadow is approximated by a blurred SVG
+silhouette; native SVG rendering may differ slightly from the browser reference.
+The current endpoint has no streamed items or progress, so seed chips and an
+indeterminate bar intentionally replace the reference's named chips.
+
+## Files changed
+
+- `mobile/lib/widgets/pip_extract_loader.dart`: shared route, handle and animation.
+- `mobile/lib/features/scan/capture_progress.dart`, `scan_page.dart`, and
+  `upload_photo_flow.dart`: loader wiring and actual returned item count.
+- `mobile/assets/mascot/pip.svg`, `pip-found-it.svg`: supplied artwork.
+- `mobile/pubspec.yaml`: asset registration and TestFlight build 129.
+- `mobile/test/pip_extract_loader_test.dart`, `capture_progress_test.dart`: lifecycle,
+  accessibility, success and existing retry/navigation coverage.
+- `mobile/tool/pip_extract_preview.dart`: network-free native QA entry point.
+- `docs/extract-loader/findez-extract-loader.html`, this README, and
+  `.agents/ACTIVE_WORK.md` / `.agents/CURRENT_STATE.md`: reference and delivery record.
+
+## Delivery
+
+Committed and pushed on `feat/pip-extract-loader`; PR #205.
+Apple acknowledged version 1.1.1 (129), delivery
+`141bf00a-26cc-419d-b983-e6bc4c70ec03`. Processing and tester availability were not
+polled. Device acceptance is unverified. No public App Store submission.
+
+The signed archive and export each passed checks for 32 iOS-device executables;
+strict signature, 24 privacy manifests, production HTTPS configuration and Apple
+validation passed. IPA SHA256:
+`620f9e553caa0a2ed6db98e0a998de05cd33832cb8eb5e05e1ecf9a1f6aeae3a`.
+Artifacts, both simulator recordings, CI receipt and Apple acknowledgment are in
+`~/Documents/FindEZ/AppStore/1.1.1-build129/`.

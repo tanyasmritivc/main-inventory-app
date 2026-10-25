@@ -1,3 +1,28 @@
+## October 24 - Pip extraction loader delivered (beta129; PR205)
+
+Branch `feat/pip-extract-loader`; runtime `7fa398c1a4f83fa1c4bdecfc4c2e1e8373365ce8`.
+The shared Flutter photo extraction overlay shows the supplied Pip artwork directly
+on a blurred, dimmed backdrop, timed captions, seed chips and indeterminate progress.
+Actual returned item count drives the 600 ms found-it moment before existing review.
+Space photos and Scan capture use it. Extraction APIs, retries/errors, save behavior,
+backend, web and database are unchanged. Native iOS Reduce Motion is observed in
+addition to Flutter disabled animations; all loader motion stops when enabled.
+
+All five runtime CI jobs passed (40155086930), including clean Flutter analysis and
+868 tests with one optional skip. Native iPhone 17 Pro/iOS 26.5 simulator exercised
+photo selection through the real Space flow with a delayed network-free two-item
+fixture, normal motion/success/Confirm Items and actual system Reduce Motion. This
+validates loading UI, not live model latency/accuracy. Physical-device acceptance
+remains unverified.
+
+Apple accepted 1.1.1 (129), delivery `141bf00a-26cc-419d-b983-e6bc4c70ec03`.
+All 32 archive/export native executables, strict signing, 24 privacy manifests,
+production configuration and Apple validation passed. IPA SHA256
+`620f9e553caa0a2ed6db98e0a998de05cd33832cb8eb5e05e1ecf9a1f6aeae3a`.
+Preserved IPA/archive, recordings and receipts: Documents/FindEZ/AppStore/1.1.1-build129.
+Processing/tester availability were not polled. No public App Store submission.
+Reference, changed files and differences: docs/extract-loader/README.md.
+
 ## October 24 - Extraction reliability delivered (API203; beta128/PR204)
 
 API runtime `ddaf60fb857acf5eb67fd9d50b1ab4d78877b319` is live with GLM retained; all five CI jobs passed (40152537949), including 1,477 Python tests. The two-file guarded overlay preserved 116 unrelated files; API/database health and anonymous denial passed. Rollback: /home/ubuntu/findez-extraction-reliability-20261024-v2. Real candidate/live API checks passed full fields, confidence/crops, signed previews, cross-account denial and explicit review/save with two disposable accounts per run removed. Live close-up extraction took 16.9s. No customer records or schema changes.
