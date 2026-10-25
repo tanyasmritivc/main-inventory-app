@@ -1,3 +1,7 @@
+## October 24 - Cluttered extraction reliability (mobile)
+
+Active scoped lane. Investigated real 503 failures in Space extraction. API validates model regions/identities independently, preserves correctly mapped siblings without repeating a paid batch, and keeps grounded crops as Unknown Review drafts when detail calls fail. No counts or confidence are invented. Mobile avoids repeated lossy image compression, prepares EXIF-correct 2048px JPEGs off the UI thread, preserves clearer chat photos, and offers explicit same-photo retry after transient failures with readable errors and shiny progress. No automatic network retries, inventory writes, schema changes, provider swap or bottom-navigation changes. Candidate build128. See docs/plans/extraction-reliability-20261024.md. Validation and publication in progress.
+
 ## October 24 - Mobile utility page polish delivered (beta127; PR202)
 
 Mobile runtime `5cb8b885ed228af43b7403e7d9e668987609b00a`; PR #202, stacked on build126. Notifications, plus-menu context/connections/import destinations, and Settings Memory now use compact typography, separated rows, tidy fields and clear states. Existing actions, API behavior and bottom navigation remain unchanged.

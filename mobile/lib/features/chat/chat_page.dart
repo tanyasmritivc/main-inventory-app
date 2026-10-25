@@ -2845,9 +2845,9 @@ class _ChatPageState extends State<ChatPage>
       } else {
         final file = await ImagePicker().pickImage(
           source: camera ? ImageSource.camera : ImageSource.gallery,
-          maxWidth: 1600,
-          maxHeight: 1600,
-          imageQuality: 80,
+          maxWidth: 2048,
+          maxHeight: 2048,
+          imageQuality: 92,
           requestFullMetadata: false,
         );
         if (file != null) {

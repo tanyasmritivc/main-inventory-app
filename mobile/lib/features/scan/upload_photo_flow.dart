@@ -1,10 +1,8 @@
 import '../../core/app_theme.dart';
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
@@ -16,23 +14,6 @@ import 'confirm_scan_sheet.dart';
 import 'capture_progress.dart';
 import 'review_capture.dart';
 import 'package:mobile/core/ui/app_text.dart';
-
-List<int> _compressImageBytes(Uint8List bytes) {
-  try {
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return bytes.toList();
-    const maxDim = 1920;
-    img.Image resized = decoded;
-    if (decoded.width >= decoded.height && decoded.width > maxDim) {
-      resized = img.copyResize(decoded, width: maxDim);
-    } else if (decoded.height > decoded.width && decoded.height > maxDim) {
-      resized = img.copyResize(decoded, height: maxDim);
-    }
-    return img.encodeJpg(resized, quality: 85);
-  } catch (_) {
-    return bytes.toList();
-  }
-}
 
 String _normalizeCategory(String rawCategory) {
   final c = rawCategory.trim().toLowerCase();
@@ -307,7 +288,7 @@ Future<void> runUploadPhotoFlow({
 
   final rawBytes = await x.readAsBytes();
   if (!context.mounted) return;
-  final bytes = _compressImageBytes(rawBytes);
+  final bytes = rawBytes;
 
   final sourceRoute = ModalRoute.of(context);
   bool isCurrent() => sourceRoute?.isCurrent ?? true;
@@ -322,6 +303,7 @@ Future<void> runUploadPhotoFlow({
   try {
     extracted = await runWithCaptureProgress(
       context: context,
+      retryOnFailure: true,
       extract: () =>
           api.extractInventoryFromImage(bytes: bytes, filename: x.name),
     );
@@ -348,16 +330,16 @@ Future<void> runUploadPhotoFlow({
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('Failed to extract items. Try again.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: AppText(friendlyApiError(e))));
     }
     return;
-  } catch (_) {
+  } catch (e) {
     if (!context.mounted || !isCurrent()) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: AppText('Failed to extract items. Try again.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: AppText(friendlyApiError(e))));
     return;
   }
 
