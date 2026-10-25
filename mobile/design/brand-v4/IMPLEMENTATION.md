@@ -136,3 +136,7 @@ The 3D scene retains its existing movement and shelf behavior; only the logo geo
 - `mobile/tool/prepare_brand_icon.dart`
 
 Repository state notes in `.agents/ACTIVE_WORK.md`, `.agents/CURRENT_STATE.md` and `.agents/DECISIONS.md` are also updated.
+
+## Release — October 25
+
+The user subsequently authorized TestFlight delivery. Apple accepted 1.1.1 (133), including chat-first onboarding and Petals branding, after all five CI jobs passed. See testflight-receipt.json. Apple processing and tester availability remain pending/unverified. All 24 v5 screenshots are staged (screenshots-v5-receipt.json); public App Store submission remains held.

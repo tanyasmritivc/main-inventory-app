@@ -1,3 +1,9 @@
+## October 25 — Petals and chat onboarding beta133 delivered (PR214)
+
+Apple accepted 1.1.1 (133), runtime `f80248d8813ad88a47909bd5a030d7480382e9db`, delivery `4d60ceee-7770-44db-985d-5eaa164884f7`. All five exact-runtime CI jobs passed (40216741053). Signed archive/export verified 34 device executables each; strict signing, 26 privacy manifests, production configuration and Apple validation passed. IPA SHA256 `7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f`. Processing and tester availability were not polled. Physical-device acceptance remains unverified. Artifacts: Documents/FindEZ/AppStore/1.1.1-build133.
+
+All 24 supplied v5 screenshots were uploaded and verified COMPLETE in numbered order across four device sets (six each), replacing v4 with backups retained. Version 1.1.1/en-US remains PREPARE_FOR_SUBMISSION. No review submission, public release or build selection was performed. Screenshot receipt: mobile/design/brand-v4/screenshots-v5-receipt.json.
+
 ## October 25 — Petals release authorized
 
 The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing 1.1.1 (133), including chat-first onboarding.
