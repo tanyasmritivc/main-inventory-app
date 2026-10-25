@@ -1,3 +1,10 @@
+## October 25 - No automatic pre-launch cutoff
+
+User requests continued use beyond planned Free quotas while gathering testers.
+Keep PILOT_MODE enabled with no end date. Upgrade prompts require a fresh server
+confirmation of non-pilot limits; cached or offline status cannot authorize them.
+Payment activation and enforcement require a later explicit launch decision.
+
 ## October 24 — Offer missing destinations on the first turn
 
 A named missing Space/inventory is an opportunity to offer a real creation card,

@@ -1,3 +1,9 @@
+## October 25 - Pre-launch access (api)
+
+Implementation lane `fix/api-prelaunch-access`. 1484 Python tests and ten subtests passed. No schema change.
+Prepared, not deployed; see `docs/plans/prelaunch-access-20261025.md`.
+Keep plan quotas and purchases off until explicit launch instruction.
+
 ## October 24 — Proactive missing destinations deployed (PR212)
 
 API runtime `a5184f6a3aa329879c2b2775fea51271b843a853` is live. All five exact-runtime

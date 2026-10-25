@@ -40,8 +40,8 @@ import app.services.usage_service  # noqa: E402
 
 _PILOT_END_DATE = "2026-11-01T23:59:59Z"
 _EXPECTED_NOTICE = (
-    "Free Pilot: Unlimited access through November 1, 2026. "
-    "Standard free-plan limits and optional paid plans begin November 2. "
+    "Free pre-launch access. Plan quotas are not enforced during this period. "
+    "There is no automatic cutoff date. "
     "You will not be charged automatically."
 )
 
@@ -171,20 +171,20 @@ class TestPilotNoticeContent(unittest.TestCase):
     def setUp(self):
         self.result = _run_summary(pilot_mode=True, pilot_ends_at=_PILOT_END_DATE)
 
-    def test_notice_mentions_nov_1(self):
-        self.assertIn("November 1, 2026", self.result["pilot_notice"])
+    def test_notice_has_no_automatic_cutoff(self):
+        self.assertIn("no automatic cutoff date", self.result["pilot_notice"])
 
-    def test_notice_mentions_nov_2(self):
-        self.assertIn("November 2", self.result["pilot_notice"])
+    def test_notice_does_not_promise_launch_date(self):
+        self.assertNotIn("November", self.result["pilot_notice"])
 
     def test_notice_mentions_no_automatic_charge(self):
         self.assertIn("not be charged automatically", self.result["pilot_notice"])
 
     def test_notice_mentions_unlimited_access(self):
-        self.assertIn("Unlimited access", self.result["pilot_notice"])
+        self.assertIn("Plan quotas are not enforced", self.result["pilot_notice"])
 
     def test_notice_mentions_free_pilot(self):
-        self.assertIn("Free Pilot", self.result["pilot_notice"])
+        self.assertIn("Free pre-launch access", self.result["pilot_notice"])
 
     def test_full_notice_exact_match(self):
         self.assertEqual(self.result["pilot_notice"], _EXPECTED_NOTICE)
