@@ -1,3 +1,15 @@
+## October 24 - Duplicate Search navigation removed (PR213)
+
+Web runtime `2e9c0af0dbe66ee21f0c887cf520b744b74953c9` is deployed. Search was
+removed from the shared organization/Personal sidebar; New chat is the only chat
+entry. Existing URLs remain compatible. All 566 web tests, TypeScript, scoped
+lint, production build and all five CI jobs (40167973852) passed. Twenty staged
+and twenty live route checks passed; signed-in browser refresh visibly showed
+New chat, Spaces, Tools and Workspaces with no Search link. Previous release and
+backend process were preserved. Build: `-Ox8Rrh0-m9OKbw7XroCX`. Release/rollback:
+`/home/ubuntu/findez-web-releases/remove-search-20261024`; prior release:
+`/home/ubuntu/findez-web-releases/theme-audit-20261024/frontend`.
+
 ## October 24 — search and browser brand refresh
 
 Deployed self-hosted web runtime a52b1537566ca2957f0ef68c69d3aff2c57cf29c (PR #201), build uPMr9qe7iEphZ4ferX3iR, at /home/ubuntu/findez-web-releases/search-brand-20261024/frontend. All five exact-runtime CI checks passed in 40148047062. Local 558 tests, TypeScript and changed-file lint passed without new warnings. Production build and 13 staged/live route checks passed. Public-domain verification confirmed exact homepage/social title, FindEZ site name, five icon links matching canonical files, valid structured data, Pricing title/canonical, and Pricing in sitemap. Previous web release and backend PID were preserved. See docs/plans/search-brand-20261024.md. On October 24, at the user’s request, Search Console accepted https://findez.ai/sitemap.xml (Success, submitted and last read October 24, 5 discovered pages). Homepage URL Inspection confirmed the page is indexed; Request indexing then confirmed “Indexing requested” and addition to the priority crawl queue. Search result artwork/title refresh and sitelink/knowledge-panel display remain controlled by Google and unverified.

@@ -54,7 +54,6 @@ test("organization navigation has a single shared chat, and inventories open dir
   expect(navigation.items.map((i) => i.label)).toEqual([
     "New chat",
     "Spaces",
-    "Search",
     "Tools",
     "Workspaces",
     "People",
