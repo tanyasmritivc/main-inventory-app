@@ -206,6 +206,11 @@ async def get_current_user(
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
 
+    # Down-scoped integration JWTs are for RLS-backed integration calls only.
+    # Treating one as an account session would bypass its scopes on private APIs.
+    if claims.get("api_key_id"):
+        raise unauthorized("Use the integration API with this credential")
+
     user_id = claims.get("sub")
     if not user_id:
         logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)

@@ -1,3 +1,31 @@
+## October 25 — Personalization API and migration081 deployed (PR223)
+
+User explicitly authorized deployment and migration. Runtime `fbd19aa` is live with
+existing agent-management/approval router additions preserved; 111 unrelated source
+files unchanged. Migration081 passed isolated live-schema rehearsal/replay before
+transactional production application. All five RLS tables, denied client writes and
+private RPC grants verified. Public API/database health, anonymous endpoint denial,
+live PostgREST cold profile and unauthorized inventory checks passed.
+
+Private database/code backups: `/home/ubuntu/findez-personalization-20261025`.
+The five-minute retention timer is active and its first run passed. Personalized
+push remains explicitly disabled pending isolated-device acceptance; learning is
+per-user opt-in. GLM, pilot mode and no-expiry pre-launch access remain unchanged.
+No customer data used for testing, no real notifications sent. Receipt:
+`docs/plans/personalization-api-receipt.json`. Mobile beta139 was accepted by Apple.
+
+## October 25 — Personalization implementation (activation pending)
+
+PR223 runtime `fbd19aa` passed all five CI gates (40244303178).
+Lane `feat/personalization-engine` adds migration 081, opted-in activity/aliases,
+scoped deterministic ranking, verified chat controls and conservative APNs outbox.
+No UI changes, production migration, API deployment or real-user sends. Notification
+dispatch defaults off. Existing master Memory disable/Forget applies to the new data.
+Verified: 1,525 backend tests, 40 PostgreSQL assertions, migration replay, six-worker
+cap/reset races and SQL/Python scoring parity. Web source unchanged: 574 tests,
+TypeScript and webpack production build passed; lint has 52 existing warnings.
+See `docs/plans/personalization-engine.md` for exact behavior, activation and limits.
+
 ## October 25 - Pre-launch access delivered (PR219)
 
 Runtime `b24c0bdcf8204b80dd8f140328788b451cece86a` is live; all five exact-source CI gates passed in 40235308444.

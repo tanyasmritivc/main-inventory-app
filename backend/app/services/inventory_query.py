@@ -73,12 +73,13 @@ def query_inventory(*, user_id: str, terms: list[str], filters: dict | None = No
         if not rows:
             return {'error': 'space_unavailable', 'items': [], 'complete': False}
     data = search_memory_candidates(user_id=user_id, terms=normalized)
-    items = []
-    for row in data['items']:
-        basis = match_item(row, normalized)
-        if basis and _filter(row, filters):
-            items.append({**row, '_match_basis': basis})
-    items.sort(key=lambda row: score_item(row, ' '.join(normalized)), reverse=True)
+    from app.services.personalization.scoring import rank_rows
+    from app.services.personalization.repository import record_search
+    context = data.get('_personalization')
+    text = ' '.join(normalized)
+    items = rank_rows([row for row in data['items'] if _filter(row, filters)], text,
+        context['aliases'] if context else [], context['scores'] if context else {})
+    record_search(context, text, items)
     counts = [recorded_quantity(row.get('quantity')) for row in items]
     return {'record_count': len(items),
             'known_units': sum(count for count in counts if count is not None),

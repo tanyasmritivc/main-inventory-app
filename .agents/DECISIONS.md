@@ -1,3 +1,12 @@
+## October 25 — Evidence-based personalization without new UI
+
+Keep behavioral learning opt-in under the existing Memory master control. Use
+verified database outcomes, bounded activity, confirmed aliases and deterministic
+ranking; behavior cannot authorize an ambiguous mutation. Push is opt-in by category,
+server-disabled by default, capped and rechecked against current authorized records.
+APNs acceptance, device delivery, opens and verified completion are distinct. Preserve
+existing web/mobile layout and navigation; expose controls through existing chat/API.
+
 ## October 25 - No automatic pre-launch cutoff
 
 User requests continued use beyond planned Free quotas while gathering testers.

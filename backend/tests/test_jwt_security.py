@@ -62,3 +62,8 @@ def test_unsigned_token_rejected_before_account_lookup(verifier):
     token=jwt.encode(claims(),key='',algorithm='none')
     assert client.get('/protected',headers={'Authorization':'Bearer '+token}).status_code==401
     db.rpc.assert_not_called()
+
+
+def test_integration_claim_cannot_be_used_as_private_account_session(verifier):
+    assert send(verifier,{**claims(),'api_key_id':'integration-key'}).status_code==401
+    verifier[3].rpc.assert_not_called()
