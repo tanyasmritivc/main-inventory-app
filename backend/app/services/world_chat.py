@@ -525,6 +525,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         raise RuntimeError('The action result needs receipt recovery') from None
                     result = {'error': error.detail if isinstance(error, HTTPException) else 'Check the destination and action details. No change was saved.'}
                 messages.append({'role': 'tool', 'tool_call_id': call.id, 'content': json.dumps(model_data(result))})
+            if capture and capture['draft'] and capture['draft']['status'] == 'draft':
+                missing = facts(capture['draft']).get('missing_quantities', [])
+                if missing:
+                    messages.append({'role': 'system', 'content':
+                        'The current draft has a missing count: ' + json.dumps(model_data(missing[0])) +
+                        '. Ask ONE short question for this count only. Do not combine it with a destination question, '
+                        'offer example destinations, repeat the item list, or introduce reorder setup. '
+                        'Handle a destination the user already named with tools, but defer asking any new destination question until this count is resolved.'})
             yield {'type': 'status', 'message': 'Preparing your response…'}
             continue
         if not content.strip():
