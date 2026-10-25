@@ -50,7 +50,7 @@
   --surface-raised: #f5f5f5;
   --bone: #111112;
   --stone: #575757;
-  --smoke: #929292;
+  --smoke: #707070;
   --forest: #000000;
   --clay: #e8590c;
   --sand: #c7c7c7;
@@ -66,7 +66,7 @@
   --t1: var(--bone);
   --t2: var(--stone);
   --t3: var(--smoke);
-  --t4: #929292;
+  --t4: #707070;
   --white: #ffffff;
   --sys-green: #2f7d5a;
   --sys-yellow: #8a5a00;
@@ -225,6 +225,26 @@ input:-webkit-autofill:focus {
      ever applies while .dark is present, never on the pages that share
      these token names (landing, auth, pricing, robotics). */
   --ink: #f4f4f2;
+  --canvas: #0e0e10;
+  --surface-earth: #17171b;
+  --surface-raised: #1d1d21;
+  --bone: #f4f4f2;
+  --stone: #a6a6ae;
+  --smoke: #a6a6ae;
+  --sand: #595963;
+  --s3: #25252a;
+  --b1: rgba(255,255,255,.08);
+  --b2: rgba(255,255,255,.14);
+  --b3: rgba(255,255,255,.22);
+  --t4: #a6a6ae;
+  --surface-hover: #25252a;
+  --surface-active: #33333a;
+  --fz-border: #26262b;
+  --border-hover: #595963;
+  --danger: #f0737c;
+  --warning: #d9a441;
+  --sys-green: #5fbf92;
+  --sys-yellow: #d9a441;
   --forest: #f4f4f2;
   --copper: #b9b9c0;
   --danger-ink: #f0737c;

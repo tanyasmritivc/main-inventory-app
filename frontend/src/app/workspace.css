@@ -118,7 +118,7 @@ html.dark .app-frame {
   border: 0;
 }
 .app-frame .app-sidebar-nav a span,
-.app-frame .app-sidebar-footer span {
+.app-frame .app-sidebar-footer span:not(.app-avatar) {
   opacity: 1;
   display: block;
   visibility: visible;
@@ -1174,7 +1174,7 @@ html.dark .app-frame {
 }
 .app-frame .app-sidebar:not(.is-open) .app-nav-section > p,
 .app-frame .app-sidebar:not(.is-open) .app-nav-section > a span,
-.app-frame .app-sidebar:not(.is-open) .app-sidebar-footer span {
+.app-frame .app-sidebar:not(.is-open) .app-sidebar-footer span:not(.app-avatar) {
   display: block;
 }
 .app-frame .app-sidebar:not(.is-open) .app-nav-section > a {
@@ -1898,7 +1898,7 @@ html.dark .app-frame .ask-workspace {
 .app-frame .workspace-section-heading h2, .app-frame .workspace-access-requests h2 { margin: 0; font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: normal; color: var(--app-text); }
 .app-frame .workspace-section-heading > a { color: var(--app-muted); font-size: 13px; }
 .app-frame .workspace-overview .directory-row { min-height: 64px; padding: 16px 4px; text-decoration: none; gap: 20px; }
-.app-frame .workspace-overview .is-overdue { color: var(--app-danger, #a33542); font-size: 12px; }
+.app-frame .workspace-overview .is-overdue { color: var(--danger-ink); font-size: 12px; }
 .app-frame .workspace-overview .directory-row > strong { font-weight: 500; }
 .app-frame .workspace-access-requests { grid-column: 1 / -1; }
 .app-frame .inventory-directory-form { max-width: 680px; display: grid; gap: 20px; }
@@ -1912,3 +1912,7 @@ html.dark .app-frame .ask-workspace {
  .app-frame .workspace-overview { grid-template-columns: minmax(0, 1fr); gap: 32px; }
  .app-frame .workspace-access-requests .directory-row { align-items: flex-start; flex-direction: column; }
 }
+
+/* Long imported names must wrap without hiding notification actions. */
+.app-frame .activity-row { grid-template-columns: 29px minmax(0, 1fr) auto; }
+.app-frame .activity-copy, .app-frame .activity-meta { overflow-wrap: anywhere; }

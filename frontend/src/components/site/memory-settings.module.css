@@ -4,10 +4,12 @@
 .panel > p, .panel > h3, .panel > details, .panel > ul { margin-block: 14px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .panel > button { margin: 4px 8px 12px 0; }
 .panel > label { display: block; margin-top: 12px; font-size: 14px; }
-.panel select, .panel > input { min-height: 44px; max-width: 100%; padding: 8px 12px; border: 1px solid currentColor; border-radius: 8px; color: inherit; background: transparent; font: inherit; }
+.panel select, .panel > input { min-height: 44px; max-width: 100%; padding: 8px 12px; border: 1px solid var(--light-line); border-radius: 8px; color: var(--ink); background: var(--light-panel); font: inherit; }
 .panel > input, .panel > select { width: 100%; margin-block: 8px; }
-.panel label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 12px; min-height: 44px; }
-.panel input[type="checkbox"] { width: 20px; height: 20px; }
+.panel label:has(input[type="checkbox"]) { display: flex; grid-column: 1 / -1; align-items: center; gap: 12px; min-height: 44px; }
+.panel input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--ink); }
 .panel > footer { flex-wrap: wrap; }
 .panel button { min-height: 44px; }
 .panel select option { color: CanvasText; background: Canvas; }
+
+.panel > p:empty, .panel > ul:empty { display: none; }

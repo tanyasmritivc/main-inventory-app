@@ -408,6 +408,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
                 key={choice.value}
                 type="button"
                 className={choice.value === theme ? "is-active" : ""}
+                aria-pressed={choice.value === theme}
                 onClick={() => {
                   try {
                     setTheme(choice.value);

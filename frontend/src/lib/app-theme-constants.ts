@@ -8,6 +8,8 @@ export const INTERIOR_PATH_PREFIXES = [
   "/organizations",
   "/worlds",
   "/inventory-access",
+  "/inventory-access-request",
+  "/agent-approvals",
   "/workspaces",
   "/home",
   "/spaces",
