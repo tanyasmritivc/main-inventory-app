@@ -1,3 +1,7 @@
+## October 24 — search and browser brand refresh
+
+Codex owns `fix/web-search-brand-20261024`. Updating the requested public title, site name and fresh stable echo favicon paths; adding Pricing metadata/canonical and its missing sitemap entry. Self-hosted web only. No changes to mobile, navigation, authentication or the API. Delivery pending.
+
 ## October 24 — clearer drafts and correct photo quantities (web)
 
 Runtime `45af6f290acc42db67a1a899e96cc10398f364e0`; PR #198; all five exact-runtime CI checks passed in run 40146412757. Self-hosted website published at /home/ubuntu/findez-web-releases/draft-flow-20261024/frontend. Build ID byC8d2bvI6dGs1MUmdh6L. Eight staged and live routes returned 200; the API process and previous web release were preserved. See `docs/plans/draft-flow-20261024.md`. Bottom navigation remains unchanged; no schema migration.

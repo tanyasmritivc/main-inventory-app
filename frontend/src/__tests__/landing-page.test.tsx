@@ -33,7 +33,7 @@ test("homepage preserves the requested copy, sections, metadata and destinations
   const destinations = { Plans: "/pricing", Developers: "/docs/api", "iOS App": "https://apps.apple.com/us/app/findez-ai/id6760401697", Privacy: "/privacy", Terms: "/terms", Contact: "mailto:info@findez.ai" };
   for (const [name, href] of Object.entries(destinations)) expect(footer.getByRole("link", {name}).getAttribute("href")).toBe(href);
   expect(screen.getByRole("link", {name: "Business inquiries ↗"}).getAttribute("href")).toBe("mailto:info@findez.ai?subject=FindEZ%20business%20inquiry");
-  expect(metadata.title).toEqual({absolute: "FindEZ AI | AI memory for the physical world"});
+  expect(metadata.title).toEqual({absolute: "FindEZ | AI for the physical world"});
   expect(metadata.alternates).toEqual({canonical: "/"});
   expect(metadata.openGraph).toMatchObject({url: "https://findez.ai/"});
 });

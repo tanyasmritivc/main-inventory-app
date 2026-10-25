@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_SITE_URL),
   title: {
     default: PUBLIC_SITE_TITLE,
-    template: "%s | FindEZ AI",
+    template: "%s | FindEZ",
   },
   description: PUBLIC_SITE_DESCRIPTION,
   alternates: {
@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     title: PUBLIC_SITE_TITLE,
     description: PUBLIC_SITE_DESCRIPTION,
     url: PUBLIC_SITE_URL,
-    siteName: "FindEZ AI",
+    siteName: "FindEZ",
     type: "website",
-    images: [{ url: "/brand/findez-logo-512.png", width: 512, height: 512, alt: "FindEZ AI" }],
+    images: [{ url: "/brand/findez-logo-512.png", width: 512, height: 512, alt: "FindEZ" }],
   },
   twitter: {
     card: "summary",
@@ -52,12 +52,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/findez-favicon.svg?v=echo-20261024", sizes: "any", type: "image/svg+xml" },
-      { url: "/favicon.png?v=echo-20261024", sizes: "96x96", type: "image/png" },
-      { url: "/favicon.ico?v=echo-20261024", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/brand/findez-echo.svg", sizes: "any", type: "image/svg+xml" },
+      { url: "/brand/findez-echo-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/brand/findez-echo.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
     ],
-    shortcut: "/favicon.ico?v=echo-20261024",
-    apple: [{ url: "/apple-touch-icon.png?v=echo-20261024", sizes: "180x180", type: "image/png" }],
+    shortcut: "/brand/findez-echo.ico",
+    apple: [{ url: "/brand/findez-echo-touch.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
