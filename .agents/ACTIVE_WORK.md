@@ -1,13 +1,29 @@
-## October 24 - Save captures into the chosen Space (in verification)
+## October 24 - Space Review saving and quantities delivered (beta131; PR208)
 
-Branch fix/mobile-capture-save-edit-later, based on beta130. Save to Space accepts
-identified items into inventory and stores unknown identities or uncounted items
-in that Space's Review section without requiring a quantity first. No fabricated
-starting quantity becomes stock. Quantity and counted unit are editable above
-collapsed evidence. The chosen Space initializes every destination; normal Review
-editing remains available there. Existing pending reviews resolve in place;
-new previews retain stable bulk-save receipts, photos and per-row failures.
-No backend/web/schema/native navigation changes in this lane. Beta131 pending.
+Runtime c4bc448ad2bd0832702b037d6bd1c55f1a1067c3 on fix/mobile-capture-save-edit-later.
+Save to Space accepts identified/countable items directly and saves unknown or
+uncounted captures in the selected Space's Review section without requiring a
+quantity. Tapping the record opens the existing editor. Quantity and counted unit
+are editable above collapsed evidence; no unknown placeholder becomes stock.
+The Space entry is labeled Review. Existing receipt/retry and permission behavior
+remain; backend and web code are unchanged in this mobile lane.
+
+Clean analysis, 879 host tests (one optional skip), and all five exact-runtime CI
+jobs passed (40161030215). Native synthetic iPhone 17 Pro/iOS26.5 QA verified blank
+quantity Save, the saved Pantry Review row, and its editable details. Physical
+customer-device acceptance remains unverified.
+
+Apple accepted 1.1.1 (131), delivery 5449a60b-dd02-43cb-9ebe-db151501a2b5.
+Processing and tester availability were not polled. All 32 archive/export native
+executables, strict signature, 24 privacy manifests, production config and Apple
+validation passed. IPA SHA256 d5314b55494109e8178b7ca04afe557e0d931cd73473709597f17628b2a358f9.
+Artifacts: Documents/FindEZ/AppStore/1.1.1-build131. No public App Store submission.
+
+Separate backend PR209/runtime962dddc is live with additive quantity units/notes
+and preserved estimated counts. All five API CI jobs and 1480 Python tests passed;
+health/database and anonymous denial passed. A real photo check returned one
+blister strip with contents explicitly uncounted behind foil. See
+`docs/plans/capture-save-quantity-20261024.md` for evidence and limits.
 
 ## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
 
