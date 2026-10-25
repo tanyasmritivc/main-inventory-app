@@ -2040,7 +2040,15 @@ class _ChatPageState extends State<ChatPage>
     bool autoExtract = false,
     String? requestId,
     List<ChatSource>? retrySources,
+    int? retryAssistantIndex,
   }) async {
+    if (retryAssistantIndex != null &&
+        (requestId == null ||
+            retryAssistantIndex < 0 ||
+            retryAssistantIndex >= _session.messages.length ||
+            _session.messages[retryAssistantIndex].role != 'assistant')) {
+      return;
+    }
     final photo = requestId == null ? _photo : null;
     final sources = List<ChatSource>.of(retrySources ?? _sources);
     final q = text.trim().isEmpty && photo != null
@@ -2095,21 +2103,29 @@ class _ChatPageState extends State<ChatPage>
           ),
         );
       }
-      _session.messages.add(
-        _ChatMessage(
-          role: 'assistant',
-          content: '',
-          timestamp: _nowTs(),
-          isStreaming: true,
-          live: true,
-        ),
+      final reply = _ChatMessage(
+        role: 'assistant',
+        content: '',
+        timestamp: retryAssistantIndex == null
+            ? _nowTs()
+            : _session.messages[retryAssistantIndex].timestamp,
+        answerContext: retryAssistantIndex == null
+            ? null
+            : _session.messages[retryAssistantIndex].answerContext,
+        isStreaming: true,
+        live: true,
       );
+      if (retryAssistantIndex == null) {
+        _session.messages.add(reply);
+      } else {
+        _session.messages[retryAssistantIndex] = reply;
+      }
     });
     widget.onChatStateChanged?.call(true);
     if (requestId == null) _controller.clear();
     _scrollToBottom(animated: false);
 
-    final assistantIndex = _session.messages.length - 1;
+    final assistantIndex = retryAssistantIndex ?? _session.messages.length - 1;
     final random = math.Random.secure();
     final bytes = List<int>.generate(16, (_) => random.nextInt(256));
     bytes[6] = (bytes[6] & 15) | 64;
@@ -2132,6 +2148,7 @@ class _ChatPageState extends State<ChatPage>
                 q,
                 requestId: turnId,
                 retrySources: sources,
+                retryAssistantIndex: assistantIndex,
                 userAlreadyAdded: true,
               ),
             );

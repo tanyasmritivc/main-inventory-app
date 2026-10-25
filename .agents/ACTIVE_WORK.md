@@ -1,3 +1,11 @@
+## October25 — Chat retry row repair
+
+Lane `fix/mobile-chat-retry`. Reuse the failed assistant row on retry, retaining
+its request ID, sources, timestamp and draft context. Repeated failure/success
+regression passes and analysis is clean. Existing layout/navigation unchanged.
+Build140 is prepared for TestFlight; delivery pending. Shared generation failures
+are fixed in the separate API lane `fix/chat-stream-reliability`.
+
 ## October 25 — Personalization routing delivered to TestFlight139 (PR224)
 
 Apple acknowledged 1.1.1 (139), runtime `d7cfb0590c41a69ff528d6b4d1b06365b3a6a818`,

@@ -64,7 +64,7 @@ class _AskApi extends ApiClient {
     this.captureThenFail = false,
     bool world = false,
   }) : super(worldKey: world ? 'personal' : null, baseUrl: 'https://api.test');
-  final bool fail;
+  bool fail;
   final bool captureThenFail;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
@@ -316,6 +316,23 @@ void main() {
       expect(api.requestIds, hasLength(2));
       expect(api.requestIds.first, api.requestIds.last);
       expect(find.text('I used 3 batteries'), findsOneWidget);
+      expect(
+        find.text('This response was interrupted. Please retry.'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry response'), findsOneWidget);
+      api.fail = false;
+      await tester.ensureVisible(find.text('Retry response'));
+      await tester.tap(find.text('Retry response'));
+      await tester.pumpAndSettle();
+      expect(api.requestIds, hasLength(3));
+      expect(api.requestIds.toSet(), hasLength(1));
+      expect(find.text('I used 3 batteries'), findsOneWidget);
+      expect(
+        find.text('This response was interrupted. Please retry.'),
+        findsNothing,
+      );
+      expect(find.text('Retry response'), findsNothing);
     },
   );
 
