@@ -1,7 +1,7 @@
 # Sample onboarding v2
 
-Local branch: `feat/onboarding-sample-scan`. Not pushed, deployed or uploaded to
-TestFlight. Mobile only; no backend, web, schema, environment or deployment changes.
+Branch: `feat/onboarding-sample-scan`. The user subsequently authorized TestFlight
+upload; preparing 1.1.1 (138). No public App Store submission. Mobile only; no backend, web, schema, environment or deployment changes.
 
 ## Behavior
 

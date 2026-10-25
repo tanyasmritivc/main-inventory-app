@@ -1,3 +1,10 @@
+## October 25 - Sample onboarding TestFlight release authorized
+
+The user requested TestFlight upload after local completion. This supersedes the
+v2 prompt's earlier no-push restriction. Preparing 1.1.1 (138) from the completed
+onboarding branch; no public App Store submission is authorized. Local analysis,
+26 focused host tests and 26 iOS simulator tests already passed.
+
 ## October 25 - Sample onboarding v2 (local, not released)
 
 Branch `feat/onboarding-sample-scan` in `/private/tmp/findez-prelaunch-mobile`.
