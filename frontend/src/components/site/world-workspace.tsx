@@ -282,7 +282,7 @@ function WorldContent({
               </button>
               {chosen === "spaces" && inventories.some((i) => i.can_edit) && (
                 <button
-                  className="workspace-button is-primary"
+                  className="workspace-button primary"
                   onClick={() => {
                     setDestination(
                       inventories.find((i) => i.can_edit)!.inventory_id,
@@ -482,7 +482,7 @@ function WorldContent({
                 Cancel
               </button>
               <button
-                className="workspace-button is-primary"
+                className="workspace-button primary"
                 disabled={busy || !spaceName.trim()}
               >
                 {busy ? "Creating…" : "Create Space"}

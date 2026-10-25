@@ -1,3 +1,14 @@
+## October 24 — web light/dark audit
+
+Branch `fix/web-theme-audit-20261024`, web only. Corrects portal contrast, theme
+storage/hydration, dialog viewport/layers/padding, notification wrapping/markers,
+sidebar initials and memory controls. 566 tests, TypeScript, lint (zero errors)
+and compile-only build pass. Runtime `8372ba003efa9fdffbae3dace11a38e59ef301c7`
+deployed via PR #210 after all five CI jobs passed (`40163364154`). Production
+build `4hZ7Go8y0odI48cwFbltq`, 20 staged/live route checks and signed-in live
+theme/menu/notification verification passed. Previous release and backend preserved.
+See `docs/plans/web-theme-audit-20261024.md`. No mobile/API/schema edits.
+
 ## October 24 — search and browser brand refresh
 
 Deployed self-hosted web runtime a52b1537566ca2957f0ef68c69d3aff2c57cf29c (PR #201), build uPMr9qe7iEphZ4ferX3iR, at /home/ubuntu/findez-web-releases/search-brand-20261024/frontend. All five exact-runtime CI checks passed in 40148047062. Local 558 tests, TypeScript and changed-file lint passed without new warnings. Production build and 13 staged/live route checks passed. Public-domain verification confirmed exact homepage/social title, FindEZ site name, five icon links matching canonical files, valid structured data, Pricing title/canonical, and Pricing in sitemap. Previous web release and backend PID were preserved. See docs/plans/search-brand-20261024.md. On October 24, at the user’s request, Search Console accepted https://findez.ai/sitemap.xml (Success, submitted and last read October 24, 5 discovered pages). Homepage URL Inspection confirmed the page is indexed; Request indexing then confirmed “Indexing requested” and addition to the priority crawl queue. Search result artwork/title refresh and sitelink/knowledge-panel display remain controlled by Google and unverified.

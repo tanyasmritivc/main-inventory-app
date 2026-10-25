@@ -22,7 +22,7 @@
 .empty p { color:var(--app-muted,#737373); font-size:13px; margin:0 0 18px; }
 .actions { position:absolute; right:10px; top:10px; }
 .menuButton { display:grid; place-items:center; width:32px; height:32px; border:0; border-radius:6px; background:transparent; color:inherit; cursor:pointer; }
-.menuButton:hover { background:var(--app-hover,#f0f0f0); }
+.menuButton:hover { background:var(--app-surface-2); }
 .flow :global(.context-people-list) { border:1px solid var(--app-border,#dedede); border-radius:9px; overflow:hidden; }
 .flow :global(.context-person) { padding:18px 22px; border-bottom:1px solid var(--app-border,#ededed); }
 .flow :global(.context-person:last-child) { border-bottom:0; }

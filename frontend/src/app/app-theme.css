@@ -22,7 +22,7 @@
   --light-line: #eaeaea;
   --light-line-strong: #c7c7c7;
   --light-muted: #575757;
-  --light-soft: #929292;
+  --light-soft: #707070;
   --control-primary: #111112;
   --control-on-primary: #ffffff;
   --clay: #000000;
@@ -54,7 +54,7 @@
   --light-line: #26262b;
   --light-line-strong: #33333a;
   --light-muted: #a6a6ae;
-  --light-soft: #84848c;
+  --light-soft: #a0a0a6;
   --control-primary: #ffffff;
   --control-on-primary: #111112;
   --focus-ring: rgba(255,255,255,.14);
@@ -68,22 +68,27 @@ html, body { background: var(--light-page); color: var(--ink); }
 ::selection { background: #000000; color: #ffffff; }
 ::-webkit-scrollbar-thumb { background: #c7c7c7; }
 ::-webkit-scrollbar-thumb:hover { background: #929292; }
-select, .glass-select { color-scheme: light; }
+select, .glass-select { color-scheme: inherit; }
+/* The legacy unlayered reset overrides Tailwind's p-6 on portal dialogs. */
+:where([data-slot="dialog-content"]:not(.p-0)) { padding: 24px; }
+.findez-form-dialog { overflow-y: auto; }
 [data-slot="card"] { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
-[data-slot="dropdown-menu-content"] { border-color: var(--light-line); background: var(--light-panel); box-shadow: none; }
-[data-slot="dropdown-menu-item"] { color: var(--ink); }
+[data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"] { color: var(--ink); border-color: var(--light-line); background: var(--light-panel); box-shadow: none; }
+[data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-sub-trigger"],
+[data-slot="dropdown-menu-checkbox-item"], [data-slot="dropdown-menu-radio-item"] { color: var(--ink); }
+[data-slot="dropdown-menu-item"][data-variant="destructive"] { color: var(--danger-ink); }
 [data-slot="dropdown-menu-item"]:is(:focus,:hover) { background: var(--light-raised); color: var(--ink); }
 [data-slot="dropdown-menu-separator"] { background: var(--light-line); }
 input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
 textarea, select { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
 input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):focus,
-textarea:focus, select:focus { border-color: #000000; box-shadow: 0 0 0 2px rgba(0,0,0,.08); }
+textarea:focus, select:focus { border-color: var(--ink); box-shadow: 0 0 0 2px var(--focus-ring); }
 input:-webkit-autofill, input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000;
-  border-color: #eaeaea !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--light-panel) inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--ink);
+  border-color: var(--light-line) !important;
 }
 
 /* Shell and navigation */
@@ -326,7 +331,7 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .board-card select, .people-list select { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
 .app-frame .activity-icon { background: var(--light-raised); color: var(--copper); }
 .activity-row.is-unread, .app-frame .activity-row.is-unread { background: var(--light-raised); }
-.unread-dot { background: var(--ink); box-shadow: none; }
+.unread-dot, .app-frame .unread-dot { background: var(--ink); box-shadow: none; }
 .checkout-empty strong, .checkout-item strong,
 .checkout-person strong { color: var(--ink); }
 .checkout-empty p, .checkout-table-head,
