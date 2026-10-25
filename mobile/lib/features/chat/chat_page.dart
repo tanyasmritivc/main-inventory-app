@@ -3007,16 +3007,6 @@ class _ChatPageState extends State<ChatPage>
         animateChunks: message.live,
         api: widget.api,
         onActionResult: _onItemActionResult,
-        onChooseDestination:
-            !_sending &&
-                message.answerContext?.chatCapture?['status'] == 'draft'
-            ? (link) => unawaited(
-                _captureKeys[message.answerContext!.chatCapture!['id']]
-                        ?.currentState
-                        ?.selectAndSave(link) ??
-                    Future.value(),
-              )
-            : null,
         onOpenResource: widget.onOpenDestination == null
             ? null
             : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
@@ -3072,6 +3062,7 @@ class _ChatPageState extends State<ChatPage>
             in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])
           WorldActionCard(
             key: ValueKey(action['id']),
+            onCaptureChanged: _onCaptureChanged,
             api: widget.api,
             action: action,
             onOpenResource: widget.onOpenDestination == null
@@ -3233,48 +3224,6 @@ class _ChatPageState extends State<ChatPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_pickingPhoto) const LinearProgressIndicator(),
-              if (!_sending)
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      for (final idea
-                          in _session.messages.any(
-                                (m) =>
-                                    m.answerContext?.chatCapture?['status'] ==
-                                    'draft',
-                              )
-                              ? [
-                                  'Keep all items',
-                                  'Help me choose a Space',
-                                  'Only keep the tools',
-                                ]
-                              : [
-                                  'Find an item',
-                                  'What needs restocking?',
-                                  'Organize a photo',
-                                ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            label: Text(
-                              idea,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            onPressed: () {
-                              _controller.text = idea;
-                              _focusNode.requestFocus();
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               if (_photo != null) _photoPreview(),
               WorldComposer(
                 sourceChips: _sourceChips,

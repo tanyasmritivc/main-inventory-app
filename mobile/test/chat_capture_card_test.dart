@@ -79,6 +79,11 @@ void main() {
           if (item.containsKey('selected')) row['selected'] = item['selected'];
           for (final key in ['quantity', 'name', 'category']) {
             if (item.containsKey(key)) row['item'][key] = item[key];
+            if (key == 'quantity' && item.containsKey(key)) {
+              (value['summary']?['unknown_quantity_indices'] as List?)?.remove(
+                item['index'],
+              );
+            }
           }
         }
         value['revision']++;
@@ -137,33 +142,15 @@ void main() {
   }
 
   testWidgets(
-    'suggested destination selects and saves once without opening chooser',
-    (t) async {
-      await mount(t);
-      expect(find.widgetWithText(ActionChip, 'Garage'), findsOneWidget);
-      final state = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
-      final link = AskResourceLink(
-        kind: 'space',
-        inventoryId: inv,
-        id: space,
-        label: 'Garage',
-      );
-      final first = state.selectAndSave(link);
-      final duplicate = state.selectAndSave(link);
-      await t.pumpAndSettle();
-      await first;
-      await duplicate;
-      expect(value['status'], 'saved');
-      expect(f.requests.where((r) => r.method == 'PATCH'), hasLength(1));
-      expect(f.requests.where((r) => r.path.endsWith('/save')), hasLength(1));
-      expect(find.text('Save to a Space'), findsNothing);
-    },
-  );
-
-  testWidgets(
     'spreadsheet save resumes checkpointed batches without another tap',
     (t) async {
-      value = {...draft(), 'source_kind': 'spreadsheet'};
+      value = {
+        ...draft(),
+        'source_kind': 'spreadsheet',
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      };
       final original = f.respond;
       var saves = 0;
       f.respond = (r) {
@@ -183,35 +170,13 @@ void main() {
         return {'capture': value};
       };
       await mount(t);
-      final state = t.state<ChatCaptureCardState>(find.byType(ChatCaptureCard));
-      final saving = state.selectAndSave(
-        AskResourceLink(
-          kind: 'space',
-          inventoryId: inv,
-          id: space,
-          label: 'Garage',
-        ),
-      );
+      await t.tap(find.widgetWithText(FilledButton, 'Save items'));
       await t.pumpAndSettle();
-      await saving;
       expect(saves, 3);
       expect(value['status'], 'saved');
       expect(value['receipt']['saved_count'], 600);
     },
   );
-
-  testWidgets('persistent Space pill saves directly after a parent rebuild', (
-    t,
-  ) async {
-    await mount(t);
-    await t.pump();
-    await t.tap(find.widgetWithText(ActionChip, 'Garage'));
-    await t.pumpAndSettle();
-    expect(value['status'], 'saved');
-    expect(f.requests.where((r) => r.method == 'PATCH'), hasLength(1));
-    expect(f.requests.where((r) => r.path.endsWith('/save')), hasLength(1));
-    expect(find.text('Save to a Space'), findsNothing);
-  });
 
   test('invalid capture cannot render editable data', () {
     expect(parseChatCapture(draft()), isNotNull);
@@ -231,23 +196,20 @@ void main() {
       await mount(t, brightness: brightness);
       expect(find.text('Needs Review'), findsOneWidget);
       await captureAuditCapture?.call('draft-${brightness.name}');
+      expect(find.byType(ActionChip), findsNothing);
       expect(
-        t
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Save items'),
-            )
-            .onPressed,
-        isNull,
+        find.widgetWithText(FilledButton, 'Choose a Space'),
+        findsOneWidget,
       );
       await t.tap(find.byType(Checkbox).last);
       await t.pumpAndSettle();
       expect(find.text('1 of 2 selected · Not saved yet'), findsOneWidget);
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
-      await t.tap(find.text('Choose inventory and Space'));
+      await t.tap(find.widgetWithText(FilledButton, 'Choose a Space'));
       await t.pumpAndSettle();
       await t.tap(find.widgetWithText(ListTile, 'Garage'));
       await t.pumpAndSettle();
-      expect(find.text('Home / Tools / Garage'), findsOneWidget);
+      expect(find.text('Garage'), findsOneWidget);
       expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
       await t.tap(find.text('Save items'));
       await t.pumpAndSettle();
@@ -319,9 +281,60 @@ void main() {
   testWidgets('large text stays scrollable', (t) async {
     await mount(t, scale: 2);
     expect(t.takeException(), isNull);
-    await t.ensureVisible(find.text('Save items'));
+    await t.ensureVisible(find.widgetWithText(FilledButton, 'Choose a Space'));
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
+  });
+  testWidgets(
+    'unknown quantity is explicit and can be omitted without saving',
+    (t) async {
+      value['source_kind'] = 'text';
+      value['summary'] = {
+        'unknown_quantity_indices': [1],
+      };
+      value['items'][1]['item']['name'] = 'Peas';
+      value['items'][1]['item']['quantity'] = 1;
+      await mount(t);
+      expect(find.textContaining('Quantity needed'), findsOneWidget);
+      await captureAuditCapture?.call('unknown-quantity');
+      await t.tap(find.widgetWithText(FilledButton, 'Add missing quantity'));
+      await t.pumpAndSettle();
+      expect(
+        t.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
+        '',
+      );
+      await t.tap(find.text('Leave this item out for now'));
+      await t.pumpAndSettle();
+      await t.pump(const Duration(milliseconds: 400));
+      await t.pumpAndSettle();
+      expect(value['items'][1]['selected'], false);
+      expect(
+        find.widgetWithText(FilledButton, 'Choose a Space'),
+        findsOneWidget,
+      );
+      expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
+    },
+  );
+  testWidgets('explicitly entering one clears the unknown quantity', (t) async {
+    value.addAll({
+      'inventory_id': inv,
+      'space_id': space,
+      'location': 'Pantry',
+      'summary': {
+        'unknown_quantity_indices': [0],
+      },
+    });
+    await mount(t);
+    await t.tap(find.text('Add quantity'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextFormField), '1');
+    await t.tap(find.text('Update quantity'));
+    await t.pumpAndSettle();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.pumpAndSettle();
+    expect(value['summary']['unknown_quantity_indices'], isEmpty);
+    expect(find.widgetWithText(FilledButton, 'Save items'), findsOneWidget);
+    expect(f.requests.where((r) => r.path.endsWith('/save')), isEmpty);
   });
   testWidgets('zero quantity correction retains uncertainty', (t) async {
     await mount(t);

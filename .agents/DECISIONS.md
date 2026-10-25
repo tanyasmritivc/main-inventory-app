@@ -1,3 +1,7 @@
+## October 24 — Unknown counts are not one unit
+
+A detected photo region is not a count. Keep uncertain quantities explicit until the user confirms or omits that row. Group only confidently counted, disjoint objects with matching visible identity markings; retain their full union crop and evidence. Destination selection does not save stock. A confirmed new destination may bind to the existing draft without losing its crops.
+
 ## October 24 — Latest rounded echo artwork supersedes previous icon selection
 
 Use docs/brand-echo-current-20261024 as the current artwork source. The user supplied

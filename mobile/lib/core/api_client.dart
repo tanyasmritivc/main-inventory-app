@@ -2638,6 +2638,9 @@ class ExtractedInventoryItem {
 
 class ScanEvidence {
   const ScanEvidence({
+    this.quantityBasis,
+    this.quantityConfidence,
+    this.groupedObservations,
     this.identificationReasoning,
     this.identityConfidence,
     this.ocrText,
@@ -2655,6 +2658,20 @@ class ScanEvidence {
     this.needsReview = false,
   });
 
+  final String? quantityBasis;
+  final double? quantityConfidence;
+  final int? groupedObservations;
+  bool get quantityMissing =>
+      quantityBasis != 'user_confirmed' &&
+      (quantityBasis == 'unknown' ||
+          reviewReasons.any(
+            (r) => r.contains('Quantity is a candidate placeholder'),
+          ));
+  ScanEvidence confirmedQuantity() => ScanEvidence.fromJson({
+    ...toJson(),
+    'quantity_basis': 'user_confirmed',
+    'quantity_confidence': null,
+  });
   final String? identificationReasoning;
   final double? identityConfidence;
   final String? ocrText;
@@ -2677,6 +2694,9 @@ class ScanEvidence {
 
   factory ScanEvidence.fromJson(Map<String, dynamic> json) {
     return ScanEvidence(
+      quantityBasis: json['quantity_basis']?.toString(),
+      quantityConfidence: _number(json['quantity_confidence']),
+      groupedObservations: (json['grouped_observations'] as num?)?.toInt(),
       identificationReasoning: json['identification_reasoning']?.toString(),
       identityConfidence: _number(json['identity_confidence']),
       ocrText: json['ocr_text']?.toString(),
@@ -2700,6 +2720,10 @@ class ScanEvidence {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+    if (quantityBasis != null) 'quantity_basis': quantityBasis,
+    if (quantityConfidence != null) 'quantity_confidence': quantityConfidence,
+    if (groupedObservations != null)
+      'grouped_observations': groupedObservations,
     if (identificationReasoning != null)
       'identification_reasoning': identificationReasoning,
     if (identityConfidence != null) 'identity_confidence': identityConfidence,

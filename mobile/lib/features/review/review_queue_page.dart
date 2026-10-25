@@ -271,6 +271,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   late final TextEditingController _brand;
   late final TextEditingController _partNumber;
   late int _quantity;
+  late bool _quantityConfirmed;
   bool _saving = false;
 
   @override
@@ -282,6 +283,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
     _brand = TextEditingController(text: widget.item.brand ?? '');
     _partNumber = TextEditingController(text: widget.item.partNumber ?? '');
     _quantity = widget.item.quantity.clamp(0, 100000);
+    _quantityConfirmed = widget.item.scanEvidence?.quantityMissing != true;
   }
 
   @override
@@ -315,13 +317,15 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
     notes: widget.item.notes,
     location: _location.text.trim(),
     catalogMatch: widget.item.catalogMatch,
-    scanEvidence: widget.item.scanEvidence,
+    scanEvidence: _quantityConfirmed
+        ? widget.item.scanEvidence?.confirmedQuantity()
+        : widget.item.scanEvidence,
     reviewId: widget.item.id,
     reviewStatus: widget.item.status,
   );
 
   Future<void> _resolve() async {
-    if (!widget.api.canEdit) return;
+    if (!widget.api.canEdit || !_quantityConfirmed) return;
     if (_name.text.trim().isEmpty ||
         _category.text.trim().isEmpty ||
         _location.text.trim().isEmpty) {
@@ -495,37 +499,57 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    IconButton.filledTonal(
-                      onPressed:
-                          _saving || !widget.api.canEdit || _quantity == 0
-                          ? null
-                          : () => setState(() => _quantity--),
-                      icon: const Icon(Icons.remove_rounded),
+                if (widget.item.scanEvidence?.quantityMissing == true)
+                  TextFormField(
+                    enabled: !_saving && widget.api.canEdit,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity needed',
+                      hintText: 'Enter the number of individual items',
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: AppText(
-                        '$_quantity',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => setState(() {
+                      final n = int.tryParse(value);
+                      _quantityConfirmed = n != null && n >= 0 && n <= 100000;
+                      if (_quantityConfirmed) _quantity = n!;
+                    }),
+                  )
+                else
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed:
+                            _saving || !widget.api.canEdit || _quantity == 0
+                            ? null
+                            : () => setState(() => _quantity--),
+                        icon: const Icon(Icons.remove_rounded),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: AppText(
+                          '$_quantity',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton.filledTonal(
-                      onPressed:
-                          _saving || !widget.api.canEdit || _quantity >= 100000
-                          ? null
-                          : () => setState(() => _quantity++),
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  ],
-                ),
+                      IconButton.filledTonal(
+                        onPressed:
+                            _saving ||
+                                !widget.api.canEdit ||
+                                _quantity >= 100000
+                            ? null
+                            : () => setState(() => _quantity++),
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 22),
                 FilledButton.icon(
-                  onPressed: _saving || !widget.api.canEdit ? null : _resolve,
+                  onPressed:
+                      _saving || !widget.api.canEdit || !_quantityConfirmed
+                      ? null
+                      : _resolve,
                   icon: _saving
                       ? const SizedBox(
                           width: 18,

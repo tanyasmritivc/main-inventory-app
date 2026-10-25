@@ -35,51 +35,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
   bool _busy = false, _expanded = false, _choosing = false;
   String? _error;
   int _visibleRows = 40;
-  List<AskResourceLink> _destinations = [];
-  bool _destinationFailed = false;
   @override
   void initState() {
     super.initState();
     _draft = widget.draft;
-    _loadDestinations();
   }
 
   @override
   void didUpdateWidget(ChatCaptureCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.draft != widget.draft) _draft = widget.draft;
-  }
-
-  Future<void> _loadDestinations() async {
-    if (_draft['status'] == 'saved' || widget.api.worldKey == null) return;
-    try {
-      final result = await widget.api.collaboration(
-        '/worlds/${widget.api.worldKey}/spaces',
-      );
-      widget.api.assertCurrentContext();
-      if (!mounted) return;
-      final links = <AskResourceLink>[];
-      for (final group
-          in (result['inventories'] as List? ?? []).whereType<Map>()) {
-        if (group['can_edit'] != true) continue;
-        for (final space in (group['spaces'] as List? ?? []).whereType<Map>()) {
-          links.add(
-            AskResourceLink(
-              kind: 'space',
-              inventoryId: group['inventory_id'] as String,
-              id: space['id'] as String,
-              label: space['name'] as String,
-            ),
-          );
-        }
-      }
-      setState(() {
-        _destinations = links;
-        _destinationFailed = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => _destinationFailed = true);
-    }
   }
 
   String get _path =>
@@ -151,7 +116,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Need a new inventory or Space? Ask in chat; your extraction stays here.',
+                'Choose a destination. Your items stay in the draft until you save.',
               ),
               for (final group in groups) ...[
                 Padding(
@@ -206,7 +171,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
         'part_number',
         'notes',
       ])
-        key: TextEditingController(text: '${item[key] ?? ''}'),
+        key: TextEditingController(
+          text: key == 'quantity' && _quantityMissing(row)
+              ? ''
+              : '${item[key] ?? ''}',
+        ),
     };
     final form = GlobalKey<FormState>();
     final result = await showModalBottomSheet<Map<String, dynamic>>(
@@ -228,7 +197,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Edit extracted item',
+                    'Edit item',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                   for (final field in [
@@ -247,6 +216,10 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                           : TextInputType.text,
                       validator: (value) {
                         if (field.$1 == 'quantity') {
+                          if ((value ?? '').trim().isEmpty &&
+                              _quantityMissing(row)) {
+                            return null;
+                          }
                           final n = int.tryParse(value ?? '');
                           return n == null || n < 0 || n > 100000
                               ? 'Enter a quantity from 0 to 100000'
@@ -266,9 +239,11 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                       Navigator.pop(ctx, {
                         'index': row['index'],
                         for (final e in controllers.entries)
-                          e.key: e.key == 'quantity'
-                              ? int.parse(e.value.text)
-                              : e.value.text.trim(),
+                          if (e.key != 'quantity' ||
+                              e.value.text.trim().isNotEmpty)
+                            e.key: e.key == 'quantity'
+                                ? int.parse(e.value.text)
+                                : e.value.text.trim(),
                       });
                     },
                     child: const Text('Update draft'),
@@ -337,27 +312,106 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     return choice;
   }
 
-  Future<void> selectAndSave(AskResourceLink link) => _run(() async {
-    if (link.kind != 'space') return;
-    if (_draft['status'] == 'saving' && _draft['space_id'] == link.id) {
-      await _saveItems();
-      return;
-    }
-    if (_draft['status'] != 'draft') return;
-    _accept(
-      await widget.api.collaboration(
-        _path,
-        method: 'PATCH',
-        data: {
-          'revision': _draft['revision'],
-          'changes': {'inventory_id': link.inventoryId, 'space_id': link.id},
-        },
+  bool _quantityMissing(Map<String, dynamic> row) =>
+      ((_draft['summary'] as Map?)?['unknown_quantity_indices'] as List? ?? [])
+          .contains(row['index']) ||
+      (row['item']['scan_evidence'] is Map &&
+          ScanEvidence.fromJson(
+            Map<String, dynamic>.from(row['item']['scan_evidence']),
+          ).quantityMissing);
+  List<Map<String, dynamic>> get _missingRows => _rows
+      .where((row) => row['selected'] == true && _quantityMissing(row))
+      .toList();
+
+  Future<void> _quantity(Map<String, dynamic> row) async {
+    final controller = TextEditingController();
+    final form = GlobalKey<FormState>();
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            MediaQuery.viewInsetsOf(ctx).bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Form(
+              key: form,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'How many ${row['item']['name']}?',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity',
+                      hintText: 'Enter a count',
+                    ),
+                    validator: (value) {
+                      final n = int.tryParse(value ?? '');
+                      return n == null || n < 0 || n > 100000
+                          ? 'Enter a whole number from 0 to 100000'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () {
+                      if (form.currentState!.validate()) {
+                        Navigator.pop(ctx, {
+                          'index': row['index'],
+                          'quantity': int.parse(controller.text),
+                        });
+                      }
+                    },
+                    child: const Text('Update quantity'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, {
+                      'index': row['index'],
+                      'selected': false,
+                    }),
+                    child: const Text('Leave this item out for now'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
-    if (mounted) await _saveItems();
-  });
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    controller.dispose();
+    if (!mounted || result == null) return;
+    await _patch({
+      'items': [result],
+    });
+  }
 
-  Future<void> _save() => _run(_saveItems);
+  Future<void> _save() async {
+    if (_missingRows.isNotEmpty) {
+      await _quantity(_missingRows.first);
+    } else if (_draft['space_id'] == null) {
+      await _destination();
+    } else {
+      await _run(_saveItems);
+    }
+  }
+
   Future<void> _saveItems() async {
     Future<Map<String, dynamic>> send(bool separate) =>
         widget.api.collaboration(
@@ -455,34 +509,6 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!saved && _destinations.isNotEmpty)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final link in _destinations)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(
-                      avatar: const Icon(Icons.grid_view_rounded, size: 18),
-                      label: Text(link.label),
-                      tooltip: 'Save selected items to ${link.label}',
-                      onPressed:
-                          _busy ||
-                              widget.disabled ||
-                              (saving && _draft['space_id'] != link.id)
-                          ? null
-                          : () => selectAndSave(link),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        if (!saved && _destinationFailed)
-          TextButton(
-            onPressed: _loadDestinations,
-            child: const Text('Retry loading Spaces'),
-          ),
         ContentCard(
           margin: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
@@ -576,12 +602,21 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                             style: const TextStyle(fontSize: 15),
                           ),
                           Text(
-                            '${row['item']['category']} · Qty ${row['item']['quantity']}',
+                            _quantityMissing(row)
+                                ? '${row['item']['category']} · Quantity needed'
+                                : '${row['item']['category']} · Qty ${row['item']['quantity']}',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary(context),
                             ),
                           ),
+                          if (_quantityMissing(row) && row['selected'] == true)
+                            TextButton(
+                              onPressed: _editable
+                                  ? () => _quantity(row)
+                                  : null,
+                              child: const Text('Add quantity'),
+                            ),
                           if ((row['item']['scan_evidence']
                                   as Map?)?['needs_review'] ==
                               true)
@@ -620,12 +655,16 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                   icon: const Icon(Icons.folder_outlined, size: 18),
                   label: Text(
                     _draft['space_id'] == null
-                        ? 'Choose inventory and Space'
-                        : '${_draft['destination_label']} / ${_draft['location']}',
+                        ? 'Choose a Space'
+                        : '${_draft['location']}',
                   ),
                 ),
                 Text(
-                  'Ask chat to refine these items or create a destination. Uncertain items go to Review.',
+                  _missingRows.isNotEmpty
+                      ? 'Add the missing quantities, or uncheck those items to save the rest.'
+                      : _draft['space_id'] == null
+                      ? 'Choose where to keep these items.'
+                      : 'Ready to save to ${_draft['location']}.',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary(context),
@@ -633,14 +672,18 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
                 ),
                 const SizedBox(height: 12),
                 FilledButton(
-                  onPressed:
-                      _busy ||
-                          widget.disabled ||
-                          selected == 0 ||
-                          _draft['space_id'] == null
+                  onPressed: _busy || widget.disabled || selected == 0
                       ? null
                       : _save,
-                  child: Text(saving ? 'Retry save safely' : 'Save items'),
+                  child: Text(
+                    saving
+                        ? 'Retry save safely'
+                        : _missingRows.isNotEmpty
+                        ? 'Add missing quantity'
+                        : _draft['space_id'] == null
+                        ? 'Choose a Space'
+                        : 'Save items',
+                  ),
                 ),
               ],
               if (_busy && !_choosing) const LinearProgressIndicator(),

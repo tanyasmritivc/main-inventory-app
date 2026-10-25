@@ -287,7 +287,9 @@ class _AskAnswerViewState extends State<AskAnswerView> {
         if (!widget.isLoading &&
             data != null &&
             widget.onOpenResource != null &&
-            data.resourceLinks.isNotEmpty)
+            data.resourceLinks.isNotEmpty &&
+            !(data.chatCapture != null &&
+                data.chatCapture!['status'] != 'saved'))
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Wrap(
