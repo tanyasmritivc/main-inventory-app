@@ -1,5 +1,6 @@
 'use client';
 
+import { PLANS_NOTICE } from "@/lib/billing-plans";
 import { useRouter } from 'next/navigation';
 
 interface UpgradeModalProps {
@@ -15,13 +16,13 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
   const config = {
     item_limit: {
       icon: '📦',
-      title: "You've hit the 30-item limit",
-      subtitle: 'Get a team plan for unlimited items, spaces, and AI scans.',
+      title: "Item limit reached",
+      subtitle: PLANS_NOTICE,
     },
     scan_limit: {
       icon: '📸',
-      title: "You've used all 5 photo scans this month",
-      subtitle: 'Get a team plan for hundreds of AI photo scans per season.',
+      title: "Photo extraction limit reached",
+      subtitle: PLANS_NOTICE,
     },
   }[reason];
 
@@ -75,13 +76,13 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
             onClick={() => router.push('/pricing')}
             style={{
               width: '100%', height: 48,
-              background: 'var(--control-primary)', color: 'var(--ink)',
+              background: 'var(--control-primary)', color: 'var(--control-on-primary)',
               border: 'none', borderRadius: 99,
               fontFamily: 'var(--font-syne)', fontSize: 15,
               fontWeight: 600, cursor: 'pointer',
             }}
           >
-            See team plans
+            Compare plans
           </button>
 
           <button

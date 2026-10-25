@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { BILLING_PLANS, PLANS_NOTICE } from '@/lib/billing-plans'
 
 interface UpgradeGateProps {
   open: boolean
@@ -18,18 +19,10 @@ const FEATURE_ICONS: Record<string, string> = {
   spaces: '📦',
 }
 
-const FEATURE_TIPS: Record<string, string> = {
-  ai_chat: 'Ask unlimited questions about your inventory.',
-  photo_scan: 'Scan unlimited photos and receipts.',
-  spreadsheet_import: 'Import unlimited spreadsheets.',
-  spaces: 'Create unlimited spaces.',
-}
-
 export function UpgradeGate({ open, onClose, feature, current, limit, message, isPilot }: UpgradeGateProps) {
   if (!open || isPilot) return null
 
   const icon = FEATURE_ICONS[feature] ?? '⭐'
-  const tip = FEATURE_TIPS[feature] ?? ''
 
   return (
     <div
@@ -75,7 +68,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           fontSize: '20px', fontWeight: 700, letterSpacing: '-0.035em',
           color: 'var(--text-primary)', textAlign: 'center', margin: '0 0 8px',
         }}>
-          You&apos;ve hit your free limit
+          Usage limit reached
         </h2>
 
         {/* Usage indicator */}
@@ -83,7 +76,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center',
           lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em',
         }}>
-          {message ?? `You've used ${current} of ${limit} free ${feature.replace(/_/g, ' ')}s this month.`}
+          {message ?? `Current usage: ${current} of ${limit} (${feature.replace(/_/g, ' ')}).`}
         </p>
 
         {/* Progress bar */}
@@ -93,7 +86,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
         }}>
           <div style={{
             height: '100%',
-            width: `${Math.min(100, (current / limit) * 100)}%`,
+            width: `${limit > 0 ? Math.max(0, Math.min(100, (current / limit) * 100)) : 100}%`,
             background: 'var(--brand-accent)',
             borderRadius: '2px',
             transition: 'width 0.4s ease',
@@ -103,20 +96,15 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
         {/* Divider */}
         <div style={{ height: '1px', background: 'rgba(0,0,0,0.07)', margin: '0 0 18px' }} />
 
-        {/* Pro features */}
+        {/* Planned allowance */}
         <div style={{ marginBottom: '22px' }}>
           <div style={{
             fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em',
             textTransform: 'uppercase', color: 'var(--light-muted)', marginBottom: '12px',
           }}>
-            FindEZ Pro includes
+            Planned Plus allowance
           </div>
-          {[
-            { icon: '💬', text: '20 → Unlimited AI chat messages' },
-            { icon: '📷', text: '5 → Unlimited photo scans' },
-            { icon: '📊', text: '2 → Unlimited spreadsheet imports' },
-            { icon: '📦', text: '3 → Unlimited spaces' },
-          ].map(f => (
+          {BILLING_PLANS[1].features.map(text => ({ icon: '✓', text })).map(f => (
             <div key={f.text} style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '6px 0',
@@ -130,11 +118,11 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
 
         {/* CTA */}
         <Link
-          href="/upgrade"
+          href="/pricing"
           style={{
             display: 'block',
             background: 'var(--control-primary)',
-            color: 'var(--ink)',
+            color: 'var(--control-on-primary)',
             border: 'none',
             borderRadius: '10px',
             padding: '13px',
@@ -149,7 +137,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-          Upgrade to Pro — $9/month
+          Compare Free, Plus and Team
         </Link>
 
         <button
@@ -179,7 +167,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           fontSize: '11px', color: 'var(--light-muted)', textAlign: 'center',
           margin: '14px 0 0', letterSpacing: '-0.005em',
         }}>
-          Free limits reset on the 1st of each month.
+          {PLANS_NOTICE}
         </p>
       </div>
     </div>

@@ -1,3 +1,12 @@
+## October 25 - Free, Plus and Team plan comparison (web)
+
+User approved the proposed three-tier prices and asked for both apps to match,
+with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
+or $99/year, Team $29/month or $299/year for five people. Current access and
+server quotas remain unchanged; purchases stay unavailable. See
+`docs/pricing-and-limits.md` for exact allowances and future payment gates.
+Validation/release in progress; no public App Store submission.
+
 ## October 25 — Wordmark balance deployed (PR216)
 
 Runtime `04f883b3c8b8567e12bbc2ab1974163d2bc228d2` is live at findez.ai. The Petals mark is 20% smaller beside unchanged lettering in light/dark and landing wordmarks. All five CI jobs passed (40217806792); production build `nvXSrYN7RI1ah94eeMZ_i`, 22 staged/live route checks and public SVG hash/live browser verification passed. Active release: `/home/ubuntu/findez-web-releases/wordmark-balance-20261025/frontend`; rollback: `petals-20261025/frontend`. Five obsolete webpack caches were cleared after ENOSPC; source and compiled rollback releases remain intact. Backend process preserved.

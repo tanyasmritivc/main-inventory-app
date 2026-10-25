@@ -1,7 +1,14 @@
+// Display catalog only. Purchases and server entitlements are not activated here.
+export const PLANS_NOTICE = "Paid plans are coming soon. Current access is unchanged. No payment will be taken.";
 export const BILLING_PLANS = [
-  { id: "free", name: "Free", monthly: 0, annual: 0, features: ["30 items", "3 Spaces", "20 AI chats per month", "5 photo scans and 10 barcode scans per month", "2 imports per month", "1 active share"] },
-  { id: "pro", name: "Pro", monthly: 19, annual: 149, features: ["2,500 items", "20 Spaces", "Unlimited AI chats and scans, subject to fair use", "Personal inventory and physical memory", "Advanced search and document workflows"] },
-  { id: "team", name: "Team", monthly: 99, annual: 790, features: ["Up to 10 users", "10,000 items", "Shared inventories and collaboration", "Team permissions and shared physical memory"] },
-  { id: "business", name: "Business", monthly: 299, annual: 2490, features: ["Up to 25 users", "50,000 items", "Advanced shared inventory workflows", "Business onboarding and support"] },
-  { id: "enterprise", name: "Enterprise", monthly: null, annual: null, features: ["Custom users, inventory capacity and usage", "Organization-specific requirements", "Tailored onboarding and support", "Custom commercial agreements"] },
+  { id: "free", name: "Free", description: "Try FindEZ on your own things.", monthly: 0, annual: 0, features: ["100 saved item records", "1 person", "Unlimited Spaces", "10 photo extractions per month", "50 AI messages per month", "Chat, capture and find"] },
+  { id: "plus", name: "Plus", description: "For your home, collections and workshop.", monthly: 9.99, annual: 99, features: ["2,500 saved item records", "1 person", "Unlimited Spaces", "50 photo extractions per month", "500 AI messages per month", "Low-stock reminders"] },
+  { id: "team", name: "Team", description: "Remember more, together.", monthly: 29, annual: 299, features: ["10,000 shared item records", "5 people included", "Unlimited Spaces", "200 photo extractions per month, shared", "2,000 AI messages per month, shared", "Shared inventory, permissions and activity"] },
+] as const;
+
+export const PLAN_POLICIES = [
+  ["Items, not units", "M3 screws with a quantity of 500 count as one saved item record."],
+  ["Clear AI allowances", "One photo extraction means one photo processed for inventory, regardless of how many items it finds. Failed extractions and automatic retries will not use your allowance."],
+  ["Everyday access stays simple", "Browsing, manual edits, barcode scanning and exports will not use your AI allowance."],
+  ["Your inventory stays yours", "After a downgrade or a usage limit, you will still be able to view, edit and export saved items."],
 ] as const;

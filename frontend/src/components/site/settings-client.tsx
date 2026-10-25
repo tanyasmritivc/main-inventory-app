@@ -428,7 +428,7 @@ function SettingsWorkspace({ email, section }: { email: string | null; section: 
       {section === "memory" && <div id="memory"><MemorySettings accountId={accountId}/></div>}
       {section === "plans" && <section className="settings-panel">
         <Link className="settings-link-row" href="/pricing">
-          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Pro, Team and Business.</small></span>
+          <span className="settings-link-copy"><strong>Plans</strong><small>Compare Free, Plus and Team. Paid plans coming soon.</small></span>
           <ChevronRight size={16} />
         </Link>
       </section>}
