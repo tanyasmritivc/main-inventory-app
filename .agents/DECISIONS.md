@@ -1,3 +1,7 @@
+## October 24 — Public search identity
+
+Use the user-requested title “FindEZ | AI for the physical world”, FindEZ as the public site name, and the latest round echo artwork. Older FindEZ AI remains an alternate structured-data name. Keep the new echo favicon paths stable after this cache refresh. Search result appearance, sitelinks and knowledge panels are controlled by Google; do not promise them or fabricate entity facts.
+
 ## October 24 — Unknown counts are not one unit
 
 A detected photo region is not a count. Keep uncertain quantities explicit until the user confirms or omits that row. Group only confidently counted, disjoint objects with matching visible identity markings; retain their full union crop and evidence. Destination selection does not save stock. A confirmed new destination may bind to the existing draft without losing its crops.

@@ -12,9 +12,9 @@ export const metadata: Metadata = {
     title: PUBLIC_SITE_TITLE,
     description: PUBLIC_SITE_DESCRIPTION,
     url: `${PUBLIC_SITE_URL}/`,
-    siteName: "FindEZ AI",
+    siteName: "FindEZ",
     type: "website",
-    images: [{ url: "/brand/findez-logo-512.png", width: 512, height: 512, alt: "FindEZ AI" }],
+    images: [{ url: "/brand/findez-logo-512.png", width: 512, height: 512, alt: "FindEZ" }],
   },
   twitter: {
     card: "summary",
