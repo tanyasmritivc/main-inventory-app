@@ -1,3 +1,15 @@
+## October 25 — Petals website deployed (PR215)
+
+Runtime `a6f5d37c78ffdb995e13eada62a8318134ff04be` is live at findez.ai. All five CI jobs passed in run 40216797751. Production build `uScVgYDkdk9XdlwXrH-Iw`; 22 staged and 22 live routes passed. Public metadata and a live browser check confirm the new wordmark/favicon. Previous release and backend process preserved. Active directory: `/home/ubuntu/findez-web-releases/petals-20261025/frontend`; rollback: `/home/ubuntu/findez-web-releases/remove-search-20261024/frontend`. No schema or backend changes.
+
+## October 25 — Petals release authorized
+
+The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing the web Petals release with the existing production configuration.
+
+## October 25 — Petals brand v4 (frontend, local only)
+
+Branch `web-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `frontend/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. Backend, schema, env and deployment configuration are untouched.
+
 ## October 24 - Duplicate Search navigation removed (PR213)
 
 Web runtime `2e9c0af0dbe66ee21f0c887cf520b744b74953c9` is deployed. Search was

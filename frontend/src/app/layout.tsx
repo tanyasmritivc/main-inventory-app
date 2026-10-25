@@ -20,10 +20,10 @@ import "./workspace.css";
 const THEME_INIT_SCRIPT = `(function(){try{var p=["${INTERIOR_PATH_PREFIXES.join('","')}"];var path=window.location.pathname;var isInterior=false;for(var i=0;i<p.length;i++){if(path===p[i]||path.indexOf(p[i]+"/")===0){isInterior=true;break;}}if(!isInterior)return;var stored;try{stored=window.localStorage.getItem(${JSON.stringify(APP_THEME_STORAGE_KEY)});}catch(e){}var dark=stored==="dark"||(stored!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(dark)document.documentElement.classList.add("dark");}catch(e){}})();`;
 
 const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"], variable: "--font-jakarta", display: "swap",
+  subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-jakarta", display: "swap",
 });
 const mono = Geist_Mono({
-  subsets: ["latin"], variable: "--font-geist-mono", display: "swap",
+  subsets: ["latin"], weight: ["400", "500"], variable: "--font-geist-mono", display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -52,12 +52,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand/findez-echo.svg", sizes: "any", type: "image/svg+xml" },
-      { url: "/brand/findez-echo-96.png", sizes: "96x96", type: "image/png" },
-      { url: "/brand/findez-echo.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/brand/findez-favicon.svg", sizes: "any", type: "image/svg+xml" },
+      { url: "/brand/findez-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/findez-favicon-16.png", sizes: "16x16", type: "image/png" },
     ],
-    shortcut: "/brand/findez-echo.ico",
-    apple: [{ url: "/brand/findez-echo-touch.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/brand/findez-favicon-32.png",
+    apple: [{ url: "/brand/findez-app-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
