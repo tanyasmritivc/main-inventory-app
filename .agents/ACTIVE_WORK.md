@@ -5,7 +5,7 @@ with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
 or $99/year, Team $29/month or $299/year for five people. Current access and
 server quotas remain unchanged; purchases stay unavailable. See
 `docs/pricing-and-limits.md` for exact allowances and future payment gates.
-Validation/release in progress; no public App Store submission.
+Runtime `76bfc93522a15093373c5c2326b5db6877b58791` is live at findez.ai/pricing (PR217). All five CI jobs passed (40219539019); production build `vaVkOWF9huJC5FyrffOPO`, 22 staged/live routes and public browser checks passed. Monthly/annual comparison and unavailable paid buttons verified. Backend and prior release preserved. Receipt: `docs/plans/launch-plans-web-receipt.json`. No public App Store submission.
 
 ## October 25 — Wordmark balance deployed (PR216)
 

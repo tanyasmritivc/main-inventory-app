@@ -53,3 +53,9 @@ from StoreKit; displayed USD estimates are not checkout prices. Paid access must
 never depend on visiting a success URL or a client-only flag.
 
 Public App Store submission is still held for the user's separate instruction.
+
+## Web delivery
+
+Runtime `76bfc93522a15093373c5c2326b5db6877b58791` is live at findez.ai/pricing (PR217). All five CI jobs passed (40219539019); production build `vaVkOWF9huJC5FyrffOPO`, 22 staged/live routes and public browser checks passed. Monthly/annual comparison and unavailable paid buttons verified. Backend and prior release preserved. Receipt: `docs/plans/launch-plans-web-receipt.json`. No public App Store submission.
+
+TypeScript, scoped lint, focused pricing tests, final full CI and production build passed. Live pricing and local annual selection were visually checked. This release prepares the catalog; payment activation and server quota enforcement remain future work.
