@@ -462,7 +462,7 @@ void main() {
     for (final serverNotice in [true, false]) {
       for (final scale in [1.0, 2.6, 3.4]) {
         testWidgets(
-          '${brightness.name} plans hidden with ${serverNotice ? 'API' : 'fallback'} notice at $scale text',
+          '${brightness.name} plan comparison available without promotion with ${serverNotice ? 'API' : 'fallback'} notice at $scale text',
           (tester) async {
             SharedPreferences.setMockInitialValues({});
             ProStatus.reset();
@@ -490,9 +490,17 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            expect(find.text('Plans'), findsNothing);
+            expect(find.text('Plans'), findsOneWidget);
             expect(find.text('Free Pilot'), findsNothing);
             expect(find.textContaining('begin November 2'), findsNothing);
+            if (scale == 1.0) {
+              await tester.tap(find.text('Plans'));
+              await tester.pumpAndSettle();
+              expect(find.text('Remember more of your world.'), findsOneWidget);
+              await tester.pageBack();
+              await tester.pumpAndSettle();
+            }
+            await tester.scrollUntilVisible(find.text('Appearance'), 160);
             expect(find.text('Appearance'), findsOneWidget);
             expect(ProStatus.isPilotMode, isTrue);
             expect(ProStatus.isPro, isFalse);

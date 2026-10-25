@@ -1,3 +1,12 @@
+## October 25 - Free, Plus and Team plan comparison (mobile)
+
+User approved the proposed three-tier prices and asked for both apps to match,
+with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
+or $99/year, Team $29/month or $299/year for five people. Current access and
+server quotas remain unchanged; purchases stay unavailable. See
+`docs/pricing-and-limits.md` for exact allowances and future payment gates.
+Validation/release in progress; no public App Store submission.
+
 ## October 25 — Petals and chat onboarding beta133 delivered (PR214)
 
 Apple accepted 1.1.1 (133), runtime `f80248d8813ad88a47909bd5a030d7480382e9db`, delivery `4d60ceee-7770-44db-985d-5eaa164884f7`. All five exact-runtime CI jobs passed (40216741053). Signed archive/export verified 34 device executables each; strict signing, 26 privacy manifests, production configuration and Apple validation passed. IPA SHA256 `7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f`. Processing and tester availability were not polled. Physical-device acceptance remains unverified. Artifacts: Documents/FindEZ/AppStore/1.1.1-build133.

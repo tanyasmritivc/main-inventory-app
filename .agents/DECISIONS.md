@@ -1,3 +1,12 @@
+## October 25 - Free, Plus and Team plan comparison (mobile)
+
+User approved the proposed three-tier prices and asked for both apps to match,
+with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
+or $99/year, Team $29/month or $299/year for five people. Current access and
+server quotas remain unchanged; purchases stay unavailable. See
+`docs/pricing-and-limits.md` for exact allowances and future payment gates.
+Validation/release in progress; no public App Store submission.
+
 ## October 25 — Petals release authorized
 
 The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing 1.1.1 (133), including chat-first onboarding.

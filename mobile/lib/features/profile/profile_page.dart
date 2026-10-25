@@ -1344,21 +1344,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ),
-
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ListTile(
-                  title: const AppText('Plans'),
-                  subtitle: const AppText(
-                    'Compare Free, Pro, Team and Business',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute(builder: (_) => const PlansPage()),
-                  ),
+            ],
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: ListTile(
+                title: const AppText('Plans'),
+                subtitle: const AppText(
+                  'Compare Free, Plus and Team. Paid plans coming soon.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const PlansPage()),
                 ),
               ),
-            ],
+            ),
             const AppearanceSettings(),
             // ── Scanning ─────────────────────────────────────────────────────
             _sectionLabel('Scanning'),
