@@ -1,6 +1,6 @@
 ## October 25 - Standard pricing only
 
-User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Release verification in progress.
+User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized.
 
 ## October 25 - Free, Plus and Team plan comparison (mobile)
 

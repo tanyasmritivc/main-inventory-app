@@ -1,6 +1,6 @@
 ## October 25 - Standard pricing only
 
-User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Release verification in progress.
+User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Apple accepted TestFlight 1.1.1 (135), runtime `969c03ff4ca65ab81fa7526ee002a50d6726981d`, delivery `9e39bf43-955c-49b5-bcb7-055bc4cbc81a`. All five CI jobs passed (40221148268); Flutter analysis and three focused plan tests passed. Signed archive/export each verified 34 device executables; privacy/config/signing and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. No public App Store submission. Receipt: `docs/plans/no-offers-mobile-receipt.json`.
 
 ## October 25 - Free, Plus and Team plan comparison (mobile)
 
