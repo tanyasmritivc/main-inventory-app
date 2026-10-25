@@ -65,12 +65,7 @@ void main() {
           home: const PlansPage(),
         ),
       );
-      expect(
-        find.text(
-          'Paid plans are coming soon. Current access is unchanged. No payment will be taken.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(plansNotice), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Yearly'), 160);
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Yearly'));

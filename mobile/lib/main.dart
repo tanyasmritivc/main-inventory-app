@@ -52,13 +52,13 @@ Future<void> main() async {
   }
 
   AppConfig.validate();
-  await ProStatus.loadCached();
   await LowStockNotifications.initialize();
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabaseAnonKey,
   );
+  await ProStatus.loadCached();
 
   try {
     await OnboardingPrefs.prepareGuidedTourInstall(

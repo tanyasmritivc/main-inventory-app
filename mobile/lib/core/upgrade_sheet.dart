@@ -14,7 +14,20 @@ Future<void> showUpgradeSheet(
   ApiClient api, {
   String? reason,
 }) async {
-  if (ProStatus.isPilotMode) return;
+  await ProStatus.refresh(api);
+  if (!context.mounted) return;
+  if (!ProStatus.shouldOfferUpgrade) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: AppText(
+          ProStatus.isPilotMode
+              ? 'Your pre-launch access is still active. Please try this action again.'
+              : 'This action could not finish. Please try again.',
+        ),
+      ),
+    );
+    return;
+  }
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
