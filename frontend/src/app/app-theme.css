@@ -71,6 +71,7 @@ html, body { background: var(--light-page); color: var(--ink); }
 select, .glass-select { color-scheme: inherit; }
 /* The legacy unlayered reset overrides Tailwind's p-6 on portal dialogs. */
 :where([data-slot="dialog-content"]:not(.p-0)) { padding: 24px; }
+.findez-form-dialog { overflow-y: auto; }
 [data-slot="card"] { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
 [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"] { color: var(--ink); border-color: var(--light-line); background: var(--light-panel); box-shadow: none; }
 [data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-sub-trigger"],
