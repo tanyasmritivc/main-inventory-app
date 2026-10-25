@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../app_theme.dart';
-import 'brand_colors.dart';
 
-/// Supplied Blue echo outlined artwork, not a font approximation or whole-image tint.
+/// Supplied Petals wordmark, with the outlined name preserved in both themes.
 class FindEZWordmark extends StatelessWidget {
   const FindEZWordmark({super.key, this.width = 208});
 
@@ -12,17 +11,10 @@ class FindEZWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-    'assets/brand/findez-wordmark.svg',
+    AppTheme.isDark(context)
+        ? 'assets/brand/findez-wordmark-white.svg'
+        : 'assets/brand/findez-wordmark.svg',
     width: width,
     semanticsLabel: 'FindEZ',
-    colorMapper: AppTheme.isDark(context) ? const _ReverseInk() : null,
   );
-}
-
-class _ReverseInk extends ColorMapper {
-  const _ReverseInk();
-
-  @override
-  Color substitute(String? id, String element, String attribute, Color color) =>
-      color == BrandColors.ink ? BrandColors.paper : color;
 }

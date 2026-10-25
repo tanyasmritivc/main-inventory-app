@@ -1,3 +1,7 @@
+## October 25 — Petals brand v4 (mobile, local only)
+
+Branch `mobile-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `mobile/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. This branch includes the completed chat-first onboarding commit `90d4881`. Backend, schema, env and deployment configuration are untouched.
+
 ## October 25 - Try chat before signup; no structural setup
 
 The new mobile first run offers Snap, Type and Describe before signup. Local

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'ui/app_colors.dart';
 import 'ui/brand_colors.dart';
@@ -76,45 +77,47 @@ class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       useMaterial3: true,
-      fontFamily: 'PlusJakartaSans',
+      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
-      textTheme: const TextTheme(
-        headlineSmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.3,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          letterSpacing: -0.1,
-        ),
-        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        bodyLarge: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.35,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.1,
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        const TextTheme(
+          headlineSmall: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.4,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.3,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.1,
+          ),
+          titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          bodyLarge: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          labelLarge: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -357,7 +360,7 @@ class AppTheme {
   }
 
   // Light mode colors
-  static const Color lightBg = BrandColors.surface;
+  static const Color lightBg = BrandColors.paper;
   static const Color lightSurface = BrandColors.paper;
   static const Color lightSurface2 = BrandColors.surface;
   static const Color lightBorder = BrandColors.hairline;
@@ -370,7 +373,7 @@ class AppTheme {
   static const Color lightHint = Color(0xFF69696E);
 
   // Dark neutral counterparts of the same monochrome brand.
-  static const Color darkBg = Color(0xFF000000);
+  static const Color darkBg = BrandColors.night;
   static const Color darkSurface = AppColors.surface;
   static const Color darkSurface2 = AppColors.surface2;
   static const Color darkBorder = AppColors.border;

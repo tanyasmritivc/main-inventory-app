@@ -55,7 +55,7 @@ dependencies:
   path_provider: ^2.1.0
   sign_in_with_apple: ^6.1.4
   google_sign_in: 6.2.1
-  google_fonts: ^6.2.1
+  google_fonts: ^7.1.0
   flutter_svg: ^2.3.0
   speech_to_text: ^6.6.0
   share_handler: ^0.0.25
@@ -98,6 +98,7 @@ flutter:
   assets:
     - assets/onboarding/
     - assets/brand/
+    - assets/fonts/brand/
     - assets/mascot/
     - assets/fonts/OFL.txt
     - assets/fonts/Jakarta-OFL.txt
@@ -105,18 +106,22 @@ flutter:
   fonts:
     - family: PlusJakartaSans
       fonts:
-        - asset: assets/fonts/PlusJakartaSans.ttf
+        - asset: assets/fonts/brand/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/brand/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/brand/PlusJakartaSans-SemiBold.ttf
+          weight: 600
     - family: GeistMono
       fonts:
-        - asset: assets/fonts/GeistMono.ttf
+        - asset: assets/fonts/brand/GeistMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/brand/GeistMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/brand/GeistMono-SemiBold.ttf
+          weight: 600
     - family: PlaceGeist
       fonts:
-    - family: PlusJakartaSans
-      fonts:
-        - asset: assets/fonts/PlusJakartaSans.ttf
-    - family: GeistMono
-      fonts:
-        - asset: assets/fonts/GeistMono.ttf
         - asset: assets/fonts/Geist-Regular.ttf
           weight: 400
         - asset: assets/fonts/Geist-Medium.ttf
@@ -125,12 +130,6 @@ flutter:
           weight: 600
     - family: PlaceGeistMono
       fonts:
-    - family: PlusJakartaSans
-      fonts:
-        - asset: assets/fonts/PlusJakartaSans.ttf
-    - family: GeistMono
-      fonts:
-        - asset: assets/fonts/GeistMono.ttf
         - asset: assets/fonts/GeistMono-Medium.ttf
           weight: 500
 

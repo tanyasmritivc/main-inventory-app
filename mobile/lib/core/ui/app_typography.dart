@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// One weight policy for app text, framework controls and editable text.
 /// Weights stay regular, medium or semibold regardless of OS Bold Text. Other
@@ -16,9 +17,12 @@ class AppTypography extends StatelessWidget {
 
   static TextStyle styleOf(BuildContext context, TextStyle? style) {
     final effective = DefaultTextStyle.of(context).style.merge(style);
-    return (style ?? const TextStyle()).copyWith(
+    final result = (style ?? const TextStyle()).copyWith(
       fontWeight: _weight(effective),
     );
+    return effective.fontFamily == 'GeistMono'
+        ? GoogleFonts.geistMono(textStyle: result)
+        : result;
   }
 
   static TextStyle bodyStyleOf(BuildContext context, [TextStyle? style]) {
