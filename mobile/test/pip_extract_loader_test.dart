@@ -110,6 +110,27 @@ void main() {
     },
   );
 
+  testWidgets('iOS Reduce Motion stops an already running loader', (
+    tester,
+  ) async {
+    final handle = await open(tester);
+    await tester.pump(const Duration(milliseconds: 1600));
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(reduceMotion: true);
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    unawaited(handle.succeed(1));
+    await tester.pump();
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(find.text('Found 1 item'), findsOneWidget);
+    handle.dismiss();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('early disposal resolves a success wait and releases timers', (
     tester,
   ) async {

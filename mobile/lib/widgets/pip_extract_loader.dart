@@ -40,7 +40,13 @@ PipExtractLoaderHandle showPipExtractLoader(BuildContext context) {
   final handle = PipExtractLoaderHandle._(
     Navigator.of(context, rootNavigator: true),
   );
-  final reduceMotion = MediaQuery.disableAnimationsOf(context);
+  final reduceMotion =
+      MediaQuery.disableAnimationsOf(context) ||
+      WidgetsBinding
+          .instance
+          .platformDispatcher
+          .accessibilityFeatures
+          .reduceMotion;
   handle._route = RawDialogRoute<void>(
     barrierDismissible: false,
     barrierColor: Colors.transparent,
@@ -73,7 +79,7 @@ class PipExtractLoader extends StatefulWidget {
 }
 
 class _PipExtractLoaderState extends State<PipExtractLoader>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   static const _lines = [
     'Pip is looking...',
     'Reading labels...',
@@ -103,6 +109,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _steps = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
       if (_step == _lines.length - 1 || widget.foundCount != null) {
         timer.cancel();
@@ -116,8 +123,28 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        WidgetsBinding
+            .instance
+            .platformDispatcher
+            .accessibilityFeatures
+            .reduceMotion;
     _syncMotion();
+  }
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    setState(() {
+      _reduceMotion =
+          MediaQuery.disableAnimationsOf(context) ||
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .accessibilityFeatures
+              .reduceMotion;
+      _syncMotion();
+    });
   }
 
   void _syncMotion() {
@@ -148,6 +175,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _steps?.cancel();
     _seeds?.cancel();
     _bob.dispose();
@@ -182,6 +210,24 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
     final status = count == null
         ? _lines[_step]
         : 'Found $count ${count == 1 ? 'item' : 'items'}';
+    final statusText = Text(
+      status,
+      key: ValueKey(status),
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        color: Colors.white,
+        shadows: [
+          Shadow(
+            color: Color(0x59000000),
+            offset: Offset(0, 1),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+    );
     return PopScope(
       canPop: false,
       child: Material(
@@ -295,48 +341,34 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                         child: ExcludeSemantics(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: AnimatedSwitcher(
-                              duration: Duration(
-                                milliseconds: _reduceMotion ? 0 : 350,
-                              ),
-                              transitionBuilder: (child, animation) =>
-                                  AnimatedBuilder(
-                                    animation: animation,
-                                    child: child,
-                                    builder: (_, child) => Opacity(
-                                      opacity: animation.value,
-                                      child: Transform.translate(
-                                        offset: Offset(
-                                          0,
-                                          (animation.status ==
-                                                      AnimationStatus.reverse
-                                                  ? -14
-                                                  : 14) *
-                                              (1 - animation.value),
+                            child: _reduceMotion
+                                ? statusText
+                                : AnimatedSwitcher(
+                                    duration: Duration(
+                                      milliseconds: _reduceMotion ? 0 : 350,
+                                    ),
+                                    transitionBuilder: (child, animation) =>
+                                        AnimatedBuilder(
+                                          animation: animation,
+                                          child: child,
+                                          builder: (_, child) => Opacity(
+                                            opacity: animation.value,
+                                            child: Transform.translate(
+                                              offset: Offset(
+                                                0,
+                                                (animation.status ==
+                                                            AnimationStatus
+                                                                .reverse
+                                                        ? -14
+                                                        : 14) *
+                                                    (1 - animation.value),
+                                              ),
+                                              child: child,
+                                            ),
+                                          ),
                                         ),
-                                        child: child,
-                                      ),
-                                    ),
+                                    child: statusText,
                                   ),
-                              child: Text(
-                                status,
-                                key: ValueKey(status),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontFamily: 'PlusJakartaSans',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      color: Color(0x59000000),
-                                      offset: Offset(0, 1),
-                                      blurRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                       ),
