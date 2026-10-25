@@ -38,7 +38,7 @@ void main() {
       expect(find.text('Offline'), findsOneWidget);
       expect(find.text('Use personalization'), findsNothing);
       api.fail = false;
-      await tester.tap(find.text('Refresh memory'));
+      await tester.tap(find.byTooltip('Refresh memory'));
       await tester.pumpAndSettle();
       expect(find.text('Use personalization'), findsOneWidget);
     },
