@@ -1,3 +1,7 @@
+## October 25 — Petals brand v4 (frontend, local only)
+
+Branch `web-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `frontend/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. Backend, schema, env and deployment configuration are untouched.
+
 ## October 24 — Public search identity
 
 Use the user-requested title “FindEZ | AI for the physical world”, FindEZ as the public site name, and the latest round echo artwork. Older FindEZ AI remains an alternate structured-data name. Keep the new echo favicon paths stable after this cache refresh. Search result appearance, sitelinks and knowledge panels are controlled by Google; do not promise them or fabricate entity facts.

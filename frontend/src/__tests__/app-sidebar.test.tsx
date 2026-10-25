@@ -43,11 +43,11 @@ test("keeps the focused inventory and account navigation reachable", () => {
     screen.getByRole("complementary").classList.contains("is-hover-expandable"),
   ).toBe(false);
 });
-test("uses the supplied Blue echo mark throughout navigation", () => {
+test("uses the supplied Petals wordmark without duplicate name text", () => {
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
   expect(
-    container.querySelector(".app-sidebar-logo path")?.getAttribute("fill"),
-  ).toBe("#A9D6F5");
+    container.querySelector(".app-sidebar-brand image")?.getAttribute("href"),
+  ).toBe("/brand/findez-wordmark.svg");
 });
 test.each(APP_NAV_ITEMS.filter((i) => i.route !== "/docs/api"))(
   "selects only $label on its route",

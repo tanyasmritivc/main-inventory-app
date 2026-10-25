@@ -1,3 +1,7 @@
+## October 25 — Petals brand v4 (frontend, local only)
+
+Branch `web-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `frontend/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. Backend, schema, env and deployment configuration are untouched.
+
 ## October 24 - Duplicate Search navigation removed (PR213)
 
 Web runtime `2e9c0af0dbe66ee21f0c887cf520b744b74953c9` is deployed. Search was
