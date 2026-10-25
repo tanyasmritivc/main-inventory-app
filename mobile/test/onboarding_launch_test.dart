@@ -16,6 +16,7 @@ import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:mobile/features/world/world_shell.dart';
+import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:mobile/features/onboarding/pending_world.dart';
 import 'package:mobile/features/sharing/invitation_host.dart';
@@ -284,7 +285,13 @@ void main() {
       );
       await tester.pumpWidget(_gate(_Api()));
       await settleHome(tester);
-      await tester.tap(find.byTooltip('More'));
+      if (usesNativeBottomTabs) {
+        tester
+            .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
+            .onSelected(2);
+      } else {
+        await tester.tap(find.byTooltip('More'));
+      }
       await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);
@@ -323,7 +330,13 @@ void main() {
       await tester.pumpWidget(_gate(_Api(), key: const Key('reopened')));
       await settleHome(tester);
       expect(find.byType(WorldShell), findsOneWidget);
-      await tester.tap(find.byTooltip('More'));
+      if (usesNativeBottomTabs) {
+        tester
+            .widget<NativeBottomTabs>(find.byType(NativeBottomTabs))
+            .onSelected(2);
+      } else {
+        await tester.tap(find.byTooltip('More'));
+      }
       await tester.pumpAndSettle();
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);

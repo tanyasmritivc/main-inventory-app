@@ -70,6 +70,9 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useSafeArea: true,
+      // Route drag dismissal bypasses PopScope. The handle below requests a
+      // guarded close so pending saves and unsaved edits cannot be abandoned.
+      enableDrag: false,
       builder: (_) => _ReviewDetailSheet(api: widget.api, item: item),
     );
     if (!mounted || outcome == null) return;
@@ -175,12 +178,25 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
         if (index == 0) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(4, 2, 4, 8),
-            child: AppText(
-              '${_items.length} ${_items.length == 1 ? 'item saved' : 'items saved'}${widget.location == null ? '' : ' in ${widget.location}'} for review. Tap an item to edit.',
-              style: TextStyle(
-                color: AppTheme.foreground(context, Colors.white60),
-                height: 1.4,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  '${_items.length} ${_items.length == 1 ? 'item saved' : 'items saved'}${widget.location == null ? '' : ' in ${widget.location}'} for review. Tap an item to edit.',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white60),
+                    height: 1.4,
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(liveRegion: true, child: AppText(_error!)),
+                  TextButton(
+                    onPressed: _loading ? null : _load,
+                    child: const AppText('Try again'),
+                  ),
+                ],
+              ],
             ),
           );
         }
@@ -272,7 +288,48 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   late final TextEditingController _partNumber;
   late int _quantity;
   late bool _quantityConfirmed;
+  String _quantityInput = '';
   bool _saving = false;
+  bool _confirmingClose = false;
+
+  bool get _dirty =>
+      _name.text != widget.item.name ||
+      _category.text != widget.item.category ||
+      _location.text != (widget.item.location ?? '') ||
+      _brand.text != (widget.item.brand ?? '') ||
+      _partNumber.text != (widget.item.partNumber ?? '') ||
+      _quantityInput.isNotEmpty ||
+      _quantity != widget.item.quantity.clamp(0, 100000) ||
+      _quantityConfirmed != (widget.item.scanEvidence?.quantityMissing != true);
+
+  Future<void> _requestClose() async {
+    if (_saving || _confirmingClose) return;
+    if (_dirty) {
+      _confirmingClose = true;
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const AppText('Discard changes?'),
+          content: const AppText(
+            'Your changes have not been saved. The original capture will stay in Review.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const AppText('Keep editing'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const AppText('Discard changes'),
+            ),
+          ],
+        ),
+      );
+      _confirmingClose = false;
+      if (!mounted || discard != true) return;
+    }
+    if (mounted) Navigator.pop(context);
+  }
 
   @override
   void initState() {
@@ -325,7 +382,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   );
 
   Future<void> _resolve() async {
-    if (!widget.api.canEdit || !_quantityConfirmed) return;
+    if (_saving || !widget.api.canEdit || !_quantityConfirmed) return;
     if (_name.text.trim().isEmpty ||
         _category.text.trim().isEmpty ||
         _location.text.trim().isEmpty) {
@@ -359,7 +416,7 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   }
 
   Future<void> _dismiss() async {
-    if (!widget.api.canEdit) return;
+    if (_saving || !widget.api.canEdit) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -396,178 +453,216 @@ class _ReviewDetailSheetState extends State<_ReviewDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final image = (widget.item.imageUrl ?? '').trim();
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.94,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.adaptive(context, Color(0xFF090909)),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(context, Colors.white24),
-              borderRadius: BorderRadius.circular(9),
+    final scrollHeading =
+        MediaQuery.sizeOf(context).height < 500 ||
+        MediaQuery.textScalerOf(context).scale(19) > 38;
+    return PopScope(
+      // Check current field values at the time of dismissal, even when an edit
+      // and Back arrive before the next frame rebuilds this widget.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_requestClose());
+      },
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.94,
+        ),
+        decoration: BoxDecoration(
+          color: AppTheme.adaptive(context, Color(0xFF090909)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragEnd: (details) {
+                if ((details.primaryVelocity ?? 0) > 200) {
+                  unawaited(_requestClose());
+                }
+              },
+              child: SizedBox(
+                width: double.infinity,
+                height: 24,
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.adaptive(context, Colors.white24),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
+              child: Row(
+                children: [
+                  if (scrollHeading)
+                    const Spacer()
+                  else
+                    Expanded(
+                      child: AppText(
                         'Review capture',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(height: 3),
-                      AppText(
-                        widget.api.canEdit
-                            ? 'Correct anything uncertain, then add it to Find.'
-                            : 'View-only access. Confirming or dismissing requires Editor access.',
-                        style: TextStyle(
-                          color: AppTheme.foreground(context, Colors.white60),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
+                  IconButton(
+                    tooltip: 'Close review',
+                    onPressed: _saving ? null : _requestClose,
+                    icon: const Icon(Icons.close_rounded),
                   ),
-                ),
-                IconButton(
-                  onPressed: _saving ? null : () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                4,
-                16,
-                MediaQuery.viewInsetsOf(context).bottom + 20,
+                ],
               ),
-              children: [
-                if (image.isNotEmpty) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: PrivateImage(
-                      image,
-                      height: 210,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  4,
+                  16,
+                  MediaQuery.viewInsetsOf(context).bottom + 20,
+                ),
+                children: [
+                  if (scrollHeading) ...[
+                    const AppText(
+                      'Review capture',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (widget.item.scanEvidence != null) ...[
-                  ScanEvidencePanel(
-                    evidence: widget.item.scanEvidence!,
-                    barcode: widget.item.barcode,
-                    initiallyExpanded: true,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                _field('Item name', _name),
-                _field('Category', _category),
-                Row(
-                  children: [
-                    Expanded(child: _field('Brand', _brand)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _field('Part / model #', _partNumber)),
+                    const SizedBox(height: 8),
                   ],
-                ),
-                _field('Location', _location),
-                AppText(
-                  'QUANTITY',
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white38),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (widget.item.scanEvidence?.quantityMissing == true)
-                  TextFormField(
-                    enabled: !_saving && widget.api.canEdit,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantity needed',
-                      hintText: 'Enter the number of individual items',
+                  AppText(
+                    widget.api.canEdit
+                        ? 'Correct anything uncertain, then add it to Find.'
+                        : 'View-only access. Confirming or dismissing requires Editor access.',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white60),
+                      fontSize: 12,
                     ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => setState(() {
-                      final n = int.tryParse(value);
-                      _quantityConfirmed = n != null && n >= 0 && n <= 100000;
-                      if (_quantityConfirmed) _quantity = n!;
-                    }),
-                  )
-                else
+                  ),
+                  const SizedBox(height: 16),
+                  if (image.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: PrivateImage(
+                        image,
+                        height: 210,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (widget.item.scanEvidence != null) ...[
+                    ScanEvidencePanel(
+                      evidence: widget.item.scanEvidence!,
+                      barcode: widget.item.barcode,
+                      initiallyExpanded: true,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _field('Item name', _name),
+                  _field('Category', _category),
                   Row(
                     children: [
-                      IconButton.filledTonal(
-                        onPressed:
-                            _saving || !widget.api.canEdit || _quantity == 0
-                            ? null
-                            : () => setState(() => _quantity--),
-                        icon: const Icon(Icons.remove_rounded),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        child: AppText(
-                          '$_quantity',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed:
-                            _saving ||
-                                !widget.api.canEdit ||
-                                _quantity >= 100000
-                            ? null
-                            : () => setState(() => _quantity++),
-                        icon: const Icon(Icons.add_rounded),
-                      ),
+                      Expanded(child: _field('Brand', _brand)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _field('Part / model #', _partNumber)),
                     ],
                   ),
-                const SizedBox(height: 22),
-                FilledButton.icon(
-                  onPressed:
-                      _saving || !widget.api.canEdit || !_quantityConfirmed
-                      ? null
-                      : _resolve,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_rounded),
-                  label: const AppText('Confirm and add to Find'),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _saving || !widget.api.canEdit ? null : _dismiss,
-                  child: const AppText('Dismiss capture'),
-                ),
-              ],
+                  _field('Location', _location),
+                  AppText(
+                    'QUANTITY',
+                    style: TextStyle(
+                      color: AppTheme.foreground(context, Colors.white38),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (widget.item.scanEvidence?.quantityMissing == true)
+                    TextFormField(
+                      enabled: !_saving && widget.api.canEdit,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity needed',
+                        hintText: 'Enter the number of individual items',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {
+                        _quantityInput = value;
+                        final n = int.tryParse(value);
+                        _quantityConfirmed = n != null && n >= 0 && n <= 100000;
+                        if (_quantityConfirmed) _quantity = n!;
+                      }),
+                    )
+                  else
+                    Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Decrease quantity',
+                          onPressed:
+                              _saving || !widget.api.canEdit || _quantity == 0
+                              ? null
+                              : () => setState(() => _quantity--),
+                          icon: const Icon(Icons.remove_rounded),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: AppText(
+                            '$_quantity',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton.filledTonal(
+                          tooltip: 'Increase quantity',
+                          onPressed:
+                              _saving ||
+                                  !widget.api.canEdit ||
+                                  _quantity >= 100000
+                              ? null
+                              : () => setState(() => _quantity++),
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 22),
+                  FilledButton.icon(
+                    onPressed:
+                        _saving || !widget.api.canEdit || !_quantityConfirmed
+                        ? null
+                        : _resolve,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_rounded),
+                    label: const AppText('Confirm and add to Find'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _saving || !widget.api.canEdit ? null : _dismiss,
+                    child: const AppText('Dismiss capture'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

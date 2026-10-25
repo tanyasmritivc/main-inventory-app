@@ -1,3 +1,25 @@
+## October 24 - Mobile thorough audit delivered (beta132; PR211)
+
+Runtime `e8372ce2c161c0a2832787409946e171e1d3503a` on `fix/mobile-thorough-audit-20261024`.
+Fixed light/dark hint contrast, visible Review refresh errors, protected unsaved
+and pending-save drafts, short-screen/large-text Review layout, and accessible
+quantity controls. Unknown captures remain in their destination Space's Review.
+No web, backend, database, extraction model or stock-promotion changes.
+
+Clean Flutter analysis, 886 tests with one optional skip and all five exact-runtime
+CI jobs passed (40165620311). Final focused checks: 27 passed. Extended and corrected
+native runs cover 167 distinct passing cases; UIKit Settings/appearance and Memory
+confirmation were separately inspected on iPhone 17 Pro/iOS 26.5. Synthetic data
+only. Physical camera, live extraction accuracy/latency, background APNs, OAuth
+and physical-device acceptance remain unverified. Audit details:
+`docs/plans/mobile-thorough-audit-20261024.md`.
+
+Apple accepted 1.1.1 (132), delivery `8b873952-8afe-4f38-a5e2-abcaa48c4154`.
+Processing/tester availability were not polled. All 32 archive/export native
+executables, strict signature, 24 privacy manifests, production configuration and
+Apple validation passed. IPA SHA256 `979c1497825f87f2901d895dbff2338463d019fc866013a31fb685611c0789aa`.
+Artifacts: Documents/FindEZ/AppStore/1.1.1-build132. No public App Store submission.
+
 ## October 24 - Space Review saving and quantities delivered (beta131; PR208)
 
 Runtime c4bc448ad2bd0832702b037d6bd1c55f1a1067c3 on fix/mobile-capture-save-edit-later.
@@ -24,6 +46,7 @@ and preserved estimated counts. All five API CI jobs and 1480 Python tests passe
 health/database and anonymous denial passed. A real photo check returned one
 blister strip with contents explicitly uncounted behind foil. See
 `docs/plans/capture-save-quantity-20261024.md` for evidence and limits.
+
 
 ## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
 
