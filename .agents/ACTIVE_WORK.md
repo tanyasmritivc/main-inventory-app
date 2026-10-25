@@ -1,3 +1,7 @@
+## October 24 - Cluttered extraction reliability (API)
+
+Active scoped lane. Investigated real 503 failures in Space extraction. API validates model regions/identities independently, preserves correctly mapped siblings without repeating a paid batch, and keeps grounded crops as Unknown Review drafts when detail calls fail. No counts or confidence are invented. Mobile avoids repeated lossy image compression, prepares EXIF-correct 2048px JPEGs off the UI thread, preserves clearer chat photos, and offers explicit same-photo retry after transient failures with readable errors and shiny progress. No automatic network retries, inventory writes, schema changes, provider swap or bottom-navigation changes. Candidate build128. See docs/plans/extraction-reliability-20261024.md. Validation and publication in progress.
+
 ## October 24 — clearer drafts and correct photo quantities (API)
 
 Runtime `737f73139b13063ed374f70f2ce4cf4f5ab1212f`; PR #200; all five exact-runtime CI checks passed in run 40147459385. Published to the self-hosted API with rollback at /home/ubuntu/findez-draft-flow-20261024-v3. API/database health and anonymous denial passed, GLM remains active, and 111 unrelated source files were preserved. No schema migration. See `docs/plans/draft-flow-20261024.md`. Web and TestFlight126 counterparts are delivered; physical-device acceptance remains unverified.

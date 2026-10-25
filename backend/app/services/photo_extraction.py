@@ -1,6 +1,8 @@
 """One provider switch for inventory extraction on every supported client."""
 
 import asyncio
+import logging
+import httpx
 from app.core.config import get_settings
 from app.services.find_pipeline import (
     FindPipelineError,
@@ -39,8 +41,14 @@ async def extract_inventory_items(
             **({"on_progress": on_progress} if on_progress else {}),
         )
     except Exception as error:
+        logging.getLogger(__name__).warning("Photo extraction failed: %s", type(error).__name__)
+        message = (
+            "Photo analysis took too long. Retry this photo, or take a closer photo of fewer items."
+            if isinstance(error, (TimeoutError, httpx.TimeoutException)) else
+            "Photo extraction could not finish. Retry this photo, or take a closer photo with fewer objects."
+        )
         # Do not change providers silently or expose gateway content to clients.
         raise PhotoExtractionError(
-            "Photo extraction could not finish. Try a closer photo with fewer objects.",
+            message,
             status_code=503,
         ) from error
