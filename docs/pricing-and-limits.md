@@ -58,3 +58,7 @@ Public App Store submission is still held for the user's separate instruction.
 Runtime `76bfc93522a15093373c5c2326b5db6877b58791` is live at findez.ai/pricing (PR217). All five CI jobs passed (40219539019); production build `vaVkOWF9huJC5FyrffOPO`, 22 staged/live routes and public browser checks passed. Monthly/annual comparison and unavailable paid buttons verified. Backend and prior release preserved. Receipt: `docs/plans/launch-plans-web-receipt.json`. No public App Store submission.
 
 TypeScript, scoped lint, focused pricing tests, final full CI and production build passed. Live pricing and local annual selection were visually checked. This release prepares the catalog; payment activation and server quota enforcement remain future work.
+
+## Standard-price correction
+
+The user rejected promotional offers. Removed the education/robotics discount and eligibility link. Deployed runtime `1f858e782a464ef5100646c664e44683723c1e7b`, build `E4TddXx2Nk6z1B-NC1Plp`. All five CI jobs passed (40221088292), 22 staged/live routes passed, and public browser refresh confirms the discount/eligibility link is absent. Source and rollback preserved. Receipt: `docs/plans/no-offers-web-receipt.json`.
