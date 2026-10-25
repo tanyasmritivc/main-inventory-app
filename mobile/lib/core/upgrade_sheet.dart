@@ -45,158 +45,134 @@ class _LimitSheet extends StatelessWidget {
         24,
         MediaQuery.of(context).padding.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border(context),
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.border(context),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0x1AF59E0B)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: AppTheme.foreground(context, Color(0xFFF59E0B)),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppText(
+                    'Usage limit reached',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary(context),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (reason != null) ...[
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.adaptive(context, const Color(0x1AF59E0B)),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.adaptive(context, const Color(0x33F59E0B)),
+                  ),
                 ),
-                child: Icon(
-                  Icons.lock_outline,
-                  color: AppTheme.foreground(context, Color(0xFFF59E0B)),
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              AppText(
-                'Usage limit reached',
-                style: TextStyle(
-                  color: AppTheme.textPrimary(context),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
+                child: AppText(
+                  mobilePlansVisible
+                      ? reason!
+                      : 'This action has reached the current usage limit. Contact info@findez.ai if you need help.',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Color(0xFFF59E0B)),
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
-          ),
-          if (reason != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, const Color(0x1AF59E0B)),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: AppTheme.adaptive(context, const Color(0x33F59E0B)),
-                ),
-              ),
-              child: AppText(
-                mobilePlansVisible
-                    ? reason!
-                    : 'This action has reached the current usage limit. Contact info@findez.ai if you need help.',
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Color(0xFFF59E0B)),
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-          if (mobilePlansVisible) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBg(context),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.cardBorder(context)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.group_outlined,
-                        color: AppTheme.foreground(context, Color(0xFFA78BFA)),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      AppText(
-                        'FindEZ Team',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary(context),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    'FindEZ Team brings shared inventory to your group. Learn more at findez.ai',
-                    style: TextStyle(
-                      color: AppTheme.textMuted(context),
-                      fontSize: 13,
-                      height: 1.45,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Navigator.of(context).push<void>(
-                MaterialPageRoute(builder: (_) => const PlansPage()),
+            AppText(
+              plansNotice,
+              style: TextStyle(
+                color: AppTheme.textSecondary(context),
+                fontSize: 14,
+                height: 1.5,
               ),
+            ),
+            TextButton(
+              onPressed: () {
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                navigator.push<void>(
+                  MaterialPageRoute(builder: (_) => const PlansPage()),
+                );
+              },
               child: const AppText('Compare plans'),
             ),
+            GestureDetector(
+              onTap: () async {
+                final joined = await _showJoinCodeDialog(context, api);
+                if (joined == true && context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.adaptive(context, const Color(0xFFA78BFA)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: AppText(
+                  'Join a team',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: AppText(
+                  'Maybe later',
+                  style: TextStyle(
+                    color: AppTheme.textMuted(context),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
           ],
-          GestureDetector(
-            onTap: () async {
-              final joined = await _showJoinCodeDialog(context, api);
-              if (joined == true && context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppTheme.adaptive(context, const Color(0xFFA78BFA)),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: AppText(
-                'Join a team',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: AppText(
-                'Maybe later',
-                style: TextStyle(
-                  color: AppTheme.textMuted(context),
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -261,7 +237,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: AppText('Joined! Your team plan is now active.'),
+          content: AppText('Joined the team.'),
           backgroundColor: AppTheme.adaptive(context, Color(0xFF30D158)),
         ),
       );
@@ -270,7 +246,8 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _errorMsg = 'Invalid code. Check with your coach.';
+        _errorMsg =
+            'Could not join. Check the code with your team manager and try again.';
       });
     }
   }

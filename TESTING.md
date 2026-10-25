@@ -331,8 +331,8 @@ conflicting success indices. Ask regressions preserve unknown quantities and
 allowlisted product matching evidence. An answer check timestamp is never a
 physical confirmation timestamp.
 
-`pricing-plans.test.tsx` checks the five prices/periods and unavailable purchase
-controls. Mobile `plans_page_test.dart` covers annual prices and narrow 2.6x
+`pricing-plans.test.tsx` checks the three launch prices/periods and unavailable purchase
+controls and legacy upgrade links. Mobile `plans_page_test.dart` covers annual prices and narrow 2.6x
 layouts in Light/Dark. Pricing is preparation only: no real purchase, restore,
 provider notification or new quota enforcement is exercised. Follow
 `.agents/HANDOFFS/2026-10-14-launch-readiness.md` before enabling billing or shipping

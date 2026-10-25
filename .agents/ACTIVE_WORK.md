@@ -1,3 +1,20 @@
+## October 25 - Missing iPhone Plans entry
+
+Root cause: the prior pricing change exposed Plans only in Flutter ProfilePage; iOS showAccountMenu opens the separate UIKit menu. Added Plans to the native menu and routed its action to PlansPage. Team capacity remains five pending a pricing decision. Native navigation regression and actual UIKit simulator checks passed in light/dark. Apple accepted TestFlight 1.1.1 (136), runtime `9031c9cec09629c706de28a6592e8de099054e02`, delivery `3f71608d-1261-40c7-afbf-8610d5956d1e`. All five CI jobs passed (40230657021); signing, 34 device executables per archive/export, privacy/config and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. No public App Store submission. Details: `docs/plans/native-plans-entry.md`; receipt: `docs/plans/native-plans-entry-receipt.json`.
+
+## October 25 - Standard pricing only
+
+User rejected promotional offers. Removed the student/robotics 50% discount from the plan comparison. Keep standard Free/Plus/Team prices and larger-team contact. No discounts are authorized. Apple accepted TestFlight 1.1.1 (135), runtime `969c03ff4ca65ab81fa7526ee002a50d6726981d`, delivery `9e39bf43-955c-49b5-bcb7-055bc4cbc81a`. All five CI jobs passed (40221148268); Flutter analysis and three focused plan tests passed. Signed archive/export each verified 34 device executables; privacy/config/signing and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. No public App Store submission. Receipt: `docs/plans/no-offers-mobile-receipt.json`.
+
+## October 25 - Free, Plus and Team plan comparison (mobile)
+
+User approved the proposed three-tier prices and asked for both apps to match,
+with Stripe/Apple setup deferred. Plans are informational: $0, Plus $9.99/month
+or $99/year, Team $29/month or $299/year for five people. Current access and
+server quotas remain unchanged; purchases stay unavailable. See
+`docs/pricing-and-limits.md` for exact allowances and future payment gates.
+Apple accepted TestFlight 1.1.1 (134), runtime `ed1f89e3ce9c49660adb7ad37846fed28159b991` (PR218), delivery `03aa6e45-73df-4174-8f15-2bccb8c255a6`. All five CI jobs passed (40219539005). Clean Flutter analysis, final host tests and two iOS simulator comparison cases passed, covering light/dark and annual prices; large-text regressions passed. Signed archive/export each verified 34 device executables; signing, 26 privacy manifests, production configuration and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. Receipt: `docs/plans/launch-plans-mobile-receipt.json`. Artifacts: Documents/FindEZ/AppStore/1.1.1-build134. No public App Store submission.
+
 ## October 25 — Petals and chat onboarding beta133 delivered (PR214)
 
 Apple accepted 1.1.1 (133), runtime `f80248d8813ad88a47909bd5a030d7480382e9db`, delivery `4d60ceee-7770-44db-985d-5eaa164884f7`. All five exact-runtime CI jobs passed (40216741053). Signed archive/export verified 34 device executables each; strict signing, 26 privacy manifests, production configuration and Apple validation passed. IPA SHA256 `7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f`. Processing and tester availability were not polled. Physical-device acceptance remains unverified. Artifacts: Documents/FindEZ/AppStore/1.1.1-build133.

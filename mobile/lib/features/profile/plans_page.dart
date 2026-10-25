@@ -1,45 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/ui/app_text.dart';
 import '../../core/ui/glass_control.dart';
 
+const plansNotice =
+    'Paid plans are coming soon. Current access is unchanged. No payment will be taken.';
+
 class FindEZPlan {
-  const FindEZPlan(this.name, this.monthly, this.annual, this.features);
-  final String name;
-  final int? monthly, annual;
+  const FindEZPlan(
+    this.name,
+    this.description,
+    this.monthly,
+    this.annual,
+    this.features,
+  );
+  final String name, description;
+  final num monthly, annual;
   final List<String> features;
 }
 
 const findEZPlans = [
-  FindEZPlan('Free', 0, 0, [
-    '30 items and 3 Spaces',
-    '20 AI chats per month',
-    '5 photo scans and 10 barcode scans per month',
-    '2 imports per month and 1 active share',
+  FindEZPlan('Free', 'Try FindEZ on your own things.', 0, 0, [
+    '100 saved item records',
+    '1 person',
+    'Unlimited Spaces',
+    '10 photo extractions per month',
+    '50 AI messages per month',
+    'Chat, capture and find',
   ]),
-  FindEZPlan('Pro', 19, 149, [
-    '2,500 items and 20 Spaces',
-    'Unlimited AI chats and scans, subject to fair use',
-    'Personal inventory and physical memory',
-    'Advanced search and document workflows',
+  FindEZPlan('Plus', 'For your home, collections and workshop.', 9.99, 99, [
+    '2,500 saved item records',
+    '1 person',
+    'Unlimited Spaces',
+    '50 photo extractions per month',
+    '500 AI messages per month',
+    'Low-stock reminders',
   ]),
-  FindEZPlan('Team', 99, 790, [
-    'Up to 10 users and 10,000 items',
-    'Shared inventories and collaboration',
-    'Team permissions and shared physical memory',
+  FindEZPlan('Team', 'Remember more, together.', 29, 299, [
+    '10,000 shared item records',
+    '5 people included',
+    'Unlimited Spaces',
+    '200 photo extractions per month, shared',
+    '2,000 AI messages per month, shared',
+    'Shared inventory, permissions and activity',
   ]),
-  FindEZPlan('Business', 299, 2490, [
-    'Up to 25 users and 50,000 items',
-    'Advanced shared inventory workflows',
-    'Business onboarding and support',
-  ]),
-  FindEZPlan('Enterprise', null, null, [
-    'Custom users, inventory capacity and usage',
-    'Organization-specific requirements',
-    'Tailored onboarding and support',
-    'Custom commercial agreements',
-  ]),
+];
+
+const planPolicies = [
+  (
+    'Items, not units',
+    'M3 screws with a quantity of 500 count as one saved item record.',
+  ),
+  (
+    'Clear AI allowances',
+    'One photo extraction means one photo processed for inventory, regardless of how many items it finds. Failed extractions and automatic retries will not use your allowance.',
+  ),
+  (
+    'Everyday access stays simple',
+    'Browsing, manual edits, barcode scanning and exports will not use your AI allowance.',
+  ),
+  (
+    'Your inventory stays yours',
+    'After a downgrade or a usage limit, you will still be able to view, edit and export saved items.',
+  ),
 ];
 
 /// Planned prices do not activate purchases or change account entitlements.
@@ -53,6 +78,29 @@ class PlansPage extends StatefulWidget {
 class _PlansPageState extends State<PlansPage> {
   bool _annual = false;
 
+  Future<void> _contactSupport() async {
+    try {
+      if (await launchUrl(
+        Uri(
+          scheme: 'mailto',
+          path: 'info@findez.ai',
+          queryParameters: {'subject': 'FindEZ plans'},
+        ),
+      )) {
+        return;
+      }
+    } catch (_) {
+      // The address remains available if this device has no mail application.
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Email info@findez.ai for plan questions.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primary = AppTheme.textPrimary(context);
@@ -64,12 +112,12 @@ class _PlansPageState extends State<PlansPage> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
           AppText(
-            'More room for what matters.',
+            'Remember more of your world.',
             style: TextStyle(color: primary, fontSize: 26, height: 1.2),
           ),
           const SizedBox(height: 12),
           AppText(
-            'Paid plans are coming soon. Current access is unchanged. No payment will be taken.',
+            plansNotice,
             style: TextStyle(color: secondary, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 20),
@@ -114,18 +162,25 @@ class _PlansPageState extends State<PlansPage> {
                     plan.name,
                     style: TextStyle(color: primary, fontSize: 20),
                   ),
+                  const SizedBox(height: 6),
+                  AppText(
+                    plan.description,
+                    style: TextStyle(
+                      color: secondary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   AppText(
-                    price == null
-                        ? 'Custom'
-                        : '\$$price${price == 0
-                              ? ''
-                              : _annual
-                              ? '/year'
-                              : '/month'}',
+                    '\$$price${price == 0
+                        ? ''
+                        : _annual
+                        ? '/year'
+                        : '/month'}',
                     style: TextStyle(color: primary, fontSize: 28),
                   ),
-                  if (_annual && price != null && price > 0) ...[
+                  if (_annual && price > 0) ...[
                     const SizedBox(height: 6),
                     AppText(
                       'About \$${(price / 12).toStringAsFixed(2)}/month, billed yearly',
@@ -146,12 +201,63 @@ class _PlansPageState extends State<PlansPage> {
                       ),
                     ),
                   ),
+                  if (plan.monthly > 0) ...[
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: null,
+                        child: const AppText('Coming soon'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             );
           }),
+          const SizedBox(height: 14),
           AppText(
-            'Planned pricing in USD. Paid plan limits apply when subscriptions launch. In-app subscription prices and terms will appear before purchase.',
+            'How the planned limits work',
+            style: TextStyle(color: primary, fontSize: 20),
+          ),
+          const SizedBox(height: 16),
+          ...planPolicies.map(
+            (policy) => Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    policy.$1,
+                    style: TextStyle(color: primary, fontSize: 15),
+                  ),
+                  const SizedBox(height: 5),
+                  AppText(
+                    policy.$2,
+                    style: TextStyle(
+                      color: secondary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AppText(
+            'Need a larger team? Contact us.',
+            style: TextStyle(color: secondary, fontSize: 14, height: 1.5),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _contactSupport,
+              child: const AppText('Contact info@findez.ai'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppText(
+            'Planned pricing in USD. All plan allowances start when subscriptions launch. AI allowances may be adjusted before launch based on measured usage. In-app subscription prices and terms will appear before purchase.',
             style: TextStyle(color: secondary, fontSize: 12, height: 1.5),
           ),
         ],
