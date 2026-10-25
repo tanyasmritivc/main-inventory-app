@@ -51,3 +51,16 @@ Simulator and synthetic tests do not prove physical camera accuracy, crowded-pho
 latency, background APNs, live OAuth or physical-device acceptance. No claim that
 every possible mobile bug is eliminated. Exact-runtime CI, signed archive checks
 and Apple's upload acknowledgment are recorded in the delivery receipt when done.
+
+## Delivered beta132
+
+Runtime `e8372ce2c161c0a2832787409946e171e1d3503a`, PR #211; all five CI gates passed in
+run 40165620311. Final CI: clean analysis, 886 tests passed and one optional skip.
+Apple acknowledged 1.1.1 (132), delivery `8b873952-8afe-4f38-a5e2-abcaa48c4154`.
+All 32 archive/export executables, strict signing, 24 privacy manifests and
+production configuration passed. Apple validation passed. IPA SHA256:
+`979c1497825f87f2901d895dbff2338463d019fc866013a31fb685611c0789aa`.
+
+Preserved archive, IPA, CI, simulator and Apple receipts:
+`Documents/FindEZ/AppStore/1.1.1-build132`. Processing/tester availability was not
+polled. Physical-device acceptance remains unverified; no public submission.
