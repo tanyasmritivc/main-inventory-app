@@ -1,15 +1,26 @@
-## October 24 - Mobile Pip cancellation and Space menu (in progress)
+## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
 
-Branch `fix/mobile-pip-stop-space-menu`, based on delivered beta129. Mobile only.
-The loader uses the supplied artwork's single shadow, a darker backdrop, a compact
-bar and Stop extraction. Stop cancels the Dio request and suppresses late success,
-failure, retry and confirmation. Existing server work may finish; no server-side
-cancellation contract is claimed. The final timed caption is Still working, and
-there is no synthetic step count. Space options explicitly use the Flutter menu
-on iOS; other native controls and bottom navigation retain their behavior.
-Build130 is reserved. Analysis passed. All 873 mobile tests passed across the full run and the
-corrected menu test rerun; one optional test skipped. Exact-commit CI and native
-visual acceptance are pending. No new TestFlight build has been uploaded.
+Runtime `af3e64c182bd09e08830b6a7bd3a05c90718faee` on
+`fix/mobile-pip-stop-space-menu`. The loader has one artwork shadow, a darker
+backdrop, compact progress and a readable Stop extraction action. Stop cancels
+client transport immediately and suppresses late success/errors and confirmation;
+server computation may continue. Space options use the Flutter popup on iOS.
+Other native controls, bottom tabs, extraction endpoint and save contract remain.
+
+All five exact-runtime CI jobs passed (40158963134), including clean Flutter
+analysis and 873 tests with one optional skip. Simulator iPhone 17 Pro/iOS 26.5
+verified light/dark rendering, Flutter menu, immediate Stop, suppression of late
+results and a subsequent two-item confirmation using a network-free delayed fixture.
+Physical-device acceptance and real model performance remain unverified.
+
+Apple accepted 1.1.1 (130), delivery `de7de827-d343-4607-b48f-688c33566059`.
+Processing/tester availability were not polled. All 32 archive/export executables,
+strict signature, 24 privacy manifests, production configuration and Apple
+validation passed. IPA SHA256
+`fa5ad56f652e0160a85e7becc425d16277e9785c21c81fb868ea1988bb5f723b`.
+Artifacts and receipts: Documents/FindEZ/AppStore/1.1.1-build130.
+No public App Store submission. User-authorized cleanup removed only rebuildable
+inactive simulator caches and disposable build output; projects/data/releases kept.
 
 ## October 24 - Pip extraction loader delivered (beta129; PR205)
 
