@@ -1,7 +1,15 @@
+## October 25 - Pre-launch access delivered (PR219)
+
+Runtime `b24c0bdcf8204b80dd8f140328788b451cece86a` is live; all five exact-source CI gates passed in 40235308444.
+Plan quotas and purchases remain off, with no automatic cutoff.
+Rollback: `/home/ubuntu/findez-prelaunch-api-20261025`. No production schema change.
+Read-only production verification confirms pilot=true, limits_enabled=false, no end date, and null item/Space/chat/scan maxima. API/database health and anonymous denial passed; 117 unrelated files preserved.
+See `docs/plans/prelaunch-access-20261025.md`. Paid subscription integration remains separate and unfinished.
+
 ## October 25 - Pre-launch access (api)
 
 Implementation lane `fix/api-prelaunch-access`. 1484 Python tests and ten subtests passed. No schema change.
-Prepared, not deployed; see `docs/plans/prelaunch-access-20261025.md`.
+Delivered; see the release receipt above and `docs/plans/prelaunch-access-20261025.md`.
 Keep plan quotas and purchases off until explicit launch instruction.
 
 ## October 24 — Proactive missing destinations deployed (PR212)
