@@ -377,8 +377,8 @@ class AppTheme {
   static const Color darkBorderHover = Color(0x33FFFFFF);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFAEAEB2);
-  static const Color darkTextMuted = Color(0xFF8E8E93);
-  static const Color darkHint = BrandColors.inkMuted;
+  static const Color darkTextMuted = Color(0xFFA0A0A6);
+  static const Color darkHint = darkTextMuted;
 
   // Shared semantic colors and neutral action fill.
   static const Color amber = AppColors.warning;
@@ -457,7 +457,7 @@ class AppTheme {
 
   static Color sectionLabel(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF8E8E93)
+      ? darkTextMuted
       : lightTextSecondary;
 
   static bool isDark(BuildContext context) =>
@@ -505,6 +505,8 @@ class AppTheme {
     }
     if (rgb == 0) return alpha < 255 ? color : (dark ? darkBg : lightBg);
     switch (rgb) {
+      case 0x8C8D92:
+        return withAlpha(dark ? darkHint : lightHint);
       case 0x090909:
       case 0x09090B:
       case 0x0A0A0A:

@@ -25,6 +25,17 @@ health/database and anonymous denial passed. A real photo check returned one
 blister strip with contents explicitly uncounted behind foil. See
 `docs/plans/capture-save-quantity-20261024.md` for evidence and limits.
 
+## October 24 - Mobile thorough audit candidate (beta132)
+
+Branch `fix/mobile-thorough-audit-20261024`, based on beta131. Theme hint contrast,
+Review refresh feedback, draft/save dismissal protection, responsive Review
+heading and quantity accessibility fixed. Full post-fix host run 885 passed with
+one optional skip; final focused set 27 passed including a seventh new regression.
+167 distinct native-hosted cases passed across the extended and corrected focused
+runs; UIKit settings/appearance and Memory confirmation inspected separately.
+See docs/plans/mobile-thorough-audit-20261024.md for audit scope and limitations.
+CI and signed TestFlight delivery pending. No backend/web/schema changes.
+
 ## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
 
 Runtime `af3e64c182bd09e08830b6a7bd3a05c90718faee` on
