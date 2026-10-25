@@ -7,18 +7,21 @@ import '../../core/api_client.dart';
 
 /// Device-only trial. Request IDs are assigned once, before any server write.
 class TrialItem {
-  TrialItem(this.item, this.spot);
+  TrialItem(this.item, this.spot, {this.detail});
+  final String? detail;
   final ExtractedInventoryItem item;
   final String spot;
   bool quantityEdited = false;
   Map<String, dynamic> toJson() => {
     'item': item.toJson(),
     'spot': spot,
+    'detail': detail,
     'quantityEdited': quantityEdited,
   };
   factory TrialItem.fromJson(Map<String, dynamic> json) => TrialItem(
     ExtractedInventoryItem.fromJson(Map<String, dynamic>.from(json['item'])),
     json['spot'] as String,
+    detail: json['detail'] as String?,
   )..quantityEdited = json['quantityEdited'] == true;
 }
 
@@ -28,6 +31,9 @@ class ChatOnboardingDraft {
   String option = '', input = '', space = 'Home', method = '', question = '';
   String? photoPath, owner, inventoryId, spaceId, extractedBy;
   List<TrialItem> items = [];
+  bool signupShown = false;
+  final List<int> asked = [];
+  bool get isSample => option == 'sample';
   bool answered = false,
       keep = false,
       photoPending = false,
@@ -57,6 +63,8 @@ class ChatOnboardingDraft {
     'spaceId': spaceId,
     'items': items.map((i) => i.toJson()).toList(),
     'answered': answered,
+    'signupShown': signupShown,
+    'asked': asked,
     'keep': keep,
     'photoPending': photoPending,
     'saving': saving,
@@ -81,6 +89,8 @@ class ChatOnboardingDraft {
       ..items = (json['items'] as List)
           .map((i) => TrialItem.fromJson(Map<String, dynamic>.from(i)))
           .toList()
+      ..signupShown = json['signupShown'] == true || json['keep'] == true
+      ..asked.addAll((json['asked'] as List? ?? []).cast<int>())
       ..answered = json['answered'] == true
       ..keep = json['keep'] == true
       ..photoPending = json['photoPending'] == true

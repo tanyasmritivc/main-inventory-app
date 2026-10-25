@@ -1,3 +1,22 @@
+## October 25 - Sample onboarding TestFlight release authorized
+
+The user requested TestFlight upload after local completion. This supersedes the
+v2 prompt's earlier no-push restriction. Apple acknowledged 1.1.1 (138) from the completed
+onboarding branch. No public App Store submission is authorized; processing and
+physical-device acceptance remain separate from upload acknowledgment.
+
+## October 25 - Offline sample onboarding with broader examples
+
+The v2 sample photo and detections are a labelled local demonstration, not an AI
+request. Never save sample inventory, request camera access, or create anonymous
+auth sessions during the trial. Signup follows the first answer after 2.2 seconds;
+Ask another question dismisses it without immediately showing it again. Retain
+real list/describe drafts and existing account-scoped idempotency. Keep the
+onboarding concise and useful for homes, dorms/students and labs as well as
+workshops; do not introduce extra audience-selection steps. The supplied sample
+image remains unchanged. This task's explicit no-push instruction overrides the
+standing TestFlight delivery rule.
+
 ## October 25 - No automatic pre-launch cutoff
 
 User requests continued use beyond planned Free quotas while gathering testers.

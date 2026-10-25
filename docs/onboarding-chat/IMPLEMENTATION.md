@@ -1,5 +1,7 @@
 # Chat-first Flutter onboarding
 
+Historical v1 implementation. Superseded by [sample onboarding v2](../onboarding-v2/IMPLEMENTATION.md), uploaded as TestFlight 138; Apple processing and physical acceptance remain separate.
+
 Local branch: `feat/chat-onboarding`. Not pushed or released.
 
 The native first-run flow now offers Snap, Type and Describe before signup. Type

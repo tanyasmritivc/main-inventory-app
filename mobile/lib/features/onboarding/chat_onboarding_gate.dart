@@ -39,6 +39,7 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
       if (!mounted) return;
       final owner = widget.api.accountId;
       if (draft == null ||
+          draft.option == 'snap' ||
           draft.method.isEmpty ||
           (draft.owner != null && draft.owner != owner)) {
         setState(() {
@@ -48,20 +49,7 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
         return;
       }
       _draft = draft;
-      if (draft.option == 'snap' &&
-          draft.photoPath != null &&
-          draft.extractedBy != owner &&
-          !draft.saving &&
-          !draft.complete) {
-        // Preview credentials and images belong to the extracting account.
-        // Re-extract after ordinary sign-in, never transfer an anonymous token.
-        draft.photoPending = true;
-        draft.keep = false;
-        await ChatOnboardingStore.save(draft);
-      }
-      if (!draft.photoPending &&
-          (draft.keep || draft.saving) &&
-          !draft.complete) {
+      if ((draft.keep || draft.saving) && !draft.complete) {
         await ChatOnboardingSaver(widget.api).save(draft);
       }
       if (!mounted || widget.api.accountId != owner) return;
@@ -70,7 +58,10 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
           const LastPlace.personal(),
           isCurrent: () => widget.api.accountId == owner,
         );
-        trialEvent('onboarding_completed', {'method': draft.method});
+        trialEvent('onboarding_completed', {
+          'method': draft.method,
+          'path': draft.option,
+        });
       }
       setState(() => _loading = false);
     } catch (_) {
@@ -128,7 +119,9 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Saved ${draft.items.length} items to ${draft.space}',
+              draft.isSample
+                  ? 'Snap a shelf to add your first items'
+                  : 'Saved ${draft.items.length} items to ${draft.space}',
             ),
           ),
         );
@@ -143,12 +136,14 @@ class _ChatOnboardingGateState extends State<ChatOnboardingGate> {
     return InventoryContextHost(
       api: widget.api,
       onInitialChatReady: acknowledge,
-      initialChatSource: ChatSource(
-        kind: 'space',
-        name: draft.space,
-        inventoryId: draft.inventoryId,
-        resourceId: draft.spaceId,
-      ),
+      initialChatSource: draft.isSample
+          ? null
+          : ChatSource(
+              kind: 'space',
+              name: draft.space,
+              inventoryId: draft.inventoryId,
+              resourceId: draft.spaceId,
+            ),
     );
   }
 }

@@ -1,124 +1,124 @@
 [
   {
-    "space": "Garage",
-    "keyword": "garage|car\\b|driveway",
+    "space": "Dorm room",
+    "keyword": "dorm|student|college|university|campus|residence hall",
     "spots": [
-      "Shelf 1",
-      "Shelf 2",
-      "Pegboard",
-      "Workbench",
-      "Bin A",
-      "Bin B"
+      "Desk drawer",
+      "Bookshelf",
+      "Bedside table",
+      "Under-bed box",
+      "Closet shelf",
+      "Backpack"
     ],
     "items": [
       [
-        "Cordless drill",
+        "Laptop charger",
         1
       ],
       [
-        "Drill bit set",
+        "Notebooks",
+        4
+      ],
+      [
+        "Textbooks",
+        6
+      ],
+      [
+        "Headphones",
         1
       ],
       [
-        "Socket wrench set",
+        "Desk lamp",
         1
       ],
       [
-        "Hammer",
+        "Calculator",
+        1
+      ],
+      [
+        "Water bottle",
         2
       ],
       [
-        "Tape measure",
-        1
-      ],
-      [
-        "Extension cord",
-        2
-      ],
-      [
-        "Screwdriver set",
-        1
-      ],
-      [
-        "Duct tape",
+        "USB-C cable",
         3
       ],
       [
-        "Wood screws",
-        120
-      ],
-      [
-        "Work gloves",
-        2
-      ],
-      [
-        "Flashlight",
+        "Laundry bag",
         1
       ],
       [
-        "Battery charger",
+        "Spare sheets",
+        2
+      ],
+      [
+        "Backpack",
+        1
+      ],
+      [
+        "Umbrella",
         1
       ]
     ]
   },
   {
-    "space": "Workshop",
-    "keyword": "robot|ftc|frc|vex|team|workshop|pit|parts\\b|screw|bolt|\\bnuts?\\b|motor|servo|drill|multimeter|solder|wrench|batter|caliper|gear",
+    "space": "Lab",
+    "keyword": "\\blab\\b|laboratory|classroom|science|makerspace|maker",
     "spots": [
-      "Parts cabinet",
-      "Bin 1",
-      "Bin 2",
-      "Pit cart",
-      "Shelf 2",
-      "Drawer A"
+      "Cabinet A",
+      "Cabinet B",
+      "Drawer 2",
+      "Bench 1",
+      "Shelf 3",
+      "Storeroom"
     ],
     "items": [
       [
-        "HD hex motor",
-        4
+        "Safety goggles",
+        12
       ],
       [
-        "Servo",
-        6
+        "Beakers",
+        8
       ],
       [
-        "Aluminum channel",
-        10
-      ],
-      [
-        "M3 x 8 screws",
-        200
-      ],
-      [
-        "M4 lock nuts",
-        150
-      ],
-      [
-        "608 bearings",
-        16
-      ],
-      [
-        "Battery pack, 12V",
-        3
-      ],
-      [
-        "Battery charger",
-        1
-      ],
-      [
-        "Control hub",
-        1
-      ],
-      [
-        "Zip ties",
-        300
-      ],
-      [
-        "Allen key set",
+        "Test tube rack",
         2
       ],
       [
-        "Spare wheels",
+        "Microscope",
+        1
+      ],
+      [
+        "Measuring cylinders",
+        4
+      ],
+      [
+        "Lab notebooks",
+        6
+      ],
+      [
+        "Pipette stand",
+        2
+      ],
+      [
+        "Sample containers",
+        20
+      ],
+      [
+        "Digital scale",
+        1
+      ],
+      [
+        "Labels",
+        100
+      ],
+      [
+        "Multimeter",
+        2
+      ],
+      [
+        "Storage trays",
         4
       ]
     ]
@@ -248,68 +248,6 @@
     ]
   },
   {
-    "space": "Lab",
-    "keyword": "lab\\b|laboratory|school|classroom|science|makerspace|maker",
-    "spots": [
-      "Cabinet A",
-      "Cabinet B",
-      "Drawer 2",
-      "Bench 1",
-      "Shelf 3",
-      "Storeroom"
-    ],
-    "items": [
-      [
-        "Multimeters",
-        8
-      ],
-      [
-        "Soldering irons",
-        6
-      ],
-      [
-        "Safety goggles",
-        24
-      ],
-      [
-        "Breadboards",
-        20
-      ],
-      [
-        "Jumper wires",
-        300
-      ],
-      [
-        "Arduino boards",
-        12
-      ],
-      [
-        "Beakers",
-        30
-      ],
-      [
-        "Nitrile gloves",
-        200
-      ],
-      [
-        "Calipers",
-        6
-      ],
-      [
-        "Glue guns",
-        4
-      ],
-      [
-        "3D printer filament",
-        10
-      ],
-      [
-        "Extension cords",
-        5
-      ]
-    ]
-  },
-  {
     "space": "Craft room",
     "keyword": "craft|art|sewing|knit|yarn|paint|studio",
     "spots": [
@@ -429,6 +367,130 @@
       ],
       [
         "Label maker",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Garage",
+    "keyword": "garage|car\\b|driveway",
+    "spots": [
+      "Shelf 1",
+      "Shelf 2",
+      "Pegboard",
+      "Workbench",
+      "Bin A",
+      "Bin B"
+    ],
+    "items": [
+      [
+        "Cordless drill",
+        1
+      ],
+      [
+        "Drill bit set",
+        1
+      ],
+      [
+        "Socket wrench set",
+        1
+      ],
+      [
+        "Hammer",
+        2
+      ],
+      [
+        "Tape measure",
+        1
+      ],
+      [
+        "Extension cord",
+        2
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Duct tape",
+        3
+      ],
+      [
+        "Wood screws",
+        120
+      ],
+      [
+        "Work gloves",
+        2
+      ],
+      [
+        "Flashlight",
+        1
+      ],
+      [
+        "Battery charger",
+        1
+      ]
+    ]
+  },
+  {
+    "space": "Workshop",
+    "keyword": "robot|ftc|frc|vex|team|workshop|pit|parts\\b|screw|bolt|\\bnuts?\\b|motor|servo|drill|multimeter|solder|wrench|batter|caliper|gear",
+    "spots": [
+      "Tool cabinet",
+      "Bin 1",
+      "Bin 2",
+      "Workbench",
+      "Shelf 2",
+      "Drawer A"
+    ],
+    "items": [
+      [
+        "Cordless drill",
+        1
+      ],
+      [
+        "Screwdriver set",
+        1
+      ],
+      [
+        "Hammer",
+        2
+      ],
+      [
+        "Tape measure",
+        1
+      ],
+      [
+        "Wood screws",
+        40
+      ],
+      [
+        "Work gloves",
+        2
+      ],
+      [
+        "Battery charger",
+        1
+      ],
+      [
+        "Sandpaper",
+        6
+      ],
+      [
+        "Pliers",
+        2
+      ],
+      [
+        "Clamps",
+        4
+      ],
+      [
+        "Safety goggles",
+        2
+      ],
+      [
+        "Extension cord",
         1
       ]
     ]

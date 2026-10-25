@@ -1,3 +1,15 @@
+## October 25 - Sample onboarding delivered to TestFlight 138 (PR222)
+
+Apple acknowledged 1.1.1 (138), runtime `79cc169f3c488f3b6455585ee0d5de1887afd407`,
+delivery `1327b03b-29b8-45f9-a817-b17d75cdde4c`. All five exact-source CI gates
+passed (40239099906), including clean Flutter analysis and 921 mobile tests with
+one optional visual skip. All 26 focused host and 26 iOS simulator cases passed;
+manual sample, broader choices and native Reduce Motion checks passed. Archive
+and export verified 34 device executables each, strict signing, 26 privacy
+manifests, production configuration and Apple validation. Processing and tester
+availability were not polled; physical-device acceptance remains unverified.
+No public App Store submission. Receipt: `docs/onboarding-v2/testflight-138-receipt.json`.
+
 ## October 25 - Pre-launch access delivered (PR221)
 
 Apple acknowledged TestFlight 1.1.1 (137), runtime `6c498571131d867ab778d696c3cc5f14ee66ad1e`,

@@ -1,19 +1,15 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io';
 import 'dart:math' as math;
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../auth/auth_page.dart';
-import 'chat_onboarding_camera.dart';
 import 'chat_onboarding_draft.dart';
 import 'chat_onboarding_world.dart';
+import 'sample_scan.dart';
 
 const trialInk = Color(0xFF111112),
     trialBlue = Color(0xFFA9D6F5),
@@ -30,16 +26,11 @@ class ChatOnboardingPage extends StatefulWidget {
     required this.api,
     this.initialDraft,
     this.onAuthenticatedKeep,
-    this.photoPicker,
-    this.photoExtractor,
     this.showWorld = true,
   });
   final ApiClient api;
   final ChatOnboardingDraft? initialDraft;
   final VoidCallback? onAuthenticatedKeep;
-  final Future<XFile?> Function()? photoPicker;
-  final Future<MultiExtractResult> Function(XFile photo, CancelToken token)?
-  photoExtractor;
   final bool showWorld;
   @override
   State<ChatOnboardingPage> createState() => _ChatOnboardingPageState();
@@ -52,18 +43,25 @@ class _TrialMessage {
   final String? location;
 }
 
-class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
+class _ChatOnboardingPageState extends State<ChatOnboardingPage>
+    with WidgetsBindingObserver {
   ChatOnboardingDraft _draft = ChatOnboardingDraft();
   TrialTemplates? _templates;
   final _input = TextEditingController(), _scroll = ScrollController();
   final _messages = <_TrialMessage>[];
   Timer? _keepTimer, _rowsTimer;
-  CancelToken? _cancel;
+  TrialSample? _sample;
   int _generation = 0, _visible = 0, _editing = -1;
   bool _loaded = false, _busy = false, _authOpening = false;
   String? _error, _thinking;
   List<String> _suggestions = [];
-  bool get _reduce => MediaQuery.disableAnimationsOf(context);
+  bool get _reduce =>
+      MediaQuery.disableAnimationsOf(context) ||
+      WidgetsBinding
+          .instance
+          .platformDispatcher
+          .accessibilityFeatures
+          .reduceMotion;
   bool get _signedIn =>
       Supabase.instance.client.auth.currentUser != null &&
       Supabase.instance.client.auth.currentUser!.isAnonymous == false;
@@ -71,40 +69,52 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     trialEvent('onboarding_started');
     unawaited(_restore());
+  }
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _restore() async {
     try {
       final templates = await TrialTemplates.load();
+      final sample = await TrialSample.load();
       final draft =
           widget.initialDraft ??
           await ChatOnboardingStore.read() ??
           ChatOnboardingDraft();
+      // Old camera trials cannot resume extraction in the offline demo.
+      final restored = draft.option == 'snap' ? ChatOnboardingDraft() : draft;
       if (!mounted) return;
       setState(() {
         _templates = templates;
+        _sample = sample;
         _error = null;
-        _draft = draft;
+        _draft = restored;
         _loaded = true;
-        _visible = draft.items.length;
+        _visible = restored.items.length;
+        if (restored.isSample && restored.items.isEmpty) {
+          _busy = true;
+          _thinking = 'Scanning the sample photo...';
+        }
       });
       _setSuggestions();
       if (draft.answered &&
+          !draft.signupShown &&
           !draft.keep &&
           draft.found >= 0 &&
           draft.found < draft.items.length) {
         final item = draft.items[draft.found];
         _messages.add(_answer(item, draft.question));
         _keepTimer = Timer(
-          const Duration(milliseconds: 1900),
+          const Duration(milliseconds: 2200),
           () => unawaited(_showKeep()),
         );
         _scrollDown();
-      }
-      if (draft.photoPending && _signedIn && draft.photoPath != null) {
-        await _extract(XFile(draft.photoPath!));
       }
     } catch (_) {
       if (mounted) {
@@ -147,6 +157,14 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
   });
   void _setSuggestions() {
     if (_draft.items.isNotEmpty) {
+      if (_draft.isSample) {
+        _suggestions = [
+          'Where is the battery charger?',
+          'What model is the charger?',
+          'How many screws?',
+        ];
+        return;
+      }
       final items = _draft.items;
       final obvious = items.firstWhere(
         (i) => RegExp(
@@ -169,14 +187,14 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
     } else {
       _suggestions = switch (_draft.option) {
         'describe' => [
-          'Garage',
-          'Workshop',
+          'Home',
+          'Dorm room',
           'Kitchen',
+          'Workshop',
           'Lab',
           'Closet',
-          'Craft room',
         ],
-        'list' => ['20 M3 screws, 4 batteries, a drill and 2 multimeters'],
+        'list' => ['2 phone chargers, 3 notebooks and spare keys'],
         _ => [],
       };
     }
@@ -184,19 +202,24 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
 
   Future<void> _start(String option) async {
     if (_busy || _templates == null) return;
+    final generation = _generation;
     setState(() {
       _draft.option = option;
       _error = null;
       _setSuggestions();
     });
     trialEvent('onboarding_option', {'option': option});
-    if (!await _persist() || !mounted) return;
-    if (option == 'snap') await _snap();
+    if (!await _persist() || !mounted || generation != _generation) return;
+    if (option == 'sample' && mounted) {
+      setState(() {
+        _busy = true;
+        _thinking = 'Scanning the sample photo...';
+      });
+    }
   }
 
   Future<void> _restart() async {
     _generation++;
-    _cancel?.cancel();
     _keepTimer?.cancel();
     _rowsTimer?.cancel();
     FocusManager.instance.primaryFocus?.unfocus();
@@ -226,138 +249,34 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
     });
   }
 
-  Future<void> _snap() async {
-    if (_busy) return;
-    final generation = ++_generation;
-    final photo =
-        await (widget.photoPicker?.call() ??
-            Navigator.of(context).push<XFile>(
-              MaterialPageRoute(builder: (_) => const ChatOnboardingCamera()),
-            ));
-    if (!mounted || generation != _generation || photo == null) return;
-    try {
-      final directory = await getApplicationSupportDirectory();
-      final path =
-          '${directory.path}/onboarding-${_draft.id}.${photo.name.split('.').last}';
-      await photo.saveTo(path);
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _draft.photoPath = path;
-        _draft.photoPending = true;
-      });
-      if (await _persist() && mounted) await _extract(XFile(path));
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Could not keep the photo. Please try again.');
-      }
-    }
+  Future<void> _finishSample() async {
+    if (!mounted || !_draft.isSample || !_busy || _sample == null) return;
+    _draft.space = _sample!.space;
+    _draft.items = _sample!.newItems();
+    setState(() {
+      _busy = false;
+      _thinking = null;
+    });
+    trialEvent('onboarding_scan_finished');
+    await _itemsReady();
   }
 
-  Future<void> _extract(XFile photo) async {
-    final generation = ++_generation;
-    final token = _cancel = CancelToken();
+  Future<void> _askAnother() async {
+    _keepTimer?.cancel();
     setState(() {
-      _busy = true;
-      _thinking = 'Reading the photo...';
-      _error = null;
       _draft.keep = false;
-    });
-    _scrollDown();
-    try {
-      if (widget.photoExtractor == null &&
-          Supabase.instance.client.auth.currentSession == null) {
-        try {
-          await Supabase.instance.client.auth.signInAnonymously();
-        } on AuthException catch (error) {
-          if ([
-                'anonymous_provider_disabled',
-                'signup_disabled',
-              ].contains(error.code) ||
-              error.statusCode == '403' ||
-              error.statusCode == '401') {
-            throw const _TrialAuthRequired();
-          }
-          rethrow;
-        }
-      }
-      if (!mounted || generation != _generation) return;
-      final result =
-          await (widget.photoExtractor?.call(photo, token) ??
-              widget.api.extractInventoryFromImage(
-                bytes: await photo.readAsBytes(),
-                filename: photo.name,
-                cancelToken: token,
-              ));
-      if (!mounted || generation != _generation) return;
-      if (result.items.isEmpty) {
-        setState(
-          () => _error =
-              'No items were found. Try a closer photo or type a list.',
-        );
-        return;
-      }
-      final alreadyAnswered = _draft.answered;
-      final previous = _draft.items;
-      _draft.space = 'Workbench';
-      _draft.items = result.items
-          .map((i) => TrialItem(i, 'Workbench'))
+      _suggestions = _draft.items
+          .asMap()
+          .entries
+          .where((e) => !_draft.asked.contains(e.key))
+          .take(3)
+          .map((e) => 'Where is the ${e.value.item.name.toLowerCase()}?')
           .toList();
-      // When identity linking falls back to ordinary sign-in, obtain fresh
-      // server evidence while retaining explicit edits for unambiguous matches.
-      for (final row in _draft.items) {
-        final matches = previous
-            .where(
-              (old) =>
-                  old.quantityEdited &&
-                  old.item.name.toLowerCase() == row.item.name.toLowerCase(),
-            )
-            .toList();
-        if (matches.length == 1 &&
-            _draft.items
-                    .where(
-                      (other) =>
-                          other.item.name.toLowerCase() ==
-                          row.item.name.toLowerCase(),
-                    )
-                    .length ==
-                1) {
-          row.item.quantity = matches.single.item.quantity;
-          row.item.scanEvidence = row.item.scanEvidence?.confirmedQuantity();
-          row.quantityEdited = true;
-        }
-      }
-      _draft.extractedBy = Supabase.instance.client.auth.currentUser?.id;
-      _draft.photoPending = false;
-      _draft.answered = false;
-      _draft.found = -1;
-      await _itemsReady();
-      if (alreadyAnswered && mounted && generation == _generation) {
-        _draft.answered = true;
-        await _showKeep();
-      }
-    } catch (error) {
-      if (!mounted || generation != _generation) return;
-      if (error is _TrialAuthRequired ||
-          error is SessionExpiredException ||
-          (error is DioException &&
-              [401, 403].contains(error.response?.statusCode))) {
-        _messages.add(_TrialMessage('Make a free account to read this photo.'));
-        _draft.photoPending = true;
-        await _showKeep();
-      } else if (error is! DioException || !CancelToken.isCancel(error)) {
-        setState(
-          () => _error =
-              'Could not read the photo. Check your connection and try again, or type a list.',
-        );
-      }
-    } finally {
-      if (mounted && generation == _generation) {
-        setState(() {
-          _busy = false;
-          _thinking = null;
-        });
-      }
-    }
+      if (_suggestions.isEmpty) _setSuggestions();
+    });
+    trialEvent('onboarding_ask_another');
+    await _persist();
+    _scrollDown();
   }
 
   Future<void> _submit(String raw) async {
@@ -440,7 +359,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       if (index < 0) {
         _messages.add(
           _TrialMessage(
-            'That is not in ${_draft.space} yet. Try one of these:',
+            'That is not on ${_draft.isSample ? 'this workbench' : 'this list'} yet. Try one of these:',
           ),
         );
         _suggestions = _draft.items
@@ -450,35 +369,43 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       } else {
         final item = _draft.items[index];
         _draft.found = index;
+        if (!_draft.asked.contains(index)) _draft.asked.add(index);
         _messages.add(_answer(item, question));
       }
     });
     _scrollDown();
+    if (index >= 0 && _draft.answered) await _persist();
     if (index >= 0 && !_draft.answered) {
       _draft.answered = true;
       _draft.question = question;
       trialEvent('onboarding_first_question');
       if (!await _persist() || !mounted) return;
       _keepTimer = Timer(
-        const Duration(milliseconds: 1900),
+        const Duration(milliseconds: 2200),
         () => unawaited(_showKeep()),
       );
     }
   }
 
   _TrialMessage _answer(TrialItem item, String question) {
+    final model = RegExp(
+      r'model|brand|make|what kind|which',
+      caseSensitive: false,
+    ).hasMatch(question);
     final counting = RegExp(
       r'how many|count',
       caseSensitive: false,
     ).hasMatch(question);
     final unknown = item.item.scanEvidence?.quantityMissing == true;
     return _TrialMessage(
-      counting
+      model && item.detail != null
+          ? 'The ${item.item.name.toLowerCase()} is a **${item.detail!.replaceAll(' · ', ' ')}**, read from its label.'
+          : counting
           ? unknown
                 ? 'The quantity of ${item.item.name.toLowerCase()} still needs your review.'
                 : '**${item.item.quantity}** ${item.item.name.toLowerCase()} in ${_draft.space}.'
           : '${item.item.name} is in **${_draft.space}**, ${item.spot.toLowerCase()}.',
-      location: counting ? null : '${_draft.space} · ${item.spot}',
+      location: '${_draft.space} · ${item.spot}',
     );
   }
 
@@ -486,9 +413,10 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
     if (!mounted) return;
     final generation = _generation;
     _draft.keep = true;
+    _draft.signupShown = true;
     if (!await _persist() || !mounted || generation != _generation) return;
     trialEvent('onboarding_signup_shown');
-    if (_signedIn && !_draft.photoPending) {
+    if (_signedIn) {
       widget.onAuthenticatedKeep?.call();
       return;
     }
@@ -506,8 +434,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       final auth = Supabase.instance.client.auth;
       if ((method == 'email' || method == null) &&
           auth.currentUser?.isAnonymous == true) {
-        // Email retains the existing verified email flow. The photo is kept
-        // locally and extracted again under the permanent account if needed.
+        // Retire an anonymous session left by an older onboarding build.
         await auth.signOut(scope: SignOutScope.local);
       }
       if (!mounted) return;
@@ -515,7 +442,10 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
         MaterialPageRoute<void>(
           builder: (_) => _TrialAuthRoute(
             method: method,
-            count: method == null ? null : _draft.items.length,
+            count: method == null || _draft.isSample
+                ? null
+                : _draft.items.length,
+            sample: method != null && _draft.isSample,
           ),
         ),
       );
@@ -541,8 +471,8 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _generation++;
-    _cancel?.cancel();
     _keepTimer?.cancel();
     _rowsTimer?.cancel();
     _input.dispose();
@@ -566,7 +496,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
         displayColor: trialInk,
       ),
     );
-    return Theme(
+    final themed = Theme(
       data: theme,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.dark,
@@ -590,11 +520,10 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
                 children: [
                   const DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFFF0F7FD), Colors.white],
-                        stops: [0, .6],
+                      gradient: RadialGradient(
+                        center: Alignment.topCenter,
+                        radius: 1,
+                        colors: [Color(0xFFFFEDE2), Colors.white],
                       ),
                     ),
                   ),
@@ -769,6 +698,10 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
         ),
       ),
     );
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: _reduce),
+      child: themed,
+    );
   }
 
   Widget _intro() => Column(
@@ -792,8 +725,8 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
             colors: [
               Colors.transparent,
               Colors.transparent,
-              trialBlue,
-              trialBlue,
+              Color(0xFFFFD3B8),
+              Color(0xFFFFD3B8),
               Colors.transparent,
             ],
             stops: [0, .64, .64, .92, .92],
@@ -812,30 +745,26 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       const Padding(
         padding: EdgeInsets.only(top: 10, bottom: 18),
         child: Text(
-          'Try it before signing up. Pick one.',
+          'Try a sample photo. No account needed.',
           style: TextStyle(color: trialMuted, fontSize: 15.5),
         ),
       ),
-      _option(
-        'snap',
-        'Snap a shelf.',
-        'FindEZ lists what it sees',
-        Icons.camera_alt_outlined,
-        0,
-      ),
-      _option(
-        'list',
-        'Type a list.',
-        'Like: 20 M3 screws, a drill',
-        Icons.format_list_bulleted,
-        1,
-      ),
-      _option(
-        'describe',
-        'Describe a space.',
-        'Like: my garage',
-        Icons.chat_bubble_outline,
-        2,
+      SampleScanCard(onTap: () => _start('sample')),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: _option('list', 'Type a list', Icons.format_list_bulleted),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _option(
+              'describe',
+              'Describe a space',
+              Icons.chat_bubble_outline,
+            ),
+          ),
+        ],
       ),
       Center(
         child: TextButton(
@@ -862,114 +791,66 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
         TextButton(onPressed: _restore, child: const Text('Try again')),
     ],
   );
-  Widget _option(
-    String value,
-    String title,
-    String subtitle,
-    IconData icon,
-    int index,
-  ) => TrialEntrance(
-    reduce: _reduce,
-    delay: Duration(milliseconds: 60 * index),
-    child: Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: trialLine),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0F1E3C64),
-              blurRadius: 24,
-              offset: Offset(0, 8),
-            ),
-          ],
+  Widget _option(String value, String title, IconData icon) =>
+      OutlinedButton.icon(
+        onPressed: () => _start(value),
+        icon: Icon(icon, size: 14),
+        label: Text(
+          title,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _start(value),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: value == 'snap'
-                          ? trialOrange
-                          : const Color(0xFFEEF6FD),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(icon, color: trialInk, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          subtitle,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: trialMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFFB4B6BC),
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: trialInk,
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          side: const BorderSide(color: trialLine),
+          shape: const StadiumBorder(),
+        ),
+      );
+
+  List<Widget> _conversation() => [
+    if (!_draft.isSample)
+      _message(
+        _TrialMessage(
+          _draft.option == 'describe'
+              ? 'Which space should FindEZ remember first?'
+              : 'List a few things. Counts help, but they are optional.',
         ),
       ),
-    ),
-  );
-  List<Widget> _conversation() => [
-    _message(
-      _TrialMessage(switch (_draft.option) {
-        'describe' => 'Which space should FindEZ remember first?',
-        'list' => 'List a few things. Counts help, but they are optional.',
-        _ => 'Point the camera at a shelf, bin or bench.',
-      }),
-    ),
+    if (_draft.option == 'describe' && _draft.items.isEmpty && !_busy)
+      Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _suggestions
+              .map(
+                (text) => TrialChip(
+                  text: text,
+                  highlight: false,
+                  onTap: () => _submit(text),
+                ),
+              )
+              .toList(),
+        ),
+      ),
     if (_draft.input.isNotEmpty)
       _message(_TrialMessage(_draft.input, user: true)),
-    if (_draft.photoPath != null)
+    if (_draft.isSample && _sample != null)
       Align(
         alignment: Alignment.centerRight,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Image.file(
-            File(_draft.photoPath!),
-            width: 230,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) =>
-                const Text('Photo unavailable. Take another photo.'),
-          ),
+        child: SampleScanPhoto(
+          key: ValueKey(_draft.id),
+          sample: _sample!,
+          scanning: _draft.items.isEmpty && _busy,
+          onFinished: _finishSample,
         ),
       ),
     if (_draft.items.isNotEmpty) ...[
       _message(
         _TrialMessage(
-          _draft.option == 'snap'
-              ? 'Found ${_draft.items.length} things on the bench. Tap a number to fix it.'
+          _draft.isSample
+              ? 'Found 7 items. Tap a number to edit.'
               : 'Here is a starter list for the ${_draft.space.toLowerCase()}. Tap a number to fix it.',
         ),
       ),
@@ -977,43 +858,15 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       if (_visible == _draft.items.length)
         _message(
           _TrialMessage(
-            'Saved to **${_draft.space}**. Now ask where something is.',
+            _draft.isSample
+                ? 'Now ask where something is.'
+                : 'Saved to **${_draft.space}**. Now ask where something is.',
           ),
         ),
     ],
     ..._messages.map(_message),
     if (_thinking != null) TrialThinking(text: _thinking!),
     if (_error != null) _errorView(),
-    if (_draft.option == 'snap' && !_busy && _draft.items.isEmpty)
-      Wrap(
-        spacing: 8,
-        children: [
-          TextButton(
-            onPressed: _draft.photoPath == null
-                ? _snap
-                : () => _extract(XFile(_draft.photoPath!)),
-            child: Text(
-              _draft.photoPath == null ? 'Take a photo' : 'Try again',
-            ),
-          ),
-          TextButton(
-            onPressed: () => _start('list'),
-            child: const Text('Type a list'),
-          ),
-        ],
-      ),
-    if (_busy && _draft.option == 'snap')
-      TextButton(
-        onPressed: () {
-          _generation++;
-          _cancel?.cancel();
-          setState(() {
-            _busy = false;
-            _thinking = null;
-          });
-        },
-        child: const Text('Stop'),
-      ),
   ];
   Widget _message(_TrialMessage message) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),
@@ -1159,14 +1012,29 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.name, style: const TextStyle(fontSize: 14)),
-                  if (!edit)
+                  if (trial.detail != null)
                     Text(
-                      trial.spot,
-                      style: const TextStyle(fontSize: 12, color: trialMuted),
+                      trial.detail!,
+                      style: const TextStyle(
+                        fontFamily: 'GeistMono',
+                        fontSize: 11,
+                        color: trialMuted,
+                      ),
                     ),
                 ],
               ),
             ),
+            if (!edit)
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    trial.spot,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 12, color: trialMuted),
+                  ),
+                ),
+              ),
             if (edit)
               IconButton(
                 tooltip: 'Decrease ${item.name}',
@@ -1205,7 +1073,9 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
     padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
     child: Column(
       children: [
-        if (_suggestions.isNotEmpty && _thinking == null)
+        if (_suggestions.isNotEmpty &&
+            _thinking == null &&
+            !(_draft.option == 'describe' && _draft.items.isEmpty))
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
@@ -1252,7 +1122,7 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
                         ? 'Ask about anything on the list...'
                         : _draft.option == 'describe'
                         ? 'Or describe it, like "my dorm room"'
-                        : 'Like: 3 hammers, duct tape, 12 AA batteries',
+                        : 'Like: 2 chargers, notebooks, spare keys',
                   ),
                 ),
               ),
@@ -1303,8 +1173,8 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _draft.photoPending
-                  ? 'Make a free account to read this photo.'
+              _draft.isSample
+                  ? 'Now try it on real stuff'
                   : 'Keep these ${_draft.items.length} items',
               style: const TextStyle(
                 fontSize: 28,
@@ -1312,11 +1182,17 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
                 letterSpacing: -1,
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(top: 8, bottom: 20),
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 20),
               child: Text(
-                'Make an account and FindEZ remembers them, on every device.',
-                style: TextStyle(color: trialMuted, fontSize: 15, height: 1.4),
+                _draft.isSample
+                    ? 'Make a free account, snap a shelf, and FindEZ remembers every item on every device.'
+                    : 'Make an account and FindEZ remembers them, on every device.',
+                style: const TextStyle(
+                  color: trialMuted,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
               ),
             ),
             if (Theme.of(context).platform == TargetPlatform.iOS)
@@ -1338,6 +1214,13 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
               textAlign: TextAlign.center,
               style: TextStyle(color: trialMuted, fontSize: 12.5),
             ),
+            TextButton(
+              onPressed: _askAnother,
+              child: const Text(
+                'Ask another question',
+                style: TextStyle(color: trialInk),
+              ),
+            ),
             if (_error != null) _errorView(),
           ],
         ),
@@ -1358,7 +1241,9 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          icon: Icon(icon, size: 20),
+          icon: method == 'google'
+              ? const GoogleAuthLogo(size: 20)
+              : Icon(icon, size: 20),
           label: Text(
             label,
             style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
@@ -1367,12 +1252,9 @@ class _ChatOnboardingPageState extends State<ChatOnboardingPage> {
       );
 }
 
-class _TrialAuthRequired implements Exception {
-  const _TrialAuthRequired();
-}
-
 class _TrialAuthRoute extends StatefulWidget {
-  const _TrialAuthRoute({this.method, this.count});
+  const _TrialAuthRoute({this.method, this.count, this.sample = false});
+  final bool sample;
   final String? method;
   final int? count;
   @override
@@ -1409,7 +1291,8 @@ class _TrialAuthRouteState extends State<_TrialAuthRoute> {
   Widget build(BuildContext context) => AuthPage(
     initialMethod: widget.method,
     trialItemCount: widget.count,
-    fromOnboarding: widget.count != null,
+    fromOnboarding: widget.count != null || widget.sample,
+    sampleTrial: widget.sample,
   );
 }
 

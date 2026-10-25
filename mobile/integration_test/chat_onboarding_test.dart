@@ -1,8 +1,8 @@
 import 'package:integration_test/integration_test.dart';
 import '../test/chat_onboarding_test.dart' as trial;
 
-// Native layout/lifecycle checks with synthetic extraction/auth/API peers.
-// Real camera permissions and provider consent still require device acceptance.
+// Native offline sample/list/describe checks with synthetic auth and save peers.
+// Real provider consent and the post-demo camera require device acceptance.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   trial.main();

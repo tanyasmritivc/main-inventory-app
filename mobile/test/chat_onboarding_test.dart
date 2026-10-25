@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,8 +15,11 @@ import 'package:mobile/features/auth/auth_page.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_draft.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_page.dart';
 import 'package:mobile/features/onboarding/chat_onboarding_save.dart';
+import 'package:mobile/features/onboarding/sample_scan.dart';
+import 'package:mobile/core/first_camera_hint.dart';
 
 class TrialTransport implements dio.HttpClientAdapter {
+  final requests = <String>[];
   final writes = <Map<String, dynamic>>[];
   final saved = <String, Map<String, dynamic>>{};
   bool loseResponse = false;
@@ -29,6 +30,7 @@ class TrialTransport implements dio.HttpClientAdapter {
     Stream<Uint8List>? stream,
     Future<void>? cancel,
   ) async {
+    requests.add(options.path);
     Object response;
     if (options.path == '/inventory-workspaces/personal/inventories') {
       response = {
@@ -204,7 +206,6 @@ void main() {
     ChatOnboardingDraft? draft,
     bool reduce = false,
     Size size = const Size(390, 844),
-    Future<MultiExtractResult> Function()? extract,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -218,7 +219,6 @@ void main() {
             api: api,
             initialDraft: draft,
             showWorld: false,
-            photoExtractor: extract == null ? null : (_, _) => extract(),
           ),
         ),
       ),
@@ -254,6 +254,8 @@ void main() {
       'Lab',
       'Closet',
       'Craft room',
+      'Dorm room',
+      'Home',
     ]) {
       final draft = ChatOnboardingDraft();
       templates.describe(draft, space);
@@ -264,7 +266,7 @@ void main() {
     final draft = ChatOnboardingDraft();
     templates.describe(draft, 'my dorm room');
     expect(draft.space, 'Dorm room');
-    expect(draft.items.first.item.name, 'Flashlight');
+    expect(draft.items.first.item.name, 'Laptop charger');
     templates.describe(draft, 'Garage');
     expect(draft.items[1].spot, 'Bin B');
     expect(transport.writes, isEmpty);
@@ -402,14 +404,16 @@ void main() {
     'Describe reaches an answer before Keep; no network or continue step',
     (tester) async {
       await launch(tester);
-      await tap(tester, 'Describe a space.');
-      await tap(tester, 'Garage');
+      await tap(tester, 'Describe a space');
+      await tester.enterText(find.byType(TextField), 'Garage');
+      await tester.tap(find.byTooltip('Send'));
+      await pump(tester);
       expect(find.text('Keep these 12 items'), findsNothing);
       expect(transport.writes, isEmpty);
       await tap(tester, 'Where is the cordless drill?');
       expect(find.text('Garage · Shelf 1'), findsOneWidget);
       expect(find.text('Keep these 12 items'), findsNothing);
-      await pump(tester, 1600);
+      await pump(tester, 2000);
       expect(find.text('Keep these 12 items'), findsOneWidget);
       expect(find.text('Continue'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -420,7 +424,7 @@ void main() {
     tester,
   ) async {
     await launch(tester, reduce: true);
-    await tap(tester, 'Type a list.');
+    await tap(tester, 'Type a list');
     await tester.enterText(find.byType(TextField), '3 hammers, duct tape');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.ensureVisible(find.byTooltip('Send'));
@@ -441,7 +445,7 @@ void main() {
     await tester.tap(find.byTooltip('Send'));
     await pump(tester);
     expect(
-      find.text('That is not in Home yet. Try one of these:'),
+      find.text('That is not on this list yet. Try one of these:'),
       findsOneWidget,
     );
     expect(find.text('Keep these 2 items'), findsNothing);
@@ -466,148 +470,201 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
   testWidgets(
-    'photo authentication rejection retains the photo and opens signup',
+    'sample demo runs offline, answers model, and only opens Keep once',
+    (tester) async {
+      await launch(tester);
+      await tap(tester, 'Scan it');
+      expect(find.text('Scanning the sample photo...'), findsOneWidget);
+      expect(find.byType(AuthPage), findsNothing);
+      await pump(tester, 2000);
+      expect(find.text('Battery charger'), findsOneWidget);
+      expect(find.text('Makita · DC18RC'), findsOneWidget);
+      expect((await ChatOnboardingStore.read())!.items.length, 7);
+      await tap(tester, 'What model is the charger?');
+      expect(
+        find.text(
+          'The battery charger is a Makita DC18RC, read from its label.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Now try it on real stuff'), findsNothing);
+      await pump(tester, 2000);
+      expect(find.text('Now try it on real stuff'), findsOneWidget);
+      await tap(tester, 'Ask another question');
+      expect(find.text('Now try it on real stuff'), findsNothing);
+      await tap(tester, 'Where is the battery pack, 18v?');
+      await pump(tester, 3500);
+      expect(find.text('Now try it on real stuff'), findsNothing);
+      expect(transport.writes, isEmpty);
+      expect(Supabase.instance.client.auth.currentSession, isNull);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'sample reduced motion shows boxes and quantities without a sweep',
+    (tester) async {
+      await launch(tester, reduce: true);
+      await tap(tester, 'Scan it');
+      expect(find.text('Scanning the sample photo...'), findsNothing);
+      expect(find.text('charger'), findsOneWidget);
+      await tap(tester, 'How many screws?');
+      expect(
+        find.text('14 socket head screws in Workbench.', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.text('Workbench · Front bin'), findsOneWidget);
+      expect(transport.writes, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets('native Reduce Motion changes are respected during onboarding', (
+    tester,
+  ) async {
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+    await launch(tester);
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(reduceMotion: true);
+    await tester.pump();
+    await tap(tester, 'Scan it');
+    expect(find.text('Scanning the sample photo...'), findsNothing);
+    expect(find.text('charger'), findsOneWidget);
+    expect(transport.requests, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+  test(
+    'sample save and retry never write demo items, hint is account-bound',
+    () async {
+      await login();
+      final sample = await TrialSample.load();
+      final draft = ChatOnboardingDraft()
+        ..option = 'sample'
+        ..space = sample.space
+        ..items = sample.newItems()
+        ..method = 'email'
+        ..keep = true;
+      await ChatOnboardingSaver(api).save(draft);
+      expect(draft.complete, isTrue);
+      expect(transport.writes, isEmpty);
+      expect(transport.requests, isEmpty);
+      expect(await FirstCameraHint.pending(actor), isTrue);
+      expect(await FirstCameraHint.pending('other-user'), isFalse);
+      await FirstCameraHint.consume(actor);
+      await ChatOnboardingSaver(api).save((await ChatOnboardingStore.read())!);
+      expect(transport.writes, isEmpty);
+      expect(await FirstCameraHint.pending(actor), isFalse);
+    },
+  );
+  testWidgets(
+    'sample auth lands in empty Ask with camera hint and no demo items',
+    (tester) async {
+      final sample = await TrialSample.load();
+      final draft = ChatOnboardingDraft()
+        ..option = 'sample'
+        ..space = sample.space
+        ..items = sample.newItems()
+        ..method = 'email'
+        ..answered = true
+        ..keep = true;
+      await ChatOnboardingStore.save(draft);
+      await login();
+      await tester.pumpWidget(MaterialApp(home: LaunchAuthGate(api: api)));
+      await pump(tester, 2500);
+      expect(find.byType(ChatPage), findsOneWidget);
+      expect(
+        tester.widget<ChatPage>(find.byType(ChatPage)).initialSource,
+        isNull,
+      );
+      expect(find.byTooltip('Snap a shelf'), findsOneWidget);
+      expect(find.text('Snap a shelf to add your first items'), findsOneWidget);
+      expect(transport.writes, isEmpty);
+      expect(await ChatOnboardingStore.read(), isNull);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      Supabase.instance.client.auth.stopAutoRefresh();
+    },
+  );
+  testWidgets(
+    'old camera draft restarts safely without extraction or anonymous sign-in',
     (tester) async {
       final draft = ChatOnboardingDraft()
         ..option = 'snap'
-        ..photoPath = '/nonexistent/trial.jpg'
-        ..photoPending = true;
-      await launch(
-        tester,
-        draft: draft,
-        extract: () async => throw dio.DioException(
-          requestOptions: dio.RequestOptions(path: '/extract'),
-          response: dio.Response(
-            requestOptions: dio.RequestOptions(path: '/extract'),
-            statusCode: 401,
+        ..photoPending = true
+        ..photoPath = '/old-photo.jpg';
+      await launch(tester, draft: draft);
+      expect(find.text('Scan it'), findsOneWidget);
+      expect(Supabase.instance.client.auth.currentSession, isNull);
+      expect(transport.writes, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'restart cancels sample callbacks and does not restore old rows',
+    (tester) async {
+      await launch(tester);
+      await tap(tester, 'Scan it');
+      await tester.tap(find.byTooltip('Start over'));
+      await pump(tester, 2500);
+      expect(find.text('Scan it'), findsOneWidget);
+      expect(find.text('Battery charger'), findsNothing);
+      expect((await ChatOnboardingStore.read())!.items, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  for (final example in {
+    'my dorm room': 'Laptop charger',
+    'a university room': 'Laptop charger',
+    'my home': 'Flashlight',
+    'science lab': 'Safety goggles',
+    'workshop': 'Cordless drill',
+  }.entries) {
+    test('local starter fits ${example.key}', () async {
+      final draft = ChatOnboardingDraft();
+      (await TrialTemplates.load()).describe(draft, example.key);
+      expect(draft.items.first.item.name, example.value);
+      expect(transport.requests, isEmpty);
+    });
+  }
+  testWidgets(
+    'first real camera tap consumes the hint even when photo is cancelled',
+    (tester) async {
+      await login();
+      await FirstCameraHint.arm(actor);
+      final worldApi = ApiClient.forWorld(
+        api,
+        'personal',
+        isCurrent: () => true,
+      );
+      var opened = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatPage(
+              api: worldApi,
+              worldHeading: 'Your physical world, remembered.',
+              photoPicker: (camera) async {
+                expect(camera, isTrue);
+                opened++;
+                return null;
+              },
+            ),
           ),
         ),
       );
-      await tap(tester, 'Try again');
-      expect(
-        find.text('Make a free account to read this photo.'),
-        findsWidgets,
-      );
-      expect((await ChatOnboardingStore.read())!.photoPending, isTrue);
+      await pump(tester);
+      await tester.tap(find.byTooltip('Snap a shelf'));
+      await pump(tester);
+      expect(opened, 1);
+      expect(await FirstCameraHint.pending(actor), isFalse);
+      expect(find.byTooltip('Snap a shelf'), findsNothing);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
+      Supabase.instance.client.auth.stopAutoRefresh();
     },
   );
-  testWidgets('photo result uses real quantity and unknown remains unknown', (
-    tester,
-  ) async {
-    final photo = File(
-      '${Directory.systemTemp.path}/findez-onboarding-test.png',
-    );
-    photo.writeAsBytesSync(
-      base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jP1kAAAAASUVORK5CYII=',
-      ),
-    );
-    addTearDown(() => photo.deleteSync());
-    final draft = ChatOnboardingDraft()
-      ..option = 'snap'
-      ..photoPath = photo.path
-      ..photoPending = true;
-    await launch(
-      tester,
-      draft: draft,
-      extract: () async => MultiExtractResult.fromJson({
-        'items': [
-          {'name': 'Drill', 'category': 'Tools', 'quantity': 2},
-          {
-            'name': 'Screws',
-            'category': 'Tools',
-            'quantity': 1,
-            'scan_evidence': {
-              'quantity_basis': 'unknown',
-              'needs_review': true,
-            },
-          },
-        ],
-      }),
-    );
-    await tap(tester, 'Try again');
-    expect((await ChatOnboardingStore.read())!.items.first.item.quantity, 2);
-    expect(find.text('?'), findsOneWidget);
-    await tap(tester, 'Where is the drill?');
-    expect(find.text('Workbench · Workbench'), findsOneWidget);
-    await pump(tester, 1600);
-    expect(find.text('Keep these 2 items'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
-  testWidgets(
-    'photo re-extraction retains explicit quantity edits after auth',
-    (tester) async {
-      await login();
-      final draft = ChatOnboardingDraft()
-        ..option = 'snap'
-        ..photoPath = '/nonexistent/trial.jpg'
-        ..photoPending = true
-        ..answered = true
-        ..items = [
-          TrialItem(
-            ExtractedInventoryItem.fromJson({
-              'name': 'Drill',
-              'category': 'Tools',
-              'quantity': 7,
-            }),
-            'Workbench',
-          )..quantityEdited = true,
-        ];
-      await launch(
-        tester,
-        draft: draft,
-        extract: () async => MultiExtractResult.fromJson({
-          'items': [
-            {'name': 'Drill', 'category': 'Tools', 'quantity': 2},
-          ],
-        }),
-      );
-      final restored = (await ChatOnboardingStore.read())!;
-      expect(restored.items.single.item.quantity, 7);
-      expect(restored.items.single.quantityEdited, isTrue);
-      expect(restored.photoPending, isFalse);
-      expect(restored.answered, isTrue);
-      expect(restored.keep, isTrue);
-      expect(
-        restored.extractedBy,
-        Supabase.instance.client.auth.currentUser!.id,
-      );
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
-  testWidgets('offline photo shows retry and Stop ignores late result', (
-    tester,
-  ) async {
-    final pending = Completer<MultiExtractResult>();
-    final draft = ChatOnboardingDraft()
-      ..option = 'snap'
-      ..photoPath = '/nonexistent/trial.jpg'
-      ..photoPending = true;
-    await launch(tester, draft: draft, extract: () => pending.future);
-    await tap(tester, 'Try again');
-    await tap(tester, 'Stop');
-    pending.complete(
-      MultiExtractResult.fromJson({
-        'items': [
-          {'name': 'Late drill', 'category': '', 'quantity': 1},
-        ],
-      }),
-    );
-    await pump(tester);
-    expect(find.text('Late drill'), findsNothing);
-    await tester.pumpWidget(const SizedBox());
-    await launch(
-      tester,
-      draft: draft,
-      extract: () async => throw const SocketException('offline'),
-    );
-    await tap(tester, 'Try again');
-    expect(find.textContaining('Check your connection'), findsOneWidget);
-    expect(find.text('Type a list'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-  });
   for (final size in [
     const Size(320, 568),
     const Size(390, 844),
@@ -616,9 +673,9 @@ void main() {
     testWidgets('intro and list fit $size with reduced motion', (tester) async {
       await launch(tester, size: size, reduce: true);
       expect(tester.takeException(), isNull);
-      await tap(tester, 'Type a list.');
-      await tap(tester, '20 M3 screws, 4 batteries, a drill and 2 multimeters');
-      expect(find.text('M3 screws'), findsOneWidget);
+      await tap(tester, 'Type a list');
+      await tap(tester, '2 phone chargers, 3 notebooks and spare keys');
+      expect(find.text('Phone chargers'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
