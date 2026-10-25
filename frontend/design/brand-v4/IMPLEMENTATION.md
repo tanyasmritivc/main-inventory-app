@@ -109,3 +109,7 @@ Repository state notes in `.agents/ACTIVE_WORK.md`, `.agents/CURRENT_STATE.md` a
 ## Release — October 25
 
 The user subsequently authorized deployment. Runtime `a6f5d37` deployed via PR215 after all five CI jobs passed. See deployment-receipt.json. Production build, 22 staged/live route checks, public metadata and browser logo/favicon checks passed. The prior release and backend are preserved.
+
+## Wordmark proportion follow-up — October 25
+
+User requested a smaller symbol beside the name. The three runtime SVG wordmarks now use a 20% smaller mark; original supplied kit and standalone icons are retained. Published runtime `04f883b` after all five CI checks, production build, 22 staged/live routes and public browser verification passed. See wordmark-balance-deployment-receipt.json.
