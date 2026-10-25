@@ -1,3 +1,12 @@
+## October 24 - Explicit capture acceptance may save before later editing
+
+The user requests direct inventory save and later editing, superseding mandatory
+Review routing for explicitly accepted Confirm Items drafts. Never turn a photo
+region into a claimed unit count: disclose uncounted starting values, retain notes,
+and show/edit the counted unit (e.g. tablet versus blister strip). Model confidence
+and uncertainty remain evidence, not a prohibition on the user's save choice.
+Unaccepted drafts and existing Review workflows retain their behavior.
+
 ## October 24 - Space options and stoppable extraction
 
 The user rejected the native iOS Space ellipsis menu; this menu uses Flutter on

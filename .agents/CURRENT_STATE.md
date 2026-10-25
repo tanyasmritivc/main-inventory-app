@@ -1,3 +1,15 @@
+## October 24 - Capture save and quantity units (in verification)
+
+Branch fix/mobile-capture-save-edit-later, based on beta130. Explicit Save to
+inventory accepts the shown editable fields without a mandatory Review detour.
+Unknown counts have a disclosed starting value of 1, preserved as uncounted in
+notes/evidence. Quantity and counted unit are editable above collapsed evidence.
+Existing pending reviews resolve in place; new previews retain stable bulk-save
+receipts, original/crop retention and per-row failure handling. Cancel writes none.
+No backend/web/schema/native navigation changes in this lane. Beta131 pending.
+877 host tests, focused confirmation/API cases and clean analysis pass. Native
+synthetic preview verifies direct acceptance. Device/network acceptance pending.
+
 ## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
 
 Runtime `af3e64c182bd09e08830b6a7bd3a05c90718faee` on

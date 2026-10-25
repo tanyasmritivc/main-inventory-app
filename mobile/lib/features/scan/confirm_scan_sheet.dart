@@ -2,6 +2,7 @@ import 'package:mobile/core/private_image.dart';
 import 'package:mobile/core/ui/glass_control.dart';
 import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
@@ -48,6 +49,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
   late final List<bool> _quantityConfirmed;
+  late final List<TextEditingController> _quantityCtrl;
+  late final List<TextEditingController> _unitCtrl;
   late final List<InventoryItem> _existing =
       widget.existingItems ?? InventoryCache.items;
 
@@ -80,6 +83,16 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     _quantityConfirmed = widget.items
         .map((it) => it.scanEvidence?.quantityMissing != true)
         .toList();
+    _unitCtrl = widget.items
+        .map(
+          (item) => TextEditingController(
+            text: item.scanEvidence?.quantityUnit ?? 'item',
+          ),
+        )
+        .toList();
+    _quantityCtrl = _qty
+        .map((qty) => TextEditingController(text: '$qty'))
+        .toList();
   }
 
   @override
@@ -90,7 +103,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     for (final c in _locCtrl) {
       c.dispose();
     }
-    for (final c in [..._brandCtrl, ..._partNumberCtrl, ..._categoryCtrl]) {
+    for (final c in [
+      ..._brandCtrl,
+      ..._partNumberCtrl,
+      ..._categoryCtrl,
+      ..._quantityCtrl,
+      ..._unitCtrl,
+    ]) {
       c.dispose();
     }
     for (final f in _nameFocus) {
@@ -144,6 +163,20 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     }
   }
 
+  String? _savedNotes(int i) {
+    final orig = widget.items[i];
+    final notes = [
+      if (!_quantityConfirmed[i])
+        'Quantity ${_qty[i]} is a starting value chosen at save, not a photo count. Edit it when counted.',
+      if (_unitCtrl[i].text.trim().isNotEmpty)
+        'Quantity unit: ${_unitCtrl[i].text.trim()}.',
+      if (orig.notes?.isNotEmpty == true) orig.notes!,
+    ].join(' ');
+    return notes.isEmpty
+        ? null
+        : notes.substring(0, notes.length.clamp(0, 2000));
+  }
+
   List<ExtractedInventoryItem> _buildResult() {
     return List.generate(widget.items.length, (i) {
       final orig = widget.items[i];
@@ -165,14 +198,21 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         confidence: orig.confidence,
         imageUrl: orig.imageUrl,
         sourceFrameUrl: orig.sourceFrameUrl,
-        notes: orig.notes,
+        notes: _savedNotes(i),
         location: _locCtrl[i].text.trim().isEmpty
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
-        scanEvidence: _quantityConfirmed[i]
-            ? orig.scanEvidence?.confirmedQuantity()
-            : orig.scanEvidence,
+        scanEvidence: orig.scanEvidence == null
+            ? null
+            : ScanEvidence.fromJson({
+                ...(_quantityConfirmed[i]
+                        ? orig.scanEvidence!.confirmedQuantity()
+                        : orig.scanEvidence!)
+                    .toJson(),
+                'needs_review': false,
+                'quantity_unit': _unitCtrl[i].text.trim(),
+              }),
         reviewId: orig.reviewId,
         reviewStatus: orig.reviewStatus,
         reviewToken: orig.reviewToken,
@@ -556,101 +596,53 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ],
           ],
+          const SizedBox(height: 16),
+          AppText('QUANTITY', style: _kLabelStyle(context)),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: ValueKey('quantity-$i'),
+            controller: _quantityCtrl[i],
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              helperMaxLines: 3,
+              helperText: widget.items[i].scanEvidence?.quantityMissing == true
+                  ? 'Not counted from the photo. Start with 1 or enter a quantity; you can edit it later.'
+                  : widget.items[i].scanEvidence?.quantityNote ??
+                        'You can edit this quantity now or later.',
+              errorText:
+                  int.tryParse(_quantityCtrl[i].text) == null ||
+                      (int.tryParse(_quantityCtrl[i].text) ?? 0) > 100000
+                  ? 'Enter a number from 0 to 100000.'
+                  : null,
+            ),
+            onChanged: (value) => setState(() {
+              final n = int.tryParse(value);
+              if (n != null && n >= 0 && n <= 100000) {
+                _qty[i] = n;
+                _quantityConfirmed[i] = true;
+              }
+            }),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: ValueKey('quantity-unit-$i'),
+            controller: _unitCtrl[i],
+            maxLength: 40,
+            decoration: const InputDecoration(
+              labelText: 'Counted unit',
+              hintText: 'e.g. tablet, blister strip, screw',
+              counterText: '',
+            ),
+          ),
           if (widget.items[i].scanEvidence != null) ...[
             const SizedBox(height: 14),
             ScanEvidencePanel(
               evidence: widget.items[i].scanEvidence!,
               barcode: widget.items[i].barcode,
+              allowEditLater: true,
             ),
           ],
-          const SizedBox(height: 16),
-          // QUANTITY label
-          AppText('QUANTITY', style: _kLabelStyle(context)),
-          const SizedBox(height: 10),
-          if (widget.items[i].scanEvidence?.quantityMissing == true)
-            TextFormField(
-              key: ValueKey('missing-quantity-$i'),
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: 'Quantity needed',
-                helperText: 'Count the individual items, not the pile.',
-              ),
-              onChanged: (value) => setState(() {
-                final n = int.tryParse(value);
-                _quantityConfirmed[i] = n != null && n >= 0 && n <= 100000;
-                if (_quantityConfirmed[i]) _qty[i] = n!;
-              }),
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (_qty[i] > 0) setState(() => _qty[i]--);
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0xFF171717),
-                      ),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0x14FFFFFF),
-                        ),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.remove,
-                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-                      size: 18,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                AppText(
-                  '${_qty[i]}',
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, Colors.white),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 24),
-                GestureDetector(
-                  onTap: () => setState(() => _qty[i]++),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.adaptive(
-                        context,
-                        const Color(0xFF171717),
-                      ),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.adaptive(
-                          context,
-                          const Color(0x14FFFFFF),
-                        ),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.add,
-                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           const SizedBox(height: 16),
           // LOCATION label
           AppText('LOCATION', style: _kLabelStyle(context)),
@@ -749,9 +741,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   const SizedBox(height: 4),
                   AppText(
-                    widget.items.any((item) => item.needsReview)
-                        ? 'Save clear items and keep uncertain items for review.'
-                        : 'Review every visible detail before saving.',
+                    'Save to your inventory. You can edit every detail later.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                       fontSize: 13,
@@ -787,15 +777,21 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_quantityConfirmed.any((known) => !known))
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'Enter the missing quantities before saving.',
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _quantityConfirmed.any((known) => !known)
+                          ? 'Uncounted items start at 1. You can change this now or later.'
+                          : 'You can edit these items after saving.',
                     ),
+                  ),
                   GestureDetector(
-                    onTap: _quantityConfirmed.every((known) => known)
+                    onTap:
+                        _quantityCtrl.every((c) {
+                              final n = int.tryParse(c.text);
+                              return n != null && n >= 0 && n <= 100000;
+                            }) &&
+                            _nameCtrl.every((c) => c.text.trim().isNotEmpty)
                         ? () => Navigator.of(context).pop(_buildResult())
                         : null,
                     child: GlassControl(
@@ -809,19 +805,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         ),
                         child: Center(
                           child: AppText(
-                            () {
-                              final reviewCount = widget.items
-                                  .where((item) => item.needsReview)
-                                  .length;
-                              final saveCount = n - reviewCount;
-                              if (reviewCount == 0) {
-                                return 'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}';
-                              }
-                              if (saveCount == 0) {
-                                return 'Keep $reviewCount in Review';
-                              }
-                              return 'Save $saveCount · Review $reviewCount';
-                            }(),
+                            'Save to inventory',
                             style: TextStyle(
                               color: AppTheme.textPrimary(context),
                               fontSize: 15,
