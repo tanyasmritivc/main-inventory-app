@@ -1,7 +1,15 @@
+## October 25 - Pre-launch access delivered (PR220)
+
+Runtime `b8e5cc80669397cbaf2e3ca1d615c65f9eb463ac` is live; all five exact-source CI gates passed in 40235348641.
+Plan quotas and purchases remain off, with no automatic cutoff.
+Rollback: `/home/ubuntu/findez-web-releases/no-offers-20261025/frontend`. No production schema change.
+Production build, 22 route checks, staged Chrome visual review and public HTTPS notice checks passed. Previous release and backend were preserved. Build ID: xRWAplxSZtohI0lJ31L2E.
+See `docs/plans/prelaunch-access-20261025.md`. Paid subscription integration remains separate and unfinished.
+
 ## October 25 - Pre-launch access (web)
 
 Implementation lane `fix/web-prelaunch-access`. 574 Jest tests, TypeScript and changed-file ESLint passed.
-Prepared, not deployed; see `docs/plans/prelaunch-access-20261025.md`.
+Delivered; see the release receipt above and `docs/plans/prelaunch-access-20261025.md`.
 Keep plan quotas and purchases off until explicit launch instruction.
 
 ## October 25 - Standard pricing only
