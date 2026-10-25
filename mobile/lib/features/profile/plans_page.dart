@@ -245,7 +245,7 @@ class _PlansPageState extends State<PlansPage> {
             ),
           ),
           AppText(
-            'Need a larger team? Contact us. Verified student and robotics teams will be eligible for 50% off Team.',
+            'Need a larger team? Contact us.',
             style: TextStyle(color: secondary, fontSize: 14, height: 1.5),
           ),
           Align(
