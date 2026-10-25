@@ -542,7 +542,11 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         import re
         mentions_card = bool(re.search(r'\b(?:confirm(?:ation)?|review|approve)\b.{0,100}\bcard\b|\bcard\b.{0,100}\bconfirm\b|\b(?:proposed|prepared)\s+(?:additions|an?\s+(?:edit|change|move|action|card))', content, re.I | re.S))
         refers_to_previous = prior_pending and bool(re.search(r'\b(?:earlier|previous|above)\b', content, re.I))
-        if mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or refers_to_previous):
+        mentions_structure = bool(re.search(
+            r"\b(?:I(?:'ve| have)?|we(?:'ve| have)?)\s+(?:prepared|proposed|created|set up)\b.{0,100}\b(?:inventory|space|workspace)\b",
+            content, re.I | re.S))
+        if (mentions_card and not (actions or item_actions or attachment or capture and capture['draft'] or refers_to_previous)
+                or mentions_structure and not (actions or refers_to_previous)):
             if not card_repair_available or step == 8:
                 raise RuntimeError('The reply referenced an action card that does not exist')
             card_repair_available = False

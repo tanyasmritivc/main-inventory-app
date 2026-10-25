@@ -349,3 +349,12 @@ def test_direct_image_reaches_multimodal_model_and_is_not_a_photo_observation():
     assert args['model']=='glm-5.3-flash-agent'
     assert any(isinstance(m['content'],list) and image in m['content'] for m in args['messages'])
     assert 'image_url' not in str(result[-1]['answer_context'])
+
+
+def test_existing_draft_does_not_substitute_for_a_real_destination_proposal():
+    call = NS(id='create', function=NS(name='world_create_task', arguments='{}'))
+    proposal = {'world_action': {'id': 'real-destination-card', 'status': 'pending'}}
+    with draft_context(), patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=proposal), patch('app.services.agent_gateway_client.gateway_completion', side_effect=[completion("I've prepared a Pantry inventory with a Pantry Space."), completion(calls=[call]), completion('Review your Pantry below.')]) as gateway:
+        result = list(w.stream_turn(ACTOR, WORLD, 'Save to my pantry', [], 'cid', supports_task_actions=True))
+    assert result[-1]['answer_context']['world_actions'] == [proposal['world_action']]
+    assert gateway.call_count == 3
