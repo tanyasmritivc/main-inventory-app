@@ -215,6 +215,9 @@ void main() {
                 180,
                 scrollable: find.byType(Scrollable).first,
               );
+              await tester.pumpAndSettle();
+              await tester.ensureVisible(find.text('Export memory'));
+              await tester.pumpAndSettle();
               await tester.tap(find.text('Export memory'));
               await tester.pumpAndSettle();
               expect(find.text('Copy JSON'), findsOneWidget);
