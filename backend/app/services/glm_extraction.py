@@ -476,6 +476,12 @@ def _group_identical(image, selected, prepared):
         target['scan_evidence']['quantity_confidence'] = min(target['scan_evidence']['quantity_confidence'], evidence['quantity_confidence'])
         target['scan_evidence']['identity_confidence'] = target['confidence']
         target['scan_evidence']['grouped_observations'] = len(match['boxes'])
+        for field in ('review_reasons', 'warnings'):
+            target['scan_evidence'][field] = list(dict.fromkeys(
+                target['scan_evidence'].get(field, []) + evidence.get(field, [])))
+        for field in ('detection_confidence', 'ocr_confidence'):
+            values = [v for v in (target['scan_evidence'].get(field), evidence.get(field)) if v is not None]
+            target['scan_evidence'][field] = min(values) if values else None
         # Keep distinct useful notes; the complete original frame is retained too.
         if item.get('notes') and item['notes'] != target.get('notes'):
             target['notes'] = ((target.get('notes') or '') + ' ' + item['notes'])[:2000]

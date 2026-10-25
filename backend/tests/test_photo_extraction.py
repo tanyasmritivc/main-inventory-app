@@ -449,6 +449,10 @@ def test_same_marked_bars_group_without_losing_crop_or_count_and_piles_do_not():
     grouped = g._group_identical(image, [(b,b'') for b in boxes], prepared())
     assert len(grouped) == 1 and grouped[0][0]['quantity'] == 2
     assert grouped[0][0]['scan_evidence']['grouped_observations'] == 2
+    rows = prepared()
+    rows[1][0]['scan_evidence']['warnings'] = ['Second wrapper is partly obscured.']
+    merged = g._group_identical(image, [(b,b'') for b in boxes], rows)
+    assert 'Second wrapper is partly obscured.' in merged[0][0]['scan_evidence']['warnings']
     assert Image.open(io.BytesIO(grouped[0][1])).width > 650
     assert len(g._group_identical(image, [(b,b'') for b in boxes], prepared(basis='unknown'))) == 2
     different = prepared(); different[1][0]['scan_evidence']['ocr_text'] = 'CADBURY 5 STAR 20g'
