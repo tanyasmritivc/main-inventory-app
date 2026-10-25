@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 import styles from "./findez-brand.module.css";
 
-// External SVG artwork stays identical to the supplied Petals assets.
+// Shared Petals artwork; wordmarks use the approved smaller mark proportion.
 export function FindEZMark({ width = 24, height = 24, ...props }: SVGProps<SVGSVGElement>) {
   const small = Number(width) < 32;
   return <svg viewBox="0 0 80 80" width={width} height={height} aria-hidden="true" {...props}>

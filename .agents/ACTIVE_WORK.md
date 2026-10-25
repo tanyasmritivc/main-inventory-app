@@ -1,3 +1,7 @@
+## October 25 — Smaller web wordmark symbol
+
+User requested better balance between the Petals symbol and FindEZ lettering. Branch `fix/web-wordmark-balance` reduces only the three runtime web wordmark symbols by 20%, keeping lettering, right-edge spacing and vertical center fixed. Scoped ESLint, 26 sidebar tests and local browser inspection pass. Deployment pending CI and production build.
+
 ## October 25 — Petals website deployed (PR215)
 
 Runtime `a6f5d37c78ffdb995e13eada62a8318134ff04be` is live at findez.ai. All five CI jobs passed in run 40216797751. Production build `uScVgYDkdk9XdlwXrH-Iw`; 22 staged and 22 live routes passed. Public metadata and a live browser check confirm the new wordmark/favicon. Previous release and backend process preserved. Active directory: `/home/ubuntu/findez-web-releases/petals-20261025/frontend`; rollback: `/home/ubuntu/findez-web-releases/remove-search-20261024/frontend`. No schema or backend changes.

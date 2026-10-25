@@ -1,3 +1,7 @@
+## October 25 — Smaller web wordmark symbol
+
+User requested better balance between the Petals symbol and FindEZ lettering. Branch `fix/web-wordmark-balance` reduces only the three runtime web wordmark symbols by 20%, keeping lettering, right-edge spacing and vertical center fixed. Scoped ESLint, 26 sidebar tests and local browser inspection pass. Deployment pending CI and production build.
+
 ## October 25 — Petals release authorized
 
 The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing the web Petals release with the existing production configuration.
