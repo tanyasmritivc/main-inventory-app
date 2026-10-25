@@ -1,3 +1,7 @@
+## October 24 - Mobile utility page polish
+
+Active mobile-only lane `fix/mobile-utility-pages-20261024`, based on delivered build126. Notifications, plus-menu context/connections/import destinations, and Settings memory share compact typography, separated rows, tidy fields and clear states. All existing actions remain; bottom navigation and API behavior are unchanged. Six multi-page layout/interaction scenarios and sixteen font-loaded previews cover light/dark and large text. Full checks and candidate TestFlight127 delivery are in progress. See `docs/plans/mobile-utility-pages-20261024.md`.
+
 ## October 24 — clearer drafts and correct photo quantities (mobile)
 
 Runtime `8e40596142be213f51730874186c3eb87e06fed4`; PR #199; all five exact-runtime CI checks passed in run 40146414106. Apple accepted FindEZ 1.1.1 (126), delivery 373106d3-45e4-4cf0-bb0a-f1dfb14106ac. Processing and tester availability were not polled. Physical-device acceptance is unverified. IPA SHA-256 45c9284b80a7db787f6cf63d2f0b2301e18537142e5c705c4c2b70a5bac57619. Preserved archive, IPA and receipts: Documents/FindEZ/AppStore/1.1.1-build126. All 32 archive/export native executables, strict signatures, 24 privacy manifests and production configuration passed. Apple validation passed. A cached simulator framework was rejected locally; the clean rebuilt package passed and only that package was uploaded. See `docs/plans/draft-flow-20261024.md`. Bottom navigation remains unchanged; no schema migration.

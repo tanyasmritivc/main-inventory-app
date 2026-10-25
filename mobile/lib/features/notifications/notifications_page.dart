@@ -12,6 +12,7 @@ import '../../core/notification_snapshot.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/ui/utility_page.dart';
 import '../workspaces/invitation_page.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -239,182 +240,200 @@ class _NotificationsPageState extends State<NotificationsPage>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const AppText('Notifications'),
-      actions: [
-        if (_pushReady)
-          IconButton(
-            tooltip: 'Phone notification settings',
-            onPressed: _openPhoneSettings,
-            icon: const Icon(CupertinoIcons.bell),
+  Widget build(BuildContext context) => UtilityPage(
+    title: 'Notifications',
+    actions: [
+      IconButton(
+        tooltip: 'Mark all as read',
+        onPressed: _unreadCount > 0 && !_reading && !_loading
+            ? _markRead
+            : null,
+        icon: const Icon(CupertinoIcons.check_mark, size: 20),
+      ),
+      PopupMenuButton<String>(
+        tooltip: 'Notification options',
+        icon: const Icon(CupertinoIcons.ellipsis, size: 22),
+        onSelected: (value) {
+          if (value == 'refresh') _load();
+          if (value == 'settings') _openPhoneSettings();
+          if (value == 'test') _testPhoneAlert();
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'refresh',
+            enabled: !_reading && !_loading,
+            child: const AppText('Refresh'),
           ),
-        IconButton(
-          tooltip: 'Mark all as read',
-          onPressed: _unreadCount > 0 && !_reading && !_loading
-              ? _markRead
-              : null,
-          icon: const Icon(CupertinoIcons.check_mark),
-        ),
-        IconButton(
-          tooltip: 'Refresh',
-          onPressed: _reading || _loading ? null : _load,
-          icon: const Icon(CupertinoIcons.refresh),
-        ),
-      ],
-    ),
-    body: Column(
+          if (_pushReady) ...[
+            const PopupMenuItem(
+              value: 'settings',
+              child: AppText('Phone notification settings'),
+            ),
+            PopupMenuItem(
+              value: 'test',
+              enabled: !_testingPush,
+              child: AppText(
+                _testingPush ? 'Sending test...' : 'Send test notification',
+              ),
+            ),
+          ],
+        ],
+      ),
+    ],
+    body: _inbox(),
+  );
+
+  Widget _inbox() => RefreshIndicator(
+    onRefresh: _load,
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
-        if (_pushReady)
-          TextButton(
-            onPressed: _testingPush ? null : _testPhoneAlert,
-            child: AppText(
-              _testingPush ? 'Sending test...' : 'Send test notification',
+        if (PushNotifications.supported && !_pushReady)
+          UtilityCard(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    'Phone alerts',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  UtilityHint(
+                    _pushError ??
+                        'Get workspace updates on your phone. Your feed works without alerts.',
+                  ),
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: _checkingPush
+                        ? null
+                        : (_permission == 'denied'
+                              ? _openPhoneSettings
+                              : () => _checkPush(request: true)),
+                    child: AppText(
+                      _checkingPush
+                          ? 'Connecting...'
+                          : (_permission == 'denied'
+                                ? 'Open Settings'
+                                : 'Enable phone alerts'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         if (_testNotice != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            child: AppText(_testNotice!),
-          ),
-        if (PushNotifications.supported && !_pushReady)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  _pushError ??
-                      'Enable phone alerts for team updates. Your feed works without them.',
-                  style: const TextStyle(fontSize: 13),
-                ),
-                TextButton(
-                  onPressed: _checkingPush
-                      ? null
-                      : (_permission == 'denied'
-                            ? _openPhoneSettings
-                            : () => _checkPush(request: true)),
-                  child: AppText(
-                    _checkingPush
-                        ? 'Connecting...'
-                        : (_permission == 'denied'
-                              ? 'Open Settings'
-                              : 'Enable phone alerts'),
-                  ),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: UtilityHint(_testNotice!),
           ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: AppText(
               _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
             ),
           ),
-        Expanded(child: _inbox()),
+        if (_loading || _reading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LinearProgressIndicator(),
+          ),
+        if (_items != null && _items!.isEmpty)
+          const UtilityEmpty(
+            icon: CupertinoIcons.bell,
+            title: 'No updates yet',
+            message: 'Workspace updates and invitations appear here.',
+          ),
+        if (_items?.isNotEmpty == true) ...[
+          UtilitySection(
+            _unreadCount > 0
+                ? 'Updates · $_unreadCount unread'
+                : 'All caught up',
+          ),
+          ..._items!.map((item) {
+            final unread = item['is_read'] != true;
+            final action = item['action']?.toString() ?? '';
+            final description = _describedActivity(item);
+            final details = [
+              item['team_name']?.toString() ?? '',
+              _time(item['created_at']?.toString()),
+            ].where((part) => part.isNotEmpty).join(' · ');
+            return Semantics(
+              label: unread ? 'Unread notification' : 'Read notification',
+              child: ListTile(
+                titleAlignment: ListTileTitleAlignment.top,
+                minLeadingWidth: 24,
+                horizontalTitleGap: 12,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 0,
+                  vertical: 10,
+                ),
+                leading: Icon(_icon(action), color: _color(action), size: 22),
+                title: AppText(
+                  description,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: unread ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                ),
+                subtitle: details.isEmpty
+                    ? null
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: UtilityHint(details),
+                      ),
+                onTap:
+                    action == 'access_invitation' &&
+                        (item['invitation'] as Map?)?['status'] != null &&
+                        (item['invitation'] as Map?)?['status'] != 'pending'
+                    ? null
+                    : action != 'access_invitation'
+                    ? (action.startsWith('task_') && item['team_id'] != null
+                          ? () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => TeamBoardPage(
+                                  api: widget.api,
+                                  initialTeamId: item['team_id'].toString(),
+                                ),
+                              ),
+                            )
+                          : null)
+                    : () async {
+                        final id =
+                            (item['invitation'] as Map?)?['invitation_id']
+                                ?.toString() ??
+                            (item['metadata'] as Map?)?['invitation_id']
+                                ?.toString();
+                        if (id == null) return;
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => AccessInvitationPage(
+                              api: widget.api,
+                              invitationId: id,
+                            ),
+                          ),
+                        );
+                        if (mounted) await _load();
+                      },
+                trailing: unread
+                    ? const Icon(
+                        CupertinoIcons.circle_fill,
+                        size: 7,
+                        semanticLabel: 'Unread',
+                      )
+                    : null,
+              ),
+            );
+          }),
+        ],
       ],
     ),
   );
-
-  Widget _inbox() {
-    if (_items == null) {
-      return _loading
-          ? const Center(child: CircularProgressIndicator())
-          : const SizedBox.shrink();
-    }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: _items!.isEmpty
-            ? [
-                const SizedBox(height: 80),
-                const AppText('No updates yet', textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                AppText(
-                  'Workspace updates and invitations appear here.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppTheme.foreground(context, AppColors.muted),
-                  ),
-                ),
-              ]
-            : _items!.map((item) {
-                final unread = item['is_read'] != true;
-                final action = item['action']?.toString() ?? '';
-                final description = _describedActivity(item);
-                final details = [
-                  item['team_name']?.toString() ?? '',
-                  _time(item['created_at']?.toString()),
-                ].where((part) => part.isNotEmpty).join(' | ');
-                return Semantics(
-                  label: unread ? 'Unread notification' : 'Read notification',
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 7,
-                    ),
-                    leading: Icon(
-                      _icon(action),
-                      color: _color(action),
-                      size: 22,
-                    ),
-                    title: AppText(
-                      description,
-                      style: TextStyle(
-                        fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                    subtitle: details.isEmpty ? null : AppText(details),
-                    onTap:
-                        action == 'access_invitation' &&
-                            (item['invitation'] as Map?)?['status'] != null &&
-                            (item['invitation'] as Map?)?['status'] != 'pending'
-                        ? null
-                        : action != 'access_invitation'
-                        ? (action.startsWith('task_') && item['team_id'] != null
-                              ? () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => TeamBoardPage(
-                                      api: widget.api,
-                                      initialTeamId: item['team_id'].toString(),
-                                    ),
-                                  ),
-                                )
-                              : null)
-                        : () async {
-                            final id =
-                                (item['invitation'] as Map?)?['invitation_id']
-                                    ?.toString() ??
-                                (item['metadata'] as Map?)?['invitation_id']
-                                    ?.toString();
-                            if (id == null) return;
-                            await Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => AccessInvitationPage(
-                                  api: widget.api,
-                                  invitationId: id,
-                                ),
-                              ),
-                            );
-                            if (mounted) await _load();
-                          },
-                    trailing: unread
-                        ? const Icon(
-                            CupertinoIcons.circle_fill,
-                            size: 7,
-                            semanticLabel: 'Unread',
-                          )
-                        : null,
-                  ),
-                );
-              }).toList(),
-      ),
-    );
-  }
 
   Color _color(String action) {
     if (action == 'task_completed') {

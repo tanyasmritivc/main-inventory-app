@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/chat_source.dart';
+import '../../core/ui/app_text.dart';
+import '../../core/ui/utility_page.dart';
 
 class ChatContextPicker extends StatefulWidget {
   const ChatContextPicker({
@@ -109,46 +111,79 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(switch (widget.kind) {
-        'space' => 'Spaces',
-        'item' => 'Items',
-        'project' => 'Projects',
-        _ => 'Documents and notes',
-      }),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, selected),
-          child: Text('Done (${selected.length})'),
+  String get title => switch (widget.kind) {
+    'space' => 'Spaces',
+    'item' => 'Items',
+    'project' => 'Projects',
+    _ => 'Documents and notes',
+  };
+  IconData get icon => switch (widget.kind) {
+    'space' => CupertinoIcons.square_grid_2x2,
+    'item' => CupertinoIcons.cube_box,
+    'project' => CupertinoIcons.folder,
+    _ => CupertinoIcons.doc_text,
+  };
+
+  void _toggle(ChatSource row) {
+    final checked = selected.any((s) => s.key == row.key);
+    if (!checked && selected.length >= 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Use up to 8 sources. Remove one before adding another.',
+          ),
         ),
-      ],
-    ),
-    body: SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      );
+      return;
+    }
+    setState(() {
+      selected.removeWhere((s) => s.key == row.key);
+      if (!checked) selected.add(row);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => UtilityPage(
+    title: title,
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, selected),
+        child: AppText(
+          MediaQuery.textScalerOf(context).scale(14) > 24
+              ? 'Done'
+              : 'Done (${selected.length})',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+      ),
+    ],
+    body: CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          sliver: SliverToBoxAdapter(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Use selected content in this chat. Your save destination stays separate.',
+                const UtilityHint(
+                  'Choose context for this chat. This does not change where items are saved.',
                 ),
-                const SizedBox(height: 12),
-                if (inventories.isNotEmpty)
+                if (inventories.isNotEmpty) ...[
+                  const UtilitySection('Inventory'),
                   DropdownButtonFormField<String>(
                     initialValue: inventory,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Inventory'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    decoration: const InputDecoration(),
                     items: [
                       for (final row in inventories)
                         DropdownMenuItem(
                           value: row['inventory_id'] as String,
-                          child: Text(
+                          child: AppText(
                             '${row['name']} - ${row['workspace_name'] ?? ''}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                     ],
@@ -158,12 +193,14 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                       unawaited(_load());
                     },
                   ),
-                const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 14),
                 TextField(
                   maxLength: 100,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(CupertinoIcons.search),
-                    hintText: 'Search context',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(CupertinoIcons.search, size: 18),
+                    hintText: 'Search ${title.toLowerCase()}',
                     counterText: '',
                   ),
                   onChanged: (value) {
@@ -176,60 +213,83 @@ class _ChatContextPickerState extends State<ChatContextPicker> {
                     );
                   },
                 ),
+                if (rows.isNotEmpty)
+                  UtilitySection('${selected.length} of 8 sources selected'),
+                if (error != null) ...[
+                  const SizedBox(height: 16),
+                  AppText(
+                    error!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        inventories.isEmpty ? _directory() : _load(),
+                    child: const AppText('Retry'),
+                  ),
+                ],
+                if (!busy && error == null && rows.isEmpty)
+                  UtilityEmpty(
+                    icon: icon,
+                    title: query.isEmpty
+                        ? 'No ${title.toLowerCase()} yet'
+                        : 'No matches',
+                    message: query.isEmpty
+                        ? 'Choose another inventory to find saved context.'
+                        : 'Try a different keyword or inventory.',
+                  ),
               ],
             ),
           ),
-          Expanded(
-            child: ListView(
-              children: [
-                if (error != null)
-                  ListTile(
-                    title: Text(error!),
-                    trailing: TextButton(
-                      onPressed: () =>
-                          inventories.isEmpty ? _directory() : _load(),
-                      child: const Text('Retry'),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList.builder(
+            itemCount: rows.length,
+            itemBuilder: (context, index) {
+              final row = rows[index];
+              final checked = selected.any((s) => s.key == row.key);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: UtilityCard(
+                  child: CheckboxListTile(
+                    value: checked,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
                     ),
+                    title: AppText(
+                      row.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    subtitle: row.inventoryName?.isNotEmpty == true
+                        ? UtilityHint(row.inventoryName!)
+                        : null,
+                    onChanged: (_) => _toggle(row),
                   ),
-                if (!busy && error == null && rows.isEmpty)
-                  const ListTile(title: Text('No matching context.')),
-                for (final row in rows)
-                  CheckboxListTile(
-                    value: selected.any((s) => s.key == row.key),
-                    title: Text(row.name),
-                    subtitle: Text(row.inventoryName ?? ''),
-                    onChanged: (checked) {
-                      if (checked == true && selected.length >= 8) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Use up to 8 sources. Remove one before adding another.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      setState(() {
-                        selected.removeWhere((s) => s.key == row.key);
-                        if (checked == true) selected.add(row);
-                      });
-                    },
-                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
                 if (busy)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: CircularProgressIndicator()),
+                  const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 if (!busy && next != null)
                   TextButton(
                     onPressed: () => _load(more: true),
-                    child: const Text('Load more'),
+                    child: const AppText('Load more'),
                   ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }

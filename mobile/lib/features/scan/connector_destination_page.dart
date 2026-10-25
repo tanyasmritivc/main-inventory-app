@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/ui/app_text.dart';
+import '../../core/ui/utility_page.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_context.dart';
@@ -105,13 +107,17 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(scoped == null ? 'Choose inventory' : 'Choose Space'),
-    ),
+  Widget build(BuildContext context) => UtilityPage(
+    title: scoped == null ? 'Choose inventory' : 'Choose Space',
     body: ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
+        UtilityHint(
+          scoped == null
+              ? 'Choose where to import your items.'
+              : 'Select a Space for this import.',
+        ),
+        const SizedBox(height: 20),
         if (busy) const LinearProgressIndicator(),
         if (error != null) ...[
           Text(error!),
@@ -126,33 +132,45 @@ class _ConnectorDestinationPageState extends State<ConnectorDestinationPage> {
           const Text('Create a Space in this inventory before importing.'),
         if (scoped == null)
           for (final inventory in inventories)
-            Card(
-              child: ListTile(
-                title: Text(inventory['name'].toString()),
-                subtitle: Text(inventory['workspace_name'].toString()),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: busy ? null : () => _select(inventory),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: UtilityCard(
+                child: ListTile(
+                  title: AppText(
+                    inventory['name'].toString(),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  subtitle: UtilityHint(inventory['workspace_name'].toString()),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
+                  onTap: busy ? null : () => _select(inventory),
+                ),
               ),
             ),
         if (scoped != null)
           for (final space in spaces)
-            Card(
-              child: ListTile(
-                title: Text(space['name'].toString()),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: busy
-                    ? null
-                    : () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => ImportSheetPage(
-                              api: scoped!,
-                              location: space['name'].toString(),
-                              kind: widget.kind,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: UtilityCard(
+                child: ListTile(
+                  title: AppText(
+                    space['name'].toString(),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
+                  onTap: busy
+                      ? null
+                      : () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => ImportSheetPage(
+                                api: scoped!,
+                                location: space['name'].toString(),
+                                kind: widget.kind,
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                ),
               ),
             ),
       ],

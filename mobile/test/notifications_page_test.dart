@@ -94,6 +94,8 @@ void main() {
       final api = _InboxApi();
       await tester.pumpWidget(MaterialApp(home: NotificationsPage(api: api)));
       await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Notification options'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Send test notification'));
       await tester.pumpAndSettle();
       expect(api.tests, 1);
@@ -162,7 +164,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: NotificationsPage(api: api)));
     await tester.pumpAndSettle();
     api.failFetch = true;
-    await tester.tap(find.byTooltip('Refresh'));
+    await tester.tap(find.byTooltip('Notification options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Refresh'));
     await tester.pumpAndSettle();
     expect(find.text('A teammate joined.'), findsOneWidget);
     expect(find.textContaining('SECRET'), findsNothing);
