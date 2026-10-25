@@ -210,6 +210,9 @@ export function getSpaceInvite({ token, share_id }: { token: string; share_id: s
 }
 
 export type ScanEvidence = {
+  quantity_basis?: string | null;
+  quantity_confidence?: number | null;
+  grouped_observations?: number | null;
   identification_reasoning?: string | null;
   identity_confidence?: number | null;
   ocr_text?: string | null;

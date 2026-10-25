@@ -792,6 +792,7 @@ function AssistClientWorkspace({
                       <ChatCaptureCard
                         key={m.context.capture.id}
                         capture={m.context.capture}
+                        onChanged={(capture) => setMessages((rows) => rows.map((row) => row.context?.capture?.id === capture.id ? { ...row, context: { ...row.context, capture } } : row))}
                         accountId={accountId}
                         worldId={worldId}
                         conversationId={conversationId}
@@ -844,9 +845,10 @@ function AssistClientWorkspace({
                         action={action}
                         accountId={accountId}
                         worldId={worldId}
+                        onCaptureChanged={(capture) => setMessages((rows) => rows.map((row) => row.context?.capture?.id === capture.id ? { ...row, context: { ...row.context, capture } } : row))}
                       />
                     ))}
-                  {!m.failed && accountId && worldId && (
+                  {!m.failed && accountId && worldId && !(m.context?.capture && m.context.capture.status !== "saved") && (
                     <WorldResourceLinks
                       links={m.context?.resourceLinks || []}
                       accountId={accountId}

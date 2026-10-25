@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { parseCapture, type ChatCapture } from "@/lib/chat-sources";
 import { useRouter } from "next/navigation";
 import { accountRequest } from "@/lib/account-request";
 import { userFacingError } from "@/lib/user-facing-error";
@@ -13,7 +14,9 @@ export function WorldActionCard({
   action: initial,
   accountId,
   worldId,
+  onCaptureChanged,
 }: {
+  onCaptureChanged?: (capture: ChatCapture) => void;
   action: WorldAction;
   accountId: string;
   worldId: string;
@@ -39,7 +42,7 @@ export function WorldActionCard({
     const c = new AbortController();
     control.current = c;
     try {
-      const result = await accountRequest<{ action: unknown }>(
+      const result = await accountRequest<{ action: unknown; capture?: unknown; capture_warning?: string }>(
         accountId,
         `/worlds/${encodeURIComponent(worldId)}/structure-actions/${encodeURIComponent(action.id)}`,
         {
@@ -53,7 +56,12 @@ export function WorldActionCard({
         throw new Error(
           "The receipt could not be verified. Retry this same card safely.",
         );
-      if (alive.current) setAction(updated);
+      if (alive.current) {
+        setAction(updated);
+        const capture = parseCapture(result.capture);
+        if (capture) onCaptureChanged?.(capture);
+        if (result.capture_warning) setError(result.capture_warning);
+      }
     } catch (e) {
       if (alive.current)
         setError(

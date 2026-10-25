@@ -1,3 +1,7 @@
+## October 24 — clearer drafts and correct photo quantities (web)
+
+Active owner: Codex, `fix/draft-flow-web-20261024`. See `docs/plans/draft-flow-20261024.md`. Implementation complete; release verification and delivery in progress. No navigation changes or database migration.
+
 ## October 24 — Chat activity and current echo branding live (PR196)
 
 Runtime d537e3018a194c6e44765cfdf55690085567325a is live on the self-hosted website.
