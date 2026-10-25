@@ -3,7 +3,10 @@
 Branch `fix/web-theme-audit-20261024`, web only. Corrects portal contrast, theme
 storage/hydration, dialog viewport/layers/padding, notification wrapping/markers,
 sidebar initials and memory controls. 566 tests, TypeScript, lint (zero errors)
-and compile-only build pass. Exact-head CI and production staging pending.
+and compile-only build pass. Runtime `8372ba003efa9fdffbae3dace11a38e59ef301c7`
+deployed via PR #210 after all five CI jobs passed (`40163364154`). Production
+build `4hZ7Go8y0odI48cwFbltq`, 20 staged/live route checks and signed-in live
+theme/menu/notification verification passed. Previous release and backend preserved.
 See `docs/plans/web-theme-audit-20261024.md`. No mobile/API/schema edits.
 
 ## October 24 — search and browser brand refresh

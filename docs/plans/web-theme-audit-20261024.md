@@ -36,5 +36,21 @@ payments, extraction/model quality and exhaustive browser/device coverage are
 outside this UI audit. A missing photo fixture initially caused the isolated QA
 app to error; the fixture was corrected, not shipped as an application change.
 
-Release status: awaiting exact-commit CI and guarded production staging. Preserve
-the active chat-pip release, its source snapshot and the unrelated VM checkout.
+## Release
+
+Deployed runtime `8372ba003efa9fdffbae3dace11a38e59ef301c7` from PR #210.
+All five exact-runtime CI jobs passed in run `40163364154`. Production webpack
+build `4hZ7Go8y0odI48cwFbltq` is active at
+`/home/ubuntu/findez-web-releases/theme-audit-20261024/frontend`.
+All 20 staging and post-publication route checks passed (authenticated routes
+follow their normal sign-in redirects in these unauthenticated HTTP checks).
+The previous chat-pip release/source snapshot and unrelated VM checkout were
+preserved, and the backend process was unchanged.
+
+Signed-in live Chrome verification confirmed light memory controls, appearance
+selection accessibility state, dark preference surviving full navigation, readable
+chat plus-menu and nested context menu, centered sidebar avatar and visible dark
+unread markers. Original Dark appearance was restored; no inventory, memory or
+notification data was changed. Local 390-by-350 verification also confirmed that
+the legacy Create a Space dialog can reach its bottom actions; its older overflow
+rule now permits scrolling.
