@@ -1,10 +1,14 @@
-## October 24 - Remove duplicate chat navigation (release preparation)
+## October 24 - Duplicate Search navigation removed (PR213)
 
-Web-only `fix/web-remove-duplicate-search-20261024` removes the Search sidebar
-entry that opened the same chat view as New chat. Shared organization/Personal
-navigation keeps New chat, Spaces, Tools and management links. Existing URLs and
-search functionality remain compatible. Updated the existing navigation expectation.
-Publication and checks are pending.
+Web runtime `2e9c0af0dbe66ee21f0c887cf520b744b74953c9` is deployed. Search was
+removed from the shared organization/Personal sidebar; New chat is the only chat
+entry. Existing URLs remain compatible. All 566 web tests, TypeScript, scoped
+lint, production build and all five CI jobs (40167973852) passed. Twenty staged
+and twenty live route checks passed; signed-in browser refresh visibly showed
+New chat, Spaces, Tools and Workspaces with no Search link. Previous release and
+backend process were preserved. Build: `-Ox8Rrh0-m9OKbw7XroCX`. Release/rollback:
+`/home/ubuntu/findez-web-releases/remove-search-20261024`; prior release:
+`/home/ubuntu/findez-web-releases/theme-audit-20261024/frontend`.
 
 ## October 24 — web light/dark audit
 
