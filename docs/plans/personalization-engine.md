@@ -121,7 +121,29 @@ feedback cannot claim task completion. Old clients do not advertise
 `personalization_destinations` and receive none of these new alerts. Permission
 revocation unregisters the active server token on resume.
 
-## Activation (not performed)
+## Deployment and notification activation
+
+On October25 the user explicitly approved deployment and migration. Migration081
+passed an isolated restore of the live schema and replay, then applied transactionally.
+Runtime `fbd19aa` was published as a guarded 15-file overlay, preserving the live
+agent-management/approval routes and 111 unrelated source files. API/database HTTPS
+health, anonymous denials, cold-profile PostgREST transport, unauthorized inventory,
+RLS and service-only RPC checks passed. The first rollout automatically restored the
+previous code after a deployment-only check incorrectly expected production OpenAPI;
+that check was corrected to expect the deliberately disabled endpoint before successful
+publication. No application-code changes or production test records were required.
+
+Private database/code backup and operational scripts remain at
+`/home/ubuntu/findez-personalization-20261025`. The isolated schema container was
+removed after verification. `findez-personalization.timer` now runs every five minutes
+with up to 30 seconds of jitter. Its launcher inherits the API process environment
+without logging credentials and explicitly forces push dispatch to zero; retention
+cleanup is active and the first run succeeded. Activating notifications later requires
+changing that explicit launcher override only after isolated-device acceptance and
+user/category opt-in. The API's GLM and unrestricted pilot policy are unchanged.
+
+The configuration sequence below remains the runbook for future environments;
+steps1–2 are complete in production, while real push activation remains pending.
 
 1. Review/apply `081_personalization_engine.sql` to a restored production-schema
    copy first, then the authorized production database. Migration 080 belongs to

@@ -1,3 +1,19 @@
+## October 25 — Personalization API and migration081 deployed (PR223)
+
+User explicitly authorized deployment and migration. Runtime `fbd19aa` is live with
+existing agent-management/approval router additions preserved; 111 unrelated source
+files unchanged. Migration081 passed isolated live-schema rehearsal/replay before
+transactional production application. All five RLS tables, denied client writes and
+private RPC grants verified. Public API/database health, anonymous endpoint denial,
+live PostgREST cold profile and unauthorized inventory checks passed.
+
+Private database/code backups: `/home/ubuntu/findez-personalization-20261025`.
+The five-minute retention timer is active and its first run passed. Personalized
+push remains explicitly disabled pending isolated-device acceptance; learning is
+per-user opt-in. GLM, pilot mode and no-expiry pre-launch access remain unchanged.
+No customer data used for testing, no real notifications sent. Receipt:
+`docs/plans/personalization-api-receipt.json`. Mobile beta139 was accepted by Apple.
+
 ## October 25 — Personalization implementation (activation pending)
 
 PR223 runtime `fbd19aa` passed all five CI gates (40244303178).
