@@ -49,12 +49,20 @@ def test_grounding_refines_crops_and_retains_review_uncertainty():
     assert item['part_number'] is None
 
 
-def test_invalid_refinement_cannot_upload_or_save():
+def test_missing_identity_preserves_grounded_crop_only_as_unknown_review():
     ground=g.Grounding(items=[g.Box(label='tool',box=[0,0,500,1000])],partial=False)
-    upload=Mock()
+    upload=Mock(return_value=NS(path='actor/crop.jpg',url='https://image.test/crop'))
     with patch.object(g,'_json',side_effect=[ground,g.Identities(items=[])]):
-        with pytest.raises(ValueError):g.extract(photo(),'actor',None,upload=upload)
-    upload.assert_not_called()
+        result=g.extract(photo(),'actor',None,upload=upload)
+    upload.assert_called_once()
+    item=result['items'][0]
+    assert result['summary']['identified_count']==0 and result['summary']['partial']
+    assert item['name']=='Unknown item' and item['confidence'] is None
+    assert item['scan_evidence']['needs_review']
+    assert item['scan_evidence']['quantity_basis']=='unknown'
+    assert item['image_url']=='https://image.test/crop'
+    crop=Image.open(io.BytesIO(upload.call_args.kwargs['content']))
+    assert crop.width < 110 and crop.height == 100
 
 
 def test_grounding_validates_final_json_without_inventory_tools():

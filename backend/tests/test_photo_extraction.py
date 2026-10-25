@@ -1,3 +1,4 @@
+import json
 import io
 import re
 from types import SimpleNamespace as NS
@@ -300,15 +301,18 @@ def test_one_failed_batch_is_explicit_unknown_partial_not_lost():
     assert any('partial extraction' in r for r in result['items'][0]['scan_evidence']['review_reasons'])
 
 
-def test_all_identity_failures_return_error_instead_of_success():
+def test_all_identity_failures_preserve_crops_as_unknown_review_drafts():
     import httpx
 
     ground = g.Grounding(
         items=[g.Box(label="bag", box=[0, 0, 1000, 1000])], partial=False
     )
     with patch.object(g, "_json", side_effect=[ground, httpx.ReadTimeout("gateway")]):
-        with pytest.raises(ValueError, match="No detected object"):
-            g.extract(image_bytes(), None, None)
+        result = g.extract(image_bytes(), None, None)
+    assert result["summary"]["identified_count"] == 0
+    assert result["summary"]["partial"]
+    assert result["items"][0]["name"] == "Unknown item"
+    assert result["items"][0]["scan_evidence"]["quantity_basis"] == "unknown"
 
 
 def test_nullable_optional_prose_and_unknown_count_do_not_discard_an_object():
@@ -420,8 +424,9 @@ def test_duplicate_batch_indices_cannot_assign_an_identity_to_the_wrong_crop():
     boxes = [g.Box(label='a', box=[0, 0, 400, 1000]), g.Box(label='b', box=[600, 0, 1000, 1000])]
     with patch.object(g, '_json', side_effect=[g.Grounding(items=boxes, partial=False),
                                               g.Identities(items=[identity(), identity()])]):
-        with pytest.raises(ValueError, match='No detected object'):
-            g.extract(image_bytes(), None, None)
+        result = g.extract(image_bytes(), None, None)
+    assert result['summary']['identified_count'] == 0
+    assert all(item['name'] == 'Unknown item' for item in result['items'])
 
 
 def test_pile_is_not_one_unit_even_when_model_confidence_is_high():
@@ -459,3 +464,36 @@ def test_same_marked_bars_group_without_losing_crop_or_count_and_piles_do_not():
     assert len(g._group_identical(image, [(b,b'') for b in boxes], different)) == 2
     overlapping = [(boxes[0],b''), (boxes[0],b'')]
     assert len(g._group_identical(image, overlapping, prepared())) == 2
+
+
+def test_malformed_sibling_keeps_valid_identity_and_unknown_count():
+    good = identity(quantity=None).model_dump()
+    result = g._parse_result(json.dumps({"items": [good, {"index": 1, "name": "bad"}]}), g.Identities)
+    assert len(result.items) == 1
+    assert result.items[0].quantity_basis == "unknown"
+    boxes = [g.Box(label="a", box=[0,0,400,1000]), g.Box(label="b", box=[600,0,1000,1000])]
+    with patch.object(g, "_json", side_effect=[g.Grounding(items=boxes, partial=False), result]):
+        output = g.extract(image_bytes(), None, None)
+    assert len(output["items"]) == 2
+    assert output["items"][1]["name"] == "Unknown item"
+    assert output["items"][1]["confidence"] is None
+    assert output["summary"]["partial"]
+
+
+def test_bad_grounding_region_does_not_discard_other_whole_object():
+    result = g._parse_result(json.dumps({"items": [
+        {"label": "valid", "box": [10,10,300,300]},
+        {"label": "bad", "box": [900,10,800,300]}], "partial": False}), g.Grounding)
+    assert len(result.items) == 1 and result.partial
+
+
+def test_duplicate_identity_is_not_salvaged_by_reassignment():
+    with pytest.raises(ValueError, match="No valid crop"):
+        g._parse_result(json.dumps({"items": [identity().model_dump(), identity().model_dump()]}), g.Identities)
+
+
+def test_valid_sibling_response_does_not_repeat_model_request():
+    content = json.dumps({"items": [identity().model_dump(), {"index": 1, "quantity": "many"}]})
+    with patch.object(g, "gateway_completion", return_value=NS(choices=[NS(message=NS(content=content))])) as call:
+        result = g._json("read", [image_bytes()], g.Identities)
+    assert len(result.items) == 1 and call.call_count == 1

@@ -7,6 +7,7 @@ Scores are uncalibrated model estimates. No inventory writes or catalog guesses.
 import io
 import json
 import math
+import logging
 import re
 import time
 from collections import Counter
@@ -31,7 +32,9 @@ from app.schemas.inventory import ExtractedInventoryItem, ScanEvidence
 from app.services.agent_gateway_client import gateway_completion
 from app.services.chat_vision import image_part
 
+logger = logging.getLogger(__name__)
 MAX_ITEMS = 8
+BATCH_SIZE = 2
 _deadline = ContextVar("extraction_deadline", default=None)
 Score = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
 Text = Annotated[str, Field(max_length=100)]
@@ -125,7 +128,57 @@ class Grounding(StrictModel):
 
 
 class Identities(StrictModel):
-    items: list[Identity] = Field(max_length=2)
+    items: list[Identity] = Field(max_length=BATCH_SIZE)
+
+
+def _parse_result(content, schema):
+    """Keep valid regions when a sibling has malformed optional data.
+
+    Never infer an index, reassign a tile, or turn an invalid count into a known
+    one. Completely unusable responses still fail instead of claiming success.
+    """
+    data = json.loads(content)
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        return schema.model_validate(data)
+    if schema is Grounding:
+        valid = []
+        for raw in data["items"][:MAX_ITEMS]:
+            try:
+                item = Box.model_validate(raw)
+                _valid_box(item.box)
+                valid.append(item)
+            except ValueError:
+                continue
+        if data["items"] and not valid:
+            raise ValueError("No valid object regions")
+        return Grounding(items=valid, partial=data.get("partial") is not False
+                         or len(valid) != len(data["items"]))
+    valid = {}
+    duplicates = set()
+    seen = set()
+    for raw in data["items"]:
+        if not isinstance(raw, dict) or type(raw.get("index")) is not int:
+            continue
+        index = raw["index"]
+        if index not in range(BATCH_SIZE):
+            continue
+        if index in seen:
+            duplicates.add(index)
+        seen.add(index)
+        try:
+            valid[index] = Identity.model_validate(raw)
+        except ValueError:
+            continue
+    for index in duplicates:
+        valid.pop(index, None)
+    if not valid:
+        raise ValueError("No valid crop identities")
+    return Identities(items=list(valid.values()))
+
+
+def _unknown(index):
+    return Identity(index=index, name="Unknown item", category="Uncategorized",
+                    uncertainty="Details could not be read reliably. Review this crop or try a closer photo.")
 
 
 def _json(prompt, images, schema):
@@ -185,13 +238,16 @@ def _json(prompt, images, schema):
                 request_timeout_seconds=min(40, remaining),
                 messages=messages,
             )
-            content = response.choices[0].message.content or ""
+            content = (response.choices[0].message.content or "").strip()
             if content.startswith("```") and content.rstrip().endswith("```"):
                 content = content.split("\n", 1)[1].rsplit("```", 1)[0]
-            return schema.model_validate_json(content)
-        except httpx.HTTPError:
+            return _parse_result(content, schema)
+        except httpx.HTTPError as error:
             # Retrying a timed-out image call doubles cost and cannot be assumed
             # to cancel the first request at the gateway.
+            logger.warning("Photo model stage=%s failure=%s status=%s",
+                           schema.__name__, type(error).__name__,
+                           getattr(getattr(error, "response", None), "status_code", None))
             raise
         except ValueError:
             if attempt:
@@ -515,7 +571,7 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
     report(f"Reading details for {len(selected)} objects…")
 
     def identify(offset):
-        batch = selected[offset : offset + 2]
+        batch = selected[offset : offset + BATCH_SIZE]
         order = [
             {"index": i, "candidate": box.label} for i, (box, _) in enumerate(batch)
         ]
@@ -526,38 +582,36 @@ def _extract(image_bytes, actor, source_url, *, upload=None, on_progress=None):
             [_contact_sheet([b for _, b in batch])],
             Identities,
         )
-        if {i.index for i in result.items} != set(range(len(batch))) or len(
-            result.items
-        ) != len(batch):
+        counts = Counter(i.index for i in result.items)
+        identities = {i.index: i for i in result.items
+                      if i.index < len(batch) and counts[i.index] == 1}
+        if not identities:
             raise ValueError("Crop identification did not cover its supplied regions")
-        return [
-            i.model_copy(update={"index": offset + i.index, "refined_box": None})
-            for i in result.items
-        ]
+        missing = {offset + i for i in range(len(batch)) if i not in identities}
+        return ([identities.get(i, _unknown(i)).model_copy(
+                    update={"index": offset + i, "refined_box": None})
+                 for i in range(len(batch))], missing)
 
     by_index = {}
     failed = set()
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = {
             pool.submit(copy_context().run, identify, offset): offset
-            for offset in range(0, len(selected), 2)
+            for offset in range(0, len(selected), BATCH_SIZE)
         }
         for future in as_completed(futures):
             index = futures[future]
             try:
-                by_index.update({i.index: i for i in future.result()})
+                identities, missing = future.result()
+                by_index.update({i.index: i for i in identities})
+                failed.update(missing)
             except (httpx.HTTPError, ValueError, TimeoutError):
-                for index in range(index, min(index + 2, len(selected))):
+                for index in range(index, min(index + BATCH_SIZE, len(selected))):
                     failed.add(index)
-                    by_index[index] = Identity(
-                        index=index,
-                        name="Unknown item",
-                        category="Uncategorized",
-                        uncertainty="This object could not be identified reliably. Try a closer photo or identify it manually.",
-                    )
+                    by_index[index] = _unknown(index)
             report(f"Checked {len(by_index)} of {len(selected)} objects…")
-    if selected and len(failed) == len(selected):
-        raise ValueError("No detected object could be identified reliably")
+    # Grounded crops are useful editable Review drafts even when all detail
+    # calls fail. No identity/count is invented and the summary stays partial.
     report("Checking confidence and trimming item photos…")
     # Validate all fields and crops before storing anything.
     with Image.open(io.BytesIO(image_bytes)) as original:
