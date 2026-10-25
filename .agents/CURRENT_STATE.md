@@ -1,3 +1,7 @@
+## October 25 — Petals release authorized
+
+The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing 1.1.1 (133), including chat-first onboarding.
+
 ## October 25 — Petals brand v4 (mobile, local only)
 
 Branch `mobile-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `mobile/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. This branch includes the completed chat-first onboarding commit `90d4881`. Backend, schema, env and deployment configuration are untouched.
