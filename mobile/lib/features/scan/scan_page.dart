@@ -22,6 +22,7 @@ import '../shopping/shopping_list_page.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/frosted_surface.dart';
 import 'confirm_scan_sheet.dart';
+import 'capture_progress.dart';
 import 'review_capture.dart';
 import 'scan_inspection.dart';
 import 'qr_sheet.dart';
@@ -1215,9 +1216,14 @@ class _ScanPageState extends State<ScanPage> {
       debugPrint(
         'FINDEZ scan: calling extractInventoryFromImage with ${bytes.length} bytes, filename: ${x.name}',
       );
-      final res = await widget.api.extractInventoryFromImage(
-        bytes: bytes,
-        filename: x.name,
+      if (!mounted) return;
+      final res = await runWithCaptureProgress(
+        context: context,
+        itemCount: (result) => result.items.length,
+        extract: () => widget.api.extractInventoryFromImage(
+          bytes: bytes,
+          filename: x.name,
+        ),
       );
       developer.log(
         'SCAN RESPONSE: ${<String, dynamic>{'items': res.items.length, 'total_detected': res.summary.totalDetected, 'categories': res.summary.categories}}',

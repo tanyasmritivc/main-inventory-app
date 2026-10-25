@@ -98,7 +98,7 @@ class CaptureHarness {
   Future<void> start(WidgetTester tester) async {
     await tester.tap(find.text('Scan photo'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Extracting items…'), findsOneWidget);
+    expect(find.text('Pip is looking...'), findsOneWidget);
   }
 }
 
@@ -145,7 +145,7 @@ void main() {
     await harness.start(tester);
     work.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Extracting items…', skipOffstage: false), findsNothing);
+    expect(find.text('Pip is looking...', skipOffstage: false), findsNothing);
     expect(find.text('Confirm Items'), findsOneWidget);
     expect(harness.calls, 1);
     expect(harness.root.currentState!.canPop(), isFalse);
@@ -164,7 +164,7 @@ void main() {
     await harness.start(tester);
     work.completeError(TimeoutException('Interrupted fixture request'));
     await tester.pumpAndSettle();
-    expect(find.text('Extracting items…', skipOffstage: false), findsNothing);
+    expect(find.text('Pip is looking...', skipOffstage: false), findsNothing);
     expect(find.text('Space items'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
     work = Completer<void>();
@@ -173,7 +173,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(harness.calls, 2);
     expect(find.text('Confirm Items'), findsOneWidget);
-    expect(find.text('Extracting items…', skipOffstage: false), findsNothing);
+    expect(find.text('Pip is looking...', skipOffstage: false), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -192,7 +192,7 @@ void main() {
     work.complete();
     await tester.pumpAndSettle();
     expect(find.text('Other modal'), findsOneWidget);
-    expect(find.text('Extracting items…', skipOffstage: false), findsNothing);
+    expect(find.text('Pip is looking...', skipOffstage: false), findsNothing);
     harness.root.currentState!.pop();
     await tester.pumpAndSettle();
     expect(find.text('Confirm Items'), findsOneWidget);
@@ -210,7 +210,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     work.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Extracting items…', skipOffstage: false), findsNothing);
+    expect(find.text('Pip is looking...', skipOffstage: false), findsNothing);
     expect(find.text('Confirm Items'), findsNothing);
     expect(find.text('Inventory directory'), findsOneWidget);
     expect(harness.root.currentState!.canPop(), isFalse);
