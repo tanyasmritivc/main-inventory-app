@@ -1,21 +1,14 @@
-## October 25 - Sample onboarding TestFlight release authorized
+## October 25 - Sample onboarding delivered to TestFlight 138 (PR222)
 
-The user requested TestFlight upload after local completion. This supersedes the
-v2 prompt's earlier no-push restriction. Preparing 1.1.1 (138) from the completed
-onboarding branch; no public App Store submission is authorized. Local analysis,
-26 focused host tests and 26 iOS simulator tests already passed.
-
-## October 25 - Sample onboarding v2 (local, not released)
-
-Branch `feat/onboarding-sample-scan` in `/private/tmp/findez-prelaunch-mobile`.
-Mobile onboarding now demonstrates a bundled photo offline before signup, with
-local Type/Describe alternatives. Demo items never enter saved inventory; real
-lists retain the existing idempotent Personal/Space save. Home, dorm/student,
-kitchen, workshop, lab and closet examples broaden the audience; copy and box
-labels are shorter. Native iOS Reduce Motion is respected alongside Flutter's
-animation flag. The supplied v2 prompt explicitly says not to push: this task
-remains local and does not replace TestFlight 137. Details and checks:
-`docs/onboarding-v2/IMPLEMENTATION.md`.
+Apple acknowledged 1.1.1 (138), runtime `79cc169f3c488f3b6455585ee0d5de1887afd407`,
+delivery `1327b03b-29b8-45f9-a817-b17d75cdde4c`. All five exact-source CI gates
+passed (40239099906), including clean Flutter analysis and 921 mobile tests with
+one optional visual skip. All 26 focused host and 26 iOS simulator cases passed;
+manual sample, broader choices and native Reduce Motion checks passed. Archive
+and export verified 34 device executables each, strict signing, 26 privacy
+manifests, production configuration and Apple validation. Processing and tester
+availability were not polled; physical-device acceptance remains unverified.
+No public App Store submission. Receipt: `docs/onboarding-v2/testflight-138-receipt.json`.
 
 ## October 25 - Pre-launch access delivered (PR221)
 

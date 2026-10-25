@@ -1,6 +1,6 @@
 # Chat-first Flutter onboarding
 
-Historical v1 implementation. Superseded locally by [sample onboarding v2](../onboarding-v2/IMPLEMENTATION.md); v2 has not been pushed or released.
+Historical v1 implementation. Superseded by [sample onboarding v2](../onboarding-v2/IMPLEMENTATION.md), uploaded as TestFlight 138; Apple processing and physical acceptance remain separate.
 
 Local branch: `feat/chat-onboarding`. Not pushed or released.
 

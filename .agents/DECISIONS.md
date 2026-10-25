@@ -1,9 +1,9 @@
 ## October 25 - Sample onboarding TestFlight release authorized
 
 The user requested TestFlight upload after local completion. This supersedes the
-v2 prompt's earlier no-push restriction. Preparing 1.1.1 (138) from the completed
-onboarding branch; no public App Store submission is authorized. Local analysis,
-26 focused host tests and 26 iOS simulator tests already passed.
+v2 prompt's earlier no-push restriction. Apple acknowledged 1.1.1 (138) from the completed
+onboarding branch. No public App Store submission is authorized; processing and
+physical-device acceptance remain separate from upload acknowledgment.
 
 ## October 25 - Offline sample onboarding with broader examples
 

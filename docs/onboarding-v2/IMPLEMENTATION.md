@@ -1,7 +1,10 @@
 # Sample onboarding v2
 
-Branch: `feat/onboarding-sample-scan`. The user subsequently authorized TestFlight
-upload; preparing 1.1.1 (138). No public App Store submission. Mobile only; no backend, web, schema, environment or deployment changes.
+Branch: `feat/onboarding-sample-scan`; PR222. Apple acknowledged TestFlight
+1.1.1 (138) on October 25. Runtime source: `79cc169f3c488f3b6455585ee0d5de1887afd407`.
+Processing/tester availability were not polled. No public App Store submission.
+Mobile only; no backend, web, schema, environment or deployment changes.
+See [delivery receipt](testflight-138-receipt.json).
 
 ## Behavior
 
@@ -46,6 +49,8 @@ separated. Existing Pip assets and fonts are reused.
 
 ## Verification
 
+- All five exact-source CI gates passed (40239099906). Final full mobile coverage
+  suite: 921 tests passed, one optional visual test skipped.
 - `flutter analyze`: no issues.
 - Final focused host suite: 26 tests passed, including native Reduce Motion changes,
   offline sample flow, model/location/count answers, one-time Keep, auth handoff,

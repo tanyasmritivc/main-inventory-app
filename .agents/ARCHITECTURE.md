@@ -24,7 +24,7 @@ unchanged. The legacy dashboard is no longer an inventory-entry destination. See
 
 This describes the current release foundation. Planned systems are labeled.
 
-## Sample-first mobile trial (October 25; local branch)
+## Sample-first mobile trial (October 25; TestFlight 138 uploaded)
 
 LaunchAuthGate shows ChatOnboardingPage before auth; permanent sessions bypass
 it. Native Flutter renders intro, chat, quantity editing and Keep. Only the
