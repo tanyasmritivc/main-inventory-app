@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/ui/app_text.dart';
@@ -5,10 +7,12 @@ import '../../core/api_error.dart';
 import '../../widgets/pip_extract_loader.dart';
 import 'package:dio/dio.dart';
 
+class CaptureCancelled implements Exception {}
+
 /// Own the root dialog so a nested Space navigator is never popped by cleanup.
 Future<T> runWithCaptureProgress<T>({
   required BuildContext context,
-  required Future<T> Function() extract,
+  required Future<T> Function(CancelToken cancelToken) extract,
   bool retryOnFailure = false,
   int Function(T result)? itemCount,
 }) async {
@@ -56,16 +60,28 @@ Future<T> runWithCaptureProgress<T>({
 
 Future<T> _runCapture<T>({
   required BuildContext context,
-  required Future<T> Function() extract,
+  required Future<T> Function(CancelToken cancelToken) extract,
   int Function(T result)? itemCount,
 }) async {
-  final loader = showPipExtractLoader(context);
+  final token = CancelToken();
+  final loader = showPipExtractLoader(
+    context,
+    onStop: () => token.cancel('Stopped by user'),
+  );
   try {
-    final result = await extract();
+    final result = await Future.any<T>([
+      Future<T>.sync(() => extract(token)),
+      token.whenCancel.then<T>((_) => throw CaptureCancelled()),
+    ]);
+    if (token.isCancelled) throw CaptureCancelled();
     if (context.mounted && itemCount != null) {
       await loader.succeed(itemCount(result));
     }
+    if (token.isCancelled) throw CaptureCancelled();
     return result;
+  } catch (error) {
+    if (token.isCancelled) throw CaptureCancelled();
+    rethrow;
   } finally {
     loader.dismiss();
   }

@@ -305,9 +305,14 @@ Future<void> runUploadPhotoFlow({
       context: context,
       retryOnFailure: true,
       itemCount: (result) => result.items.length,
-      extract: () =>
-          api.extractInventoryFromImage(bytes: bytes, filename: x.name),
+      extract: (cancelToken) => api.extractInventoryFromImage(
+        bytes: bytes,
+        filename: x.name,
+        cancelToken: cancelToken,
+      ),
     );
+  } on CaptureCancelled {
+    return;
   } on dio.DioException catch (e) {
     if (!context.mounted || !isCurrent()) return;
     if (e.response?.statusCode == 429) {

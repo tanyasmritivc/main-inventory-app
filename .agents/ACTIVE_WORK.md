@@ -1,3 +1,16 @@
+## October 24 - Mobile Pip cancellation and Space menu (in progress)
+
+Branch `fix/mobile-pip-stop-space-menu`, based on delivered beta129. Mobile only.
+The loader uses the supplied artwork's single shadow, a darker backdrop, a compact
+bar and Stop extraction. Stop cancels the Dio request and suppresses late success,
+failure, retry and confirmation. Existing server work may finish; no server-side
+cancellation contract is claimed. The final timed caption is Still working, and
+there is no synthetic step count. Space options explicitly use the Flutter menu
+on iOS; other native controls and bottom navigation retain their behavior.
+Build130 is reserved. Analysis passed. All 873 mobile tests passed across the full run and the
+corrected menu test rerun; one optional test skipped. Exact-commit CI and native
+visual acceptance are pending. No new TestFlight build has been uploaded.
+
 ## October 24 - Pip extraction loader delivered (beta129; PR205)
 
 Branch `feat/pip-extract-loader`; runtime `7fa398c1a4f83fa1c4bdecfc4c2e1e8373365ce8`.

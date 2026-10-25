@@ -740,11 +740,14 @@ class ApiClient {
   Future<MultiExtractResult> extractInventoryFromImage({
     required List<int> bytes,
     required String filename,
+    dio.CancelToken? cancelToken,
   }) async {
+    if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
     final outBytes = await compute(
       prepareExtractionImage,
       Uint8List.fromList(bytes),
     );
+    if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
     final outName =
         filename.toLowerCase().endsWith('.jpg') ||
             filename.toLowerCase().endsWith('.jpeg')
@@ -758,6 +761,7 @@ class ApiClient {
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/extract_from_image',
       data: form,
+      cancelToken: cancelToken,
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
