@@ -1,15 +1,17 @@
-## October 24 - Extraction quantity units (candidate verified)
+## October 24 - Extraction count units deployed (PR209)
 
-Branch fix/api-extraction-count-units, based on live extraction reliability.
-GLM counts distinguish visible individuals from packages, with additive optional
-quantity_unit/quantity_note evidence. Supported counts at 0.5-0.9 confidence are
-retained as estimates rather than reset to one; unknown/pile counts remain unknown.
-Blister prompts count filled visible pockets, exclude empty pockets, and distinguish
-foil-hidden contents, original pack size and dosage from remaining stock.
-No database migration or client edits in this lane. All 1480 Python tests and ten
-subtests pass. Isolated real-provider check of the user's screenshot photo returned
-one blister strip with contents explicitly uncounted in 14.8s. No inventory writes.
-Publication pending guarded two-file overlay and exact-runtime CI.
+Runtime 962dddc3175202a30933166c57178c13fef0e64f is live. All five CI checks passed
+(40160782561), with 1480 Python tests and ten subtests. Guarded two-file publication
+preserved 116 unrelated live source files; API/database health and anonymous denial
+passed. GLM remains active; no database migration. Rollback is preserved at
+/home/ubuntu/findez-count-units-20261024.
+
+The extractor distinguishes package units from contents, keeps supported moderately
+confident counts as estimates, and returns additive quantity_unit/quantity_note
+fields. A real isolated check of the user's screenshot photo returned one blister
+strip with foil-hidden tablet contents explicitly uncounted in 14.8 seconds.
+This single example does not establish general counting accuracy. No customer
+inventory was written during the check. Mobile Space Review delivery is PR208.
 
 ## October 24 - Extraction reliability delivered (API203; beta128/PR204)
 
