@@ -1,3 +1,7 @@
+## October 25 — Petals website deployed (PR215)
+
+Runtime `a6f5d37c78ffdb995e13eada62a8318134ff04be` is live at findez.ai. All five CI jobs passed in run 40216797751. Production build `uScVgYDkdk9XdlwXrH-Iw`; 22 staged and 22 live routes passed. Public metadata and a live browser check confirm the new wordmark/favicon. Previous release and backend process preserved. Active directory: `/home/ubuntu/findez-web-releases/petals-20261025/frontend`; rollback: `/home/ubuntu/findez-web-releases/remove-search-20261024/frontend`. No schema or backend changes.
+
 ## October 25 — Petals release authorized
 
 The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing the web Petals release with the existing production configuration.

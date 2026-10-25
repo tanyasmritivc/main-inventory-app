@@ -105,3 +105,7 @@ The complete supplied kit is retained in design/brand-v4. Runtime SVG metadata w
 - `frontend/src/components/site/findez-brand.tsx`
 
 Repository state notes in `.agents/ACTIVE_WORK.md`, `.agents/CURRENT_STATE.md` and `.agents/DECISIONS.md` are also updated.
+
+## Release — October 25
+
+The user subsequently authorized deployment. Runtime `a6f5d37` deployed via PR215 after all five CI jobs passed. See deployment-receipt.json. Production build, 22 staged/live route checks, public metadata and browser logo/favicon checks passed. The prior release and backend are preserved.
