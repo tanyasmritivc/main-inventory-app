@@ -340,7 +340,11 @@ class ApiClient {
   }) async {
     final result = await _dio.post<Map<String, dynamic>>(
       '/push/devices',
-      data: {'device_token': token, 'environment': environment},
+      data: {
+        'device_token': token,
+        'environment': environment,
+        'personalization_destinations': true,
+      },
       options: _authOptions(),
     );
     if (result.data?['registered'] != true) {

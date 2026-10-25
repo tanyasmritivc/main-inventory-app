@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'api_client.dart';
+import 'personalization_notifications.dart';
 
 class PushNotifications {
   static const _channel = MethodChannel('com.findez.app/push');
@@ -10,6 +11,8 @@ class PushNotifications {
   static final _received = StreamController<void>.broadcast();
   static Stream<void> get received => _received.stream;
   static bool _initialized = false;
+  static ApiClient? _feedbackApi;
+  static Map<String, dynamic>? _pendingTap;
   static Future<bool>? _registration;
   static Future<bool>? _permissionRequest;
   static String? _registrationAccount;
@@ -53,6 +56,17 @@ class PushNotifications {
   static Future<bool> registerIfAuthorized(ApiClient api) async {
     final status = await authorizationStatus();
     if (!['authorized', 'provisional', 'ephemeral'].contains(status)) {
+      final token = _registeredToken;
+      if (token != null && _registeredAccount == api.accountId) {
+        try {
+          await api.unregisterPushDevice(token);
+          _registeredToken = null;
+          _registeredAccount = null;
+          _registeredApi = null;
+        } catch (_) {
+          // Retry revocation on the next resume; iOS already blocks presentation.
+        }
+      }
       return false;
     }
     return register(api);
@@ -60,28 +74,67 @@ class PushNotifications {
 
   static Future<void> initialize({
     required Future<void> Function(Map<String, dynamic>) onNotificationTap,
+    ApiClient? api,
   }) async {
     if (!supported) return;
     _onNotificationTap = onNotificationTap;
+    _feedbackApi = api;
     if (!_initialized) {
       _initialized = true;
       _channel.setMethodCallHandler((call) async {
         if (call.method == 'notificationReceived') {
           _received.add(null);
+          if (_feedbackApi != null && call.arguments is Map) {
+            unawaited(
+              PersonalizationNotifications.feedback(
+                _feedbackApi!,
+                Map<String, dynamic>.from(call.arguments as Map),
+                'delivered',
+              ),
+            );
+          }
+          return;
+        }
+        if (call.method == 'notificationDismissed') {
+          if (_feedbackApi != null && call.arguments is Map) {
+            unawaited(
+              PersonalizationNotifications.feedback(
+                _feedbackApi!,
+                Map<String, dynamic>.from(call.arguments as Map),
+                'dismissed',
+              ),
+            );
+          }
           return;
         }
         if (call.method != 'notificationTapped') return;
         final arguments = call.arguments;
         if (arguments is Map) {
-          await _onNotificationTap?.call(Map<String, dynamic>.from(arguments));
+          final payload = Map<String, dynamic>.from(arguments);
+          if (_onNotificationTap == null) {
+            _pendingTap = payload;
+          } else {
+            await _onNotificationTap!(payload);
+          }
         }
       });
     }
+    final pending = _pendingTap;
+    _pendingTap = null;
+    if (pending != null) await _onNotificationTap?.call(pending);
     final initial = await _channel.invokeMapMethod<String, dynamic>(
       'getInitialNotification',
     );
     if (initial != null && initial.isNotEmpty) {
-      await _onNotificationTap?.call(initial);
+      if (initial['findez_feedback'] == 'dismissed') {
+        if (api != null) {
+          unawaited(
+            PersonalizationNotifications.feedback(api, initial, 'dismissed'),
+          );
+        }
+      } else {
+        await _onNotificationTap?.call(initial);
+      }
     }
   }
 
@@ -143,6 +196,8 @@ class PushNotifications {
     _registeredAccount = null;
     _generation++;
     _onNotificationTap = null;
+    _feedbackApi = null;
+    _pendingTap = null;
     if (!supported) return;
     await _channel.invokeMethod<void>('unregister');
     if (api != null && token != null && api.accountId == account) {
