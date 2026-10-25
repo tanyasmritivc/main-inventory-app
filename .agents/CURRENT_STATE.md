@@ -1,8 +1,14 @@
-## October 25 - Pre-launch access (mobile)
+## October 25 - Pre-launch access delivered (PR221)
 
-Implementation lane `fix/mobile-prelaunch-access`. 912 Flutter tests passed with one optional visual test skipped; Flutter analysis is clean. Build 137 is reserved for this release.
-Prepared, not deployed; see `docs/plans/prelaunch-access-20261025.md`.
-Keep plan quotas and purchases off until explicit launch instruction.
+Apple acknowledged TestFlight 1.1.1 (137), runtime `6c498571131d867ab778d696c3cc5f14ee66ad1e`,
+delivery `aa22f3c7-cdd9-4a5f-bc04-dcec4bf7f085`. All five exact-source CI gates
+passed in 40235815810. Flutter analysis clean; 912 tests passed, one optional
+visual test skipped. Plans verified in light/dark on iOS simulator. Signed device
+archive/export, privacy/production configuration and Apple validation passed.
+Processing/tester availability not polled; physical-device acceptance unverified.
+No public App Store submission. API/web pre-launch changes are live; plan quotas,
+purchases and automatic cutoff remain off. Subscription WIP remains separate and
+unfinished. See `docs/plans/prelaunch-mobile-receipt.json`.
 
 ## October 25 - Missing iPhone Plans entry
 
