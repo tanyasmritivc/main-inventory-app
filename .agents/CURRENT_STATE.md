@@ -1,6 +1,8 @@
-## October 24 - Mobile utility page polish
+## October 24 - Mobile utility page polish delivered (beta127; PR202)
 
-Active mobile-only lane `fix/mobile-utility-pages-20261024`, based on delivered build126. Notifications, plus-menu context/connections/import destinations, and Settings memory share compact typography, separated rows, tidy fields and clear states. All existing actions remain; bottom navigation and API behavior are unchanged. Six multi-page layout/interaction scenarios and sixteen font-loaded previews cover light/dark and large text. Full checks and candidate TestFlight127 delivery are in progress. See `docs/plans/mobile-utility-pages-20261024.md`.
+Mobile runtime `5cb8b885ed228af43b7403e7d9e668987609b00a`; PR #202, stacked on build126. Notifications, plus-menu context/connections/import destinations, and Settings Memory now use compact typography, separated rows, tidy fields and clear states. Existing actions, API behavior and bottom navigation remain unchanged.
+
+All five exact-runtime CI jobs passed in run 40150209867, including clean Flutter analysis and 856 tests with one optional skip. Six light/dark layout scenarios cover eight pages at 1x, 2x and 3.2x text; sixteen bundled-font previews were inspected. The full suite caught a large-text header overflow, corrected before the final passing CI and signed build. Apple accepted 1.1.1 (127), delivery `1a776a1f-697e-45cb-807f-710f84d2a784`. Processing/tester availability were not polled; physical-device acceptance remains unverified. Preserved IPA/archive and receipts: Documents/FindEZ/AppStore/1.1.1-build127. All 32 archive/export executables, strict signature, 24 privacy manifests, production configuration and Apple validation passed. IPA SHA-256 `2a77fac2c5a2439200219551aec09fe6f70aeeb5c35da747da8a1c051f6ef035`. See `docs/plans/mobile-utility-pages-20261024.md`. No public App Store submission.
 
 ## October 24 — clearer drafts and correct photo quantities (mobile)
 
