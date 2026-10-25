@@ -412,6 +412,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                           onPressed: widget.onStop,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
+                            backgroundColor: const Color(0x33111112),
                             minimumSize: const Size(120, 44),
                             side: const BorderSide(color: Color(0x99FFFFFF)),
                             shape: const StadiumBorder(),
