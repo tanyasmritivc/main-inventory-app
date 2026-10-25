@@ -1,3 +1,7 @@
+## October 24 - Pip extraction loader (mobile only, in verification)
+
+Branch `feat/pip-extract-loader`, based on beta128. Owns mobile extraction loading presentation, supplied mascot assets and reference docs. No backend, web, database, extraction request or save changes. Shared route-owned Pip overlay covers Space photos and Scan capture. Native QA and release checks are in progress; no deployment claim.
+
 ## October 24 - Extraction reliability delivered (API203; beta128/PR204)
 
 API runtime `ddaf60fb857acf5eb67fd9d50b1ab4d78877b319` is live with GLM retained; all five CI jobs passed (40152537949), including 1,477 Python tests. The two-file guarded overlay preserved 116 unrelated files; API/database health and anonymous denial passed. Rollback: /home/ubuntu/findez-extraction-reliability-20261024-v2. Real candidate/live API checks passed full fields, confidence/crops, signed previews, cross-account denial and explicit review/save with two disposable accounts per run removed. Live close-up extraction took 16.9s. No customer records or schema changes.

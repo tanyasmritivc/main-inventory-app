@@ -304,6 +304,7 @@ Future<void> runUploadPhotoFlow({
     extracted = await runWithCaptureProgress(
       context: context,
       retryOnFailure: true,
+      itemCount: (result) => result.items.length,
       extract: () =>
           api.extractInventoryFromImage(bytes: bytes, filename: x.name),
     );

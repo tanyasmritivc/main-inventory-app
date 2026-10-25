@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/ui/app_text.dart';
 import '../../core/api_error.dart';
-import '../chat/chat_progress.dart';
+import '../../widgets/pip_extract_loader.dart';
 import 'package:dio/dio.dart';
 
 /// Own the root dialog so a nested Space navigator is never popped by cleanup.
@@ -13,10 +10,15 @@ Future<T> runWithCaptureProgress<T>({
   required BuildContext context,
   required Future<T> Function() extract,
   bool retryOnFailure = false,
+  int Function(T result)? itemCount,
 }) async {
   while (true) {
     try {
-      return await _runCapture(context: context, extract: extract);
+      return await _runCapture(
+        context: context,
+        extract: extract,
+        itemCount: itemCount,
+      );
     } catch (error) {
       final canRetry =
           error is DioException &&
@@ -55,51 +57,16 @@ Future<T> runWithCaptureProgress<T>({
 Future<T> _runCapture<T>({
   required BuildContext context,
   required Future<T> Function() extract,
+  int Function(T result)? itemCount,
 }) async {
-  final navigator = Navigator.of(context, rootNavigator: true);
-  final route = DialogRoute<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) => PopScope(
-      canPop: false,
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: AppTheme.adaptive(dialogContext, const Color(0xFF1C1C1E)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  color: AppTheme.adaptive(dialogContext, Colors.white),
-                ),
-                const SizedBox(height: 16),
-                const ShinyStatusText('Extracting items…'),
-                const SizedBox(height: 12),
-                const SizedBox(
-                  width: 220,
-                  child: AppText(
-                    'Reading objects and details. Crowded photos can take longer.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, height: 1.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-  unawaited(navigator.push<void>(route));
+  final loader = showPipExtractLoader(context);
   try {
-    return await extract();
+    final result = await extract();
+    if (context.mounted && itemCount != null) {
+      await loader.succeed(itemCount(result));
+    }
+    return result;
   } finally {
-    // Remove this exact route, even if another sheet was opened in the meantime.
-    if (navigator.mounted && route.isActive) navigator.removeRoute(route);
+    loader.dismiss();
   }
 }
