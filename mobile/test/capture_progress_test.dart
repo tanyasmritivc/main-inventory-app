@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/features/scan/capture_progress.dart';
@@ -11,6 +12,7 @@ class CaptureHarness {
   final nested = GlobalKey<NavigatorState>();
   late BuildContext spaceContext;
   int calls = 0;
+  bool retry = false;
 
   Future<void> mount(
     WidgetTester tester,
@@ -45,6 +47,7 @@ class CaptureHarness {
                         try {
                           await runWithCaptureProgress(
                             context: context,
+                            retryOnFailure: retry,
                             extract: () {
                               calls++;
                               return extract();
@@ -58,7 +61,8 @@ class CaptureHarness {
                           }
                           return;
                         }
-                        if (!context.mounted || sourceRoute?.isCurrent == false) {
+                        if (!context.mounted ||
+                            sourceRoute?.isCurrent == false) {
                           return;
                         }
                         await showModalBottomSheet<
@@ -99,6 +103,39 @@ class CaptureHarness {
 }
 
 void main() {
+  testWidgets(
+    'retry reuses the same extraction callback only after user choice',
+    (tester) async {
+      final harness = CaptureHarness()..retry = true;
+      await harness.mount(tester, () async {
+        if (harness.calls == 1) {
+          throw DioException(
+            requestOptions: RequestOptions(
+              path: '/inventory/extract_from_image',
+            ),
+            response: Response(
+              requestOptions: RequestOptions(
+                path: '/inventory/extract_from_image',
+              ),
+              statusCode: 503,
+              data: {'detail': 'Photo analysis took too long.'},
+            ),
+          );
+        }
+      });
+      await tester.tap(find.text('Scan photo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Photo analysis took too long.'), findsOneWidget);
+      expect(harness.calls, 1);
+      await tester.tap(find.text('Retry photo'));
+      await tester.pumpAndSettle();
+      expect(harness.calls, 2);
+      expect(find.text('Confirm Items'), findsOneWidget);
+      expect(harness.root.currentState!.canPop(), isFalse);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets('completed extraction removes root spinner before confirmation', (
     tester,
   ) async {

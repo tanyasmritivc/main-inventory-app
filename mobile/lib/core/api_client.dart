@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
+import 'extraction_image.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ask_answer.dart';
@@ -737,25 +737,14 @@ class ApiClient {
     return (data['deleted'] == true);
   }
 
-  List<int> _resizeAndCompressJpeg(List<int> bytes) {
-    try {
-      final decoded = img.decodeImage(Uint8List.fromList(bytes));
-      if (decoded == null) return bytes;
-
-      final resized = decoded.width > 1280
-          ? img.copyResize(decoded, width: 1280)
-          : decoded;
-      return img.encodeJpg(resized, quality: 80);
-    } catch (_) {
-      return bytes;
-    }
-  }
-
   Future<MultiExtractResult> extractInventoryFromImage({
     required List<int> bytes,
     required String filename,
   }) async {
-    final outBytes = _resizeAndCompressJpeg(bytes);
+    final outBytes = await compute(
+      prepareExtractionImage,
+      Uint8List.fromList(bytes),
+    );
     final outName =
         filename.toLowerCase().endsWith('.jpg') ||
             filename.toLowerCase().endsWith('.jpeg')

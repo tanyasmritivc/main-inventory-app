@@ -4,9 +4,55 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/ui/app_text.dart';
+import '../../core/api_error.dart';
+import '../chat/chat_progress.dart';
+import 'package:dio/dio.dart';
 
 /// Own the root dialog so a nested Space navigator is never popped by cleanup.
 Future<T> runWithCaptureProgress<T>({
+  required BuildContext context,
+  required Future<T> Function() extract,
+  bool retryOnFailure = false,
+}) async {
+  while (true) {
+    try {
+      return await _runCapture(context: context, extract: extract);
+    } catch (error) {
+      final canRetry =
+          error is DioException &&
+          (error.type == DioExceptionType.receiveTimeout ||
+              error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.connectionError ||
+              (error.response?.statusCode ?? 0) >= 500);
+      if (!retryOnFailure ||
+          !canRetry ||
+          !context.mounted ||
+          ModalRoute.of(context)?.isCurrent == false) {
+        rethrow;
+      }
+      final retry = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const AppText('Photo analysis interrupted'),
+          content: AppText(friendlyApiError(error)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const AppText('Not now'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const AppText('Retry photo'),
+            ),
+          ],
+        ),
+      );
+      if (retry != true || !context.mounted) rethrow;
+    }
+  }
+}
+
+Future<T> _runCapture<T>({
   required BuildContext context,
   required Future<T> Function() extract,
 }) async {
@@ -32,11 +78,14 @@ Future<T> runWithCaptureProgress<T>({
                   color: AppTheme.adaptive(dialogContext, Colors.white),
                 ),
                 const SizedBox(height: 16),
-                AppText(
-                  'Extracting items…',
-                  style: TextStyle(
-                    color: AppTheme.foreground(dialogContext, Colors.white),
-                    fontSize: 15,
+                const ShinyStatusText('Extracting items…'),
+                const SizedBox(height: 12),
+                const SizedBox(
+                  width: 220,
+                  child: AppText(
+                    'Reading objects and details. Crowded photos can take longer.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, height: 1.4),
                   ),
                 ),
               ],
