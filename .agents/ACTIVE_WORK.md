@@ -1,6 +1,6 @@
 ## October 24 — clearer drafts and correct photo quantities (API)
 
-Active owner: Codex, `fix/draft-flow-api-20261024`. See `docs/plans/draft-flow-20261024.md`. Implementation complete; release verification and delivery in progress. No navigation changes or database migration.
+Runtime `737f73139b13063ed374f70f2ce4cf4f5ab1212f`; PR #200; all five exact-runtime CI checks passed in run 40147459385. Published to the self-hosted API with rollback at /home/ubuntu/findez-draft-flow-20261024-v3. API/database health and anonymous denial passed, GLM remains active, and 111 unrelated source files were preserved. No schema migration. See `docs/plans/draft-flow-20261024.md`. Web and TestFlight126 counterparts are delivered; physical-device acceptance remains unverified.
 
 ## October 24 — Activity progress and draft-first inventory delivered (PR195)
 
