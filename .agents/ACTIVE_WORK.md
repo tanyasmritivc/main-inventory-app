@@ -1,3 +1,11 @@
+## October 24 - Remove duplicate chat navigation (release preparation)
+
+Web-only `fix/web-remove-duplicate-search-20261024` removes the Search sidebar
+entry that opened the same chat view as New chat. Shared organization/Personal
+navigation keeps New chat, Spaces, Tools and management links. Existing URLs and
+search functionality remain compatible. Updated the existing navigation expectation.
+Publication and checks are pending.
+
 ## October 24 — web light/dark audit
 
 Branch `fix/web-theme-audit-20261024`, web only. Corrects portal contrast, theme

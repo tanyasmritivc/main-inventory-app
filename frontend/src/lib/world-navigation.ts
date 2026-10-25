@@ -1,7 +1,6 @@
 import {
   MessageSquarePlus,
   MapPin,
-  Search,
   Wrench,
   FolderKanban,
   Users,
@@ -34,12 +33,6 @@ export function worldNavigation(
         label: "Spaces",
         route: worldHref(world, "spaces"),
         icon: MapPin,
-        section: "Organization",
-      },
-      {
-        label: "Search",
-        route: worldHref(world, "search"),
-        icon: Search,
         section: "Organization",
       },
       {
