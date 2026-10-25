@@ -1,4 +1,5 @@
 import '../../core/api_client.dart';
+import '../../core/first_camera_hint.dart';
 import '../../core/inventory_context.dart';
 import 'chat_onboarding_draft.dart';
 
@@ -10,6 +11,13 @@ class ChatOnboardingSaver {
     final account = source.accountId;
     if (account == null || (draft.owner != null && draft.owner != account)) {
       throw StateError('Sign in to the account that started this save.');
+    }
+    if (draft.isSample) {
+      draft.owner = account;
+      await FirstCameraHint.arm(account);
+      draft.complete = true;
+      await ChatOnboardingStore.save(draft);
+      return; // Demo items must never reach an inventory API, even on retry.
     }
     if (draft.items.isEmpty) throw StateError('There are no items to save.');
     draft.owner = account;

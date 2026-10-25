@@ -1,3 +1,4 @@
+import '../onboarding/sample_scan.dart' show TrialCameraPulse;
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -8,6 +9,7 @@ class WorldComposer extends StatefulWidget {
   const WorldComposer({
     super.key,
     this.attachmentKey,
+    this.onFirstCamera,
     this.sourceChips,
     this.menuOpen = false,
     this.onSourceSelected,
@@ -26,6 +28,7 @@ class WorldComposer extends StatefulWidget {
     required this.compact,
   });
   final GlobalKey? attachmentKey;
+  final VoidCallback? onFirstCamera;
   final Widget? sourceChips;
   final bool menuOpen;
   final ValueChanged<String>? onSourceSelected;
@@ -216,6 +219,18 @@ class _WorldComposerState extends State<WorldComposer>
                     size: 19,
                   ),
                 ),
+                if (widget.onFirstCamera != null)
+                  TrialCameraPulse(
+                    child: IconButton(
+                      tooltip: 'Snap a shelf',
+                      onPressed: widget.onFirstCamera,
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFFE8590C),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                    ),
+                  ),
                 const Spacer(),
                 Semantics(
                   button: true,

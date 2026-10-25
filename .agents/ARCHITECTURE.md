@@ -24,23 +24,24 @@ unchanged. The legacy dashboard is no longer an inventory-entry destination. See
 
 This describes the current release foundation. Planned systems are labeled.
 
-## Chat-first mobile trial (October 25; local branch)
+## Sample-first mobile trial (October 25; local branch)
 
-LaunchAuthGate shows ChatOnboardingPage before auth (including anonymous photo
-sessions). Permanent sessions bypass the introduction. Native Flutter renders
-intro, chat, item editing and Keep; ChatOnboardingWorld embeds only the supplied
-local 3D scene in a transparent WebView with a no-WebGL fallback. Describe, list
-parsing and questions run locally. Photo uses the existing extraction API.
-ChatOnboardingStore persists a versioned trial and save receipt on-device.
-ChatOnboardingGate claims retained trials after auth and ChatOnboardingSaver uses
-the existing Personal inventory, get-or-create Space and Confirm Items bulk-save
-contracts. Stable item request IDs and retained receipts make retries idempotent.
-Ask receives the saved Space as initial context before the local receipt clears.
-Apple/Google can link an anonymous identity; normal-login fallback re-extracts
-photos under the permanent account instead of transferring preview credentials.
-The old WorldSetupGate remains only for compatibility with existing prepared
-Option A drafts; legacy setup/replay widgets still have callers. They are no
-longer first-run onboarding. See docs/onboarding-chat/IMPLEMENTATION.md.
+LaunchAuthGate shows ChatOnboardingPage before auth; permanent sessions bypass
+it. Native Flutter renders intro, chat, quantity editing and Keep. Only the
+bundled Petals 3D scene runs in a transparent WebView, with a no-WebGL fallback.
+A labelled sample photo/JSON drives an offline scan demonstration; no extraction,
+camera permission or anonymous session occurs during onboarding. Describe/list
+parsing and questions remain local and support household, dorm/student and lab
+examples. The Keep sheet appears once, 2.2 seconds after the first matched answer.
+ChatOnboardingStore persists the trial and receipt. ChatOnboardingSaver prevents
+all sample inventory writes and arms an account-scoped first-camera hint. Sample
+signup lands on empty Ask; the existing camera flow starts on the first camera
+tap. Real Type/Describe lists retain Personal inventory, get-or-create Space and
+Confirm Items bulk-save contracts with stable request IDs and save receipts.
+Apple, Google and email use existing auth. Legacy camera drafts cannot resume
+extraction. WorldSetupGate remains only for compatibility with existing prepared
+Option A drafts. Both native reduceMotion and disableAnimations are honored.
+See docs/onboarding-v2/IMPLEMENTATION.md; earlier v1 notes are historical.
 
 ## Account memory (backend activated October 16)
 

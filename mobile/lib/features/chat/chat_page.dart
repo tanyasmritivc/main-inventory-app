@@ -1,3 +1,4 @@
+import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
 import 'voice_capture.dart';
 import 'chat_history_sheet.dart';
@@ -244,6 +245,41 @@ class _ChatPageState extends State<ChatPage>
   final List<String> _pendingAttachments = [];
   AskPhoto? _photo;
   bool _pickingPhoto = false;
+  String? _cameraHintOwner;
+  bool get _cameraHint =>
+      _cameraHintOwner != null && _cameraHintOwner == widget.api.accountId;
+  Future<void> _loadCameraHint() async {
+    final owner = widget.api.accountId;
+    if (owner == null) return;
+    final pending = await FirstCameraHint.pending(owner);
+    if (mounted && widget.api.accountId == owner) {
+      setState(() => _cameraHintOwner = pending ? owner : null);
+    }
+  }
+
+  Future<void> _firstCamera() => _attachPhoto(source: true, autoExtract: true);
+
+  Future<bool> _consumeCameraHint() async {
+    if (!_cameraHint) return true;
+    final owner = widget.api.accountId!;
+    try {
+      await FirstCameraHint.consume(owner);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not remember this preference. Please try again.',
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+    if (!mounted || widget.api.accountId != owner) return false;
+    setState(() => _cameraHintOwner = null);
+    return true;
+  }
 
   late final VoiceCapture _voice = VoiceCapture(
     recorder: DeviceVoiceRecorder(),
@@ -2260,8 +2296,9 @@ class _ChatPageState extends State<ChatPage>
         ? _ChatSession()
         : _ChatSession._internal();
     _controller = TextEditingController();
-    if (widget.initialSource != null) {
-      _sources.add(widget.initialSource!);
+    unawaited(_loadCameraHint());
+    if (widget.initialSource != null) _sources.add(widget.initialSource!);
+    if (widget.onInitialSourceReady != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.onInitialSourceReady?.call();
       });
@@ -2846,6 +2883,8 @@ class _ChatPageState extends State<ChatPage>
           ),
         );
     if (camera == null || !mounted || generation != _requestGeneration) return;
+    if (camera && !await _consumeCameraHint()) return;
+    if (!mounted || generation != _requestGeneration) return;
     setState(() => _pickingPhoto = true);
     var picked = false;
     try {
@@ -3142,6 +3181,9 @@ class _ChatPageState extends State<ChatPage>
                     const SizedBox(height: 12),
                     if (_photo != null) _photoPreview(),
                     WorldComposer(
+                      onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                          ? _firstCamera
+                          : null,
                       sourceChips: _sourceChips,
                       menuOpen: _sourceMenuOpen,
                       attachmentKey: _attachmentAnchor,
@@ -3236,6 +3278,9 @@ class _ChatPageState extends State<ChatPage>
               if (_pickingPhoto) const LinearProgressIndicator(),
               if (_photo != null) _photoPreview(),
               WorldComposer(
+                onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                    ? _firstCamera
+                    : null,
                 sourceChips: _sourceChips,
                 menuOpen: _sourceMenuOpen,
                 attachmentKey: _attachmentAnchor,
@@ -3355,6 +3400,9 @@ class _ChatPageState extends State<ChatPage>
               if (_photo != null) _photoPreview(),
               if (widget.worldHeading != null)
                 WorldComposer(
+                  onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                      ? _firstCamera
+                      : null,
                   sourceChips: _sourceChips,
                   menuOpen: _sourceMenuOpen,
                   attachmentKey: _attachmentAnchor,

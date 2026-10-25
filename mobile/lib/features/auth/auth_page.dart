@@ -24,6 +24,7 @@ class AuthPage extends StatefulWidget {
     this.onBackToSetup,
     this.initialMethod,
     this.trialItemCount,
+    this.sampleTrial = false,
   });
 
   final VoidCallback? onAuthChanged;
@@ -31,6 +32,7 @@ class AuthPage extends StatefulWidget {
   final VoidCallback? onBackToSetup;
   final String? initialMethod;
   final int? trialItemCount;
+  final bool sampleTrial;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -473,28 +475,6 @@ class _AuthPageState extends State<AuthPage> {
     String? accessToken,
   }) async {
     final auth = Supabase.instance.client.auth;
-    if (widget.trialItemCount != null &&
-        auth.currentUser?.isAnonymous == true) {
-      try {
-        return await auth.linkIdentityWithIdToken(
-          provider: provider,
-          idToken: idToken,
-          nonce: nonce,
-          accessToken: accessToken,
-        );
-      } on AuthException catch (error) {
-        // Existing accounts and projects with linking disabled use the ordinary
-        // provider flow. The durable trial is claimed by the resulting user.
-        if (![
-          'identity_already_exists',
-          'email_exists',
-          'manual_linking_disabled',
-          'user_already_exists',
-        ].contains(error.code)) {
-          rethrow;
-        }
-      }
-    }
     return auth.signInWithIdToken(
       provider: provider,
       idToken: idToken,
@@ -836,14 +816,18 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  String get _headline => widget.trialItemCount != null
+  String get _headline => widget.sampleTrial
+      ? 'Now try it on real stuff'
+      : widget.trialItemCount != null
       ? 'Keep these ${widget.trialItemCount} items'
       : widget.fromOnboarding
       ? 'Keep your items'
       : _isLogin
       ? 'Welcome back'
       : 'Create your account';
-  String get _subtitle => widget.fromOnboarding
+  String get _subtitle => widget.sampleTrial
+      ? 'Make a free account, snap a shelf, and FindEZ remembers every item on every device.'
+      : widget.fromOnboarding
       ? 'Make an account and FindEZ remembers them, on every device.'
       : _isLogin
       ? 'Sign in to your inventory.'
@@ -883,7 +867,7 @@ class _AuthPageState extends State<AuthPage> {
     _social(
       OAuthProvider.google,
       'Continue with Google',
-      const _GoogleLogo(size: 22),
+      const GoogleAuthLogo(size: 22),
       _signInWithGoogle,
     ),
     if (Theme.of(context).platform == TargetPlatform.iOS) ...[
@@ -1343,8 +1327,8 @@ class _AuthPageState extends State<AuthPage> {
   );
 }
 
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo({this.size = 20});
+class GoogleAuthLogo extends StatelessWidget {
+  const GoogleAuthLogo({super.key, this.size = 20});
 
   final double size;
 

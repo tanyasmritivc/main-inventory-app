@@ -1,3 +1,15 @@
+## October 25 - Sample onboarding v2 (local, not released)
+
+Branch `feat/onboarding-sample-scan` in `/private/tmp/findez-prelaunch-mobile`.
+Mobile onboarding now demonstrates a bundled photo offline before signup, with
+local Type/Describe alternatives. Demo items never enter saved inventory; real
+lists retain the existing idempotent Personal/Space save. Home, dorm/student,
+kitchen, workshop, lab and closet examples broaden the audience; copy and box
+labels are shorter. Native iOS Reduce Motion is respected alongside Flutter's
+animation flag. The supplied v2 prompt explicitly says not to push: this task
+remains local and does not replace TestFlight 137. Details and checks:
+`docs/onboarding-v2/IMPLEMENTATION.md`.
+
 ## October 25 - Pre-launch access delivered (PR221)
 
 Apple acknowledged TestFlight 1.1.1 (137), runtime `6c498571131d867ab778d696c3cc5f14ee66ad1e`,

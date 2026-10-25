@@ -1,5 +1,7 @@
 # Chat-first Flutter onboarding
 
+Historical v1 implementation. Superseded locally by [sample onboarding v2](../onboarding-v2/IMPLEMENTATION.md); v2 has not been pushed or released.
+
 Local branch: `feat/chat-onboarding`. Not pushed or released.
 
 The native first-run flow now offers Snap, Type and Describe before signup. Type
