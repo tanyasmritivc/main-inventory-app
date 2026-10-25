@@ -1,6 +1,6 @@
 ## October 24 — search and browser brand refresh
 
-Codex owns `fix/web-search-brand-20261024`. Updating the requested public title, site name and fresh stable echo favicon paths; adding Pricing metadata/canonical and its missing sitemap entry. Self-hosted web only. No changes to mobile, navigation, authentication or the API. Delivery pending.
+Deployed self-hosted web runtime a52b1537566ca2957f0ef68c69d3aff2c57cf29c (PR #201), build uPMr9qe7iEphZ4ferX3iR, at /home/ubuntu/findez-web-releases/search-brand-20261024/frontend. All five exact-runtime CI checks passed in 40148047062. Local 558 tests, TypeScript and changed-file lint passed without new warnings. Production build and 13 staged/live route checks passed. Public-domain verification confirmed exact homepage/social title, FindEZ site name, five icon links matching canonical files, valid structured data, Pricing title/canonical, and Pricing in sitemap. Previous web release and backend PID were preserved. See docs/plans/search-brand-20261024.md. Google caches refresh separately; no Search Console indexing request has been submitted.
 
 ## October 24 — clearer drafts and correct photo quantities (web)
 
