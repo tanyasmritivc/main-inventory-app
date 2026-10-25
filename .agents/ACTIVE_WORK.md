@@ -1,6 +1,6 @@
 ## October 25 - Missing iPhone Plans entry
 
-Root cause: the prior pricing change exposed Plans only in Flutter ProfilePage; iOS showAccountMenu opens the separate UIKit menu. Added Plans to the native menu and routed its action to PlansPage. Team capacity remains five pending a pricing decision. Native route regression and simulator verification in progress; preparing beta136.
+Root cause: the prior pricing change exposed Plans only in Flutter ProfilePage; iOS showAccountMenu opens the separate UIKit menu. Added Plans to the native menu and routed its action to PlansPage. Team capacity remains five pending a pricing decision. Native navigation regression and actual UIKit simulator checks passed in light/dark. Apple accepted TestFlight 1.1.1 (136), runtime `9031c9cec09629c706de28a6592e8de099054e02`, delivery `3f71608d-1261-40c7-afbf-8610d5956d1e`. All five CI jobs passed (40230657021); signing, 34 device executables per archive/export, privacy/config and Apple validation passed. Processing/tester availability not polled; physical-device acceptance unverified. No public App Store submission. Details: `docs/plans/native-plans-entry.md`; receipt: `docs/plans/native-plans-entry-receipt.json`.
 
 ## October 25 - Standard pricing only
 
