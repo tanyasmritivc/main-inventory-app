@@ -1,3 +1,16 @@
+## October 24 - Extraction quantity units (candidate verified)
+
+Branch fix/api-extraction-count-units, based on live extraction reliability.
+GLM counts distinguish visible individuals from packages, with additive optional
+quantity_unit/quantity_note evidence. Supported counts at 0.5-0.9 confidence are
+retained as estimates rather than reset to one; unknown/pile counts remain unknown.
+Blister prompts count filled visible pockets, exclude empty pockets, and distinguish
+foil-hidden contents, original pack size and dosage from remaining stock.
+No database migration or client edits in this lane. All 1480 Python tests and ten
+subtests pass. Isolated real-provider check of the user's screenshot photo returned
+one blister strip with contents explicitly uncounted in 14.8s. No inventory writes.
+Publication pending guarded two-file overlay and exact-runtime CI.
+
 ## October 24 - Extraction reliability delivered (API203; beta128/PR204)
 
 API runtime `ddaf60fb857acf5eb67fd9d50b1ab4d78877b319` is live with GLM retained; all five CI jobs passed (40152537949), including 1,477 Python tests. The two-file guarded overlay preserved 116 unrelated files; API/database health and anonymous denial passed. Rollback: /home/ubuntu/findez-extraction-reliability-20261024-v2. Real candidate/live API checks passed full fields, confidence/crops, signed previews, cross-account denial and explicit review/save with two disposable accounts per run removed. Live close-up extraction took 16.9s. No customer records or schema changes.

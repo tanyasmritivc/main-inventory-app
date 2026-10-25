@@ -1,3 +1,12 @@
+## October 24 - Count units and estimated quantities
+
+A product type/region is not a quantity. Return the counted unit and count note;
+keep moderately confident visible counts as marked estimates, not a fabricated one.
+Count packages when their contents are hidden and distinguish that unit from pieces.
+Printed dosage/original capacity cannot establish remaining inventory quantity.
+The mobile user's explicit save may accept a value for later editing; extraction
+itself still never writes inventory or claims calibrated certainty.
+
 ## October 24 — Counts, destinations and drafts
 
 A detected photo region is not one unit. Unknown counts stay explicit until confirmed or omitted. Only disjoint objects with reliable counts and matching visible markings can merge; preserve the union crop and every warning. A confirmed creation-only destination may bind to its original draft without saving stock. An existing draft is never evidence that a separate destination confirmation card exists.
