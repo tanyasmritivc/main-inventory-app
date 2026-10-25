@@ -592,10 +592,13 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     if not q:
         return list_items(user_id=user_id)
     if current_inventory.get():
-        from app.services.item_search import score_item, match_basis
-        ranked = [(score_item(item, q), item) for item in list_items(user_id=user_id)]
-        ranked.sort(key=lambda pair: pair[0], reverse=True)
-        return [{**item, '_match_basis': match_basis(score)} for score, item in ranked if score]
+        from app.services.personalization.repository import search_context, record_search
+        from app.services.personalization.scoring import rank_rows
+        context = search_context()
+        ranked = rank_rows(list_items(user_id=user_id), q,
+            context['aliases'] if context else [], context['scores'] if context else {})
+        record_search(context, q, ranked)
+        return ranked
 
     supabase = get_supabase_admin()
     pattern = f"%{q}%"
@@ -630,6 +633,9 @@ def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501
     completeness sentinel. No user text enters PostgREST grammar.
     """
     from app.services.item_search import score_item
+    from app.services.personalization.repository import search_context
+    from app.services.personalization.scoring import rank_rows
+    context = search_context()
     limit = min(max(limit, 2), 501)
     client = get_supabase_admin()
     matches = []
@@ -639,13 +645,13 @@ def search_memory_candidates(*, user_id: str, terms: list[str], limit: int = 501
             .order('created_at', desc=True).order('item_id').range(offset, offset + 499).execute())
         page = response.data or []
         for row in page:
-            if score_item(row, text):
+            if score_item(row, text) or (context and rank_rows([row], text, context['aliases'], {})):
                 matches.append(row)
                 if len(matches) >= limit:
-                    return {'items': matches[:limit - 1], 'truncated': True}
+                    return {'items': matches[:limit - 1], 'truncated': True, '_personalization': context}
         if len(page) < 500:
-            return {'items': matches, 'truncated': False}
-    return {'items': matches, 'truncated': True}
+            return {'items': matches, 'truncated': False, '_personalization': context}
+    return {'items': matches, 'truncated': True, '_personalization': context}
 
 
 def update_item_from_chat(*, user_id: str, item_id: str, updates: dict,

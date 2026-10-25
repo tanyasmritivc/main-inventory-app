@@ -58,6 +58,8 @@ def _send(
     data: dict | None = None,
     badge: int | None = None,
     thread_id: str | None = None,
+    max_attempts: int = 3,
+    collapse_id: str | None = None,
 ) -> bool:
     credentials = _credentials()
     if credentials is None:
@@ -69,7 +71,7 @@ def _send(
     aps = {
         "alert": {"title": title, "body": body},
         "sound": "default",
-        "category": "TEAM_ACTIVITY",
+        "category": "PERSONALIZATION" if (data or {}).get("action") == "personalization" else "TEAM_ACTIVITY",
     }
     if badge is not None:
         aps["badge"] = max(0, badge)
@@ -77,23 +79,25 @@ def _send(
         aps["thread-id"] = thread_id
     payload = {"aps": aps, **(data or {})}
     response = None
-    for attempt in range(3):
+    max_attempts = max(1, min(3, max_attempts))
+    for attempt in range(max_attempts):
         try:
             with httpx.Client(http2=True, timeout=10.0) as client:
                 response = client.post(
                     f"https://{host}/3/device/{token}",
                     headers={"authorization": f"bearer {_authorization()}",
-                             "apns-topic": topic, "apns-push-type": "alert", "apns-priority": "10"},
+                             "apns-topic": topic, "apns-push-type": "alert", "apns-priority": "10",
+                             **({"apns-collapse-id": collapse_id} if collapse_id else {})},
                     json=payload,
                 )
             if response.status_code != 429 and response.status_code < 500:
                 break
         except httpx.HTTPError:
             # Exception URLs can contain private device tokens. Keep logs generic.
-            if attempt == 2:
+            if attempt == max_attempts - 1:
                 logger.warning("APNs transport unavailable after bounded retries")
                 return False
-        if attempt < 2:
+        if attempt < max_attempts - 1:
             time.sleep(attempt + 1)
     if response is None:
         return False
