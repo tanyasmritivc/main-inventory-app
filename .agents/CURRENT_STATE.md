@@ -1,3 +1,7 @@
+## October 24 — clearer drafts and correct photo quantities (mobile)
+
+Active owner: Codex, `fix/draft-flow-mobile-20261024`. See `docs/plans/draft-flow-20261024.md`. Implementation complete; release verification and delivery in progress. No navigation changes or database migration.
+
 ## October 24 — Chat activity and current echo icons delivered (beta125; PR197)
 
 Apple acknowledged 1.1.1 (125), delivery `e5f4a8f8-2426-4a60-8d99-4a86a23beffb`.

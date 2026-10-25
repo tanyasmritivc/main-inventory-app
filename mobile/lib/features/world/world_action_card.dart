@@ -10,12 +10,14 @@ class WorldActionCard extends StatefulWidget {
     required this.api,
     required this.action,
     this.onSaved,
+    this.onCaptureChanged,
     this.onChanged,
     this.onOpenResource,
   });
   final ApiClient api;
   final Map<String, dynamic> action;
   final VoidCallback? onSaved;
+  final ValueChanged<Map<String, dynamic>>? onCaptureChanged;
   final ValueChanged<AskResourceLink>? onOpenResource;
   final ValueChanged<Map<String, dynamic>>? onChanged;
   @override
@@ -48,6 +50,11 @@ class _WorldActionCardState extends State<WorldActionCard> {
       if (!mounted) return;
       setState(() => _action = action);
       widget.onChanged?.call(action);
+      final capture = parseChatCapture(result['capture']);
+      if (capture != null) widget.onCaptureChanged?.call(capture);
+      if (result['capture_warning'] is String) {
+        setState(() => _error = result['capture_warning']);
+      }
       if (action['status'] == 'confirmed') widget.onSaved?.call();
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);

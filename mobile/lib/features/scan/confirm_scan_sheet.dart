@@ -47,6 +47,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
+  late final List<bool> _quantityConfirmed;
   late final List<InventoryItem> _existing =
       widget.existingItems ?? InventoryCache.items;
 
@@ -75,7 +76,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       );
     }).toList();
     _nameFocus = List.generate(widget.items.length, (_) => FocusNode());
-    _qty = widget.items.map((it) => it.quantity.clamp(1, 9999)).toList();
+    _qty = widget.items.map((it) => it.quantity.clamp(0, 100000)).toList();
+    _quantityConfirmed = widget.items
+        .map((it) => it.scanEvidence?.quantityMissing != true)
+        .toList();
   }
 
   @override
@@ -166,7 +170,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
-        scanEvidence: orig.scanEvidence,
+        scanEvidence: _quantityConfirmed[i]
+            ? orig.scanEvidence?.confirmedQuantity()
+            : orig.scanEvidence,
         reviewId: orig.reviewId,
         reviewStatus: orig.reviewStatus,
         reviewToken: orig.reviewToken,
@@ -561,69 +567,90 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // QUANTITY label
           AppText('QUANTITY', style: _kLabelStyle(context)),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (_qty[i] > 1) setState(() => _qty[i]--);
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                    shape: BoxShape.circle,
-                    border: Border.all(
+          if (widget.items[i].scanEvidence?.quantityMissing == true)
+            TextFormField(
+              key: ValueKey('missing-quantity-$i'),
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Quantity needed',
+                helperText: 'Count the individual items, not the pile.',
+              ),
+              onChanged: (value) => setState(() {
+                final n = int.tryParse(value);
+                _quantityConfirmed[i] = n != null && n >= 0 && n <= 100000;
+                if (_quantityConfirmed[i]) _qty[i] = n!;
+              }),
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (_qty[i] > 0) setState(() => _qty[i]--);
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
                       color: AppTheme.adaptive(
                         context,
-                        const Color(0x14FFFFFF),
+                        const Color(0xFF171717),
                       ),
-                      width: 0.5,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.remove,
+                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      size: 18,
                     ),
                   ),
-                  child: Icon(
-                    Icons.remove,
-                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-                    size: 18,
+                ),
+                const SizedBox(width: 24),
+                AppText(
+                  '${_qty[i]}',
+                  style: TextStyle(
+                    color: AppTheme.foreground(context, Colors.white),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const SizedBox(width: 24),
-              AppText(
-                '${_qty[i]}',
-                style: TextStyle(
-                  color: AppTheme.foreground(context, Colors.white),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 24),
-              GestureDetector(
-                onTap: () => setState(() => _qty[i]++),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppTheme.adaptive(context, const Color(0xFF171717)),
-                    shape: BoxShape.circle,
-                    border: Border.all(
+                const SizedBox(width: 24),
+                GestureDetector(
+                  onTap: () => setState(() => _qty[i]++),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
                       color: AppTheme.adaptive(
                         context,
-                        const Color(0x14FFFFFF),
+                        const Color(0xFF171717),
                       ),
-                      width: 0.5,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.adaptive(
+                          context,
+                          const Color(0x14FFFFFF),
+                        ),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.add,
+                      color: AppTheme.foreground(context, Color(0x73FFFFFF)),
+                      size: 18,
                     ),
                   ),
-                  child: Icon(
-                    Icons.add,
-                    color: AppTheme.foreground(context, Color(0x73FFFFFF)),
-                    size: 18,
-                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 16),
           // LOCATION label
           AppText('LOCATION', style: _kLabelStyle(context)),
@@ -760,8 +787,17 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (_quantityConfirmed.any((known) => !known))
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Enter the missing quantities before saving.',
+                      ),
+                    ),
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_buildResult()),
+                    onTap: _quantityConfirmed.every((known) => known)
+                        ? () => Navigator.of(context).pop(_buildResult())
+                        : null,
                     child: GlassControl(
                       radius: 99,
                       child: Container(

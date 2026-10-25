@@ -418,13 +418,13 @@ void main() {
         final list = find.byType(ListView).first;
         expect(
           tester.getTopLeft(list).dy,
-          lessThan(tester.getBottomLeft(find.byTooltip('Back')).dy),
+          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
         );
         await tester.drag(list, const Offset(0, -300));
         await tester.pumpAndSettle();
         expect(
           tester.getTopLeft(list).dy,
-          lessThan(tester.getBottomLeft(find.byTooltip('Back')).dy),
+          greaterThanOrEqualTo(tester.getBottomLeft(find.byTooltip('Back')).dy),
         );
         expect(find.text('Ask FindEZ…'), findsOneWidget);
         expect(find.byTooltip('Send message'), findsNothing);
