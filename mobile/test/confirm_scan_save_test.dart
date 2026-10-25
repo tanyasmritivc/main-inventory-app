@@ -67,7 +67,7 @@ void main() {
       List<ExtractedInventoryItem>? result;
       await open(tester, item(), (value) => result = value);
       expect(find.textContaining('Keep 1 in Review'), findsNothing);
-      await tester.tap(find.text('Save to inventory'));
+      await tester.tap(find.text('Save to Space'));
       await tester.pumpAndSettle();
       expect(result!.single.needsReview, isFalse);
       expect(result!.single.quantity, 8);
@@ -87,18 +87,37 @@ void main() {
   );
 
   testWidgets(
-    'unknown count can save a disclosed starting value without pretending it was counted',
+    'unknown count saves in the chosen Space review without needing a count',
     (tester) async {
       List<ExtractedInventoryItem>? result;
       await open(tester, item(unknown: true), (value) => result = value);
-      await tester.tap(find.text('Save to inventory'));
+      await tester.tap(find.text('Save to Space'));
       await tester.pumpAndSettle();
       expect(result!.single.quantity, 1);
       expect(result!.single.scanEvidence!.quantityBasis, 'unknown');
-      expect(result!.single.notes, contains('not a photo count'));
-      expect(result!.single.needsReview, isFalse);
+      expect(result!.single.notes, contains('not been counted'));
+      expect(result!.single.needsReview, isTrue);
+      expect(result!.single.location, 'Pantry');
+      final api = _ReviewApi();
+      final plan = await prepareCaptureForSave(api: api, items: result!);
+      expect(plan.inventoryItems, isEmpty);
+      expect(plan.reviewCount, 1);
+      expect(api.saved!.location, 'Pantry');
     },
   );
+
+  testWidgets('unknown identity goes to Review even when its count is known', (
+    tester,
+  ) async {
+    List<ExtractedInventoryItem>? result;
+    final draft = item()..name = 'Unknown item';
+    await open(tester, draft, (value) => result = value);
+    await tester.tap(find.text('Save to Space'));
+    await tester.pumpAndSettle();
+    expect(result!.single.quantity, 8);
+    expect(result!.single.needsReview, isTrue);
+    expect(result!.single.location, 'Pantry');
+  });
 
   testWidgets(
     'quantity and unit edit; invalid count cannot save; Cancel returns no draft',
@@ -109,7 +128,7 @@ void main() {
       await tester.ensureVisible(quantity);
       await tester.enterText(quantity, '100001');
       await tester.pump();
-      await tester.tap(find.text('Save to inventory'));
+      await tester.tap(find.text('Save to Space'));
       await tester.pumpAndSettle();
       expect(result, isNull);
       await tester.enterText(quantity, '6');
@@ -117,7 +136,7 @@ void main() {
       await tester.ensureVisible(unit);
       await tester.enterText(unit, 'tablet');
       await tester.pump();
-      await tester.tap(find.text('Save to inventory'));
+      await tester.tap(find.text('Save to Space'));
       await tester.pumpAndSettle();
       expect(result!.single.quantity, 6);
       expect(result!.single.scanEvidence!.quantityUnit, 'tablet');
@@ -130,4 +149,21 @@ void main() {
       expect(result, isNull);
     },
   );
+}
+
+class _ReviewApi extends ApiClient {
+  _ReviewApi() : super(baseUrl: 'https://api.test');
+  ExtractedInventoryItem? saved;
+  @override
+  Future<ReviewItem> updateReviewItem({
+    required String reviewId,
+    required ExtractedInventoryItem item,
+  }) async {
+    saved = item;
+    return ReviewItem.fromJson({
+      ...item.toJson(),
+      'review_id': reviewId,
+      'status': 'pending',
+    });
+  }
 }

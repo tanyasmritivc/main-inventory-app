@@ -69,15 +69,15 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     _categoryCtrl = widget.items
         .map((it) => TextEditingController(text: it.category))
         .toList();
-    _locCtrl = widget.items.map((it) {
-      final loc = (it.location ?? '').trim();
-      // Use the user's chosen space as the default; only fall back to the
-      // AI-extracted location if it's a non-trivial, non-default value.
-      final isAiDefault = loc.isEmpty || loc.toLowerCase() == 'unsorted';
-      return TextEditingController(
-        text: isAiDefault ? widget.defaultLocation : loc,
-      );
-    }).toList();
+    _locCtrl = widget.items
+        .map(
+          (it) => TextEditingController(
+            text: widget.defaultLocation.trim().isNotEmpty
+                ? widget.defaultLocation
+                : (it.location ?? 'Unsorted'),
+          ),
+        )
+        .toList();
     _nameFocus = List.generate(widget.items.length, (_) => FocusNode());
     _qty = widget.items.map((it) => it.quantity.clamp(0, 100000)).toList();
     _quantityConfirmed = widget.items
@@ -90,8 +90,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ),
         )
         .toList();
-    _quantityCtrl = _qty
-        .map((qty) => TextEditingController(text: '$qty'))
+    _quantityCtrl = widget.items
+        .asMap()
+        .entries
+        .map(
+          (entry) => TextEditingController(
+            text: _quantityConfirmed[entry.key] ? '${_qty[entry.key]}' : '',
+          ),
+        )
         .toList();
   }
 
@@ -163,11 +169,23 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     }
   }
 
+  bool _needsReview(int i) {
+    final original = widget.items[i];
+    final name = _nameCtrl[i].text.trim();
+    final unknownName = RegExp(
+      r'^(unknown|unidentified|unrecognized)( item| object)?$',
+      caseSensitive: false,
+    ).hasMatch(name);
+    final weakUneditedIdentity =
+        (original.scanEvidence?.identityConfidence ?? 1) < 0.5 &&
+        name == original.name.trim();
+    return !_quantityConfirmed[i] || unknownName || weakUneditedIdentity;
+  }
+
   String? _savedNotes(int i) {
     final orig = widget.items[i];
     final notes = [
-      if (!_quantityConfirmed[i])
-        'Quantity ${_qty[i]} is a starting value chosen at save, not a photo count. Edit it when counted.',
+      if (!_quantityConfirmed[i]) 'Quantity has not been counted yet.',
       if (_unitCtrl[i].text.trim().isNotEmpty)
         'Quantity unit: ${_unitCtrl[i].text.trim()}.',
       if (orig.notes?.isNotEmpty == true) orig.notes!,
@@ -210,7 +228,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         ? orig.scanEvidence!.confirmedQuantity()
                         : orig.scanEvidence!)
                     .toJson(),
-                'needs_review': false,
+                'needs_review': _needsReview(i),
                 'quantity_unit': _unitCtrl[i].text.trim(),
               }),
         reviewId: orig.reviewId,
@@ -607,20 +625,21 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             decoration: InputDecoration(
               helperMaxLines: 3,
               helperText: widget.items[i].scanEvidence?.quantityMissing == true
-                  ? 'Not counted from the photo. Start with 1 or enter a quantity; you can edit it later.'
+                  ? "Not counted from the photo. Leave blank to save in this Space's Review section."
                   : widget.items[i].scanEvidence?.quantityNote ??
                         'You can edit this quantity now or later.',
               errorText:
-                  int.tryParse(_quantityCtrl[i].text) == null ||
-                      (int.tryParse(_quantityCtrl[i].text) ?? 0) > 100000
+                  _quantityCtrl[i].text.isNotEmpty &&
+                      (int.tryParse(_quantityCtrl[i].text) == null ||
+                          (int.tryParse(_quantityCtrl[i].text) ?? 0) > 100000)
                   ? 'Enter a number from 0 to 100000.'
                   : null,
             ),
             onChanged: (value) => setState(() {
               final n = int.tryParse(value);
+              _quantityConfirmed[i] = n != null && n >= 0 && n <= 100000;
               if (n != null && n >= 0 && n <= 100000) {
                 _qty[i] = n;
-                _quantityConfirmed[i] = true;
               }
             }),
           ),
@@ -741,7 +760,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   const SizedBox(height: 4),
                   AppText(
-                    'Save to your inventory. You can edit every detail later.',
+                    'Save to this Space. Unknown items go to its Review section.',
                     style: TextStyle(
                       color: AppTheme.foreground(context, Color(0x73FFFFFF)),
                       fontSize: 13,
@@ -780,8 +799,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      _quantityConfirmed.any((known) => !known)
-                          ? 'Uncounted items start at 1. You can change this now or later.'
+                      List.generate(n, _needsReview).any((review) => review)
+                          ? 'Unknown items will be saved in ${widget.defaultLocation} / Review. Edit them there later.'
                           : 'You can edit these items after saving.',
                     ),
                   ),
@@ -789,7 +808,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     onTap:
                         _quantityCtrl.every((c) {
                               final n = int.tryParse(c.text);
-                              return n != null && n >= 0 && n <= 100000;
+                              return c.text.isEmpty ||
+                                  (n != null && n >= 0 && n <= 100000);
                             }) &&
                             _nameCtrl.every((c) => c.text.trim().isNotEmpty)
                         ? () => Navigator.of(context).pop(_buildResult())
@@ -805,7 +825,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                         ),
                         child: Center(
                           child: AppText(
-                            'Save to inventory',
+                            'Save to Space',
                             style: TextStyle(
                               color: AppTheme.textPrimary(context),
                               fontSize: 15,

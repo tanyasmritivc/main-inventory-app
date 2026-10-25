@@ -3,8 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/scan/confirm_scan_sheet.dart';
+import 'package:mobile/features/review/review_queue_page.dart';
+import 'package:mobile/features/scan/review_capture.dart';
+import '../test/support/hierarchy_fixture.dart';
 
-void main() {
+final fixture = HierarchyFixture();
+final reviews = <Map<String, dynamic>>[];
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await fixture.initialize(mockPreferences: false);
+  fixture.respond = (request) {
+    if (request.path == '/review-items' && request.method == 'GET') {
+      return {'items': reviews, 'pending_count': reviews.length};
+    }
+    if (request.path.startsWith('/review-items/') && request.method == 'POST') {
+      final row = <String, dynamic>{
+        ...Map<String, dynamic>.from(request.data as Map),
+        'review_id': 'qa-review',
+        'status': 'pending',
+      };
+      reviews.clear();
+      reviews.add(row);
+      return {'review_item': row};
+    }
+    return {'unread_count': 0, 'notifications': [], 'display_name': 'QA'};
+  };
   runApp(
     MaterialApp(
       theme: AppTheme.create(Brightness.light),
@@ -33,6 +56,9 @@ class _PreviewState extends State<_Preview> {
           ExtractedInventoryItem(
             name: 'Tablets - blister strip',
             category: 'Health',
+            reviewId: 'qa-preview',
+            reviewStatus: 'preview',
+            reviewToken: 'fixture',
             quantity: 1,
             scanEvidence: ScanEvidence(
               needsReview: true,
@@ -46,6 +72,9 @@ class _PreviewState extends State<_Preview> {
         ],
       ),
     );
+    if (result != null) {
+      await prepareCaptureForSave(api: fixture.api, items: result);
+    }
     if (!mounted) return;
     setState(
       () => receipt = result == null
@@ -69,6 +98,15 @@ class _PreviewState extends State<_Preview> {
           TextButton(
             onPressed: () => show(true),
             child: const Text('Open uncounted item'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    ReviewQueuePage(api: fixture.api, location: 'Pantry'),
+              ),
+            ),
+            child: const Text('Pantry Review'),
           ),
         ],
       ),

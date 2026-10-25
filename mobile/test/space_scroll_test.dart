@@ -59,7 +59,7 @@ void main() {
       await spaceScrollCapture?.call('detail-${brightness.name}');
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
       await tester.pumpAndSettle();
-      expect(find.text('Review images').hitTestable(), findsNothing);
+      expect(find.text('Review').hitTestable(), findsNothing);
       expect(find.byType(Dismissible).evaluate().length, lessThan(25));
       await spaceScrollCapture?.call('detail-scrolled-${brightness.name}');
       expect(tester.takeException(), isNull);

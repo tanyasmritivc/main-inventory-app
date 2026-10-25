@@ -1,11 +1,11 @@
-## October 24 - Explicit capture acceptance may save before later editing
+## October 24 - Save unknown captures in the destination Space's Review
 
-The user requests direct inventory save and later editing, superseding mandatory
-Review routing for explicitly accepted Confirm Items drafts. Never turn a photo
-region into a claimed unit count: disclose uncounted starting values, retain notes,
-and show/edit the counted unit (e.g. tablet versus blister strip). Model confidence
-and uncertainty remain evidence, not a prohibition on the user's save choice.
-Unaccepted drafts and existing Review workflows retain their behavior.
+The user clarified that unknown items belong in the Review section of the Space
+chosen when saving, rather than as a Review tag on ordinary stock. Save must not
+block on their missing quantity. Identified, counted items can save directly and
+be edited later. Preserve uncertainty and count units (tablet versus blister strip)
+and never present a default one as a measured count. Review remains scoped to the
+inventory and chosen Space; tapping a record opens the existing editor.
 
 ## October 24 - Space options and stoppable extraction
 
