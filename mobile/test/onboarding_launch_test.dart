@@ -14,7 +14,7 @@ import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/core/invitation.dart';
 import 'package:mobile/features/auth/auth_page.dart';
-import 'package:mobile/features/onboarding/onboarding_page.dart';
+import 'package:mobile/features/onboarding/chat_onboarding_page.dart';
 import 'package:mobile/features/world/world_shell.dart';
 import 'package:mobile/features/world/native_bottom_tabs.dart';
 import 'package:mobile/features/onboarding/onboarding_prefs.dart';
@@ -196,56 +196,60 @@ void main() {
   });
   tearDownAll(() async => Supabase.instance.dispose());
 
-  testWidgets(
-    'fresh launch restores the full setup flow before authentication',
-    (tester) async {
-      final api = _Api();
-      await tester.pumpWidget(_gate(api));
-      await tester.pumpAndSettle();
-      expect(find.byType(OnboardingPage), findsOneWidget);
-      expect(find.byType(AuthPage), findsNothing);
-      expect(find.byType(MainShell), findsNothing);
-      expect(api.reads, 0);
-      expect(find.text("Who's FindEZ for?"), findsOneWidget);
-      await tester.tap(find.text('I already have an account'));
-      await tester.pumpAndSettle();
-      expect(find.byType(OnboardingPage), findsNothing);
-      expect(find.byType(AuthPage), findsOneWidget);
-      expect(find.byType(MainShell), findsNothing);
-      expect(api.reads, 0);
-      expect(await OnboardingPrefs.isCompleted(), isTrue);
-      expect(await WorldSetupStore.draft(), isNull);
-      expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
-    },
-  );
+  testWidgets('fresh launch offers a local chat trial before authentication', (
+    tester,
+  ) async {
+    final api = _Api();
+    await tester.pumpWidget(_gate(api));
+    await settleHome(tester);
+    expect(find.byType(ChatOnboardingPage), findsOneWidget);
+    expect(find.byType(AuthPage), findsNothing);
+    expect(find.byType(MainShell), findsNothing);
+    expect(api.reads, 0);
+    expect(find.text('Memory for'), findsOneWidget);
+    await tester.tap(
+      find.text('Already have an account? Sign in', findRichText: true),
+    );
+    await settleHome(tester);
+    expect(find.byType(ChatOnboardingPage), findsNothing);
+    expect(find.byType(AuthPage), findsOneWidget);
+    expect(find.byType(MainShell), findsNothing);
+    expect(api.reads, 0);
+    expect(await OnboardingPrefs.isCompleted(), isFalse);
+    expect(await WorldSetupStore.draft(), isNull);
+    expect(await OnboardingPrefs.getPendingFirstSpaceName(), isNull);
+  });
 
   testWidgets(
-    'Existing-account shortcut opens auth and a restart does not replay the introduction',
+    'Existing-account shortcut opens auth and signed-out restart offers the trial',
     (tester) async {
       final api = _Api();
       await tester.pumpWidget(_gate(api));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('I already have an account'));
-      await tester.pumpAndSettle();
+      await settleHome(tester);
+      await tester.tap(
+        find.text('Already have an account? Sign in', findRichText: true),
+      );
+      await settleHome(tester);
       expect(find.byType(AuthPage), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_gate(api, key: const Key('restart')));
-      await tester.pumpAndSettle();
-      expect(find.byType(OnboardingPage), findsNothing);
-      expect(find.byType(AuthPage), findsOneWidget);
+      await settleHome(tester);
+      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+      expect(find.byType(AuthPage), findsNothing);
       expect(api.reads, 0);
     },
   );
 
-  testWidgets('legacy completed installs retain the authentication flow', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({'onboarding_completed': true});
-    await tester.pumpWidget(_gate(_Api()));
-    await tester.pumpAndSettle();
-    expect(find.byType(AuthPage), findsOneWidget);
-    expect(find.byType(OnboardingPage), findsNothing);
-  });
+  testWidgets(
+    'signed-out installs can try chat despite the old completed flag',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({'onboarding_completed': true});
+      await tester.pumpWidget(_gate(_Api()));
+      await settleHome(tester);
+      expect(find.byType(AuthPage), findsNothing);
+      expect(find.byType(ChatOnboardingPage), findsOneWidget);
+    },
+  );
 
   testWidgets('returning authenticated users keep their session and open Ask', (
     tester,
@@ -259,7 +263,7 @@ void main() {
     expect(find.byType(InventoryContextHost), findsOneWidget);
     expect(find.byType(WorldShell), findsOneWidget);
     expect(find.byType(MainShell), findsNothing);
-    expect(find.byType(OnboardingPage), findsNothing);
+    expect(find.byType(ChatOnboardingPage), findsNothing);
     expect(find.byType(AuthPage), findsNothing);
     expect(
       Supabase.instance.client.auth.currentUser?.id,
@@ -292,7 +296,7 @@ void main() {
       } else {
         await tester.tap(find.byTooltip('More'));
       }
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
@@ -320,10 +324,10 @@ void main() {
       ]) {
         tester.binding.handleAppLifecycleStateChanged(state);
       }
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       expect(find.byKey(const Key('tutorial-card')), findsNothing);
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       await OnboardingPrefs.prepareGuidedTourInstall(hasSession: true);
       OnboardingPrefs.justSignedUp = true;
       await OnboardingPrefs.setPostSignupPending(true);
@@ -337,7 +341,7 @@ void main() {
       } else {
         await tester.tap(find.byTooltip('More'));
       }
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       await tester.tap(find.text('Workspaces and team tools'));
       await settleHome(tester);
       expect(find.byType(WorkspaceHome), findsOneWidget);
@@ -416,18 +420,20 @@ void main() {
           home: LaunchAuthGate(api: api),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       links.add(
         Uri.parse(
           'https://www.findez.ai/join/${kind == 'team' ? 'team/' : ''}ZZZZZZ',
         ),
       );
-      await tester.pumpAndSettle();
+      await settleHome(tester);
       expect(inbox.pending?.kind, kind);
-      expect(find.byType(OnboardingPage), findsOneWidget);
+      expect(find.byType(ChatOnboardingPage), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
-      await tester.tap(find.text('I already have an account'));
-      await tester.pumpAndSettle();
+      await tester.tap(
+        find.text('Already have an account? Sign in', findRichText: true),
+      );
+      await settleHome(tester);
       expect(find.byType(AuthPage), findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
       await tester.pumpWidget(const SizedBox());
@@ -438,8 +444,8 @@ void main() {
       expect(restored.ownerId, isNull);
       expect(api.reads, 0);
       await tester.pumpWidget(_gate(api));
-      await tester.pumpAndSettle();
-      expect(find.byType(AuthPage), findsOneWidget);
+      await settleHome(tester);
+      expect(find.byType(ChatOnboardingPage), findsOneWidget);
     });
   }
 }

@@ -1,3 +1,23 @@
+## October 25 — Petals release authorized
+
+The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing 1.1.1 (133), including chat-first onboarding.
+
+## October 25 — Petals brand v4 (mobile, local only)
+
+Branch `mobile-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `mobile/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. This branch includes the completed chat-first onboarding commit `90d4881`. Backend, schema, env and deployment configuration are untouched.
+
+## October 25 - Try chat before signup; no structural setup
+
+The new mobile first run offers Snap, Type and Describe before signup. Local
+Describe/Type answers precede the Keep prompt; photo authentication rejection is
+the explicit exception. No organization/workspace/inventory questionnaire.
+Do not embed the reference app: only the provided 3D scene belongs in a WebView.
+Persist the trial locally and preserve ownership plus stable bulk-save request
+IDs through auth and retries. The repository's real API has persisted Spaces:
+use that existing contract despite the prompt's stale no-Spaces-table statement.
+The user's explicit local-only feat/chat-onboarding instruction overrides standing
+push/TestFlight delivery instructions for this change. No production release.
+
 ## October 24 - Save unknown captures in the destination Space's Review
 
 The user clarified that unknown items belong in the Review section of the Space

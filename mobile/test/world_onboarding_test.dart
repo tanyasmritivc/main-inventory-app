@@ -255,7 +255,7 @@ void main() {
       (tester) async {
         await phone(tester, AuthPage(fromOnboarding: variant));
         expect(
-          find.text(variant ? 'Your dashboard is ready' : 'Welcome back'),
+          find.text(variant ? 'Keep your items' : 'Welcome back'),
           findsOneWidget,
         );
         expect(find.text('Continue with Google'), findsOneWidget);

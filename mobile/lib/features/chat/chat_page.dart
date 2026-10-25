@@ -60,9 +60,13 @@ class ChatPage extends StatefulWidget {
     this.photoPicker,
     this.worldHeading,
     this.onCaptureAction,
+    this.initialSource,
+    this.onInitialSourceReady,
   });
 
   final String? worldHeading;
+  final ChatSource? initialSource;
+  final VoidCallback? onInitialSourceReady;
   final Future<void> Function(String)? onCaptureAction;
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
@@ -2256,6 +2260,12 @@ class _ChatPageState extends State<ChatPage>
         ? _ChatSession()
         : _ChatSession._internal();
     _controller = TextEditingController();
+    if (widget.initialSource != null) {
+      _sources.add(widget.initialSource!);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onInitialSourceReady?.call();
+      });
+    }
 
     assert(() {
       final keepAlive = <Object?>[

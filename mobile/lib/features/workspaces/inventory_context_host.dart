@@ -2,6 +2,7 @@ import '../world/world_shell.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/chat_source.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_session.dart';
 import '../../core/ui/app_text.dart';
@@ -24,12 +25,16 @@ class InventoryContextHost extends StatefulWidget {
     this.initialInventoryId,
     this.initialOrganizationId,
     this.onInitialInventoryOpened,
+    this.initialChatSource,
+    this.onInitialChatReady,
   });
   final ApiClient api;
   final bool pickOnly;
   final String? initialWorkspaceId;
   final String? initialInventoryId, initialOrganizationId;
   final Future<void> Function()? onInitialInventoryOpened;
+  final ChatSource? initialChatSource;
+  final VoidCallback? onInitialChatReady;
   @override
   State<InventoryContextHost> createState() => _InventoryContextHostState();
 }
@@ -374,7 +379,11 @@ class _InventoryContextHostState extends State<InventoryContextHost>
         builder: (context) {
           if (selected == null || api == null) {
             if (!widget.pickOnly) {
-              return WorldShell(session: _places);
+              return WorldShell(
+                session: _places,
+                initialChatSource: widget.initialChatSource,
+                onInitialChatReady: widget.onInitialChatReady,
+              );
             }
             return HierarchyPage(
               api: _session.directoryApi,

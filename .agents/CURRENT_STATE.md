@@ -1,3 +1,36 @@
+## October 25 — Petals and chat onboarding beta133 delivered (PR214)
+
+Apple accepted 1.1.1 (133), runtime `f80248d8813ad88a47909bd5a030d7480382e9db`, delivery `4d60ceee-7770-44db-985d-5eaa164884f7`. All five exact-runtime CI jobs passed (40216741053). Signed archive/export verified 34 device executables each; strict signing, 26 privacy manifests, production configuration and Apple validation passed. IPA SHA256 `7ad1b6c5e5eb0a079c0d70000622c01a61762530e9140c3cbae37cc049f55c4f`. Processing and tester availability were not polled. Physical-device acceptance remains unverified. Artifacts: Documents/FindEZ/AppStore/1.1.1-build133.
+
+All 24 supplied v5 screenshots were uploaded and verified COMPLETE in numbered order across four device sets (six each), replacing v4 with backups retained. Version 1.1.1/en-US remains PREPARE_FOR_SUBMISSION. No review submission, public release or build selection was performed. Screenshot receipt: mobile/design/brand-v4/screenshots-v5-receipt.json.
+
+## October 25 — Petals release authorized
+
+The user subsequently requested TestFlight delivery and website deployment. This supersedes the brand prompts’ local-only restriction. Public App Store submission remains explicitly held. Preparing 1.1.1 (133), including chat-first onboarding.
+
+## October 25 — Petals brand v4 (mobile, local only)
+
+Branch `mobile-brand-v4` applies the supplied v4 brand kit to logos/icons and theme tokens. Validation and the complete file list are in `mobile/design/brand-v4/IMPLEMENTATION.md`. The latest prompts say not to push/deploy; no release or TestFlight upload was performed. This branch includes the completed chat-first onboarding commit `90d4881`. Backend, schema, env and deployment configuration are untouched.
+
+## October 25 - Chat-first onboarding complete locally
+
+Branch `feat/chat-onboarding` replaces first-run structure setup with native
+Snap/Type/Describe trials before signup, local answers, the supplied 3D scene,
+durable drafts and idempotent Personal/Space saves into Ask. Existing permanent
+sessions bypass the trial. Apple/Google linking and email fallback reuse auth.
+No web/backend/schema/env/CI/deploy changes. No push, TestFlight or submission,
+as explicitly requested for this lane.
+
+Validation: clean Flutter analysis; final 44 focused host regressions and all 17
+iOS simulator integration cases passed. The broad host run passed 901 cases with
+one optional skip and one obsolete headline expectation; that expectation was
+corrected and its entire 14-case file passed in the final focused run. One added
+photo re-extraction regression also passes. Manual reference and native visual
+checks covered the scene, list/edit/answer/Keep and Reduce Motion. Camera and
+provider/network peers in integration tests are synthetic; live physical camera,
+production OAuth/anonymous conversion and device acceptance remain outstanding.
+Full implementation, file list and limitations: docs/onboarding-chat/IMPLEMENTATION.md.
+
 ## October 24 - Mobile thorough audit delivered (beta132; PR211)
 
 Runtime `e8372ce2c161c0a2832787409946e171e1d3503a` on `fix/mobile-thorough-audit-20261024`.

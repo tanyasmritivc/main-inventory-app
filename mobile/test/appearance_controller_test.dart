@@ -42,6 +42,7 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test(
     'first launch defaults to compact text with system accessibility scaling',
     () async {

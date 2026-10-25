@@ -290,7 +290,11 @@ void main() {
     );
     await settle(tester);
     expect(transport.posts, isEmpty);
-    expect(find.text('Your dashboard is ready'), findsOneWidget);
+    await tester.tap(
+      find.text('Already have an account? Sign in', findRichText: true),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome back'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('auth-more-options')));
     await tester.tap(find.byKey(const Key('auth-more-options')));
     await tester.pumpAndSettle();

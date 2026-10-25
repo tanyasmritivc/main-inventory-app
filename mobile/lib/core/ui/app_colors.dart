@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'brand_colors.dart';
 
 class AppColors {
-  static const background = Color(0xFF000000);
+  static const background = BrandColors.night;
   static const surface = Color(0xFF262626);
   static const surface2 = Color(0xFF303030);
   static const chip = surface2;

@@ -21,6 +21,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.record['enabled'], true);
       await tester.scrollUntilVisible(find.text('Forget personalization'), 200);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Forget personalization'));
       await tester.pumpAndSettle();
       expect(find.text('Forget personalization?'), findsOneWidget);

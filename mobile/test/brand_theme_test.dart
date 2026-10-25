@@ -126,32 +126,29 @@ void main() {
     );
   });
 
-  test('supplied native icon is opaque with paper, ink and signal', () {
+  test('Petals native icon is opaque with white petals on orange', () {
     final icon = image.decodePng(
       File('assets/brand/findez-app-icon.png').readAsBytesSync(),
     )!;
     expect([icon.width, icon.height, icon.numChannels], [1024, 1024, 3]);
-    expect(icon.getPixel(0, 0).toList(), [255, 255, 255]);
-    expect(icon.getPixel(750, 250).toList(), [232, 89, 12]);
-    expect(icon.getPixel(400, 400).toList(), [17, 17, 18]);
+    expect(icon.getPixel(0, 0).toList(), [232, 89, 12]);
+    expect(icon.getPixel(750, 250).toList(), [255, 255, 255]);
+    expect(icon.getPixel(400, 400).toList(), [255, 255, 255]);
   });
 
-  test(
-    'Blue echo mark and outlined wordmark retain supplied geometry',
-    () async {
-      for (final name in ['findez-mark.svg', 'findez-wordmark.svg']) {
-        final svg = await rootBundle.loadString('assets/brand/$name');
-        expect(svg, contains('fill="#A9D6F5"'));
-        expect(svg, contains('M54.25 24.25 H67.25'));
-        // Keep the supplied filled vector paths, without added strokes.
-        expect(svg, isNot(contains('stroke-linejoin="round"')));
-        expect(svg, isNot(contains('stroke-linecap="round"')));
-        expect(svg, contains('fill="#111112"'));
-        expect(svg, isNot(contains('<text')));
-        expect(svg, isNot(contains('Gradient')));
-      }
-    },
-  );
+  test('Petals mark and outlined wordmark retain supplied geometry', () async {
+    for (final name in ['findez-mark.svg', 'findez-wordmark.svg']) {
+      final svg = await rootBundle.loadString('assets/brand/$name');
+      expect(svg, contains('fill="#E8590C"'));
+      expect(svg, isNot(contains('#A9D6F5')));
+      expect(svg, contains('M12 24A12 12 0 0 1 24 12'));
+      // Keep the supplied filled vector paths, without added strokes.
+      expect(svg, isNot(contains('stroke-linejoin="round"')));
+      expect(svg, isNot(contains('stroke-linecap="round"')));
+      expect(svg, isNot(contains('<text')));
+      expect(svg, isNot(contains('Gradient')));
+    }
+  });
 
   for (final brightness in Brightness.values) {
     testWidgets('${brightness.name} resolved text stays readable in children', (
@@ -204,19 +201,13 @@ void main() {
         final loader =
             tester.widget<SvgPicture>(find.byType(SvgPicture)).bytesLoader
                 as SvgAssetLoader;
-        final mapper = loader.colorMapper;
-        if (brightness == Brightness.dark) {
-          expect(
-            mapper!.substitute(null, 'path', 'stroke', BrandColors.ink),
-            BrandColors.paper,
-          );
-          expect(
-            mapper.substitute(null, 'path', 'stroke', BrandColors.signal),
-            BrandColors.signal,
-          );
-        } else {
-          expect(mapper, isNull);
-        }
+        expect(loader.colorMapper, isNull);
+        expect(
+          loader.assetName,
+          brightness == Brightness.dark
+              ? 'assets/brand/findez-wordmark-white.svg'
+              : 'assets/brand/findez-wordmark.svg',
+        );
         expect(find.bySemanticsLabel('FindEZ'), findsOneWidget);
         expect(tester.takeException(), isNull);
         semantics.dispose();
