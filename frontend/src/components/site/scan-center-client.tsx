@@ -1,4 +1,5 @@
 "use client";
+import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import scanStyles from "./scan-methods.module.css";
 import { privateImageSrc } from "@/lib/private-image";
 
@@ -140,6 +141,7 @@ export function ScanCenterClient() {
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     const inventory = activeInventory();
     setWorking(true); setError(null);
+    if (items.some((item) => hasUnknownQuantity(item.scan_evidence))) { setWorking(false); setError("Enter the missing quantities before saving."); return; }
     try {
       const located = items.map((item) => ({ ...item, location: space }));
       const uncertain = located.filter((item) => item.scan_evidence?.needs_review);
@@ -234,7 +236,7 @@ export function ScanCenterClient() {
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">
                 <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
-                {canWrite && <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>}
+                {canWrite && <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space || items.some((item) => hasUnknownQuantity(item.scan_evidence))}>{items.some((item) => item.scan_evidence?.needs_review) ? "Save clear items · queue uncertain" : `Save to ${space || "a Space"}`}</button>}
               </div>
               <fieldset disabled={working || !canWrite} className="find-review-list" style={{ border: 0, padding: 0, minWidth: 0 }}>
                 {items.map((item, index) => {
@@ -245,7 +247,7 @@ export function ScanCenterClient() {
                     <div className="find-review-primary">
                       <label><span>Name</span><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => update({ name: event.target.value })} /></label>
                       <label><span>Category</span><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => update({ category: event.target.value })} /></label>
-                      <label><span>Quantity</span><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => update({ quantity: Number(event.target.value) })} /></label>
+                      <label><span>Quantity</span><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={hasUnknownQuantity(item.scan_evidence) ? "" : item.quantity} placeholder="Quantity needed" onChange={(event) => update({ quantity: Number(event.target.value), scan_evidence: {...item.scan_evidence, needs_review: item.scan_evidence?.needs_review ?? true, quantity_basis: event.target.value !== "" && Number.isSafeInteger(Number(event.target.value)) && Number(event.target.value) >= 0 ? "user_confirmed" : "unknown"} })} /></label>
                     </div>
                     <div className="find-review-secondary">
                       <label><span>Manufacturer</span><input className="product-input" value={item.brand ?? ""} placeholder="Not visible" onChange={(event) => update({ brand: event.target.value || null })} /></label>

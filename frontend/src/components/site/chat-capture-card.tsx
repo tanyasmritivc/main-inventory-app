@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { accountRequest } from "@/lib/account-request";
 import { ApiError } from "@/lib/api";
+import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import { userFacingError } from "@/lib/user-facing-error";
 import {
   parseCapture,
@@ -21,11 +22,13 @@ export function ChatCaptureCard({
   accountId,
   worldId,
   conversationId,
+  onChanged,
 }: {
   capture: ChatCapture;
   accountId: string;
   worldId: string;
   conversationId: string;
+  onChanged?: (capture: ChatCapture) => void;
 }) {
   const [draft, setDraft] = useState(capture),
     [inventories, setInventories] = useState<Inventory[]>([]),
@@ -96,6 +99,7 @@ export function ChatCaptureCard({
         );
       if (live.current) {
         setDraft(verified);
+        onChanged?.(verified);
         setRefreshRequired(false);
         setDuplicates(false);
         setAllowDuplicates(false);
@@ -123,9 +127,7 @@ export function ChatCaptureCard({
     }
   }
   const frozen = busy || refreshRequired || draft.status !== "draft",
-    destination = inventories.find(
-      (i) => i.inventory_id === draft.inventory_id,
-    );
+    missing = draft.items.filter((row) => row.selected && (draft.summary?.unknown_quantity_indices?.includes(row.index) || hasUnknownQuantity(row.item.scan_evidence)));
   return (
     <section className={styles.card} aria-label="Extraction draft">
       <header>
@@ -181,6 +183,7 @@ export function ChatCaptureCard({
               <CaptureItem
                 key={`${draft.revision}:${row.index}`}
                 row={row}
+                quantityMissing={!!(draft.summary?.unknown_quantity_indices?.includes(row.index) || hasUnknownQuantity(row.item.scan_evidence))}
                 disabled={frozen}
                 onChange={(changes) =>
                   void act("PATCH", {
@@ -213,44 +216,25 @@ export function ChatCaptureCard({
           )}
           <div className={styles.stack}>
             <label>
-              Save in inventory
+              Save to
               <select
-                value={draft.inventory_id || ""}
+                value={draft.space_id ? `${draft.inventory_id}:${draft.space_id}` : ""}
                 disabled={frozen}
-                onChange={(e) =>
-                  void act("PATCH", { inventory_id: e.target.value })
-                }
+                onChange={(e) => {
+                  const [inventory_id, space_id] = e.target.value.split(":");
+                  void act("PATCH", { inventory_id, space_id });
+                }}
               >
-                <option value="" disabled>
-                  Choose inventory
-                </option>
+                <option value="" disabled>Choose a Space</option>
                 {inventories.map((i) => (
-                  <option key={i.inventory_id} value={i.inventory_id}>
-                    {i.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Space
-              <select
-                value={draft.space_id || ""}
-                disabled={frozen || !destination}
-                onChange={(e) =>
-                  void act("PATCH", { space_id: e.target.value })
-                }
-              >
-                <option value="" disabled>
-                  Choose Space
-                </option>
-                {destination?.spaces.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
+                  <optgroup key={i.inventory_id} label={i.name}>
+                    {i.spaces.map((s) => <option key={s.id} value={`${i.inventory_id}:${s.id}`}>{s.name}</option>)}
+                  </optgroup>
                 ))}
               </select>
             </label>
           </div>
+          {!!missing.length && <p role="status">Add a quantity for {missing.map((r) => r.item.name).join(", ")}, or uncheck those items to save the rest.</p>}
           {!inventories.length && (
             <p className={styles.muted}>
               Create an inventory and Space in chat, or ask an owner for edit
@@ -281,6 +265,7 @@ export function ChatCaptureCard({
                 busy ||
                 refreshRequired ||
                 !draft.space_id ||
+                missing.length > 0 ||
                 !draft.items.some((i) => i.selected) ||
                 (duplicates && !allowDuplicates)
               }
@@ -300,15 +285,17 @@ export function ChatCaptureCard({
 }
 function CaptureItem({
   row,
+  quantityMissing,
   disabled,
   onChange,
 }: {
   row: CaptureRow;
+  quantityMissing: boolean;
   disabled: boolean;
   onChange: (value: Record<string, unknown>) => void;
 }) {
   const [name, setName] = useState(row.item.name),
-    [quantity, setQuantity] = useState(String(row.item.quantity));
+    [quantity, setQuantity] = useState(quantityMissing ? "" : String(row.item.quantity));
   const [details, setDetails] = useState({
     category: row.item.category,
     brand: row.item.brand || "",
@@ -338,6 +325,8 @@ function CaptureItem({
       />
       <input
         aria-label={`Quantity for ${row.item.name}`}
+        placeholder="Quantity needed"
+        aria-invalid={quantityMissing && row.selected}
         type="number"
         min={0}
         max={100000}
@@ -352,10 +341,10 @@ function CaptureItem({
             Number.isInteger(n) &&
             n >= 0 &&
             n <= 100000 &&
-            n !== row.item.quantity
+            (quantityMissing || n !== row.item.quantity)
           )
             onChange({ quantity: n });
-          else setQuantity(String(row.item.quantity));
+          else setQuantity(quantityMissing ? "" : String(row.item.quantity));
         }}
       />
       {row.item.scan_evidence?.needs_review && (

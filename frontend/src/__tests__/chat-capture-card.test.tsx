@@ -115,3 +115,21 @@ test("unconfirmed saves require refresh and suppress repeated clicks", async () 
   ).toHaveLength(1);
   expect(screen.queryByText(/Saved to/)).toBeNull();
 });
+
+test('unknown count stays blank and entering one explicitly confirms it', async () => {
+  const unknown: ChatCapture = {...draft, summary: {unknown_quantity_indices: [0]}, items: [{...draft.items[0], item: {...draft.items[0].item, quantity: 1}}]};
+  jest.mocked(accountRequest).mockImplementation(async (_id, path, options) => {
+    if (path.endsWith('/spaces')) return {inventories: []} as never;
+    expect(options?.body).toEqual({revision: 1, changes: {items: [{index: 0, quantity: 1}]}});
+    return {capture: {...unknown, revision: 2, summary: {unknown_quantity_indices: []}}} as never;
+  });
+  render(<ChatCaptureCard capture={unknown} accountId="a" worldId="w" conversationId="c" />);
+  const quantity = screen.getByLabelText('Quantity for Bolt');
+  expect(quantity).toHaveProperty('value', '');
+  expect(screen.getByRole('button', {name: 'Confirm and save'})).toHaveProperty('disabled', true);
+  fireEvent.change(quantity, {target: {value: '1'}});
+  fireEvent.blur(quantity);
+  await screen.findByDisplayValue('1');
+  expect(screen.getByRole('button', {name: 'Confirm and save'})).toHaveProperty('disabled', false);
+  expect(jest.mocked(accountRequest).mock.calls.some(([, path]) => path.endsWith('/save'))).toBe(false);
+});

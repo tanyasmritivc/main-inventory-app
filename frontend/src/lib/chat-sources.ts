@@ -43,10 +43,11 @@ export type CaptureRow = {
     brand?: string;
     part_number?: string;
     notes?: string;
-    scan_evidence?: { needs_review?: boolean; review_reasons?: string[] };
+    scan_evidence?: { quantity_basis?: string; needs_review?: boolean; review_reasons?: string[] };
   };
 };
 export type ChatCapture = {
+  summary?: { unknown_quantity_indices?: number[]; described_place?: string };
   id: string;
   revision: number;
   status: "draft" | "saving" | "saved";

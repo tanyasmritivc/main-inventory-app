@@ -1,4 +1,5 @@
 "use client";
+import { hasUnknownQuantity } from "@/lib/quantity-evidence";
 import { privateImageSrc } from "@/lib/private-image";
 import styles from "./review-queue.module.css";
 
@@ -173,7 +174,7 @@ export function ReviewQueueClient() {
                 <label><span>Name</span><input disabled={!canEditInventory()} className="product-input" value={item.name} onChange={(event) => change(item.review_id, { name: event.target.value })} /></label>
                 <label><span>Category</span><input disabled={!canEditInventory()} className="product-input" value={item.category} onChange={(event) => change(item.review_id, { category: event.target.value })} /></label>
                 <label><span>Location</span><input disabled={!canEditInventory()} className="product-input" value={item.location ?? ""} placeholder="Required" onChange={(event) => change(item.review_id, { location: event.target.value })} /></label>
-                <label><span>Quantity</span><input disabled={!canEditInventory()} className="product-input" type="number" min={0} max={100000} value={item.quantity} onChange={(event) => change(item.review_id, { quantity: Number(event.target.value) })} /></label>
+                <label><span>Quantity</span><input disabled={!canEditInventory()} className="product-input" type="number" min={0} max={100000} value={hasUnknownQuantity(item.scan_evidence) ? "" : item.quantity} placeholder="Quantity needed" onChange={(event) => change(item.review_id, { quantity: Number(event.target.value), scan_evidence: {...item.scan_evidence, needs_review: item.scan_evidence?.needs_review ?? true, quantity_basis: event.target.value !== "" && Number.isSafeInteger(Number(event.target.value)) && Number(event.target.value) >= 0 ? "user_confirmed" : "unknown"} })} /></label>
                 <label><span>Brand</span><input disabled={!canEditInventory()} className="product-input" value={item.brand ?? ""} onChange={(event) => change(item.review_id, { brand: event.target.value || null })} /></label>
                 <label><span>Part / model #</span><input disabled={!canEditInventory()} className="product-input" value={item.part_number ?? ""} onChange={(event) => change(item.review_id, { part_number: event.target.value || null })} /></label>
               </div>
