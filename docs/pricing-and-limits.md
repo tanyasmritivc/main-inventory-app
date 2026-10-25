@@ -11,8 +11,7 @@ and robotics-season proposals. It is a display catalog, not a billing entitlemen
 
 All plans include unlimited Spaces. Plus includes low-stock reminders. Team adds
 shared inventory, permissions and activity. Larger teams contact info@findez.ai.
-Verified student/robotics teams are planned to receive 50% off Team, with manual
-eligibility review. No discount checkout or entitlement is active.
+No promotional offers, education discounts or robotics discounts are offered.
 
 ## Usage definitions for launch
 

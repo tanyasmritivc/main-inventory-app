@@ -39,7 +39,6 @@ export function PricingClient() {
           <h2 id="plan-details-title">How the planned limits work</h2>
           <dl>{PLAN_POLICIES.map(([title, detail]) => <div key={title}><dt>{title}</dt><dd>{detail}</dd></div>)}</dl>
           <p>Need a larger team? <a href="mailto:info@findez.ai?subject=FindEZ%20larger%20team">Contact us</a>.</p>
-          <p>Verified student and robotics teams will be eligible for 50% off Team. <a href="mailto:info@findez.ai?subject=FindEZ%20education%20discount">Ask about eligibility</a>.</p>
         </section>
         <p className="plans-footnote">Planned pricing in USD. All plan allowances start when subscriptions launch. AI allowances may be adjusted before launch based on measured usage. Current access is unchanged. <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link></p>
       </main>
