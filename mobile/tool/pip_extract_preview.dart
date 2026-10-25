@@ -13,7 +13,7 @@ Future<void> main() async {
   await fixture.initialize(mockPreferences: false);
   fixture.respond = (request) async {
     if (request.path.endsWith('/extract_from_image')) {
-      await Future<void>.delayed(const Duration(seconds: 12));
+      await Future<void>.delayed(const Duration(seconds: 30));
       return {
         'items': [
           {'name': 'QA fixture charger', 'category': 'Tools', 'quantity': 1},

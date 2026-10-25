@@ -102,16 +102,42 @@ void main() {
   });
   tearDownAll(() => Supabase.instance.dispose());
 
+  test('cancelled extraction does not upload a photo', () async {
+    final adapter = CaptureAdapter();
+    final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
+      ..httpClientAdapter = adapter;
+    final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+    final token = dio.CancelToken()..cancel();
+    await expectLater(
+      api.extractInventoryFromImage(
+        bytes: [1, 2, 3],
+        filename: 'photo.jpg',
+        cancelToken: token,
+      ),
+      throwsA(
+        isA<dio.DioException>().having(
+          (error) => error.type,
+          'type',
+          dio.DioExceptionType.cancel,
+        ),
+      ),
+    );
+    expect(adapter.requests, isEmpty);
+  });
+
   test('upload is a preview and only Save creates the signed review', () async {
     final adapter = CaptureAdapter();
     final client = dio.Dio(dio.BaseOptions(baseUrl: 'https://api.test'))
       ..httpClientAdapter = adapter;
     final api = ApiClient(baseUrl: 'https://api.test', httpClient: client);
+    final cancelToken = dio.CancelToken();
     final result = await api.extractInventoryFromImage(
+      cancelToken: cancelToken,
       bytes: [1, 2, 3],
       filename: 'photo.jpg',
     );
     expect(adapter.requests, hasLength(1));
+    expect(adapter.requests.single.cancelToken, same(cancelToken));
     expect(
       (adapter.requests.single.data as dio.FormData).fields
           .firstWhere((field) => field.key == 'preview_only')

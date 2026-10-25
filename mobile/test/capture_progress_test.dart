@@ -13,6 +13,7 @@ class CaptureHarness {
   late BuildContext spaceContext;
   int calls = 0;
   bool retry = false;
+  CancelToken? token;
 
   Future<void> mount(
     WidgetTester tester,
@@ -48,11 +49,14 @@ class CaptureHarness {
                           await runWithCaptureProgress(
                             context: context,
                             retryOnFailure: retry,
-                            extract: () {
+                            extract: (cancelToken) {
+                              token = cancelToken;
                               calls++;
                               return extract();
                             },
                           );
+                        } on CaptureCancelled {
+                          return;
                         } catch (_) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +107,50 @@ class CaptureHarness {
 }
 
 void main() {
+  for (final lateError in [false, true]) {
+    testWidgets(
+      'Stop ignores late ${lateError ? 'failure' : 'success'} and permits another scan',
+      (tester) async {
+        final first = Completer<void>();
+        final second = Completer<void>();
+        final harness = CaptureHarness()..retry = true;
+        await harness.mount(
+          tester,
+          () => harness.calls == 1 ? first.future : second.future,
+        );
+        await harness.start(tester);
+        final firstToken = harness.token!;
+        await tester.tap(find.text('Stop extraction'));
+        await tester.pumpAndSettle();
+        expect(firstToken.isCancelled, isTrue);
+        expect(find.text('Space items'), findsOneWidget);
+        expect(find.text('Confirm Items'), findsNothing);
+        expect(find.text('Try again'), findsNothing);
+        await harness.start(tester);
+        expect(harness.token!.isCancelled, isFalse);
+        if (lateError) {
+          first.completeError(
+            DioException(
+              requestOptions: RequestOptions(path: '/extract'),
+              type: DioExceptionType.receiveTimeout,
+            ),
+          );
+        } else {
+          first.complete();
+        }
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('Pip is looking...'), findsOneWidget);
+        expect(find.text('Confirm Items'), findsNothing);
+        expect(find.text('Photo analysis interrupted'), findsNothing);
+        second.complete();
+        await tester.pumpAndSettle();
+        expect(find.text('Confirm Items'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
   testWidgets(
     'retry reuses the same extraction callback only after user choice',
     (tester) async {

@@ -1220,9 +1220,10 @@ class _ScanPageState extends State<ScanPage> {
       final res = await runWithCaptureProgress(
         context: context,
         itemCount: (result) => result.items.length,
-        extract: () => widget.api.extractInventoryFromImage(
+        extract: (cancelToken) => widget.api.extractInventoryFromImage(
           bytes: bytes,
           filename: x.name,
+          cancelToken: cancelToken,
         ),
       );
       developer.log(
@@ -1273,6 +1274,8 @@ class _ScanPageState extends State<ScanPage> {
           unawaited(_showExtractionReviewModal(ok: ok, failed: failed));
         });
       }
+    } on CaptureCancelled {
+      return;
     } on dio.DioException catch (e) {
       debugPrint(
         'FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}',

@@ -7,9 +7,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// Owns exactly one root route; closing it never pops a newer sheet or page.
 class PipExtractLoaderHandle {
-  PipExtractLoaderHandle._(this._navigator);
+  PipExtractLoaderHandle._(this._navigator, this._onStop);
 
   final NavigatorState _navigator;
+  final VoidCallback? _onStop;
   final _count = ValueNotifier<int?>(null);
   late final RawDialogRoute<void> _route;
   Timer? _successTimer;
@@ -25,6 +26,12 @@ class PipExtractLoaderHandle {
     return _success!.future;
   }
 
+  void stop() {
+    if (_closed) return;
+    _onStop?.call();
+    dismiss();
+  }
+
   void dismiss() {
     if (_closed) return;
     _closed = true;
@@ -36,9 +43,13 @@ class PipExtractLoaderHandle {
   }
 }
 
-PipExtractLoaderHandle showPipExtractLoader(BuildContext context) {
+PipExtractLoaderHandle showPipExtractLoader(
+  BuildContext context, {
+  VoidCallback? onStop,
+}) {
   final handle = PipExtractLoaderHandle._(
     Navigator.of(context, rootNavigator: true),
+    onStop,
   );
   final reduceMotion =
       MediaQuery.disableAnimationsOf(context) ||
@@ -55,7 +66,10 @@ PipExtractLoaderHandle showPipExtractLoader(BuildContext context) {
         FadeTransition(opacity: animation, child: child),
     pageBuilder: (_, _, _) => ValueListenableBuilder<int?>(
       valueListenable: handle._count,
-      builder: (_, count, _) => PipExtractLoader(foundCount: count),
+      builder: (_, count, _) => PipExtractLoader(
+        foundCount: count,
+        onStop: onStop == null ? null : handle.stop,
+      ),
     ),
   );
   unawaited(handle._navigator.push<void>(handle._route));
@@ -70,9 +84,10 @@ PipExtractLoaderHandle showPipExtractLoader(BuildContext context) {
 
 /// Presentation only. Timed captions are not model telemetry; no invented finds.
 class PipExtractLoader extends StatefulWidget {
-  const PipExtractLoader({super.key, this.foundCount});
+  const PipExtractLoader({super.key, this.foundCount, this.onStop});
 
   final int? foundCount;
+  final VoidCallback? onStop;
 
   @override
   State<PipExtractLoader> createState() => _PipExtractLoaderState();
@@ -85,7 +100,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
     'Reading labels...',
     'Counting items...',
     'Matching model numbers...',
-    'Almost done...',
+    'Still working...',
   ];
   late final _bob = AnimationController(
     vsync: this,
@@ -219,17 +234,13 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
         fontWeight: FontWeight.w600,
         fontSize: 16,
         color: Colors.white,
-        shadows: [
-          Shadow(
-            color: Color(0x59000000),
-            offset: Offset(0, 1),
-            blurRadius: 10,
-          ),
-        ],
       ),
     );
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) widget.onStop?.call();
+      },
       child: Material(
         type: MaterialType.transparency,
         child: Stack(
@@ -237,7 +248,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
           children: [
             BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: const ColoredBox(color: Color(0x3D111112)),
+              child: const ColoredBox(color: Color(0xB3111112)),
             ),
             SafeArea(
               child: Align(
@@ -254,29 +265,6 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                           clipBehavior: Clip.none,
                           alignment: Alignment.bottomCenter,
                           children: [
-                            AnimatedBuilder(
-                              animation: _bob,
-                              builder: (_, _) {
-                                final pose = _pose(
-                                  _reduceMotion || count != null
-                                      ? 0
-                                      : _bob.value,
-                                );
-                                return Transform.scale(
-                                  scale: 1 + pose[0] / 40,
-                                  child: Container(
-                                    width: 84,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0x38000000),
-                                      borderRadius: BorderRadius.all(
-                                        Radius.elliptical(42, 5),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
                             RepaintBoundary(
                               child: AnimatedBuilder(
                                 animation: Listenable.merge([_bob, _pop]),
@@ -375,7 +363,7 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                       const SizedBox(height: 8),
                       Text(
                         count == null
-                            ? 'step ${_step + 1} of 5'
+                            ? 'Looking through your photo'
                             : '$count found',
                         style: const TextStyle(
                           fontFamily: 'GeistMono',
@@ -384,8 +372,8 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                         ),
                       ),
                       const SizedBox(height: 12),
-                      FractionallySizedBox(
-                        widthFactor: .7,
+                      SizedBox(
+                        width: 180,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: SizedBox(
@@ -418,6 +406,20 @@ class _PipExtractLoaderState extends State<PipExtractLoader>
                           ),
                         ),
                       ),
+                      if (widget.onStop != null) ...[
+                        const SizedBox(height: 24),
+                        OutlinedButton(
+                          onPressed: widget.onStop,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0x33111112),
+                            minimumSize: const Size(120, 44),
+                            side: const BorderSide(color: Color(0x99FFFFFF)),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text('Stop extraction'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -437,31 +439,12 @@ class _PipArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = 'assets/mascot/${success ? 'pip-found-it' : 'pip'}.svg';
+    // The supplied SVG already includes a ground shadow. Adding a second
+    // silhouette or oval makes Pip look doubled on light backgrounds.
     return SizedBox(
       width: 170,
       height: 170,
-      child: ExcludeSemantics(
-        child: Stack(
-          fit: StackFit.expand,
-          clipBehavior: Clip.none,
-          children: [
-            Transform.translate(
-              offset: const Offset(0, 10),
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 11, sigmaY: 11),
-                child: SvgPicture.asset(
-                  asset,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0x2E000000),
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-            SvgPicture.asset(asset),
-          ],
-        ),
-      ),
+      child: ExcludeSemantics(child: SvgPicture.asset(asset)),
     );
   }
 }

@@ -1,3 +1,27 @@
+## October 24 - Mobile Pip cancellation and Space menu delivered (beta130; PR207)
+
+Runtime `af3e64c182bd09e08830b6a7bd3a05c90718faee` on
+`fix/mobile-pip-stop-space-menu`. The loader has one artwork shadow, a darker
+backdrop, compact progress and a readable Stop extraction action. Stop cancels
+client transport immediately and suppresses late success/errors and confirmation;
+server computation may continue. Space options use the Flutter popup on iOS.
+Other native controls, bottom tabs, extraction endpoint and save contract remain.
+
+All five exact-runtime CI jobs passed (40158963134), including clean Flutter
+analysis and 873 tests with one optional skip. Simulator iPhone 17 Pro/iOS 26.5
+verified light/dark rendering, Flutter menu, immediate Stop, suppression of late
+results and a subsequent two-item confirmation using a network-free delayed fixture.
+Physical-device acceptance and real model performance remain unverified.
+
+Apple accepted 1.1.1 (130), delivery `de7de827-d343-4607-b48f-688c33566059`.
+Processing/tester availability were not polled. All 32 archive/export executables,
+strict signature, 24 privacy manifests, production configuration and Apple
+validation passed. IPA SHA256
+`fa5ad56f652e0160a85e7becc425d16277e9785c21c81fb868ea1988bb5f723b`.
+Artifacts and receipts: Documents/FindEZ/AppStore/1.1.1-build130.
+No public App Store submission. User-authorized cleanup removed only rebuildable
+inactive simulator caches and disposable build output; projects/data/releases kept.
+
 ## October 24 - Pip extraction loader delivered (beta129; PR205)
 
 Branch `feat/pip-extract-loader`; runtime `7fa398c1a4f83fa1c4bdecfc4c2e1e8373365ce8`.

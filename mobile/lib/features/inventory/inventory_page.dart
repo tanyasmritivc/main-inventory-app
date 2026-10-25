@@ -704,6 +704,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             NotificationBell(api: widget.api),
             AppMenuButton(
               label: 'Space options',
+              useNative: false,
               onSelected: _onFabItemTap,
               items: [
                 if (!widget.readOnly)

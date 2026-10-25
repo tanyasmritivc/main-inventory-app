@@ -1,3 +1,23 @@
+## October 24 follow-up (delivered beta130)
+
+The user rejected the layered shadow and requested Stop. The loader now retains
+only the shadow inside the original SVG, dims the backdrop more strongly, removes
+text shadows, and uses a compact progress bar. Stop closes immediately, cancels
+client transport, and suppresses late results/errors and the confirmation sheet.
+Server computation already underway may continue. Existing endpoint and save
+contracts are unchanged. Stop also works during the success hold. The final timed
+caption reads Still working; the fabricated step counter is removed.
+Space options use the existing Flutter popup instead of UIKit on iOS.
+The beta129 record below describes the previous delivered version.
+
+Build130: runtime af3e64c182bd09e08830b6a7bd3a05c90718faee, PR207,
+CI40158963134 all five jobs passed; clean analysis, 873 tests and one optional skip.
+Simulator light/dark rendering, Stop/late-result suppression and subsequent success
+passed with the delayed network-free fixture. Apple acknowledged upload with delivery
+de7de827-d343-4607-b48f-688c33566059. Processing/tester availability not polled;
+physical-device acceptance unverified. Signed artifacts, audit and receipt are in
+Documents/FindEZ/AppStore/1.1.1-build130.
+
 # Pip extraction loader
 
 Reference: open `findez-extract-loader.html`, then **B · Pip, no card**.

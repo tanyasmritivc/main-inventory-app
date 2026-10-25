@@ -10,6 +10,7 @@ void main() {
     WidgetTester tester, {
     bool reduced = false,
     double scale = 1,
+    VoidCallback? onStop,
   }) async {
     late PipExtractLoaderHandle handle;
     await tester.pumpWidget(
@@ -24,7 +25,8 @@ void main() {
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () => handle = showPipExtractLoader(context),
+              onPressed: () =>
+                  handle = showPipExtractLoader(context, onStop: onStop),
               child: const Text('Photo'),
             ),
           ),
@@ -50,14 +52,28 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
     }
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Almost done...'), findsOneWidget);
-    expect(find.text('step 5 of 5'), findsOneWidget);
+    expect(find.text('Still working...'), findsOneWidget);
+    expect(find.text('Looking through your photo'), findsOneWidget);
     expect(find.textContaining('found'), findsNothing);
     handle.dismiss();
     handle.dismiss();
     await tester.pumpAndSettle();
     expect(find.byType(PipExtractLoader), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Stop during success cancels the hold without completing twice', (
+    tester,
+  ) async {
+    var stops = 0;
+    final handle = await open(tester, onStop: () => stops++);
+    unawaited(handle.succeed(2));
+    await tester.pump();
+    await tester.tap(find.text('Stop extraction'));
+    await tester.pumpAndSettle();
+    handle.stop();
+    expect(stops, 1);
+    expect(find.byType(PipExtractLoader), findsNothing);
   });
 
   for (final count in [0, 1, 8]) {
@@ -152,7 +168,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       expect(tester.takeException(), isNull);
     }
-    expect(find.text('Almost done...'), findsOneWidget);
+    expect(find.text('Still working...'), findsOneWidget);
     handle.dismiss();
     await tester.pumpAndSettle();
   });

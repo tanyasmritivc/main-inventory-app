@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mobile/core/ui/native_menu_button.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
@@ -112,6 +114,38 @@ void main() {
     expect(find.text('Manual Add'), findsNothing);
     expect(find.byType(ItemEditorSheet), findsNothing);
   }
+
+  testWidgets(
+    'Space options use the Flutter menu on iOS and retain import scope',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final api = await mount(tester);
+      final menu = find.byWidgetPredicate(
+        (widget) => widget is AppMenuButton && widget.label == 'Space options',
+      );
+      expect(
+        find.descendant(of: menu, matching: find.byType(NativeToolbarButton)),
+        findsNothing,
+      );
+      await tester.tap(find.byTooltip('Space options'));
+      await tester.pumpAndSettle();
+      expect(find.text('Print Bin Label'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PopupMenuItem<String>),
+          matching: find.text('Import Spreadsheet'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final page = tester.widget<ImportSheetPage>(find.byType(ImportSheetPage));
+      expect(page.api, same(api));
+      expect(page.location, 'Garage');
+      expect(fixture.requests.where((r) => r.method != 'GET'), isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets(
     'empty Space Add Item opens three capture choices without a write',

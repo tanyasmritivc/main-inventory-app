@@ -26,12 +26,14 @@ class AppMenuButton extends StatelessWidget {
     required this.items,
     required this.onSelected,
     this.label = 'Options',
+    this.useNative = true,
   });
   final List<AppMenuItem> items;
   final ValueChanged<String> onSelected;
   final String label;
+  final bool useNative;
   @override
-  Widget build(BuildContext context) => usesNativePresentation
+  Widget build(BuildContext context) => useNative && usesNativePresentation
       ? NativeToolbarButton(
           symbol: 'ellipsis',
           label: label,
