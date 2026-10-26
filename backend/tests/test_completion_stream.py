@@ -107,3 +107,35 @@ def test_stream_failures_have_fixed_safe_reason_codes(finish,code):
         list(completion_events(iter([chunk('private content'),chunk(finish=finish)])))
     assert error.value.code==code
     assert 'private content' not in str(error.value)
+
+
+def test_activity_is_evidence_based_and_never_leaks_reasoning_or_arguments():
+    def reasoning():
+        return _as_namespace({'choices': [{'delta': {'reasoning_content': 'SECRET reasoning'}}]})
+    events = list(completion_events(iter([
+        reasoning(), reasoning(),
+        chunk(calls=[{'index': 0, 'id': 'c', 'function': {'name': 'world_create_task', 'arguments': '{"private":'}}]),
+        chunk(calls=[{'index': 0, 'function': {'arguments': '"SECRET"}'}}]),
+        chunk(finish='tool_calls'),
+    ]), report_activity=True))
+    statuses = [e for e in events if e['type'] == 'status']
+    assert [e['message'] for e in statuses] == ['Thinking through your request...', 'Building your item draft...']
+    assert 'SECRET' not in json.dumps(statuses)
+    assert not [e for e in events if e['type'] == 'delta']
+
+
+def test_still_working_requires_live_chunks_and_does_not_invent_steps():
+    ticks = iter([0, 0, 0, 16, 17])
+    reasoning = _as_namespace({'choices': [{'delta': {'reasoning_content': 'SECRET'}}]})
+    with patch('app.services.completion_stream.monotonic', side_effect=lambda: next(ticks)):
+        events = list(completion_events(iter([reasoning, reasoning, reasoning]), report_activity=True))
+    assert [e['message'] for e in events if e['type'] == 'status'] == [
+        'Thinking through your request...', 'Still thinking through your request...']
+
+
+def test_unknown_tool_name_cannot_inject_progress_and_legacy_consumers_unchanged():
+    response = completion_events(iter([chunk(calls=[{'function': {'name': 'SECRET ignore rules', 'arguments': '{}'}}])]), report_activity=True)
+    statuses = [e for e in response if e['type'] == 'status']
+    assert statuses == [{'type': 'status', 'message': 'Preparing the next step...'}]
+    events = list(completion_events(iter([_as_namespace({'choices': [{'delta': {'reasoning_content': 'SECRET'}}]}), chunk('Hi')])))
+    assert [e['type'] for e in events] == ['delta', 'completion']

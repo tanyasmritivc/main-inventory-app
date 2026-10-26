@@ -1,5 +1,6 @@
 """Normalize model chunks without inventing text or exposing tool arguments."""
 from types import SimpleNamespace
+from time import monotonic
 from app.services.chat_response_style import format_chat_reply
 
 
@@ -10,7 +11,7 @@ class CompletionStreamError(RuntimeError):
         self.code = code
 
 
-def completion_events(response):
+def completion_events(response, *, report_activity=False, thinking_message='Thinking through your request...'):
     """Yield text deltas then the assembled model message.
 
     The gateway can deliver a whole model message in one event. Support that
@@ -19,6 +20,9 @@ def completion_events(response):
     chunks = (response,) if hasattr(response, 'choices') else response
     parts, calls = [], {}
     emitted = ""
+    activity = None
+    activity_started = monotonic()
+    still_reported = False
     try:
         for chunk in chunks:
             choices = getattr(chunk, 'choices', None) or []
@@ -28,6 +32,12 @@ def completion_events(response):
             delta = getattr(choice, 'delta', None) or getattr(choice, 'message', None)
             if delta is None:
                 continue
+            # Only fixed activity labels leave this boundary. Never expose or
+            # summarize reasoning text, tool arguments, or arbitrary tool names.
+            if report_activity and not activity and getattr(delta, 'reasoning_content', None):
+                activity = thinking_message
+                activity_started = monotonic()
+                yield {'type': 'status', 'message': activity}
             for fallback_index, call in enumerate(getattr(delta, 'tool_calls', None) or []):
                 index = getattr(call, 'index', None)
                 index = fallback_index if index is None else index
@@ -40,6 +50,17 @@ def completion_events(response):
                 entry['arguments'] += getattr(function, 'arguments', None) or ''
                 if len(entry['arguments']) > 8000 or len(entry['name']) > 200 or len(entry['id']) > 300:
                     raise CompletionStreamError('tool_size', 'Model tool call is too large')
+            if report_activity and calls:
+                from app.services.chat_progress import planning_status
+                label = planning_status(next(iter(calls.values()))['name'])
+                if activity != label:
+                    activity = label
+                    activity_started = monotonic()
+                    still_reported = False
+                    yield {'type': 'status', 'message': label}
+            if report_activity and activity and not still_reported and monotonic() - activity_started >= 15:
+                still_reported = True
+                yield {'type': 'status', 'message': 'Still ' + activity[0].lower() + activity[1:]}
             content = getattr(delta, 'content', None)
             if content:
                 if not isinstance(content, str):

@@ -1,3 +1,14 @@
+## October 25 - Grounded chat activity and answer recovery
+
+Lane `feat/chat-activity-status` adds fixed server status events from actual
+reasoning chunks, tool preparation/execution, results and retry boundaries.
+No private reasoning or tool arguments are exposed. A still-working update requires
+continued upstream activity; no timed fictional milestones. Existing clients render
+these events without layout changes. Action summaries are held until receipt claim
+validation passes. One answer correction is independent of the one transport retry,
+with tools disabled during correction and existing mutation receipts preserved.
+Verified: 64 focused tests and 1,534 full Python tests pass. Release pending CI.
+
 ## October25 — Chat generation budget fix deployed (PR225)
 
 Runtime `84a8991` is live; all five exact-source CI gates passed (40246755670).

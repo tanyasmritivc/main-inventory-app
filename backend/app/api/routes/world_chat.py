@@ -183,7 +183,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                 draft = None
                 stage = 'load_chat_photo'
                 image_content = await asyncio.to_thread(chat_vision.retained_image, actor, retained)
-            yield encode({'type': 'status', 'message': 'Preparing your response…'})
+            yield encode({'type': 'status', 'message': 'Loading your conversation context...'})
             stage = 'chat_reply'
             from app.services.world_user_context import load as load_user_context
             user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None

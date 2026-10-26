@@ -207,7 +207,7 @@ def test_capture_reply_retries_interrupted_generation_once_and_resets_text():
         result = list(w.stream_turn(ACTOR, WORLD, 'Auto extract', [], 'cid'))
     assert gateway.call_count == 2
     assert gateway.call_args.kwargs['max_tokens'] == w.CHAT_RETRY_TOKENS
-    assert [e['type'] for e in result] == ['delta','reset','delta','done']
+    assert [e['type'] for e in result if e['type'] != 'status'] == ['delta','reset','delta','done']
     assert result[-1]['assistant_message'] == 'Which inventory and Space should I use?'
 
 
@@ -383,3 +383,38 @@ def test_repeated_output_limit_is_bounded_and_never_executes_partial_tool(caplog
     execute.assert_not_called()
     assert 'reason=output_limit' in caplog.text
     assert 'PRIVATE' not in caplog.text and 'My private apartment' not in caplog.text
+
+
+def test_length_retry_does_not_consume_answer_repair_and_unverified_summary_never_flashes():
+    call = NS(id='c', function=NS(name='world_create_task', arguments='{}'))
+    proposal = {'world_action': {'id': 'review', 'status': 'pending'}}
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value=proposal) as execute, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[
+        broken_stream(), completion(calls=[call]), completion('I created your items.'),
+        completion('Your draft is ready to review. Nothing has been saved yet.')
+    ]) as gateway:
+        events = list(w.stream_turn(ACTOR, WORLD, 'Build my apartment inventory', [], 'cid', supports_task_actions=True))
+    execute.assert_called_once()
+    assert gateway.call_count == 4
+    assert 'tools' not in gateway.call_args_list[-1].kwargs
+    assert events[-1]['type'] == 'done'
+    assert events[-1]['answer_context']['world_actions'] == [proposal['world_action']]
+    assert 'I created' not in ''.join(e['delta'] for e in events if e['type'] == 'delta')
+    labels = [e['message'] for e in events if e['type'] == 'status']
+    assert 'Building your item draft...' in labels
+    assert 'Writing your draft summary...' in labels
+    assert 'Retrying the interrupted response...' in labels
+    assert 'Checking the answer against your saved changes...' in labels
+
+
+def test_repeated_false_claims_still_fail_closed_after_transport_retry():
+    call = NS(id='c', function=NS(name='world_create_task', arguments='{}'))
+    with patch.object(w, 'directory', return_value={}), patch.object(w, 'execute', return_value={'world_action': {'id': 'review', 'status': 'pending'}}) as execute, patch('app.services.agent_gateway_client.gateway_completion', side_effect=[
+        broken_stream(), completion(calls=[call]), completion('I saved the items.'), completion('I saved the items.')
+    ]) as gateway:
+        events = []
+        with pytest.raises(RuntimeError, match='without a confirmed receipt'):
+            for event in w.stream_turn(ACTOR, WORLD, 'Add my items', [], 'cid', supports_task_actions=True):
+                events.append(event)
+    execute.assert_called_once()
+    assert gateway.call_count == 4
+    assert not any(e['type'] in ('delta', 'done') for e in events)

@@ -373,6 +373,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
     from app.services.agent_gateway_client import gateway_completion
     from app.services.completion_stream import completion_events
     from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
+    yield {'type': 'status', 'message': 'Checking your inventories and Spaces...'}
     known = directory(actor, world)
     messages = [{'role': 'system', 'content': 'You are FindEZ, AI memory for the physical world. '
         'Answer the user in your own words. Search saved records before making inventory claims. '
@@ -492,6 +493,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
             'never invent items. Personalize only from explicit current context and saved preferences. '
             'Do not claim a save, low-stock rule, purchase, or memory preference was applied unless a tool receipt confirms it.'})
     retry_available = True
+    answer_repair_available = True
     prior_states = {a.get('id'): a for row in history for a in row.get('action_states', [])}
     prior_pending = any(a.get('status') == 'pending' for a in prior_states.values())
     messages.append({'role': 'system', 'content': DESTINATION_GUIDANCE})
@@ -504,6 +506,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         available_tools = capture_tools(client_tools, capture)
         # Retry generation only: executed tools and their durable receipts stay in
         # messages/memo. A transport failure never reruns an inventory mutation.
+        from app.services.assistant_tool_safety import READ_TOOLS, mutation_requested
+        hold_summary = mutation_requested(message) or any(t['tool'] not in READ_TOOLS for t in trace)
         while True:
             try:
                 from app.core.config import get_settings
@@ -512,9 +516,13 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                     max_tokens=generation_limit, stream=True,
                     **({'tools': available_tools, 'tool_choice': 'auto', 'parallel_tool_calls': False} if enabled else {}))
                 content, calls = '', []
-                for event in completion_events(response):
-                    if event['type'] == 'delta':
+                from app.services.chat_progress import response_status
+                for event in completion_events(response, report_activity=True, thinking_message=response_status(trace)):
+                    if event['type'] == 'status':
                         yield event
+                    elif event['type'] == 'delta':
+                        if not hold_summary:
+                            yield event
                     else:
                         content, calls = event['content'], event['tool_calls']
                 if not content.strip() and not calls:
@@ -530,6 +538,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 retry_available = False
                 generation_limit = CHAT_RETRY_TOKENS
                 yield {'type': 'reset'}
+                yield {'type': 'status', 'message': 'Retrying the interrupted response...'}
         if calls:
             yield {'type': 'reset'}
             if not enabled:
@@ -604,7 +613,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                         '. Ask ONE short question for this count only. Do not combine it with a destination question, '
                         'offer example destinations, repeat the item list, or introduce reorder setup. '
                         'Handle a destination the user already named with tools, but defer asking any new destination question until this count is resolved.'})
-            yield {'type': 'status', 'message': 'Preparing your response…'}
+            from app.services.chat_progress import response_status
+            yield {'type': 'status', 'message': response_status(trace)}
             continue
         if not content.strip():
             raise RuntimeError('Empty model response')
@@ -628,12 +638,14 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         try:
             validate_model_answer(message, trace, content)
         except RuntimeError:
-            if not retry_available or step == 8:
+            if not answer_repair_available or step == 8:
                 raise
-            retry_available = False
+            answer_repair_available = False
+            logger.warning('World answer repair reason=unconfirmed_action_claim')
             repairing = True
             generation_limit = CHAT_RETRY_TOKENS
             yield {'type': 'reset'}
+            yield {'type': 'status', 'message': 'Checking the answer against your saved changes...'}
             messages.append({'role': 'system', 'content':
                 ('Use the current confirmed extraction receipt to describe its earlier save accurately. Do not claim new changes. '
                  if capture and capture['draft'] and capture['draft']['status'] == 'saved' else
@@ -646,6 +658,8 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         # An invented internal URL must not look like a working navigation control.
         content = re.sub(r'\[([^\]]+)\]\((findez://[^)]+)\)',
             lambda match: match.group(0) if match.group(2) in references else match.group(1), content)
+        if hold_summary:
+            yield {'type': 'delta', 'delta': format_chat_reply(content)}
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
             'answer_context': {**({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
