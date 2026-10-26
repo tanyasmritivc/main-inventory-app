@@ -1,0 +1,31 @@
+Hello App Review,
+
+Thank you for reviewing FindEZ AI. Here are the requested details about version 1.0.7:
+
+1. Does your app use third-party AI?
+
+FindEZ uses AI models developed by third parties, but the inventory photo and language models are self-hosted and operated by AI Robots Inc, the developer of FindEZ. They do not use an external hosted AI provider for inference. The language gateway's configured model route is deepseek-v4-flash-agent. Inventory photo analysis uses our self-hosted FIND vision pipeline.
+
+Optional voice input uses Apple's native speech recognition service, with iOS speech-recognition and microphone permissions.
+
+2. Who hosts and runs the AI models in your binary?
+
+The FindEZ iOS binary does not contain language or inventory-vision model weights. It calls our FindEZ backend. AI Robots Inc operates the FIND vision service and the FTCTools agent gateway, and runs their model inference on our own servers. The FTCTools domain does not represent an external AI processor in this deployment. The optional speech transcription feature is provided by Apple's Speech framework.
+
+3. Does the platform use any external or third-party AI integrations?
+
+The iOS app does not integrate with OpenAI, Anthropic, or another external hosted language or image AI API for its inventory features. It does use Apple's optional speech recognition for voice input.
+
+Separately, FindEZ provides optional API connectors for external assistants such as Claude Desktop and ChatGPT. These are configured by a user outside the iOS app using a scoped FindEZ API key. They are not embedded in the iOS binary, required for the app, or automatically enabled. Users can revoke their keys.
+
+4. Is user data shared with external AI providers for processing?
+
+Inventory photos, typed questions, and the relevant inventory context are processed on our own servers for FindEZ's photo and language features. They are not forwarded to external AI providers for that inference.
+
+There are two optional cases: Apple may process audio when a user grants the required permissions and uses voice input; and a user-configured external assistant can receive inventory information permitted by that user's API key when the user invokes the connection. Typed input remains available without speech-recognition permission.
+
+We found obsolete references to OpenAI in build 58's in-app Privacy Policy and Terms of Service. They do not describe the current backend. We have prepared a policy correction for replacement build 59 that accurately describes our self-hosted processing, Apple's optional speech recognition, and user-configured API integrations.
+
+Regarding Guideline 2.3.10, we have prepared replacement screenshots captured directly from the native iOS app on iPhone and iPad, using the dedicated sample review account. They show the actual interface and iOS status bars, without reconstructed device UI. These replacements are ready to upload in Media Manager before resubmission.
+
+Thank you.

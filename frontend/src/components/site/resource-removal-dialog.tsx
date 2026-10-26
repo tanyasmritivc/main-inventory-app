@@ -1,0 +1,30 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { accountRequest } from "@/lib/account-request";
+import { ApiError } from "@/lib/api";
+import { userFacingError } from "@/lib/user-facing-error";
+export type RemovalKind = "organization" | "workspace" | "inventory" | "space";
+type Preview = {kind:RemovalKind;id:string;name:string;workspaces:number;inventories:number;spaces:number;items:number;can_move:boolean;destinations:{id:string;name:string}[]};
+const moveText:Record<RemovalKind,string>={organization:"Keep workspaces outside this organization",workspace:"Move inventories to their owners’ Personal area",inventory:"Move this inventory somewhere else",space:"Move items to another Space"};
+const explanation:Record<RemovalKind,string>={organization:"Workspaces and their contents stay together. Existing workspace members keep their access. The organization and its memberships are removed.",workspace:"Inventories, Spaces, items and photos stay with their existing owners. Workspace tasks, files and memberships are removed; inventory sharing is revoked.",inventory:"Spaces, items and photos stay together with the existing owner. Previous sharing is revoked. Members of the destination workspace receive access through its permissions.",space:"Items, bins, photos and pending identifications move to the chosen Space. The original Space and its sharing links are removed."};
+export function ResourceRemovalDialog({kind,id,name,accountId,onClose,onDone}:{kind:RemovalKind;id:string;name:string;accountId:string;onClose:()=>void;onDone:()=>void}) {
+ const [preview,setPreview]=useState<Preview|null>(null),[error,setError]=useState(""),[action,setAction]=useState<"move"|"delete"|"">(""),[destination,setDestination]=useState(""),[entered,setEntered]=useState(""),[busy,setBusy]=useState(false),[revision,setRevision]=useState(0);
+ const live=useRef(true),pending=useRef(false);
+ const path=`/resource-removal/${kind}/${encodeURIComponent(id)}`;
+ useEffect(()=>{let current=true;live.current=true;setPreview(null);setError("");void accountRequest<Preview>(accountId,path).then(value=>{if(!current)return;if(value.kind!==kind||value.id!==id||value.name!==name||!Array.isArray(value.destinations))throw new Error("The resource changed. Reopen the confirmation.");setPreview(value);}).catch(reason=>{if(current)setError(userFacingError(reason,"Could not check the contents."));});return()=>{current=false;live.current=false;};},[accountId,path,kind,id,name,revision]);
+ async function submit(event:React.FormEvent){event.preventDefault();if(pending.current||!preview||!action||entered!==name||action==="move"&&(kind==="space"||kind==="inventory")&&!destination)return;pending.current=true;setBusy(true);setError("");try{
+  const result=await accountRequest<{kind:string;id:string;action:string;deleted:boolean;moved:boolean}>(accountId,path,{method:"POST",body:{name,action,...(action==="move"&&(kind==="space"||kind==="inventory")&&destination!=="personal"?{destination_id:destination}:{})}});
+  if(!live.current)return;if(result.kind!==kind||result.id!==id||result.action!==action||!(result.deleted===true||result.moved===true)){setError("The change could not be confirmed. Refresh before retrying.");return;}window.dispatchEvent(new Event("findez-permissions-changed"));onDone();
+ }catch(reason){if(live.current)setError(reason instanceof ApiError&&typeof reason.limitData==="string"?reason.limitData:userFacingError(reason,"The change could not be saved."));}finally{pending.current=false;if(live.current)setBusy(false);}}
+ return <Dialog open onOpenChange={open=>{if(!open&&!pending.current)onClose();}}><DialogContent className="workspace-dialog inventory-creation-dialog"><DialogTitle>Delete {kind}</DialogTitle><DialogDescription>Choose what happens to “{name}” and its contents before continuing.</DialogDescription>
+ {!preview&&!error&&<p role="status">Checking contents…</p>}{error&&<p role="alert" className="notice-error">{error}</p>}{!preview&&error&&<button className="product-button" onClick={()=>setRevision(v=>v+1)}>Retry</button>}
+ {preview&&<form onSubmit={submit}><p className="workspace-muted">{preview.workspaces>0?`${preview.workspaces} workspaces · `:""}{preview.inventories>0?`${preview.inventories} inventories · `:""}{preview.spaces>0?`${preview.spaces} Spaces · `:""}{preview.items} items</p><fieldset disabled={busy} style={{border:0,padding:0,display:"grid",gap:16,margin:"20px 0"}}><legend>What would you like to do?</legend>
+ {preview.can_move&&<label><input type="radio" name="removal-action" checked={action==="move"} onChange={()=>setAction("move")}/> {moveText[kind]}</label>}
+ <label><input type="radio" name="removal-action" checked={action==="delete"} onChange={()=>setAction("delete")}/> Delete {kind} and all its contents</label></fieldset>
+ {action==="move"&&<p>{explanation[kind]}</p>}{action==="move"&&(kind==="space"||kind==="inventory")&&<label>Destination<select aria-label="Destination" className="product-select" value={destination} disabled={busy} onChange={event=>setDestination(event.target.value)}><option value="">Choose a destination</option>{preview.destinations.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
+ {action==="delete"&&<p role="note">All contents inside this {kind} will be permanently removed. This cannot be undone. Other resources are preserved.</p>}
+ <label>Type {name} to confirm<input aria-label={`Type ${name} to confirm`} className="product-input" value={entered} disabled={busy} onChange={event=>setEntered(event.target.value)}/></label>
+ <div className="product-actions"><button type="button" className="product-button" disabled={busy} onClick={onClose}>Cancel</button><button className="product-button" disabled={busy||!action||entered!==name||action==="move"&&(kind==="space"||kind==="inventory")&&!destination}>{busy?"Saving…":action==="move"?"Move and continue":`Delete ${kind}`}</button></div></form>}{!preview&&<button className="product-button" onClick={onClose}>Cancel</button>}
+ </DialogContent></Dialog>;
+}
