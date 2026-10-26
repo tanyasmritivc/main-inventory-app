@@ -98,3 +98,12 @@ def test_streamed_punctuation_is_stable_across_network_boundaries():
     events = list(completion_events(iter([chunk('Bolts '), chunk(' —'), chunk(' '), chunk(' in Cabinet.') ])))
     assert ''.join(event['delta'] for event in events if event['type'] == 'delta') == 'Bolts - in Cabinet.'
     assert events[-1]['content'] == 'Bolts - in Cabinet.'
+
+
+@pytest.mark.parametrize('finish,code',[('length','output_limit'),('content_filter','content_filter')])
+def test_stream_failures_have_fixed_safe_reason_codes(finish,code):
+    from app.services.completion_stream import CompletionStreamError
+    with pytest.raises(CompletionStreamError) as error:
+        list(completion_events(iter([chunk('private content'),chunk(finish=finish)])))
+    assert error.value.code==code
+    assert 'private content' not in str(error.value)

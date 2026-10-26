@@ -3,6 +3,13 @@ from types import SimpleNamespace
 from app.services.chat_response_style import format_chat_reply
 
 
+class CompletionStreamError(RuntimeError):
+    """A fixed parser reason safe to log; never contains provider text or arguments."""
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
 def completion_events(response):
     """Yield text deltas then the assembled model message.
 
@@ -25,18 +32,18 @@ def completion_events(response):
                 index = getattr(call, 'index', None)
                 index = fallback_index if index is None else index
                 if not isinstance(index, int) or not 0 <= index < 4:
-                    raise RuntimeError('Invalid model tool index')
+                    raise CompletionStreamError('tool_index', 'Invalid model tool index')
                 entry = calls.setdefault(index, {'id': '', 'name': '', 'arguments': ''})
                 function = getattr(call, 'function', None)
                 entry['id'] += getattr(call, 'id', None) or ''
                 entry['name'] += getattr(function, 'name', None) or ''
                 entry['arguments'] += getattr(function, 'arguments', None) or ''
                 if len(entry['arguments']) > 8000 or len(entry['name']) > 200 or len(entry['id']) > 300:
-                    raise RuntimeError('Model tool call is too large')
+                    raise CompletionStreamError('tool_size', 'Model tool call is too large')
             content = getattr(delta, 'content', None)
             if content:
                 if not isinstance(content, str):
-                    raise RuntimeError('Invalid model text')
+                    raise CompletionStreamError('text_type', 'Invalid model text')
                 parts.append(content)
                 if not calls:
                     # Keep punctuation identical to the saved answer, even when
@@ -47,7 +54,7 @@ def completion_events(response):
                     if delta:
                         yield {'type': 'delta', 'delta': delta}
             if getattr(choice, 'finish_reason', None) in ('length', 'content_filter'):
-                raise RuntimeError('The model answer was interrupted')
+                raise CompletionStreamError('output_limit' if choice.finish_reason == 'length' else 'content_filter', 'The model answer was interrupted')
         normalized = format_chat_reply(''.join(parts))
         if not calls and len(normalized) > len(emitted):
             yield {'type': 'delta', 'delta': normalized[len(emitted):]}

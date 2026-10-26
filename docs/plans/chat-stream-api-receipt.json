@@ -1,0 +1,70 @@
+{
+  "published": true,
+  "source": "84a899127803a820a4cce34d61bdd4bd1ead09d1",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 123,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "ci_run": 40246755670,
+  "ci_all_five_jobs": "passed",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/225",
+  "backup_directory": "/home/ubuntu/findez-chat-stream-20261025",
+  "production_probe": {
+    "synthetic_context": true,
+    "database_writes": false,
+    "model_metadata": [
+      {
+        "max_tokens": 8192,
+        "finishes": [
+          "tool_calls"
+        ],
+        "tool_indexes": [
+          0
+        ],
+        "reasoning_characters": 14944,
+        "content_characters": 80,
+        "argument_characters": 56,
+        "parse": "passed"
+      },
+      {
+        "max_tokens": 8192,
+        "finishes": [
+          "tool_calls"
+        ],
+        "tool_indexes": [
+          0
+        ],
+        "reasoning_characters": 9472,
+        "content_characters": 141,
+        "argument_characters": 3331,
+        "parse": "passed"
+      },
+      {
+        "proposed_tool": "world_create_task",
+        "validated": true,
+        "item_records": 30,
+        "locations": 5,
+        "executed": false
+      },
+      {
+        "max_tokens": 8192,
+        "finishes": [
+          "stop"
+        ],
+        "tool_indexes": [],
+        "reasoning_characters": 740,
+        "content_characters": 1659,
+        "argument_characters": 0,
+        "parse": "passed"
+      },
+      {
+        "completed": true,
+        "review_cards": 1
+      }
+    ]
+  },
+  "backend_tests": 1529,
+  "real_inventory_writes_during_probe": false
+}

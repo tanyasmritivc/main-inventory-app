@@ -11,7 +11,7 @@ from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import world_chat as world
 from app.services import chat_sources
 from app.services.supabase_client import get_supabase_raw
-from app.services.completion_stream import async_iterate
+from app.services.completion_stream import async_iterate, CompletionStreamError
 from app.services.limits import check_and_increment_chat, check_and_increment_scan, ChatLimitExceeded, ScanLimitExceeded, TeamSoftCapExceeded
 from app.api.routes.ai import _authorized_stream
 
@@ -212,8 +212,9 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             import traceback
             frames = traceback.extract_tb(error.__traceback__)
             location = frames[-1].name if frames else 'unknown'
-            logger.warning('World chat failed stage=%s error_type=%s location=%s',
-                           stage, type(error).__name__, location)
+            logger.warning('World chat failed stage=%s error_type=%s location=%s reason=%s',
+                           stage, type(error).__name__, location,
+                           error.code if isinstance(error, CompletionStreamError) else 'unclassified')
             yield encode({'type': 'error', 'code': 'history_save_failed' if stage == 'save_reply' else 'world_chat_failed', 'conversation_id': cid, 'message': 'I could not finish this response. Retry to check the result of this request.'})
         finally:
             if matching is not None:
