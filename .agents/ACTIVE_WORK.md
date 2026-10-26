@@ -1,3 +1,17 @@
+## October 25 — Mobile response controls (not uploaded)
+
+Branch `feat/mobile-message-controls` adds compact copy/rating/retry/timestamp
+controls and prompt editing, plus a verified creation confirmation. Feedback stays
+unselected until the exact-message backend receipt; history loads ratings in a
+single account-scoped batch. Negative reasons/comments use a small optional sheet.
+The stream accepts completion once, ignores trailing errors/markers, preserves
+cancellation, and presents canonical text after validation/persistence. Successful
+world-chat regeneration is server read-only and references the original prompt.
+Flutter analysis clean; 936 tests passed, 1 existing skip. Five synthetic feedback
+interaction tests passed on iOS 26.5 / iPhone 17 Pro simulator. Full live persistence
+requires migration 082 and API lane `feat/response-feedback-api` first.
+No TestFlight upload or production deployment authorized for this task.
+
 ## October 25 — Chat reliability fix delivered (TestFlight 140)
 
 Apple acknowledged 1.1.1 (140), runtime `35d34e34b35e4c5fa862c3c62e61164a31f484a2`,

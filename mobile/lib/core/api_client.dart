@@ -1234,6 +1234,29 @@ class ApiClient {
     String? conversationId,
     String? requestId,
     List<ChatSource> sources = const [],
+  }) => _commandStream(
+    message: message,
+    conversationId: conversationId,
+    requestId: requestId,
+    sources: sources,
+  );
+
+  Stream<AiStreamEvent> retryChatResponse({
+    required String message,
+    required String conversationId,
+    required String messageId,
+  }) => _commandStream(
+    message: message,
+    conversationId: conversationId,
+    retryOf: messageId,
+  );
+
+  Stream<AiStreamEvent> _commandStream({
+    required String message,
+    String? conversationId,
+    String? requestId,
+    String? retryOf,
+    List<ChatSource> sources = const [],
   }) async* {
     final baseUrl = _dio.options.baseUrl.endsWith('/')
         ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
@@ -1250,6 +1273,7 @@ class ApiClient {
     request.headers['Authorization'] = 'Bearer $token';
     request.body = json.encode(<String, dynamic>{
       'message': message,
+      if (worldKey != null && retryOf != null) 'retry_of': retryOf,
       if (worldKey != null && requestId != null) 'request_id': requestId,
       if (conversationId != null) 'conversation_id': conversationId,
       'supports_item_actions': true,
@@ -1835,6 +1859,8 @@ class AiStreamEvent {
     this.result,
     this.assistantMessage,
     this.conversationId,
+    this.messageId,
+    this.createdAt,
     this.answerContext,
     this.navHint,
   });
@@ -1846,6 +1872,8 @@ class AiStreamEvent {
   final Object? result;
   final String? assistantMessage;
   final String? conversationId;
+  final String? messageId;
+  final DateTime? createdAt;
   final AskAnswerContext? answerContext;
   final Map<String, dynamic>? navHint;
 
@@ -1865,6 +1893,8 @@ class AiStreamEvent {
       result: json['result'],
       assistantMessage: json['assistant_message']?.toString(),
       conversationId: json['conversation_id']?.toString(),
+      messageId: json['message_id']?.toString(),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       answerContext: json['answer_context'] is Map<String, dynamic>
           ? AskAnswerContext.fromJson(
               json['answer_context'] as Map<String, dynamic>,
@@ -1878,42 +1908,85 @@ class AiStreamEvent {
 }
 
 Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) {
-  return bytes
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .timeout(const Duration(minutes: 2))
-      .transform(
-        StreamTransformer<String, AiStreamEvent>.fromHandlers(
-          handleData: (line, sink) {
-            final data = line.trimRight();
-            if (!data.startsWith('data:')) return;
-            final payload = data.substring(5).trim();
-            if (payload == '[DONE]') {
-              sink.add(AiStreamEvent(type: 'done'));
-              sink.close();
-              return;
-            }
-            if (payload.isEmpty) return;
-            final decoded = json.decode(payload);
-            if (decoded is! Map<String, dynamic>) return;
-            final event = AiStreamEvent.fromJson(decoded);
-            if (event.type == 'error') {
-              throw AskRequestException(switch (decoded['code']) {
-                'photo_timeout' =>
-                  'Photo analysis took too long. Try a clearer, closer photo.',
-                'photo_failed' =>
-                  'Your photo could not be analyzed. Please try again.',
-                'history_save_failed' =>
-                  'I could not save this reply. Retry to check the result of this request.',
-                'world_chat_failed' =>
-                  'I could not finish this response. Retry to check the result of this request.',
-                _ => 'This response was interrupted. Please retry.',
-              });
-            }
-            sink.add(event);
-          },
-        ),
-      );
+  final data = <String>[];
+  StreamSubscription<String>? subscription;
+  var ended = false;
+  late StreamController<AiStreamEvent> controller;
+  void finish([Object? error, StackTrace? stack]) {
+    if (ended) return;
+    ended = true;
+    if (error != null) controller.addError(error, stack);
+    unawaited(subscription?.cancel());
+    unawaited(controller.close());
+  }
+
+  void consume() {
+    if (ended || data.isEmpty) return;
+    final payload = data.join('\n');
+    data.clear();
+    try {
+      if (payload == '[DONE]') {
+        throw const AskRequestException(
+          'This response was interrupted. Please retry.',
+        );
+      }
+      final decoded = json.decode(payload);
+      if (decoded is! Map<String, dynamic>) return;
+      final event = AiStreamEvent.fromJson(decoded);
+      if (event.type == 'error') {
+        throw AskRequestException(switch (decoded['code']) {
+          'photo_timeout' =>
+            'Photo analysis took too long. Try a clearer, closer photo.',
+          'photo_failed' =>
+            'Your photo could not be analyzed. Please try again.',
+          'history_save_failed' =>
+            'I could not save this reply. Retry to check the result of this request.',
+          'world_chat_failed' =>
+            'I could not finish this response. Retry to check the result of this request.',
+          _ => 'This response was interrupted. Please retry.',
+        });
+      }
+      controller.add(event);
+      if (event.type == 'done') finish();
+    } catch (error, stack) {
+      finish(error, stack);
+    }
+  }
+
+  controller = StreamController<AiStreamEvent>(
+    onListen: () {
+      subscription = bytes
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .timeout(const Duration(minutes: 2))
+          .listen(
+            (line) {
+              if (ended) return;
+              if (line.startsWith('data:')) {
+                data.add(line.substring(5).trimLeft());
+              } else if (line.isEmpty) {
+                consume();
+              }
+            },
+            onError: finish,
+            onDone: () {
+              consume();
+              if (!ended) {
+                finish(
+                  const AskRequestException(
+                    'This response was interrupted. Please retry.',
+                  ),
+                );
+              }
+            },
+          );
+    },
+    onCancel: () {
+      ended = true;
+      return subscription?.cancel();
+    },
+  );
+  return controller.stream;
 }
 
 class ConversationSummary {

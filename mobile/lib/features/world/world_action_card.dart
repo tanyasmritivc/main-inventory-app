@@ -55,7 +55,12 @@ class _WorldActionCardState extends State<WorldActionCard> {
       if (result['capture_warning'] is String) {
         setState(() => _error = result['capture_warning']);
       }
-      if (action['status'] == 'confirmed') widget.onSaved?.call();
+      if (action['status'] == 'confirmed') {
+        widget.onSaved?.call();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Created and saved.')));
+      }
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);
     } finally {

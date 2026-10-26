@@ -1,3 +1,4 @@
+import 'message_actions.dart';
 import '../../core/first_camera_hint.dart';
 import 'chat_progress.dart';
 import 'voice_capture.dart';
@@ -206,6 +207,30 @@ class _ChatPageState extends State<ChatPage>
   bool get wantKeepAlive => true;
   late final TextEditingController _controller;
   final _focusNode = FocusNode();
+  final Map<String, Map<String, dynamic>> _responseRatings = {};
+  Future<void> _loadRatings(String conversationId) async {
+    try {
+      final result = await widget.api.collaboration(
+        '/response-feedback',
+        query: {'conversation_id': conversationId},
+      );
+      widget.api.assertCurrentContext();
+      if (!mounted || _currentConversationId != conversationId) return;
+      setState(() {
+        for (final row in (result['ratings'] as List? ?? const [])) {
+          final value = Map<String, dynamic>.from(row as Map);
+          final id = value['message_id'] as String;
+          if ((value['revision'] as int) >=
+              (_responseRatings[id]?['revision'] as int? ?? 0)) {
+            _responseRatings[id] = value;
+          }
+        }
+      });
+    } catch (_) {
+      /* Optional ratings must not prevent reading chat. */
+    }
+  }
+
   final _scrollController = ScrollController();
 
   bool _worldHome = true;
@@ -474,6 +499,7 @@ class _ChatPageState extends State<ChatPage>
     _presentationComplete.clear();
     _queuedFollowUps.clear();
     _actionReplyIds.clear();
+    _responseRatings.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2041,6 +2067,7 @@ class _ChatPageState extends State<ChatPage>
     String? requestId,
     List<ChatSource>? retrySources,
     int? retryAssistantIndex,
+    String? retryOf,
   }) async {
     if (retryAssistantIndex != null &&
         (requestId == null ||
@@ -2065,7 +2092,7 @@ class _ChatPageState extends State<ChatPage>
       _queuedFollowUps.add(q);
       setState(() {
         _canQueueFollowUp = false;
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        final safeQ = q;
         _session.messages.add(
           _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
         );
@@ -2093,7 +2120,7 @@ class _ChatPageState extends State<ChatPage>
       _canQueueFollowUp = false;
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        final safeQ = q;
         _session.messages.add(
           _ChatMessage(
             role: 'user',
@@ -2150,6 +2177,7 @@ class _ChatPageState extends State<ChatPage>
                 retrySources: sources,
                 retryAssistantIndex: assistantIndex,
                 userAlreadyAdded: true,
+                retryOf: retryOf,
               ),
             );
           }
@@ -2160,7 +2188,16 @@ class _ChatPageState extends State<ChatPage>
       String? conversationId;
       var completed = false;
       String? canonical;
-      final events = photo == null
+      var provisional = '';
+      String? savedMessageId;
+      DateTime? savedAt;
+      final events = retryOf != null && _currentConversationId != null
+          ? widget.api.retryChatResponse(
+              message: q,
+              conversationId: _currentConversationId!,
+              messageId: retryOf,
+            )
+          : photo == null
           ? widget.api.aiCommandStream(
               message: q,
               sources: sources,
@@ -2196,6 +2233,7 @@ class _ChatPageState extends State<ChatPage>
         }
         if (event.type == 'capture') _replyVisible(assistantIndex);
         if (event.type == 'reset') {
+          provisional = '';
           _cancelPresentation(assistantIndex);
           setState(
             () => _session.messages[assistantIndex] = _session
@@ -2205,7 +2243,7 @@ class _ChatPageState extends State<ChatPage>
         }
         if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
           if (photo != null) _progress = null;
-          _enqueuePresentation(assistantIndex, event.delta!);
+          provisional += event.delta!;
         }
         if (event.type == 'status' && (event.message ?? '').isNotEmpty) {
           setState(() => _progress = event.message);
@@ -2218,22 +2256,29 @@ class _ChatPageState extends State<ChatPage>
         }
         if (event.type == 'done') {
           completed = true;
-          canonical = event.assistantMessage;
+          savedMessageId = event.messageId;
+          savedAt = event.createdAt;
+          canonical = event.assistantMessage ?? provisional;
           if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
               !_presentationQueue.any(
                 (chunk) => chunk.index == assistantIndex,
               ) &&
               _session.messages[assistantIndex].content.isEmpty &&
-              (event.assistantMessage ?? '').isNotEmpty) {
-            _enqueuePresentation(assistantIndex, event.assistantMessage!);
+              canonical.isNotEmpty) {
+            _enqueuePresentation(assistantIndex, canonical);
           }
+          break;
         }
       }
       if (!completed) throw StateError('Ask response interrupted');
       if (!mounted || requestGeneration != _requestGeneration) return;
       _currentConversationId = conversationId ?? _currentConversationId;
       _session.messages[assistantIndex] = _session.messages[assistantIndex]
-          .copyWith(answerContext: answerContext);
+          .copyWith(
+            answerContext: answerContext,
+            messageId: savedMessageId,
+            timestamp: savedAt?.millisecondsSinceEpoch ?? _nowTs(),
+          );
       if (answerContext?.chatCapture != null) {
         _onCaptureChanged(answerContext!.chatCapture!);
       }
@@ -2257,6 +2302,7 @@ class _ChatPageState extends State<ChatPage>
           role: 'assistant',
           answerContext: _session.messages[assistantIndex].answerContext,
           onRetry: retry,
+          failed: true,
           content: dioErrMsg.length > 1000
               ? '${dioErrMsg.substring(0, 1000)}...'
               : dioErrMsg,
@@ -2276,6 +2322,7 @@ class _ChatPageState extends State<ChatPage>
           role: 'assistant',
           answerContext: _session.messages[assistantIndex].answerContext,
           onRetry: retry,
+          failed: true,
           content: e is AskRequestException
               ? e.message
               : 'This response was interrupted. Please retry.',
@@ -2445,6 +2492,7 @@ class _ChatPageState extends State<ChatPage>
           .map(
             (m) => _ChatMessage(
               role: m.role,
+              messageId: m.id,
               content: m.content,
               timestamp: m.createdAt.millisecondsSinceEpoch,
               answerContext: m.answerContext,
@@ -2469,6 +2517,7 @@ class _ChatPageState extends State<ChatPage>
         _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
       });
+      unawaited(_loadRatings(id));
       widget.onChatStateChanged?.call(msgs.isNotEmpty);
       _scrollToBottom();
       return true;
@@ -3237,6 +3286,73 @@ class _ChatPageState extends State<ChatPage>
   );
 
   Widget _messageEntrance(_ChatMessage message, Widget child) {
+    if (!message.isStreaming && !message.failed && message.content.isNotEmpty) {
+      final index = _session.messages.indexOf(message);
+      int userIndex = index;
+      while (userIndex >= 0 && _session.messages[userIndex].role != 'user') {
+        userIndex--;
+      }
+      final prompt = userIndex >= 0 ? _session.messages[userIndex] : null;
+      final answerIndex = message.role == 'assistant'
+          ? index
+          : (index + 1 < _session.messages.length &&
+                    _session.messages[index + 1].role == 'assistant'
+                ? index + 1
+                : -1);
+      final answer = answerIndex >= 0 ? _session.messages[answerIndex] : null;
+      void retry() {
+        if (_sending || prompt == null || answer == null) return;
+        if (answer.onRetry != null) {
+          answer.onRetry!();
+          return;
+        }
+        if (answer.messageId == null) return;
+        unawaited(
+          _submit(
+            prompt.content,
+            userAlreadyAdded: true,
+            requestId: answer.messageId,
+            retryOf: answer.messageId,
+            retryAssistantIndex: answerIndex,
+          ),
+        );
+      }
+
+      child = Column(
+        crossAxisAlignment: message.role == 'user'
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          child,
+          MessageActions(
+            api: widget.api,
+            content: message.content,
+            timestamp: message.timestamp,
+            isUser: message.role == 'user',
+            messageId: message.messageId,
+            rating: _responseRatings[message.messageId],
+            disabled: _sending,
+            onRating: (rating) =>
+                setState(() => _responseRatings[message.messageId!] = rating),
+            onRetry:
+                (widget.api.worldKey != null && answer?.messageId != null) ||
+                    answer?.onRetry != null
+                ? retry
+                : null,
+            onEdit: message.role == 'user'
+                ? () {
+                    _controller.text = message.content;
+                    _controller.selection = TextSelection.collapsed(
+                      offset: _controller.text.length,
+                    );
+                    _focusNode.requestFocus();
+                    setState(() {});
+                  }
+                : null,
+          ),
+        ],
+      );
+    }
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
@@ -3630,8 +3746,12 @@ class _ChatMessage {
     this.photo,
     this.photoUrl,
     this.onRetry,
+    this.messageId,
+    this.failed = false,
   });
 
+  final String? messageId;
+  final bool failed;
   final VoidCallback? onRetry;
   final String role;
   final String content;
@@ -3651,10 +3771,13 @@ class _ChatMessage {
     AskAnswerContext? answerContext,
     String? photoUrl,
     bool clearRetry = false,
+    String? messageId,
   }) {
     return _ChatMessage(
       role: role,
       onRetry: clearRetry ? null : onRetry,
+      messageId: messageId ?? this.messageId,
+      failed: failed,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,

@@ -215,7 +215,8 @@ void main() {
     await http.runWithClient(
       () async {
         final events = await api.aiCommandStream(message: 'Where?').toList();
-        expect(events.single.delta, 'Bin 4');
+        expect(events.first.delta, 'Bin 4');
+        expect(events.last.type, 'done');
         current = false;
         await expectLater(
           api.aiCommandStream(message: 'Again').toList(),
@@ -226,7 +227,7 @@ void main() {
         expect(request.url.path, '/inventories/fasteners/ai_command');
         expect(request.url.queryParameters['stream'], 'true');
         return http.Response(
-          'data: ${jsonEncode({'type': 'delta', 'delta': 'Bin 4'})}\n\n',
+          'data: ${jsonEncode({'type': 'delta', 'delta': 'Bin 4'})}\n\ndata: {"type":"done"}\n\n',
           200,
         );
       }),
