@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { userFacingError } from "@/lib/user-facing-error";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { FindEZWordmark } from "@/components/site/findez-brand";
 import { invitationHandoff, INVITATION_METADATA_KEY } from "@/lib/invitation";
-import { normalizeAuthNext } from "@/lib/auth-callback";
+import { navigateAfterAuth, normalizeAuthNext } from "@/lib/auth-callback";
 import { LEGAL_VERSION } from "@/lib/legal-content";
 import { previewPrompt, previewAuthDestination } from "@/lib/landing-preview";
 import previewStyles from "./preview-handoff.module.css";
@@ -57,7 +57,6 @@ export function AuthForm({
   onToggleMode,
   onSuccess,
 }: AuthFormProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/worlds";
   const prompt = previewPrompt(searchParams.get("prompt"));
@@ -336,8 +335,7 @@ export function AuthForm({
         }
 
         onSuccess?.();
-        router.push(successRedirect);
-        router.refresh();
+        navigateAfterAuth(successRedirect);
         return;
       }
 
@@ -348,8 +346,7 @@ export function AuthForm({
       if (signInError) throw signInError;
 
       onSuccess?.();
-      router.push(normalizedRedirect);
-      router.refresh();
+      navigateAfterAuth(normalizedRedirect);
     } catch (err: unknown) {
       setError(
         userFacingError(

@@ -1,9 +1,19 @@
 export function normalizeAuthNext(value: string | null | undefined) {
-  return value?.startsWith("/") &&
-    !value.startsWith("//") &&
-    !/[\\\u0000-\u001f]/.test(value)
-    ? value
-    : "/worlds";
+  if (!value?.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u001f]/.test(value))
+    return "/worlds";
+  // Resolve dot segments/encoded path characters before excluding auth loops.
+  try {
+    const path = decodeURIComponent(new URL(value, "https://findez.ai").pathname);
+    if (/^\/(?:signin|signup)(?:\/|$)/.test(path) || path === "/") return "/worlds";
+  } catch {
+    return "/worlds";
+  }
+  return value;
+}
+
+/** A fresh document sees the newly persisted cookies, not a pre-login RSC cache. */
+export function navigateAfterAuth(destination: string) {
+  window.location.replace(normalizeAuthNext(destination));
 }
 
 type CallbackAuth = {
