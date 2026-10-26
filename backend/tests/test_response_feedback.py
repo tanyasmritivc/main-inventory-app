@@ -33,7 +33,7 @@ def test_missing_backend_confirmation_never_claims_saved(data):
         f.submit(ACTOR, MSG, f.Rating(rating=1))
     assert error.value.status_code==503
 
-@pytest.mark.parametrize('code,status', [('40001',409),('42501',404),('secret',503)])
+@pytest.mark.parametrize('code,status', [('40001',409),('PT409',409),('42501',404),('secret',503)])
 def test_concurrency_and_failure_are_public_errors(code,status):
     client=MagicMock();err=Exception('SECRET');err.code=code;client.rpc.return_value.execute.side_effect=err
     with patch.object(f,'owned_message',return_value={}),patch.object(f,'get_supabase_raw',return_value=client),pytest.raises(HTTPException) as error:

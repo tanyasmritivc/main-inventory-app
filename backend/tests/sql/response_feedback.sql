@@ -11,6 +11,8 @@ CREATE FUNCTION public.findez_actor_active(actor uuid) RETURNS boolean LANGUAGE 
 CREATE FUNCTION public.findez_personalization_enabled(actor uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce((SELECT enabled FROM personalization_profiles WHERE user_id=actor),false) $$;
 \ir ../../supabase/migrations/082_response_feedback.sql
 \ir ../../supabase/migrations/082_response_feedback.sql
+\ir ../../supabase/migrations/083_response_feedback_conflict.sql
+\ir ../../supabase/migrations/083_response_feedback_conflict.sql
 CREATE FUNCTION pg_temp.check(ok boolean,label text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF ok IS DISTINCT FROM true THEN RAISE EXCEPTION 'FAIL: %',label; END IF; RAISE NOTICE 'PASS: %',label; END $$;
 INSERT INTO auth.users VALUES('10000000-0000-0000-0000-000000000001'),('10000000-0000-0000-0000-000000000002');
 INSERT INTO conversations VALUES('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','personal');
@@ -22,7 +24,7 @@ SELECT pg_temp.check((SELECT count(*)=1 AND min(revision)=1 AND min(learning_gen
 SELECT public.findez_response_feedback('10000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',-1,'other','Optional comment',1,'{"execution":"not_observed"}');
 SELECT pg_temp.check((SELECT revision=2 AND rating=-1 AND comment='Optional comment' FROM response_feedback),'rating and optional details updated');
 DO $$ BEGIN
- BEGIN PERFORM public.findez_response_feedback('10000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,NULL,NULL,1,'{}'); RAISE EXCEPTION 'stale write accepted'; EXCEPTION WHEN serialization_failure THEN RAISE NOTICE 'PASS: stale revision denied'; END;
+ BEGIN PERFORM public.findez_response_feedback('10000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',1,NULL,NULL,1,'{}'); RAISE EXCEPTION 'stale write accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN RAISE NOTICE 'PASS: stale revision denied'; END;
  BEGIN PERFORM public.findez_response_feedback('10000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001',1,NULL,NULL,0,'{}'); RAISE EXCEPTION 'foreign write accepted'; EXCEPTION WHEN no_data_found THEN RAISE NOTICE 'PASS: foreign message denied'; END;
  BEGIN PERFORM public.findez_response_feedback('10000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001',0,NULL,NULL,2,'{}'); RAISE EXCEPTION 'invalid rating accepted'; EXCEPTION WHEN check_violation THEN RAISE NOTICE 'PASS: invalid rating denied'; END;
 END $$;

@@ -120,7 +120,7 @@ def submit(actor, message_id, rating):
     except HTTPException: raise
     except Exception as error:
         code = getattr(error, 'code', None)
-        if code == '40001': raise HTTPException(409, 'Feedback changed. Refresh and try again.') from None
+        if code in ('40001', 'PT409'): raise HTTPException(409, 'Feedback changed. Refresh and try again.') from None
         if code in ('42501', 'P0002'): raise HTTPException(404, 'Response not found.') from None
         raise HTTPException(503, 'Feedback could not be saved. Please retry.') from None
 
