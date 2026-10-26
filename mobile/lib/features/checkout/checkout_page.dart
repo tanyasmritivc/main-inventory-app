@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import 'package:mobile/core/ui/app_text.dart';
 
@@ -15,6 +16,7 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   List<Map<String, dynamic>> _checkouts = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -24,7 +26,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Future<void> _load() async {
     if (!mounted) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final checkouts = await widget.api.getActiveCheckouts();
       if (!mounted) return;
@@ -32,10 +37,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _checkouts = checkouts;
         _loading = false;
       });
-    } catch (e, stack) {
-      if (mounted) setState(() => _loading = false);
-      debugPrint('[CheckOut] API call failed: $e');
-      debugPrint('[CheckOut] Stack: $stack');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = friendlyApiError(
+            e,
+            fallback: 'Could not load checked-out items. Please try again.',
+          );
+        });
+      }
     }
   }
 
@@ -153,7 +164,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         ],
       ),
-      body: _loading
+      body: _error != null
+          ? Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    TextButton(onPressed: _load, child: const AppText('Retry')),
+                  ],
+                ),
+              ),
+            )
+          : _loading
           ? Center(
               child: CircularProgressIndicator(
                 color: AppTheme.textPrimary(context),
@@ -161,42 +186,45 @@ class _CheckoutPageState extends State<CheckoutPage> {
             )
           : _checkouts.isEmpty
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    color: AppTheme.foreground(context, Color(0xFF30D158)),
-                    size: 56,
-                  ),
-                  const SizedBox(height: 16),
-                  AppText(
-                    'Nothing checked out',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary(context),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: AppTheme.foreground(context, Color(0xFF30D158)),
+                      size: 56,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    'Check out items from any item\'s detail view.',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary(context),
-                      fontSize: 14,
+                    const SizedBox(height: 16),
+                    AppText(
+                      'Nothing checked out',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary(context),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  AppText(
-                    'Items checked out from shared spaces\nwill appear here for all team members.',
-                    style: TextStyle(
-                      color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
-                      fontSize: 13,
+                    const SizedBox(height: 8),
+                    AppText(
+                      'Check out items from any item\'s detail view.',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary(context),
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    AppText(
+                      'Items checked out from shared spaces\nwill appear here for all team members.',
+                      style: TextStyle(
+                        color: AppTheme.foreground(context, Color(0x4DFFFFFF)),
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             )
           : RefreshIndicator(
@@ -221,12 +249,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           size: 20,
                         ),
                         const SizedBox(width: 12),
-                        AppText(
-                          '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary(context),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: AppText(
+                            '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

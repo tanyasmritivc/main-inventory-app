@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/ui/native_presentation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -49,11 +50,26 @@ void main() {
   group('Native organization navigation', workspace.main);
   group('Native move and deletion dialogs', deletion.main);
   group('Native organization leave', leave.main);
-  group('Native item details', items.main);
-  group('Native profile navigation', profile.main);
+  group('Native item details', () {
+    // Flutter dialog assertions; actual UIKit controls are inspected separately.
+    setUp(() => debugNativePresentationOverride = false);
+    tearDown(() => debugNativePresentationOverride = null);
+    items.main();
+  });
+  group('Native profile navigation', () {
+    // Flutter dialog assertions; actual UIKit controls are inspected separately.
+    setUp(() => debugNativePresentationOverride = false);
+    tearDown(() => debugNativePresentationOverride = null);
+    profile.main();
+  });
   group('Native profile crop', crop.main);
   group('Native focused chat', chat.main);
-  group('Native chat actions', actions.main);
+  group('Native chat actions', () {
+    // Flutter dialog assertions; actual UIKit controls are inspected separately.
+    setUp(() => debugNativePresentationOverride = false);
+    tearDown(() => debugNativePresentationOverride = null);
+    actions.main();
+  });
   group('Native task attribution', tasks.main);
   group('Native account deletion', account.main);
   group('Native avatar accessibility', avatar.main);

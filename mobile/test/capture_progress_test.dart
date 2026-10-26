@@ -173,7 +173,11 @@ void main() {
       });
       await tester.tap(find.text('Scan photo'));
       await tester.pumpAndSettle();
-      expect(find.text('Photo analysis took too long.'), findsOneWidget);
+      expect(
+        find.text('FindEZ could not complete this request. Please try again.'),
+        findsOneWidget,
+      );
+      expect(find.text('Photo analysis took too long.'), findsNothing);
       expect(harness.calls, 1);
       await tester.tap(find.text('Retry photo'));
       await tester.pumpAndSettle();

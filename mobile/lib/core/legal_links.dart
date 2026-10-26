@@ -92,7 +92,7 @@ class _LegalLinkPageState extends State<LegalLinkPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: AppText(_title)),
     body: SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,15 +111,24 @@ class _LegalLinkPageState extends State<LegalLinkPage> {
             ),
             TextButton(
               onPressed: () async {
-                await Clipboard.setData(
-                  ClipboardData(
-                    text: legalDocumentUrl(widget.document).toString(),
-                  ),
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: AppText('Link copied.')),
+                try {
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: legalDocumentUrl(widget.document).toString(),
+                    ),
                   );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: AppText('Link copied.')),
+                    );
+                  }
+                } catch (_) {
+                  if (mounted) {
+                    setState(
+                      () => _error =
+                          'The link could not be copied. Try again or select the address above.',
+                    );
+                  }
                 }
               },
               child: const AppText('Copy link'),

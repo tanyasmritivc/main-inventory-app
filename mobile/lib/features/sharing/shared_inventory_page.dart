@@ -2070,31 +2070,36 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Row(
-              children: [
-                _badge(
-                  _isOwner ? 'Owner' : 'Member',
-                  textColor: AppTheme.adaptive(
-                    context,
-                    const Color(0x73FFFFFF),
+          if (MediaQuery.textScalerOf(context).scale(14) <= 21 &&
+              MediaQuery.sizeOf(context).width >= 360)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Row(
+                children: [
+                  _badge(
+                    _isOwner ? 'Owner' : 'Member',
+                    textColor: AppTheme.adaptive(
+                      context,
+                      const Color(0x73FFFFFF),
+                    ),
+                    bgColor: AppTheme.adaptive(
+                      context,
+                      const Color(0x14FFFFFF),
+                    ),
                   ),
-                  bgColor: AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                ),
-                const SizedBox(width: 6),
-                _badge(
-                  widget.permission == 'edit' ? 'Can edit' : 'View only',
-                  textColor: widget.permission == 'edit'
-                      ? AppTheme.adaptive(context, const Color(0xFF30D158))
-                      : AppTheme.adaptive(context, const Color(0x73FFFFFF)),
-                  bgColor: widget.permission == 'edit'
-                      ? AppTheme.adaptive(context, const Color(0x1A30D158))
-                      : AppTheme.adaptive(context, const Color(0x14FFFFFF)),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  _badge(
+                    widget.permission == 'edit' ? 'Can edit' : 'View only',
+                    textColor: widget.permission == 'edit'
+                        ? AppTheme.adaptive(context, const Color(0xFF30D158))
+                        : AppTheme.adaptive(context, const Color(0x73FFFFFF)),
+                    bgColor: widget.permission == 'edit'
+                        ? AppTheme.adaptive(context, const Color(0x1A30D158))
+                        : AppTheme.adaptive(context, const Color(0x14FFFFFF)),
+                  ),
+                ],
+              ),
             ),
-          ),
           PopupMenuButton<String>(
             icon: Icon(
               Icons.more_horiz,
@@ -2106,6 +2111,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ),
             onSelected: _onFabItemTap,
             itemBuilder: (_) => [
+              if (MediaQuery.textScalerOf(context).scale(14) > 21 ||
+                  MediaQuery.sizeOf(context).width < 360)
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: AppText(
+                    '${_isOwner ? 'Owner' : 'Member'} · ${widget.permission == 'edit' ? 'Can edit' : 'View only'}',
+                  ),
+                ),
               if (widget.permission == 'edit')
                 const PopupMenuItem(
                   value: 'Import Spreadsheet',

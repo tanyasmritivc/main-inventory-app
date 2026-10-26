@@ -117,6 +117,29 @@ void main() {
     expect(attempts, 2);
     expect(find.text('Copy link'), findsOneWidget);
   });
+  testWidgets('legal fallback remains scrollable on small large-text screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2.6;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LegalLinkPage(
+          document: LegalDocumentKind.privacy,
+          openUrl: (_) async => false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Copy link'));
+    expect(find.text('Copy link').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('a late browser result cannot update a disposed page', (
     tester,
   ) async {
