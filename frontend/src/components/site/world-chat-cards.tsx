@@ -127,6 +127,7 @@ export function WorldActionCard({
           </button>
         </div>
       )}
+      {action.status === "confirmed" && <p role="status">Created and saved.</p>}
       {error && <p role="alert">{error}</p>}
     </section>
   );

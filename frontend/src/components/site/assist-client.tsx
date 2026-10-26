@@ -1,4 +1,5 @@
 "use client";
+import { MessageActions, type ResponseRating } from "./message-actions";
 import { ChatProgress } from "./chat-progress";
 import { ChatPlusMenu, type ChatChoice } from "./chat-plus-menu";
 import { ChatContextPicker } from "./chat-context-picker";
@@ -49,6 +50,10 @@ type Message = ConversationMessage & {
   failed?: boolean;
   live?: boolean;
   revision?: number;
+  persistedId?: string;
+  requestId?: string;
+  retrySources?: ChatSource[];
+  retryPhoto?: File;
 };
 type AssistProps = { initialQuery?: string; worldId?: string; title?: string };
 export function AssistClient({
@@ -97,6 +102,9 @@ function AssistClientWorkspace({
   const [conversations, setConversations] = useState<ConversationSummary[]>([]),
     [conversationId, setConversationId] = useState<string | null>(null),
     [messages, setMessages] = useState<Message[]>([]);
+  const [ratings, setRatings] = useState<Record<string, ResponseRating>>({});
+  const composer = useRef<HTMLTextAreaElement>(null);
+  const sendLock = useRef(false);
   const [input, setInput] = useState(initialQuery),
     [photo, setPhoto] = useState<File>(),
     [preview, setPreview] = useState<string>(),
@@ -105,6 +113,15 @@ function AssistClientWorkspace({
     [opening, setOpening] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
+  useEffect(() => {
+    setRatings({});
+    if (!accountId || !conversationId) return;
+    const control = new AbortController();
+    void accountRequest<{ratings: ResponseRating[]}>(accountId, `/response-feedback?conversation_id=${encodeURIComponent(conversationId)}`, {signal: control.signal})
+      .then(result => { if (!control.signal.aborted) setRatings(previous => { const next = {...previous}; for (const r of (Array.isArray(result.ratings) ? result.ratings : [])) if (r.revision >= (next[r.message_id]?.revision || 0)) next[r.message_id] = r; return next; }); })
+      .catch(() => { /* Ratings remain unselected until a confirmed receipt. */ });
+    return () => control.abort();
+  }, [accountId, conversationId]);
   const photoInput = useRef<HTMLInputElement>(null),
     cameraInput = useRef<HTMLInputElement>(null),
     fileInput = useRef<HTMLInputElement>(null),
@@ -427,69 +444,71 @@ function AssistClientWorkspace({
     setPhoto(file);
     setError("");
   }
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    if (!accountId || unavailable || (!input.trim() && !photo)) return;
+  async function send(e?: React.FormEvent, retryPrompt?: Message, retryAnswer?: Message) {
+    e?.preventDefault();
+    if (!accountId || unavailable || sendLock.current || (!(retryPrompt?.content || input).trim() && !photo)) return;
+    sendLock.current = true;
     const account = accountId,
       generation = epoch.current,
       text =
-        input.trim() ||
+        retryPrompt?.content || input.trim() ||
         (autoExtract
           ? "Auto extract the items in this photo. Keep a draft for review before saving."
           : "What is in this photo?"),
       now = new Date().toISOString(),
       userId = crypto.randomUUID(),
       assistantId = crypto.randomUUID();
-    const signature = JSON.stringify({ sources, autoExtract });
+    const requestSources = retryPrompt?.retrySources || sources;
+    const requestPhoto = retryPrompt?.retryPhoto || (retryPrompt ? undefined : photo);
+    const signature = JSON.stringify({ sources: requestSources, autoExtract });
     if (
       !retry.current ||
       retry.current.signature !== signature ||
       retry.current.text !== text ||
-      retry.current.photo !== photo ||
+      retry.current.photo !== requestPhoto ||
       retry.current.conversationId !== conversationId
     )
       retry.current = {
         text,
-        photo,
+        photo: requestPhoto,
         conversationId,
         signature,
-        id: crypto.randomUUID(),
+        id: retryPrompt?.requestId || crypto.randomUUID(),
       };
     const control = new AbortController();
     controller.current = control;
     const current = () =>
       owner.current === account && epoch.current === generation;
     setSending(true);
+    draft("");
     setPendingMessageId(assistantId);
     setError("");
     setStatus(photo ? "Reading your photo…" : "Checking your inventory…");
-    setMessages((m) => [
-      ...m,
-      { id: userId, role: "user", content: text, created_at: now },
-      {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        created_at: now,
-        live: true,
-      },
-    ]);
+    const placeholder: Message = { id: assistantId, role: "assistant", content: "", created_at: now, live: true };
+    setMessages(m => retryAnswer
+      ? m.map(row => row.id === retryAnswer.id ? placeholder : row)
+      : [...m, ...(!retryPrompt ? [{ id: userId, role: "user" as const, content: text, created_at: now,
+          requestId: retry.current!.id, retrySources: requestSources, retryPhoto: requestPhoto }] : []), placeholder]);
     let final:
       | {
           conversationId?: string;
+          messageId?: string;
+          createdAt?: string;
           content?: string;
           context?: AskAnswerContext;
         }
       | undefined;
     let receivedCapture = false;
+    let provisional = "";
     const timer = window.setTimeout(() => control.abort(), 180_000);
     try {
       await askQuestion({
         accountId: account,
         worldId,
         requestId: retry.current.id,
-        sources,
+        sources: requestSources,
         autoExtract,
+        retryOf: retryAnswer?.persistedId || (retryAnswer && !retryAnswer.live ? retryAnswer.id : undefined),
         onCapture: (id, context) => {
           if (current()) {
             receivedCapture = true;
@@ -502,29 +521,12 @@ function AssistClientWorkspace({
           }
         },
         message: text,
-        photo,
+        photo: retryAnswer?.persistedId || (retryAnswer && !retryAnswer.live) ? undefined : requestPhoto,
         conversationId,
         signal: control.signal,
-        onDelta: (delta) => {
-          if (current())
-            setMessages((m) =>
-              m.map((msg) =>
-                msg.id === assistantId
-                  ? { ...msg, content: msg.content + delta }
-                  : msg,
-              ),
-            );
-        },
-        onReset: () => {
-          if (current())
-            setMessages((m) =>
-              m.map((msg) =>
-                msg.id === assistantId
-                  ? { ...msg, content: "", revision: (msg.revision ?? 0) + 1 }
-                  : msg,
-              ),
-            );
-        },
+        // Wait for validation and persistence before presenting the canonical reply.
+        onDelta: (delta) => { provisional += delta; },
+        onReset: () => { provisional = ""; },
         onStatus: (value) => {
           if (current()) setStatus(value);
         },
@@ -542,7 +544,9 @@ function AssistClientWorkspace({
           msg.id === assistantId
             ? {
                 ...msg,
-                content: final?.content ?? msg.content,
+                persistedId: final?.messageId,
+                created_at: final?.createdAt || new Date().toISOString(),
+                content: final?.content ?? provisional,
                 context: final?.context || msg.context,
               }
             : msg,
@@ -563,6 +567,7 @@ function AssistClientWorkspace({
       }
     } catch (reason) {
       if (current()) {
+        draft(text);
         if (receivedCapture) {
           setPhoto(undefined);
           setAutoExtract(false);
@@ -585,6 +590,7 @@ function AssistClientWorkspace({
         );
       }
     } finally {
+      sendLock.current = false;
       window.clearTimeout(timer);
       if (current()) {
         setSending(false);
@@ -935,6 +941,19 @@ function AssistClientWorkspace({
                         )}
                       </details>
                     )}
+                  {m.id !== pendingMessageId && m.content && !m.failed && <MessageActions
+                    content={m.content} role={m.role} timestamp={m.created_at} accountId={accountId || undefined}
+                    messageId={m.role === "assistant" ? m.persistedId || (!m.live ? m.id : undefined) : undefined}
+                    rating={ratings[m.persistedId || m.id]}
+                    onRating={saved => setRatings(previous => ({...previous, [saved.message_id]: saved}))}
+                    disabled={unavailable || sending}
+                    onEdit={m.role === "user" ? () => { draft(m.content); composer.current?.focus(); } : undefined}
+                    onRetry={worldId || m.failed ? () => {
+                      const prompt = m.role === "user" ? m : messages.slice(0, messageIndex).findLast(row => row.role === "user");
+                      const answer = m.role === "assistant" ? m : messages.slice(messageIndex + 1).find(row => row.role === "assistant");
+                      if (prompt) void send(undefined, prompt, answer);
+                    } : undefined}
+                  />}
                 </article>
               );
             })
@@ -1005,6 +1024,8 @@ function AssistClientWorkspace({
               </div>
             )}
             <textarea
+              ref={composer}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }}
               className="workspace-input"
               aria-label="Your question"
               placeholder="Ask about your inventory…"
