@@ -269,6 +269,10 @@ class _ChatPageState extends State<ChatPage>
 
   final List<String> _pendingAttachments = [];
   AskPhoto? _photo;
+  Map<String, dynamic>? _previewDraft;
+  bool _scanningPreview = false;
+  bool _savingCapture = false;
+  final _previewKey = GlobalKey<ChatCaptureCardState>();
   bool _pickingPhoto = false;
   String? _cameraHintOwner;
   bool get _cameraHint =>
@@ -512,6 +516,8 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) return;
     setState(() {
       _worldHome = true;
+      _previewDraft = null;
+      _scanningPreview = false;
       _photo = null;
       _pickingPhoto = false;
       _sending = false;
@@ -2069,6 +2075,7 @@ class _ChatPageState extends State<ChatPage>
     int? retryAssistantIndex,
     String? retryOf,
   }) async {
+    if (_savingCapture || _scanningPreview) return;
     if (retryAssistantIndex != null &&
         (requestId == null ||
             retryAssistantIndex < 0 ||
@@ -2078,14 +2085,44 @@ class _ChatPageState extends State<ChatPage>
     }
     final photo = requestId == null ? _photo : null;
     final sources = List<ChatSource>.of(retrySources ?? _sources);
-    final q = text.trim().isEmpty && photo != null
-        ? (autoExtract
-              ? 'Auto extract the items in this photo. Keep a draft and ask only for any missing destination.'
-              : 'Describe this photo briefly and ask what I would like help with.')
-        : text.trim().isEmpty && sources.isNotEmpty
+    final q = text.trim().isEmpty && sources.isNotEmpty && photo == null
         ? 'Help me understand these selected sources.'
         : text.trim();
-    if (q.isEmpty) return;
+    if (q.isEmpty && photo == null) return;
+    if (!_sending &&
+        RegExp(
+          r'^(?:please )?save(?: it| these| these items| the draft)?[.!]?$',
+          caseSensitive: false,
+        ).hasMatch(q)) {
+      ChatCaptureCardState? card = _previewDraft == null
+          ? null
+          : _previewKey.currentState;
+      if (card == null) {
+        for (final message in _session.messages.reversed) {
+          final draft = message.answerContext?.chatCapture;
+          if (draft?['status'] == 'draft') {
+            card = _captureKeys[draft!['id']]?.currentState;
+            break;
+          }
+        }
+      }
+      if (card != null) {
+        _controller.clear();
+        setState(
+          () => _session.messages.add(
+            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+          ),
+        );
+        setState(() => _savingCapture = true);
+        try {
+          await card.saveFromChat();
+        } finally {
+          if (mounted) setState(() => _savingCapture = false);
+        }
+        return;
+      }
+    }
+    if (!_sending && _previewDraft != null) _publishPreview();
     if (_pickingPhoto) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
@@ -3010,13 +3047,174 @@ class _ChatPageState extends State<ChatPage>
         generation == _requestGeneration &&
         widget.api.worldKey != null &&
         autoExtract) {
-      await _submit(_controller.text, autoExtract: true);
+      await _extractPreview();
     }
   }
+
+  void _publishPreview() {
+    final draft = _previewDraft;
+    if (draft == null) return;
+    setState(() {
+      _worldHome = false;
+      _session.hasStarted = true;
+      _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: draft['status'] == 'saved'
+              ? 'Saved to ${draft['location'] ?? 'your Space'}.'
+              : '',
+          timestamp: _nowTs(),
+          answerContext: AskAnswerContext(chatCapture: draft),
+        ),
+      );
+      _previewDraft = null;
+    });
+    widget.onChatStateChanged?.call(true);
+  }
+
+  Future<void> _extractPreview() async {
+    final photo = _photo;
+    if (photo == null || _sending || _scanningPreview) return;
+    final generation = ++_requestGeneration;
+    setState(() {
+      _photo = null;
+      _scanningPreview = true;
+      _pickingPhoto = true;
+      _worldHome = false;
+      _progress = 'Reading your photo...';
+    });
+    final iterator = StreamIterator(
+      widget.api.aiPhotoQuestionStream(
+        message: '',
+        photo: AskPhoto(bytes: photo.bytes, autoExtract: true),
+        conversationId: _currentConversationId,
+        previewOnly: true,
+      ),
+    );
+    _activeReply = iterator;
+    try {
+      var completed = false;
+      while (await iterator.moveNext()) {
+        if (!mounted || generation != _requestGeneration) return;
+        final event = iterator.current;
+        if (event.conversationId != null) {
+          _currentConversationId = event.conversationId;
+        }
+        if (event.type == 'status') setState(() => _progress = event.message);
+        if (event.answerContext?.chatCapture != null) {
+          setState(() => _previewDraft = event.answerContext!.chatCapture);
+        }
+        if (event.type == 'done') {
+          completed = true;
+          break;
+        }
+      }
+      if (!completed || _previewDraft == null) {
+        throw StateError('Extraction interrupted');
+      }
+    } catch (_) {
+      if (mounted && generation == _requestGeneration) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Could not finish scanning. Your photo is ready to retry.',
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                setState(() => _photo = photo);
+                unawaited(_extractPreview());
+              },
+            ),
+          ),
+        );
+      }
+    } finally {
+      unawaited(iterator.cancel());
+      if (mounted && generation == _requestGeneration) {
+        _activeReply = null;
+        setState(() {
+          _scanningPreview = false;
+          _pickingPhoto = false;
+          _progress = null;
+        });
+      }
+    }
+  }
+
+  Widget _capturePreview() => ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight: math.max(
+        96,
+        MediaQuery.sizeOf(context).height * .42 -
+            MediaQuery.viewInsetsOf(context).bottom * .65,
+      ),
+    ),
+    child: Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 16),
+                const Expanded(child: Text('Review extraction')),
+                IconButton(
+                  tooltip: _scanningPreview
+                      ? 'Stop scanning'
+                      : 'Keep draft in chat',
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    if (_scanningPreview) {
+                      _requestGeneration++;
+                      final active = _activeReply;
+                      _activeReply = null;
+                      if (active != null) unawaited(active.cancel());
+                      setState(() {
+                        _scanningPreview = false;
+                        _pickingPhoto = false;
+                        _progress = null;
+                      });
+                    }
+                    _publishPreview();
+                  },
+                ),
+              ],
+            ),
+            if (_scanningPreview)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ChatProgress(
+                  message: _progress ?? 'Reading your photo...',
+                ),
+              ),
+            if (_previewDraft != null && _currentConversationId != null)
+              ChatCaptureCard(
+                key: _previewKey,
+                api: widget.api,
+                conversationId: _currentConversationId!,
+                draft: _previewDraft!,
+                disabled: _scanningPreview,
+                onChanged: _onCaptureChanged,
+                onSaved: () {
+                  _controller.clear();
+                  _publishPreview();
+                  widget.onInventoryMutated?.call();
+                },
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   void _onCaptureChanged(Map<String, dynamic> updated) {
     if (!mounted) return;
     setState(() {
+      if (_previewDraft?['id'] == updated['id']) _previewDraft = updated;
       for (var i = 0; i < _session.messages.length; i++) {
         final message = _session.messages[i];
         final data = message.answerContext;
@@ -3245,6 +3443,8 @@ class _ChatPageState extends State<ChatPage>
                   children: [
                     _buildEmptyState(),
                     const SizedBox(height: 12),
+                    if (_previewDraft != null || _scanningPreview)
+                      _capturePreview(),
                     if (_photo != null) _photoPreview(),
                     WorldComposer(
                       onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
@@ -3374,6 +3574,8 @@ class _ChatPageState extends State<ChatPage>
     final compactComposer =
         keyboardVisible && MediaQuery.textScalerOf(context).scale(16) > 32;
     final canSend =
+        !_savingCapture &&
+        !_scanningPreview &&
         !_pickingPhoto &&
         (_controller.text.trim().isNotEmpty ||
             _photo != null ||
@@ -3381,7 +3583,9 @@ class _ChatPageState extends State<ChatPage>
         (!_sending || _canQueueFollowUp);
 
     if (widget.worldHeading != null &&
-        (_worldHome || _session.messages.isEmpty)) {
+        (_worldHome || _session.messages.isEmpty) &&
+        _previewDraft == null &&
+        !_scanningPreview) {
       return _worldLanding(canSend, keyboardVisible || compactComposer);
     }
     if (widget.worldHeading != null) {
@@ -3409,6 +3613,7 @@ class _ChatPageState extends State<ChatPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_pickingPhoto) const LinearProgressIndicator(),
+              if (_previewDraft != null || _scanningPreview) _capturePreview(),
               if (_photo != null) _photoPreview(),
               WorldComposer(
                 onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
@@ -3467,10 +3672,14 @@ class _ChatPageState extends State<ChatPage>
                 const SizedBox(height: 12),
               ],
               if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty))
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
                 const Spacer(flex: 2),
               if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty))
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
                 _buildEmptyState()
               else
                 Expanded(
@@ -3530,6 +3739,7 @@ class _ChatPageState extends State<ChatPage>
                 ),
                 const SizedBox(height: 10),
               ],
+              if (_previewDraft != null || _scanningPreview) _capturePreview(),
               if (_photo != null) _photoPreview(),
               if (widget.worldHeading != null)
                 WorldComposer(
@@ -3724,7 +3934,9 @@ class _ChatPageState extends State<ChatPage>
                   ),
                 ),
               if (widget.worldHeading != null &&
-                  (_worldHome || _session.messages.isEmpty))
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
                 const Spacer(flex: 3),
             ],
           ),

@@ -142,6 +142,52 @@ void main() {
   }
 
   testWidgets(
+    'chat save confirms once and a failed save is not retried silently',
+    (t) async {
+      value.addAll({
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      });
+      await mount(t);
+      final saving = t
+          .state<ChatCaptureCardState>(find.byType(ChatCaptureCard))
+          .saveFromChat();
+      await t.pumpAndSettle();
+      await saving;
+      expect(value['status'], 'saved');
+      expect(find.text('Extraction saved'), findsOneWidget);
+      expect(f.requests.where((r) => r.path.endsWith('/save')).length, 1);
+      await t
+          .state<ChatCaptureCardState>(find.byType(ChatCaptureCard))
+          .saveFromChat();
+      expect(f.requests.where((r) => r.path.endsWith('/save')).length, 1);
+    },
+  );
+
+  testWidgets(
+    'chat save failure keeps draft editable without claiming success',
+    (t) async {
+      value.addAll({
+        'inventory_id': inv,
+        'space_id': space,
+        'location': 'Garage',
+      });
+      f.status = 503;
+      f.respond = (_) => {'detail': 'Temporarily unavailable'};
+      await mount(t);
+      final saving = t
+          .state<ChatCaptureCardState>(find.byType(ChatCaptureCard))
+          .saveFromChat();
+      await t.pumpAndSettle();
+      await saving;
+      expect(value['status'], 'draft');
+      expect(find.text('Extraction saved'), findsNothing);
+      expect(f.requests.where((r) => r.path.endsWith('/save')).length, 1);
+    },
+  );
+
+  testWidgets(
     'spreadsheet save resumes checkpointed batches without another tap',
     (t) async {
       value = {

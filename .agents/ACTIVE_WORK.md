@@ -1,3 +1,7 @@
+## October 25 - Photo draft composer and truthful memory
+
+Active lane: Mobile photo attachment staging, nonmodal extraction preview above composer, shared-draft refinement/save. Existing navigation retained. User authorized implementation; preserve explicit opt-outs. Separate backend/mobile commits and releases.
+
 ## October 25 — Mobile response controls (not uploaded)
 
 ## October 25 — Response controls delivered to TestFlight 141

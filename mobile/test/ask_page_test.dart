@@ -1,3 +1,4 @@
+import 'package:mobile/features/chat/native_chat_menu_button.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -68,6 +69,7 @@ class _AskApi extends ApiClient {
   final bool captureThenFail;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
+  final List<String> commands = [];
   final List<String?> requestIds = [];
   final List<AskPhoto> photos = [];
   final List<String> photoQuestions = [];
@@ -78,6 +80,7 @@ class _AskApi extends ApiClient {
     String? requestId,
     String? conversationId,
     List<ChatSource> sources = const [],
+    bool previewOnly = false,
   }) async* {
     photos.add(photo);
     photoQuestions.add(message);
@@ -110,6 +113,33 @@ class _AskApi extends ApiClient {
       throw const AskRequestException('Reply interrupted');
     }
 
+    if (previewOnly) {
+      yield AiStreamEvent(
+        type: 'capture',
+        conversationId: 'photo-conversation',
+        answerContext: AskAnswerContext(
+          chatCapture: {
+            'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            'version': 1,
+            'revision': 1,
+            'status': 'draft',
+            'items': [
+              {
+                'index': 0,
+                'selected': true,
+                'item': {
+                  'name': 'Blue pen',
+                  'category': 'Stationery',
+                  'quantity': 1,
+                },
+              },
+            ],
+          },
+        ),
+      );
+      yield AiStreamEvent(type: 'done', conversationId: 'photo-conversation');
+      return;
+    }
     if (pending != null) {
       yield* pending!.stream;
       return;
@@ -131,6 +161,7 @@ class _AskApi extends ApiClient {
     String? requestId,
     List<ChatSource> sources = const [],
   }) async* {
+    commands.add(message);
     conversationIds.add(conversationId);
     requestIds.add(requestId);
     if (pending != null) {
@@ -671,7 +702,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
     expect(api.photos, hasLength(1));
-    expect(api.photoQuestions.single, contains('Describe this photo'));
+    expect(api.photoQuestions.single, isEmpty);
     expect(api.conversationIds, isEmpty);
     expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
     expect(find.byType(AskQuestionCard), findsOneWidget);
@@ -811,7 +842,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.photos, hasLength(1));
       expect(api.photos.single.autoExtract, isTrue);
-      expect(api.photoQuestions.single, contains('Auto extract'));
+      expect(api.photoQuestions.single, isEmpty);
+      expect(find.text('Review extraction'), findsOneWidget);
+      expect(find.byType(AskQuestionCard), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      tester.view.resetViewInsets();
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Increase the blue pen quantity to 2',
+      );
+      await tester.pump();
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pumpAndSettle();
+      expect(find.text('Review extraction'), findsNothing);
+      expect(api.conversationIds.single, 'photo-conversation');
+      expect(api.commands.single, 'Increase the blue pen quantity to 2');
+      expect(find.byKey(const Key('ask-photo-preview')), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -824,9 +873,21 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Do I have this?');
     await tester.tap(find.byTooltip('Capture or attach'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Attach'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Photo library'));
+    if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
+      tester
+          .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+          .onSelected('library');
+    } else {
+      if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
+        tester
+            .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+            .onSelected('library');
+      } else {
+        await tester.tap(find.text('Attach'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Photo library'));
+      }
+    }
     await tester.pumpAndSettle();
     expect(api.photos, isEmpty);
     await tester.tap(find.byTooltip('Send message'));
@@ -844,9 +905,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Capture or attach'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Attach'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Photo library'));
+      if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
+        tester
+            .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+            .onSelected('library');
+      } else {
+        await tester.tap(find.text('Attach'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Photo library'));
+      }
       await tester.pumpAndSettle();
       expect(api.photos, isEmpty);
       expect(find.text('Photo attached'), findsOneWidget);
@@ -884,13 +951,11 @@ void main() {
     await tester.tap(find.text('Auto Extract'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Choose photo'));
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widgetList<AskAnswerView>(find.byType(AskAnswerView))
-          .map((view) => view.answer),
-      contains('Reply interrupted'),
-    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byTooltip('Stop scanning'), findsNothing);
+    expect(find.text('Review extraction'), findsOneWidget);
+    expect(find.byType(AskQuestionCard), findsNothing);
     expect(find.text('Auto Extract'), findsOneWidget);
     expect(find.text('1 of 1 selected · Not saved yet'), findsOneWidget);
   });

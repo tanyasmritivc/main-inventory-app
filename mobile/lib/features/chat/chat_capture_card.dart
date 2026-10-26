@@ -402,6 +402,19 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
     });
   }
 
+  Future<void> saveFromChat() async {
+    if (!_editable) return;
+    if (_missingRows.isNotEmpty) {
+      await _quantity(_missingRows.first);
+      if (!mounted || !_editable || _missingRows.isNotEmpty) return;
+    }
+    if (_draft['space_id'] == null) {
+      await _destination();
+      if (!mounted || !_editable || _draft['space_id'] == null) return;
+    }
+    await _run(_saveItems);
+  }
+
   Future<void> _save() async {
     if (_missingRows.isNotEmpty) {
       await _quantity(_missingRows.first);
@@ -440,7 +453,7 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
       response = await send(false);
       _accept(response);
     }
-    widget.onSaved?.call();
+    if (_draft['status'] == 'saved') widget.onSaved?.call();
   }
 
   void _showSavedItems() {

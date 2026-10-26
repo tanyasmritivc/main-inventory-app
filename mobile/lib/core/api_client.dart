@@ -1319,6 +1319,7 @@ class ApiClient {
     String? requestId,
     String? conversationId,
     List<ChatSource> sources = const [],
+    bool previewOnly = false,
   }) async* {
     if (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes) {
       throw const AskRequestException(
@@ -1342,6 +1343,7 @@ class ApiClient {
       if (requestId != null) request.fields['request_id'] = requestId;
       request.fields['supports_capture'] = 'true';
       request.fields['auto_extract'] = photo.autoExtract.toString();
+      request.fields['preview_only'] = previewOnly.toString();
       if (sources.isNotEmpty) {
         request.fields['sources'] = json.encode(
           sources.map((s) => s.toJson()).toList(),
