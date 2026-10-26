@@ -1,4 +1,6 @@
 "use client";
+import styles from "./world-resource-links.module.css";
+import { ArrowUpRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { parseCapture, type ChatCapture } from "@/lib/chat-sources";
 import { useRouter } from "next/navigation";
@@ -182,12 +184,12 @@ export function WorldResourceLinks({
       <div className="workspace-actions">
         {links.map((l) => (
           <button
-            className="workspace-button"
+            className={styles.link}
             key={l.href}
             disabled={busy}
             onClick={() => void open(l)}
           >
-            Open {l.label}
+            <span>Open {l.label}</span><ArrowUpRight size={14} aria-hidden="true"/>
           </button>
         ))}
       </div>

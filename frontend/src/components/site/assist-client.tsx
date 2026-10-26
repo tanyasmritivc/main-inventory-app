@@ -951,8 +951,8 @@ function AssistClientWorkspace({
                     messageId={m.role === "assistant" ? m.persistedId || (!m.live ? m.id : undefined) : undefined}
                     rating={ratings[m.persistedId || m.id]}
                     onRating={saved => setRatings(previous => ({...previous, [saved.message_id]: saved}))}
-                    disabled={unavailable || sending}
-                    onEdit={m.role === "user" ? () => { draft(m.content); composer.current?.focus(); } : undefined}
+                    disabled={unavailable}
+                    retryDisabled={sending}
                     onRetry={worldId || m.failed ? () => {
                       const prompt = m.role === "user" ? m : messages.slice(0, messageIndex).findLast(row => row.role === "user");
                       const answer = m.role === "assistant" ? m : messages.slice(messageIndex + 1).find(row => row.role === "assistant");

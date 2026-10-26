@@ -1,8 +1,19 @@
 "use client";
 import { useRef, useState } from "react";
-import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw, Pencil, X } from "lucide-react";
+import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw, X } from "lucide-react";
 import { accountRequest } from "@/lib/account-request";
 import styles from "./message-actions.module.css";
+export async function copyMessage(content: string) {
+ try { if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(content); return; } } catch { /* Older Safari and restricted clipboard contexts use selection copy. */ }
+ const active = document.activeElement as HTMLElement | null;
+ const selection = window.getSelection();
+ const ranges = selection ? Array.from({length: selection.rangeCount}, (_, i) => selection.getRangeAt(i).cloneRange()) : [];
+ const field = document.createElement("textarea"); field.value = content;
+ field.setAttribute("readonly", ""); field.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+ document.body.appendChild(field);
+ try { field.select(); if (!document.execCommand("copy")) throw new Error("Copy unavailable"); }
+ finally { field.remove(); active?.focus({preventScroll:true}); selection?.removeAllRanges(); ranges.forEach(range => selection?.addRange(range)); }
+}
 export type ResponseRating = { id: string; message_id: string; rating: 1 | -1; reason: string | null; comment: string | null; revision: number; updated_at: string };
 const reasons: Record<string, string> = {
  wrong_inventory: "Wrong inventory information", misunderstood: "Misunderstood my request",
@@ -10,10 +21,10 @@ const reasons: Record<string, string> = {
  forgot_context: "Forgot my preferences or context", unsafe_action: "Incorrect or unsafe action",
  clarity: "Poor explanation or excessive verbosity", other: "Other",
 };
-export function MessageActions({ content, role, timestamp, messageId, accountId, rating, onRating, onRetry, onEdit, disabled = false }: {
+export function MessageActions({ content, role, timestamp, messageId, accountId, rating, onRating, onRetry, disabled = false, retryDisabled = false }: {
  content: string; role: "user" | "assistant"; timestamp: string; messageId?: string;
  accountId?: string; rating?: ResponseRating; onRating?: (rating: ResponseRating) => void;
- onRetry?: () => void; onEdit?: () => void; disabled?: boolean;
+ onRetry?: () => void; disabled?: boolean; retryDisabled?: boolean;
 }) {
  const [busy, setBusy] = useState(false), [details, setDetails] = useState(false), [error, setError] = useState("");
  const [reason, setReason] = useState(rating?.reason || ""), [comment, setComment] = useState(rating?.comment || "");
@@ -33,7 +44,8 @@ export function MessageActions({ content, role, timestamp, messageId, accountId,
   finally { lock.current = false; setBusy(false); }
  }
  async function copy() {
-  try { await navigator.clipboard.writeText(content); setCopied(true); }
+  setError("");
+  try { await copyMessage(content); setCopied(true); }
   catch { setError("Couldn't copy this message."); }
  }
  const date = new Date(timestamp), validDate = !Number.isNaN(date.valueOf());
@@ -41,11 +53,10 @@ export function MessageActions({ content, role, timestamp, messageId, accountId,
   <div className={styles.row} aria-label={`${role === "assistant" ? "Response" : "Prompt"} actions`}>
    <button type="button" aria-label={copied ? "Copied" : "Copy message"} title="Copy" onClick={() => void copy()}>{copied ? <Check size={16}/> : <Copy size={16}/>}</button>
    {role === "assistant" && messageId && accountId && <>
-    <button type="button" aria-label="Good response" title="Good response" aria-pressed={rating?.rating === 1} disabled={busy || disabled} onClick={() => void rate(1)}><ThumbsUp size={16}/></button>
-    <button type="button" aria-label="Bad response" title="Bad response" aria-pressed={rating?.rating === -1} disabled={busy || disabled} onClick={() => rating?.rating === -1 ? setDetails(!details) : void rate(-1)}><ThumbsDown size={16}/></button>
+    <button type="button" aria-label="Good response" title={rating?.rating === 1 ? "Good response — saved" : "Good response"} aria-pressed={rating?.rating === 1} disabled={busy || disabled} onClick={() => void rate(1)}><ThumbsUp size={16} fill={rating?.rating === 1 ? "currentColor" : "none"}/></button>
+    <button type="button" aria-label="Bad response" title={rating?.rating === -1 ? "Bad response — saved" : "Bad response"} aria-pressed={rating?.rating === -1} disabled={busy || disabled} onClick={() => rating?.rating === -1 ? setDetails(!details) : void rate(-1)}><ThumbsDown size={16} fill={rating?.rating === -1 ? "currentColor" : "none"}/></button>
    </>}
-   {onRetry && <button type="button" aria-label={role === "assistant" ? "Retry response" : "Retry prompt"} title="Retry" disabled={disabled} onClick={onRetry}><RotateCcw size={16}/></button>}
-   {role === "user" && onEdit && <button type="button" aria-label="Edit prompt" title="Edit prompt" disabled={disabled} onClick={onEdit}><Pencil size={16}/></button>}
+   {onRetry && <button type="button" aria-label={role === "assistant" ? "Retry response" : "Retry prompt"} title="Retry" disabled={disabled || retryDisabled} onClick={onRetry}><RotateCcw size={16}/></button>}
    {validDate && <time dateTime={date.toISOString()} title={date.toLocaleString()}>{date.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</time>}
   </div>
   {details && <div className={styles.details} role="group" aria-label="Optional feedback details">

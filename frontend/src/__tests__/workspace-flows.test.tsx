@@ -375,5 +375,5 @@ test('Enter sends and clears the composer immediately; Shift Enter and compositi
   done({conversationId:'chat',content:'Three mugs.',messageId:'saved-answer'});finish();
   await screen.findByLabelText('Good response');
   expect(document.querySelectorAll('time')).toHaveLength(2);
-  fireEvent.click(screen.getByLabelText('Edit prompt'));expect(input.value).toBe('Count my mugs');
+  expect(screen.queryByLabelText('Edit prompt')).toBeNull();expect(input.value).toBe('');
 });

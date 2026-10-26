@@ -1,3 +1,7 @@
+## October 25 — Compact working chat actions
+
+Active web lane fix/web-chat-controls. Remove prompt edit; clear selected feedback; allow rating completed replies while generation runs; clipboard fallback; baby-blue resource pills. Preserve layout and authorization.
+
 ## October 25 - Live chat progress deployed (PR234)
 
 Runtime `d192ab3` is live in self-hosted `live-progress-20261025/frontend`, build `fG-Fp_63lHkB58BaIjdI5`. Existing chat progress now shows elapsed time, receiving-updates/last-update age and persistent second-attempt indication from real server events. No synthetic milestones or private reasoning. All five CI gates passed (40268610118), 598 web tests and TypeScript passed; ESLint zero errors/52 existing warnings. Production build and 26 staged/live routes passed. Chrome test-account chat verified live timing, completion and existing response controls. Prior auth-entry release remains for rollback. Backend activity events deployed separately; no mobile binary or schema change. Receipt: `docs/plans/live-chat-progress-web-receipt.json`.

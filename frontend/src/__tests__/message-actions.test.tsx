@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import {useState} from 'react';
 import {render, screen, fireEvent, waitFor} from '@testing-library/react';
-import {MessageActions, type ResponseRating} from '@/components/site/message-actions';
+import {MessageActions, copyMessage, type ResponseRating} from '@/components/site/message-actions';
 import {accountRequest} from '@/lib/account-request';
 jest.mock('@/lib/account-request',()=>({accountRequest:jest.fn()}));
 const api=jest.mocked(accountRequest);
@@ -30,10 +30,25 @@ it('restores a saved selection and updates negative reasons using revision',asyn
  fireEvent.click(screen.getByText('Save details'));
  await waitFor(()=>expect(api).toHaveBeenLastCalledWith('actor','/response-feedback/exact-message',expect.objectContaining({body:{rating:-1,reason:'incomplete',comment:'Missing one',expected_revision:2}})));
 });
-it('user prompt only has copy retry edit and a semantic timestamp',()=>{
- const edit=jest.fn(),retry=jest.fn();render(<MessageActions role="user" content="Prompt" timestamp="2026-10-25T20:00:00Z" onEdit={edit} onRetry={retry}/>);
- expect(screen.queryByLabelText('Good response')).toBeNull();fireEvent.click(screen.getByLabelText('Edit prompt'));fireEvent.click(screen.getByLabelText('Retry prompt'));
- expect(edit).toHaveBeenCalledTimes(1);expect(retry).toHaveBeenCalledTimes(1);expect(document.querySelector('time')?.dateTime).toBe('2026-10-25T20:00:00.000Z');
+it('user prompt has only copy retry and a semantic timestamp',()=>{
+ const retry=jest.fn();render(<MessageActions role="user" content="Prompt" timestamp="2026-10-25T20:00:00Z" onRetry={retry}/>);
+ expect(screen.queryByLabelText('Good response')).toBeNull();expect(screen.queryByLabelText('Edit prompt')).toBeNull();fireEvent.click(screen.getByLabelText('Retry prompt'));
+ expect(retry).toHaveBeenCalledTimes(1);expect(document.querySelector('time')?.dateTime).toBe('2026-10-25T20:00:00.000Z');
+});
+it('completed responses can be rated while retry is disabled for another running answer',async()=>{
+ api.mockResolvedValue(saved);render(<MessageActions accountId="actor" messageId="exact-message" role="assistant" content="Answer" timestamp="2026-10-25T20:00:00Z" onRetry={()=>{}} retryDisabled/>);
+ expect((screen.getByLabelText('Retry response') as HTMLButtonElement).disabled).toBe(true);
+ fireEvent.click(screen.getByLabelText('Good response'));await waitFor(()=>expect(api).toHaveBeenCalledTimes(1));
+});
+it('copy falls back after clipboard rejection and restores focus',async()=>{
+ Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:jest.fn().mockRejectedValue(new Error('denied'))}});
+ document.execCommand=jest.fn().mockReturnValue(true);
+ const button=document.createElement('button');document.body.appendChild(button);button.focus();
+ await copyMessage('The exact response');expect(document.execCommand).toHaveBeenCalledWith('copy');expect(document.activeElement).toBe(button);expect(document.querySelector('textarea')).toBeNull();button.remove();
+});
+it('copy does not report success if neither browser method succeeds',async()=>{
+ Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});document.execCommand=jest.fn().mockReturnValue(false);
+ render(<Harness/>);fireEvent.click(screen.getByLabelText('Copy message'));expect((await screen.findByRole('alert')).textContent).toContain("Couldn't copy");expect(screen.queryByLabelText('Copied')).toBeNull();
 });
 it('does not accept a receipt for another response',async()=>{
  api.mockResolvedValue({...saved,message_id:'wrong'});render(<Harness/>);fireEvent.click(screen.getByLabelText('Good response'));await screen.findByRole('alert');
