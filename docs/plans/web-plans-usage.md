@@ -23,3 +23,9 @@ Safari visual checks used the actual components with fictional data in a tempora
 ## Deployment
 
 Build a separate self-hosted Next.js candidate using existing production public configuration. Verify touched-file baseline hashes against the active store-privacy-20261025 release, retain previous release, run the five CI gates, and smoke-test public/authenticated routes and metadata persistence with a disposable account. Publish by switching only findez-web's working directory; retain service override rollback. No Vercel deployment, production database migration, payment activation or App Store submission is part of this release.
+
+## Delivered
+
+Runtime `9d39948a65cf2aa613e17bbcbf22dfe94a2bbcfe` is live at `plans-usage-20261026/frontend`, build `bhC0HsnhcOvcIhc4TXAep`. All five CI gates passed in run 40420785743 (PR242). Production build passed on retry after a transient existing homepage Google-font download error. Twenty-seven staged and live route checks passed. Seven real-auth checks passed on staging and public HTTPS, including account-only plans access, live early-access usage and fresh-read dismissal persistence; synthetic accounts were deleted and customer records were not used.
+
+Safari confirmed live public monthly/yearly prices, ten Team members and the protected route's sign-in redirect. Signed-in component layouts were reviewed in local fixtures; authenticated server behavior was verified by HTTP because Safari had no signed-in session. No claim of a live signed-in Safari click-through is made. Prior release/source retained for rollback; backend PID unchanged. Only old regenerable build caches were cleared to make disk space. No database migration or payment activation. Machine-readable receipt: `web-plans-usage-receipt.json`.

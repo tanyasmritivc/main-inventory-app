@@ -1,3 +1,9 @@
+## October 26 — Web plans, sidebar Upgrade and usage deployed (PR242)
+
+Runtime `9d39948` is live in self-hosted `plans-usage-20261026/frontend`, build `bhC0HsnhcOvcIhc4TXAep`. Shared Free/Plus/Team cards now cover public pricing, the skippable first-entry introduction and account Plans & usage. User selected **10 Team members** at unchanged $29/month or $299/year. Intro dismissal persists in account metadata; sidebar Upgrade opens real account-owned record/Space counts. Pilot AI usage correctly says Not metered; paid actions remain Coming soon and early access retains no plan quotas/automatic charges/cutoff.
+
+620 web tests/85 suites, TypeScript, ESLint (0 errors/52 existing warnings), all five CI gates and the production build pass. 27 staged/live routes plus seven staged/public real-auth checks pass. Safari visual checks cover local desktop/narrow light/dark components and public HTTPS pricing; signed-in live checks used disposable-account HTTP. Backend unchanged and prior release retained. No migration, mobile binary or App Store submission. Existing mobile five-seat display requires a separately scoped update. Details/receipt: `docs/plans/web-plans-usage.md` and `docs/plans/web-plans-usage-receipt.json`.
+
 ## October 26 — Web plans and usage (active)
 
 `feat/web-plans-usage` in `/private/tmp/findez-plans-usage` owns the web catalog, first-account plan introduction, sidebar access and authenticated usage page. Based on live privacy release fca454a. Preserve unfinished feat/web-subscriptions lane; its endpoints are not deployed. User approved 10 Team members at the same prices. No backend, schema, purchase activation or native release in this lane.

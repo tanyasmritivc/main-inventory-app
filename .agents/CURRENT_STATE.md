@@ -1,3 +1,9 @@
+## October 26 — Web plans, sidebar Upgrade and usage deployed (PR242)
+
+Runtime `9d39948` is live in self-hosted `plans-usage-20261026/frontend`, build `bhC0HsnhcOvcIhc4TXAep`. Shared Free/Plus/Team cards now cover public pricing, the skippable first-entry introduction and account Plans & usage. User selected **10 Team members** at unchanged $29/month or $299/year. Intro dismissal persists in account metadata; sidebar Upgrade opens real account-owned record/Space counts. Pilot AI usage correctly says Not metered; paid actions remain Coming soon and early access retains no plan quotas/automatic charges/cutoff.
+
+620 web tests/85 suites, TypeScript, ESLint (0 errors/52 existing warnings), all five CI gates and the production build pass. 27 staged/live routes plus seven staged/public real-auth checks pass. Safari visual checks cover local desktop/narrow light/dark components and public HTTPS pricing; signed-in live checks used disposable-account HTTP. Backend unchanged and prior release retained. No migration, mobile binary or App Store submission. Existing mobile five-seat display requires a separately scoped update. Details/receipt: `docs/plans/web-plans-usage.md` and `docs/plans/web-plans-usage-receipt.json`.
+
 ## October25 — Privacy disclosure and authenticated Safari 502 corrected
 
 92a9d66/PR240 privacy notice deployed; five CI gates and26routes pass. Safari exposed oversized upstream authentication response headers; narrow nginx buffer adjustment tested/reloaded and same-session Privacy render verified. Apple account-linked personalization/feedback purposes updated. See docs/plans/store-privacy-20261025.md.
