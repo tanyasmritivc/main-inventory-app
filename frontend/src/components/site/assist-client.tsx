@@ -113,6 +113,8 @@ function AssistClientWorkspace({
     [opening, setOpening] = useState(false),
     [error, setError] = useState(""),
     [status, setStatus] = useState("");
+  const [progressStartedAt, setProgressStartedAt] = useState(0);
+  const [lastActivityAt, setLastActivityAt] = useState<number | null>(null);
   useEffect(() => {
     setRatings({});
     if (!accountId || !conversationId) return;
@@ -480,6 +482,8 @@ function AssistClientWorkspace({
     const current = () =>
       owner.current === account && epoch.current === generation;
     setSending(true);
+    setProgressStartedAt(Date.now());
+    setLastActivityAt(null);
     draft("");
     setPendingMessageId(assistantId);
     setError("");
@@ -527,6 +531,7 @@ function AssistClientWorkspace({
         // Wait for validation and persistence before presenting the canonical reply.
         onDelta: (delta) => { provisional += delta; },
         onReset: () => { provisional = ""; },
+        onActivity: () => { if (current()) setLastActivityAt(Date.now()); },
         onStatus: (value) => {
           if (current()) setStatus(value);
         },
@@ -784,7 +789,7 @@ function AssistClientWorkspace({
                     )
                   ) : (
                     m.id === pendingMessageId ? (
-                      <ChatProgress key={m.id} message={status} />
+                      <ChatProgress key={m.id} message={status} startedAt={progressStartedAt} lastActivityAt={lastActivityAt} />
                     ) : <p className="ask-pending">The answer did not finish.</p>
                   )}
                   {accountId &&

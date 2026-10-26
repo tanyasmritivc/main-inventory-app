@@ -1,3 +1,7 @@
+## October 25 - Live chat progress
+
+`fix/web-live-chat-progress` adds a compact elapsed/last-server-update line to the existing progress disclosure. Actual SSE status/delta/capture/model-activity events update liveness; a stale stream shows the age instead of pretending progress. Automatic retry remains visible as second attempt. Timers clean up when the request leaves the loading state. Requires additive backend activity events for continuous liveness during private model generation; no layout redesign or reasoning disclosure.
+
 ## October 25 - Direct signed-in web entry deployed (PR233)
 
 Runtime `e5701fc0959b71c28493de6001ebae5782f19c28` is live in the self-hosted `auth-entry-20261025/frontend` release, build `8GSX23MO4oG1DIprR6hBU`. `src/proxy.ts` now executes session refresh and redirects active sessions from homepage/signin/signup into the existing app. Successful password sign-in/signup bypass stale route caches. Prompt, invitation and recovery handoffs remain. All five CI gates passed (40267225450), 595 web tests, TypeScript, production build and 26 staged/live routes passed. ESLint: zero errors/52 existing warnings. Thirteen real-session HTTP checks passed on staging and public HTTPS with disposable accounts cleaned up, including expired-cookie refresh; Chrome verified all three entry URLs open Personal chat. Backend unchanged, previous favicon release retained for rollback. Receipt: `docs/plans/web-auth-entry-receipt.json`. No mobile or schema change.

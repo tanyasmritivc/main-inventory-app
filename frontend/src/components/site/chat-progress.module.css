@@ -13,10 +13,12 @@
 .progress summary { display: flex; gap: .4rem; align-items: center; width: fit-content; max-width: 100%; min-height: 44px; cursor: pointer; list-style: none; }
 .progress summary::-webkit-details-marker { display: none; }
 .progress summary svg { flex-shrink: 0; transition: transform .15s ease; }
-.progress[open] summary svg { transform: rotate(180deg); }
+.progress details[open] summary svg { transform: rotate(180deg); }
 .progress summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px; }
 .progress ol { margin: .2rem 0 .5rem; padding-left: 1.5rem; font-size: .8125rem; }
 .progress li { padding: .15rem 0; }
 .shiny { display: inline-block; color: var(--status-base); background-color: var(--status-base); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 @media (prefers-reduced-motion: reduce) { .progress summary svg { transition: none; } .shiny { background-image: none !important; } }
 @media (forced-colors: active) { .shiny { background: none !important; -webkit-text-fill-color: currentColor; } }
+
+.timing { margin: 0 0 .35rem 44px; font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--status-base); }
