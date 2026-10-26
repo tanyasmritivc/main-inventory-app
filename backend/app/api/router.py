@@ -91,3 +91,6 @@ api_router.include_router(world_chat_router)
 
 from app.api.routes.personalization import router as personalization_router
 api_router.include_router(personalization_router)
+
+from app.api.routes.response_feedback import router as response_feedback_router
+api_router.include_router(response_feedback_router)

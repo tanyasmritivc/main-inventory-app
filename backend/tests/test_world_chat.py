@@ -418,3 +418,16 @@ def test_repeated_false_claims_still_fail_closed_after_transport_retry():
     execute.assert_called_once()
     assert gateway.call_count == 4
     assert not any(e['type'] in ('delta', 'done') for e in events)
+
+def test_regenerating_finished_answer_cannot_repeat_inventory_mutation():
+    call = NS(id='c',function=NS(name='world_adjust_quantity',arguments='{}'))
+    with patch.object(w,'directory',return_value={}),patch.object(w,'execute') as execute,patch('app.services.agent_gateway_client.gateway_completion',side_effect=[completion(calls=[call]),completion('No additional changes were made.')]) as gateway:
+        result=list(w.stream_turn(ACTOR,WORLD,'Add five more',[],'cid',read_only_retry=True))
+    execute.assert_not_called()
+    for invocation in gateway.call_args_list:
+        assert all(t['function']['name'] not in ('world_adjust_quantity','world_structure','world_add_items') for t in invocation.kwargs.get('tools',[]))
+    assert result[-1]['type']=='done'
+
+def test_operation_diagnostics_never_copy_arguments_or_results():
+    result=w.trace_diagnostics([{'tool':'world_adjust_quantity','args':{'secret':'private'},'result':{'inventory_changed':True,'name':'private','quantity':4}}])
+    assert result==[{'operation':'world_adjust_quantity','read_only':False,'result':'database_confirmed'}]

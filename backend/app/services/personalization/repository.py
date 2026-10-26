@@ -22,9 +22,9 @@ def authorize_inventory(actor, inventory):
     return _inventory(str(inventory), _actor(actor))
 
 
-def profile(actor):
+def profile(actor, *, client=None):
     actor = _actor(actor)
-    client = get_supabase_raw()
+    client = client if client is not None else get_supabase_raw()
     rows = client.table('personalization_profiles').select('*').eq('user_id', actor).limit(1).execute().data or []
     row = rows[0] if rows else {'enabled': False, 'revision': 0, 'generation': 0, 'categories': [],
         'timezone': 'UTC', 'quiet_start': 1260, 'quiet_end': 540, 'daily_cap': 1, 'weekly_cap': 3}
