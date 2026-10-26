@@ -1,3 +1,7 @@
+## October 26 — Baby-blue Upgrade button deployed (PR243)
+
+Runtime `23d6c37` is live in `upgrade-blue-20261026/frontend`, build `ANGzqwqm9IXVTuPlT_7N5`. CSS-only baby-blue glass gradient, soft glow, restrained six-second sheen cycle, focus ring and reduced-motion fallback; original layout/link retained. Safari light/dark preview and live authenticated Upgrade-to-usage navigation verified. All five CI gates (40422960778), production build and 27 staged/live routes passed. Backend unchanged; preceding release retained. Receipt: `docs/plans/upgrade-blue-web-receipt.json`.
+
 ## October 26 — Baby-blue Upgrade styling (active)
 
 `style/web-upgrade-blue` owns only the sidebar Upgrade CSS in `/private/tmp/findez-plans-usage`. Add a soft baby-blue glass gradient, restrained sheen, visible focus and reduced-motion fallback. Preserve dimensions, link behavior and pricing.
