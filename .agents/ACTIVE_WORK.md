@@ -1,3 +1,7 @@
+## October 25 - Live chat progress deployed (PR234)
+
+Runtime `d192ab3` is live in self-hosted `live-progress-20261025/frontend`, build `fG-Fp_63lHkB58BaIjdI5`. Existing chat progress now shows elapsed time, receiving-updates/last-update age and persistent second-attempt indication from real server events. No synthetic milestones or private reasoning. All five CI gates passed (40268610118), 598 web tests and TypeScript passed; ESLint zero errors/52 existing warnings. Production build and 26 staged/live routes passed. Chrome test-account chat verified live timing, completion and existing response controls. Prior auth-entry release remains for rollback. Backend activity events deployed separately; no mobile binary or schema change. Receipt: `docs/plans/live-chat-progress-web-receipt.json`.
+
 ## October 25 - Live chat progress
 
 `fix/web-live-chat-progress` adds a compact elapsed/last-server-update line to the existing progress disclosure. Actual SSE status/delta/capture/model-activity events update liveness; a stale stream shows the age instead of pretending progress. Automatic retry remains visible as second attempt. Timers clean up when the request leaves the loading state. Requires additive backend activity events for continuous liveness during private model generation; no layout redesign or reasoning disclosure.
