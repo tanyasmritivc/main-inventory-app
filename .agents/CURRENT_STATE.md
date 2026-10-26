@@ -1,3 +1,7 @@
+## October 25 — Photo draft preview and compact actions delivered (PR237)
+
+Apple acknowledged TestFlight 1.1.1 (142), runtime `8ca37ba`, delivery `cc7b440b-ea4b-4911-924c-6b68949dc67d`. Auto Extract opens the durable preview above chat; typed edits and save use the same draft. Ordinary photos wait for Send with optional caption. Prompt edit removed, confirmed ratings visually selected, resource links blue. API preview dependency/migration084 deployed separately. 938 host tests + one existing skip, 46 photo-focused and 41 control-focused tests; four iOS synthetic photo integration cases; analysis clean. All five CI gates pass (40272802298). 34 archive/export executables device-verified; 26 privacy manifests; production HTTPS/anon config, strict signature and Apple validation pass. Processing and tester availability not polled; physical camera/library acceptance unverified. No public App Store submission. Receipt docs/plans/mobile-photo-draft-composer-receipt.json.
+
 ## October 25 — Chat reliability fix delivered (TestFlight 140)
 
 ## October 25 — Response controls delivered to TestFlight 141
