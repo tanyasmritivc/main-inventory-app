@@ -268,3 +268,12 @@ test("settings categories use distinct page routes and keep their labels visible
  expect(view.container.querySelector(".app-frame")?.classList.contains("sidebar-pinned")).toBe(true);
  expect(screen.queryByRole("button", { name: "Unpin navigation" })).toBeNull();
 });
+
+test("sidebar Upgrade opens the account usage route without an inventory suffix", async () => {
+  mockPathname="/settings/plans";
+  const inventory = {accountId:"a",inventory_id:"tools",name:"Tools",owner_user_id:"a",team_id:null,is_default:true,can_edit:true,workspace:{workspace_id:"personal",name:"Personal",kind:"personal" as const,team_id:null,role:"owner" as const}};
+  selectInventory(inventory);render(<AppShell inventory={inventory}><p>Plan page</p></AppShell>);
+  const link=screen.getByRole("link",{name:"Upgrade — plans and usage"});
+  expect(link.getAttribute("href")).toBe("/settings/plans");expect(link.getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("link",{name:"Plans & usage"})).toBeTruthy();
+});

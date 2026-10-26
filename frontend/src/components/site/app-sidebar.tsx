@@ -24,6 +24,7 @@ import {
   Bell,
   Pin,
   PinOff,
+  ArrowUpRight,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -315,6 +316,9 @@ export function AppSidebar({
           )}
         </nav>
         <div className="app-sidebar-footer">
+          <Link href="/settings/plans" className="app-upgrade-link" aria-label="Upgrade — plans and usage" aria-current={pathname === "/settings/plans" ? "page" : undefined} title="Plans and usage" onClick={closeDrawer}>
+            <Sparkles size={16} aria-hidden="true"/><span>Upgrade</span><ArrowUpRight size={14} className="app-upgrade-arrow" aria-hidden="true"/>
+          </Link>
           <Link href="/settings" className="app-account-link" aria-label={`${userName} Profile and settings`} title="Profile and settings" onClick={closeDrawer}>
             <span
               className="app-avatar"

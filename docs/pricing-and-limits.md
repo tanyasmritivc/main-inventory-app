@@ -7,7 +7,7 @@ and robotics-season proposals. It is a display catalog, not a billing entitlemen
 | --- | --- | --- | --- | --- | --- | --- |
 | Free | $0 | $0 | 100 | 1 | 10 | 50 |
 | Plus | $9.99 | $99 | 2,500 | 1 | 50 | 500 |
-| Team | $29 | $299 | 10,000 shared | 5 | 200 shared | 2,000 shared |
+| Team | $29 | $299 | 10,000 shared | 10 | 200 shared | 2,000 shared |
 
 All plans include unlimited Spaces. Plus includes low-stock reminders. Team adds
 shared inventory, permissions and activity. Larger teams contact info@findez.ai.
@@ -62,3 +62,7 @@ TypeScript, scoped lint, focused pricing tests, final full CI and production bui
 ## Standard-price correction
 
 The user rejected promotional offers. Removed the education/robotics discount and eligibility link. Deployed runtime `1f858e782a464ef5100646c664e44683723c1e7b`, build `E4TddXx2Nk6z1B-NC1Plp`. All five CI jobs passed (40221088292), 22 staged/live routes passed, and public browser refresh confirms the discount/eligibility link is absent. Source and rollback preserved. Receipt: `docs/plans/no-offers-web-receipt.json`.
+
+## October 26 web plan access
+
+User approved 10 included Team members at unchanged $29/month or $299/year. The web catalog is updated; the previously uploaded mobile binary still contains its older catalog and requires a separate release. Plan allowances remain prospective during unrestricted early access.

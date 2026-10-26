@@ -14,7 +14,7 @@ test("three plans show correct periods without offering an unconfigured purchase
   for (const price of ["$0", "$9.99", "$29"]) expect(screen.getByText(price)).toBeTruthy();
   for (const name of ["Pro", "Business", "Enterprise"]) expect(screen.queryByRole("heading", { name })).toBeNull();
   expect(screen.getByText("100 saved item records")).toBeTruthy();
-  expect(screen.getByText("5 people included")).toBeTruthy();
+  expect(screen.getByText("10 people included")).toBeTruthy();
   expect(screen.getByText("200 photo extractions per month, shared")).toBeTruthy();
   expect(screen.getAllByText("Unlimited Spaces")).toHaveLength(3);
   await userEvent.click(screen.getByRole("button", { name: "Yearly" }));

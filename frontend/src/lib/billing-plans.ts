@@ -3,7 +3,7 @@ export const PLANS_NOTICE = "Free pre-launch access. Plan quotas are not enforce
 export const BILLING_PLANS = [
   { id: "free", name: "Free", description: "Try FindEZ on your own things.", monthly: 0, annual: 0, features: ["100 saved item records", "1 person", "Unlimited Spaces", "10 photo extractions per month", "50 AI messages per month", "Chat, capture and find"] },
   { id: "plus", name: "Plus", description: "For your home, collections and workshop.", monthly: 9.99, annual: 99, features: ["2,500 saved item records", "1 person", "Unlimited Spaces", "50 photo extractions per month", "500 AI messages per month", "Low-stock reminders"] },
-  { id: "team", name: "Team", description: "Remember more, together.", monthly: 29, annual: 299, features: ["10,000 shared item records", "5 people included", "Unlimited Spaces", "200 photo extractions per month, shared", "2,000 AI messages per month, shared", "Shared inventory, permissions and activity"] },
+  { id: "team", name: "Team", description: "Remember more, together.", monthly: 29, annual: 299, features: ["10,000 shared item records", "10 people included", "Unlimited Spaces", "200 photo extractions per month, shared", "2,000 AI messages per month, shared", "Shared inventory, permissions and activity"] },
 ] as const;
 
 export const PLAN_POLICIES = [

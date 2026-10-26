@@ -83,3 +83,8 @@
 @media(prefers-reduced-motion:reduce) {
   .shell.shell :global(.app-sidebar), .shell.shell :global(.app-main), .shell.shell :global(.app-topbar), .shell.shell :global(.app-nav-section > a) { transition:none; }
 }
+
+.shell.shell :global(.app-sidebar-footer > .app-upgrade-link) { display:flex; gap:10px; min-height:40px; margin-bottom:10px; padding:9px 10px; border:1px solid var(--app-border); border-radius:9px; background:var(--app-surface); color:var(--app-text); font-size:13px; }
+.shell.shell :global(.app-upgrade-link:hover), .shell.shell :global(.app-upgrade-link[aria-current=page]) { background:var(--app-surface-2); }
+.shell.shell :global(.app-upgrade-arrow) { margin-left:auto; }
+@media(min-width:860px) { .shell.shell:not(:global(.sidebar-pinned)) :global(.app-sidebar:not(.is-hovered):not(:focus-within) .app-upgrade-arrow) { display:none; } }

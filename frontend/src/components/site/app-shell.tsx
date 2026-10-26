@@ -44,6 +44,7 @@ import { AccountMenu } from "./account-menu";
 import shellStyles from "./desktop-shell.module.css";
 import { AccountVerification } from "./account-verification";
 import accountStyles from "./account-layout.module.css";
+import { PlanIntroduction } from "./plan-introduction";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
@@ -295,7 +296,7 @@ export function AppShell({
       section: "Account settings",
     },
     {
-      label: "Plans",
+      label: "Plans & usage",
       route: "/settings/plans",
       icon: CreditCard,
       section: "Account settings",
@@ -390,6 +391,7 @@ export function AppShell({
   return (
     <AppThemeProvider>
       {!accountPage && <AccountVerification prompt />}
+      {userId && /^\/worlds\/[^/]+$/.test(pathname) && <PlanIntroduction key={userId} accountId={userId} />}
       <div
         className={`app-frame ${shellStyles.shell} ${accountPage ? accountStyles.shell : ""} ${!inventory ? "is-context-management" : ""} ${pathname === "/assist" || (pathname.startsWith("/worlds/") && context?.activeRoute === context?.homeHref) ? "is-ask-workspace" : ""} ${pathname.startsWith("/teams") ? "is-team-workspace" : ""} ${sidebarOpen ? "sidebar-open" : ""} ${accountPage || sidebarPinned ? "sidebar-pinned" : ""}`}
       >
