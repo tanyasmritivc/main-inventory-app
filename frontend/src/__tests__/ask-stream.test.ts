@@ -102,3 +102,9 @@ test("unknown counts remain unknown and photo match evidence is allowlisted", ()
   expect(context?.rows[1].matchBasis).toBeUndefined();
   expect(JSON.stringify(context)).not.toContain("today");
 });
+
+test('late errors and duplicate done cannot replace verified completion',async()=>{
+ const received:unknown[]=[];
+ await readAskEvents(stream('data: {"type":"done","message_id":"saved","assistant_message":"Answer"}\n\ndata: [DONE]\n\ndata: {"type":"error","error":"late"}\n\n'),event=>received.push(event));
+ expect(received).toHaveLength(1);
+});

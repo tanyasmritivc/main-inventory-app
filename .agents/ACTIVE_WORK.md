@@ -1,3 +1,15 @@
+## October 25 — Compact chat controls (not deployed)
+
+Branch `feat/chat-message-controls` implements compact copy/rating/retry/timestamp
+controls and prompt editing, Enter-to-send (Shift+Enter newline, IME safe), immediate
+composer clearing, and verified “Created and saved” confirmation. Optional negative
+feedback details stay collapsed until requested. Clients render canonical replies
+only after completion and stop accepting late stream events. Feedback selection
+requires the backend receipt; history restores ratings in one account-scoped batch.
+Requires API lane `feat/response-feedback-api` and migration 082 before release.
+584 tests pass; TypeScript passes; ESLint 0 errors/52 existing warnings; webpack
+production build passes with fixture public config. No deployment authorized.
+
 ## October 25 - Chat confirmation fix deployed (PR228)
 
 Runtime `9d38fb0` is live, build `RiqETwne2y6XdnkE3O8M1`.

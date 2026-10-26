@@ -14,6 +14,8 @@ export type AskStreamEvent = {
   delta?: string;
   assistant_message?: string;
   conversation_id?: string;
+  message_id?: string;
+  created_at?: string;
   answer_context?: unknown;
   message?: string;
   error?: string;
@@ -34,7 +36,7 @@ export async function readAskEvents(
       .filter((line) => line.startsWith("data:"))
       .map((line) => line.slice(5).replace(/^ /, ""))
       .join("\n");
-    if (!data || data === "[DONE]") return;
+    if (ended || !data || data === "[DONE]") return;
     let event: AskStreamEvent;
     try {
       event = JSON.parse(data);
@@ -60,7 +62,7 @@ export async function readAskEvents(
       const blocks = buffer.split(/\r?\n\r?\n/);
       buffer = blocks.pop() ?? "";
       for (const block of blocks) consume(block);
-      if (done) break;
+      if (done || ended) break;
     }
     if (buffer.trim()) consume(buffer);
     if (!ended)
@@ -78,6 +80,7 @@ export async function askQuestion({
   conversationId,
   worldId,
   requestId,
+  retryOf,
   sources = [],
   autoExtract = false,
   onCapture,
@@ -90,6 +93,7 @@ export async function askQuestion({
   accountId: string;
   worldId?: string;
   requestId?: string;
+  retryOf?: string;
   sources?: ChatSource[];
   autoExtract?: boolean;
   onCapture?: (conversationId: string, context: AskAnswerContext) => void;
@@ -102,6 +106,8 @@ export async function askQuestion({
   onReset?: () => void;
   onDone: (result: {
     conversationId?: string;
+    messageId?: string;
+    createdAt?: string;
     content?: string;
     context?: AskAnswerContext;
   }) => void;
@@ -125,6 +131,7 @@ export async function askQuestion({
         supports_task_actions: true,
         supports_capture: true,
         request_id: requestId,
+        retry_of: retryOf,
       }
     : {};
   if (photo) {
@@ -183,6 +190,8 @@ export async function askQuestion({
     if (event.type === "done")
       onDone({
         conversationId: event.conversation_id,
+        messageId: event.message_id,
+        createdAt: event.created_at,
         content: event.assistant_message,
         context: parseAskContext(event.answer_context),
       });

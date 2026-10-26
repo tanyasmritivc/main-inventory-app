@@ -28,6 +28,7 @@ test.each(["confirm", "cancel"] as const)("creation %s sends JSON through actual
   render(<WorldActionCard action={parseWorldAction(raw)!} accountId="actor" worldId="personal" />);
   fireEvent.click(screen.getByText(decision === "confirm" ? "Create and complete" : "Cancel"));
   await screen.findByText(decision === "confirm" ? "Created and completed" : "Cancelled");
+  expect(screen.queryByText("Created and saved.") !== null).toBe(decision === "confirm");
   expect(transport.mock.calls[0][0]).toContain(`/worlds/personal/structure-actions/${id}`);
   expect(JSON.parse(transport.mock.calls[0][1].body)).toEqual({ decision, supports_task_actions: true });
 });

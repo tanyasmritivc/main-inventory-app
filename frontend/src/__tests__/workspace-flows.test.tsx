@@ -362,3 +362,18 @@ test("Before I buy clears another account's results and retains a failed search 
     ).value,
   ).toBe("My hub");
 });
+
+test('Enter sends and clears the composer immediately; Shift Enter and composition do not send', async()=>{
+  let done!:(value: {conversationId:string;content:string;messageId:string})=>void;
+  let finish!:()=>void;
+  jest.mocked(askQuestion).mockImplementation(options=>{done=options.onDone;return new Promise(resolve=>{finish=resolve;});});
+  render(<AssistClient initialQuery="Count my mugs"/>);
+  const input=screen.getByLabelText('Your question') as HTMLTextAreaElement;
+  fireEvent.keyDown(input,{key:'Enter',shiftKey:true});expect(askQuestion).not.toHaveBeenCalled();
+  fireEvent.keyDown(input,{key:'Enter',isComposing:true});expect(askQuestion).not.toHaveBeenCalled();
+  fireEvent.keyDown(input,{key:'Enter'});await waitFor(()=>expect(askQuestion).toHaveBeenCalledTimes(1));expect(input.value).toBe('');
+  done({conversationId:'chat',content:'Three mugs.',messageId:'saved-answer'});finish();
+  await screen.findByLabelText('Good response');
+  expect(document.querySelectorAll('time')).toHaveLength(2);
+  fireEvent.click(screen.getByLabelText('Edit prompt'));expect(input.value).toBe('Count my mugs');
+});
