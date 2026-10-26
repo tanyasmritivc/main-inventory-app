@@ -1,3 +1,7 @@
+## October 25 — Personalization inventory deletion migration085 applied
+
+5cc8d13/PR239, all five CI gates passed. Schema rehearsal and verified full backup preceded the exact function patch; grants preserved and no customer rows modified. Live disposable-account inventory and account deletion, draft save retry, canonical quantity update, and memory switch checks passed. Later AI gateway availability is a separate unresolved mobile-review blocker. See docs/plans/personalization-inventory-deletion.md.
+
 ## October 25 — Memory/action/photo-preview backend deployed (PR236)
 
 Runtime `874b537` and migration `084` are live. Actual effective personalization state is provided to chat; missing and untouched defaults start on, explicit off/reset remains off, and the visible Memory switch enables learning. Notifications remain off unless opted in. Canonical source/destination inventory IDs survive the bounded model-data filter; safe proposals keep their confirmation card. Preview-only photo extraction creates a durable draft without an extra chat reply or chat allowance. All five CI jobs passed (40271290834), 1,572 tests + 10 subtests. Schema-only isolated rehearsal and replay passed. Live disposable account verified default/toggle state, GLM draft quantity 1→2, explicit save/retry creates one item, and canonical quantity edit with idempotent receipt. Account and all test data removed. Receipt: docs/plans/memory-photo-actions-receipt.json.
