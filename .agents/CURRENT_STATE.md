@@ -1,3 +1,7 @@
+## October 25 — Browser and search favicon refresh deployed (PR232)
+
+Published runtime `c12c0cebb30ab933cd4266d0d20f8b6985ac3686` to the self-hosted `petals-favicon-20261025/frontend` release, build `Lu2S6k09Rd9HS9ImuqiCa`. Root metadata now advertises stable Petals ICO/SVG, 96px PNG and 180px touch-icon URLs using the existing approved mark. All five CI gates passed (40265331908); 584 web tests and TypeScript passed, ESLint has zero errors/52 existing warnings. Production build and 26 staged/live routes passed. Both public domains advertise and serve the exact new icon bytes to crawler user agents. Safari tab visually confirms the new mark. Google Search Console accepted the homepage indexing request into its priority crawl queue; search icon refresh remains pending Google recrawl. Backend unchanged; prior response-feedback release retained for rollback. Receipt: `docs/plans/petals-favicon-web-receipt.json`.
+
 ## October 25 - Chat confirmation fix deployed (PR228)
 
 ## October 25 — Chat controls deployed on the self-hosted website
