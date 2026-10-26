@@ -1,6 +1,6 @@
-## October 25 — Compact working chat actions
+## October 25 — Compact chat controls and blue resource links deployed (PR238)
 
-Active web lane fix/web-chat-controls. Remove prompt edit; clear selected feedback; allow rating completed replies while generation runs; clipboard fallback; baby-blue resource pills. Preserve layout and authorization.
+Runtime `b714ae6d8f35ffb3512cd4dd1900e55fdedabde9` is live in self-hosted `chat-controls-blue-20261025/frontend`, build `ihpWKFLtBpGhNnun92YBY`. Removed prompt editing, tightened the remaining action row, added clipboard fallback and clear confirmed-rating selection, and kept completed-response ratings usable during a new reply. Resource links now use scoped baby-blue glass pills; Safari visual review caught and corrected a global action-style override. Copy verified in Safari and Chrome; positive/negative ratings and persistence after reload verified with the Chrome test account. Customer inventory unchanged. All five CI gates passed (40273737914), 601 web tests and TypeScript passed, ESLint zero errors/52 existing warnings. Production build and 26 staged/live routes passed; prior releases and backend process preserved. Receipt: `docs/plans/web-chat-controls-receipt.json`. Mobile matching controls/photo flow delivered separately in TestFlight142, availability pending Apple processing.
 
 ## October 25 - Live chat progress deployed (PR234)
 
