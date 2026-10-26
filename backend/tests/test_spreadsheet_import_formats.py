@@ -64,7 +64,6 @@ def test_import_common_csv_does_not_wait_for_gateway():
         file=io.BytesIO(b'Part #,Description,Qty\nPN-F17,0-80 Screw,50\n'),
     )
     with (
-        patch('app.api.routes.imports.gateway_completion') as gateway,
         patch('app.api.routes.imports.check_and_increment_import'),
         patch('app.api.routes.imports.check_limit', new_callable=AsyncMock) as limit,
         patch('app.api.routes.imports.increment_usage', new_callable=AsyncMock),
@@ -83,7 +82,6 @@ def test_import_common_csv_does_not_wait_for_gateway():
             )
         )
 
-    gateway.assert_not_called()
     self_items = bulk.call_args.kwargs['items']
     assert self_items[0]['name'] == '0-80 Screw'
     assert self_items[0]['part_number'] == 'PN-F17'

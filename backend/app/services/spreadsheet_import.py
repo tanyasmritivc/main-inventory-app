@@ -3,7 +3,9 @@
 import csv
 import io
 import json
+import math
 import re
+from datetime import date, datetime, time
 
 import openpyxl
 
@@ -16,15 +18,41 @@ def _text(value: object) -> str:
 
 
 def _table(name: str, headers: list, rows) -> dict | None:
-    clean_headers = [_text(header) for header in headers]
-    clean_rows = [
-        [_text(cell) for cell in row]
-        for row in rows
-        if any(_text(cell) for cell in row)
-    ]
-    if not any(clean_headers) or not clean_rows:
+    source_rows = [list(row) for row in rows if any(_text(cell) for cell in row)]
+    if not source_rows:
         return None
-    return {'name': name, 'headers': clean_headers, 'rows': clean_rows}
+    # Preserve position: duplicate and unnamed columns must not overwrite values.
+    width = max((i + 1 for row in [headers, *source_rows]
+                 for i, value in enumerate(row) if _text(value)), default=0)
+    source_headers = [
+        _header(headers[i]) if i < len(headers) else '' for i in range(width)
+    ]
+    return {
+        'name': name,
+        'headers': [h.strip() or f'Column {i + 1}' for i, h in enumerate(source_headers)],
+        'rows': [[_text(cell) for cell in row] for row in source_rows],
+        'source_headers': source_headers,
+        'source_rows': [[_json_value(row[i]) if i < len(row) else None
+                         for i in range(width)] for row in source_rows],
+    }
+
+
+def _header(value: object) -> str:
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return '' if value is None else str(value)
+
+
+def _json_value(value):
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError('Non-finite numbers are not supported in inventory files.')
+    if isinstance(value, dict):
+        return {key: _json_value(cell) for key, cell in value.items()}
+    if isinstance(value, list):
+        return [_json_value(cell) for cell in value]
+    return value
 
 
 def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
@@ -98,7 +126,7 @@ def parse_import_tables(raw: bytes, filename: str) -> list[dict]:
 
 
 def infer_import_mapping(headers: list[str]) -> dict | None:
-    """Map common column names locally; unknown layouts can use the gateway."""
+    """Map familiar columns; arbitrary layouts keep a descriptive sheet-based name."""
     normalized = {
         re.sub(r'[^a-z0-9]', '', str(header).lower()): header
         for header in headers
@@ -114,24 +142,31 @@ def infer_import_mapping(headers: list[str]) -> dict | None:
 
     part = column('part number', 'part #', 'part no', 'partnumber', 'sku',
                   'item number', 'item #', 'item code', 'product code', 'pn')
+    if not part:
+        part = next((h for h in headers if re.fullmatch(r'\d+', h)), None)
     name = column('name', 'item name', 'part name', 'product name', 'title',
                   'description', 'part description', 'product', 'item')
     if not name:
         name = part
+    derived_name = not name
+    if not name:
+        qty = column('quantity', 'qty', 'count', 'on hand', 'stock', 'units')
+        name = next((h for h in headers if h != qty), headers[0] if headers else None)
     if not name:
         return None
 
     mapping = {
         'name_columns': [name],
+        'derived_name': derived_name,
         'quantity_column': column('quantity', 'qty', 'count', 'on hand',
                                   'stock', 'units'),
         'category_column': column('category', 'type', 'class', 'group'),
         'part_number_column': part,
         'subcategory_column': column('subcategory', 'size', 'size type',
                                      'dimension', 'screw length', 'shaft size'),
-        'brand_column': column('brand', 'manufacturer', 'vendor', 'supplier'),
+        'brand_column': column('brand', 'manufacturer', 'vendor', 'vendor name', 'supplier'),
         'purchase_source_column': column('purchase source', 'source',
-                                         'vendor part number', 'supplier code'),
+                                         'vendor part number', 'vendor part #', 'supplier code'),
         'notes_columns': [],
         'category': 'Supplies',
     }
@@ -163,3 +198,47 @@ def infer_import_mapping(headers: list[str]) -> dict | None:
         {'field': field, 'label': labels[field]} for field in fields
     ]
     return mapping
+
+
+def build_import_items(tables: list[dict], *, filename: str, location: str) -> list[dict]:
+    """Map each sheet independently and retain every original field on each item."""
+    items = []
+    for table in tables:
+        mapping = infer_import_mapping(table['headers']) or {}
+        headers = table['headers']
+        for row, source in zip(table['rows'], table['source_rows']):
+            def value(column):
+                if column not in headers:
+                    return ''
+                index = headers.index(column)
+                return row[index] if index < len(row) else ''
+
+            name = ' - '.join(filter(None, (value(c) for c in mapping.get('name_columns', []))))
+            if not name:
+                name = next((cell for cell in row if cell), '')
+            if mapping.get('derived_name'):
+                name = f"{table['name']} - {mapping['name_columns'][0]} {name}"
+            if not name:
+                continue
+            try:
+                quantity = max(0, int(float(value(mapping.get('quantity_column')) or '1')))
+            except (ValueError, OverflowError):
+                quantity = 1
+            items.append({
+                'name': name[:500],
+                'category': value(mapping.get('category_column')) or mapping.get('category', 'Supplies'),
+                'subcategory': value(mapping.get('subcategory_column')) or None,
+                'part_number': value(mapping.get('part_number_column')) or None,
+                'brand': value(mapping.get('brand_column')) or None,
+                'purchase_source': value(mapping.get('purchase_source_column')) or None,
+                'notes': ' | '.join(filter(None, (value(c) for c in mapping.get('notes_columns', [])))) or None,
+                'quantity': quantity,
+                'location': location,
+                'import_data': {
+                    'filename': filename,
+                    'sheet': table['name'],
+                    'fields': [{'name': header, 'value': cell}
+                               for header, cell in zip(table['source_headers'], source)],
+                },
+            })
+    return items

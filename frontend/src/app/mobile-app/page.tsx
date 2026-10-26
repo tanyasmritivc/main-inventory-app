@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
-import { FindEZMark } from "@/components/site/findez-brand";
+import { FindEZMark, FindEZWordmark } from "@/components/site/findez-brand";
 
 export const metadata: Metadata = {
   title: "Get the FindEZ app",
@@ -15,7 +15,7 @@ export default function MobileAppPage() {
   return (
     <main className="mobile-app-page">
       <nav>
-        <Link href="/" className="landing-wordmark"><FindEZMark className="findez-logo" width={28} height={28} /><span>FindEZ</span></Link>
+        <Link href="/" className="landing-wordmark"><FindEZWordmark width={112} height={30}/></Link>
         <Link href="/docs/api">Developers</Link>
       </nav>
       <section className="mobile-app-content">

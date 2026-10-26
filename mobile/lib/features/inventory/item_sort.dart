@@ -1,7 +1,10 @@
+import '../../core/ui/native_presentation.dart';
+import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 const _kSortPrefKey = 'item_sort_option';
 
@@ -121,10 +124,28 @@ void showItemSortSheet(
   BuildContext context,
   ItemSortOption current,
   void Function(ItemSortOption) onSelected,
-) {
+) async {
+  if (usesNativePresentation) {
+    final id = await showNativeChoices(
+      context,
+      title: 'Sort by',
+      rows: [
+        for (final option in ItemSortOption.values)
+          {
+            'id': option.name,
+            'title': itemSortLabel(option),
+            'checked': current == option,
+          },
+      ],
+    );
+    if (context.mounted && id != null) {
+      onSelected(ItemSortOption.values.byName(id));
+    }
+    return;
+  }
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFF1C1C1E),
+    backgroundColor: AppTheme.adaptive(context, const Color(0xFF1C1C1E)),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -137,22 +158,26 @@ void showItemSortSheet(
             height: 4,
             margin: const EdgeInsets.only(top: 12, bottom: 4),
             decoration: BoxDecoration(
-              color: const Color(0x33FFFFFF),
+              color: AppTheme.adaptive(ctx, const Color(0x33FFFFFF)),
               borderRadius: BorderRadius.circular(99),
             ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
+            child: AppText(
               'Sort by',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.foreground(ctx, Colors.white),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const Divider(height: 1, thickness: 0.5, color: Color(0x14FFFFFF)),
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: AppTheme.adaptive(ctx, Color(0x14FFFFFF)),
+          ),
           for (final option in ItemSortOption.values)
             InkWell(
               onTap: () {
@@ -167,12 +192,15 @@ void showItemSortSheet(
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         itemSortLabel(option),
                         style: TextStyle(
                           color: option == current
-                              ? Colors.white
-                              : const Color(0xCCFFFFFF),
+                              ? AppTheme.foreground(ctx, Colors.white)
+                              : AppTheme.foreground(
+                                  ctx,
+                                  const Color(0xCCFFFFFF),
+                                ),
                           fontSize: 15,
                           fontWeight: option == current
                               ? FontWeight.w600
@@ -181,7 +209,11 @@ void showItemSortSheet(
                       ),
                     ),
                     if (option == current)
-                      const Icon(Icons.check, color: Colors.white, size: 18),
+                      Icon(
+                        Icons.check,
+                        color: AppTheme.foreground(ctx, Colors.white),
+                        size: 18,
+                      ),
                   ],
                 ),
               ),

@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from app.core.config import get_settings
-from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
+from app.services.supabase_client import get_supabase_raw as get_supabase_admin, supabase_execute_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -548,8 +548,8 @@ def get_limits_summary(user_id: str) -> dict:
     result["pilot_ends_at"] = settings.pilot_ends_at
     if settings.pilot_mode:
         result["pilot_notice"] = (
-            "Free Pilot: Unlimited access through September 11, 2026. "
-            "Standard free-plan limits and optional paid plans begin September 12. "
+            "Free Pilot: Unlimited access through November 1, 2026. "
+            "Standard free-plan limits and optional paid plans begin November 2. "
             "You will not be charged automatically."
         )
     else:
