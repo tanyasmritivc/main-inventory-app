@@ -1,190 +1,68 @@
-# FindEZ — pricing and usage limits
+# FindEZ launch plans - October 25, 2026
 
-A starting point, not a verdict. The tier structure and the cap
-*shapes* are grounded in what the code actually costs to run. The
-specific dollar figures are judgement calls that should be tested
-against real users before they harden.
+These are the user-approved planned USD prices. This replaces earlier five-tier
+and robotics-season proposals. It is a display catalog, not a billing entitlement.
 
----
+| Plan | Monthly | Annual | Item records | People | Photo extractions/month | AI messages/month |
+| --- | --- | --- | --- | --- | --- | --- |
+| Free | $0 | $0 | 100 | 1 | 10 | 50 |
+| Plus | $9.99 | $99 | 2,500 | 1 | 50 | 500 |
+| Team | $29 | $299 | 10,000 shared | 10 | 200 shared | 2,000 shared |
 
-## What actually costs money
+All plans include unlimited Spaces. Plus includes low-stock reminders. Team adds
+shared inventory, permissions and activity. Larger teams contact info@findez.ai.
+No promotional offers, education discounts or robotics discounts are offered.
 
-Read from the code, not assumed:
+## Usage definitions for launch
 
-| Feature | Runtime | Relative capacity use |
-|---|---|---|
-| AI chat | FTCTools agent gateway | low |
-| Memory extraction | FTCTools agent gateway | very low |
-| Search query parsing | FTCTools agent gateway | negligible |
-| **Photo scan / extract_from_image** | **FIND** | **highest** |
-| Spreadsheet import mapping | FTCTools agent gateway | moderate, rare |
-| Barcode lookup | Catalog APIs plus gateway fallback | negligible |
+- Item limits count records, not quantity: 500 M3 screws in one record use one slot.
+- One photo extraction is one input photo processed for inventory. The number of
+  detected objects does not multiply usage. Failures and internal retries must not
+  count when the future policy is implemented.
+- AI messages are user requests, not streamed tokens, internal tool calls or retries.
+- Team allowances pool across the team, not per member.
+- Browsing, manual edits, barcode scanning and exports do not consume AI allowances.
+- Downgrading or reaching limits must retain view/edit/export of saved inventory.
+- Measure FIND GPU time, gateway capacity and retry costs before finalizing allowances.
 
-The asymmetry still matters. Chat is a core feature and uses shared private model capacity. Photo scanning runs segmentation, identification, OCR, and measurement, so it needs the tighter operational limit. Limits now protect GPU capacity and latency rather than a per-request external model bill.
----
+## What this change does
 
-## Tiers
+Both client catalogs use Free/Plus/Team, show monthly and annual prices, and label
+paid subscriptions Coming soon. Mobile Settings exposes the comparison while
+legacy pilot/upgrade promotions remain hidden. Web Settings and legacy upgrade
+entry points use the comparison; the legacy checkout link cannot initiate a charge.
+Current server limits and access remain unchanged. No new payment SDK, purchase,
+restore, webhook, entitlement grant, schema, billing product or production
+configuration is introduced. Internal legacy pro flags are not renamed to Plus.
 
-### Free
+## Before accepting money
 
-Unchanged except where noted. The job of this tier is to prove the
-product works on the user's own stuff, then run out.
+Bank details alone do not activate this product. Configure Stripe recurring prices
+and Apple subscription products/agreements, implement provider-verified ownership,
+renewal/cancellation/refund/restore and idempotent events, and unify server-side
+Free/Plus/Team entitlements before enabling purchase buttons. Inspect the actual
+production schema and approve required migrations separately. Replace legacy
+one-time seasonal checkout at activation; do not reuse it for subscriptions.
 
-| | |
-|---|---|
-| Items | 30 |
-| Spaces | 3 |
-| AI chat | 20 / month |
-| Photo scans | 5 / month |
-| Barcode scans | 10 / month |
-| Spreadsheet imports | 2 / month |
-| Active shares | 1 |
+Enforce capacity and successful-operation quotas atomically on the server, with
+retry receipts and team-scoped pools. Preserve existing customers and data on
+migration/downgrade. Sandbox-test purchase, restore, renewal, expiration, refund,
+account switching, retries and failure recovery. Native purchase prices must come
+from StoreKit; displayed USD estimates are not checkout prices. Paid access must
+never depend on visiting a success URL or a client-only flag.
 
-**One change worth considering:** 30 items is tight. A single
-kitchen drawer is 30 items. A user who imports a spreadsheet hits
-the wall before they have seen the product work, which converts
-nobody — it just annoys them. 50 would let someone finish
-cataloguing one real space.
+Public App Store submission is still held for the user's separate instruction.
 
-Test this rather than assuming. If free users are churning at
-exactly 30 items, that is your answer.
+## Web delivery
 
-### Pro — $6.99/mo, $59.99/yr
+Runtime `76bfc93522a15093373c5c2326b5db6877b58791` is live at findez.ai/pricing (PR217). All five CI jobs passed (40219539019); production build `vaVkOWF9huJC5FyrffOPO`, 22 staged/live routes and public browser checks passed. Monthly/annual comparison and unavailable paid buttons verified. Backend and prior release preserved. Receipt: `docs/plans/launch-plans-web-receipt.json`. No public App Store submission.
 
-Keep the price. It is normal for this category and the annual
-discount (28%) is in the right range.
+TypeScript, scoped lint, focused pricing tests, final full CI and production build passed. Live pricing and local annual selection were visually checked. This release prepares the catalog; payment activation and server quota enforcement remain future work.
 
-Replace `"limit": 999999` with real ceilings:
+## Standard-price correction
 
-| | Monthly | Daily |
-|---|---|---|
-| AI chat | 1,000 | — |
-| Photo scans | **300** | **30** |
-| Spreadsheet imports | 20 | — |
-| Barcode scans | unlimited | — |
-| Items | unlimited | — |
-| Spaces | unlimited | — |
-| Active shares | unlimited | — |
+The user rejected promotional offers. Removed the education/robotics discount and eligibility link. Deployed runtime `1f858e782a464ef5100646c664e44683723c1e7b`, build `E4TddXx2Nk6z1B-NC1Plp`. All five CI jobs passed (40221088292), 22 staged/live routes passed, and public browser refresh confirms the discount/eligibility link is absent. Source and rollback preserved. Receipt: `docs/plans/no-offers-web-receipt.json`.
 
-These are set so that a genuine power user never sees them. 300
-photo scans a month is ten a day, every day — far beyond normal
-cataloguing. The daily cap of 30 is what actually stops scripted
-abuse, because it bounds the damage to one day rather than one
-month.
+## October 26 web plan access
 
-The Pro caps bound shared GPU demand and queue latency. They should be tuned from measured FIND job duration, gateway throughput, and concurrent usage rather than an external per-token bill.
-
-### Team — new tier
-
-The gap in the current model. An FTC team of 20 sharing one
-inventory has no sensible way to buy today: either one person pays
-personally, or everyone squeezes onto a single login.
-
-| | |
-|---|---|
-| Members | up to 20 on shared spaces |
-| Everything in Pro | per member |
-| Photo scans | 300 / month pooled across the team |
-| Admin | one billing owner, members join by code |
-
-**Pricing shape matters more than the number here.** Two options:
-
-- **$19.99/month** — familiar, recurring, easy to reason about
-- **$99 / season** — FTC runs Sept–April; a coach expensing one
-  line item for the season is an easier sell than a subscription
-  they have to justify renewing, and it sidesteps summer churn
-
-The seasonal option is the more interesting bet and the one your
-market is most likely to respond to. It is also the one you can
-validate with four phone calls.
-
----
-
-## Enforcement — three layers
-
-**1. Per-route rate limits (already built).** slowapi is in place
-and the expensive routes are already covered:
-
-```
-/ai_command              20/minute
-/ai_upload               10/minute
-/extract_from_image      10/minute
-/inventory/extract...    10/minute
-/import/spreadsheet       5/minute
-/search_items            30/minute
-```
-
-These are your burst protection and they are fine as they are.
-
-**2. Quotas (needs the change).** `check_limit` currently returns
-`{"limit": 999999}` for any Pro user — genuinely uncapped. Replace
-with a `PRO_LIMITS` dict mirroring `FREE_LIMITS`.
-
-The existing `usage_limits` table is keyed by month, which is the
-right granularity for everything except photo scans. Those need a
-daily counter as well.
-
-**3. Fair use in the terms.** A clause reserving the right to
-throttle abusive usage. This is the backstop for the case nobody
-predicted, and it costs nothing to add.
-
----
-
-## When a limit is hit
-
-The difference between a good and bad experience here is larger
-than the limit itself.
-
-**Free user hits a cap** → upgrade sheet. This is the conversion
-moment and it already works.
-
-**Pro user hits a cap** → *not* an upgrade prompt. They already
-paid. Show what reset looks like:
-
-> "You've used today's 30 photo scans. Resets at midnight."
-
-A paying customer who gets sold to when they hit a ceiling churns.
-A paying customer who gets told when it resets waits.
-
-**Never fail silently.** A quota rejection that renders as an
-empty screen is indistinguishable from the app being broken —
-which is the failure mode that already cost real debugging time on
-this codebase.
-
----
-
-## Implementation
-
-Backend only. Roughly an afternoon.
-
-1. Add `PRO_LIMITS` to `usage_service.py` alongside `FREE_LIMITS`.
-2. `check_limit`: replace the `is_pro → 999999` branch with a
-   `PRO_LIMITS` lookup. Unlimited features map to `None`, checked
-   explicitly rather than by magic number.
-3. Add a daily period alongside the monthly one in `usage_limits`
-   (a `period_type` column, or a `YYYY-MM-DD` period string),
-   applied only to `photo_scan`.
-4. `increment_usage` writes both counters where both apply.
-5. Return `resets_at` in the limit-exceeded response so the client
-   can say when, not just no.
-6. Mobile: distinguish free (upgrade sheet) from pro (reset time)
-   in the 402/403 handler.
-
-Team tier is a larger piece of work — billing owner, seat
-management, pooled quotas — and is a v1.1 item. The Pro caps are
-the part worth doing before launch, because uncapped Pro is a
-live liability.
-
----
-
-## What to validate before treating any of this as settled
-
-- Ask three or four FTC coaches how they would want to buy, and
-  what a team seat is worth to them. Monthly or seasonal.
-- Watch where free users stop. If it clusters at 30 items, raise
-  it.
-- Instrument FIND job duration, gateway latency, GPU utilization, and per-user request volume for a month before finalising the Pro caps.
-
-The last one matters most. Every figure in this document is an
-estimate until you have a month of real usage data, and that data
-will be more persuasive than any framework.
+User approved 10 included Team members at unchanged $29/month or $299/year. The web catalog is updated; the previously uploaded mobile binary still contains its older catalog and requires a separate release. Plan allowances remain prospective during unrestricted early access.

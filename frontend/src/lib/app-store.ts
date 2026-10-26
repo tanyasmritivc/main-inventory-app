@@ -6,12 +6,15 @@ export const APP_STORE_URL = `https://apps.apple.com/us/app/findez-ai/id${APP_ST
 export const INVITE_LINK_ORIGIN = "https://www.findez.ai";
 
 export function invitationUniversalLink(kind: "space" | "team", code: string): string {
+  if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error("Invalid invitation code");
   const path = kind === "team" ? `/join/team/${code}` : `/join/${code}`;
   return `${INVITE_LINK_ORIGIN}${path}`;
 }
 
 /** Custom-scheme fallback that opens an installed app when Universal Links are bypassed. */
-export function invitationAppSchemeLink(kind: "space" | "team", code: string): string {
+export function invitationAppSchemeLink(kind: "space" | "team" | "access", code: string): string {
+  if (!(kind === "access" ? /^[A-Z2-9]{12}$/ : /^[A-Z0-9]{6}$/).test(code)) throw new Error("Invalid invitation code");
+  if (kind === "access") return `findez://access-invite?code=${encodeURIComponent(code)}`;
   const host = kind === "team" ? "team-invite" : "space-invite";
   return `findez://${host}?code=${encodeURIComponent(code)}`;
 }

@@ -12,8 +12,14 @@ export type CreateIntegrationKey = {
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  workspace_access_denied: "Only the team owner can manage integrations for this workspace.",
-  organization_required: "Create a team first, then return here to create its API key.",
+  workspace_access_denied: "Only the workspace owner can manage integrations. Inventory content permissions must also allow access.",
+  organization_required: "Create a workspace first, then return here to create its API key.",
+  key_creation_unavailable: "The key could not be created. Try again after refreshing the page.",
+  key_list_unavailable: "API keys could not be loaded. Try again.",
+  workspace_list_unavailable: "Your workspaces could not be loaded. Try again.",
+  key_revocation_unavailable: "The key could not be revoked. It may still be active. Try again.",
+  database_unavailable: "Inventory access is temporarily unavailable. Your key has not been changed.",
+  authentication_unavailable: "API authentication is temporarily unavailable. Try again.",
   invalid_expiration: "Choose an expiration date in the future.",
   invalid_api_key: "This API key is invalid. Check that you copied the entire key.",
   revoked_api_key: "This API key has been revoked.",
@@ -28,12 +34,14 @@ async function request<T>(path: string, token: string, method = "GET", body?: un
   let response: Response;
   try {
     response = await fetch(`${apiBase().replace(/\/$/, "")}/api/v1${path}`, {
-      method, cache: "no-store",
+      method, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000),
       headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new Error("Could not connect to FindEZ. Check your connection and try again.");
+    throw new Error(method === "GET" || path === "/query"
+      ? "Could not connect to FindEZ. Check your connection and try again."
+      : "The change could not be confirmed. Refresh the key list before trying again; the request may have succeeded.");
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
@@ -49,12 +57,19 @@ async function request<T>(path: string, token: string, method = "GET", body?: un
 export const listIntegrationKeys = (token: string) => request<{ keys: IntegrationKey[] }>("/keys", token);
 export const listKeyWorkspaces = (token: string) => request<{ workspaces: KeyWorkspace[] }>("/keys/workspaces", token);
 export const createIntegrationKey = (token: string, body: CreateIntegrationKey) => request<IntegrationKey & { key: string }>("/keys", token, "POST", body);
-export const revokeIntegrationKey = (token: string, id: string) => request<{ revoked: true; revoked_at: string }>(`/keys/${encodeURIComponent(id)}`, token, "DELETE");
+export async function revokeIntegrationKey(token: string, id: string) {
+  const receipt = await request<{ revoked: boolean; revoked_at: string }>(`/keys/${encodeURIComponent(id)}`, token, "DELETE");
+  if (receipt.revoked !== true || typeof receipt.revoked_at !== "string" || !Number.isFinite(Date.parse(receipt.revoked_at)))
+    throw new Error("Revocation could not be confirmed. Refresh the key list; the key may still be active.");
+  return receipt;
+}
 
 export async function testIntegrationKey(key: string): Promise<string> {
   const identity = await request<{ scopes: KeyScope[] }>("/whoami", key);
+  if (!Array.isArray(identity.scopes) || !identity.scopes.length) throw new Error("FindEZ returned an invalid key identity. The connection could not be verified.");
   if (identity.scopes.includes("items:read") || identity.scopes.includes("org:read")) {
     const count = await request<{ value: number }>("/query", key, "POST", { resource: "items", aggregate: "count" });
+    if (!Number.isSafeInteger(count.value) || count.value < 0) throw new Error("FindEZ returned an invalid inventory count. The connection could not be verified.");
     return `Connected. This key can read ${count.value} inventory items.`;
   }
   if (identity.scopes.includes("workspace:read")) {

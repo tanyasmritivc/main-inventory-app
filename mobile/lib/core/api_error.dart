@@ -1,6 +1,15 @@
 import 'package:dio/dio.dart';
+import 'api_client.dart' show AskRequestException, SessionExpiredException;
 
-enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
+enum ErrorKind {
+  sessionExpired,
+  planLimit,
+  permissionDenied,
+  notFound,
+  offline,
+  server,
+  generic,
+}
 
 /// Maps API error responses to a user-friendly message and a kind tag.
 ///
@@ -14,6 +23,11 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
 ///
 /// Never returns a raw exception dump or internal stack trace.
 (String, ErrorKind) describeError(Object e) {
+  if (e is AskRequestException) return (e.message, ErrorKind.generic);
+  if (e is SessionExpiredException) {
+    return ('Session expired. Please sign in again.', ErrorKind.sessionExpired);
+  }
+  if (e is FormatException) return (e.message, ErrorKind.generic);
   if (e is DioException) {
     final status = e.response?.statusCode;
     final data = e.response?.data;
@@ -29,9 +43,9 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
           case 'FREE_TIER_SHARE_LIMIT':
             return (
               'Free accounts can have $max active '
-              '${(max as int?) == 1 ? 'share' : 'shares'} '
-              '(you have $used of $max). '
-              'Revoke an old share or join a team.',
+                  '${(max as int?) == 1 ? 'share' : 'shares'} '
+                  '(you have $used of $max). '
+                  'Revoke an old share or join a team.',
               ErrorKind.planLimit,
             );
           case 'FREE_TIER_SPACE_LIMIT':
@@ -57,13 +71,13 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
           case 'CHAT_LIMIT_REACHED':
             return (
               "You've used all ${max ?? 'your'} free AI chats this month"
-              "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
+                  "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
               ErrorKind.planLimit,
             );
           case 'SCAN_LIMIT_REACHED':
             return (
               "You've used all ${max ?? 'your'} free photo scans this month"
-              "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
+                  "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
               ErrorKind.planLimit,
             );
         }
@@ -89,7 +103,12 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
             !detail.startsWith('Exception') &&
             !detail.startsWith('Error:') &&
             !detail.contains('DioException')) {
-          return (detail, ErrorKind.generic);
+          return (
+            detail,
+            e.response?.statusCode == 403
+                ? ErrorKind.permissionDenied
+                : ErrorKind.generic,
+          );
         }
       }
     }
@@ -98,7 +117,10 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
       return ('Session expired — sign in again.', ErrorKind.sessionExpired);
     }
     if (status == 403) {
-      return ("You've reached the free limit.", ErrorKind.planLimit);
+      return (
+        'You do not have permission to access this resource.',
+        ErrorKind.permissionDenied,
+      );
     }
     if (status == 404) {
       return ('This item no longer exists.', ErrorKind.notFound);
@@ -154,5 +176,4 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
 String friendlyApiError(
   Object e, {
   String fallback = 'Something went wrong. Please try again.',
-}) =>
-    describeError(e).$1;
+}) => describeError(e).$1;
