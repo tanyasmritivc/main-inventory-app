@@ -1,0 +1,126 @@
+{
+  "published": true,
+  "source": "9e5e318f67a80f52316322ffe641d15094993c79",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 127,
+  "schema_changed": false,
+  "extraction_provider": "glm",
+  "ci_run": 40268609538,
+  "all_five_ci_gates_passed": true,
+  "model_probe": {
+    "synthetic_context": true,
+    "database_writes": false,
+    "model_metadata": [
+      {
+        "proposed_tool": "world_create_task",
+        "validated": true,
+        "item_records": 30,
+        "locations": 5,
+        "executed": false
+      },
+      {
+        "seconds": 40.2,
+        "timeline": [
+          {
+            "seconds": 0.0,
+            "type": "status",
+            "message": "Checking your inventories and Spaces..."
+          },
+          {
+            "seconds": 1.3,
+            "type": "activity"
+          },
+          {
+            "seconds": 1.3,
+            "type": "status",
+            "message": "Thinking through your request..."
+          },
+          {
+            "seconds": 6.3,
+            "type": "activity"
+          },
+          {
+            "seconds": 11.3,
+            "type": "activity"
+          },
+          {
+            "seconds": 16.3,
+            "type": "activity"
+          },
+          {
+            "seconds": 16.3,
+            "type": "status",
+            "message": "Still thinking through your request..."
+          },
+          {
+            "seconds": 21.3,
+            "type": "activity"
+          },
+          {
+            "seconds": 23.7,
+            "type": "status",
+            "message": "Preparing an inventory lookup..."
+          },
+          {
+            "seconds": 23.8,
+            "type": "status",
+            "message": "Checking your Spaces\u2026"
+          },
+          {
+            "seconds": 23.8,
+            "type": "status",
+            "message": "Working through the results..."
+          },
+          {
+            "seconds": 24.1,
+            "type": "activity"
+          },
+          {
+            "seconds": 24.1,
+            "type": "status",
+            "message": "Working through the results..."
+          },
+          {
+            "seconds": 29.1,
+            "type": "activity"
+          },
+          {
+            "seconds": 33.0,
+            "type": "status",
+            "message": "Building your item draft..."
+          },
+          {
+            "seconds": 34.1,
+            "type": "activity"
+          },
+          {
+            "seconds": 36.9,
+            "type": "status",
+            "message": "Preparing your inventory draft\u2026"
+          },
+          {
+            "seconds": 36.9,
+            "type": "status",
+            "message": "Writing your draft summary..."
+          },
+          {
+            "seconds": 37.4,
+            "type": "activity"
+          },
+          {
+            "seconds": 37.4,
+            "type": "status",
+            "message": "Writing your draft summary..."
+          }
+        ]
+      },
+      {
+        "completed": true,
+        "review_cards": 1
+      }
+    ]
+  },
+  "backend_tests": 1569
+}
