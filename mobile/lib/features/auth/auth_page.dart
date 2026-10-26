@@ -1,18 +1,38 @@
+import '../../core/ui/findez_wordmark.dart';
 import 'dart:math' as math;
-import 'dart:ui';
+import 'dart:convert';
+import 'dart:async';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import '../../core/legal_links.dart';
+import '../profile/privacy_policy_page.dart';
+import '../profile/terms_of_service_page.dart';
 import '../onboarding/onboarding_prefs.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, this.onAuthChanged});
+  const AuthPage({
+    super.key,
+    this.onAuthChanged,
+    this.fromOnboarding = false,
+    this.onBackToSetup,
+    this.initialMethod,
+    this.trialItemCount,
+    this.sampleTrial = false,
+  });
 
   final VoidCallback? onAuthChanged;
+  final bool fromOnboarding;
+  final VoidCallback? onBackToSetup;
+  final String? initialMethod;
+  final int? trialItemCount;
+  final bool sampleTrial;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -27,6 +47,16 @@ class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _password;
 
   bool _isLogin = true;
+  bool _showEmail = false, _moreOptions = false;
+  bool _edge = false;
+  double _edgeDistance = 0;
+  bool _legalAccepted = false;
+  Map<String, dynamic> get _legalAcceptance => {
+    'terms_version': legalTermsVersion,
+    'terms_url': legalDocumentUrl(LegalDocumentKind.terms).toString(),
+    'terms_accepted_at': DateTime.now().toUtc().toIso8601String(),
+    'eligibility_attested': true,
+  };
   bool _loading = false;
   bool _resending = false;
   String? _error;
@@ -42,6 +72,12 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialMethod == 'email') _showEmail = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.initialMethod == 'apple') unawaited(_signInWithApple());
+      if (widget.initialMethod == 'google') unawaited(_signInWithGoogle());
+    });
     _firstName = TextEditingController();
     _lastName = TextEditingController();
     _profileRole = TextEditingController();
@@ -59,12 +95,22 @@ class _AuthPageState extends State<AuthPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: AppText(message),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
   }
 
   bool _validateSignupIdentity() {
     if (_isLogin) return true;
+    if (!_legalAccepted) {
+      setState(
+        () => _error =
+            'Confirm your eligibility and accept the Terms of Service to create an account.',
+      );
+      return false;
+    }
     final firstName = _firstName.text.trim();
     final lastName = _lastName.text.trim();
     final displayName = [firstName, lastName].join(' ').trim();
@@ -223,6 +269,11 @@ class _AuthPageState extends State<AuthPage> {
 
       if (displayName.isEmpty && metadataDisplayName.isEmpty) return;
 
+      if (!_isLogin && _legalAccepted) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: _legalAcceptance),
+        );
+      }
       await Supabase.instance.client.from('profiles').upsert({
         'id': userId,
         'display_name': displayName.isNotEmpty
@@ -257,11 +308,14 @@ class _AuthPageState extends State<AuthPage> {
     });
 
     try {
+      final auth = Supabase.instance.client.auth;
+      final rawNonce = auth.generateRawNonce();
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
       );
 
       final idToken = credential.identityToken;
@@ -272,10 +326,10 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       OnboardingPrefs.justSignedUp = true;
-      final auth = Supabase.instance.client.auth;
-      await auth.signInWithIdToken(
+      await _trialIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
+        nonce: rawNonce,
       );
 
       final userId = auth.currentUser?.id;
@@ -377,7 +431,7 @@ class _AuthPageState extends State<AuthPage> {
 
       final auth = Supabase.instance.client.auth;
 
-      await auth.signInWithIdToken(
+      await _trialIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
@@ -412,6 +466,21 @@ class _AuthPageState extends State<AuthPage> {
         });
       }
     }
+  }
+
+  Future<AuthResponse> _trialIdToken({
+    required OAuthProvider provider,
+    required String idToken,
+    String? nonce,
+    String? accessToken,
+  }) async {
+    final auth = Supabase.instance.client.auth;
+    return auth.signInWithIdToken(
+      provider: provider,
+      idToken: idToken,
+      nonce: nonce,
+      accessToken: accessToken,
+    );
   }
 
   static const List<String> _blockedDomains = [
@@ -544,6 +613,7 @@ class _AuthPageState extends State<AuthPage> {
           password: password,
           emailRedirectTo: _oauthRedirectTo,
           data: {
+            ..._legalAcceptance,
             if (firstName.isNotEmpty) 'given_name': firstName,
             if (lastName.isNotEmpty) 'family_name': lastName,
             if (fullName.isNotEmpty) 'full_name': fullName,
@@ -660,702 +730,605 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(_isLogin ? 'Sign in' : 'Create account'),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    IconData? icon,
+    int? maxLength,
+    List<String>? hints,
+    bool password = false,
+    TextInputType? keyboard,
+  }) => TextField(
+    controller: controller,
+    enabled: !_loading,
+    keyboardType: keyboard,
+    textInputAction: password ? TextInputAction.done : TextInputAction.next,
+    autofillHints: hints,
+    maxLength: maxLength,
+    obscureText: password,
+    onChanged: controller == _email
+        ? (_) => setState(() => _emailError = null)
+        : null,
+    onSubmitted: password
+        ? (_) => FocusManager.instance.primaryFocus?.unfocus()
+        : null,
+    style: AppTypography.bodyStyleOf(
+      context,
+      const TextStyle(
+        fontFamily: 'PlusJakartaSans',
+        fontSize: 16,
+        color: Color(0xFF302D38),
       ),
-      body: Container(
-        color: Colors.black,
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Opacity(
-                        opacity: 0.9,
-                        child: ImageFiltered(
-                          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  const Color(
-                                    0xFF6997DD,
-                                  ).withValues(alpha: 0.20),
-                                  const Color(
-                                    0xFFC084FC,
-                                  ).withValues(alpha: 0.12),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.0, 0.55, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+    ),
+    decoration: InputDecoration(
+      labelText: label,
+      counterText: '',
+      prefixIcon: icon == null ? null : Icon(icon, size: 21),
+      errorText: controller == _email ? _emailError : null,
+      filled: true,
+      fillColor: Colors.white,
+    ),
+  );
+
+  Widget _social(
+    OAuthProvider provider,
+    String label,
+    Widget icon,
+    VoidCallback action,
+  ) => OutlinedButton.icon(
+    onPressed: _loading ? null : action,
+    icon: _loading && _oauthProviderLoading == provider
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : icon,
+    label: AppText(label, textAlign: TextAlign.center),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: provider == OAuthProvider.apple
+          ? Colors.white
+          : const Color(0xFF302D38),
+      backgroundColor: provider == OAuthProvider.apple
+          ? const Color(0xFF302D38)
+          : Colors.white,
+      minimumSize: const Size(double.infinity, 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      side: BorderSide(color: const Color(0xFF302D38), width: 1.8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      textStyle: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
+
+  void _switchMode() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _isLogin = !_isLogin;
+      _showEmail = true;
+      _needsEmailVerification = false;
+      _verificationEmail = null;
+      _error = null;
+      _emailError = null;
+    });
+  }
+
+  String get _headline => widget.sampleTrial
+      ? 'Now try it on real stuff'
+      : widget.trialItemCount != null
+      ? 'Keep these ${widget.trialItemCount} items'
+      : widget.fromOnboarding
+      ? 'Keep your items'
+      : _isLogin
+      ? 'Welcome back'
+      : 'Create your account';
+  String get _subtitle => widget.sampleTrial
+      ? 'Make a free account, snap a shelf, and FindEZ remembers every item on every device.'
+      : widget.fromOnboarding
+      ? 'Make an account and FindEZ remembers them, on every device.'
+      : _isLogin
+      ? 'Sign in to your inventory.'
+      : 'Keep your inventory in one place.';
+
+  Widget _heading() => Column(
+    children: [
+      Semantics(
+        header: true,
+        child: Text(
+          _headline,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 30,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -.75,
+            height: 1.12,
+            color: Color(0xFF302D38),
+          ),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        _subtitle,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontFamily: 'PlusJakartaSans',
+          fontSize: 15,
+          height: 1.45,
+          color: Color(0xFF6B6965),
+        ),
+      ),
+    ],
+  );
+  List<Widget> _providers() => [
+    _social(
+      OAuthProvider.google,
+      'Continue with Google',
+      const GoogleAuthLogo(size: 22),
+      _signInWithGoogle,
+    ),
+    if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+      const SizedBox(height: 14),
+      _social(
+        OAuthProvider.apple,
+        'Continue with Apple',
+        const Icon(Icons.apple, size: 25),
+        _signInWithApple,
+      ),
+    ],
+  ];
+  Widget _legalFooter() => Column(
+    children: [
+      const Text(
+        'By continuing, you acknowledge that you have read and agreed to our',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'PlusJakartaSans',
+          fontSize: 12.5,
+          height: 1.45,
+          color: Color(0xFF6B6965),
+        ),
+      ),
+      Wrap(
+        alignment: WrapAlignment.center,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const TermsOfServicePage(),
+              ),
+            ),
+            child: const Text(
+              'Terms of Service',
+              style: TextStyle(
+                decoration: TextDecoration.underline,
+                color: Color(0xFF302D38),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PrivacyPolicyPage(),
+              ),
+            ),
+            child: const Text(
+              'Privacy Policy',
+              style: TextStyle(
+                decoration: TextDecoration.underline,
+                color: Color(0xFF302D38),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+  Widget _emailForm() => AutofillGroup(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ..._providers(),
+        const SizedBox(height: 24),
+        const Row(
+          children: [
+            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+            Flexible(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  'or use email',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PlusJakartaSans',
+                    fontSize: 13,
+                    color: Color(0xFF6B6965),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(18),
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Color(0xFFE3E0DA))),
+          ],
+        ),
+        const SizedBox(height: 24),
+        if (!_isLogin) ...[
+          _field(
+            _firstName,
+            'First name',
+            maxLength: 50,
+            hints: const [AutofillHints.givenName],
+          ),
+          const SizedBox(height: 12),
+          _field(
+            _lastName,
+            'Last name',
+            maxLength: 50,
+            hints: const [AutofillHints.familyName],
+          ),
+          const SizedBox(height: 12),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 16),
+            title: const AppText(
+              'Work details (optional)',
+              style: TextStyle(fontSize: 14),
+            ),
+            children: [
+              _field(
+                _profileRole,
+                'Role (optional)',
+                maxLength: 120,
+                hints: const [AutofillHints.jobTitle],
+              ),
+              const SizedBox(height: 12),
+              _field(
+                _organization,
+                'Organization (optional)',
+                maxLength: 120,
+                hints: const [AutofillHints.organizationName],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        _field(
+          _email,
+          'Email',
+          icon: Icons.alternate_email_rounded,
+          keyboard: TextInputType.emailAddress,
+          hints: const [AutofillHints.email],
+        ),
+        const SizedBox(height: 12),
+        _field(
+          _password,
+          'Password',
+          icon: Icons.lock_outline_rounded,
+          password: true,
+          hints: [
+            _isLogin ? AutofillHints.password : AutofillHints.newPassword,
+          ],
+        ),
+        if (_isLogin)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _loading ? null : _sendPasswordReset,
+              child: const AppText(
+                'Forgot password?',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            value: _legalAccepted,
+            onChanged: _loading
+                ? null
+                : (value) => setState(() => _legalAccepted = value ?? false),
+            title: const AppText(
+              "I'm at least 13, have any required guardian permission, and accept the Terms of Service.",
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ),
+        ],
+        if (_error != null) ...[
+          Semantics(
+            liveRegion: true,
+            child: AppText(
+              _error!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        FilledButton(
+          onPressed: _loading ? null : _submit,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(double.infinity, 54),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          child: _loading && _oauthProviderLoading == null
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : AppText(_isLogin ? 'Sign in' : 'Create account'),
+        ),
+
+        const SizedBox(height: 16),
+        if (_needsEmailVerification) ...[
+          Semantics(
+            liveRegion: true,
+            child: AppText(
+              'Check your email to confirm your account.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: const Color(0xFF6B6965)),
+            ),
+          ),
+          TextButton(
+            onPressed: _resending || _loading ? null : _resendVerificationEmail,
+            child: AppText(
+              _resending ? 'Resending…' : 'Resend verification email',
+            ),
+          ),
+        ],
+        TextButton(
+          onPressed: _loading ? null : _switchMode,
+          child: AppText(
+            _isLogin
+                ? 'New here? Create account'
+                : 'Already have an account? Sign in',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_isLogin)
+          AppText(
+            'By signing in, you accept our Terms and confirm you’re eligible (13+).',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: const Color(0xFF6B6965),
+            ),
+          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const TermsOfServicePage(),
+                ),
+              ),
+              child: const AppText(
+                'Terms of Service',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PrivacyPolicyPage(),
+                ),
+              ),
+              child: const AppText(
+                'Privacy Policy',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => Theme(
+    data: Theme.of(context).copyWith(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF7F7F6),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFE8590C),
+        brightness: Brightness.light,
+      ),
+      textTheme: Theme.of(context).textTheme.apply(
+        fontFamily: 'PlusJakartaSans',
+        bodyColor: const Color(0xFF302D38),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        labelStyle: const TextStyle(
+          fontFamily: 'PlusJakartaSans',
+          fontSize: 16,
+          color: Color(0xFF6B6965),
+        ),
+        hintStyle: const TextStyle(color: Color(0xFF8A8782)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 18,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE3E0DA)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE8590C), width: 1.5),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF302D38),
+          foregroundColor: Colors.white,
+          textStyle: const TextStyle(
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: const OutlinedButtonThemeData(),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF302D38),
+          minimumSize: const Size(44, 44),
+        ),
+      ),
+    ),
+    child: Builder(
+      builder: (context) => Scaffold(
+        backgroundColor: const Color(0xFFF7F7F6),
+        body: SafeArea(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (details) {
+              _edge = details.globalPosition.dx <= 24;
+              _edgeDistance = 0;
+            },
+            onHorizontalDragUpdate: (details) {
+              if (_edge) _edgeDistance += details.delta.dx;
+            },
+            onHorizontalDragEnd: (details) {
+              if (!_loading &&
+                  _edge &&
+                  (_edgeDistance > 60 ||
+                      (details.primaryVelocity ?? 0) > 300)) {
+                widget.onBackToSetup?.call();
+              }
+              _edge = false;
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(20, _showEmail ? 12 : 42, 20, 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          _isLogin ? 'Welcome back' : 'Welcome',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.4,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'by AI Robots Inc',
-                          style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _isLogin
-                              ? 'Sign in to upload documents and view activity.'
-                              : 'Sign up to start uploading documents.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.60),
-                              ),
-                        ),
-                        const SizedBox(height: 18),
-                        if (!_isLogin) ...[
-                          TextField(
-                            controller: _firstName,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 50,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'First name',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.givenName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _lastName,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 50,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Last name',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.familyName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _profileRole,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Role (optional)',
-                              hintText: 'Student, mentor, coach…',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.jobTitle],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _organization,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Organization (optional)',
-                              hintText: 'School, team, or company',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.apartment_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [
-                              AutofillHints.organizationName,
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        TextField(
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          onChanged: (_) => setState(() => _emailError = null),
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'you@company.com',
-                            hintStyle: TextStyle(
-                              color: Color(0x33FFFFFF),
-                              fontSize: 15,
-                            ),
-                            prefixIcon: Icon(Icons.alternate_email_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          autofillHints: const [AutofillHints.email],
-                        ),
-                        if (_emailError != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              _emailError!,
-                              style: const TextStyle(
-                                color: Color(0xFFFF3B30),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _password,
-                          obscureText: true,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) =>
-                              FocusManager.instance.primaryFocus?.unfocus(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          autofillHints: const [AutofillHints.password],
-                        ),
-                        if (_isLogin)
+                        if (_showEmail)
                           Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _loading ? null : _sendPasswordReset,
-                              child: const Text('Forgot password?'),
-                            ),
-                          )
-                        else
-                          const SizedBox(height: 12),
-                        if (_error != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.error_outline_rounded,
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _error!,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            disabledBackgroundColor: Colors.white.withValues(
-                              alpha: 0.4,
-                            ),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(14),
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              tooltip: 'All sign-in options',
+                              onPressed: _loading
+                                  ? null
+                                  : () => setState(() => _showEmail = false),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 20,
                               ),
                             ),
                           ),
-                          child: (_loading && _oauthProviderLoading == null)
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.black.withValues(
-                                                alpha: 0.7,
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Text('Please wait…'),
-                                  ],
-                                )
-                              : Text(_isLogin ? 'Sign in' : 'Create account'),
+                        const Center(child: FindEZWordmark(width: 144)),
+                        SizedBox(
+                          height: _showEmail
+                              ? 28
+                              : constraints.maxHeight *
+                                    (_moreOptions ? .115 : .20),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Divider(
-                                color: Colors.white.withValues(alpha: 0.12),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Text(
-                                'OR',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
+                        _heading(),
+                        SizedBox(
+                          height: _showEmail
+                              ? 28
+                              : constraints.maxHeight * .055,
+                        ),
+                        if (_showEmail)
+                          _emailForm()
+                        else ...[
+                          ..._providers(),
+                          if (_moreOptions) ...[
+                            const SizedBox(height: 14),
+                            OutlinedButton(
+                              key: const Key('auth-email-option'),
+                              onPressed: _loading
+                                  ? null
+                                  : () => setState(() => _showEmail = true),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 56),
+                                foregroundColor: const Color(0xFF302D38),
+                                backgroundColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Color(0xFF302D38),
+                                  width: 1.8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.white.withValues(alpha: 0.12),
+                              child: const Text(
+                                'Continue with Email',
+                                style: TextStyle(
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (Theme.of(context).platform ==
-                            TargetPlatform.iOS) ...[
-                          _SocialButton(
-                            enabled: !_loading,
-                            onPressed: _loading ? null : _signInWithApple,
-                            icon: const Icon(
-                              Icons.apple,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            label: const Text(
-                              'Continue with Apple',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
+                          const SizedBox(height: 18),
+                          TextButton(
+                            key: const Key('auth-more-options'),
+                            onPressed: _loading
+                                ? null
+                                : () => setState(
+                                    () => _moreOptions = !_moreOptions,
+                                  ),
+                            child: Text(
+                              _moreOptions ? 'Fewer options' : 'More options',
+                              style: const TextStyle(
+                                fontFamily: 'PlusJakartaSans',
+                                fontSize: 18,
                                 fontWeight: FontWeight.w500,
+                                color: Color(0xFF302D38),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                        _SocialButton(
-                          enabled: !_loading,
-                          onPressed: _loading ? null : _signInWithGoogle,
-                          icon:
-                              (_loading &&
-                                  _oauthProviderLoading == OAuthProvider.google)
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const _GoogleLogo(size: 18),
-                          label: Text(
-                            (_loading &&
-                                    _oauthProviderLoading ==
-                                        OAuthProvider.google)
-                                ? 'Please wait…'
-                                : 'Continue with Google',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_needsEmailVerification) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                                width: 0.5,
+                          if (_error != null)
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                _error!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(
-                                      Icons.mark_email_unread_outlined,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        'Check your email to confirm your account before logging in.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.85,
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                OutlinedButton(
-                                  onPressed: (_resending || _loading)
-                                      ? null
-                                      : _resendVerificationEmail,
-                                  child: Text(
-                                    _resending
-                                        ? 'Resending…'
-                                        : 'Resend verification email',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 26),
+                          _legalFooter(),
                         ],
-                        TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _isLogin = !_isLogin;
-                                    _needsEmailVerification = false;
-                                    _verificationEmail = null;
-                                    _error = null;
-                                    _emailError = null;
-                                  });
-                                },
-                          child: Text(
-                            _isLogin
-                                ? 'Need an account? Sign up'
-                                : 'Have an account? Login',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _SocialButton extends StatefulWidget {
-  const _SocialButton({
-    required this.enabled,
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  final bool enabled;
-  final VoidCallback? onPressed;
-  final Widget icon;
-  final Widget label;
-
-  @override
-  State<_SocialButton> createState() => _SocialButtonState();
-}
-
-class _SocialButtonState extends State<_SocialButton> {
-  double _pressedOpacity = 1;
-
-  void _setPressed(bool pressed) {
-    if (!mounted) return;
-    setState(() => _pressedOpacity = pressed ? 0.7 : 1.0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: widget.enabled ? _pressedOpacity : 0.5,
-      child: IgnorePointer(
-        ignoring: !widget.enabled,
-        child: GestureDetector(
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          onTap: widget.onPressed,
-          child: Container(
-            width: double.infinity,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [widget.icon, const SizedBox(width: 10), widget.label],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GoogleLogo extends StatelessWidget {
-  const _GoogleLogo({this.size = 20});
+class GoogleAuthLogo extends StatelessWidget {
+  const GoogleAuthLogo({super.key, this.size = 20});
 
   final double size;
 

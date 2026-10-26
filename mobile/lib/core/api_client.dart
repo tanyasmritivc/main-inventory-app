@@ -1,38 +1,145 @@
+import 'item_search.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
-
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
+import 'extraction_image.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'ask_answer.dart';
+import 'chat_source.dart';
+import 'chat_item_action.dart';
+import 'inventory_context.dart';
 
 class SessionExpiredException implements Exception {
   @override
   String toString() => 'Session expired. Please sign in again.';
 }
 
+class AskRequestException implements Exception {
+  const AskRequestException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// Profile uploads must declare the image MIME type required by the API.
+dio.MultipartFile profilePhotoMultipartFile({
+  required List<int> bytes,
+  required String filename,
+}) {
+  if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+    throw const FormatException('Profile photo must be smaller than 5 MB');
+  }
+  final extension = filename.split('.').last.toLowerCase();
+  final mime = switch (extension) {
+    'jpg' || 'jpeg' => 'image/jpeg',
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'heic' => 'image/heic',
+    'heif' => 'image/heif',
+    _ => null,
+  };
+  if (mime == null) throw const FormatException('Choose a supported image');
+  return dio.MultipartFile.fromBytes(
+    bytes,
+    filename: 'avatar.$extension',
+    contentType: MediaType.parse(mime),
+  );
+}
+
 class ApiClient {
-  ApiClient({required String baseUrl})
-    : _dio = dio.Dio(
-        dio.BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      ),
-      _teamId = null,
-      _teamSpaceId = null {
+  ApiClient({
+    required String baseUrl,
+    dio.Dio? httpClient,
+    this.inventoryContext,
+    this.worldKey,
+    String? boundAccount,
+    bool Function()? isCurrent,
+  }) : _dio =
+           httpClient ??
+           dio.Dio(
+             dio.BaseOptions(
+               baseUrl: baseUrl,
+               connectTimeout: const Duration(seconds: 20),
+               receiveTimeout: const Duration(seconds: 30),
+             ),
+           ),
+       _boundAccount = boundAccount ?? inventoryContext?.accountId,
+       _isCurrent = isCurrent,
+       _teamId = null,
+       _teamSpaceId = null {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
         onRequest: (options, handler) {
+          try {
+            assertCurrentContext();
+            final path = options.path;
+            if (worldKey != null) options.path = inventoryPath(path);
+            if (inventoryContext != null && _inventoryRoutes.hasMatch(path)) {
+              if (options.method == 'DELETE' &&
+                  path.startsWith('/spaces/') &&
+                  !canDeleteSpace) {
+                throw const AskRequestException(
+                  'Only inventory owners and admins can delete a Space.',
+                );
+              }
+              final preview =
+                  [
+                    '/extract_from_image',
+                    '/inventory/extract_from_image',
+                  ].contains(path) &&
+                  options.data is dio.FormData &&
+                  (options.data as dio.FormData).fields.any(
+                    (field) =>
+                        field.key == 'preview_only' &&
+                        ['true', '1'].contains(field.value.toLowerCase()),
+                  );
+              if (!canEdit &&
+                  !_readOperation(options.method, path) &&
+                  !preview) {
+                throw const AskRequestException(
+                  'You have view-only access to this inventory.',
+                );
+              }
+              options.path = inventoryPath(path);
+            }
+          } catch (error) {
+            handler.reject(
+              dio.DioException(
+                requestOptions: options,
+                error: error,
+                message: error.toString(),
+              ),
+            );
+            return;
+          }
           final token =
               Supabase.instance.client.auth.currentSession?.accessToken;
-          if (token != null && token.isNotEmpty) {
+          // Explicit auth options capture the account that initiated a request.
+          // Never replace that token after an account switch while queued.
+          final hasAuthorization = options.headers.keys.any(
+            (key) => key.toLowerCase() == 'authorization',
+          );
+          if (!hasAuthorization && token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
+        },
+        onResponse: (response, handler) {
+          try {
+            assertCurrentContext();
+            handler.next(response);
+          } catch (error) {
+            handler.reject(
+              dio.DioException(
+                requestOptions: response.requestOptions,
+                error: error,
+                message: error.toString(),
+              ),
+            );
+          }
         },
       ),
     );
@@ -44,13 +151,170 @@ class ApiClient {
     required String spaceId,
   }) : _dio = source._dio,
        _teamId = teamId,
-       _teamSpaceId = spaceId;
+       _teamSpaceId = spaceId,
+       inventoryContext = source.inventoryContext,
+       worldKey = source.worldKey,
+       _boundAccount = source._boundAccount,
+       _isCurrent = source._isCurrent;
+
+  /// Separate interceptors keep an old upload bound to its original inventory.
+  factory ApiClient.forInventory(
+    ApiClient source,
+    InventoryContext context, {
+    required bool Function() isCurrent,
+  }) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    inventoryContext: context,
+    isCurrent: isCurrent,
+  );
+
+  factory ApiClient.forAccount(ApiClient source, String account) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    boundAccount: account,
+  );
+
+  factory ApiClient.forWorld(
+    ApiClient source,
+    String world, {
+    required bool Function() isCurrent,
+  }) => ApiClient(
+    baseUrl: source.baseUrl,
+    httpClient: dio.Dio(source._dio.options.copyWith())
+      ..httpClientAdapter = source._dio.httpClientAdapter,
+    worldKey: world,
+    boundAccount: source.accountId,
+    isCurrent: isCurrent,
+  );
+
+  final String? worldKey;
+  final InventoryContext? inventoryContext;
+  final String? _boundAccount;
+  final bool Function()? _isCurrent;
+  bool get canEdit => inventoryContext?.canEdit ?? true;
+  bool get canDeleteSpace =>
+      inventoryContext == null ||
+      ['owner', 'admin'].contains(inventoryContext!.role);
+  String get cacheKey => inventoryContext == null
+      ? (worldKey == null ? 'legacy' : '$accountId:world:$worldKey')
+      : '${inventoryContext!.accountId}:${inventoryContext!.inventoryId}';
+  static final _inventoryRoutes = RegExp(
+    r'^/(?:search_items|add_item|update_item|delete_item|items|inventory|spaces|bins|documents|activity|review-items|conversations|checkouts|project-kits|sharing|ai_command|ai_photo_question|ai_actions|ai_upload|extract_from_image|process_barcode|barcode_lookup|eezy|import|connectors)(?:[/?]|$)',
+  );
+  static bool _readOperation(String method, String path) =>
+      ['GET', 'HEAD', 'OPTIONS'].contains(method) ||
+      path.startsWith('/conversations') ||
+      path.startsWith('/ai_actions/') ||
+      [
+        '/search_items',
+        '/ai_command',
+        '/ai_photo_question',
+        '/ai_upload',
+        '/process_barcode',
+        '/barcode_lookup',
+        '/inventory/bom/analyze',
+        '/eezy/chat',
+      ].contains(path.split('?').first);
+
+  void assertCurrentContext() {
+    if ((_boundAccount != null && accountId != _boundAccount) ||
+        (_isCurrent != null && !_isCurrent())) {
+      throw const AskRequestException(
+        'The account or inventory changed. Reopen this page and try again.',
+      );
+    }
+  }
+
+  String inventoryPath(String path) {
+    assertCurrentContext();
+    if (worldKey != null &&
+        RegExp(
+          r'^/(?:ai_command|ai_photo_question|conversations)(?:[/?]|$)',
+        ).hasMatch(path)) {
+      return '/worlds/${Uri.encodeComponent(worldKey!)}$path';
+    }
+    return inventoryContext != null && _inventoryRoutes.hasMatch(path)
+        ? '/inventories/${Uri.encodeComponent(inventoryContext!.inventoryId)}$path'
+        : path;
+  }
+
+  Future<ChatSource> readChatFile(List<int> bytes, String filename) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/chat-files',
+      data: dio.FormData.fromMap({
+        'file': dio.MultipartFile.fromBytes(bytes, filename: filename),
+      }),
+      options: _authOptions(),
+    );
+    assertCurrentContext();
+    return ChatSource.fromJson(response.data!);
+  }
+
+  Future<Map<String, dynamic>> chatSourceChoices({
+    required String inventoryId,
+    required String kind,
+    String query = '',
+    int offset = 0,
+  }) async {
+    final result = await collaboration(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/chat-sources',
+      query: {
+        'inventory_id': inventoryId,
+        'kind': kind,
+        'query': query,
+        'offset': offset,
+      },
+    );
+    assertCurrentContext();
+    return result;
+  }
+
+  Future<Map<String, dynamic>> createSpreadsheetDraft(
+    dio.MultipartFile file, {
+    String? conversationId,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/worlds/${Uri.encodeComponent(worldKey!)}/captures/spreadsheet',
+      data: dio.FormData.fromMap({
+        'file': file,
+        if (conversationId != null) 'conversation_id': conversationId,
+      }),
+      options: _authOptions(),
+    );
+    assertCurrentContext();
+    return response.data ?? {};
+  }
+
+  /// Account-bound hierarchy APIs use the same JWT and server permissions as web.
+  Future<Map<String, dynamic>> collaboration(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? query,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.request<Map<String, dynamic>>(
+      path,
+      data: data,
+      queryParameters: query,
+      options: _authOptions().copyWith(method: method),
+    );
+    return response.data ?? {};
+  }
 
   final dio.Dio _dio;
   final String? _teamId;
   final String? _teamSpaceId;
+  String get baseUrl => _dio.options.baseUrl;
+  String? get teamId => _teamId;
 
   String _requireToken() {
+    assertCurrentContext();
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token == null || token.isEmpty) throw SessionExpiredException();
     return token;
@@ -74,13 +338,41 @@ class ApiClient {
     required String token,
     required String environment,
   }) async {
-    await _dio.post<void>(
+    final result = await _dio.post<Map<String, dynamic>>(
       '/push/devices',
-      data: {'device_token': token, 'environment': environment},
+      data: {
+        'device_token': token,
+        'environment': environment,
+        'personalization_destinations': true,
+      },
+      options: _authOptions(),
+    );
+    if (result.data?['registered'] != true) {
+      throw const FormatException(
+        'Phone alert registration was not confirmed.',
+      );
+    }
+  }
+
+  Future<void> unregisterPushDevice(String token) async {
+    await _dio.delete<void>(
+      '/push/devices/${Uri.encodeComponent(token)}',
+      options: _authOptions(),
     );
   }
 
-  Future<void> sendTestPush() async => _dio.post<void>('/push/test');
+  String? get accountId => Supabase.instance.client.auth.currentUser?.id;
+
+  Future<void> sendTestPush() async {
+    final result = await _dio.post<Map<String, dynamic>>(
+      '/push/test',
+      options: _authOptions(),
+    );
+    final count = result.data?['delivered'];
+    if (count is! int || count < 1) {
+      throw const FormatException('The test alert was not accepted.');
+    }
+  }
 
   Future<List<ActivityEntry>> getRecentActivity({int limit = 10}) async {
     final res = await _dio.get<Map<String, dynamic>>(
@@ -108,8 +400,62 @@ class ApiClient {
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
-    developer.log('UPLOAD RESPONSE: ${jsonEncode(data)}');
     return UploadDocumentResult.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> uploadConnectorSource({
+    required dio.MultipartFile file,
+    required String location,
+    String kind = 'inventory',
+    String? shareId,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/connectors/imports',
+      data: dio.FormData.fromMap({
+        'file': file,
+        'location': location,
+        'kind': kind,
+        if (shareId != null) 'share_id': shareId,
+      }),
+      options: _longRunningOptions(),
+    );
+    assertCurrentContext();
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> connectorImport(
+    String id, {
+    String action = '',
+    Map<String, dynamic>? data,
+  }) async {
+    assertCurrentContext();
+    final response = await _dio.request<Map<String, dynamic>>(
+      '/connectors/imports/$id${action.isEmpty ? '' : '/$action'}',
+      data: data,
+      options: _longRunningOptions().copyWith(
+        method: data == null ? 'GET' : 'POST',
+      ),
+    );
+    assertCurrentContext();
+    final result = response.data ?? {};
+    if (action == 'commit') {
+      final counts = result['counts'];
+      if (result['id'] != id ||
+          !['complete', 'importing'].contains(result['status']) ||
+          counts is! Map ||
+          [
+            'imported',
+            'skipped',
+            'failed',
+            'pending',
+          ].any((key) => counts[key] is! int || (counts[key] as int) < 0)) {
+        throw const FormatException(
+          'The import result could not be verified. Resume safely to check saved results.',
+        );
+      }
+    }
+    return result;
   }
 
   Future<SpreadsheetImportResult> importSpreadsheet({
@@ -279,11 +625,7 @@ class ApiClient {
       ).map(InventoryItem.fromJson).toList();
       final normalized = query.trim().toLowerCase();
       if (normalized.isNotEmpty) {
-        items = items.where((item) {
-          return item.name.toLowerCase().contains(normalized) ||
-              item.category.toLowerCase().contains(normalized) ||
-              (item.partNumber ?? '').toLowerCase().contains(normalized);
-        }).toList();
+        items = items.where((item) => item.searchScore(query) > 0).toList();
       }
       return SearchItemsResult(items: items, parsed: const {});
     }
@@ -399,38 +741,31 @@ class ApiClient {
     return (data['deleted'] == true);
   }
 
-  List<int> _resizeAndCompressJpeg(List<int> bytes) {
-    try {
-      final decoded = img.decodeImage(Uint8List.fromList(bytes));
-      if (decoded == null) return bytes;
-
-      final resized = decoded.width > 1280
-          ? img.copyResize(decoded, width: 1280)
-          : decoded;
-      return img.encodeJpg(resized, quality: 80);
-    } catch (_) {
-      return bytes;
-    }
-  }
-
   Future<MultiExtractResult> extractInventoryFromImage({
     required List<int> bytes,
     required String filename,
+    dio.CancelToken? cancelToken,
   }) async {
-    final outBytes = _resizeAndCompressJpeg(bytes);
+    if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
+    final outBytes = await compute(
+      prepareExtractionImage,
+      Uint8List.fromList(bytes),
+    );
+    if (cancelToken?.isCancelled == true) throw cancelToken!.cancelError!;
     final outName =
         filename.toLowerCase().endsWith('.jpg') ||
             filename.toLowerCase().endsWith('.jpeg')
         ? filename
         : '${filename.split('.').first}.jpg';
     final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
-    final form = dio.FormData.fromMap({'file': file});
+    final form = dio.FormData.fromMap({'file': file, 'preview_only': true});
     debugPrint(
       'FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image',
     );
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/extract_from_image',
       data: form,
+      cancelToken: cancelToken,
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
@@ -439,13 +774,122 @@ class ApiClient {
 
   Future<BulkCreateResult> bulkCreateInventory({
     required List<ExtractedInventoryItem> items,
+    List<String>? requestIds,
   }) async {
+    if (requestIds != null && requestIds.length != items.length) {
+      throw ArgumentError('Every capture needs its own request ID.');
+    }
+    if (items.any(
+      (item) => !item.needsReview && item.reviewStatus == 'pending',
+    )) {
+      final inserted = <InventoryItem>[];
+      final accepted = <int>[];
+      final failures = <Map<String, dynamic>>[];
+      for (var i = 0; i < items.length; i++) {
+        final item = items[i];
+        try {
+          if (!item.needsReview && item.reviewStatus == 'pending') {
+            final id = item.reviewId;
+            if (id == null || id.isEmpty) {
+              throw StateError('Missing review identity');
+            }
+            inserted.add(await resolveReviewItem(reviewId: id, item: item));
+            accepted.add(i);
+          } else {
+            final result = await bulkCreateInventory(
+              items: [item],
+              requestIds: requestIds == null ? null : [requestIds[i]],
+            );
+            if (result.confirmedIndices(1).contains(0)) {
+              inserted.addAll(result.inserted);
+              accepted.add(i);
+            } else {
+              failures.add({
+                'index': i,
+                'reason': 'Saving could not be confirmed. Retry this item.',
+              });
+            }
+          }
+        } catch (_) {
+          failures.add({
+            'index': i,
+            'reason': 'Saving could not be confirmed. Retry this item.',
+          });
+        }
+      }
+      return BulkCreateResult(
+        inserted: inserted,
+        failures: failures,
+        acceptedIndices: accepted,
+      );
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/bulk_create',
-      data: <String, dynamic>{'items': items.map((i) => i.toJson()).toList()},
+      options: _authOptions(),
+      data: <String, dynamic>{
+        'items': items
+            .asMap()
+            .entries
+            .map(
+              (entry) => {
+                ...entry.value.toJson(),
+                if (requestIds != null)
+                  'client_request_id': requestIds[entry.key],
+              },
+            )
+            .toList(),
+      },
     );
     final data = res.data ?? {};
     return BulkCreateResult.fromJson(data);
+  }
+
+  Future<ReviewQueueResult> getReviewItems({int limit = 100}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/review-items',
+      queryParameters: {'limit': limit},
+      options: _authOptions(),
+    );
+    return ReviewQueueResult.fromJson(res.data ?? const {});
+  }
+
+  Future<ReviewItem> updateReviewItem({
+    required String reviewId,
+    required ExtractedInventoryItem item,
+  }) async {
+    final res = await _dio.request<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}',
+      data: item.reviewStatus == 'preview'
+          ? item.toJson()
+          : item.toReviewJson(),
+      options: _authOptions().copyWith(
+        method: item.reviewStatus == 'preview' ? 'POST' : 'PATCH',
+      ),
+    );
+    return ReviewItem.fromJson(
+      (res.data?['review_item'] as Map<String, dynamic>?) ?? const {},
+    );
+  }
+
+  Future<InventoryItem> resolveReviewItem({
+    required String reviewId,
+    required ExtractedInventoryItem item,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}/resolve',
+      data: item.toReviewJson(),
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      (res.data?['item'] as Map<String, dynamic>?) ?? const {},
+    );
+  }
+
+  Future<void> dismissReviewItem({required String reviewId}) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/review-items/${Uri.encodeComponent(reviewId)}',
+      options: _authOptions(),
+    );
   }
 
   Future<VerifiedCatalogPart> getVerifiedCatalogPart(String catalogId) async {
@@ -490,6 +934,26 @@ class ApiClient {
     return resp.data as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> previewInvitation(
+    String kind,
+    String code,
+  ) async {
+    final result = await _dio.post<Map<String, dynamic>>(
+      '/invitations/preview',
+      data: {'kind': kind, 'code': code},
+      options: _authOptions(),
+    );
+    return result.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> getSpaceInvite(String shareId) async {
+    final result = await _dio.get<Map<String, dynamic>>(
+      '/sharing/${Uri.encodeComponent(shareId)}/invite',
+      options: _authOptions(),
+    );
+    return result.data ?? {};
+  }
+
   Future<List<dynamic>> getMyShares() async {
     final resp = await _dio.get<List<dynamic>>(
       '/sharing/my-shares',
@@ -507,6 +971,30 @@ class ApiClient {
       '/sharing/$shareId/leave',
       options: _authOptions(),
     );
+  }
+
+  Future<Map<String, dynamic>?> getOnboardingAnswers() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/profile/onboarding',
+      options: _authOptions(),
+    );
+    final answers = res.data?['answers'];
+    if (answers == null) return null;
+    if (answers is! Map<String, dynamic>) {
+      throw const FormatException('Invalid setup answers');
+    }
+    return answers;
+  }
+
+  Future<void> saveOnboardingAnswers(Map<String, dynamic> answers) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      '/profile/onboarding',
+      data: answers,
+      options: _authOptions(),
+    );
+    if (res.data?['saved'] != true) {
+      throw const FormatException('Setup answers were not confirmed');
+    }
   }
 
   Future<Map<String, dynamic>> getMyProfile() async {
@@ -542,7 +1030,7 @@ class ApiClient {
     required String filename,
   }) async {
     final form = dio.FormData.fromMap({
-      'photo': dio.MultipartFile.fromBytes(bytes, filename: filename),
+      'photo': profilePhotoMultipartFile(bytes: bytes, filename: filename),
     });
     final res = await _dio.post<Map<String, dynamic>>(
       '/profile/photo',
@@ -583,6 +1071,22 @@ class ApiClient {
       options: _authOptions(),
     );
     return resp.data as List<dynamic>;
+  }
+
+  /// Uses the existing membership-authorized shared-item update contract.
+  Future<InventoryItem> updateSharedItem({
+    required String shareId,
+    required UpdateItemRequest request,
+  }) async {
+    final data = request.toJson()..remove('item_id');
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/sharing/${Uri.encodeComponent(shareId)}/items/${Uri.encodeComponent(request.itemId)}',
+      data: data,
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      response.data?['item'] as Map<String, dynamic>? ?? {},
+    );
   }
 
   Future<Map<String, dynamic>> joinShare(String code) async {
@@ -626,9 +1130,133 @@ class ApiClient {
     await _dio.delete<void>('/conversations/$id', options: _authOptions());
   }
 
+  String _photoAttachmentPath(Map<String, dynamic> card) {
+    assertCurrentContext();
+    if (worldKey == null) {
+      throw const AskRequestException('Open your organization chat first.');
+    }
+    return '/worlds/${Uri.encodeComponent(worldKey!)}/conversations/${Uri.encodeComponent(card['conversation_id'] as String)}/photo-attachments/${Uri.encodeComponent(card['id'] as String)}';
+  }
+
+  Map<String, dynamic> _photoReceipt(
+    Map<String, dynamic> result,
+    Map<String, dynamic> original,
+  ) {
+    assertCurrentContext();
+    final card = parsePhotoAttachment(result['attachment']);
+    if (card == null ||
+        card['id'] != original['id'] ||
+        card['conversation_id'] != original['conversation_id']) {
+      throw const AskRequestException(
+        'The photo receipt could not be checked. Retry this same card.',
+      );
+    }
+    return card;
+  }
+
+  Future<Map<String, dynamic>> getChatPhotoAttachment(
+    Map<String, dynamic> card,
+  ) async {
+    final response = await collaboration(_photoAttachmentPath(card));
+    return _photoReceipt(response, card);
+  }
+
+  Future<Map<String, dynamic>> decideChatPhotoAttachment(
+    Map<String, dynamic> card,
+    String decision, {
+    Map<String, dynamic>? choice,
+  }) async {
+    final response = await collaboration(
+      _photoAttachmentPath(card),
+      method: 'POST',
+      data: {
+        'decision': decision,
+        if (choice != null) 'item_id': choice['item_id'],
+        if (choice != null) 'inventory_id': choice['inventory_id'],
+      },
+    );
+    return _photoReceipt(response, card);
+  }
+
+  Future<ChatItemActionResult> decideChatItemAction({
+    required ChatItemAction action,
+    required String decision,
+    dio.CancelToken? cancelToken,
+  }) async {
+    assertCurrentContext();
+    if (worldKey == null &&
+        (inventoryContext == null ||
+            inventoryContext!.inventoryId != action.inventoryId)) {
+      throw const AskRequestException(
+        'Open the inventory containing this action before continuing.',
+      );
+    }
+    if (!const ['confirm', 'cancel'].contains(decision)) {
+      throw ArgumentError('Invalid decision');
+    }
+    if (decision == 'confirm' && !canEdit) {
+      throw const AskRequestException(
+        'You have view-only access to this inventory.',
+      );
+    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      worldKey == null
+          ? '/ai_actions/${action.id}'
+          : '/worlds/$worldKey/inventories/${action.inventoryId}/ai_actions/${action.id}',
+      data: {'decision': decision},
+      options: _authOptions().copyWith(
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+      cancelToken: cancelToken,
+    );
+    assertCurrentContext();
+    final data = response.data ?? {};
+    final updated = ChatItemAction.parse(data['action']);
+    if (updated == null ||
+        updated.id != action.id ||
+        updated.inventoryId != action.inventoryId ||
+        updated.operation != action.operation ||
+        updated.status == 'pending') {
+      throw const AskRequestException(
+        'The action receipt could not be checked. Retry this same card safely.',
+      );
+    }
+    return ChatItemActionResult(
+      action: updated,
+      assistantMessage: data['assistant_message'] as String?,
+      replyId: data['reply_id'] as String?,
+      answerError: data['answer_error'] as String?,
+    );
+  }
+
   Stream<AiStreamEvent> aiCommandStream({
     required String message,
     String? conversationId,
+    String? requestId,
+    List<ChatSource> sources = const [],
+  }) => _commandStream(
+    message: message,
+    conversationId: conversationId,
+    requestId: requestId,
+    sources: sources,
+  );
+
+  Stream<AiStreamEvent> retryChatResponse({
+    required String message,
+    required String conversationId,
+    required String messageId,
+  }) => _commandStream(
+    message: message,
+    conversationId: conversationId,
+    retryOf: messageId,
+  );
+
+  Stream<AiStreamEvent> _commandStream({
+    required String message,
+    String? conversationId,
+    String? requestId,
+    String? retryOf,
+    List<ChatSource> sources = const [],
   }) async* {
     final baseUrl = _dio.options.baseUrl.endsWith('/')
         ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
@@ -636,14 +1264,25 @@ class ApiClient {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token == null) throw StateError('Not authenticated');
 
-    final uri = Uri.parse('$baseUrl/ai_command?stream=true');
+    final uri = Uri.parse(
+      '$baseUrl${inventoryPath('/ai_command?stream=true')}',
+    );
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
     request.headers['Accept'] = 'text/event-stream';
     request.headers['Authorization'] = 'Bearer $token';
     request.body = json.encode(<String, dynamic>{
       'message': message,
+      if (worldKey != null && retryOf != null) 'retry_of': retryOf,
+      if (worldKey != null && requestId != null) 'request_id': requestId,
       if (conversationId != null) 'conversation_id': conversationId,
+      'supports_item_actions': true,
+      'supports_item_management': true,
+      'supports_task_actions': true,
+      'supports_photo_attachment': true,
+      if (worldKey != null) 'supports_capture': true,
+      if (worldKey != null && sources.isNotEmpty)
+        'sources': sources.map((s) => s.toJson()).toList(),
     });
 
     final client = http.Client();
@@ -652,40 +1291,93 @@ class ApiClient {
           .send(request)
           .timeout(const Duration(minutes: 2));
       if (response.statusCode != 200) {
-        throw StateError('HTTP ${response.statusCode}');
+        throw AskRequestException(switch (response.statusCode) {
+          401 => 'Session expired. Please sign in again.',
+          403 =>
+            'Access or chat allowance changed. Check your selected sources and account.',
+          404 =>
+            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
+          422 =>
+            'The selected sources could not be read together. Try fewer files or different sources.',
+          429 => 'Too many requests. Please wait a moment.',
+          _ => 'Your request could not be completed. Please try again.',
+        });
       }
 
-      var partialLine = '';
-      await for (final bytes in response.stream) {
-        final chunk = utf8.decode(bytes);
-        partialLine += chunk;
-        final lines = partialLine.split('\n');
-        partialLine = lines.removeLast();
-        for (final line in lines) {
-          final l = line.trimRight();
-          if (l.isEmpty || !l.startsWith('data:')) continue;
-          final jsonStr = l.substring(5).trim();
-          if (jsonStr.isEmpty) continue;
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is! Map) continue;
-            yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-          } catch (_) {}
-        }
+      yield* decodeAiCommandEvents(response.stream).map((event) {
+        assertCurrentContext();
+        return event;
+      });
+    } finally {
+      client.close();
+    }
+  }
+
+  Stream<AiStreamEvent> aiPhotoQuestionStream({
+    required String message,
+    required AskPhoto photo,
+    String? requestId,
+    String? conversationId,
+    List<ChatSource> sources = const [],
+    bool previewOnly = false,
+  }) async* {
+    if (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes) {
+      throw const AskRequestException(
+        'Choose a valid photo smaller than 10 MB.',
+      );
+    }
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(
+        '${baseUrl.replaceFirst(RegExp(r"/$"), "")}${inventoryPath('/ai_photo_question')}',
+      ),
+    );
+    request.headers['Accept'] = 'text/event-stream';
+    request.headers['Authorization'] = 'Bearer ${_requireToken()}';
+    request.fields['message'] = message;
+    request.fields['supports_item_actions'] = 'true';
+    request.fields['supports_item_management'] = 'true';
+    request.fields['supports_task_actions'] = 'true';
+    request.fields['supports_photo_attachment'] = 'true';
+    if (worldKey != null) {
+      if (requestId != null) request.fields['request_id'] = requestId;
+      request.fields['supports_capture'] = 'true';
+      request.fields['auto_extract'] = photo.autoExtract.toString();
+      request.fields['preview_only'] = previewOnly.toString();
+      if (sources.isNotEmpty) {
+        request.fields['sources'] = json.encode(
+          sources.map((s) => s.toJson()).toList(),
+        );
       }
-      // Flush any remaining partial line
-      final l = partialLine.trimRight();
-      if (l.startsWith('data:')) {
-        final jsonStr = l.substring(5).trim();
-        if (jsonStr.isNotEmpty) {
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is Map) {
-              yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-            }
-          } catch (_) {}
-        }
+    }
+    if (conversationId != null) {
+      request.fields['conversation_id'] = conversationId;
+    }
+    request.files.add(
+      http.MultipartFile.fromBytes('file', photo.bytes, filename: 'photo.jpg'),
+    );
+    final client = http.Client();
+    try {
+      final response = await client
+          .send(request)
+          .timeout(const Duration(minutes: 2));
+      if (response.statusCode != 200) {
+        throw AskRequestException(switch (response.statusCode) {
+          401 => 'Session expired. Please sign in again.',
+          403 =>
+            'Access or allowance changed. Check your selected sources and account.',
+          404 =>
+            'This chat or a selected source is unavailable. Remove the source or start a new chat.',
+          413 => 'Choose a photo smaller than 10 MB.',
+          400 || 422 => 'Choose a valid photo and a shorter question.',
+          429 => 'Too many photo requests. Please wait a moment.',
+          _ => 'Your photo question could not be completed. Please try again.',
+        });
       }
+      yield* decodeAiCommandEvents(response.stream).map((event) {
+        assertCurrentContext();
+        return event;
+      });
     } finally {
       client.close();
     }
@@ -719,10 +1411,16 @@ class ApiClient {
   Future<Map<String, dynamic>> createTeam({
     required String name,
     required String program,
+    String? customCategory,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/teams',
-      data: {'name': name, 'program': program, 'rookie': false},
+      data: {
+        'name': name,
+        'program': program,
+        'rookie': false,
+        if (program == 'custom') 'custom_category': customCategory,
+      },
       options: _authOptions(),
     );
     return Map<String, dynamic>.from(res.data?['team'] ?? const {});
@@ -1163,6 +1861,10 @@ class AiStreamEvent {
     this.result,
     this.assistantMessage,
     this.conversationId,
+    this.messageId,
+    this.createdAt,
+    this.answerContext,
+    this.navHint,
   });
 
   final String type;
@@ -1172,18 +1874,121 @@ class AiStreamEvent {
   final Object? result;
   final String? assistantMessage;
   final String? conversationId;
+  final String? messageId;
+  final DateTime? createdAt;
+  final AskAnswerContext? answerContext;
+  final Map<String, dynamic>? navHint;
 
   factory AiStreamEvent.fromJson(Map<String, dynamic> json) {
     return AiStreamEvent(
-      type: (json['type'] ?? '').toString(),
+      type:
+          (json['type'] ??
+                  (json.containsKey('error')
+                      ? 'error'
+                      : json.containsKey('content')
+                      ? 'delta'
+                      : ''))
+              .toString(),
       message: json['message']?.toString(),
-      delta: json['delta']?.toString(),
+      delta: (json['delta'] ?? json['content'])?.toString(),
       tool: json['tool']?.toString(),
       result: json['result'],
       assistantMessage: json['assistant_message']?.toString(),
       conversationId: json['conversation_id']?.toString(),
+      messageId: json['message_id']?.toString(),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      answerContext: json['answer_context'] is Map<String, dynamic>
+          ? AskAnswerContext.fromJson(
+              json['answer_context'] as Map<String, dynamic>,
+            )
+          : null,
+      navHint: json['nav_hint'] is Map<String, dynamic>
+          ? json['nav_hint'] as Map<String, dynamic>
+          : null,
     );
   }
+}
+
+Stream<AiStreamEvent> decodeAiCommandEvents(Stream<List<int>> bytes) {
+  final data = <String>[];
+  StreamSubscription<String>? subscription;
+  var ended = false;
+  late StreamController<AiStreamEvent> controller;
+  void finish([Object? error, StackTrace? stack]) {
+    if (ended) return;
+    ended = true;
+    if (error != null) controller.addError(error, stack);
+    unawaited(subscription?.cancel());
+    unawaited(controller.close());
+  }
+
+  void consume() {
+    if (ended || data.isEmpty) return;
+    final payload = data.join('\n');
+    data.clear();
+    try {
+      if (payload == '[DONE]') {
+        throw const AskRequestException(
+          'This response was interrupted. Please retry.',
+        );
+      }
+      final decoded = json.decode(payload);
+      if (decoded is! Map<String, dynamic>) return;
+      final event = AiStreamEvent.fromJson(decoded);
+      if (event.type == 'error') {
+        throw AskRequestException(switch (decoded['code']) {
+          'photo_timeout' =>
+            'Photo analysis took too long. Try a clearer, closer photo.',
+          'photo_failed' =>
+            'Your photo could not be analyzed. Please try again.',
+          'history_save_failed' =>
+            'I could not save this reply. Retry to check the result of this request.',
+          'world_chat_failed' =>
+            'I could not finish this response. Retry to check the result of this request.',
+          _ => 'This response was interrupted. Please retry.',
+        });
+      }
+      controller.add(event);
+      if (event.type == 'done') finish();
+    } catch (error, stack) {
+      finish(error, stack);
+    }
+  }
+
+  controller = StreamController<AiStreamEvent>(
+    onListen: () {
+      subscription = bytes
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .timeout(const Duration(minutes: 2))
+          .listen(
+            (line) {
+              if (ended) return;
+              if (line.startsWith('data:')) {
+                data.add(line.substring(5).trimLeft());
+              } else if (line.isEmpty) {
+                consume();
+              }
+            },
+            onError: finish,
+            onDone: () {
+              consume();
+              if (!ended) {
+                finish(
+                  const AskRequestException(
+                    'This response was interrupted. Please retry.',
+                  ),
+                );
+              }
+            },
+          );
+    },
+    onCancel: () {
+      ended = true;
+      return subscription?.cancel();
+    },
+  );
+  return controller.stream;
 }
 
 class ConversationSummary {
@@ -1219,18 +2024,25 @@ class ConversationMessage {
     required this.role,
     required this.content,
     required this.createdAt,
+    this.answerContext,
   });
 
   final String id;
   final String role;
   final String content;
   final DateTime createdAt;
+  final AskAnswerContext? answerContext;
 
   factory ConversationMessage.fromJson(Map<String, dynamic> json) {
     return ConversationMessage(
       id: (json['id'] ?? '').toString(),
       role: (json['role'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
+      answerContext: json['answer_context'] is Map<String, dynamic>
+          ? AskAnswerContext.fromJson(
+              json['answer_context'] as Map<String, dynamic>,
+            )
+          : null,
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -1516,6 +2328,44 @@ class BarcodeLookupResult {
   }
 }
 
+class ImportedItemField {
+  const ImportedItemField({required this.name, required this.value});
+  final String name;
+  final dynamic value;
+
+  String get displayValue => value == null || value == ''
+      ? 'Empty'
+      : value is Map || value is List
+      ? jsonEncode(value)
+      : value.toString();
+}
+
+class ImportedItemData {
+  const ImportedItemData({
+    required this.filename,
+    required this.sheet,
+    required this.fields,
+  });
+  final String filename;
+  final String sheet;
+  final List<ImportedItemField> fields;
+
+  factory ImportedItemData.fromJson(Map<String, dynamic> json) =>
+      ImportedItemData(
+        filename: (json['filename'] ?? '').toString(),
+        sheet: (json['sheet'] ?? '').toString(),
+        fields: (json['fields'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (field) => ImportedItemField(
+                name: (field['name'] ?? '').toString(),
+                value: field['value'],
+              ),
+            )
+            .toList(),
+      );
+}
+
 class InventoryItem {
   InventoryItem({
     required this.itemId,
@@ -1535,8 +2385,19 @@ class InventoryItem {
     this.tags,
     this.confidence,
     this.catalogId,
+    this.importData,
+    this.unitPrice,
+    this.currency,
+    this.expiresOn,
+    this.reorderEnabled = false,
+    this.reorderThreshold,
+    this.reorderQuantity,
   });
 
+  final double? unitPrice;
+  final String? currency, expiresOn;
+  final bool reorderEnabled;
+  final int? reorderThreshold, reorderQuantity;
   final String itemId;
   final String name;
   final String category;
@@ -1553,9 +2414,32 @@ class InventoryItem {
   final List<String>? tags;
   final double? confidence;
   final String? catalogId;
+  final ImportedItemData? importData;
   final DateTime createdAt;
 
-  /// The identifier users scan first in inventory lists. Robotics parts are
+  /// Search the details users can actually see, including imported columns.
+  int searchScore(String query) => scoreItemSearch(
+    query: query,
+    name: name,
+    identifiers: [partNumber ?? '', barcode ?? ''],
+    fields: [
+      name,
+      partNumber ?? '',
+      barcode ?? '',
+      category,
+      location,
+      brand ?? '',
+      subcategory ?? '',
+      notes ?? '',
+      purchaseSource ?? '',
+      ...?tags,
+      ...?importData?.fields
+          .where((field) => field.value != null)
+          .map((field) => field.displayValue),
+    ],
+  );
+
+  /// The identifier users scan first in inventory lists. Catalogued parts are
   /// commonly organized by part number, so prefer it whenever one is present.
   String get displayName {
     final part = partNumber?.trim() ?? '';
@@ -1571,6 +2455,12 @@ class InventoryItem {
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(
+      unitPrice: double.tryParse('${json['unit_price'] ?? ''}'),
+      currency: json['currency']?.toString(),
+      expiresOn: json['expires_on']?.toString(),
+      reorderEnabled: json['reorder_enabled'] == true,
+      reorderThreshold: (json['reorder_threshold'] as num?)?.toInt(),
+      reorderQuantity: (json['reorder_quantity'] as num?)?.toInt(),
       itemId: (json['item_id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       category: (json['category'] ?? '').toString(),
@@ -1591,6 +2481,11 @@ class InventoryItem {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
       catalogId: json['catalog_id']?.toString(),
+      importData: json['import_data'] is Map
+          ? ImportedItemData.fromJson(
+              Map<String, dynamic>.from(json['import_data'] as Map),
+            )
+          : null,
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -1685,6 +2580,10 @@ class UpdateItemRequest {
     this.imageUrl,
     this.barcode,
     this.purchaseSource,
+    this.brand,
+    this.partNumber,
+    this.subcategory,
+    this.tags,
     this.notes,
   });
 
@@ -1696,6 +2595,10 @@ class UpdateItemRequest {
   final String? imageUrl;
   final String? barcode;
   final String? purchaseSource;
+  final String? brand;
+  final String? partNumber;
+  final String? subcategory;
+  final List<String>? tags;
   final String? notes;
 
   Map<String, dynamic> toJson() {
@@ -1708,6 +2611,10 @@ class UpdateItemRequest {
       if (imageUrl != null) 'image_url': imageUrl,
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
+      if (brand != null) 'brand': brand,
+      if (partNumber != null) 'part_number': partNumber,
+      if (subcategory != null) 'subcategory': subcategory,
+      if (tags != null) 'tags': tags,
       if (notes != null) 'notes': notes,
     };
   }
@@ -1736,6 +2643,10 @@ class ExtractedInventoryItem {
     this.notes,
     this.location,
     this.catalogMatch,
+    this.scanEvidence,
+    this.reviewId,
+    this.reviewStatus,
+    this.reviewToken,
   });
 
   String name;
@@ -1752,6 +2663,14 @@ class ExtractedInventoryItem {
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
+  ScanEvidence? scanEvidence;
+  String? reviewId;
+  String? reviewStatus;
+  String? reviewToken;
+
+  bool get needsReview => scanEvidence?.needsReview == true;
+  bool get isPendingReview =>
+      needsReview && reviewId != null && reviewStatus == 'pending';
 
   factory ExtractedInventoryItem.fromJson(Map<String, dynamic> json) {
     return ExtractedInventoryItem(
@@ -1777,6 +2696,14 @@ class ExtractedInventoryItem {
               json['catalog_match'] as Map<String, dynamic>,
             )
           : null,
+      scanEvidence: json['scan_evidence'] is Map
+          ? ScanEvidence.fromJson(
+              Map<String, dynamic>.from(json['scan_evidence'] as Map),
+            )
+          : null,
+      reviewId: json['review_id']?.toString(),
+      reviewStatus: json['review_status']?.toString(),
+      reviewToken: json['review_token']?.toString(),
     );
   }
 
@@ -1800,7 +2727,218 @@ class ExtractedInventoryItem {
           'catalog_id': catalogMatch!.catalogId,
           'verified': catalogMatch!.verified,
         },
+      if (scanEvidence != null) 'scan_evidence': scanEvidence!.toJson(),
+      if (reviewId != null) 'review_id': reviewId,
+      if (reviewStatus != null) 'review_status': reviewStatus,
+      if (reviewToken != null) 'review_token': reviewToken,
     };
+  }
+
+  Map<String, dynamic> toReviewJson() {
+    return <String, dynamic>{
+      'name': name,
+      'category': category,
+      'quantity': quantity,
+      if (subcategory != null) 'subcategory': subcategory,
+      if (brand != null) 'brand': brand,
+      if (partNumber != null) 'part_number': partNumber,
+      if (barcode != null) 'barcode': barcode,
+      if (tags != null) 'tags': tags,
+      if (confidence != null) 'confidence': confidence,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (notes != null) 'notes': notes,
+      'location': (location ?? '').trim().isEmpty ? 'Unsorted' : location,
+    };
+  }
+}
+
+class ScanEvidence {
+  const ScanEvidence({
+    this.quantityBasis,
+    this.quantityUnit,
+    this.quantityNote,
+    this.quantityConfidence,
+    this.groupedObservations,
+    this.identificationReasoning,
+    this.identityConfidence,
+    this.ocrText,
+    this.ocrConfidence,
+    this.lengthMm,
+    this.widthMm,
+    this.measurementConfidence,
+    this.measurementMethod,
+    this.measurementAssumption,
+    this.barcodeSymbology,
+    this.barcodeConfidence,
+    this.detectionConfidence,
+    this.reviewReasons = const [],
+    this.warnings = const [],
+    this.needsReview = false,
+  });
+
+  final String? quantityBasis;
+  final String? quantityUnit;
+  final String? quantityNote;
+  final double? quantityConfidence;
+  final int? groupedObservations;
+  bool get quantityMissing =>
+      quantityBasis != 'user_confirmed' &&
+      (quantityBasis == 'unknown' ||
+          reviewReasons.any(
+            (r) => r.contains('Quantity is a candidate placeholder'),
+          ));
+  ScanEvidence confirmedQuantity() => ScanEvidence.fromJson({
+    ...toJson(),
+    'quantity_basis': 'user_confirmed',
+    'quantity_confidence': null,
+  });
+  final String? identificationReasoning;
+  final double? identityConfidence;
+  final String? ocrText;
+  final double? ocrConfidence;
+  final double? lengthMm;
+  final double? widthMm;
+  final String? measurementConfidence;
+  final String? measurementMethod;
+  final String? measurementAssumption;
+  final String? barcodeSymbology;
+  final double? barcodeConfidence;
+  final double? detectionConfidence;
+  final List<String> reviewReasons;
+  final List<String> warnings;
+  final bool needsReview;
+
+  static double? _number(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse((value ?? '').toString());
+
+  factory ScanEvidence.fromJson(Map<String, dynamic> json) {
+    return ScanEvidence(
+      quantityBasis: json['quantity_basis']?.toString(),
+      quantityUnit: json['quantity_unit']?.toString(),
+      quantityNote: json['quantity_note']?.toString(),
+      quantityConfidence: _number(json['quantity_confidence']),
+      groupedObservations: (json['grouped_observations'] as num?)?.toInt(),
+      identificationReasoning: json['identification_reasoning']?.toString(),
+      identityConfidence: _number(json['identity_confidence']),
+      ocrText: json['ocr_text']?.toString(),
+      ocrConfidence: _number(json['ocr_confidence']),
+      lengthMm: _number(json['length_mm']),
+      widthMm: _number(json['width_mm']),
+      measurementConfidence: json['measurement_confidence']?.toString(),
+      measurementMethod: json['measurement_method']?.toString(),
+      measurementAssumption: json['measurement_assumption']?.toString(),
+      barcodeSymbology: json['barcode_symbology']?.toString(),
+      barcodeConfidence: _number(json['barcode_confidence']),
+      detectionConfidence: _number(json['detection_confidence']),
+      reviewReasons: (json['review_reasons'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      warnings: (json['warnings'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      needsReview: json['needs_review'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (quantityBasis != null) 'quantity_basis': quantityBasis,
+    if (quantityUnit != null) 'quantity_unit': quantityUnit,
+    if (quantityNote != null) 'quantity_note': quantityNote,
+    if (quantityConfidence != null) 'quantity_confidence': quantityConfidence,
+    if (groupedObservations != null)
+      'grouped_observations': groupedObservations,
+    if (identificationReasoning != null)
+      'identification_reasoning': identificationReasoning,
+    if (identityConfidence != null) 'identity_confidence': identityConfidence,
+    if (ocrText != null) 'ocr_text': ocrText,
+    if (ocrConfidence != null) 'ocr_confidence': ocrConfidence,
+    if (lengthMm != null) 'length_mm': lengthMm,
+    if (widthMm != null) 'width_mm': widthMm,
+    if (measurementConfidence != null)
+      'measurement_confidence': measurementConfidence,
+    if (measurementMethod != null) 'measurement_method': measurementMethod,
+    if (measurementAssumption != null)
+      'measurement_assumption': measurementAssumption,
+    if (barcodeSymbology != null) 'barcode_symbology': barcodeSymbology,
+    if (barcodeConfidence != null) 'barcode_confidence': barcodeConfidence,
+    if (detectionConfidence != null)
+      'detection_confidence': detectionConfidence,
+    'review_reasons': reviewReasons,
+    'warnings': warnings,
+    'needs_review': needsReview,
+  };
+}
+
+class ReviewItem extends ExtractedInventoryItem {
+  ReviewItem({
+    required this.id,
+    required this.status,
+    required super.name,
+    required super.category,
+    required super.quantity,
+    super.subcategory,
+    super.brand,
+    super.partNumber,
+    super.barcode,
+    super.tags,
+    super.confidence,
+    super.imageUrl,
+    super.sourceFrameUrl,
+    super.notes,
+    super.location,
+    super.catalogMatch,
+    super.scanEvidence,
+    this.createdAt,
+  }) : super(reviewId: id, reviewStatus: status);
+
+  final String id;
+  final String status;
+  final DateTime? createdAt;
+
+  factory ReviewItem.fromJson(Map<String, dynamic> json) {
+    final item = ExtractedInventoryItem.fromJson({
+      ...json,
+      'review_id': json['review_id'],
+      'review_status': json['status'],
+    });
+    return ReviewItem(
+      id: (json['review_id'] ?? '').toString(),
+      status: (json['status'] ?? 'pending').toString(),
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      subcategory: item.subcategory,
+      brand: item.brand,
+      partNumber: item.partNumber,
+      barcode: item.barcode,
+      tags: item.tags,
+      confidence: item.confidence,
+      imageUrl: item.imageUrl,
+      sourceFrameUrl: item.sourceFrameUrl,
+      notes: item.notes,
+      location: item.location,
+      catalogMatch: item.catalogMatch,
+      scanEvidence: item.scanEvidence,
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
+    );
+  }
+}
+
+class ReviewQueueResult {
+  const ReviewQueueResult({required this.items, required this.pendingCount});
+
+  final List<ReviewItem> items;
+  final int pendingCount;
+
+  factory ReviewQueueResult.fromJson(Map<String, dynamic> json) {
+    return ReviewQueueResult(
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(ReviewItem.fromJson)
+          .toList(),
+      pendingCount: (json['pending_count'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 
@@ -1973,10 +3111,34 @@ class MultiExtractResult {
 }
 
 class BulkCreateResult {
-  BulkCreateResult({required this.inserted, required this.failures});
+  BulkCreateResult({
+    required this.inserted,
+    required this.failures,
+    this.acceptedIndices,
+  });
 
   final List<InventoryItem> inserted;
   final List<Map<String, dynamic>> failures;
+  final List<int>? acceptedIndices;
+
+  Set<int> confirmedIndices(int submittedCount) {
+    final indices = acceptedIndices;
+    if (indices == null) {
+      return failures.isEmpty && inserted.length == submittedCount
+          ? Set<int>.from(List.generate(submittedCount, (index) => index))
+          : <int>{};
+    }
+    final accepted = indices.toSet();
+    if (accepted.length != indices.length ||
+        accepted.length != inserted.length ||
+        accepted.any((index) => index < 0 || index >= submittedCount) ||
+        failures.any((failure) => accepted.contains(failure['index']))) {
+      throw const FormatException(
+        'Saving could not be confirmed. Your draft is safe to retry.',
+      );
+    }
+    return accepted;
+  }
 
   factory BulkCreateResult.fromJson(Map<String, dynamic> json) {
     final inserted = (json['inserted'] as List<dynamic>? ?? [])
@@ -1987,6 +3149,13 @@ class BulkCreateResult {
     return BulkCreateResult(
       inserted: inserted.map(InventoryItem.fromJson).toList(),
       failures: failures,
+      acceptedIndices: !json.containsKey('accepted_indices')
+          ? null
+          : json['accepted_indices'] is List
+          ? (json['accepted_indices'] as List)
+                .map((value) => value is int ? value : -1)
+                .toList()
+          : [-1],
     );
   }
 }

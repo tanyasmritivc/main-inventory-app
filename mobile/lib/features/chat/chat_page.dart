@@ -1,24 +1,47 @@
+import 'message_actions.dart';
+import '../../core/first_camera_hint.dart';
+import 'chat_progress.dart';
+import 'voice_capture.dart';
+import 'chat_history_sheet.dart';
+import 'dart:math' as math;
+import 'chat_photo_attachment_card.dart';
+import '../../core/chat_source.dart';
+import 'chat_source_menu.dart';
+import 'native_chat_menu_button.dart';
+import 'chat_context_picker.dart';
+import 'assistant_connections_page.dart';
+import '../scan/connector_destination_page.dart';
+import '../scan/space_barcode_flow.dart';
+import 'chat_viewport.dart';
+import '../notifications/notification_bell.dart';
+import 'package:flutter/services.dart';
+import 'chat_capture_card.dart';
+import '../world/world_composer.dart';
+import '../world/world_action_card.dart';
+import '../../core/app_theme.dart';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer' as developer;
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import '../../core/ui/liquid_surface.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:speech_to_text/speech_to_text.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
-import '../../core/low_stock_prefs.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/restock_plan.dart';
+import '../../core/ask_answer.dart';
+import '../../core/chat_item_action.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/frosted_surface.dart';
+import 'ask_answer_view.dart';
 import '../scan/scan_page.dart';
+import 'package:mobile/core/ui/app_text.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -33,10 +56,20 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onChatStateChanged,
+    this.onBack,
     this.pageController,
     this.onOpenDestination,
+    this.photoPicker,
+    this.worldHeading,
+    this.onCaptureAction,
+    this.initialSource,
+    this.onInitialSourceReady,
   });
 
+  final String? worldHeading;
+  final ChatSource? initialSource;
+  final VoidCallback? onInitialSourceReady;
+  final Future<void> Function(String)? onCaptureAction;
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
   final String? initialMessage;
@@ -47,8 +80,10 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(bool hasMessages)? onChatStateChanged;
+  final VoidCallback? onBack;
   final PageController? pageController;
   final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
+  final Future<AskPhoto?> Function(bool camera)? photoPicker;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -91,7 +126,10 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        final color = Colors.white.withValues(alpha: 0.4);
+        final color = AppTheme.adaptive(
+          context,
+          Colors.white.withValues(alpha: 0.4),
+        );
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -146,11 +184,21 @@ class _AiIntent {
 
 class _ChatSession {
   static final _ChatSession _instance = _ChatSession._internal();
-  factory _ChatSession() => _instance;
+  static final _scope = AskSessionScope();
+  factory _ChatSession() {
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    if (_scope.selectAccount(owner)) {
+      _instance.messages.clear();
+      _instance.hasStarted = false;
+      _instance.conversationId = null;
+    }
+    return _instance;
+  }
   _ChatSession._internal();
 
   List<_ChatMessage> messages = [];
   bool hasStarted = false;
+  String? conversationId;
 }
 
 class _ChatPageState extends State<ChatPage>
@@ -159,31 +207,58 @@ class _ChatPageState extends State<ChatPage>
   bool get wantKeepAlive => true;
   late final TextEditingController _controller;
   final _focusNode = FocusNode();
+  final Map<String, Map<String, dynamic>> _responseRatings = {};
+  Future<void> _loadRatings(String conversationId) async {
+    try {
+      final result = await widget.api.collaboration(
+        '/response-feedback',
+        query: {'conversation_id': conversationId},
+      );
+      widget.api.assertCurrentContext();
+      if (!mounted || _currentConversationId != conversationId) return;
+      setState(() {
+        for (final row in (result['ratings'] as List? ?? const [])) {
+          final value = Map<String, dynamic>.from(row as Map);
+          final id = value['message_id'] as String;
+          if ((value['revision'] as int) >=
+              (_responseRatings[id]?['revision'] as int? ?? 0)) {
+            _responseRatings[id] = value;
+          }
+        }
+      });
+    } catch (_) {
+      /* Optional ratings must not prevent reading chat. */
+    }
+  }
+
   final _scrollController = ScrollController();
 
+  bool _worldHome = true;
   bool _sending = false;
   String? _progress;
-  final _session = _ChatSession();
-  String _userInitial = '';
+  late final _ChatSession _session;
+  int _requestGeneration = 0;
+  final List<ChatSource> _sources = [];
+  bool _sourceMenuOpen = false;
+  StreamIterator<AiStreamEvent>? _activeReply;
 
   // Conversation history
-  String? _currentConversationId;
-  // Retained for the intentionally detached history panel (68f5e83).
-  // ignore: unused_field
+  String? get _currentConversationId => _session.conversationId;
+  set _currentConversationId(String? value) => _session.conversationId = value;
   bool _historyOpen = false;
-  bool _historyLoading = false;
-  bool _historyLoadFailed = false;
-  List<ConversationSummary> _conversations = [];
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
+  final Map<String, GlobalKey<ChatCaptureCardState>> _captureKeys = {};
+  final Set<int> _replyHaptics = {};
   Timer? _presentationTimer;
   Timer? _presentationIdleTimer;
   final Map<int, StringBuffer> _presentationBuffers = {};
   final Queue<({int index, String text})> _presentationQueue = Queue();
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
   final Set<int> _presentationComplete = <int>{};
+  final Set<String> _actionReplyIds = {};
   final Queue<String> _queuedFollowUps = Queue();
   bool _canQueueFollowUp = false;
 
@@ -193,11 +268,72 @@ class _ChatPageState extends State<ChatPage>
   List<InventoryItem>? _inventorySnapshot;
 
   final List<String> _pendingAttachments = [];
+  AskPhoto? _photo;
+  Map<String, dynamic>? _previewDraft;
+  bool _scanningPreview = false;
+  bool _savingCapture = false;
+  final _previewKey = GlobalKey<ChatCaptureCardState>();
+  bool _pickingPhoto = false;
+  String? _cameraHintOwner;
+  bool get _cameraHint =>
+      _cameraHintOwner != null && _cameraHintOwner == widget.api.accountId;
+  Future<void> _loadCameraHint() async {
+    final owner = widget.api.accountId;
+    if (owner == null) return;
+    final pending = await FirstCameraHint.pending(owner);
+    if (mounted && widget.api.accountId == owner) {
+      setState(() => _cameraHintOwner = pending ? owner : null);
+    }
+  }
 
-  Map<String, dynamic>? _pendingNavHint;
+  Future<void> _firstCamera() => _attachPhoto(source: true, autoExtract: true);
 
-  final SpeechToText _speech = SpeechToText();
-  bool _isListening = false;
+  Future<bool> _consumeCameraHint() async {
+    if (!_cameraHint) return true;
+    final owner = widget.api.accountId!;
+    try {
+      await FirstCameraHint.consume(owner);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not remember this preference. Please try again.',
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+    if (!mounted || widget.api.accountId != owner) return false;
+    setState(() => _cameraHintOwner = null);
+    return true;
+  }
+
+  late final VoiceCapture _voice = VoiceCapture(
+    recorder: DeviceVoiceRecorder(),
+    onSend: (words) {
+      if (!mounted || _sending) return;
+      widget.api.assertCurrentContext();
+      final draft = _controller.text.trim();
+      unawaited(_submit(draft.isEmpty ? words : '$draft $words'));
+    },
+    onError: () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Voice input could not start. Check microphone and speech permissions, then try again.',
+            ),
+          ),
+        );
+      }
+    },
+  )..addListener(_voiceChanged);
+  bool get _isListening => _voice.active;
+  void _voiceChanged() {
+    if (mounted) setState(() {});
+  }
 
   List<DocumentEntry>? _pendingDocChoices;
 
@@ -232,19 +368,8 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(error).$1)));
     }
-  }
-
-  String _navHintLabel(Map<String, dynamic> hint) {
-    final name = (hint['name'] ?? hint['space_name'] ?? '').toString();
-    if (hint['type'] == 'project_kit') {
-      return 'Open project kit${name.isEmpty ? '' : ': $name'}';
-    }
-    if (hint['type'] == 'item') {
-      return 'Open ${hint['space_name'] ?? 'item location'}';
-    }
-    return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
   String _renderableStreamingMarkdown(String content) {
@@ -263,7 +388,7 @@ class _ChatPageState extends State<ChatPage>
       _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
       _queuePresentationWords(index, pending.substring(0, splitAt));
     }
-    _presentationIdleTimer = Timer(const Duration(milliseconds: 160), () {
+    _presentationIdleTimer = Timer(const Duration(milliseconds: 48), () {
       if (!mounted) return;
       final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
       if (buffered.isNotEmpty) _queuePresentationWords(index, buffered);
@@ -271,10 +396,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _queuePresentationWords(int index, String content) {
-    for (final match in RegExp(r'\S+\s*').allMatches(content)) {
+    for (final match in RegExp(r'\s+|\S+\s*').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
-    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 24), (
       _,
     ) {
       if (!mounted) return;
@@ -283,52 +408,74 @@ class _ChatPageState extends State<ChatPage>
         _presentationTimer = null;
         return;
       }
-      final chunk = _presentationQueue.removeFirst();
-      if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
+      final index = _presentationQueue.first.index;
+      final text = StringBuffer();
+      final reduced = MediaQuery.disableAnimationsOf(context);
+      final count = reduced
+          ? _presentationQueue.length
+          : (8 + _presentationQueue.length ~/ 8).clamp(8, 48);
+      for (
+        var i = 0;
+        i < count &&
+            _presentationQueue.isNotEmpty &&
+            _presentationQueue.first.index == index;
+        i++
+      ) {
+        text.write(_presentationQueue.removeFirst().text);
+      }
+      if (index < 0 || index >= _session.messages.length) return;
       final isLast =
-          _presentationComplete.contains(chunk.index) &&
-          !_presentationQueue.any((entry) => entry.index == chunk.index);
+          _presentationComplete.contains(index) &&
+          !_presentationQueue.any((entry) => entry.index == index);
       setState(() {
-        final message = _session.messages[chunk.index];
-        _session.messages[chunk.index] = message.copyWith(
-          content: message.content + chunk.text,
+        final message = _session.messages[index];
+        _session.messages[index] = message.copyWith(
+          content: message.content + text.toString(),
           isStreaming: !isLast,
-          navHint: isLast ? _presentationHints.remove(chunk.index) : null,
+          navHint: isLast ? _presentationHints.remove(index) : null,
         );
       });
-      if (isLast) _presentationComplete.remove(chunk.index);
+      _replyVisible(index);
+      if (isLast) _presentationComplete.remove(index);
       _scrollToBottom(animated: false);
     });
   }
 
-  void _completePresentation(int index, Map<String, dynamic>? hint) {
+  void _completePresentation(
+    int index,
+    Map<String, dynamic>? hint, {
+    String? canonical,
+  }) {
     if (!mounted || index < 0 || index >= _session.messages.length) return;
     _presentationIdleTimer?.cancel();
     _presentationIdleTimer = null;
-    final tail = StringBuffer();
+    final message = _session.messages[index];
+    final pending = StringBuffer(message.content);
     for (final entry in _presentationQueue) {
-      if (entry.index == index) tail.write(entry.text);
+      if (entry.index == index) pending.write(entry.text);
     }
+    pending.write(_presentationBuffers.remove(index)?.toString() ?? '');
+    final target = canonical ?? pending.toString();
+    if (target.trim().isEmpty) throw StateError('Ask returned no answer');
     _presentationQueue.removeWhere((entry) => entry.index == index);
-    tail.write(_presentationBuffers.remove(index)?.toString() ?? '');
-    if (_presentationQueue.isEmpty) {
-      _presentationTimer?.cancel();
-      _presentationTimer = null;
-    }
-    if (tail.isEmpty && _session.messages[index].content.isEmpty) {
-      tail.write('Something went wrong. Please try again.');
-    }
-    _presentationHints.remove(index);
-    _presentationComplete.remove(index);
-    setState(() {
-      final message = _session.messages[index];
-      _session.messages[index] = message.copyWith(
-        content: message.content + tail.toString(),
-        isStreaming: false,
-        navHint: hint,
+    // Reconcile formatting without exposing the unseen suffix at completion.
+    final shown = message.content.length.clamp(0, target.length);
+    _session.messages[index] = message.copyWith(
+      content: target.substring(0, shown),
+    );
+    _presentationHints[index] = hint;
+    _presentationComplete.add(index);
+    if (shown < target.length) {
+      _queuePresentationWords(index, target.substring(shown));
+    } else {
+      _presentationComplete.remove(index);
+      setState(
+        () => _session.messages[index] = _session.messages[index].copyWith(
+          isStreaming: false,
+          navHint: _presentationHints.remove(index),
+        ),
       );
-    });
-    _scrollToBottom(animated: false);
+    }
   }
 
   void _cancelPresentation(int index) {
@@ -339,6 +486,13 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _voice.cancel();
+    _requestGeneration++;
+    final active = _activeReply;
+    _activeReply = null;
+    if (active != null) unawaited(active.cancel());
+    _captureKeys.clear();
+    _replyHaptics.clear();
     _presentationTimer?.cancel();
     _presentationTimer = null;
     _presentationIdleTimer?.cancel();
@@ -348,6 +502,8 @@ class _ChatPageState extends State<ChatPage>
     _presentationHints.clear();
     _presentationComplete.clear();
     _queuedFollowUps.clear();
+    _actionReplyIds.clear();
+    _responseRatings.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -359,12 +515,18 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
+      _worldHome = true;
+      _previewDraft = null;
+      _scanningPreview = false;
+      _photo = null;
+      _pickingPhoto = false;
       _sending = false;
       _canQueueFollowUp = false;
       _progress = null;
       _session.messages.clear();
       _session.hasStarted = false;
       _pendingAttachments.clear();
+      _sources.clear();
       _currentConversationId = null;
     });
     widget.onChatStateChanged?.call(false);
@@ -941,19 +1103,19 @@ class _ChatPageState extends State<ChatPage>
           if (!mounted) return;
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
+          ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e2))));
         }
       } else if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
+            content: AppText('Rate limited. Try again in ~20 seconds.'),
           ),
         );
       } else {
         _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+        ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
       }
     } catch (e) {
       _cancelPresentation(assistantIndex);
@@ -962,7 +1124,7 @@ class _ChatPageState extends State<ChatPage>
       _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
@@ -1057,7 +1219,7 @@ class _ChatPageState extends State<ChatPage>
         );
       }
       widget.onInventoryMutated?.call();
-      unawaited(_prefetchInventorySnapshot());
+      if (widget.api.worldKey == null) unawaited(_prefetchInventorySnapshot());
     } catch (_) {
       // Best-effort only.
     }
@@ -1311,6 +1473,12 @@ class _ChatPageState extends State<ChatPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_scrollController.hasClients) return;
+      // Keep the first question and its collapsed evidence visible as the
+      // response grows instead of jumping to the bottom of a long results card.
+      if (_session.messages.length <= 2) {
+        _scrollController.jumpTo(0);
+        return;
+      }
       final target = _scrollController.position.maxScrollExtent;
       if (animated) {
         _scrollController.animateTo(
@@ -1334,7 +1502,7 @@ class _ChatPageState extends State<ChatPage>
       final m = _session.messages[assistantIndex];
       if (m.role != 'assistant') return;
       setState(() {
-        _session.messages[assistantIndex] = m.copyWith(content: 'Thinking…');
+        if (m.content.isEmpty) _progress ??= 'Understanding your request…';
       });
       _scrollToBottom();
     });
@@ -1357,7 +1525,7 @@ class _ChatPageState extends State<ChatPage>
     });
     _scrollToBottom(animated: false);
 
-    await Future<void>.delayed(const Duration(milliseconds: 160));
+    await Future<void>.delayed(const Duration(milliseconds: 48));
     if (!mounted) return;
     _fakeTypingAssistantIndex = -1;
     _presentationBuffers[assistantIndex] = StringBuffer(text);
@@ -1397,18 +1565,18 @@ class _ChatPageState extends State<ChatPage>
                 children: [
                   ListTile(
                     leading: const Icon(Icons.image_outlined),
-                    title: const Text('Upload Image'),
+                    title: const AppText('Upload Image'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.image),
                   ),
                   ListTile(
                     leading: const Icon(Icons.description_outlined),
-                    title: const Text('Upload Document'),
+                    title: const AppText('Upload Document'),
                     onTap: () =>
                         Navigator.of(context).pop(_UploadKind.document),
                   ),
                   ListTile(
                     leading: const Icon(Icons.attach_file),
-                    title: const Text('Upload File'),
+                    title: const AppText('Upload File'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.file),
                   ),
                 ],
@@ -1444,16 +1612,24 @@ class _ChatPageState extends State<ChatPage>
     if (kind == null) return;
 
     if (kind == _UploadKind.image) {
-      await Navigator.of(context).push<void>(
+      final savedSpace = await Navigator.of(context).push<String>(
         MaterialPageRoute(
           builder: (context) => ScanPage(
             api: widget.api,
             onSaved: () => widget.onInventoryMutated?.call(),
+            onCaptureCompleted: (space) => Navigator.of(context).pop(space),
           ),
         ),
       );
 
       widget.onInventoryMutated?.call();
+      if (savedSpace != null && mounted) {
+        if (widget.onOpenDestination != null) {
+          await widget.onOpenDestination!({'space_name': savedSpace});
+        } else {
+          widget.onOpenInventory?.call();
+        }
+      }
       unawaited(_prefetchInventorySnapshot());
       return;
     }
@@ -1470,7 +1646,7 @@ class _ChatPageState extends State<ChatPage>
       if (_isVideoFile(name)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Videos aren’t supported.')),
+          const SnackBar(content: AppText('Videos aren’t supported.')),
         );
         return;
       }
@@ -1655,7 +1831,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
@@ -1673,7 +1849,7 @@ class _ChatPageState extends State<ChatPage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyRequestError(e))));
     } finally {
       if (mounted) {
         setState(() {
@@ -1847,6 +2023,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _prefetchInventorySnapshot() async {
+    if (widget.api.worldKey != null) return;
     try {
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
@@ -1857,30 +2034,22 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<String?> _lowStockSummary() async {
-    final thresholds = await LowStockPrefs.loadAll();
-    if (thresholds.isEmpty) return null;
-
+    final account = RestockPrefs.accountKey;
+    final plan = await RestockPrefs.load();
     final result = await widget.api.searchItems(query: '');
-    final low = <({String name, int qty, int thr})>[];
-    for (final item in result.items) {
-      final thr = thresholds[item.itemId];
-      if (thr == null || thr <= 0) continue;
-
-      if (item.quantity <= thr) {
-        final name = item.name.trim();
-        if (name.isNotEmpty) {
-          low.add((name: name, qty: item.quantity, thr: thr));
-        }
-      }
-    }
-
-    if (low.isEmpty) return null;
-    low.sort((a, b) => a.qty.compareTo(b.qty));
-    final top = low
-        .take(6)
-        .map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})')
-        .join(', ');
-    return 'Low stock: $top.';
+    if (!mounted || account != RestockPrefs.accountKey) return null;
+    final buying = result.items
+        .where((i) => plan.needsBuying(i.itemId, i.quantity))
+        .toList();
+    final ordered = result.items.where((i) => plan.onOrder(i.itemId)).toList();
+    if (buying.isEmpty && ordered.isEmpty) return null;
+    final lines = <String>[
+      if (buying.isNotEmpty)
+        'To buy: ${buying.take(6).map((i) => '${i.displayName} (${plan.entry(i.itemId).quantityToBuy(i.quantity)} to buy, ${i.quantity} on hand)').join(', ')}.',
+      if (ordered.isNotEmpty)
+        'On order: ${ordered.take(6).map((i) => i.displayName).join(', ')}. Stock is unchanged until arrival is confirmed.',
+    ];
+    return lines.join('\n');
   }
 
   String _friendlyRequestError(Object error) {
@@ -1890,123 +2059,269 @@ class _ChatPageState extends State<ChatPage>
     return 'Something went wrong. Please try again.';
   }
 
-  Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
-    final q = text.trim();
-    if (q.isEmpty) return;
+  void _replyVisible(int index) {
+    if (!_replyHaptics.add(index)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(HapticFeedback.lightImpact());
+    });
+  }
+
+  Future<void> _submit(
+    String text, {
+    bool userAlreadyAdded = false,
+    bool autoExtract = false,
+    String? requestId,
+    List<ChatSource>? retrySources,
+    int? retryAssistantIndex,
+    String? retryOf,
+  }) async {
+    if (_savingCapture || _scanningPreview) return;
+    if (retryAssistantIndex != null &&
+        (requestId == null ||
+            retryAssistantIndex < 0 ||
+            retryAssistantIndex >= _session.messages.length ||
+            _session.messages[retryAssistantIndex].role != 'assistant')) {
+      return;
+    }
+    final photo = requestId == null ? _photo : null;
+    final sources = List<ChatSource>.of(retrySources ?? _sources);
+    final q = text.trim().isEmpty && sources.isNotEmpty && photo == null
+        ? 'Help me understand these selected sources.'
+        : text.trim();
+    if (q.isEmpty && photo == null) return;
+    if (!_sending &&
+        RegExp(
+          r'^(?:please )?save(?: it| these| these items| the draft)?[.!]?$',
+          caseSensitive: false,
+        ).hasMatch(q)) {
+      ChatCaptureCardState? card = _previewDraft == null
+          ? null
+          : _previewKey.currentState;
+      if (card == null) {
+        for (final message in _session.messages.reversed) {
+          final draft = message.answerContext?.chatCapture;
+          if (draft?['status'] == 'draft') {
+            card = _captureKeys[draft!['id']]?.currentState;
+            break;
+          }
+        }
+      }
+      if (card != null) {
+        _controller.clear();
+        setState(
+          () => _session.messages.add(
+            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+          ),
+        );
+        setState(() => _savingCapture = true);
+        try {
+          await card.saveFromChat();
+        } finally {
+          if (mounted) setState(() => _savingCapture = false);
+        }
+        return;
+      }
+    }
+    if (!_sending && _previewDraft != null) _publishPreview();
+    if (_pickingPhoto) return;
     if (_sending) {
       if (!_canQueueFollowUp || userAlreadyAdded) return;
       _queuedFollowUps.add(q);
       setState(() {
         _canQueueFollowUp = false;
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        final safeQ = q;
         _session.messages.add(
           _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
         );
       });
-      _controller.clear();
+      if (requestId == null) _controller.clear();
       _scrollToBottom(animated: false);
       return;
     }
 
-    if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
-    }
-
-    developer.log('ChatPage: Submitting message "$q"');
+    if (_isListening) _voice.cancel();
 
     if (!mounted) return;
+    unawaited(HapticFeedback.lightImpact());
+    final requestGeneration = ++_requestGeneration;
 
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
 
     if (!mounted) return;
     setState(() {
+      _worldHome = false;
       _sending = true;
+      _progress = photo == null ? null : 'Reading your photo...';
+      if (requestId == null) _photo = null;
       _canQueueFollowUp = false;
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        final safeQ = q;
         _session.messages.add(
-          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+          _ChatMessage(
+            role: 'user',
+            content: safeQ,
+            timestamp: _nowTs(),
+            photo: photo,
+          ),
         );
       }
-      _session.messages.add(
-        _ChatMessage(
-          role: 'assistant',
-          content: '',
-          timestamp: _nowTs(),
-          isStreaming: true,
-        ),
+      final reply = _ChatMessage(
+        role: 'assistant',
+        content: '',
+        timestamp: retryAssistantIndex == null
+            ? _nowTs()
+            : _session.messages[retryAssistantIndex].timestamp,
+        answerContext: retryAssistantIndex == null
+            ? null
+            : _session.messages[retryAssistantIndex].answerContext,
+        isStreaming: true,
+        live: true,
       );
+      if (retryAssistantIndex == null) {
+        _session.messages.add(reply);
+      } else {
+        _session.messages[retryAssistantIndex] = reply;
+      }
     });
     widget.onChatStateChanged?.call(true);
-    _controller.clear();
+    if (requestId == null) _controller.clear();
     _scrollToBottom(animated: false);
 
-    final assistantIndex = _session.messages.length - 1;
+    final assistantIndex = retryAssistantIndex ?? _session.messages.length - 1;
+    final random = math.Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final turnId =
+        requestId ??
+        '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+    _replyHaptics.remove(assistantIndex);
+    final retry = photo == null
+        ? () {
+            if (_sending || !mounted) return;
+            setState(
+              () => _session.messages[assistantIndex] = _session
+                  .messages[assistantIndex]
+                  .copyWith(clearRetry: true),
+            );
+            unawaited(
+              _submit(
+                q,
+                requestId: turnId,
+                retrySources: sources,
+                retryAssistantIndex: assistantIndex,
+                userAlreadyAdded: true,
+                retryOf: retryOf,
+              ),
+            );
+          }
+        : null;
     try {
-      developer.log('ChatPage: Calling AI stream...');
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
-      if (token == null) throw StateError('Not authenticated');
-      final baseUrl = AppConfig.apiBaseUrl.endsWith('/')
-          ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
-          : AppConfig.apiBaseUrl;
-
-      final request = http.Request(
-        'POST',
-        Uri.parse('$baseUrl/ai_command?stream=true'),
-      );
-      request.headers['Content-Type'] = 'application/json';
-      request.headers['Accept'] = 'text/event-stream';
-      request.headers['Authorization'] = 'Bearer $token';
-      request.body = json.encode(<String, dynamic>{
-        'message': q,
-        if (_currentConversationId != null)
-          'conversation_id': _currentConversationId,
-      });
-
-      final httpClient = http.Client();
-      try {
-        final streamedResponse = await httpClient
-            .send(request)
-            .timeout(const Duration(minutes: 2));
-        if (streamedResponse.statusCode != 200) {
-          throw StateError('HTTP ${streamedResponse.statusCode}');
+      AskAnswerContext? answerContext;
+      Map<String, dynamic>? hint;
+      String? conversationId;
+      var completed = false;
+      String? canonical;
+      var provisional = '';
+      String? savedMessageId;
+      DateTime? savedAt;
+      final events = retryOf != null && _currentConversationId != null
+          ? widget.api.retryChatResponse(
+              message: q,
+              conversationId: _currentConversationId!,
+              messageId: retryOf,
+            )
+          : photo == null
+          ? widget.api.aiCommandStream(
+              message: q,
+              sources: sources,
+              requestId: turnId,
+              conversationId: _currentConversationId,
+            )
+          : widget.api.aiPhotoQuestionStream(
+              message: q,
+              requestId: turnId,
+              sources: sources,
+              photo: AskPhoto(bytes: photo.bytes, autoExtract: autoExtract),
+              conversationId: _currentConversationId,
+            );
+      var backendAcknowledged = false;
+      final iterator = StreamIterator(events);
+      _activeReply = iterator;
+      while (await iterator.moveNext()) {
+        final event = iterator.current;
+        if (!mounted || requestGeneration != _requestGeneration) return;
+        if (!backendAcknowledged && event.type != 'error') {
+          backendAcknowledged = true;
+          unawaited(HapticFeedback.selectionClick());
         }
-
-        await for (final line
-            in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          if (!mounted) break;
-          final l = line.trimRight();
-          if (!l.startsWith('data: ')) continue;
-          final raw = l.substring(6).trim();
-          if (raw == '[DONE]') break;
-          try {
-            final decoded = json.decode(raw);
-            if (decoded is! Map) continue;
-            final content = (decoded['content'] ?? '') as String;
-            if (content.isNotEmpty) {
-              _enqueuePresentation(assistantIndex, content);
-            }
-            final navHintData = decoded['nav_hint'];
-            if (navHintData is Map) {
-              _pendingNavHint = Map<String, dynamic>.from(
-                navHintData.cast<String, dynamic>(),
-              );
-            }
-          } catch (_) {}
+        if (event.type == 'capture' &&
+            event.answerContext?.chatCapture != null) {
+          _currentConversationId =
+              event.conversationId ?? _currentConversationId;
+          setState(() {
+            _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(answerContext: event.answerContext);
+          });
         }
-      } finally {
-        httpClient.close();
+        if (event.type == 'capture') _replyVisible(assistantIndex);
+        if (event.type == 'reset') {
+          provisional = '';
+          _cancelPresentation(assistantIndex);
+          setState(
+            () => _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(content: ''),
+          );
+        }
+        if (event.type == 'delta' && (event.delta ?? '').isNotEmpty) {
+          if (photo != null) _progress = null;
+          provisional += event.delta!;
+        }
+        if (event.type == 'status' && (event.message ?? '').isNotEmpty) {
+          setState(() => _progress = event.message);
+        }
+        if (event.navHint != null) hint = event.navHint;
+        if (event.answerContext != null) answerContext = event.answerContext;
+        if (event.conversationId != null) {
+          conversationId = event.conversationId;
+          _currentConversationId = conversationId;
+        }
+        if (event.type == 'done') {
+          completed = true;
+          savedMessageId = event.messageId;
+          savedAt = event.createdAt;
+          canonical = event.assistantMessage ?? provisional;
+          if ((_presentationBuffers[assistantIndex]?.isEmpty ?? true) &&
+              !_presentationQueue.any(
+                (chunk) => chunk.index == assistantIndex,
+              ) &&
+              _session.messages[assistantIndex].content.isEmpty &&
+              canonical.isNotEmpty) {
+            _enqueuePresentation(assistantIndex, canonical);
+          }
+          break;
+        }
+      }
+      if (!completed) throw StateError('Ask response interrupted');
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _currentConversationId = conversationId ?? _currentConversationId;
+      _session.messages[assistantIndex] = _session.messages[assistantIndex]
+          .copyWith(
+            answerContext: answerContext,
+            messageId: savedMessageId,
+            timestamp: savedAt?.millisecondsSinceEpoch ?? _nowTs(),
+          );
+      if (answerContext?.chatCapture != null) {
+        _onCaptureChanged(answerContext!.chatCapture!);
       }
 
       if (mounted) {
-        final hint = _pendingNavHint;
-        _pendingNavHint = null;
-        _completePresentation(assistantIndex, hint);
+        _completePresentation(assistantIndex, hint, canonical: canonical);
         setState(() {
           _sending = false;
           _canQueueFollowUp = false;
@@ -2016,12 +2331,15 @@ class _ChatPageState extends State<ChatPage>
         unawaited(_prefetchInventorySnapshot());
       }
     } on dio.DioException catch (e) {
-      developer.log('ChatPage: DioException: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       final dioErrMsg = _friendlyRequestError(e);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
+          answerContext: _session.messages[assistantIndex].answerContext,
+          onRetry: retry,
+          failed: true,
           content: dioErrMsg.length > 1000
               ? '${dioErrMsg.substring(0, 1000)}...'
               : dioErrMsg,
@@ -2032,23 +2350,33 @@ class _ChatPageState extends State<ChatPage>
       _scrollToBottom();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
+      ).showSnackBar(SnackBar(content: AppText(dioErrMsg)));
     } catch (e) {
-      developer.log('ChatPage: Exception: $e');
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _requestGeneration) return;
+      _cancelPresentation(assistantIndex);
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
-          content: 'Something went wrong. Please try again.',
+          answerContext: _session.messages[assistantIndex].answerContext,
+          onRetry: retry,
+          failed: true,
+          content: e is AskRequestException
+              ? e.message
+              : 'This response was interrupted. Please retry.',
           timestamp: _session.messages[assistantIndex].timestamp,
           isStreaming: false,
         );
       });
       _scrollToBottom();
     } finally {
-      _phaseTimer1?.cancel();
-      _phaseTimer2?.cancel();
-      if (mounted) {
+      if (requestGeneration == _requestGeneration) {
+        final active = _activeReply;
+        _activeReply = null;
+        if (active != null) unawaited(active.cancel());
+        _phaseTimer1?.cancel();
+        _phaseTimer2?.cancel();
+      }
+      if (mounted && requestGeneration == _requestGeneration) {
         setState(() {
           _progress = null;
           _sending = false;
@@ -2059,17 +2387,24 @@ class _ChatPageState extends State<ChatPage>
           unawaited(_submit(next, userAlreadyAdded: true));
         }
       }
-      developer.log('ChatPage: stream finished');
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _session = widget.api.worldKey == null
+        ? _ChatSession()
+        : _ChatSession._internal();
     _controller = TextEditingController();
-    unawaited(_speech.initialize());
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
+    unawaited(_loadCameraHint());
+    if (widget.initialSource != null) _sources.add(widget.initialSource!);
+    if (widget.onInitialSourceReady != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onInitialSourceReady?.call();
+      });
+    }
+
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2100,6 +2435,11 @@ class _ChatPageState extends State<ChatPage>
     widget.onRegisterReset?.call(_resetChat);
     widget.onRegisterOpenHistory?.call(_openHistory);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onChatStateChanged?.call(_session.messages.isNotEmpty);
+    });
+
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2107,41 +2447,22 @@ class _ChatPageState extends State<ChatPage>
         _controller.text = initial;
         unawaited(_submit(initial));
       });
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _focusNode.requestFocus();
-      });
     }
   }
 
-  Future<void> _toggleListening() async {
-    if (_isListening) {
-      await _speech.stop();
-      setState(() => _isListening = false);
+  void _toggleListening() {
+    if (_voice.active) {
+      unawaited(_voice.release());
     } else {
-      final available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (result) {
-            setState(() {
-              _controller.text = result.recognizedWords;
-              _controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: _controller.text.length),
-              );
-            });
-          },
-          listenFor: const Duration(seconds: 30),
-          pauseFor: const Duration(seconds: 3),
-          localeId: 'en_US',
-        );
-      }
+      unawaited(_voice.start());
     }
   }
 
   @override
   void dispose() {
+    _requestGeneration++;
+    final active = _activeReply;
+    if (active != null) unawaited(active.cancel());
     _presentationTimer?.cancel();
     _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
@@ -2150,511 +2471,1079 @@ class _ChatPageState extends State<ChatPage>
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
-    unawaited(_speech.stop());
+    _voice.dispose();
     super.dispose();
   }
 
   // ── Conversation History ─────────────────────────────────────────────────
 
-  String _relativeTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${dt.day}/${dt.month}';
-  }
-
   Future<void> _openHistory() async {
-    if (_historyLoading) return;
-    setState(() {
-      _historyOpen = true;
-      _historyLoading = true;
-      _historyLoadFailed = false;
-      _conversations = [];
-    });
+    if (_historyOpen) return;
+    _historyOpen = true;
+    _focusNode.unfocus();
+    final generation = _requestGeneration;
     try {
-      final convs = await widget.api.listConversations();
-      if (mounted) {
-        setState(() {
-          _conversations = convs;
-          _historyLoading = false;
-        });
+      final selected = await showChatHistory(
+        context,
+        api: widget.api,
+        currentId: _currentConversationId,
+        onDeleted: (id) {
+          if (mounted && id == _currentConversationId) {
+            _currentConversationId = null;
+          }
+        },
+      );
+      if (!mounted || generation != _requestGeneration || selected == null) {
+        return;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _historyLoading = false;
-          _historyLoadFailed = true;
-        });
+      widget.api.assertCurrentContext();
+      if (selected == ChatHistorySheet.newChat) {
+        _resetChat();
+      } else {
+        await _loadConversation(selected);
       }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      }
+    } finally {
+      _historyOpen = false;
     }
   }
 
-  void _closeHistory() => setState(() => _historyOpen = false);
-
-  Future<void> _loadConversation(String id) async {
-    _closeHistory();
+  Future<bool> _loadConversation(String id) async {
+    _resetChat();
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
     try {
       final result = await widget.api.getConversation(id);
-      if (!mounted) return;
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return false;
+      }
+      _actionReplyIds.addAll(result.messages.map((message) => message.id));
       final msgs = result.messages
           .map(
             (m) => _ChatMessage(
               role: m.role,
+              messageId: m.id,
               content: m.content,
               timestamp: m.createdAt.millisecondsSinceEpoch,
+              answerContext: m.answerContext,
             ),
           )
           .toList();
+      for (var i = 1; i < msgs.length; i++) {
+        if (msgs[i].role != 'assistant' || msgs[i - 1].role != 'user') continue;
+        final photoUrl = trustedAskPhotoUrl(
+          msgs[i].answerContext?.photoUrl,
+          owner: Supabase.instance.client.auth.currentUser?.id,
+          origins: [widget.api.baseUrl, AppConfig.supabaseUrl],
+          inventoryId: widget.api.inventoryContext?.inventoryId,
+        );
+        if (photoUrl != null) {
+          msgs[i - 1] = msgs[i - 1].copyWith(photoUrl: photoUrl);
+        }
+      }
       setState(() {
+        _worldHome = false;
         _session.messages = msgs;
         _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
       });
+      unawaited(_loadRatings(id));
+      widget.onChatStateChanged?.call(msgs.isNotEmpty);
       _scrollToBottom();
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return false;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+      ).showSnackBar(SnackBar(content: AppText(describeError(e).$1)));
     }
+    return false;
   }
 
-  Future<void> _deleteConversation(String id) async {
-    // Optimistic removal: Dismissible has already animated the row away.
-    final idx = _conversations.indexWhere((c) => c.id == id);
-    if (idx == -1) return;
-    final removed = _conversations[idx];
-    setState(() {
-      _conversations.removeAt(idx);
-      if (_currentConversationId == id) _currentConversationId = null;
-    });
+  Widget _buildHeader() {
+    if (widget.worldHeading != null) {
+      return Row(
+        children: [
+          if (widget.onBack != null)
+            LiquidIconButton(
+              tooltip: 'Back',
+              icon: CupertinoIcons.chevron_left,
+              onPressed: () {
+                _returnToHome();
+              },
+            ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Center(
+              child: Text(
+                'Ask',
+                key: const Key('ask-heading'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ),
+          NotificationBell(api: widget.api),
+          const SizedBox(width: 8),
+          LiquidIconButton(
+            tooltip: 'New chat',
+            icon: CupertinoIcons.square_pencil,
+            onPressed: _resetChat,
+          ),
+        ],
+      );
+    }
+    // The parent Scaffold consumes MediaQuery's keyboard inset when it resizes.
+    final compact =
+        (View.of(context).viewInsets.bottom > 0 ||
+            MediaQuery.viewInsetsOf(context).bottom > 0) &&
+        MediaQuery.textScalerOf(context).scale(18) > 36;
+    final title = AppText(
+      key: const Key('ask-heading'),
+      'Ask',
+      style: TextStyle(
+        color: AppTheme.foreground(context, Color(0xFFF2F2F2)),
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0,
+        height: 1.2,
+      ),
+    );
+    final reset = FrostedSurface(
+      radius: 16,
+      shadow: false,
+      child: TextButton(
+        onPressed: _resetChat,
+        child: AppText(
+          'New chat',
+          style: TextStyle(
+            color: AppTheme.foreground(context, Color(0xFF85858E)),
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: compact
+          ? Row(
+              children: [
+                if (widget.onBack != null) _buildBack(),
+                Expanded(child: title),
+                IconButton(
+                  tooltip: 'New chat',
+                  onPressed: _resetChat,
+                  icon: const Icon(Icons.add_comment_outlined),
+                ),
+              ],
+            )
+          : MediaQuery.textScalerOf(context).scale(18) > 36
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [if (widget.onBack != null) _buildBack(), title]),
+                if (_session.messages.isNotEmpty) reset,
+              ],
+            )
+          : Row(
+              children: [
+                if (widget.onBack != null) _buildBack(),
+                Expanded(child: title),
+                if (_session.messages.isNotEmpty) reset,
+              ],
+            ),
+    );
+  }
+
+  void _returnToHome() {
+    final pending = _controller.text;
+    _resetChat();
+    _controller.text = pending;
+    widget.onBack?.call();
+  }
+
+  Widget _buildBack() => IconButton(
+    tooltip: 'Back',
+    onPressed: () {
+      if (widget.worldHeading != null) {
+        _returnToHome();
+      } else {
+        widget.onBack?.call();
+      }
+    },
+    icon: Icon(
+      Icons.arrow_back_ios_new_rounded,
+      size: 20,
+      color: AppTheme.textPrimary(context),
+    ),
+  );
+
+  Widget _buildEmptyState() => Padding(
+    padding: EdgeInsets.symmetric(
+      vertical: widget.worldHeading == null ? 64 : 22,
+      horizontal: 16,
+    ),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Text(
+          widget.worldHeading ?? 'What would you like to know?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: AppTheme.textPrimary(context),
+            fontSize: widget.worldHeading == null ? 22 : 24,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'PlusJakartaSans',
+            letterSpacing: widget.worldHeading == null ? null : -0.6,
+            height: 1.25,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  final _attachmentAnchor = GlobalKey();
+
+  Future<void> _captureSource(String kind) async {
+    if (_sending || _pickingPhoto) return;
+    if (kind != 'barcode') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConnectorDestinationPage(api: widget.api),
+        ),
+      );
+      return;
+    }
+    if (_sending || _pickingPhoto || widget.api.worldKey == null) return;
+    final generation = _requestGeneration;
+    final conversationId = _currentConversationId;
+    bool current() => mounted && generation == _requestGeneration;
+    setState(() => _pickingPhoto = true);
     try {
-      await widget.api.deleteConversation(id);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _conversations.insert(idx, removed));
+      final code = await scanBarcodeForDraft(context);
+      if (!current() || code == null) return;
+      setState(() => _progress = 'Looking up barcode...');
+      final result = await widget.api.collaboration(
+        '/worlds/${widget.api.worldKey}/captures/barcode',
+        method: 'POST',
+        data: {
+          'barcode': code,
+          if (conversationId != null) 'conversation_id': conversationId,
+        },
+      );
+      widget.api.assertCurrentContext();
+      if (!mounted || !current()) return;
+      final id = result['conversation_id'] as String;
+      if (!await _loadConversation(id) || !mounted) return;
+      setState(() => _pickingPhoto = false);
+      // The durable draft is already visible before the model offers destinations.
+      await _submit(
+        'Help me review this extraction and choose where to save it.',
+      );
+    } catch (error) {
+      if (mounted && current()) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+        ).showSnackBar(SnackBar(content: Text(friendlyApiError(error))));
+      }
+    } finally {
+      if (mounted && current()) {
+        setState(() {
+          _pickingPhoto = false;
+          _progress = null;
+        });
       }
     }
   }
 
-  // Retained while the history UI is intentionally detached (68f5e83).
-  // ignore: unused_element
-  Widget _buildHistoryPanel() {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0x14FFFFFF),
-            border: Border(
-              right: BorderSide(color: Color(0x26FFFFFF), width: 1),
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
+  Widget? get _sourceChips => _sources.isEmpty
+      ? null
+      : SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final source in _sources)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Chat History',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: _closeHistory,
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.white.withValues(alpha: 0.60),
-                          size: 20,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GestureDetector(
-                    onTap: () {
-                      _closeHistory();
-                      _resetChat();
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(
-                            0xFFF2F2F7,
-                          ).withValues(alpha: 0.40),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
-                          SizedBox(width: 6),
-                          Text(
-                            'New Chat',
-                            style: TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                  padding: const EdgeInsets.only(right: 6),
+                  child: InputChip(
+                    avatar: Icon(
+                      source.kind == 'file'
+                          ? CupertinoIcons.doc
+                          : CupertinoIcons.link,
+                      size: 16,
+                    ),
+                    label: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 190),
+                      child: Text(
+                        '${source.name}${source.truncated ? ' (excerpt)' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    tooltip:
+                        '${source.name}${source.inventoryName == null ? '' : ' - ${source.inventoryName}'}',
+                    onDeleted: _sending
+                        ? null
+                        : () => setState(() => _sources.remove(source)),
+                    deleteButtonTooltipMessage: 'Remove ${source.name}',
                   ),
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: _historyLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : _historyLoadFailed
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Couldn't load history.",
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
-                                  fontSize: 13,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _openHistory,
-                                child: const Text(
-                                  'Retry',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _conversations.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No past conversations',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              fontSize: 13,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          itemCount: _conversations.length,
-                          itemBuilder: (context, i) {
-                            final c = _conversations[i];
-                            final isActive = c.id == _currentConversationId;
-                            return Dismissible(
-                              key: Key(c.id),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 16),
-                                color: const Color(0x33FF3B30),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  color: Color(0xFFFF3B30),
-                                  size: 18,
-                                ),
-                              ),
-                              onDismissed: (_) =>
-                                  unawaited(_deleteConversation(c.id)),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => unawaited(_loadConversation(c.id)),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: Color(0x0FFFFFFF),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              c.title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                                fontWeight: isActive
-                                                    ? FontWeight.w600
-                                                    : FontWeight.w400,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              _relativeTime(c.updatedAt),
-                                              style: const TextStyle(
-                                                color: Color(0x66FFFFFF),
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (isActive)
-                                        const Icon(
-                                          Icons.radio_button_checked,
-                                          color: Color(0xFFF2F2F7),
-                                          size: 12,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+            ],
+          ),
+        );
+
+  Future<void> _attachChatFile() async {
+    if (_sending || _pickingPhoto) return;
+    if (_sources.length >= 8 ||
+        _sources.where((s) => s.kind == 'file').length >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use up to 8 sources, including up to 4 files.'),
+        ),
+      );
+      return;
+    }
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    bool current() =>
+        mounted &&
+        generation == _requestGeneration &&
+        owner == Supabase.instance.client.auth.currentUser?.id;
+    setState(() => _pickingPhoto = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'txt', 'md', 'jpg', 'jpeg', 'png', 'webp'],
+        withData: true,
+      );
+      if (!current() || result == null) return;
+      final file = result.files.single;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty || bytes.length > 10 * 1024 * 1024) {
+        throw const AskRequestException(
+          'Choose a nonempty file smaller than 10 MB.',
+        );
+      }
+      if ([
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+      ].contains(file.extension?.toLowerCase())) {
+        setState(() => _photo = AskPhoto(bytes: bytes));
+        return;
+      }
+      final source = await widget.api.readChatFile(bytes, file.name);
+      if (!mounted || !current()) return;
+      if (_sources.fold<int>(0, (count, s) => count + (s.text?.length ?? 0)) +
+              (source.text?.length ?? 0) >
+          48000) {
+        throw const AskRequestException(
+          'These files are too long together. Remove a file before adding another.',
+        );
+      }
+      setState(() {
+        if (!_sources.any((s) => s.key == source.key)) _sources.add(source);
+      });
+    } catch (error) {
+      if (!mounted || !current()) return;
+      final detail = error is dio.DioException
+          ? (error.response?.data is Map
+                ? error.response?.data['detail']
+                : null)
+          : null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is AskRequestException
+                ? error.message
+                : detail is String
+                ? detail
+                : 'Could not read this file. Try a text-based PDF, TXT or Markdown file.',
+          ),
+        ),
+      );
+    } finally {
+      if (current()) setState(() => _pickingPhoto = false);
+    }
+  }
+
+  Future<void> _worldAttachmentMenu() async {
+    if (_sending || _pickingPhoto || _sourceMenuOpen) return;
+    final generation = _requestGeneration;
+    setState(() => _sourceMenuOpen = true);
+    final selected = await showChatSourceMenu(
+      context,
+      _attachmentAnchor,
+      nativeAttach: usesNativeChatMenu,
+    );
+    if (!mounted) return;
+    setState(() => _sourceMenuOpen = false);
+    if (selected == null || generation != _requestGeneration) return;
+    await _selectChatSource(selected);
+  }
+
+  Future<void> _selectChatSource(String selected) async {
+    if (!mounted || _sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    if (selected == 'open') {
+      await _worldAttachmentMenu();
+    } else if (selected == 'auto_extract') {
+      await _attachPhoto(autoExtract: true);
+    } else if (selected == 'camera' || selected == 'library') {
+      await _attachPhoto(source: selected == 'camera');
+    } else if (selected == 'file') {
+      await _attachChatFile();
+    } else if (selected == 'connections') {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => AssistantConnectionsPage(api: widget.api),
+        ),
+      );
+    } else if (['space', 'item', 'project', 'document'].contains(selected)) {
+      final result = await Navigator.of(context).push<List<ChatSource>>(
+        MaterialPageRoute(
+          builder: (_) => ChatContextPicker(
+            api: widget.api,
+            kind: selected,
+            selected: _sources,
+          ),
+        ),
+      );
+      if (!mounted || generation != _requestGeneration || result == null) {
+        return;
+      }
+      widget.api.assertCurrentContext();
+      setState(() {
+        _sources.clear();
+        _sources.addAll(result);
+      });
+    } else if (selected == 'spreadsheet') {
+      final proceed = await showModalBottomSheet<bool>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Import inventory', style: TextStyle(fontSize: 22)),
+                const SizedBox(height: 12),
+                const Text(
+                  'Choose a CSV or Excel (.xlsx) file up to 10 MB. FindEZ will create a draft for you to review, then choose an inventory and Space before saving.',
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(CupertinoIcons.folder),
+                  label: const Text('Choose spreadsheet'),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
+      );
+      if (mounted && generation == _requestGeneration && proceed == true) {
+        await _captureSource(selected);
+      }
+    } else {
+      await _captureSource(selected);
+    }
   }
 
-  Widget _buildPillButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.70)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+  Future<void> _attachPhoto({bool? source, bool autoExtract = false}) async {
+    if (_sending || _pickingPhoto) return;
+    final generation = _requestGeneration;
+    final owner = Supabase.instance.client.auth.currentUser?.id;
+    final camera =
+        source ??
+        await showModalBottomSheet<bool>(
+          context: context,
+          showDragHandle: true,
+          backgroundColor: AppTheme.adaptive(context, const Color(0xFF171719)),
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const AppText('Take photo'),
+                  onTap: () => Navigator.pop(context, true),
+                ),
+                ListTile(
+                  title: const AppText('Choose photo'),
+                  onTap: () => Navigator.pop(context, false),
+                ),
+              ],
             ),
-          ],
+          ),
+        );
+    if (camera == null || !mounted || generation != _requestGeneration) return;
+    if (camera && !await _consumeCameraHint()) return;
+    if (!mounted || generation != _requestGeneration) return;
+    setState(() => _pickingPhoto = true);
+    var picked = false;
+    try {
+      AskPhoto? photo;
+      if (widget.photoPicker != null) {
+        photo = await widget.photoPicker!(camera);
+      } else {
+        final file = await ImagePicker().pickImage(
+          source: camera ? ImageSource.camera : ImageSource.gallery,
+          maxWidth: 2048,
+          maxHeight: 2048,
+          imageQuality: 92,
+          requestFullMetadata: false,
+        );
+        if (file != null) {
+          if (await file.length() > AskPhoto.maxBytes) {
+            throw const AskRequestException(
+              'Choose a photo smaller than 10 MB.',
+            );
+          }
+          photo = AskPhoto(bytes: await file.readAsBytes());
+        }
+      }
+      if (!mounted ||
+          generation != _requestGeneration ||
+          owner != Supabase.instance.client.auth.currentUser?.id) {
+        return;
+      }
+      if (photo != null &&
+          (photo.bytes.isEmpty || photo.bytes.length > AskPhoto.maxBytes)) {
+        throw const AskRequestException(
+          'Choose a valid photo smaller than 10 MB.',
+        );
+      }
+      if (photo != null) {
+        picked = true;
+        setState(() => _photo = photo);
+      }
+    } catch (error) {
+      if (!mounted || generation != _requestGeneration) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: AppText(
+            error is AskRequestException
+                ? error.message
+                : 'Could not open the photo. Check camera or photo access in Settings.',
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted && generation == _requestGeneration) {
+        setState(() => _pickingPhoto = false);
+      }
+    }
+    if (picked &&
+        mounted &&
+        generation == _requestGeneration &&
+        widget.api.worldKey != null &&
+        autoExtract) {
+      await _extractPreview();
+    }
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
+  void _publishPreview() {
+    final draft = _previewDraft;
+    if (draft == null) return;
+    setState(() {
+      _worldHome = false;
+      _session.hasStarted = true;
+      _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: draft['status'] == 'saved'
+              ? 'Saved to ${draft['location'] ?? 'your Space'}.'
+              : '',
+          timestamp: _nowTs(),
+          answerContext: AskAnswerContext(chatCapture: draft),
+        ),
+      );
+      _previewDraft = null;
+    });
+    widget.onChatStateChanged?.call(true);
+  }
+
+  Future<void> _extractPreview() async {
+    final photo = _photo;
+    if (photo == null || _sending || _scanningPreview) return;
+    final generation = ++_requestGeneration;
+    setState(() {
+      _photo = null;
+      _scanningPreview = true;
+      _pickingPhoto = true;
+      _worldHome = false;
+      _progress = 'Reading your photo...';
+    });
+    final iterator = StreamIterator(
+      widget.api.aiPhotoQuestionStream(
+        message: '',
+        photo: AskPhoto(bytes: photo.bytes, autoExtract: true),
+        conversationId: _currentConversationId,
+        previewOnly: true,
+      ),
+    );
+    _activeReply = iterator;
+    try {
+      var completed = false;
+      while (await iterator.moveNext()) {
+        if (!mounted || generation != _requestGeneration) return;
+        final event = iterator.current;
+        if (event.conversationId != null) {
+          _currentConversationId = event.conversationId;
+        }
+        if (event.type == 'status') setState(() => _progress = event.message);
+        if (event.answerContext?.chatCapture != null) {
+          setState(() => _previewDraft = event.answerContext!.chatCapture);
+        }
+        if (event.type == 'done') {
+          completed = true;
+          break;
+        }
+      }
+      if (!completed || _previewDraft == null) {
+        throw StateError('Extraction interrupted');
+      }
+    } catch (_) {
+      if (mounted && generation == _requestGeneration) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Could not finish scanning. Your photo is ready to retry.',
+            ),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                setState(() => _photo = photo);
+                unawaited(_extractPreview());
+              },
+            ),
+          ),
+        );
+      }
+    } finally {
+      unawaited(iterator.cancel());
+      if (mounted && generation == _requestGeneration) {
+        _activeReply = null;
+        setState(() {
+          _scanningPreview = false;
+          _pickingPhoto = false;
+          _progress = null;
+        });
+      }
+    }
+  }
+
+  Widget _capturePreview() => ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight: math.max(
+        96,
+        MediaQuery.sizeOf(context).height * .42 -
+            MediaQuery.viewInsetsOf(context).bottom * .65,
+      ),
+    ),
+    child: Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: Color(0xFFF2F2F7),
-                size: 31,
-              ),
+            Row(
+              children: [
+                const SizedBox(width: 16),
+                const Expanded(child: Text('Review extraction')),
+                IconButton(
+                  tooltip: _scanningPreview
+                      ? 'Stop scanning'
+                      : 'Keep draft in chat',
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    if (_scanningPreview) {
+                      _requestGeneration++;
+                      final active = _activeReply;
+                      _activeReply = null;
+                      if (active != null) unawaited(active.cancel());
+                      setState(() {
+                        _scanningPreview = false;
+                        _pickingPhoto = false;
+                        _progress = null;
+                      });
+                    }
+                    _publishPreview();
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 18),
-            const _ShimmerTitle('Ask FindEZ'),
+            if (_scanningPreview)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ChatProgress(
+                  message: _progress ?? 'Reading your photo...',
+                ),
+              ),
+            if (_previewDraft != null && _currentConversationId != null)
+              ChatCaptureCard(
+                key: _previewKey,
+                api: widget.api,
+                conversationId: _currentConversationId!,
+                draft: _previewDraft!,
+                disabled: _scanningPreview,
+                onChanged: _onCaptureChanged,
+                onSaved: () {
+                  _controller.clear();
+                  _publishPreview();
+                  widget.onInventoryMutated?.call();
+                },
+              ),
           ],
         ),
       ),
-    );
-  }
-
-  MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
-    p: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.42,
-      letterSpacing: -0.15,
     ),
-    strong: const TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w600,
-      fontSize: 16,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    em: const TextStyle(
-      color: Color(0xFFAEAEB2),
-      fontStyle: FontStyle.italic,
-      fontSize: 16,
-    ),
-    listBullet: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      height: 1.42,
-    ),
-    blockSpacing: 8,
-    listIndent: 18,
   );
 
-  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.92,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(2, 4, 12, 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.ai.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: AppColors.ai,
-                      size: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: Color(0xFF8E8E93),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                switchInCurve: Curves.easeOutCubic,
-                child: message.content.trim().isEmpty && isTyping
-                    ? const Padding(
-                        key: ValueKey('thinking'),
-                        padding: EdgeInsets.symmetric(vertical: 7),
-                        child: _TypingDots(),
-                      )
-                    : MarkdownBody(
-                        key: ValueKey('answer'),
-                        data: isTyping
-                            ? _renderableStreamingMarkdown(message.content)
-                            : message.content,
-                        styleSheet: _assistantMarkdownStyle(),
-                        softLineBreak: true,
-                      ),
-              ),
-              if (!isTyping && message.navHint != null)
-                GestureDetector(
-                  onTap: () => unawaited(_openNavHint(message.navHint!)),
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          message.navHint!['type'] == 'project_kit'
-                              ? Icons.construction_outlined
-                              : Icons.folder_open_outlined,
-                          color: const Color(0xFFF2F2F7),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            _navHintLabel(message.navHint!),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFF2F2F7),
-                          size: 17,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+  void _onCaptureChanged(Map<String, dynamic> updated) {
+    if (!mounted) return;
+    setState(() {
+      if (_previewDraft?['id'] == updated['id']) _previewDraft = updated;
+      for (var i = 0; i < _session.messages.length; i++) {
+        final message = _session.messages[i];
+        final data = message.answerContext;
+        if (data?.chatCapture?['id'] != updated['id']) continue;
+        _session.messages[i] = message.copyWith(
+          answerContext: AskAnswerContext(
+            chatCapture: updated,
+            photoAttachment: data!.photoAttachment,
+            worldActions: data.worldActions,
+            resourceLinks: data.resourceLinks,
+            sources: data.sources,
+            rows: data.rows,
+            rowsTruncated: data.rowsTruncated,
+            photoUrl: data.photoUrl,
+            pendingActions: data.pendingActions,
           ),
+        );
+      }
+    });
+  }
+
+  void _onItemActionResult(ChatItemActionResult result) {
+    if (!mounted) return;
+    // ListView may dispose offscreen cards. Retain the actual receipt on the
+    // message itself so scrolling back never shows a confirmed card as pending.
+    setState(() {
+      for (var i = 0; i < _session.messages.length; i++) {
+        final message = _session.messages[i];
+        final data = message.answerContext;
+        if (data == null ||
+            !data.pendingActions.any(
+              (action) => action.id == result.action.id,
+            )) {
+          continue;
+        }
+        _session.messages[i] = message.copyWith(
+          answerContext: AskAnswerContext(
+            chatCapture: data.chatCapture,
+            photoAttachment: data.photoAttachment,
+            worldActions: data.worldActions,
+            resourceLinks: data.resourceLinks,
+            sources: data.sources,
+            rows: data.rows,
+            rowsTruncated: data.rowsTruncated,
+            photoUrl: data.photoUrl,
+            pendingActions: data.pendingActions
+                .map(
+                  (action) =>
+                      action.id == result.action.id ? result.action : action,
+                )
+                .toList(),
+          ),
+        );
+      }
+    });
+    if (result.action.status != 'confirmed') return;
+    widget.onInventoryMutated?.call();
+    unawaited(_prefetchInventorySnapshot());
+    final text = result.assistantMessage;
+    final replyId = result.replyId;
+    if (text == null ||
+        text.isEmpty ||
+        replyId == null ||
+        !_actionReplyIds.add(replyId)) {
+      return;
+    }
+    final index = _session.messages.length;
+    setState(
+      () => _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: '',
+          timestamp: _nowTs(),
+          isStreaming: true,
+          live: true,
         ),
       ),
     );
+    _enqueuePresentation(index, text);
+    _completePresentation(index, null, canonical: text);
   }
 
+  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (message.onRetry != null && !isTyping)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _sending ? null : message.onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry response'),
+          ),
+        ),
+      AskAnswerView(
+        key: ValueKey('answer-${message.timestamp}'),
+        refined: widget.worldHeading != null,
+        answer: isTyping
+            ? _renderableStreamingMarkdown(message.content)
+            : message.content,
+        contextData: message.answerContext,
+        isLoading: isTyping,
+        animateChunks: message.live,
+        api: widget.api,
+        onActionResult: _onItemActionResult,
+        onOpenResource: widget.onOpenDestination == null
+            ? null
+            : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+        pendingMessage: _progress ?? 'Checking your things...',
+        onOpenSource:
+            message.navHint?['type'] != 'project_kit' ||
+                message.answerContext?.sources
+                        .where((source) => source.kind == 'project')
+                        .length !=
+                    1
+            ? null
+            : () => unawaited(_openNavHint(message.navHint!)),
+      ),
+      if (message.answerContext?.chatCapture != null &&
+          _currentConversationId != null &&
+          identical(
+            message,
+            _session.messages.lastWhere(
+              (m) =>
+                  m.answerContext?.chatCapture?['id'] ==
+                  message.answerContext!.chatCapture!['id'],
+            ),
+          ))
+        ChatCaptureCard(
+          key: _captureKeys.putIfAbsent(
+            message.answerContext!.chatCapture!['id'] as String,
+            () => GlobalKey<ChatCaptureCardState>(),
+          ),
+          api: widget.api,
+          conversationId: _currentConversationId!,
+          draft: message.answerContext!.chatCapture!,
+          disabled: _sending,
+          onChanged: _onCaptureChanged,
+          onSaved: widget.onInventoryMutated,
+          onOpenResource: widget.onOpenDestination == null
+              ? null
+              : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+        ),
+      if (!isTyping && message.answerContext?.photoAttachment != null)
+        ChatPhotoAttachmentCard(
+          key: ValueKey(message.answerContext!.photoAttachment!['id']),
+          api: widget.api,
+          attachment: message.answerContext!.photoAttachment!,
+          onSaved: widget.onInventoryMutated,
+          onChanged: (updated) {
+            final target = message.answerContext!.photoAttachment!;
+            target.clear();
+            target.addAll(updated);
+          },
+        ),
+      if (!isTyping)
+        for (final action
+            in message.answerContext?.worldActions ?? <Map<String, dynamic>>[])
+          WorldActionCard(
+            key: ValueKey(action['id']),
+            onCaptureChanged: _onCaptureChanged,
+            api: widget.api,
+            action: action,
+            onOpenResource: widget.onOpenDestination == null
+                ? null
+                : (link) => unawaited(widget.onOpenDestination!(link.toJson())),
+            onSaved: widget.onInventoryMutated,
+            onChanged: (updated) {
+              action.clear();
+              action.addAll(updated);
+            },
+          ),
+    ],
+  );
+
+  Widget _photoPreview() => Padding(
+    key: const Key('ask-photo-preview'),
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      children: [
+        InkWell(
+          onTap: _sending ? null : _attachPhoto,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              _photo!.bytes,
+              width: 64,
+              height: 64,
+              fit: BoxFit.cover,
+              semanticLabel: 'Attached photo. Tap to replace.',
+              errorBuilder: (_, _, _) => const SizedBox(
+                width: 64,
+                height: 64,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  semanticLabel: 'Photo preview unavailable',
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(child: Text('Photo attached')),
+        IconButton(
+          tooltip: 'Remove photo',
+          onPressed: _sending ? null : () => setState(() => _photo = null),
+          icon: const Icon(Icons.close, size: 20),
+        ),
+      ],
+    ),
+  );
+
+  Widget _worldLanding(bool canSend, bool compact) => LayoutBuilder(
+    builder: (context, bounds) {
+      return SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: bounds.maxHeight),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildEmptyState(),
+                    const SizedBox(height: 12),
+                    if (_previewDraft != null || _scanningPreview)
+                      _capturePreview(),
+                    if (_photo != null) _photoPreview(),
+                    WorldComposer(
+                      onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                          ? _firstCamera
+                          : null,
+                      sourceChips: _sourceChips,
+                      menuOpen: _sourceMenuOpen,
+                      attachmentKey: _attachmentAnchor,
+                      onSourceSelected: (value) =>
+                          unawaited(_selectChatSource(value)),
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      onChanged: (_) => setState(() {}),
+                      onAttach: _sending || _pickingPhoto
+                          ? null
+                          : _worldAttachmentMenu,
+                      onVoice: _sending ? null : _toggleListening,
+                      onVoiceStart: _sending
+                          ? null
+                          : () => unawaited(_voice.start()),
+                      onVoiceEnd: () => unawaited(_voice.release()),
+                      onVoiceCancel: _voice.cancel,
+                      voiceTranscript: _voice.transcript,
+                      onSend: canSend
+                          ? () => unawaited(_submit(_controller.text))
+                          : null,
+                      busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
+                      listening: _isListening,
+                      compact: compact,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
   Widget _messageEntrance(_ChatMessage message, Widget child) {
+    if (!message.isStreaming && !message.failed && message.content.isNotEmpty) {
+      final index = _session.messages.indexOf(message);
+      int userIndex = index;
+      while (userIndex >= 0 && _session.messages[userIndex].role != 'user') {
+        userIndex--;
+      }
+      final prompt = userIndex >= 0 ? _session.messages[userIndex] : null;
+      final answerIndex = message.role == 'assistant'
+          ? index
+          : (index + 1 < _session.messages.length &&
+                    _session.messages[index + 1].role == 'assistant'
+                ? index + 1
+                : -1);
+      final answer = answerIndex >= 0 ? _session.messages[answerIndex] : null;
+      void retry() {
+        if (_sending || prompt == null || answer == null) return;
+        if (answer.onRetry != null) {
+          answer.onRetry!();
+          return;
+        }
+        if (answer.messageId == null) return;
+        unawaited(
+          _submit(
+            prompt.content,
+            userAlreadyAdded: true,
+            requestId: answer.messageId,
+            retryOf: answer.messageId,
+            retryAssistantIndex: answerIndex,
+          ),
+        );
+      }
+
+      child = Column(
+        crossAxisAlignment: message.role == 'user'
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          child,
+          MessageActions(
+            api: widget.api,
+            content: message.content,
+            timestamp: message.timestamp,
+            isUser: message.role == 'user',
+            messageId: message.messageId,
+            rating: _responseRatings[message.messageId],
+            onRating: (rating) =>
+                setState(() => _responseRatings[message.messageId!] = rating),
+            onRetry:
+                !_sending &&
+                    ((widget.api.worldKey != null &&
+                            answer?.messageId != null) ||
+                        answer?.onRetry != null)
+                ? retry
+                : null,
+          ),
+        ],
+      );
+    }
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
@@ -2670,338 +3559,378 @@ class _ChatPageState extends State<ChatPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final keyboardVisible =
+        View.of(context).viewInsets.bottom > 0 ||
+        MediaQuery.viewInsetsOf(context).bottom > 0;
+    final compactComposer =
+        keyboardVisible && MediaQuery.textScalerOf(context).scale(16) > 32;
     final canSend =
-        _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
+        !_savingCapture &&
+        !_scanningPreview &&
+        !_pickingPhoto &&
+        (_controller.text.trim().isNotEmpty ||
+            _photo != null ||
+            _sources.isNotEmpty) &&
+        (!_sending || _canQueueFollowUp);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: widget.inPageView
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              surfaceTintColor: Colors.transparent,
-              leadingWidth: 52,
-              leading: Padding(
-                padding: const EdgeInsets.all(10),
-                child: GestureDetector(
-                  onTap: widget.onProfileTap,
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFF2C2C2E),
-                    radius: 16,
-                    child: Text(
-                      _userInitial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
+    if (widget.worldHeading != null &&
+        (_worldHome || _session.messages.isEmpty) &&
+        _previewDraft == null &&
+        !_scanningPreview) {
+      return _worldLanding(canSend, keyboardVisible || compactComposer);
+    }
+    if (widget.worldHeading != null) {
+      return Scaffold(
+        resizeToAvoidBottomInset: !widget.inPageView,
+        backgroundColor: Colors.transparent,
+        body: ChatViewport(
+          header: _buildHeader(),
+          controller: _scrollController,
+          messages: [
+            for (final message in _session.messages)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: message.role == 'user'
+                    ? AskQuestionCard(
+                        compact: true,
+                        question: message.content,
+                        photoBytes: message.photo?.bytes,
+                        photoUrl: message.photoUrl,
+                      )
+                    : _buildAssistantMessage(message, message.isStreaming),
               ),
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPillButton(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    onTap: () => _focusNode.requestFocus(),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan',
-                    onTap: widget.onScanTap ?? () {},
-                  ),
-                ],
-              ),
-              centerTitle: true,
-              actions: [
-                if (widget.onOpenInventory != null)
-                  IconButton(
-                    onPressed: widget.onOpenInventory,
-                    icon: Icon(
-                      Icons.article_outlined,
-                      color: Colors.white.withValues(alpha: 0.60),
-                    ),
-                  ),
-                IconButton(
-                  onPressed: _resetChat,
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white.withValues(alpha: 0.60),
-                  ),
-                ),
-              ],
-            ),
-      body: Container(
-        color: Colors.transparent,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            12,
-            isIOS ? 16 : 18,
-            12,
-            keyboardVisible ? 12 : 110,
-          ),
-          child: Column(
+          ],
+          footer: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: _session.messages.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.separated(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.only(top: 4, bottom: 12),
-                        itemCount: _session.messages.length,
-                        separatorBuilder: (context, index) {
-                          final curr = _session.messages[index];
-                          final next = _session.messages[index + 1];
-                          return SizedBox(
-                            height: curr.role == next.role ? 6 : 18,
-                          );
-                        },
-                        itemBuilder: (context, index) {
-                          final m = _session.messages[index];
-                          final isUser = m.role == 'user';
-                          final isTyping =
-                              !isUser &&
-                              (m.isStreaming ||
-                                  index == _fakeTypingAssistantIndex ||
-                                  m.content == 'Typing…' ||
-                                  m.content == 'Thinking…' ||
-                                  m.content == 'Thinking...');
-                          if (!isUser) {
-                            return _messageEntrance(
-                              m,
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: _buildAssistantMessage(m, isTyping),
-                              ),
-                            );
-                          }
-                          return _messageEntrance(
-                            m,
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width * 0.78,
-                                ),
-                                child: Container(
-                                  margin: const EdgeInsets.only(
-                                    left: 54,
-                                    bottom: 2,
-                                    top: 2,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 15,
-                                    vertical: 10,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF2F2F7),
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(18),
-                                      topRight: Radius.circular(18),
-                                      bottomLeft: Radius.circular(18),
-                                      bottomRight: Radius.circular(5),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    m.content,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1C1C1E),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-              if (_sending && _progress != null) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _progress!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF8E8E93),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-              Container(
-                constraints: const BoxConstraints(
-                  minHeight: 48,
-                  maxHeight: 116,
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        minLines: 1,
-                        maxLines: 4,
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        onChanged: (_) => setState(() {}),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: 'Ask about your inventory',
-                          isDense: true,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          contentPadding: EdgeInsets.zero,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF636366),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 38,
-                        height: 38,
-                      ),
-                      icon: Icon(
-                        _isListening
-                            ? Icons.mic_rounded
-                            : Icons.mic_none_rounded,
-                        color: _isListening
-                            ? const Color(0xFFF2F2F7)
-                            : Colors.white38,
-                        size: 21,
-                      ),
-                      onPressed: _toggleListening,
-                    ),
-                    GestureDetector(
-                      onTap: canSend
-                          ? () => unawaited(_submit(_controller.text))
-                          : null,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _sending && !_canQueueFollowUp
-                              ? const Color(0xFF2C2C2E)
-                              : canSend
-                              ? const Color(0xFFF2F2F7)
-                              : const Color(0xFF2C2C2E),
-                        ),
-                        child: _sending && !_canQueueFollowUp
-                            ? const Padding(
-                                padding: EdgeInsets.all(9),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.7,
-                                  color: Color(0xFF8E8E93),
-                                ),
-                              )
-                            : Icon(
-                                Icons.arrow_upward_rounded,
-                                color: canSend
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFF636366),
-                                size: 20,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
+              if (_pickingPhoto) const LinearProgressIndicator(),
+              if (_previewDraft != null || _scanningPreview) _capturePreview(),
+              if (_photo != null) _photoPreview(),
+              WorldComposer(
+                onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                    ? _firstCamera
+                    : null,
+                sourceChips: _sourceChips,
+                menuOpen: _sourceMenuOpen,
+                attachmentKey: _attachmentAnchor,
+                onSourceSelected: (value) =>
+                    unawaited(_selectChatSource(value)),
+                controller: _controller,
+                focusNode: _focusNode,
+                onChanged: (_) => setState(() {}),
+                onAttach: _sending || _pickingPhoto
+                    ? null
+                    : _worldAttachmentMenu,
+                onVoice: _sending ? null : _toggleListening,
+                onVoiceStart: _sending ? null : () => unawaited(_voice.start()),
+                onVoiceEnd: () => unawaited(_voice.release()),
+                onVoiceCancel: _voice.cancel,
+                voiceTranscript: _voice.transcript,
+                onSend: canSend
+                    ? () => unawaited(_submit(_controller.text))
+                    : null,
+                busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
+                listening: _isListening,
+                compact: true,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
+      );
+    }
+    return Scaffold(
+      // MainShell already resizes its PageView for the keyboard.
+      resizeToAvoidBottomInset: !widget.inPageView,
+      backgroundColor: widget.worldHeading != null
+          ? Colors.transparent
+          : AppTheme.adaptive(context, const Color(0xFF09090B)),
 
-class _ShimmerTitle extends StatefulWidget {
-  const _ShimmerTitle(this.text);
-
-  final String text;
-
-  @override
-  State<_ShimmerTitle> createState() => _ShimmerTitleState();
-}
-
-class _ShimmerTitleState extends State<_ShimmerTitle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = _controller.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
+      body: Container(
+        color: Colors.transparent,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            18,
+            16,
+            // MainShell reserves space for its pill below the page.
+            keyboardVisible || widget.inPageView ? 12 : 110,
+          ),
+          child: Column(
+            children: [
+              if (_session.messages.isNotEmpty &&
+                  (widget.worldHeading == null || !_worldHome)) ...[
+                _buildHeader(),
+                const SizedBox(height: 12),
+              ],
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
+                const Spacer(flex: 2),
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
+                _buildEmptyState()
+              else
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(top: 4, bottom: 16),
+                    itemCount: _session.messages.isEmpty
+                        ? 1
+                        : _session.messages.length,
+                    separatorBuilder: (context, index) {
+                      final curr = _session.messages[index];
+                      final next = _session.messages[index + 1];
+                      return SizedBox(height: curr.role == next.role ? 12 : 8);
+                    },
+                    itemBuilder: (context, index) {
+                      if (_session.messages.isEmpty) {
+                        return _buildEmptyState();
+                      }
+                      final messageIndex = index;
+                      final m = _session.messages[messageIndex];
+                      final isUser = m.role == 'user';
+                      final isTyping =
+                          !isUser &&
+                          (m.isStreaming ||
+                              messageIndex == _fakeTypingAssistantIndex ||
+                              m.content == 'Typing…' ||
+                              m.content == 'Thinking…' ||
+                              m.content == 'Thinking...');
+                      if (!isUser) {
+                        return _messageEntrance(
+                          m,
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: _buildAssistantMessage(m, isTyping),
+                          ),
+                        );
+                      }
+                      return _messageEntrance(
+                        m,
+                        AskQuestionCard(
+                          compact: widget.worldHeading != null,
+                          question: m.content,
+                          photoBytes: m.photo?.bytes,
+                          photoUrl: m.photoUrl,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              if (_sending &&
+                  _progress != null &&
+                  !_session.messages.any((message) => message.isStreaming)) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: ChatProgress(message: _progress!),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (_previewDraft != null || _scanningPreview) _capturePreview(),
+              if (_photo != null) _photoPreview(),
+              if (widget.worldHeading != null)
+                WorldComposer(
+                  onFirstCamera: _cameraHint && !_sending && !_pickingPhoto
+                      ? _firstCamera
+                      : null,
+                  sourceChips: _sourceChips,
+                  menuOpen: _sourceMenuOpen,
+                  attachmentKey: _attachmentAnchor,
+                  onSourceSelected: (value) =>
+                      unawaited(_selectChatSource(value)),
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (_) => setState(() {}),
+                  onAttach: _sending || _pickingPhoto
+                      ? null
+                      : _worldAttachmentMenu,
+                  onVoice: _sending ? null : _toggleListening,
+                  onVoiceStart: _sending
+                      ? null
+                      : () => unawaited(_voice.start()),
+                  onVoiceEnd: () => unawaited(_voice.release()),
+                  onVoiceCancel: _voice.cancel,
+                  voiceTranscript: _voice.transcript,
+                  onSend: canSend
+                      ? () => unawaited(_submit(_controller.text))
+                      : null,
+                  busy: (_sending && !_canQueueFollowUp) || _pickingPhoto,
+                  listening: _isListening,
+                  compact: keyboardVisible || compactComposer || !_worldHome,
+                )
+              else
+                Container(
+                  constraints: const BoxConstraints(
+                    minHeight: 48,
+                    maxHeight: 150,
+                  ),
+                  padding: const EdgeInsets.fromLTRB(4, 4, 6, 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.adaptive(context, const Color(0xFF171719)),
+                    borderRadius: BorderRadius.circular(
+                      widget.worldHeading != null ? 28 : 18,
+                    ),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: .08),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: widget.worldHeading != null
+                            ? 'Capture or attach'
+                            : 'Attach photo',
+                        onPressed: _sending || _pickingPhoto
+                            ? null
+                            : widget.worldHeading != null
+                            ? _worldAttachmentMenu
+                            : _attachPhoto,
+                        icon: _pickingPhoto
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                ),
+                              )
+                            : Icon(
+                                Icons.add_rounded,
+                                color: _sending
+                                    ? AppTheme.textSecondary(context)
+                                    : AppTheme.accentForeground(context),
+                                size: 22,
+                              ),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          minLines:
+                              widget.worldHeading != null &&
+                                  (_worldHome || _session.messages.isEmpty) &&
+                                  !keyboardVisible &&
+                                  !compactComposer
+                              ? 3
+                              : 1,
+                          maxLines: compactComposer ? 1 : 4,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          onChanged: (_) => setState(() {}),
+                          style: AppTypography.bodyStyleOf(
+                            context,
+                            TextStyle(
+                              color: AppTheme.foreground(context, Colors.white),
+                              fontSize: 16,
+                            ),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: compactComposer
+                                ? 'Ask...'
+                                : widget.worldHeading != null
+                                ? 'Describe your world...'
+                                : 'Ask a question',
+                            hintMaxLines: 1,
+                            isDense: true,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.zero,
+                            hintStyle: AppTypography.bodyStyleOf(
+                              context,
+                              TextStyle(
+                                fontSize: 16,
+                                color: AppTheme.foreground(
+                                  context,
+                                  Color(0xFF636366),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 38,
+                          height: 38,
+                        ),
+                        icon: Icon(
+                          _isListening
+                              ? Icons.mic_rounded
+                              : Icons.mic_none_rounded,
+                          color: _isListening
+                              ? AppTheme.foreground(
+                                  context,
+                                  const Color(0xFFF2F2F7),
+                                )
+                              : AppTheme.foreground(context, Colors.white38),
+                          size: 21,
+                        ),
+                        onPressed: _toggleListening,
+                      ),
+                      GestureDetector(
+                        onTap: canSend
+                            ? () => unawaited(_submit(_controller.text))
+                            : null,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _sending && !_canQueueFollowUp
+                                ? AppTheme.adaptive(
+                                    context,
+                                    const Color(0xFF2C2C2E),
+                                  )
+                                : canSend
+                                ? AppTheme.action
+                                : AppTheme.adaptive(
+                                    context,
+                                    const Color(0xFF2C2C2E),
+                                  ),
+                          ),
+                          child: _sending && !_canQueueFollowUp
+                              ? Padding(
+                                  padding: EdgeInsets.all(9),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.7,
+                                    color: AppTheme.adaptive(
+                                      context,
+                                      Color(0xFF8E8E93),
+                                    ),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.arrow_upward_rounded,
+                                  color: canSend
+                                      ? AppTheme.onAction
+                                      : AppTheme.foreground(
+                                          context,
+                                          const Color(0xFF636366),
+                                        ),
+                                  size: 20,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (widget.worldHeading != null &&
+                  (_worldHome || _session.messages.isEmpty) &&
+                  _previewDraft == null &&
+                  !_scanningPreview)
+                const Spacer(flex: 3),
             ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
+          ),
         ),
       ),
     );
@@ -3014,27 +3943,52 @@ class _ChatMessage {
     required this.content,
     required this.timestamp,
     this.isStreaming = false,
+    this.live = false,
     this.navHint,
+    this.answerContext,
+    this.photo,
+    this.photoUrl,
+    this.onRetry,
+    this.messageId,
+    this.failed = false,
   });
 
+  final String? messageId;
+  final bool failed;
+  final VoidCallback? onRetry;
   final String role;
   final String content;
   final int timestamp;
   final bool isStreaming;
+  final bool live;
   final Map<String, dynamic>? navHint;
+  final AskAnswerContext? answerContext;
+  final AskPhoto? photo;
+  final String? photoUrl;
 
   _ChatMessage copyWith({
     String? content,
     int? timestamp,
     bool? isStreaming,
     Map<String, dynamic>? navHint,
+    AskAnswerContext? answerContext,
+    String? photoUrl,
+    bool clearRetry = false,
+    String? messageId,
   }) {
     return _ChatMessage(
       role: role,
+      onRetry: clearRetry ? null : onRetry,
+      messageId: messageId ?? this.messageId,
+      failed: failed,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
+      live: live,
       navHint: navHint ?? this.navHint,
+      answerContext: answerContext ?? this.answerContext,
+      photo: photo,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

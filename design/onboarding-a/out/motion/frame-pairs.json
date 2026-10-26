@@ -1,0 +1,51 @@
+[
+  {
+    "phase": "intro",
+    "reference_s": 2.1,
+    "native_path": "personal",
+    "native_s": 4,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "choose",
+    "reference_s": 6.8,
+    "native_path": "team",
+    "native_s": 234,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "organization",
+    "reference_s": 12.3,
+    "native_path": "team",
+    "native_s": 210,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "keyboard",
+    "reference_s": 11,
+    "native_path": "team",
+    "native_s": 203,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "workspace",
+    "reference_s": 16.5,
+    "native_path": "team",
+    "native_s": 254,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "inventory",
+    "reference_s": 20.8,
+    "native_path": "personal",
+    "native_s": 72,
+    "alignment": "pose, not identical elapsed time"
+  },
+  {
+    "phase": "recap",
+    "reference_s": 25.5,
+    "native_path": "team",
+    "native_s": 310,
+    "alignment": "pose, not identical elapsed time"
+  }
+]

@@ -1,0 +1,50 @@
+{
+  "version": "1.1.1",
+  "version_id": "3b814b33-0ce5-4419-953b-07a9c8040368",
+  "locale": "en-US",
+  "state": "PREPARE_FOR_SUBMISSION",
+  "submitted": false,
+  "verified_at": "2026-10-25T17:32:26Z",
+  "sets": [
+    {
+      "display": "APP_IPAD_PRO_129",
+      "dimensions": [
+        2048,
+        2732
+      ],
+      "count": 6,
+      "numbered_order": true,
+      "all_complete": true
+    },
+    {
+      "display": "APP_IPHONE_67",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "count": 6,
+      "numbered_order": true,
+      "all_complete": true
+    },
+    {
+      "display": "APP_IPHONE_65",
+      "dimensions": [
+        1284,
+        2778
+      ],
+      "count": 6,
+      "numbered_order": true,
+      "all_complete": true
+    },
+    {
+      "display": "APP_IPAD_PRO_3GEN_129",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "count": 6,
+      "numbered_order": true,
+      "all_complete": true
+    }
+  ]
+}
