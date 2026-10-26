@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { JoinInvitationClient } from "@/components/site/join-invitation-client";
 import { APP_STORE_ID, invitationUniversalLink } from "@/lib/app-store";
+import { normalizeInvitationCode } from "@/lib/invitation";
 
 type Params = { params: Promise<{ code: string }> };
 
 function normalizeCode(rawCode: string) {
-  const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-  return code.length === 6 ? code : "";
+  return normalizeInvitationCode(rawCode);
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: "Join a shared Space",
     description: "Accept a FindEZ Space invitation in your browser.",
     robots: { index: false, follow: false },
-    // Safari's Smart App Banner hands this invitation to the app after install.
+    // The banner opens this link in an installed app. Account handoff handles installation.
     itunes: code ? { appId: APP_STORE_ID, appArgument: invitationUniversalLink("space", code) } : { appId: APP_STORE_ID },
   };
 }

@@ -5,21 +5,21 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import jwt
+import jwt
 
 from app.core.config import get_settings
 from app.core.errors import unauthorized
 from app.services.supabase_client import get_supabase_admin
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
 
 def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for", "")
-    if xff:
-        return xff.split(",")[0].strip()
+    # Uvicorn resolves forwarded addresses only from the configured local proxy.
+    # Raw forwarding headers are client-controlled and must not override it.
     return request.client.host if request.client else "unknown"
 
 
@@ -30,6 +30,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 class AuthenticatedUser:
     user_id: str
     first_name: str | None = None
+    actor_id: str | None = None
 
 
 class _KidNotFound(Exception):
@@ -157,12 +158,15 @@ async def get_current_user(
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 audience=settings.supabase_jwt_audience,
-                options={"verify_iss": False},
+                issuer=str(settings.supabase_public_url or settings.supabase_url).rstrip("/") + "/auth/v1",
+                options={"require": ["exp", "iat", "iss", "sub", "aud"]},
             )
         except Exception:
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
     else:
+        if header_alg not in ("ES256", "RS256"):
+            raise unauthorized("Unsupported token algorithm")
         jwks_url = str(settings.supabase_jwks_url)
         jwks = await _jwks_cache.get(jwks_url)
 
@@ -192,19 +196,40 @@ async def get_current_user(
         try:
             claims = jwt.decode(
                 token,
-                jwk,
+                jwt.PyJWK.from_dict(jwk).key,
                 algorithms=["ES256", "RS256"],
                 audience=settings.supabase_jwt_audience,
-                options={"verify_iss": False},
+                issuer=str(settings.supabase_public_url or settings.supabase_url).rstrip("/") + "/auth/v1",
+                options={"require": ["exp", "iat", "iss", "sub", "aud"]},
             )
         except Exception:
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
 
+    # Down-scoped integration JWTs are for RLS-backed integration calls only.
+    # Treating one as an account session would bypass its scopes on private APIs.
+    if claims.get("api_key_id"):
+        raise unauthorized("Use the integration API with this credential")
+
     user_id = claims.get("sub")
     if not user_id:
         logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
         raise unauthorized("Invalid token payload")
+
+    # A still-valid JWT must not keep a deleted or suspended account active.
+    # Check the authoritative account on every protected request; do not cache a
+    # positive result across role/account changes.
+    from app.services.supabase_client import get_supabase_raw
+    try:
+        active = await run_in_threadpool(lambda: get_supabase_raw().rpc(
+            'findez_actor_active', {'p_actor': str(user_id)}
+        ).execute().data)
+    except Exception:
+        raise HTTPException(503, 'Account access could not be verified. Try again.') from None
+    if active is False:
+        raise unauthorized('This account is unavailable or suspended.')
+    if active is not True:
+        raise HTTPException(503, 'Account access could not be verified. Try again.')
 
     cached, first_name = _get_cached_first_name(user_id)
     if not cached:
@@ -221,4 +246,6 @@ async def get_current_user(
             first_name = None
         _cache_first_name(user_id, first_name)
 
+    from app.services.resource_access import begin_actor
+    begin_actor(str(user_id))
     return AuthenticatedUser(user_id=str(user_id), first_name=first_name)

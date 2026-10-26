@@ -1,3 +1,4 @@
+from postgrest.exceptions import APIError
 """
 Team management endpoints.
 
@@ -21,6 +22,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
 from app.services import teams_repo
+from app.services.team_categories import TeamCategory
 from app.services.email_delivery import send_transactional_email
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
@@ -31,10 +33,8 @@ logger = logging.getLogger(__name__)
 
 class CreateTeamRequest(BaseModel):
     name: str = Field(max_length=100)
-    program: Literal[
-        "robotics", "ftc", "frc", "vex", "fll",
-        "education", "makerspace", "club", "business", "other",
-    ]
+    program: TeamCategory
+    custom_category: str | None = Field(default=None, max_length=60)
     rookie: bool = False  # if True, set plan='free_rookie', allowed once per owner
 
 
@@ -115,6 +115,7 @@ def create_team_route(
             user_id=user.user_id,
             name=payload.name,
             program=payload.program,
+            custom_category=payload.custom_category,
         )
         if payload.rookie:
             expires_at = _season_expires_at()
@@ -159,8 +160,13 @@ def join_team_route(
         if "NOT_FOUND" in str(exc):
             raise HTTPException(404, "Invalid join code")
         raise HTTPException(400, str(exc))
+    except APIError as exc:
+        if exc.code == "23514":
+            raise HTTPException(422, "Workspace access changed. Accept the organization invitation first, then reopen the current workspace link.")
+        logger.exception("Failed to save workspace invitation user=%s", user.user_id)
+        raise HTTPException(503, "Could not save workspace access. Please try again.")
     except Exception:
-        logger.exception("Failed to join team user=%s code=%s", user.user_id, payload.code)
+        logger.exception("Failed to join team user=%s", user.user_id)
         raise HTTPException(500, "Could not join team. Please try again.")
 
 
@@ -300,6 +306,11 @@ def delete_team_route(
         return {"deleted": deleted}
     except PermissionError:
         raise HTTPException(403, "Only the team owner can delete this team.")
+
+    except APIError as exc:
+        if exc.code in ('23505','23514'):
+            raise HTTPException(409,'Resolve linked project allocations or duplicate Space names before removing this workspace.')
+        raise
 
 
 @router.get("/{team_id}/members")

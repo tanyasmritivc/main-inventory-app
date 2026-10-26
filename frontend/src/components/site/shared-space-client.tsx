@@ -10,6 +10,7 @@ import {
   getShareMembers,
   getMyShares,
   getJoinedShares,
+  getSpaceInvite,
   itemDisplayDescription,
   itemDisplayName,
   removeShareMember,
@@ -26,6 +27,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 import { userFacingError } from "@/lib/user-facing-error";
+
+import { ItemDetails } from "@/components/site/item-details";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -60,7 +63,7 @@ function getInitials(name: string): string {
 
 export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const supabase = createSupabaseBrowserClient();
-  const { confirmAction } = useAppDialog();
+  const { confirmAction, promptValue } = useAppDialog();
 
   const [token, setToken] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
+  const [copyingInvite, setCopyingInvite] = useState(false);
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('Other');
@@ -86,6 +90,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [editItemError, setEditItemError] = useState<string | null>(null);
   const [savingItem, setSavingItem] = useState(false);
 
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
@@ -340,6 +345,16 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
           </span>
         </div>
 
+        <button type="button" disabled={copyingInvite || !token} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, border: '1px solid var(--light-line)', background: 'var(--light-panel)', color: 'var(--text-primary)', cursor: 'pointer' }} onClick={async () => {
+          if (!token || copyingInvite) return;
+          setCopyingInvite(true); setError(null);
+          try {
+            const invite = await getSpaceInvite({ token, share_id: shareId });
+            try { await navigator.clipboard.writeText(invite.invite_url); }
+            catch { await promptValue({ title: 'Copy invitation link', message: 'Anyone with this link can join with the access set by the owner.', label: 'Invitation link', initialValue: invite.invite_url, confirmLabel: 'Done' }); }
+          } catch (reason) { setError(userFacingError(reason, 'This invitation could not be shared.')); }
+          finally { setCopyingInvite(false); }
+        }}>{copyingInvite ? 'Copying...' : 'Copy invitation link'}</button>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '6px 0 0', letterSpacing: '-0.01em' }}>
           {items.length} item{items.length !== 1 ? 's' : ''} · {members.length} member{members.length !== 1 ? 's' : ''}
         </p>
@@ -487,7 +502,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
               <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
                 <div style={{ minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>
-                    {itemDisplayName(item)}
+                    <button type="button" onClick={() => setDetailItem(item)} style={{ background: "transparent", border: 0, color: "inherit", padding: 0, textAlign: "left" }}>{itemDisplayName(item)}</button>
                   </div>
                   {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{itemDisplayDescription(item)}</div>}
                 </div>
@@ -496,7 +511,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                     {item.category ?? '—'}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
+                <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)' }}>
                   {item.quantity}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
@@ -525,6 +540,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         )}
       </div>
 
+<Dialog open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}><DialogContent className="workspace-dialog" aria-describedby={undefined}><DialogTitle>Shared item</DialogTitle>{detailItem && <ItemDetails item={detailItem} context={{ kind: "shared", shareId }} canEdit={permission === "edit"} onChanged={next => { setDetailItem(next); setItems(current => current.map(i => i.item_id === next.item_id ? next : i)); }}/>}</DialogContent></Dialog>
       <Dialog open={addItemOpen} onOpenChange={(open) => { setAddItemOpen(open); if (!open) setAddItemError(null); }}>
         <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader><DialogTitle style={{ color: 'var(--text-primary)' }}>Add to {spaceName}</DialogTitle></DialogHeader>

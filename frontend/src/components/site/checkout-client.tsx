@@ -1,4 +1,5 @@
 'use client';
+import { canEditInventory } from '@/lib/inventory-selection';
 
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, RefreshCw, RotateCcw } from 'lucide-react';
@@ -116,7 +117,7 @@ export function CheckoutClient() {
                   <div className="checkout-item"><strong>{itemName}</strong><small>{location || 'No saved location'}</small></div>
                   <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#929292', color: '#ffffff' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
                   <div className={`checkout-due ${overdue ? 'overdue' : ''}`}>{dueBackAt ? (overdue ? `Overdue · ${timeAgo(dueBackAt)}` : timeAgo(dueBackAt)) : 'No due date'}</div>
-                  <button className="product-button" type="button" onClick={() => void handleReturn(checkoutId, itemName)} disabled={returning === checkoutId}><RotateCcw size={13} /> {returning === checkoutId ? 'Returning…' : 'Return'}</button>
+                  <button className="product-button" type="button" onClick={() => void handleReturn(checkoutId, itemName)} disabled={returning === checkoutId || !canEditInventory()}><RotateCcw size={13} /> {returning === checkoutId ? 'Returning…' : 'Return'}</button>
                 </article>
               );
             })}

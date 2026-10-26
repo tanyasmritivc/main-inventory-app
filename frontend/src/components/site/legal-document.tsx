@@ -1,33 +1,22 @@
 import type { ReactNode } from "react";
+import styles from "./legal-document.module.css";
 
+export type LegalSection = { id?: string; heading: string; body: string[]; bullets?: string[]; emphasized?: boolean };
 export function LegalDocument({ title, effective, intro, sections, footer }: {
-  title: string;
-  effective: string;
-  intro: string;
-  sections: { heading: string; body: string[]; bullets?: string[]; emphasized?: boolean }[];
-  footer: ReactNode;
+  title: string; effective: string; intro: string; sections: LegalSection[]; footer: ReactNode;
 }) {
-  return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-14 flex-1">
-      <article className="space-y-8 text-sm leading-7 text-foreground/90">
-        <header className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
-          <p className="text-muted-foreground">Effective: {effective}</p>
-          <p>{intro}</p>
-        </header>
-        {sections.map((section) => (
-          <section key={section.heading} className="space-y-3">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">{section.heading}</h2>
-            {section.body.map((paragraph) => (
-              <p key={paragraph} className={section.emphasized ? "font-medium" : undefined}>{paragraph}</p>
-            ))}
-            {section.bullets && <ul className="list-disc space-y-2 pl-5">
-              {section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
-            </ul>}
-          </section>
-        ))}
-      </article>
-      <footer className="mt-12 flex flex-wrap items-center gap-3 border-t pt-6 text-xs text-muted-foreground">{footer}</footer>
-    </main>
-  );
+  return <main className={styles.document}>
+    <article>
+      <header className={styles.intro}><h1>{title}</h1><p className={styles.date}>Effective {effective}</p><p>{intro}</p></header>
+      <nav className={styles.contents} aria-label={`${title} contents`}>
+        {sections.map((section, index) => <a key={section.heading} href={`#${section.id || `section-${index + 1}`}`}>{section.heading.replace(/^\d+\.\s*/, "")}</a>)}
+      </nav>
+      {sections.map((section, index) => <section key={section.heading} id={section.id || `section-${index + 1}`} className={styles.section}>
+        <h2>{section.heading}</h2>
+        {section.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        {section.bullets && <ul>{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
+      </section>)}
+    </article>
+    <footer className={styles.footer}>{footer}</footer>
+  </main>;
 }

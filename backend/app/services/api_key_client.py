@@ -1,6 +1,6 @@
 import time
 
-from jose import jwt
+import jwt
 from postgrest import SyncPostgrestClient
 
 from app.core.api_key_auth import APIKeyPrincipal

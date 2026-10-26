@@ -1,3 +1,4 @@
+from typing import Literal
 
 from functools import lru_cache
 
@@ -34,16 +35,20 @@ class Settings(BaseSettings):
     supabase_storage_public: bool = True
     supabase_storage_signed_url_ttl_seconds: int = 3600
 
-    # All language tasks use the self-hosted FTCTools agent gateway. Photo
-    # recognition uses FIND below. There is intentionally no external fallback.
+    # Language and GLM vision tasks use the existing FTCTools agent gateway.
+    # Extraction selects one provider below; there is no silent fallback.
     findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"
+    findez_chat_vision_model: str = "glm-5.3-flash-agent"
+    # Shared photo extraction switch; FIND remains available for separate development.
+    findez_extraction_provider: Literal["find", "glm"] = "find"
+    # Deprecated chat-only flag retained for environment compatibility.
+    findez_chat_extraction: str = "find"
     findez_agent_timezone: str = "America/Los_Angeles"
 
-    # FIND is the server-side inventory-photo ingestion pipeline used by both
-    # web and mobile through POST /inventory/extract_from_image. Keep its
-    # bearer token out of client bundles and source control.
+    # FIND stays available as an explicit extraction provider for development
+    # and rollback. Keep its bearer token out of client bundles and source control.
     find_api_base_url: AnyHttpUrl | None = None
     find_api_key: str | None = None
     # The current FIND appliance exposes HTTP only. Keep this false everywhere
@@ -90,7 +95,7 @@ class Settings(BaseSettings):
     # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
     # Does not affect Stripe code or DB data — safe to remove when billing goes live.
     pilot_mode: bool = False
-    # ISO-8601 timestamp when the pilot ends, e.g. "2026-09-11T23:59:59Z".
+    # ISO-8601 timestamp when the pilot ends, e.g. "2026-11-01T23:59:59Z".
     # Surfaced in /me/limits as pilot_ends_at and pilot_notice. Informational only —
     # limits do not flip automatically; pilot_mode must be toggled manually.
     pilot_ends_at: str | None = None
