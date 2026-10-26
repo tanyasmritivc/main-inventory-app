@@ -1,3 +1,7 @@
+## October 26 — Baby-blue Upgrade styling (active)
+
+`style/web-upgrade-blue` owns only the sidebar Upgrade CSS in `/private/tmp/findez-plans-usage`. Add a soft baby-blue glass gradient, restrained sheen, visible focus and reduced-motion fallback. Preserve dimensions, link behavior and pricing.
+
 ## October 26 — Web plans, sidebar Upgrade and usage deployed (PR242)
 
 Runtime `9d39948` is live in self-hosted `plans-usage-20261026/frontend`, build `bhC0HsnhcOvcIhc4TXAep`. Shared Free/Plus/Team cards now cover public pricing, the skippable first-entry introduction and account Plans & usage. User selected **10 Team members** at unchanged $29/month or $299/year. Intro dismissal persists in account metadata; sidebar Upgrade opens real account-owned record/Space counts. Pilot AI usage correctly says Not metered; paid actions remain Coming soon and early access retains no plan quotas/automatic charges/cutoff.
