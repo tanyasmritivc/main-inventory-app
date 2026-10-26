@@ -10,6 +10,7 @@ import { parseAskContext, type AskAnswerContext } from "@/lib/ask-answer";
 
 export type AskStreamEvent = {
   type?: string;
+  source?: string;
   content?: string;
   delta?: string;
   assistant_message?: string;
@@ -87,6 +88,7 @@ export async function askQuestion({
   signal,
   onDelta,
   onStatus,
+  onActivity,
   onReset,
   onDone,
 }: {
@@ -103,6 +105,7 @@ export async function askQuestion({
   signal: AbortSignal;
   onDelta: (text: string) => void;
   onStatus: (text: string) => void;
+  onActivity?: () => void;
   onReset?: () => void;
   onDone: (result: {
     conversationId?: string;
@@ -179,6 +182,9 @@ export async function askQuestion({
     );
   await readAskEvents(response.body, (event) => {
     assertInventory(selected);
+    if ((event.type === "activity" && event.source === "model") ||
+        event.type === "status" || event.type === "capture" || event.content || event.delta)
+      onActivity?.();
     if (event.type === "capture" && event.conversation_id) {
       const context = parseAskContext(event.answer_context);
       if (context) onCapture?.(event.conversation_id, context);
