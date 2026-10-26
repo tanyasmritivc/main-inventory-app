@@ -2,7 +2,7 @@ import type { LegalSection } from "@/components/site/legal-document";
 
 export const LEGAL_VERSION = "2026-10-18";
 export const LEGAL_EFFECTIVE_DATE = "October 18, 2026";
-export const PRIVACY_EFFECTIVE_DATE = "October 18, 2026";
+export const PRIVACY_EFFECTIVE_DATE = "October 25, 2026";
 export const COOKIE_NOTICE_TEXT = "FindEZ uses cookies for sign-in and saves preferences and drafts on this device. No analytics or advertising cookies are enabled.";
 
 export const privacySections: LegalSection[] = [
@@ -22,11 +22,12 @@ export const privacySections: LegalSection[] = [
     "bullets": [
       "Account and profile information: email, account identifiers, sign-in method, name, optional profile fields, team role, and account eligibility and Terms acknowledgments.",
       "Optional setup answers: your intended use, inventory types, main goal, and whether you work alone or with others. Completed answers are linked to your account after sign-in, are not shared with Team members, and can be updated in Profile.",
-      "Setup drafts: the personal or team setup choices and organization, workspace, and inventory names you enter. Drafts can remain on your device before sign-in; completing setup creates the account resources you confirm.",
-      "Optional account memory: preferences you explicitly save and private location aliases for an inventory. Settings > Memory lets you review, edit, export, forget, or disable this memory. Disabling memory does not delete your inventory or conversation history.",
+      "Onboarding drafts: lists and location names you enter can remain on your device before sign-in. Real lists are saved to your account after sign-in; the labeled sample demonstration does not create inventory records.",
+      "Account personalization: confirmed preferences and aliases, along with limited signals from inventory searches, successful actions, and response feedback, help tailor answers and retrieval. Personalization is enabled by default unless you have disabled it. Settings > Memory lets you review, edit, export, forget, or disable personalization. Disabling it does not delete inventory or conversation history. Inferred interests are separate from confirmed preferences and current inventory facts.",
       "Workspace content: inventory names, quantities, physical locations you enter, barcodes, part numbers, Spaces, notes, documents, project kits, team tasks, and sharing permissions.",
       "Submitted content: the photos, spreadsheets, prompts, corrections, and other files you choose to upload. Files can include metadata, including location information embedded by the device that created them.",
       "Service information: IP addresses, request and error logs, timestamps, account activity, and device tokens used for phone notifications.",
+      "Response feedback: ratings, optional reasons and comments are linked to the assistant response and available execution diagnostics. We use them to investigate failures and evaluate quality. A rating does not directly change inventory facts or automatically train model weights.",
       "Purchase information: plan and entitlement records. Payment providers handle payment details under their own notices; FindEZ does not need your full card number to provide inventory features."
     ]
   },

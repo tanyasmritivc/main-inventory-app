@@ -6,7 +6,7 @@ import { CookieNotice } from "@/components/site/cookie-notice";
 import { LEGAL_VERSION } from "@/lib/legal-content";
 jest.mock("@/lib/use-marketing-session", () => ({ useMarketingSession: () => false }));
 
-test.each([[PrivacyPage, "October 18, 2026"], [TermsPage, "October 18, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
+test.each([[PrivacyPage, "October 25, 2026"], [TermsPage, "October 18, 2026"]] as const)("canonical legal pages have meaningful section targets and current verified contact", (Page, effectiveDate) => {
   const { container } = render(<Page />);
   expect(screen.getByText(`Effective ${effectiveDate}`)).toBeTruthy();
   expect(screen.getByText(/887 Poppy Ct, Sunnyvale, CA 94086/)).toBeTruthy();
@@ -22,6 +22,8 @@ test("the privacy page describes actual storage and photo limitations without cl
   expect(screen.getByText(/photos require authenticated requests/)).toBeTruthy();
   expect(screen.getByText(/display window, not a promise/)).toBeTruthy();
   expect(screen.getByText(/not agreement to Terms/)).toBeTruthy();
+  expect(screen.getByText(/Personalization is enabled by default unless you have disabled it/)).toBeTruthy();
+  expect(screen.getByText(/does not directly change inventory facts or automatically train model weights/)).toBeTruthy();
 });
 test("the storage notice can be dismissed without enabling tracking or accepting Terms", () => {
   localStorage.removeItem("findez-cookie-notice");
