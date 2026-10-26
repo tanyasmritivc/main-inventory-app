@@ -1,5 +1,9 @@
 ## October 25 - Chat activity and recovery deployed (PR227)
 
+## October 25 — Response feedback migrated and deployed
+
+User explicitly authorized migration, self-hosted deployment and TestFlight delivery. Migrations 082 and 083 are live with RLS/service-only access, cascading deletion and retention. API runtime `c7053719ac3f385a22cdccfbd92e4425d30d924c` is published; original feature runtime `2f6bbd8` plus explicit stale-rating conflict correction. Private backups and live-schema rehearsal passed; 13 SQL assertions passed. All five final CI gates passed (40259822005), 27 focused conflict tests passed, prior full backend suite passed 1,526 plus 10 subtests. Live authenticated QA verified idempotent ratings, negative reasons/comments, reload, prompt stale conflicts, foreign-access denial, deletion, canonical SSE and read-only regeneration without inventory writes. Both disposable accounts were removed. API/database public HTTPS checks and retention worker pass; 119 unrelated runtime files and deployed agent routers preserved. Pilot access still has no cutoff; personalized push remains disabled; GLM extraction unchanged. Rollback files and database backup are in `/home/ubuntu/findez-response-feedback-20261025`. No public App Store submission. Receipt: `docs/plans/response-feedback-api-receipt.json`.
+
 Runtime `7e82e7e` is live after all five exact-source CI gates passed (40250686843).
 Fixed labels follow actual stream/tool work; reasoning and arguments remain private.
 Independent bounded answer correction survives a transport retry. Action summaries

@@ -1,6 +1,6 @@
 # Response feedback and chat controls
 
-Implementation only. Production migration, deployment and TestFlight upload are **not authorized for this task**. Three feature lanes: `feat/response-feedback-api`, `feat/chat-message-controls`, `feat/mobile-message-controls`.
+Production migration, self-hosted deployment and TestFlight upload were explicitly authorized on October 25. Public App Store submission remains unauthorized. Three feature lanes: `feat/response-feedback-api`, `feat/chat-message-controls`, `feat/mobile-message-controls`.
 
 ## Architecture and behavior
 
@@ -14,7 +14,7 @@ World-chat regeneration is read-only on the server, resolves the original authen
 
 ## Persistence and security
 
-Migration **082_response_feedback.sql**, after 081, adds one table and service-only functions. Unique `(user_id,message_id)` provides idempotency. Identical retries return the existing revision; changed ratings require the expected revision. The backend validates the authenticated owner, message role, world membership, rating, reason and optional comment. User/system errors, direct receipt placeholders and empty replies cannot be rated. Client-supplied identities, review labels or execution claims are rejected.
+Migration **082_response_feedback.sql**, after 081, adds one table and service-only functions. Unique `(user_id,message_id)` provides idempotency. Identical retries return the existing revision; changed ratings require the expected revision. Migration 083 returns an explicit conflict for stale revisions, without database serialization retries. The backend validates the authenticated owner, message role, world membership, rating, reason and optional comment. User/system errors, direct receipt placeholders and empty replies cannot be rated. Client-supplied identities, review labels or execution claims are rejected.
 
 RLS is enabled; anon/authenticated roles have no direct table or RPC access. Only authenticated backend routes using the service role may read/write. Foreign keys cascade conversation/message/account deletion. Private responses use `Cache-Control: private, no-store`. PUT is limited to 30/minute; deletes to 10/minute. Eight allowlisted reason codes are validated in code; storage allows future additive codes without a migration. Comments are capped at 1,000 characters.
 
@@ -46,9 +46,9 @@ PYTHONPATH=backend python backend/tools/response_feedback_report.py --baseline r
 
 Comparison inputs map the **same stable synthetic/adjudicated case IDs** to measured dimension labels. Changed case sets fail; a correct→incorrect regression exits 2. Run both versions on the fixed cases using the existing provider/test harness before supplying measured results. The command does not itself call models or manufacture labels. Reports include rating coverage/rates, reasons, operation outcomes and model/response-version groups (minimum five ratings per group). Unrated examples are not negative; unreviewed/unsupported labels are excluded. Exports are selection-biased, not estimates of overall model accuracy. Output files use mode 0600 and omit comments/transcripts/identities. Do not publish raw exports.
 
-## Deployment sequence — pending explicit authorization
+## Deployment sequence
 
-1. Rehearse 082 on a staging copy with the existing 081 schema, take a backup, and apply 082 before backend publication. The isolated fixture has synthetic users only; it does not migrate production.
+1. Rehearse 082 and 083 on a staging copy with the existing 081 schema, take a backup, and apply them before backend publication. Migration 083 uses an explicit `PT409` for stale revisions: the live gateway did not promptly surface `40001`, causing a 60-second temporary-error response during release QA. The isolated fixture has synthetic users only; it does not migrate production.
 2. Deploy API first, then web and mobile. Existing clients tolerate additive completion metadata. New rating writes require 082.
 3. The existing personalization worker now invokes `findez_response_feedback_cleanup`: clear comments after 30 days and delete ratings after 180 days. No new scheduler/provider/credential is introduced. Monitor worker failures. Reset removes learning eligibility immediately; full feedback deletion uses DELETE or account deletion.
 4. Verify two isolated staging users: rate/change/reload, denied foreign message, confirmation and safe regeneration, feedback network failure, both themes, foreground/restart. Do not rate customer messages as QA.
@@ -58,7 +58,7 @@ Comparison inputs map the **same stable synthetic/adjudicated case IDs** to meas
 
 Automated coverage includes feedback validation/ownership, revisions and lost-response retry, deletion/retention/RLS, opt-out/generation boundaries, sparse evidence, diagnostic truth distinctions, offline filtering/regression checks, Enter/IME/composer behavior, exact-message controls, persisted selection, stream completion/cancellation and read-only retry. SQL runs on an empty disposable PostgreSQL database and replays migration 082. The CI SQL job includes this fixture.
 
-No real production feedback has been written and no production model evaluation or training has been performed. Live authenticated persistence across released app restarts remains a staging/release check after migration authorization. Legacy replies may have unknown model version or incomplete operation diagnostics. No automatic inspection/correction of an alleged wrong quantity is performed; reviewers correlate existing receipts and tests.
+Release QA uses disposable authenticated accounts and synthetic messages only. No customer feedback or inventory data is modified and no model training is performed. Physical-device acceptance after TestFlight installation remains unverified. Legacy replies may have unknown model version or incomplete operation diagnostics. No automatic inspection/correction of an alleged wrong quantity is performed; reviewers correlate existing receipts and tests.
 
 ### Verified locally (2026-10-25)
 
@@ -67,3 +67,13 @@ No real production feedback has been written and no production model evaluation 
 - Web: 584 tests passed; TypeScript passed; ESLint has 0 errors and the same 52 existing warnings. Production webpack build passed with public fixture configuration. Turbopack cannot resolve this worktree's external node_modules symlink; webpack is the repository's existing supported check.
 - Mobile: Flutter analysis clean; focused chat/feedback/cancellation suite 62 passed, inventory isolation suite 16 passed. Five feedback tests also passed on iPhone 17 Pro simulator (iOS 26.5) using a synthetic API. Full-suite result is recorded in the mobile lane.
 - No production migration, runtime deployment, TestFlight upload, real user feedback or inventory mutation was performed.
+
+### Authorized release results (2026-10-25)
+
+- Self-hosted API and website published. Migrations 082 and 083 applied after private database backup and live-schema rehearsal. Previous runtime releases retained.
+- Release QA found stale `40001` revisions returned 503 after approximately 60 seconds through the live gateway. Migration 083 uses explicit `PT409`; the backend accepts it as 409. The corrected live check completes promptly. 27 focused tests, 13 isolated SQL assertions and all five final API CI gates passed.
+- Two disposable accounts verified actual HTTPS rating upsert/deduplication, change/reload, reason/comment storage, stale revision conflicts, cross-user denial, unsupported reasons, deletion, opt-out and execution-diagnostic boundaries. A real provider response produced exactly one durable SSE completion; read-only regeneration replaced it in history without inventory writes. Both accounts and their conversations/feedback were removed.
+- Public API/database health, deployed runtime hashes and the retention worker passed. Production customer inventory was not modified. Personalized push remains disabled and prelaunch access has no cutoff.
+- Website release `response-feedback-20261025`, build `p3PYYDc0JiTVin8HQuocq`, passed the production build and 22 route checks. Public signed-out chat correctly redirects to sign-in. No Vercel deployment was used.
+- Apple acknowledged 1.1.1 (141), delivery `37e20d76-fb6e-4563-ad52-14c224f28497`. Clean archive/export signing, 34 device binaries per package, privacy/configuration and Apple validation passed. Processing/tester availability were not polled. Physical-device acceptance remains unverified. No public App Store submission.
+- Receipts are recorded separately in the API, web and mobile feature lanes. All implementation and delivery commits are pushed; no additional binary is required for documentation-only receipts.

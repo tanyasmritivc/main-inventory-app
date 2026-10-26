@@ -1,0 +1,43 @@
+{
+  "published": true,
+  "source": "c7053719ac3f385a22cdccfbd92e4425d30d924c",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_denied": true,
+  "unrelated_files_preserved": 119,
+  "push_dispatch_enabled": false,
+  "pilot_mode": true,
+  "extraction_provider": "glm",
+  "initial_source": "2f6bbd896cd1c799a9448348caa1e241f8d86665",
+  "migrations": [
+    "082_response_feedback.sql",
+    "083_response_feedback_conflict.sql"
+  ],
+  "schema_backup": true,
+  "live_schema_rehearsal": true,
+  "sql_assertions_passed": 13,
+  "ci_run": 40259822005,
+  "ci_gates": "all five passed",
+  "backend_tests_passed": 1526,
+  "backend_subtests_passed": 10,
+  "focused_conflict_tests_passed": 27,
+  "public_https_health": true,
+  "public_https_database_health": true,
+  "live_checks": {
+    "checks": [
+      "positive rating and duplicate retry return the same receipt",
+      "negative reason/comment persist and reload with revision 2",
+      "stale updates, foreign access and unsupported reasons rejected",
+      "ratings do not claim execution or enable learning; delete removes feedback",
+      "live SSE returns one durable reply; safe retry replaces it in history without inventory writes",
+      "both disposable accounts and their feedback/conversations removed"
+    ],
+    "customer_inventory_modified": false,
+    "disposable_accounts_removed": 2
+  },
+  "retention_worker": "success, exit 0 after release",
+  "rollback": "/home/ubuntu/findez-response-feedback-20261025/before",
+  "rollback_database": "Leave additive feedback table in place; restore runtime first",
+  "conflict_function_backup": "/home/ubuntu/findez-response-feedback-20261025/conflict-fix/before-function.sql",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/229"
+}
