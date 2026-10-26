@@ -1,3 +1,21 @@
+## October 25 — Chat reliability fix delivered (TestFlight 140)
+
+Apple acknowledged 1.1.1 (140), runtime `35d34e34b35e4c5fa862c3c62e61164a31f484a2`,
+delivery `af1fa51c-0fee-4b17-a2bd-e2c0177771a6`. All five exact-source CI gates
+passed (40246789775), 33 focused chat tests passed, and Flutter analysis is clean.
+Retries reuse the failed assistant row and original request ID, removing duplicate
+error messages without changing layout or navigation. Signed archive/export each
+verified 34 device executables; strict signing, privacy/configuration checks and
+Apple validation passed. Processing/tester availability were not polled;
+physical-device acceptance remains unverified. No public App Store submission.
+Receipt: `docs/plans/chat-retry-mobile-receipt.json`.
+
+Shared backend fix `84a8991` is live for web and mobile: bounded generation budgets
+now allow internal reasoning plus final tool output. The deployed long-request
+probe completed with 30 records across five locations and a review card, using
+synthetic context and mocked writes. Personalization migration 081 and API PR223
+were also deployed in the separate API lane; personalized push remains disabled.
+
 ## October 25 — Personalization routing delivered to TestFlight139 (PR224)
 
 Apple acknowledged 1.1.1 (139), runtime `d7cfb0590c41a69ff528d6b4d1b06365b3a6a818`,
