@@ -12,3 +12,4 @@ class AICommandResponse(BaseModel):
     tool: str | None
     result: dict | list | None
     assistant_message: str
+    answer_context: dict | None = None

@@ -12,6 +12,7 @@ from uuid import uuid4
 from PIL import Image
 
 from app.services.agent_gateway_client import gateway_completion
+from app.services.chat_response_style import CHAT_STYLE_INSTRUCTION, format_chat_reply
 from app.services.document_text_extractor import extract_text_from_upload
 from app.services.find_pipeline import FindPipelineError, extract_inventory_items_with_find
 
@@ -101,6 +102,7 @@ def iter_assist_file_analysis_sse(
         except Exception:
             logger.exception("FIND upload analysis failed")
             assistant = "Photo analysis is temporarily unavailable. Please try again."
+        assistant = format_chat_reply(assistant)
         yield _evt({"type": "delta", "delta": assistant})
         yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
         yield "event: done\n"
@@ -130,7 +132,8 @@ def iter_assist_file_analysis_sse(
                         "content": (
                             "Summarize the supplied document accurately in 3 to 7 concise "
                             "bullets. Include visible dates, model numbers, amounts, and "
-                            "identifiers. End with one useful follow-up question."
+                            "identifiers. End with one useful follow-up question. "
+                            + CHAT_STYLE_INSTRUCTION
                         ),
                     },
                     {"role": "user", "content": f"Filename: {name}\n\n{clipped}"},
@@ -142,6 +145,7 @@ def iter_assist_file_analysis_sse(
             logger.exception("Gateway document summary failed")
             assistant = "Document analysis is temporarily unavailable. Please try again."
 
+    assistant = format_chat_reply(assistant)
     yield _evt({"type": "delta", "delta": assistant})
     yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
     yield "event: done\n"
