@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PricingClient } from "@/components/site/pricing-client";
 
 export default function PricingPage() {
-  redirect("/");
+  return <PricingClient />;
 }

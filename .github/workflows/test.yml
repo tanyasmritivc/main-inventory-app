@@ -37,7 +37,19 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: findez-test-only
           PGDATABASE: findez_api_tests
-        run: psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/catalog_write_concurrency.py
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/resource_permission_concurrency.py
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 python3 backend/tests/sql/chat_item_action_concurrency.py
+          createdb findez_memory_tests
+          PGDATABASE=findez_memory_tests psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/account_memory.sql
+          createdb personalization_ci
+          PGDATABASE=personalization_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/personalization.sql
+          PGDATABASE=personalization_ci psql -X -v ON_ERROR_STOP=1 -f backend/supabase/migrations/081_personalization_engine.sql
+          createdb response_feedback_ci
+          PGDATABASE=response_feedback_ci psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/response_feedback.sql
+          FINDEZ_DISPOSABLE_SQL_TESTS=1 PGDATABASE=personalization_ci python3 backend/tests/sql/personalization_concurrency.py
 
   backend:
     name: Backend (Python)

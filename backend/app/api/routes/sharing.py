@@ -1,12 +1,13 @@
 
 import logging
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.config import get_settings
 from app.services import sharing_service
 from app.services.supabase_client import get_supabase_admin
 from app.services.email_service import render_team_invitation, send_transactional_email
@@ -23,8 +24,9 @@ router = APIRouter(tags=["inventory"])
 logger = logging.getLogger(__name__)
 
 class CreateShareRequest(BaseModel):
-    share_name: str = Field(default="My Inventory", max_length=100)
+    share_name: str = Field(default="My Inventory", min_length=1, max_length=100)
     permission: Literal["view", "edit"] = "view"
+    space_id: uuid.UUID | None = None
 
 
 class JoinShareRequest(BaseModel):
@@ -38,6 +40,10 @@ class InviteMemberRequest(BaseModel):
 class UpdateSharedItemRequest(BaseModel):
     name: str | None = Field(default=None, max_length=200)
     category: str | None = Field(default=None, max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(default=None, max_length=20)
     quantity: int | None = Field(default=None, ge=0, le=100000)
     image_url: str | None = Field(default=None, max_length=2000)
     barcode: str | None = Field(default=None, max_length=100)
@@ -50,7 +56,9 @@ async def create_share_route(
     body: CreateShareRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    share_name = body.share_name
+    share_name = body.share_name.strip()
+    if not share_name:
+        raise HTTPException(400, "Choose a space to share.")
     permission = body.permission
     if permission not in ("view", "edit"):
         raise HTTPException(400, "Invalid permission")
@@ -71,6 +79,7 @@ async def create_share_route(
         user_id=user.user_id,
         share_name=share_name,
         permission=permission,
+        **({'space_id': str(body.space_id)} if body.space_id else {}),
     )
     return result
 
@@ -312,6 +321,27 @@ async def invite_member_by_email(
     )
 
     return {"sent": True, "email": email, "share_code": share_code}
+
+
+@router.get("/sharing/{share_id}/invite")
+def get_space_invite(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    # Members may forward the existing invitation, not create a share of their
+    # own inventory with the same name or change the owner's permissions.
+    try:
+        share, _ = sharing_service.get_share_access(
+            requesting_user_id=user.user_id, share_id=share_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(403, "This space invitation is not available to you.") from exc
+    code = share["share_code"]
+    return {
+        "share_id": share_id, "share_name": share.get("share_name") or "Shared space",
+        "permission": share.get("permission", "view"), "share_code": code,
+        "invite_url": f"{get_settings().frontend_url.rstrip('/')}/join/{code}",
+    }
 
 
 @router.get("/sharing/{share_id}/members")

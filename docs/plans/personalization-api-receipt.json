@@ -1,0 +1,47 @@
+{
+  "source_commit": "fbd19aa43e7afebacb8045ddf4438e020340fe75",
+  "pull_request": "https://github.com/tanyasmritivc/main-inventory-app/pull/223",
+  "ci_run": 40244303178,
+  "ci_all_five_jobs": "passed",
+  "production_migration_applied": true,
+  "api_deployed": true,
+  "push_dispatch_enabled": false,
+  "real_user_notifications_sent": false,
+  "local_backend_tests": 1525,
+  "sql_assertions": 40,
+  "migration_replay": "passed",
+  "concurrency": "six-worker daily cap; reset generation fence; SQL/Python priority parity passed",
+  "physical_apns_acceptance": "unverified",
+  "production_deployment": {
+    "published": true,
+    "source": "fbd19aa43e7afebacb8045ddf4438e020340fe75",
+    "api_healthy": true,
+    "database_healthy": true,
+    "anonymous_denied": true,
+    "unrelated_files_preserved": 111,
+    "push_dispatch_enabled": false,
+    "pilot_mode": true,
+    "extraction_provider": "glm",
+    "migration": "081"
+  },
+  "retention": {
+    "retention_timer": "active",
+    "interval": "5 minutes with up to 30s jitter",
+    "first_run": "success",
+    "push_dispatch_enabled": false
+  },
+  "live_verification": {
+    "postgrest_cold_profile": "passed",
+    "unauthorized_inventory": "denied",
+    "schema_test_container": "removed",
+    "private_backup": "retained",
+    "production_customer_data_tested": false
+  },
+  "backup_directory": "/home/ubuntu/findez-personalization-20261025",
+  "preserved_live_router_additions": [
+    "agent_management_router",
+    "agent_approvals_router"
+  ],
+  "public_https_health": "passed",
+  "deployed_at": "2026-10-25T23:39:38.327616+00:00"
+}
