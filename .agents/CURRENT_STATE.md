@@ -1,5 +1,9 @@
 ## October 25 - Chat confirmation fix deployed (PR228)
 
+## October 25 — Chat controls deployed on the self-hosted website
+
+Published runtime `3e1025f3ea8ae353d41f008f49317746eb8c2f1b` to `/home/ubuntu/findez-web-releases/response-feedback-20261025/frontend`, build `p3PYYDc0JiTVin8HQuocq`. Includes compact response/prompt controls, persisted ratings, Enter send/Shift+Enter newline, prompt clearing, canonical completion handling and confirmed creation copy. Production build and 22 staged/live route checks passed; public HTTPS chat correctly requires sign-in. All five CI gates passed (40254596435); 584 web tests and TypeScript pass, lint has zero errors and 52 existing warnings. Previous chat-card-json release retained for rollback. No Vercel deployment was used. Receipt: `docs/plans/response-feedback-web-receipt.json`.
+
 Runtime `9d38fb0` is live, build `RiqETwne2y6XdnkE3O8M1`.
 All five exact-source CI gates passed (40248237158). All 577 Jest tests, TypeScript,
 changed-file ESLint, production build and 22 staged/live route checks passed.
