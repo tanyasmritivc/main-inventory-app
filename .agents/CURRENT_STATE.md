@@ -1,11 +1,14 @@
-## October 25 - Chat confirmation JSON repair
+## October 25 - Chat confirmation fix deployed (PR228)
 
-Lane `fix/chat-card-json` fixes creation and item review decisions sent as raw
-strings without application/json. Pass structured objects to the existing account
-transport so Content-Type and serialization are correct. Same-card IDs, ownership,
-receipt validation and UI are unchanged. Production 422s occurred before writes.
-Verified: 577 Jest tests, TypeScript and changed-file ESLint passed, including real
-account/API transport coverage for confirm and cancel. Release pending CI/build.
+Runtime `9d38fb0` is live, build `RiqETwne2y6XdnkE3O8M1`.
+All five exact-source CI gates passed (40248237158). All 577 Jest tests, TypeScript,
+changed-file ESLint, production build and 22 staged/live route checks passed.
+Creation and item card confirm/cancel now send application/json via the existing
+account transport. No layout change or automatic confirmation. Reopen the existing
+conversation after refresh to retry its original card. The observed 422s occurred
+before any mutation. No customer inventory was changed by verification.
+Rollback: `/home/ubuntu/findez-web-releases/prelaunch-20261025/frontend`.
+Receipt: `docs/plans/chat-card-web-receipt.json`. Backend release is separate.
 
 ## October 25 - Pre-launch access delivered (PR220)
 
