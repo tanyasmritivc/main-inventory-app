@@ -1,6 +1,6 @@
-## October 25 - Web session entry fix in progress
+## October 25 - Direct signed-in web entry deployed (PR233)
 
-Branch `fix/web-auth-entry`: production middleware manifest is empty because the auth middleware sits outside `src`, while the app lives in `src/app`. Move it to the supported `src/proxy.ts` convention, restore verified-session redirects on homepage/auth routes, preserve prompt/invitation destinations and refreshed cookies, and avoid stale pre-login route cache after successful authentication. Web only; no backend/mobile/schema change.
+Runtime `e5701fc0959b71c28493de6001ebae5782f19c28` is live in the self-hosted `auth-entry-20261025/frontend` release, build `8GSX23MO4oG1DIprR6hBU`. `src/proxy.ts` now executes session refresh and redirects active sessions from homepage/signin/signup into the existing app. Successful password sign-in/signup bypass stale route caches. Prompt, invitation and recovery handoffs remain. All five CI gates passed (40267225450), 595 web tests, TypeScript, production build and 26 staged/live routes passed. ESLint: zero errors/52 existing warnings. Thirteen real-session HTTP checks passed on staging and public HTTPS with disposable accounts cleaned up, including expired-cookie refresh; Chrome verified all three entry URLs open Personal chat. Backend unchanged, previous favicon release retained for rollback. Receipt: `docs/plans/web-auth-entry-receipt.json`. No mobile or schema change.
 
 ## October 25 — Browser and search favicon refresh deployed (PR232)
 
