@@ -47,7 +47,7 @@ export function WorldActionCard({
         `/worlds/${encodeURIComponent(worldId)}/structure-actions/${encodeURIComponent(action.id)}`,
         {
           method: "POST",
-          body: JSON.stringify({ decision, supports_task_actions: true }),
+          body: { decision, supports_task_actions: true },
           signal: c.signal,
         },
       );

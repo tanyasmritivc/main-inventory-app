@@ -26,7 +26,7 @@ test("pending cards do not call the API until explicitly confirmed; a model repl
   fireEvent.click(screen.getByRole("button", { name: "Confirm additions" }));
   expect(await screen.findByText("Change confirmed")).toBeTruthy();
   expect(accountRequest).toHaveBeenCalledTimes(1);
-  expect(accountRequest).toHaveBeenCalledWith("actor", `/inventories/${inventoryId}/ai_actions/${actionId}`, expect.objectContaining({ method: "POST", body: JSON.stringify({ decision: "confirm" }) }));
+  expect(accountRequest).toHaveBeenCalledWith("actor", `/inventories/${inventoryId}/ai_actions/${actionId}`, expect.objectContaining({ method: "POST", body: { decision: "confirm" } }));
   expect(reply).toHaveBeenCalledWith({ id: "reply", content: "Added 3 bolts in Garage." });
   expect(screen.queryByRole("button", { name: "Confirm additions" })).toBeNull();
 });
@@ -83,7 +83,7 @@ test("Viewer can dismiss a card but cannot confirm an item write", async () => {
   expect((screen.getByRole("button", { name: "Confirm additions" }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByText("Cancel"));
   await screen.findByText("Cancelled");
-  expect(jest.mocked(accountRequest).mock.calls[0][2]?.body).toBe(JSON.stringify({ decision: "cancel" }));
+  expect(jest.mocked(accountRequest).mock.calls[0][2]?.body).toEqual({ decision: "cancel" });
 });
 
 test("switching inventory during confirmation discards its response", async () => {

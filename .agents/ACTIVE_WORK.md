@@ -1,3 +1,12 @@
+## October 25 - Chat confirmation JSON repair
+
+Lane `fix/chat-card-json` fixes creation and item review decisions sent as raw
+strings without application/json. Pass structured objects to the existing account
+transport so Content-Type and serialization are correct. Same-card IDs, ownership,
+receipt validation and UI are unchanged. Production 422s occurred before writes.
+Verified: 577 Jest tests, TypeScript and changed-file ESLint passed, including real
+account/API transport coverage for confirm and cancel. Release pending CI/build.
+
 ## October 25 - Pre-launch access delivered (PR220)
 
 Runtime `b8e5cc80669397cbaf2e3ca1d615c65f9eb463ac` is live; all five exact-source CI gates passed in 40235348641.
