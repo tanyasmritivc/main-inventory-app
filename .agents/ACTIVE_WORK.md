@@ -1,3 +1,14 @@
+## October25 — Chat generation budget fix deployed (PR225)
+
+Runtime `84a8991` is live; all five exact-source CI gates passed (40246755670).
+Guarded three-file publication preserved123 unrelated files. Public API/database
+health and anonymous denial passed; no schema change. GLM retained. Rollback:
+`/home/ubuntu/findez-chat-stream-20261025`. The deployed model pipeline completed
+the user's long apartment request with a validated30-record/five-location synthetic
+proposal and final reply; all real writes blocked. Root cause was internal reasoning
+exhausting1800/2400 tokens; new bounded budgets8192/16384 preserve receipt safeguards.
+See `docs/plans/chat-stream-api-receipt.json`. Mobile retry-row fix is PR226/beta140.
+
 ## October25 — Chat generation budget repair
 
 Lane `fix/chat-stream-reliability`. Reproduced the supplied apartment request with

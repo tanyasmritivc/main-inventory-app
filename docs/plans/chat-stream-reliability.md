@@ -23,3 +23,12 @@ Verification:1529 Python tests passed (451 existing warnings;10 subtests). Focus
 stream/world suite59 passed. Mobile Ask regression and clean analysis passed.
 Physical-device retry acceptance is not yet verified. No customer records were
 created/updated by model diagnostics. CI and release receipts follow deployment.
+
+## Deployed result
+
+PR225 runtime84a8991 passed all five CI gates in40246755670 and is live. Public
+API/database health and anonymous denial passed;123 unrelated live files preserved.
+The deployed pipeline's write-blocked synthetic test produced30 validated item
+records acrossfive locations, one review card and a completed reply, all at8192
+tokens per generation. No schema, provider, customer inventory or web bundle change.
+Rollback and receipt: `docs/plans/chat-stream-api-receipt.json`.
