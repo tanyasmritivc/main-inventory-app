@@ -139,3 +139,11 @@ def test_unknown_tool_name_cannot_inject_progress_and_legacy_consumers_unchanged
     assert statuses == [{'type': 'status', 'message': 'Preparing the next step...'}]
     events = list(completion_events(iter([_as_namespace({'choices': [{'delta': {'reasoning_content': 'SECRET'}}]}), chunk('Hi')])))
     assert [e['type'] for e in events] == ['delta', 'completion']
+
+
+def test_progress_distinguishes_pending_draft_from_confirmed_changes():
+    from app.services.chat_progress import response_status
+    assert response_status([]) == 'Thinking through your request...'
+    assert response_status([{'result': {'pending_action': {'status': 'confirmed'}}}]) == 'Working through the results...'
+    assert response_status([{'result': {'world_action': {'status': 'pending'}}}]) == 'Writing your draft summary...'
+    assert response_status([{'result': {'error': 'PRIVATE'}}]) == 'Working through the results...'

@@ -13,5 +13,5 @@ Mutation/proposal summaries are emitted only after claim validation passes; ordi
 read-only text remains streamed. False repeated claims still fail closed.
 
 No schema, provider, model budget, authorization, layout or navigation change.
-64 focused tests and 1,534 full backend tests passed (existing deprecation warnings).
+65 focused tests and 1,535 full backend tests passed (existing deprecation warnings).
 Production release awaits exact-source CI. Web card JSON transport is a separate lane.

@@ -7,7 +7,7 @@ continued upstream activity; no timed fictional milestones. Existing clients ren
 these events without layout changes. Action summaries are held until receipt claim
 validation passes. One answer correction is independent of the one transport retry,
 with tools disabled during correction and existing mutation receipts preserved.
-Verified: 64 focused tests and 1,534 full Python tests pass. Release pending CI.
+Verified: 65 focused tests and 1,535 full Python tests pass. Release pending CI.
 
 ## October25 — Chat generation budget fix deployed (PR225)
 

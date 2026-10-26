@@ -38,10 +38,14 @@ def planning_status(name):
 
 
 def response_status(trace):
-    if any(entry.get('result', {}).get('world_action') or entry.get('result', {}).get('pending_action')
-           or entry.get('result', {}).get('capture_draft') for entry in trace
-           if isinstance(entry.get('result'), dict)):
-        return "Writing your draft summary..."
+    for entry in trace:
+        result = entry.get('result')
+        if not isinstance(result, dict):
+            continue
+        for key in ('world_action', 'pending_action', 'capture_draft'):
+            action = result.get(key)
+            if isinstance(action, dict) and action.get('status') in ('pending', 'draft'):
+                return "Writing your draft summary..."
     if trace:
         return "Working through the results..."
     return "Thinking through your request..."
