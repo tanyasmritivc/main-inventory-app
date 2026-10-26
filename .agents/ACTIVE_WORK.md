@@ -1,3 +1,11 @@
+## October 25 - Live chat progress deployed (PR235)
+
+Runtime `9e5e318` is live after all five CI gates passed (40268609538). Content-free model activity events are emitted only on actual received chunks, at most every five seconds. Existing statuses, tool execution, canonical completion, budgets and providers are unchanged. All 1,569 backend tests plus 10 subtests passed. An isolated real-GLM apartment probe completed in 40.2 seconds with 30 records, five locations and a review card; inventory writes were blocked. API/database health and anonymous denial passed; 127 unrelated runtime files preserved. No migration or mobile change. This provides liveness evidence, not a speed guarantee or completion percentage. Receipt: `docs/plans/live-chat-progress-api-receipt.json`.
+
+## October 25 - Live chat progress
+
+Emit a content-free model activity event at most every five seconds, only when an actual reasoning/text/tool-call chunk arrives. A quiet provider must not produce pretend liveness. Preserve fixed phase labels, generation budgets, private reasoning, verified final replies, tools and saves. Web consumes the additive event; old clients safely ignore it. No schema or model change.
+
 ## October 25 — Response feedback API (ready for review, not deployed)
 
 ## October 25 — Response feedback migrated and deployed

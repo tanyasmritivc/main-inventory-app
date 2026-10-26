@@ -533,7 +533,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
                 content, calls = '', []
                 from app.services.chat_progress import response_status
                 for event in completion_events(response, report_activity=True, thinking_message=response_status(trace)):
-                    if event['type'] == 'status':
+                    if event['type'] in ('status', 'activity'):
                         yield event
                     elif event['type'] == 'delta':
                         if not hold_summary:
