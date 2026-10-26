@@ -1,5 +1,9 @@
 ## October 25 - No automatic pre-launch cutoff
 
+## October 25 - Browser and search favicon cache refresh
+
+The live root ICO and existing brand assets already contain the approved orange/white Petals mark, but Safari and Google screenshots show the prior logo. Advertise stable, brand-specific Petals ICO/SVG/96px PNG and 180px touch-icon URLs to avoid reusing older cached icon keys. Preserve existing URLs and all page layouts. Google recrawl timing remains external. Local web tests, TypeScript and ESLint completed; deployment verification recorded separately.
+
 User requests continued use beyond planned Free quotas while gathering testers.
 Keep PILOT_MODE enabled with no end date. Upgrade prompts require a fresh server
 confirmation of non-pilot limits; cached or offline status cannot authorize them.

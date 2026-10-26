@@ -1,5 +1,9 @@
 ## October 25 — Compact chat controls (not deployed)
 
+## October 25 - Browser and search favicon cache refresh
+
+The live root ICO and existing brand assets already contain the approved orange/white Petals mark, but Safari and Google screenshots show the prior logo. Advertise stable, brand-specific Petals ICO/SVG/96px PNG and 180px touch-icon URLs to avoid reusing older cached icon keys. Preserve existing URLs and all page layouts. Google recrawl timing remains external. Local web tests, TypeScript and ESLint completed; deployment verification recorded separately.
+
 ## October 25 — Chat controls deployed on the self-hosted website
 
 Published runtime `3e1025f3ea8ae353d41f008f49317746eb8c2f1b` to `/home/ubuntu/findez-web-releases/response-feedback-20261025/frontend`, build `p3PYYDc0JiTVin8HQuocq`. Includes compact response/prompt controls, persisted ratings, Enter send/Shift+Enter newline, prompt clearing, canonical completion handling and confirmed creation copy. Production build and 22 staged/live route checks passed; public HTTPS chat correctly requires sign-in. All five CI gates passed (40254596435); 584 web tests and TypeScript pass, lint has zero errors and 52 existing warnings. Previous chat-card-json release retained for rollback. No Vercel deployment was used. Receipt: `docs/plans/response-feedback-web-receipt.json`.
