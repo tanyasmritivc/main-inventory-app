@@ -1246,7 +1246,9 @@ class ApiClient {
     required String conversationId,
     required String messageId,
   }) => _commandStream(
-    message: message,
+    // The retry endpoint resolves the original prompt from messageId. Its
+    // request schema still requires nonempty text for photo-only prompts.
+    message: message.trim().isEmpty ? 'Retry this response.' : message,
     conversationId: conversationId,
     retryOf: messageId,
   );

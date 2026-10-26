@@ -145,6 +145,9 @@ class _WorldComposerState extends State<WorldComposer>
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible =
+        View.of(context).viewInsets.bottom > 0 ||
+        MediaQuery.viewInsetsOf(context).bottom > 0;
     return _ComposerSurface(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 10, 10),
@@ -173,9 +176,10 @@ class _WorldComposerState extends State<WorldComposer>
               focusNode: widget.focusNode,
               onChanged: widget.onChanged,
               minLines: widget.compact ? 1 : 2,
-              maxLines: widget.compact ? 2 : 4,
+              maxLines: widget.compact ? (keyboardVisible ? 1 : 2) : 4,
               textInputAction: TextInputAction.newline,
               keyboardType: TextInputType.multiline,
+              onTapOutside: (_) => widget.focusNode.unfocus(),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
@@ -232,6 +236,12 @@ class _WorldComposerState extends State<WorldComposer>
                     ),
                   ),
                 const Spacer(),
+                if (widget.focusNode.hasFocus)
+                  IconButton(
+                    tooltip: 'Hide keyboard',
+                    onPressed: widget.focusNode.unfocus,
+                    icon: const Icon(Icons.keyboard_hide_outlined, size: 21),
+                  ),
                 Semantics(
                   button: true,
                   label: widget.listening

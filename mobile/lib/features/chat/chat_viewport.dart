@@ -8,10 +8,12 @@ class ChatViewport extends StatelessWidget {
     required this.footer,
     required this.messages,
     required this.controller,
+    this.preview,
   });
   final Widget header, footer;
   final List<Widget> messages;
   final ScrollController controller;
+  final Widget? preview;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -26,13 +28,33 @@ class ChatViewport extends StatelessWidget {
         child: header,
       ),
       Expanded(
-        child: ClipRect(
-          child: ListView(
-            key: const Key('chat-full-viewport'),
-            controller: controller,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            children: messages,
+        child: LayoutBuilder(
+          builder: (context, bounds) => Column(
+            children: [
+              Expanded(
+                child: ClipRect(
+                  child: ListView(
+                    key: const Key('chat-full-viewport'),
+                    controller: controller,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    children: messages,
+                  ),
+                ),
+              ),
+              if (preview != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          bounds.maxHeight * (messages.isEmpty ? 1 : .65),
+                    ),
+                    child: preview!,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

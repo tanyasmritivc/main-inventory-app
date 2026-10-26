@@ -18,6 +18,7 @@ class ChatCaptureCard extends StatefulWidget {
     this.onSaved,
     this.onOpenResource,
     this.disabled = false,
+    this.embedded = false,
   });
   final ApiClient api;
   final String conversationId;
@@ -25,7 +26,7 @@ class ChatCaptureCard extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onChanged;
   final VoidCallback? onSaved;
   final ValueChanged<AskResourceLink>? onOpenResource;
-  final bool disabled;
+  final bool disabled, embedded;
   @override
   State<ChatCaptureCard> createState() => ChatCaptureCardState();
 }
@@ -519,218 +520,224 @@ class ChatCaptureCardState extends State<ChatCaptureCard> {
               'findez://space/${_draft['inventory_id']}/${_draft['space_id']}',
         }) ??
         links.where((link) => link.kind == 'space').firstOrNull;
-    return Column(
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ContentCard(
-          margin: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome_outlined, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      saved
-                          ? (_draft['source_kind'] == 'text'
-                                ? 'Items saved'
-                                : 'Extraction saved')
-                          : _draft['source_kind'] == 'text'
-                          ? 'Inventory draft'
-                          : 'Auto Extract',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Refresh extraction',
-                    onPressed: _busy || widget.disabled ? null : _refresh,
-                    icon: const Icon(Icons.refresh, size: 20),
-                  ),
-                ],
-              ),
-              Text(
-                saved
-                    ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
-                    : '$selected of ${rows.length} selected · Not saved yet',
+        Row(
+          children: [
+            if (!widget.embedded)
+              const Icon(Icons.auto_awesome_outlined, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.embedded
+                    ? '$selected of ${rows.length} selected · Not saved yet'
+                    : saved
+                    ? (_draft['source_kind'] == 'text'
+                          ? 'Items saved'
+                          : 'Extraction saved')
+                    : _draft['source_kind'] == 'text'
+                    ? 'Inventory draft'
+                    : 'Auto Extract',
                 style: TextStyle(
-                  color: AppTheme.textSecondary(context),
-                  fontSize: 13,
+                  fontSize: widget.embedded ? 13 : 17,
+                  color: widget.embedded
+                      ? AppTheme.textSecondary(context)
+                      : null,
+                  fontWeight: widget.embedded
+                      ? FontWeight.w400
+                      : FontWeight.w600,
                 ),
               ),
-              if (!saved && rows.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'No items were detected. Try a closer, well-lit photo.',
+            ),
+            IconButton(
+              tooltip: 'Refresh extraction',
+              onPressed: _busy || widget.disabled ? null : _refresh,
+              icon: const Icon(Icons.refresh, size: 20),
+            ),
+          ],
+        ),
+        if (!widget.embedded)
+          Text(
+            saved
+                ? '${receipt?['saved_count'] ?? 0} saved · ${receipt?['review_count'] ?? 0} in Review'
+                : '$selected of ${rows.length} selected · Not saved yet',
+            style: TextStyle(
+              color: AppTheme.textSecondary(context),
+              fontSize: 13,
+            ),
+          ),
+        if (!saved && rows.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'No items were detected. Try a closer, well-lit photo.',
+            ),
+          ),
+        for (final row
+            in (saved
+                ? <Map<String, dynamic>>[]
+                : _expanded
+                ? rows.take(_visibleRows)
+                : rows.take(4))) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (!saved)
+                Checkbox(
+                  value: row['selected'] == true,
+                  onChanged: !_editable
+                      ? null
+                      : (value) => _patch({
+                          'items': [
+                            {'index': row['index'], 'selected': value},
+                          ],
+                        }),
+                ),
+              if (row['item']['image_url'] is String)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: PrivateImage(
+                    row['item']['image_url'],
+                    width: 46,
+                    height: 46,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox(
+                      width: 46,
+                      height: 46,
+                      child: Icon(Icons.image_outlined),
+                    ),
                   ),
                 ),
-              for (final row
-                  in (saved
-                      ? <Map<String, dynamic>>[]
-                      : _expanded
-                      ? rows.take(_visibleRows)
-                      : rows.take(4))) ...[
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!saved)
-                      Checkbox(
-                        value: row['selected'] == true,
-                        onChanged: !_editable
-                            ? null
-                            : (value) => _patch({
-                                'items': [
-                                  {'index': row['index'], 'selected': value},
-                                ],
-                              }),
-                      ),
-                    if (row['item']['image_url'] is String)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: PrivateImage(
-                          row['item']['image_url'],
-                          width: 46,
-                          height: 46,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox(
-                            width: 46,
-                            height: 46,
-                            child: Icon(Icons.image_outlined),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            row['item']['name'] as String,
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          Text(
-                            _quantityMissing(row)
-                                ? '${row['item']['category']} · Quantity needed'
-                                : '${row['item']['category']} · Qty ${row['item']['quantity']}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary(context),
-                            ),
-                          ),
-                          if (_quantityMissing(row) && row['selected'] == true)
-                            TextButton(
-                              onPressed: _editable
-                                  ? () => _quantity(row)
-                                  : null,
-                              child: const Text('Add quantity'),
-                            ),
-                          if ((row['item']['scan_evidence']
-                                  as Map?)?['needs_review'] ==
-                              true)
-                            const Text(
-                              'Needs Review',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                        ],
+                    Text(
+                      row['item']['name'] as String,
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    Text(
+                      _quantityMissing(row)
+                          ? '${row['item']['category']} · Quantity needed'
+                          : '${row['item']['category']} · Qty ${row['item']['quantity']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary(context),
                       ),
                     ),
-                    if (!saved)
-                      IconButton(
-                        tooltip: 'Edit ${row['item']['name']}',
-                        onPressed: _editable ? () => _edit(row) : null,
-                        icon: const Icon(Icons.edit_outlined, size: 18),
+                    if (_quantityMissing(row) && row['selected'] == true)
+                      TextButton(
+                        onPressed: _editable ? () => _quantity(row) : null,
+                        child: const Text('Add quantity'),
+                      ),
+                    if ((row['item']['scan_evidence']
+                            as Map?)?['needs_review'] ==
+                        true)
+                      const Text(
+                        'Needs Review',
+                        style: TextStyle(fontSize: 12),
                       ),
                   ],
                 ),
-              ],
-              if (!saved && rows.length > 4)
-                TextButton(
-                  onPressed: () => setState(() => _expanded = !_expanded),
-                  child: Text(
-                    _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
-                  ),
+              ),
+              if (!saved)
+                IconButton(
+                  tooltip: 'Edit ${row['item']['name']}',
+                  onPressed: _editable ? () => _edit(row) : null,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
                 ),
-              if (!saved && _expanded && rows.length > _visibleRows)
-                TextButton(
-                  onPressed: () => setState(() => _visibleRows += 40),
-                  child: const Text('Show more items'),
-                ),
-              if (!saved) ...[
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: _editable ? _destination : null,
-                  icon: const Icon(Icons.folder_outlined, size: 18),
-                  label: Text(
-                    _draft['space_id'] == null
-                        ? 'Choose a Space'
-                        : '${_draft['location']}',
-                  ),
-                ),
-                Text(
-                  _missingRows.isNotEmpty
-                      ? 'Add the missing quantities, or uncheck those items to save the rest.'
-                      : _draft['space_id'] == null
-                      ? 'Choose where to keep these items.'
-                      : 'Ready to save to ${_draft['location']}.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary(context),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _busy || widget.disabled || selected == 0
-                      ? null
-                      : _save,
-                  child: Text(
-                    saving
-                        ? 'Retry save safely'
-                        : _missingRows.isNotEmpty
-                        ? 'Add missing quantity'
-                        : _draft['space_id'] == null
-                        ? 'Choose a Space'
-                        : 'Save items',
-                  ),
-                ),
-              ],
-              if (_busy && !_choosing) const LinearProgressIndicator(),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              if (receipt != null) ...[
-                for (final failure in receipt['failures'] as List? ?? [])
-                  Text(failure['reason'] as String),
-                if (destination != null)
-                  TextButton.icon(
-                    onPressed: widget.onOpenResource == null
-                        ? null
-                        : () => widget.onOpenResource!(destination),
-                    icon: const Icon(Icons.folder_outlined, size: 18),
-                    label: Text('Open ${destination.label}'),
-                  ),
-                if (saved && selected > 0)
-                  TextButton(
-                    onPressed: _showSavedItems,
-                    child: Text('View $selected extracted items'),
-                  ),
-              ],
             ],
           ),
-        ),
+        ],
+        if (!saved && rows.length > 4)
+          TextButton(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            child: Text(
+              _expanded ? 'Show fewer' : 'Show all ${rows.length} items',
+            ),
+          ),
+        if (!saved && _expanded && rows.length > _visibleRows)
+          TextButton(
+            onPressed: () => setState(() => _visibleRows += 40),
+            child: const Text('Show more items'),
+          ),
+        if (!saved) ...[
+          const SizedBox(height: 12),
+          if (!widget.embedded || _draft['space_id'] != null)
+            TextButton.icon(
+              onPressed: _editable ? _destination : null,
+              icon: const Icon(Icons.folder_outlined, size: 18),
+              label: Text(
+                _draft['space_id'] == null
+                    ? 'Choose a Space'
+                    : '${_draft['location']}',
+              ),
+            ),
+          Text(
+            _missingRows.isNotEmpty
+                ? 'Add the missing quantities, or uncheck those items to save the rest.'
+                : _draft['space_id'] == null
+                ? 'Choose where to keep these items.'
+                : 'Ready to save to ${_draft['location']}.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: _busy || widget.disabled || selected == 0 ? null : _save,
+            child: Text(
+              saving
+                  ? 'Retry save safely'
+                  : _missingRows.isNotEmpty
+                  ? 'Add missing quantity'
+                  : _draft['space_id'] == null
+                  ? 'Choose a Space'
+                  : 'Save items',
+            ),
+          ),
+        ],
+        if (_busy && !_choosing) const LinearProgressIndicator(),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        if (receipt != null) ...[
+          for (final failure in receipt['failures'] as List? ?? [])
+            Text(failure['reason'] as String),
+          if (destination != null)
+            TextButton.icon(
+              onPressed: widget.onOpenResource == null
+                  ? null
+                  : () => widget.onOpenResource!(destination),
+              icon: const Icon(Icons.folder_outlined, size: 18),
+              label: Text('Open ${destination.label}'),
+            ),
+          if (saved && selected > 0)
+            TextButton(
+              onPressed: _showSavedItems,
+              child: Text('View $selected extracted items'),
+            ),
+        ],
       ],
+    );
+    if (widget.embedded) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: content,
+      );
+    }
+    return ContentCard(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      child: content,
     );
   }
 }

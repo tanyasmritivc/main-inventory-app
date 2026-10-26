@@ -1,8 +1,10 @@
 import 'package:mobile/features/chat/native_chat_menu_button.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,8 @@ import 'package:mobile/core/ask_answer.dart';
 import 'package:mobile/features/chat/ask_answer_view.dart';
 import 'package:mobile/features/chat/chat_page.dart';
 import 'package:mobile/features/shell/home_navigation.dart';
+
+Future<void> Function(String, List<int>)? previewAuditCapture;
 
 final _context = AskAnswerContext.fromJson({
   'sources': [
@@ -63,16 +67,35 @@ class _AskApi extends ApiClient {
     this.fail = false,
     this.pending,
     this.captureThenFail = false,
+    this.previewRows = 1,
     bool world = false,
   }) : super(worldKey: world ? 'personal' : null, baseUrl: 'https://api.test');
   bool fail;
   final bool captureThenFail;
+  final int previewRows;
   final StreamController<AiStreamEvent>? pending;
   final List<String?> conversationIds = [];
   final List<String> commands = [];
   final List<String?> requestIds = [];
   final List<AskPhoto> photos = [];
   final List<String> photoQuestions = [];
+  final List<String?> photoRequestIds = [];
+  final List<String> retriedMessageIds = [];
+  @override
+  Stream<AiStreamEvent> retryChatResponse({
+    required String message,
+    required String conversationId,
+    required String messageId,
+  }) async* {
+    retriedMessageIds.add(messageId);
+    yield AiStreamEvent(
+      type: 'done',
+      conversationId: conversationId,
+      messageId: 'retried-photo-answer',
+      assistantMessage: 'Photo answer regenerated without saving items.',
+    );
+  }
+
   @override
   Stream<AiStreamEvent> aiPhotoQuestionStream({
     required String message,
@@ -84,6 +107,7 @@ class _AskApi extends ApiClient {
   }) async* {
     photos.add(photo);
     photoQuestions.add(message);
+    photoRequestIds.add(requestId);
     if (fail) {
       throw const AskRequestException(
         'Your photo could not be analyzed. Please try again.',
@@ -113,6 +137,10 @@ class _AskApi extends ApiClient {
       throw const AskRequestException('Reply interrupted');
     }
 
+    if (pending != null) {
+      yield* pending!.stream;
+      return;
+    }
     if (previewOnly) {
       yield AiStreamEvent(
         type: 'capture',
@@ -124,15 +152,18 @@ class _AskApi extends ApiClient {
             'revision': 1,
             'status': 'draft',
             'items': [
-              {
-                'index': 0,
-                'selected': true,
-                'item': {
-                  'name': 'Blue pen',
-                  'category': 'Stationery',
-                  'quantity': 1,
+              for (var index = 0; index < previewRows; index++)
+                {
+                  'index': index,
+                  'selected': true,
+                  'item': {
+                    'name': index == 0
+                        ? 'Blue pen'
+                        : 'Desktop computer and accessories $index',
+                    'category': 'Stationery',
+                    'quantity': 1,
+                  },
                 },
-              },
             ],
           },
         ),
@@ -140,15 +171,15 @@ class _AskApi extends ApiClient {
       yield AiStreamEvent(type: 'done', conversationId: 'photo-conversation');
       return;
     }
-    if (pending != null) {
-      yield* pending!.stream;
-      return;
-    }
     yield AiStreamEvent(
       type: 'delta',
       delta: 'This appears to be a servo. No inventory item has been added.',
     );
-    yield AiStreamEvent(type: 'done', conversationId: 'photo-conversation');
+    yield AiStreamEvent(
+      type: 'done',
+      conversationId: 'photo-conversation',
+      messageId: 'photo-answer',
+    );
   }
 
   @override
@@ -187,10 +218,17 @@ Widget _page(
   TextScaler scaler = TextScaler.noScaling,
   Future<AskPhoto?> Function(bool camera)? photoPicker,
   Brightness brightness = Brightness.dark,
+  ValueChanged<bool>? onChatStateChanged,
 }) => MaterialApp(
   theme: AppTheme.create(brightness),
   builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(textScaler: scaler),
+    data: MediaQuery.of(context).copyWith(
+      textScaler: scaler,
+      // Synthetic device sizes must not inherit the simulator's physical-pixel
+      // safe area after overriding its devicePixelRatio to one.
+      padding: const EdgeInsets.only(top: 44),
+      viewPadding: const EdgeInsets.only(top: 44, bottom: 34),
+    ),
     child: child!,
   ),
   home: Scaffold(
@@ -200,8 +238,11 @@ Widget _page(
       initialMessage: initialMessage,
       photoPicker: photoPicker,
       worldHeading: api.worldKey == null ? null : 'Find your things.',
+      onChatStateChanged: onChatStateChanged,
     ),
-    bottomNavigationBar: HomeNavigation(selectedIndex: 2, onSelected: (_) {}),
+    bottomNavigationBar: api.worldKey != null
+        ? null
+        : HomeNavigation(selectedIndex: 2, onSelected: (_) {}),
   ),
 );
 
@@ -268,7 +309,37 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> attachWorld(WidgetTester tester) async {
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Capture or attach'));
+    await tester.pumpAndSettle();
+    if (find.byType(NativeChatMenuButton).evaluate().isNotEmpty) {
+      tester
+          .widget<NativeChatMenuButton>(find.byType(NativeChatMenuButton))
+          .onSelected('library');
+    } else {
+      await tester.tap(find.text('Attach'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Photo library'));
+    }
+    await tester.pumpAndSettle();
+  }
+
   setUpAll(() async {
+    for (final entry in {
+      'PlusJakartaSans': 'assets/fonts/PlusJakartaSans.ttf',
+      for (final weight in ['regular', 'medium', 'semiBold', 'bold'])
+        'PlusJakartaSans_$weight': 'assets/fonts/PlusJakartaSans.ttf',
+      'Ahem': 'assets/fonts/PlusJakartaSans.ttf',
+      'Roboto': 'assets/fonts/PlusJakartaSans.ttf',
+      'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
+      'packages/cupertino_icons/CupertinoIcons':
+          'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+    }.entries) {
+      await (FontLoader(
+        entry.key,
+      )..addFont(rootBundle.load(entry.value))).load();
+    }
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',
@@ -783,6 +854,193 @@ void main() {
     );
   });
 
+  testWidgets(
+    'failed photo-only retry reuses photo and request without duplicates',
+    (tester) async {
+      final api = _AskApi(fail: true, world: true);
+      await tester.pumpWidget(
+        _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+      );
+      await attachWorld(tester);
+      await tester.tap(find.byTooltip('Send message'));
+      await tester.pumpAndSettle();
+      expect(find.text('Retry response'), findsOneWidget);
+      api.fail = false;
+      await tester.tap(find.text('Retry response'));
+      await tester.pumpAndSettle();
+      expect(api.photos, hasLength(2));
+      expect(api.photos.last.bytes, png);
+      expect(api.photoQuestions, ['', '']);
+      expect(api.photoRequestIds.first, isNotNull);
+      expect(api.photoRequestIds.last, api.photoRequestIds.first);
+      expect(api.commands, isEmpty);
+      expect(find.byType(AskQuestionCard), findsOneWidget);
+      expect(find.textContaining('could not be analyzed'), findsNothing);
+      expect(
+        find.textContaining('No inventory item has been added'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('completed photo-only response retries through saved message', (
+    tester,
+  ) async {
+    final api = _AskApi(world: true);
+    await tester.pumpWidget(
+      _page(api, photoPicker: (_) async => AskPhoto(bytes: png)),
+    );
+    await attachWorld(tester);
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Retry response'));
+    await tester.pumpAndSettle();
+    expect(api.retriedMessageIds, ['photo-answer']);
+    expect(api.photos, hasLength(1));
+    expect(api.commands, isEmpty);
+    expect(find.byType(AskQuestionCard), findsOneWidget);
+    expect(
+      find.text('Photo answer regenerated without saving items.'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final brightness in Brightness.values) {
+    for (final width in [320.0, 390.0]) {
+      for (final scale in [1.0, 2.6]) {
+        testWidgets(
+          'extraction keeps composer visible with keyboard ${brightness.name} $width scale$scale',
+          (tester) async {
+            final height = width == 320 ? 568.0 : 844.0;
+            final keyboard = width == 320 ? 216.0 : 336.0;
+            tester.view.physicalSize = Size(width, height);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            addTearDown(tester.view.resetViewInsets);
+            final focused = <bool>[];
+            await tester.pumpWidget(
+              RepaintBoundary(
+                key: const Key('preview-audit-frame'),
+                child: _page(
+                  _AskApi(world: true, previewRows: 8),
+                  brightness: brightness,
+                  scaler: TextScaler.linear(scale),
+                  photoPicker: (_) async => AskPhoto(bytes: png),
+                  onChatStateChanged: focused.add,
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            await tester.tap(find.byTooltip('Capture or attach'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Auto Extract'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Choose photo'));
+            await tester.pumpAndSettle();
+            expect(focused.last, isTrue);
+            expect(find.text('Review extraction'), findsOneWidget);
+            expect(find.text('Auto Extract'), findsNothing);
+            expect(find.byType(LinearProgressIndicator), findsNothing);
+            tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
+            await tester.enterText(
+              find.byType(TextField).first,
+              'Make the blue pen quantity 2',
+            );
+            await tester.pumpAndSettle();
+            final input = tester.getRect(find.byType(TextField).first);
+            final send = tester.getRect(find.byTooltip('Send message'));
+            expect(input.bottom, lessThanOrEqualTo(height - keyboard));
+            expect(send.bottom, lessThanOrEqualTo(height - keyboard));
+            expect(
+              find.byTooltip('Send message').hitTestable(),
+              findsOneWidget,
+            );
+            expect(
+              find.byTooltip('Hide keyboard').hitTestable(),
+              findsOneWidget,
+            );
+            expect(
+              find.byTooltip('Keep draft in chat').hitTestable(),
+              findsOneWidget,
+            );
+            expect(
+              tester
+                  .getRect(find.byKey(const Key('extraction-preview-scroll')))
+                  .bottom,
+              lessThan(input.top),
+            );
+            expect(tester.takeException(), isNull);
+            if (previewAuditCapture != null) {
+              final boundary = tester.renderObject<RenderRepaintBoundary>(
+                find.byKey(const Key('preview-audit-frame')),
+              );
+              final image = await boundary.toImage(pixelRatio: 1);
+              final data = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await previewAuditCapture!(
+                'extraction-keyboard-${brightness.name}-${width.toInt()}-$scale',
+                data!.buffer.asUint8List(),
+              );
+              image.dispose();
+            }
+            await tester.tap(find.byTooltip('Hide keyboard'));
+            await tester.pump();
+            expect(
+              tester
+                  .widget<TextField>(find.byType(TextField).first)
+                  .focusNode!
+                  .hasFocus,
+              isFalse,
+            );
+            expect(find.text('Make the blue pen quantity 2'), findsOneWidget);
+            await tester.pumpWidget(const SizedBox());
+          },
+        );
+      }
+    }
+  }
+
+  testWidgets(
+    'scanning preview has one status and stops without losing typed text',
+    (tester) async {
+      final pending = StreamController<AiStreamEvent>();
+      addTearDown(pending.close);
+      final focused = <bool>[];
+      await tester.pumpWidget(
+        _page(
+          _AskApi(world: true, pending: pending),
+          photoPicker: (_) async => AskPhoto(bytes: png),
+          onChatStateChanged: focused.add,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Capture or attach'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Auto Extract'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose photo'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(focused.last, isTrue);
+      expect(find.text('Reading your photo...'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byTooltip('Stop scanning').hitTestable(), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, 'Keep this draft');
+      await tester.pump();
+      await tester.tap(find.byTooltip('Stop scanning'));
+      await tester.pumpAndSettle();
+      expect(find.text('Keep this draft'), findsOneWidget);
+      expect(find.text('Review extraction'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
   testWidgets('reset ignores late photo picker completion', (tester) async {
     final picker = Completer<AskPhoto?>();
     await tester.pumpWidget(
@@ -956,7 +1214,7 @@ void main() {
     expect(find.byTooltip('Stop scanning'), findsNothing);
     expect(find.text('Review extraction'), findsOneWidget);
     expect(find.byType(AskQuestionCard), findsNothing);
-    expect(find.text('Auto Extract'), findsOneWidget);
+    expect(find.text('Review extraction'), findsOneWidget);
     expect(find.text('1 of 1 selected · Not saved yet'), findsOneWidget);
   });
 }

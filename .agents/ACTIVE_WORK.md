@@ -1,3 +1,7 @@
+## October 26 - Extraction keyboard follow-up, public submission held
+
+User reported inaccessible composer/keyboard and duplicate headers in Auto Extract after pausing submission. Mobile lane fix/mobile-app-store-audit now pins the composer below a bounded scrollable preview, focuses the outer shell on scan start, adds keyboard dismissal, simplifies scan status and preview, and restores world response actions/photo retry. Full suite 1,167 passed plus one existing skip; 11 focused native checks passed in both themes/small/standard phones/large text. Build144 candidate. User reported physical acceptance on their earlier latest TestFlight; new screenshots supersede any blanket UI acceptance. Keep public submission on hold; beta delivery remains authorized. See docs/plans/mobile-app-store-audit-20261025.md.
+
 ## October 25 - App Store release audit
 
 Active mobile lane `fix/mobile-app-store-audit`, based on delivered build142. User explicitly authorizes comprehensive mobile workflow/UI/error testing, fixes, and public App Review submission after verification. Audit current Apple requirements and metadata; preserve manual-release setting. Use synthetic/disposable data. Track physical-only coverage separately. Shared error presentation and legal fallback accessibility are reproduced defects under repair. Backend fixes, if required by a verified service defect, remain in a separate lane.
