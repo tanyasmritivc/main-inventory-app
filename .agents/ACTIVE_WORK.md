@@ -1,3 +1,14 @@
+## October 25 — Response feedback API (ready for review, not deployed)
+
+Branch `feat/response-feedback-api` adds private exact-message rating persistence,
+revision/idempotency controls, bounded opt-in verification guidance, privacy-filtered
+offline evaluation and safe read-only response regeneration. Migration 082 is
+prepared and tested on isolated PostgreSQL only. Latest user instruction explicitly
+requires authorization before production migration/configuration/deployment.
+Backend 1,526 tests + 10 subtests pass. See `docs/plans/response-feedback.md` for
+security, retention, rollout sequence, limitations and operator evaluation commands.
+Companion lanes: `feat/chat-message-controls` (web), `feat/mobile-message-controls`.
+
 ## October 25 - Chat activity and recovery deployed (PR227)
 
 Runtime `7e82e7e` is live after all five exact-source CI gates passed (40250686843).

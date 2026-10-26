@@ -28,6 +28,7 @@ class Question(BaseModel):
     supports_photo_attachment: bool = False
     supports_task_actions: bool = False
     request_id: UUID | None = None
+    retry_of: UUID | None = None
     sources: chat_sources.SourceList = Field(default_factory=list)
 
 
@@ -85,7 +86,22 @@ def conversation(world_id: str, conversation_id: UUID, user: AuthenticatedUser =
         capture_id = context.get('chat_capture_id')
         if capture_id:
             context['chat_capture'] = load(user.user_id, world.world_key(world_id), str(conversation_id), capture_id)['answer_context']['chat_capture']
-    return {'conversation': value, 'messages': [row for row in rows if not any((row.get('answer_context') or {}).get(flag) for flag in ('direct_receipt', 'attachment_receipt'))]}
+    replacements = {(row.get('answer_context') or {}).get('retry_of'): row for row in rows
+                    if (row.get('answer_context') or {}).get('retry_of')}
+    def latest(row):
+        original_context = row.get('answer_context') or {}
+        seen = set()
+        while row['id'] in replacements and row['id'] not in seen:
+            seen.add(row['id'])
+            row = replacements[row['id']]
+        if seen:
+            row = {**row, 'answer_context': {**(row.get('answer_context') or {})}}
+            for field in ('world_actions', 'pending_actions', 'completed_actions', 'chat_capture_id', 'chat_capture', 'photo_attachment'):
+                if field in original_context: row['answer_context'][field] = original_context[field]
+        return row
+    return {'conversation': value, 'messages': [latest(row) for row in rows
+        if not any((row.get('answer_context') or {}).get(flag) for flag in ('retry_of', 'direct_receipt', 'attachment_receipt'))]}
+
 
 
 @router.delete('/conversations/{conversation_id}')
@@ -99,15 +115,35 @@ def encode(event):
     return 'data: ' + json.dumps(event) + '\n\n'
 
 
-async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None):
+async def answer(actor, key, message, conversation_id, photo=None, *, supports_item_management=False, supports_capture=False, auto_extract=False, sources=None, supports_photo_attachment=False, supports_task_actions=False, request_id=None, retry_of=None):
     key = await asyncio.to_thread(world.authorize, actor, key)
+    retry_context = None
+    if retry_of:
+        from app.services.response_feedback import owned_message
+        original = await asyncio.to_thread(owned_message, actor, retry_of)
+        await asyncio.to_thread(world.conversation, actor, key, original['conversation_id'])
+        if conversation_id != original['conversation_id']:
+            raise HTTPException(409, 'Retry in the original conversation.')
+        retry_context = original.get('answer_context') or {}
+        def original_prompt():
+            query = get_supabase_raw().table('messages').select('id,content').eq('conversation_id', original['conversation_id']).eq('role', 'user')
+            reference = retry_context.get('request_message_id')
+            if reference: query = query.eq('id', reference)
+            else: query = query.lte('created_at', original['created_at']).order('created_at', desc=True)
+            return query.limit(1).execute().data or []
+        prompts = await asyncio.to_thread(original_prompt)
+        if not prompts:
+            raise HTTPException(409, 'The original prompt is unavailable.')
+        message = prompts[0]['content']
     source_evidence = await asyncio.to_thread(chat_sources.resolve, actor, key, sources) if sources else []
     try:
         await asyncio.to_thread(check_and_increment_chat, actor)
     except (ChatLimitExceeded, TeamSoftCapExceeded):
         raise HTTPException(403, 'Your chat allowance has been reached. Check your account settings.') from None
     turn_id = str(uuid5(NAMESPACE_URL, f'findez:request:{actor}:{key}:{request_id}')) if request_id else str(uuid4())
-    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions else {}))
+    if retry_of:
+        turn_id = prompts[0]['id']
+    cid, history = await asyncio.to_thread(world.prepare, actor, key, message, conversation_id, **({'turn_id': turn_id} if supports_task_actions or retry_of else {}))
     async def generate():
         stored = None
         saved = False
@@ -188,8 +224,15 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
             from app.services.world_user_context import load as load_user_context
             user_context = await asyncio.to_thread(load_user_context, actor) if supports_task_actions else None
             with use_photo(retained), chat_capture.use_capture(actor, key, cid, draft, enabled=supports_capture) as capture:
-                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}))):
+                async for event in async_iterate(world.stream_turn(actor, key, message, history, cid, evidence, supports_item_management=supports_item_management, **({'supports_task_actions': True, 'turn_id': turn_id, 'user_context': user_context} if supports_task_actions else {}), **({'supports_photo_attachment': True} if supports_photo_attachment else {}), **({'source_evidence': source_evidence} if source_evidence else {}), **({'image_content': image_content} if image_content else {}), **({'read_only_retry': True} if retry_of else {}))):
                     if event['type'] == 'done':
+                        if supports_task_actions or retry_of:
+                            event['answer_context']['request_message_id'] = turn_id
+                        if retry_context is not None:
+                            event['answer_context']['retry_of'] = str(retry_of)
+                            event['answer_context']['action_message_id'] = retry_context.get('action_message_id') or str(retry_of)
+                            for field in ('world_actions', 'pending_actions', 'completed_actions', 'chat_capture_id', 'chat_capture', 'photo_attachment'):
+                                event['answer_context'].pop(field, None)
                         if stored:
                             event['answer_context'].update({'photo_path': stored.path, 'photo_url': stored.url, 'chat_photo': retained})
                         if source_evidence:
@@ -197,8 +240,16 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
                             event['answer_context'].setdefault('sources', []).extend({'kind': {'space': 'spaces', 'item': 'inventory', 'file': 'document'}.get(s['kind'], s['kind']), 'label': s['name'], 'detail': 'Selected excerpt' if s.get('truncated') else 'Selected for this message'} for s in source_evidence)
                         stage = 'save_reply'
                         save_started = True
-                        await asyncio.to_thread(world.save_answer, actor, key, cid, event['assistant_message'], event['answer_context'])
+                        receipt = await asyncio.to_thread(world.save_answer, actor, key, cid, event['assistant_message'], dict(event['answer_context']))
+                        if isinstance(receipt, dict):
+                            event.update(receipt)
                         saved = True
+                        # Display the original cards, but never duplicate their durable
+                        # action IDs across messages (confirmation queries require uniqueness).
+                        if retry_context is not None:
+                            for field in ('world_actions', 'pending_actions', 'completed_actions', 'chat_capture_id', 'chat_capture', 'photo_attachment'):
+                                if field in retry_context:
+                                    event['answer_context'][field] = retry_context[field]
                         if supports_capture and capture['draft']:
                             event['answer_context']['chat_capture'] = capture['draft']
                     yield encode(event)
@@ -234,7 +285,7 @@ async def answer(actor, key, message, conversation_id, photo=None, *, supports_i
 @router.post('/ai_command')
 @limiter.limit('20/minute')
 async def command(request: Request, world_id: str, body: Question, user: AuthenticatedUser = Depends(get_current_user)):
-    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id)
+    return await answer(user.user_id, world.world_key(world_id), body.message, str(body.conversation_id) if body.conversation_id else None, supports_item_management=body.supports_item_management, supports_capture=body.supports_capture, sources=body.sources, supports_photo_attachment=body.supports_photo_attachment, supports_task_actions=body.supports_task_actions, request_id=body.request_id, retry_of=body.retry_of)
 
 
 @router.post('/ai_photo_question')

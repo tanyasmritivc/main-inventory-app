@@ -248,3 +248,41 @@ def test_extraction_activity_is_forwarded_before_the_draft(transport):
         response = transport.client.post(f'/worlds/{WORLD}/ai_photo_question',
             data={'supports_capture': 'true', 'auto_extract': 'true'}, files={'file': ('photo.png', out.getvalue(), 'image/png')})
     assert response.text.index('Finding objects') < response.text.index('Checking confidence') < response.text.index('"type": "capture"')
+
+def test_done_returns_persisted_message_identifier(transport):
+    transport.save.return_value={'message_id':str(uuid4()),'created_at':'2026-10-25T20:00:00Z'}
+    with patch.object(world,'stream_turn',return_value=events()):
+        response=transport.client.post(f'/worlds/{WORLD}/ai_command',json={'message':'hello'})
+    assert transport.save.return_value['message_id'] in response.text
+    assert transport.save.return_value['created_at'] in response.text
+
+def test_response_retry_uses_original_prompt_and_read_only_mode(transport):
+    mid,turn=str(uuid4()),str(uuid4())
+    original={'conversation_id':CID,'content':'Answer','created_at':'2026-10-25T20:00:00Z','answer_context':{'world_actions':[{'id':'saved','status':'confirmed','receipt':{}}]}}
+    db=Mock();q=Mock();db.table.return_value=q
+    for name in ('select','eq','lte','order','limit'): getattr(q,name).return_value=q
+    q.execute.return_value.data=[{'id':turn,'content':'Original prompt'}]
+    with patch('app.services.response_feedback.owned_message',return_value=original),patch.object(world,'conversation'),patch.object(route,'get_supabase_raw',return_value=db),patch.object(world,'stream_turn',return_value=events()) as stream:
+        response=transport.client.post(f'/worlds/{WORLD}/ai_command',json={'message':'Malicious replacement','conversation_id':CID,'retry_of':mid})
+    assert response.status_code==200 and '"type": "done"' in response.text
+    assert stream.call_args.args[2]=='Original prompt'
+    assert stream.call_args.kwargs['read_only_retry'] is True
+    assert transport.prepare.call_args.kwargs['turn_id']==turn
+    assert transport.save.call_args.args[-1]['retry_of']==mid
+    assert 'world_actions' not in transport.save.call_args.args[-1]
+    assert '"id": "saved"' in response.text
+
+def test_regenerated_history_keeps_original_position_and_current_card(transport):
+    a,b,c=str(uuid4()),str(uuid4()),str(uuid4())
+    rows=[{'id':'prompt-one','role':'user','answer_context':{}},
+          {'id':a,'role':'assistant','answer_context':{'world_actions':[{'id':'unique','status':'confirmed'}]}},
+          {'id':'prompt-two','role':'user','answer_context':{}},
+          {'id':b,'role':'assistant','answer_context':{}},
+          {'id':c,'role':'assistant','answer_context':{'retry_of':a}}]
+    db=Mock();q=Mock();db.table.return_value=q
+    for name in ('select','eq','order'):getattr(q,name).return_value=q
+    q.execute.return_value.data=rows
+    with patch.object(world,'conversation',return_value={'id':CID}),patch.object(route,'get_supabase_raw',return_value=db),patch('app.services.ask_photo_questions.refresh_photo_context',side_effect=lambda context,actor:context):
+        result=transport.client.get(f'/worlds/{WORLD}/conversations/{CID}').json()
+    assert [m['id'] for m in result['messages']]==['prompt-one',c,'prompt-two',b]
+    assert result['messages'][1]['answer_context']['world_actions'][0]['status']=='confirmed'

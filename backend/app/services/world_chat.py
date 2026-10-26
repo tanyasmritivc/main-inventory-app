@@ -192,11 +192,18 @@ def save_answer(actor, world, conversation_id, answer, context, *, message_id=No
     direct = [a for a in context.get('pending_actions', []) if a.get('direct') and a.get('status') == 'confirmed']
     if direct:
         context = {**context, 'pending_actions': [a for a in context['pending_actions'] if a not in direct], 'completed_actions': direct}
+    from app.services.response_feedback import RESPONSE_VERSION
+    from app.core.config import get_settings
+    context = {**context, 'response_metadata': {'response_version': RESPONSE_VERSION,
+        'model_version': get_settings().findez_chat_vision_model, 'validation': 'passed'}}
     record = {'id': message_id or str(uuid4()), 'conversation_id': conversation_id,
         'role': 'assistant', 'content': answer, 'answer_context': context}
+    verified = {}
     def saved():
-        rows = raw.table('messages').select('id,content,answer_context').eq('id', record['id']).eq('conversation_id', conversation_id).execute().data or []
-        return len(rows) == 1 and all(rows[0].get(k) == record[k] for k in ('id', 'content', 'answer_context'))
+        rows = raw.table('messages').select('id,content,answer_context,created_at').eq('id', record['id']).eq('conversation_id', conversation_id).execute().data or []
+        ok = len(rows) == 1 and all(rows[0].get(k) == record[k] for k in ('id', 'content', 'answer_context'))
+        if ok: verified.update(rows[0])
+        return ok
     try:
         raw.table('messages').insert(record).execute()
     except Exception:
@@ -205,6 +212,7 @@ def save_answer(actor, world, conversation_id, answer, context, *, message_id=No
     if not saved():
         raise RuntimeError('Chat receipt could not be verified')
     raw.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).eq('user_id', actor).eq('world_key', world).execute()
+    return {'message_id': record['id'], 'created_at': verified.get('created_at')}
 
 
 def tool(name, description, properties, required=()):
@@ -367,7 +375,7 @@ def capture_tools(tools, capture):
         and (capture and capture.get('enabled') or t['function']['name'] != 'world_draft_items')]
 
 
-def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None, user_context=None, image_content=None):
+def stream_turn(actor, world, message, history, conversation_id, photo_evidence=None, *, supports_item_management=False, source_evidence=None, supports_photo_attachment=False, supports_task_actions=False, turn_id=None, user_context=None, image_content=None, read_only_retry=False):
     from app.services.chat_capture import current_capture, facts
     capture = current_capture.get()
     from app.services.agent_gateway_client import gateway_completion
@@ -398,6 +406,9 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         'Use world_tracking for due expiry dates, prices or enabled reorder rules. Ask for missing dates, amounts and currency. Creation and deletion require a real confirmation card; follow the client action policy below for edits and moves. ' + CHAT_STYLE_INSTRUCTION},
         {'role': 'system', 'content': 'Current organization directory: ' + json.dumps(model_data(known))},
         *[{k: row[k] for k in ('role', 'content')} for row in history], {'role': 'user', 'content': message}]
+    guidance = (user_context or {}).get('feedback_guidance', [])
+    if guidance:
+        messages.append({'role': 'system', 'content': 'Repeated opt-in feedback suggests these verification checks (not inventory facts or new preferences): ' + ' '.join(guidance)})
     from app.services.personalization.scoring import clear_reference
     recent_references = next((r['_references'] for r in reversed(history) if r.get('_references')), [])
     reference = clear_reference(message, recent_references, actor=actor, conversation=conversation_id)
@@ -459,6 +470,10 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         messages.append({'role': 'system', 'content': 'This is a retry of the SAME request. The durable receipts below already completed. Report their results; never repeat these changes. If only part completed, say which part and ask for a new request for the remainder: ' + json.dumps(model_data(replayed))})
     if not supports_item_management:
         messages.append({'role': 'system', 'content': 'This app version cannot display advanced item management review cards. For edits, moves, price/expiry tracking and reorder requests, ask the user to update FindEZ. Never claim those actions completed.'})
+    if read_only_retry:
+        from app.services.assistant_tool_safety import READ_TOOLS
+        available_tools = [t for t in available_tools if t['function']['name'] in READ_TOOLS]
+        messages.append({'role': 'system', 'content': 'Regenerate only the explanation for this existing response. Never repeat or propose inventory changes. Use current saved receipts and fresh read tools; distinguish pending proposals from completed changes.'})
     actions, item_actions, trace = [], [], []
     direct_ordinal = 0
     for saved in replayed:
@@ -661,7 +676,7 @@ def stream_turn(actor, world, message, history, conversation_id, photo_evidence=
         if hold_summary:
             yield {'type': 'delta', 'delta': format_chat_reply(content)}
         yield {'type': 'done', 'assistant_message': format_chat_reply(content),
-            'answer_context': {**({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
+            'answer_context': {'operation_diagnostics': trace_diagnostics(trace), **({'photo_attachment': attachment} if attachment else {}), **({'chat_capture_id': capture['draft']['id']} if capture and capture['draft'] else {}), 'world_actions': actions, 'pending_actions': item_actions,
                 'resource_links': [link for link in references.values() if link['href'] in content or link['label'].casefold() in content.casefold()][:20]}, 'conversation_id': conversation_id}
         return
     raise RuntimeError('No completed response')
@@ -830,3 +845,15 @@ from app.services.personalization.chat import Arguments as PersonalizationArgume
 TOOLS.append(tool('world_personalization', 'Read or explicitly change private personalization controls. The server validates the original user message; model arguments cannot grant consent. Optional inventory_id is for an item alias only.',
     {'inventory_id': {'type': ['string', 'null']}}, []))
 ARGUMENTS['world_personalization'] = PersonalizationArguments
+
+
+def trace_diagnostics(trace):
+    """Bounded execution evidence, without tool arguments or private result content."""
+    from app.services.assistant_tool_safety import READ_TOOLS
+    return [{
+        'operation': str(entry.get('tool', 'unknown'))[:80],
+        'read_only': entry.get('tool') in READ_TOOLS,
+        'result': 'rejected' if (entry.get('result') or {}).get('error') else
+                  'database_confirmed' if (entry.get('result') or {}).get('inventory_changed') is True else
+                  'proposal' if (entry.get('result') or {}).get('pending_action') else 'not_observed',
+    } for entry in trace[-20:]]

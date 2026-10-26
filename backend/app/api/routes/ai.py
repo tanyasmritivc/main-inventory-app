@@ -84,20 +84,23 @@ def _prepare_ask_conversation(*, user_id: str, message: str, conversation_id: st
     return conversation_id
 
 
-def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
+def _save_ask_answer(*, conversation_id: str, answer: dict) -> dict:
     client = get_supabase_admin()
+    from uuid import uuid4
+    verified = {}
     record = {
+        'id': str(uuid4()),
         'conversation_id': conversation_id, 'role': 'assistant',
         'content': answer['assistant_message'], 'answer_context': answer.get('answer_context'),
     }
     if (answer.get('answer_context') or {}).get('pending_actions'):
         # A review card is actionable only after its exact frozen payload is
         # durable. A stable identity also reconciles a lost insert response.
-        from uuid import uuid4
-        record['id'] = str(uuid4())
         def saved():
             rows = client.table('messages').select('id,content,answer_context').eq('id', record['id']).eq('conversation_id', conversation_id).limit(1).execute().data
-            return isinstance(rows, list) and len(rows) == 1 and all(rows[0].get(key) == record[key] for key in ('id', 'content', 'answer_context'))
+            ok = isinstance(rows, list) and len(rows) == 1 and all(rows[0].get(key) == record[key] for key in ('id', 'content', 'answer_context'))
+            if ok: verified.update(rows[0])
+            return ok
         try:
             client.table('messages').insert(record).execute()
         except Exception:
@@ -106,8 +109,11 @@ def _save_ask_answer(*, conversation_id: str, answer: dict) -> None:
         if not saved():
             raise RuntimeError('The Chat review could not be verified')
     else:
-        client.table('messages').insert(record).execute()
+        rows = client.table('messages').insert(record).execute().data
+        if isinstance(rows, list) and len(rows) == 1 and rows[0].get('id') == record['id']:
+            verified.update(rows[0])
     client.table('conversations').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', conversation_id).execute()
+    return {'message_id': record['id'], 'created_at': verified.get('created_at')} if verified else {}
 
 
 @router.post('/ai_photo_question', response_model=None)
@@ -175,7 +181,7 @@ async def ai_photo_question_route(
                     continue
             answer = await task
             try:
-                await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
+                receipt = await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer=answer)
             except Exception:
                 logger.exception('Photo answer snapshot could not be saved')
                 yield b'data: {"type":"error","code":"history_save_failed"}\n\n'
@@ -185,7 +191,7 @@ async def ai_photo_question_route(
                 await asyncio.to_thread(remember_photo_answer, user_id=effective_user_id, message=question, answer=answer['assistant_message'])
             except Exception:
                 logger.warning('Photo follow-up memory unavailable; answer snapshot is saved')
-            yield f"data: {json_module.dumps({'type': 'done', 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
+            yield f"data: {json_module.dumps({'type': 'done', **(receipt if isinstance(receipt, dict) else {}), 'assistant_message': answer['assistant_message'], 'answer_context': answer.get('answer_context'), 'conversation_id': conv_id})}\n\n".encode()
             yield b'data: [DONE]\n\n'
         except FindPipelineError as exc:
             code = 'photo_timeout' if exc.status_code == 504 else 'photo_failed'
@@ -336,9 +342,10 @@ async def ai_command_route(
                             if not full_response:
                                 raise RuntimeError("The model returned no completed answer")
                             answer_context = item.get("answer_context")
+                            receipt = {}
                             if conv_id:
                                 try:
-                                    await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer={
+                                    receipt = await asyncio.to_thread(_save_ask_answer, conversation_id=conv_id, answer={
                                         'assistant_message': full_response, 'answer_context': answer_context})
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
@@ -349,7 +356,7 @@ async def ai_command_route(
                             asyncio.create_task(log_query(effective_user_id, payload.message))
                             asyncio.create_task(save_conversation(effective_user_id, payload.message, full_response))
                             nav_hint = item.get("nav_hint")
-                            yield f"data: {json_module.dumps({'type': 'done', 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
+                            yield f"data: {json_module.dumps({'type': 'done', **(receipt if isinstance(receipt, dict) else {}), 'answer_context': answer_context, 'conversation_id': conv_id, 'nav_hint': nav_hint, 'assistant_message': full_response})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")

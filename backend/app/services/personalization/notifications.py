@@ -46,6 +46,7 @@ def dispatch(limit=50):
 def main():
     result=dispatch()
     get_supabase_raw().rpc('findez_personalization_cleanup',{}).execute()
+    get_supabase_raw().rpc('findez_response_feedback_cleanup',{}).execute()
     print(result)  # Aggregate counts only, never tokens or content.
 
 
