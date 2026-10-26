@@ -1,3 +1,7 @@
+## October 25 — Memory/action/photo-preview backend deployed (PR236)
+
+Runtime `874b537` and migration `084` are live. Actual effective personalization state is provided to chat; missing and untouched defaults start on, explicit off/reset remains off, and the visible Memory switch enables learning. Notifications remain off unless opted in. Canonical source/destination inventory IDs survive the bounded model-data filter; safe proposals keep their confirmation card. Preview-only photo extraction creates a durable draft without an extra chat reply or chat allowance. All five CI jobs passed (40271290834), 1,572 tests + 10 subtests. Schema-only isolated rehearsal and replay passed. Live disposable account verified default/toggle state, GLM draft quantity 1→2, explicit save/retry creates one item, and canonical quantity edit with idempotent receipt. Account and all test data removed. Receipt: docs/plans/memory-photo-actions-receipt.json.
+
 ## October 25 - Photo draft composer and truthful memory
 
 Active lane: API memory defaults/status, authorized tool identifiers, safe reviewed fallback and preview-only extraction. User authorized implementation; preserve explicit opt-outs. Separate backend/mobile commits and releases.

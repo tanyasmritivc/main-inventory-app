@@ -1,0 +1,31 @@
+{
+  "published": true,
+  "source": "874b537492232e2a05082b245627ef6b6f5e49f3",
+  "api_healthy": true,
+  "database_healthy": true,
+  "anonymous_search_denied": true,
+  "unrelated_files_preserved": 122,
+  "schema_changed": true,
+  "migration": "084",
+  "extraction_provider": "glm",
+  "live_qa": {
+    "passed": true,
+    "checks": [
+      "new user default on and Memory toggle sync",
+      "live GLM same draft quantity 1 to 2 without stock write",
+      "explicit capture save and retry create one item",
+      "canonical inventory edit with idempotent receipt"
+    ],
+    "customer_records_used": false,
+    "synthetic_accounts_removed": 1
+  },
+  "ci": {
+    "run": 40271290834,
+    "jobs_passed": 5
+  },
+  "tests": {
+    "backend_passed": 1572,
+    "subtests": 10,
+    "warnings": 452
+  }
+}

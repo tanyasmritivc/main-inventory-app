@@ -11,3 +11,5 @@ Mobile photo preview is additive: preview_only requires auto_extract and support
 Verification: 1,572 backend tests and 10 subtests pass (452 existing warnings). Migration 084 replayed on a network-isolated schema-only production clone. Synthetic SQL checks cover new defaults, explicit opt-out, switch synchronization, notifications remaining off, and private RPC denial. Run backend/tests/sql/personalization_defaults.sql only in a disposable database after 084.
 
 Deployment: apply 084 before code, retain private backup, publish only changed API files after all five CI gates. No provider or production configuration changes required. Exact original customer mutation failure has not been replayed; the source/destination contract defect is verified. Physical mobile acceptance remains separate from backend tests.
+
+Live QA found an existing unrelated deletion guard: findez_delete_inventory_contents rejects newer inventory dependencies with “Unreviewed inventory dependency.” It was not weakened. Disposable QA cleanup used auth account deletion and verified item/conversation/profile removal. Inventory-content deletion needs a separately reviewed allowlist update.
