@@ -11,7 +11,7 @@ export async function decideChatItemAction(accountId: string, action: ChatItemAc
   if (decision === "confirm" && !worldId && !inventory?.can_edit) throw new Error("You have view-only access to this inventory.");
   const result = await accountRequest<{ action: unknown; assistant_message?: string; reply_id?: string; answer_error?: string }>(accountId,
     worldId ? `/worlds/${encodeURIComponent(worldId)}/inventories/${encodeURIComponent(action.inventoryId)}/ai_actions/${encodeURIComponent(action.id)}` : inventoryApiPath(`/ai_actions/${encodeURIComponent(action.id)}`, inventory), {
-      method: "POST", body: JSON.stringify({ decision }), signal,
+      method: "POST", body: { decision }, signal,
     });
   assertInventory(inventory);
   const updated = parseChatItemAction(result.action);

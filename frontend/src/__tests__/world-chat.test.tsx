@@ -103,7 +103,7 @@ test("one reviewed creation includes item additions and moves and safely retries
     `/worlds/org/structure-actions/${id}`,
   ]);
   expect(
-    JSON.parse(jest.mocked(accountRequest).mock.calls[1][2]!.body as string),
+    jest.mocked(accountRequest).mock.calls[1][2]!.body,
   ).toEqual({ decision: "confirm", supports_task_actions: true });
 });
 test("unverified creation receipts stay pending and never claim success", async () => {
